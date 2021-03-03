@@ -12,6 +12,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.Hub
+import io.sentry.Scope
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
@@ -19,6 +20,7 @@ import io.sentry.SpanStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ActivityLifecycleIntegrationTest {
@@ -227,39 +229,43 @@ class ActivityLifecycleIntegrationTest {
         }, any())
     }
 
-//    @Test
-//    fun `When transaction is created, set transaction to the bound Scope`() {
-//        val sut = fixture.getSut()
-//        fixture.options.tracesSampleRate = 1.0
-//
-//        sut.register(fixture.hub, fixture.options)
-//
-//        whenever(fixture.hub.configureScope(any())).thenCallRealMethod()
-//
-//        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
-//
-//        fixture.hub.configureScope {
-//            assertNotNull(it.transaction)
-//        }
-//    }
+    @Test
+    fun `When transaction is created, set transaction to the bound Scope`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
 
-//    @Test
-//    fun `When transaction is created, do not overwrite transaction already bound to the Scope`() {
-//        val sut = fixture.getSut()
-//        fixture.options.tracesSampleRate = 1.0
-//        sut.register(fixture.hub, fixture.options)
-//
-//        val transaction = fixture.hub.startTransaction("a", "a")
-//        fixture.hub.configureScope {
-//            it.setTransaction(transaction)
-//        }
-//
-//        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
-//
-//        fixture.hub.configureScope {
-//            assertEquals(transaction, it.transaction)
-//        }
-//    }
+        sut.register(fixture.hub, fixture.options)
+
+        whenever(fixture.hub.configureScope(any())).thenAnswer {
+            val scope = Scope(fixture.options)
+
+            sut.applyScope(scope, fixture.transaction)
+
+            assertNotNull(scope.transaction)
+        }
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+    }
+
+    @Test
+    fun `When transaction is created, do not overwrite transaction already bound to the Scope`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+
+        sut.register(fixture.hub, fixture.options)
+
+        whenever(fixture.hub.configureScope(any())).thenAnswer {
+            val scope = Scope(fixture.options)
+            val previousTransaction = SentryTransaction("name", "op", fixture.hub)
+            scope.setTransaction(previousTransaction)
+
+            sut.applyScope(scope, fixture.transaction)
+
+            assertEquals(previousTransaction, scope.transaction)
+        }
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+    }
 
     @Test
     fun `When tracing auto finish is enabled, it stops the transaction on onActivityPostResumed`() {

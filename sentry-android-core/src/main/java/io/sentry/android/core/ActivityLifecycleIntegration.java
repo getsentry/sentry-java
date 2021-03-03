@@ -9,6 +9,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.Integration;
+import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
@@ -109,25 +110,30 @@ public final class ActivityLifecycleIntegration
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
           scope -> {
-            scope.withTransaction(
-                scopeTransaction -> {
-                  // we'd not like to overwrite existent transactions bound to the Scope
-                  // manually.
-                  if (scopeTransaction == null) {
-                    scope.setTransaction(transaction);
-                  } else {
-                    options
-                        .getLogger()
-                        .log(
-                            SentryLevel.DEBUG,
-                            "Transaction '%s' won't be bound to the Scope since there's one already in there.",
-                            transaction.getName());
-                  }
-                });
+            applyScope(scope, transaction);
           });
 
       activitiesWithOngoingTransactions.put(activity, transaction);
     }
+  }
+
+  @TestOnly
+  void applyScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+    scope.withTransaction(
+        scopeTransaction -> {
+          // we'd not like to overwrite existent transactions bound to the Scope
+          // manually.
+          if (scopeTransaction == null) {
+            scope.setTransaction(transaction);
+          } else {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Transaction '%s' won't be bound to the Scope since there's one already in there.",
+                    transaction.getName());
+          }
+        });
   }
 
   private boolean isRunningTransaction(final @NonNull Activity activity) {
