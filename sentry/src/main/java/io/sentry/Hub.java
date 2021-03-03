@@ -516,32 +516,32 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull ITransaction transaction, final @Nullable Object hint) {
+    final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureTransaction' call is a no-op.");
+        .getLogger()
+        .log(
+          SentryLevel.WARNING,
+          "Instance is disabled and this 'captureTransaction' call is a no-op.");
     } else {
       if (!transaction.isFinished()) {
         options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Capturing unfinished transaction: %s",
-                transaction.getEventId());
+          .getLogger()
+          .log(
+            SentryLevel.WARNING,
+            "Capturing unfinished transaction: %s",
+            transaction.getEventId());
       }
       if (!Boolean.TRUE.equals(transaction.isSampled())) {
         options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Transaction %s was dropped due to sampling decision.",
-                transaction.getEventId());
+          .getLogger()
+          .log(
+            SentryLevel.DEBUG,
+            "Transaction %s was dropped due to sampling decision.",
+            transaction.getEventId());
       } else {
         StackItem item = null;
         try {
@@ -549,18 +549,20 @@ public final class Hub implements IHub {
           sentryId = item.getClient().captureTransaction(transaction, item.getScope(), hint);
         } catch (Exception e) {
           options
-              .getLogger()
-              .log(
-                  SentryLevel.ERROR,
-                  "Error while capturing transaction with id: " + transaction.getEventId(),
-                  e);
+            .getLogger()
+            .log(
+              SentryLevel.ERROR,
+              "Error while capturing transaction with id: " + transaction.getEventId(),
+              e);
         } finally {
+//          TODO: clear transaction
           if (item != null) {
+            // with transaction thread safe
             final Scope scope = item.getScope();
-            if (scope.getTransaction() == transaction) {
+            // pass tracer as a hint
+            if (scope.getTransaction() == /**/) {
               scope.clearTransaction();
             }
-          }
         }
       }
     }
@@ -594,7 +596,7 @@ public final class Hub implements IHub {
       boolean samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSampled(samplingDecision);
 
-      transaction = new SentryTransaction(transactionContext, this);
+      transaction = new SentryTracer(transactionContext, this);
     }
     return transaction;
   }
@@ -645,5 +647,13 @@ public final class Hub implements IHub {
       return span.getSpanContext();
     }
     return null;
+  }
+
+  public void clearTransaction(SentryTracer transaction) {
+    final StackItem item = stack.peek();
+    final Scope scope = item.getScope();
+    if (scope.getTransaction() == transaction) {
+      scope.clearTransaction();
+    }
   }
 }

@@ -995,7 +995,7 @@ class HubTest {
         sut.bindClient(mockClient)
         sut.close()
 
-        sut.captureTransaction(SentryTransaction("name", "op"), null)
+        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock())), null)
         verify(mockClient, never()).captureTransaction(any(), any(), any())
     }
 
@@ -1009,7 +1009,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction("name", SpanContext("op", true), NoOpHub.getInstance()), null)
+        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op", true), mock())), null)
         verify(mockClient).captureTransaction(any(), any(), eq(null))
     }
 
@@ -1023,7 +1023,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction("name", SpanContext("op", false), NoOpHub.getInstance()), null)
+        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op", false), mock())), null)
         verify(mockClient, times(0)).captureTransaction(any(), any(), eq(null))
     }
 
@@ -1035,9 +1035,11 @@ class HubTest {
         options.setSerializer(mock())
         val sut = Hub(options)
 
-        val transaction = SentryTransaction(TransactionContext("name", "op", true), sut)
+        val transaction = SentryTracer(TransactionContext("name", "op", true), sut)
         sut.configureScope { it.setTransaction(transaction) }
-        sut.captureTransaction(transaction, null)
+        val sentryTransaction = SentryTransaction(transaction)
+        sut.captureTransaction(sentryTransaction, null)
+        sut.clearTransaction(transaction)
         sut.configureScope {
             assertNull(it.transaction)
         }
@@ -1051,10 +1053,10 @@ class HubTest {
         options.setSerializer(mock())
         val sut = Hub(options)
 
-        val transaction = SentryTransaction(TransactionContext("name", "op", true), sut)
-        val anotherTransaction = SentryTransaction(TransactionContext("name", "op", true), sut)
+        val transaction = SentryTracer(TransactionContext("name", "op", true), sut)
+        val anotherTransaction = SentryTracer(TransactionContext("name", "op", true), sut)
         sut.configureScope { it.setTransaction(anotherTransaction) }
-        sut.captureTransaction(transaction, null)
+        sut.captureTransaction(SentryTransaction(transaction), null)
         sut.configureScope {
             assertNotNull(it.transaction)
             assertEquals(anotherTransaction, it.transaction)
@@ -1069,8 +1071,8 @@ class HubTest {
         val contexts = TransactionContext("name", "op")
 
         val transaction = hub.startTransaction(contexts)
-        assertTrue(transaction is SentryTransaction)
-        assertEquals(contexts, transaction.context)
+        assertTrue(transaction is SentryTracer)
+        assertEquals(contexts, transaction.root.spanContext)
     }
 
     @Test

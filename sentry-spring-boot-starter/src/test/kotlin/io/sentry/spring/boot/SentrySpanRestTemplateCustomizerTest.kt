@@ -5,9 +5,11 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.SentryOptions
+import io.sentry.SentryTracer
 import io.sentry.SentryTransaction
 import io.sentry.SpanContext
 import io.sentry.SpanStatus
+import io.sentry.TransactionContext
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.http.HttpMethod
@@ -23,7 +25,7 @@ class SentrySpanRestTemplateCustomizerTest {
         val hub = mock<IHub>()
         val restTemplate = RestTemplate()
         var mockServer = MockRestServiceServer.createServer(restTemplate)
-        val transaction = SentryTransaction("aTransaction", SpanContext("op", true), hub)
+        val transaction = SentryTracer(TransactionContext("aTransaction", "op"), hub)
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK): RestTemplate {

@@ -130,4 +130,9 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public void setTag(@NotNull String key, @NotNull String value) {}
+
+  @Override
+  public @Nullable String getTag(@NotNull String key) {
+    return null;
+  }
 }

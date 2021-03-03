@@ -12,6 +12,7 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SpanContext
+import io.sentry.TransactionContext
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
@@ -42,7 +43,7 @@ class SentryTransactionAdviceTest {
 
     @BeforeTest
     fun setup() {
-        whenever(hub.startTransaction(any<String>(), any())).thenAnswer { io.sentry.SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
+        whenever(hub.startTransaction(any<String>(), any())).thenAnswer { io.sentry.SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
     }
 
     @Test
@@ -66,7 +67,7 @@ class SentryTransactionAdviceTest {
     @Test
     fun `when transaction is already active, does not start new transaction`() {
         val scope = Scope(SentryOptions())
-        scope.setTransaction(io.sentry.SentryTransaction("aTransaction", SpanContext("op"), hub))
+        scope.setTransaction(io.sentry.SentryTracer(TransactionContext("aTransaction", "op"), hub))
 
         whenever(hub.configureScope(any())).thenAnswer {
             (it.arguments[0] as ScopeCallback).run(scope)

@@ -11,6 +11,7 @@ import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
+import io.sentry.SentryTracer
 import io.sentry.SentryTransaction
 import io.sentry.SpanContext
 import io.sentry.SpanId
@@ -47,10 +48,10 @@ class SentryTracingFilterTest {
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
-                whenever(hub.startTransaction(any<TransactionContext>(), any())).thenAnswer { SentryTransaction((it.arguments[0] as TransactionContext).name, it.arguments[0] as SpanContext, hub) }
+                whenever(hub.startTransaction(any<TransactionContext>(), any())).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             }
             response.status = 200
-            whenever(hub.startTransaction(any<String>(), any(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
+            whenever(hub.startTransaction(any<String>(), any(), any())).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
             return SentryTracingFilter(hub, sentryRequestResolver, transactionNameProvider)
         }

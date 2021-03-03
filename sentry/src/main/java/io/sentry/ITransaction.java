@@ -49,14 +49,6 @@ public interface ITransaction extends ISpan {
   List<Span> getSpans();
 
   /**
-   * Returns if transaction is sampled.
-   *
-   * @return is sampled
-   */
-  @Nullable
-  Boolean isSampled();
-
-  /**
    * Returns the latest span that is not finished.
    *
    * @return span or null if not found.

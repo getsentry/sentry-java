@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** Represents performance monitoring Span. */
 public interface ISpan {
+  String NAME_TAG = "sentry-name";
   /**
    * Starts a child Span.
    *
@@ -47,14 +48,14 @@ public interface ISpan {
    *
    * @param operation - the operation
    */
-  void setOperation(@Nullable String operation);
+  void setOperation(@NotNull String operation);
 
   /**
    * Returns the span operation.
    *
    * @return the operation
    */
-  @Nullable
+  @NotNull
   String getOperation();
 
   /**
@@ -118,10 +119,21 @@ public interface ISpan {
    */
   void setTag(@NotNull String key, @NotNull String value);
 
+  @Nullable
+  String getTag(@NotNull String key);
+
   /**
    * Returns if span has finished.
    *
    * @return if span has finished.
    */
   boolean isFinished();
+
+  /**
+   * Returns if transaction is sampled.
+   *
+   * @return is sampled
+   */
+  @Nullable
+  Boolean isSampled();
 }
