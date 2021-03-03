@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
+import org.jetbrains.annotations.VisibleForTesting;
 
 public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
@@ -117,7 +118,7 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  @TestOnly
+  @VisibleForTesting
   void applyScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
         scopeTransaction -> {
