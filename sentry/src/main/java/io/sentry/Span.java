@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,6 +24,8 @@ public final class Span extends SpanContext implements ISpan {
   private transient @Nullable Throwable throwable;
 
   private final transient @NotNull IHub hub;
+
+  private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
   Span(
       final @NotNull SentryId traceId,
@@ -62,16 +65,21 @@ public final class Span extends SpanContext implements ISpan {
 
   @Override
   public void finish() {
-    timestamp = DateUtils.getCurrentDateTime();
-    if (throwable != null) {
-      hub.setSpanContext(throwable, this);
-    }
+    this.finish(this.status);
   }
 
   @Override
   public void finish(@Nullable SpanStatus status) {
+    // the span can be finished only once
+    if (!finished.compareAndSet(false, true)) {
+      return;
+    }
+
     this.status = status;
-    this.finish();
+    timestamp = DateUtils.getCurrentDateTime();
+    if (throwable != null) {
+      hub.setSpanContext(throwable, this);
+    }
   }
 
   @Override
@@ -81,7 +89,7 @@ public final class Span extends SpanContext implements ISpan {
 
   @Override
   public boolean isFinished() {
-    return this.timestamp != null;
+    return finished.get();
   }
 
   @Override

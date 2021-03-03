@@ -64,6 +64,11 @@ object Config {
         val servletApi = "javax.servlet:javax.servlet-api"
 
         val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.3"
+
+        val retrofit2Version = "2.9.0"
+        val retrofit2Group = "com.squareup.retrofit2"
+        val retrofit2 = "$retrofit2Group:retrofit:$retrofit2Version"
+        val retrofit2Gson = "$retrofit2Group:converter-gson:$retrofit2Version"
     }
 
     object AnnotationProcessors {

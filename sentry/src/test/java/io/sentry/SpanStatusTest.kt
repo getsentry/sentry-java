@@ -25,4 +25,9 @@ class SpanStatusTest {
     fun `returns null when no SpanStatus matches specific code`() {
         assertNull(SpanStatus.fromHttpStatusCode(302))
     }
+
+    @Test
+    fun `returns default value when no SpanStatus matches specific code`() {
+        assertEquals(SpanStatus.UNKNOWN_ERROR, SpanStatus.fromHttpStatusCode(302, SpanStatus.UNKNOWN_ERROR))
+    }
 }

@@ -104,8 +104,8 @@ dependencies {
 //    }
 
     implementation(Config.Libs.appCompat)
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation(Config.Libs.retrofit2)
+    implementation(Config.Libs.retrofit2Gson)
 
     debugImplementation(Config.Libs.leakCanary)
 }

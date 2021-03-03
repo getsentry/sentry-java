@@ -44,6 +44,12 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     this(name, new SpanContext(operation), NoOpHub.getInstance());
   }
 
+  @TestOnly
+  SentryTransaction(
+      final @NotNull String name, final @NotNull String operation, final @NotNull IHub hub) {
+    this(name, new SpanContext(operation), hub);
+  }
+
   SentryTransaction(final @NotNull TransactionContext transactionContext, final @NotNull IHub hub) {
     this(transactionContext.getName(), transactionContext, hub);
   }
@@ -158,23 +164,23 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
 
   @Override
   public void finish() {
+    this.finish(this.getStatus());
+  }
+
+  @Override
+  public void finish(@Nullable SpanStatus status) {
     // the transaction can be finished only once
     if (!finished.compareAndSet(false, true)) {
       return;
     }
 
+    this.setStatus(status);
     this.timestamp = DateUtils.getCurrentDateTime();
     if (this.throwable != null) {
       hub.setSpanContext(this.throwable, this);
     }
     this.getContexts().setTrace(this.context);
     this.hub.captureTransaction(this, null);
-  }
-
-  @Override
-  public void finish(@Nullable SpanStatus status) {
-    this.setStatus(status);
-    this.finish();
   }
 
   /**

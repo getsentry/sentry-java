@@ -724,11 +724,31 @@ class ScopeTest {
     @Test
     fun `when transaction is set after transaction name is set, clearing transaction does not bring back old transaction name`() {
         val scope = Scope(SentryOptions())
-        scope.setTransaction("transaction-a")
         val sentryTransaction = SentryTransaction("transaction-name", "op")
         scope.setTransaction(sentryTransaction)
+
         assertEquals("transaction-name", scope.transactionName)
         scope.clearTransaction()
         assertNull(scope.transactionName)
+    }
+
+    @Test
+    fun `withTransaction returns the current Transaction bound to the Scope`() {
+        val scope = Scope(SentryOptions())
+        val sentryTransaction = SentryTransaction("transaction-name", "op")
+        scope.setTransaction(sentryTransaction)
+
+        scope.withTransaction {
+            assertEquals(sentryTransaction, it)
+        }
+    }
+
+    @Test
+    fun `withTransaction returns null if no transaction bound to the Scope`() {
+        val scope = Scope(SentryOptions())
+
+        scope.withTransaction {
+            assertNull(it)
+        }
     }
 }
