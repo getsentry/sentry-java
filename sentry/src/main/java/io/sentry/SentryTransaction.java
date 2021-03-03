@@ -45,7 +45,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   }
 
   @TestOnly
-  SentryTransaction(
+  public SentryTransaction(
       final @NotNull String name, final @NotNull String operation, final @NotNull IHub hub) {
     this(name, new SpanContext(operation), hub);
   }

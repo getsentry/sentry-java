@@ -5,26 +5,34 @@ import android.app.Application
 import android.os.Bundle
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.Hub
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.SentryTransaction
+import io.sentry.SpanStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ActivityLifecycleIntegrationTest {
 
     private class Fixture {
         val application = mock<Application>()
-        val hub = mock<IHub>()
+        val hub = mock<Hub>()
         val options = SentryAndroidOptions()
         val activity = mock<Activity>()
         val bundle = mock<Bundle>()
+        val transaction = SentryTransaction("name", "op", hub)
 
         fun getSut(): ActivityLifecycleIntegration {
+            whenever(hub.startTransaction(any<String>(), any())).thenReturn(transaction)
             return ActivityLifecycleIntegration(application)
         }
     }
@@ -168,5 +176,190 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityDestroyed(fixture.activity)
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+    }
+
+    @Test
+    fun `When tracing is disabled, do not start tracing`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+
+        verify(fixture.hub, never()).startTransaction(any<String>(), any())
+    }
+
+    @Test
+    fun `When tracing is enabled but activity is running, do not start tracing again`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+
+        // call only once
+        verify(fixture.hub).startTransaction(any<String>(), any())
+    }
+
+    @Test
+    fun `Transaction op is navigation`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(any<String>(), check {
+            assertEquals("navigation", it)
+        })
+    }
+
+    @Test
+    fun `Transaction name is the Activity's name`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(check<String> {
+            assertEquals("Activity", it)
+        }, any())
+    }
+
+//    @Test
+//    fun `When transaction is created, set transaction to the bound Scope`() {
+//        val sut = fixture.getSut()
+//        fixture.options.tracesSampleRate = 1.0
+//
+//        sut.register(fixture.hub, fixture.options)
+//
+//        whenever(fixture.hub.configureScope(any())).thenCallRealMethod()
+//
+//        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+//
+//        fixture.hub.configureScope {
+//            assertNotNull(it.transaction)
+//        }
+//    }
+
+//    @Test
+//    fun `When transaction is created, do not overwrite transaction already bound to the Scope`() {
+//        val sut = fixture.getSut()
+//        fixture.options.tracesSampleRate = 1.0
+//        sut.register(fixture.hub, fixture.options)
+//
+//        val transaction = fixture.hub.startTransaction("a", "a")
+//        fixture.hub.configureScope {
+//            it.setTransaction(transaction)
+//        }
+//
+//        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+//
+//        fixture.hub.configureScope {
+//            assertEquals(transaction, it.transaction)
+//        }
+//    }
+
+    @Test
+    fun `When tracing auto finish is enabled, it stops the transaction on onActivityPostResumed`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        sut.onActivityPostResumed(fixture.activity)
+
+        verify(fixture.hub).captureTransaction(check<SentryTransaction> {
+            assertEquals(SpanStatus.OK, it.status)
+        }, eq(null))
+    }
+
+    @Test
+    fun `When tracing has status, do not overwrite it`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+
+        fixture.transaction.status = SpanStatus.UNKNOWN_ERROR
+
+        sut.onActivityPostResumed(fixture.activity)
+
+        verify(fixture.hub).captureTransaction(check<SentryTransaction> {
+            assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
+        }, eq(null))
+    }
+
+    @Test
+    fun `When tracing auto finish is disabled, do not finish transaction`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableActivityLifecycleTracingAutoFinish = false
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        sut.onActivityPostResumed(fixture.activity)
+
+        verify(fixture.hub, never()).captureTransaction(any<SentryTransaction>(), eq(null))
+    }
+
+    @Test
+    fun `When tracing is disabled, do not finish transaction`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPostResumed(fixture.activity)
+
+        verify(fixture.hub, never()).captureTransaction(any<SentryTransaction>(), eq(null))
+    }
+
+    @Test
+    fun `When Activity is destroyed but transaction is running, finish it`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        sut.onActivityDestroyed(fixture.activity)
+
+        verify(fixture.hub).captureTransaction(any<SentryTransaction>(), eq(null))
+    }
+
+    @Test
+    fun `When transaction is started, adds to WeakWef`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+
+        assertFalse(sut.activitiesWithOngoingTransactions.isEmpty())
+    }
+
+    @Test
+    fun `When Activity is destroyed removes WeakRef`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        sut.onActivityDestroyed(fixture.activity)
+
+        assertTrue(sut.activitiesWithOngoingTransactions.isEmpty())
+    }
+
+    @Test
+    fun `When new Activity and transaction is created, finish previous ones`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, mock())
+
+        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        verify(fixture.hub).captureTransaction(any<SentryTransaction>(), eq(null))
     }
 }

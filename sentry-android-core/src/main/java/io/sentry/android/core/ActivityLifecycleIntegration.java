@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
@@ -213,5 +214,11 @@ public final class ActivityLifecycleIntegration
     if (performanceEnabled) {
       activitiesWithOngoingTransactions.remove(activity);
     }
+  }
+
+  @TestOnly
+  @NotNull
+  WeakHashMap<Activity, ITransaction> getActivitiesWithOngoingTransactions() {
+    return activitiesWithOngoingTransactions;
   }
 }

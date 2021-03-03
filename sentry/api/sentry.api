@@ -850,6 +850,7 @@ public final class io/sentry/SentryTraceHeader {
 
 public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent, io/sentry/ITransaction {
 	public fun <init> (Ljava/lang/String;Lio/sentry/SpanContext;Lio/sentry/IHub;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/IHub;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getDescription ()Ljava/lang/String;
