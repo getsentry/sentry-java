@@ -42,6 +42,9 @@ final class ManifestMetadataReader {
       "io.sentry.uncaught-exception-handler.enable";
 
   static final String TRACES_SAMPLE_RATE = "io.sentry.traces.sample-rate";
+  static final String TRACES_ACTIVITY_ENABLE = "io.sentry.traces.activity.enable";
+  static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
+      "io.sentry.traces.activity.auto-finish.enable";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
 
@@ -168,6 +171,20 @@ final class ManifestMetadataReader {
             options.setTracesSampleRate(tracesSampleRate);
           }
         }
+
+        options.setEnableAutoActivityLifecycleTracing(
+            readBool(
+                metadata,
+                logger,
+                TRACES_ACTIVITY_ENABLE,
+                options.isEnableAutoActivityLifecycleTracing()));
+
+        options.setEnableActivityLifecycleTracingAutoFinish(
+            readBool(
+                metadata,
+                logger,
+                TRACES_ACTIVITY_AUTO_FINISH_ENABLE,
+                options.isEnableActivityLifecycleTracingAutoFinish()));
       }
       options
           .getLogger()

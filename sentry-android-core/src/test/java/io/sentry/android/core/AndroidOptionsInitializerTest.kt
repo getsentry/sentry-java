@@ -298,7 +298,7 @@ class AndroidOptionsInitializerTest {
         whenever(mockContext.applicationContext).thenReturn(null)
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.integrations.firstOrNull { it is ActivityBreadcrumbsIntegration }
+        val actual = sentryOptions.integrations.firstOrNull { it is ActivityLifecycleIntegration }
         assertNull(actual)
     }
 

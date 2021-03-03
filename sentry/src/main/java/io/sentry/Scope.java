@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,6 +60,9 @@ public final class Scope implements Cloneable {
   /** Session lock, Ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
 
+  /** Transaction lock, Ops should be atomic */
+  private final @NotNull Object transactionLock = new Object();
+
   /** Scope's contexts */
   private @NotNull Contexts contexts = new Contexts();
 
@@ -71,8 +75,8 @@ public final class Scope implements Cloneable {
    * @param options the options
    */
   public Scope(final @NotNull SentryOptions options) {
-    this.options = options;
-    this.breadcrumbs = createBreadcrumbsList(options.getMaxBreadcrumbs());
+    this.options = Objects.requireNonNull(options, "SentryOptions is required.");
+    this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
   }
 
   /**
@@ -140,7 +144,9 @@ public final class Scope implements Cloneable {
    * @param transaction the transaction
    */
   public void setTransaction(final @NotNull ITransaction transaction) {
-    this.transaction = Objects.requireNonNull(transaction, "transaction is required");
+    synchronized (transactionLock) {
+      this.transaction = Objects.requireNonNull(transaction, "transaction is required");
+    }
   }
 
   /**
@@ -290,7 +296,9 @@ public final class Scope implements Cloneable {
 
   /** Clears the transaction. */
   public void clearTransaction() {
-    transaction = null;
+    synchronized (transactionLock) {
+      transaction = null;
+    }
     transactionName = null;
   }
 
@@ -307,7 +315,6 @@ public final class Scope implements Cloneable {
   /** Resets the Scope to its default state */
   public void clear() {
     level = null;
-    transaction = null;
     user = null;
     request = null;
     fingerprint.clear();
@@ -689,5 +696,29 @@ public final class Scope implements Cloneable {
       }
     }
     return previousSession;
+  }
+
+  /**
+   * Mutates the current transaction atomically
+   *
+   * @param callback the IWithTransaction callback
+   */
+  @ApiStatus.Internal
+  public void withTransaction(final @NotNull IWithTransaction callback) {
+    synchronized (transactionLock) {
+      callback.accept(transaction);
+    }
+  }
+
+  /** the IWithTransaction callback */
+  @ApiStatus.Internal
+  public interface IWithTransaction {
+
+    /**
+     * The accept method of the callback
+     *
+     * @param transaction the current transaction or null if none exists
+     */
+    void accept(@Nullable ITransaction transaction);
   }
 }

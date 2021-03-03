@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +33,8 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
 
   private final transient @NotNull SpanContext context;
 
+  private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
+
   /** The {@code type} property is required in JSON payload sent to Sentry. */
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
@@ -39,6 +42,12 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
   /** Creates transaction. */
   SentryTransaction(final @NotNull String name, final @NotNull String operation) {
     this(name, new SpanContext(operation), NoOpHub.getInstance());
+  }
+
+  @TestOnly
+  public SentryTransaction(
+      final @NotNull String name, final @NotNull String operation, final @NotNull IHub hub) {
+    this(name, new SpanContext(operation), hub);
   }
 
   SentryTransaction(final @NotNull TransactionContext transactionContext, final @NotNull IHub hub) {
@@ -155,6 +164,17 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
 
   @Override
   public void finish() {
+    this.finish(this.getStatus());
+  }
+
+  @Override
+  public void finish(@Nullable SpanStatus status) {
+    // the transaction can be finished only once
+    if (!finished.compareAndSet(false, true)) {
+      return;
+    }
+
+    this.setStatus(status);
     this.timestamp = DateUtils.getCurrentDateTime();
     if (this.throwable != null) {
       hub.setSpanContext(this.throwable, this);
@@ -163,24 +183,18 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
     this.hub.captureTransaction(this, null);
   }
 
-  @Override
-  public void finish(@Nullable SpanStatus status) {
-    this.setStatus(status);
-    this.finish();
-  }
-
   /**
    * Sets transaction operation.
    *
-   * @param op - operation
+   * @param operation - operation
    */
   @Override
-  public void setOperation(@Nullable String op) {
-    this.context.setOperation(op);
+  public void setOperation(final @NotNull String operation) {
+    this.context.setOperation(operation);
   }
 
   @Override
-  public @Nullable String getOperation() {
+  public @NotNull String getOperation() {
     return this.context.getOperation();
   }
 
@@ -268,6 +282,6 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
 
   @Override
   public boolean isFinished() {
-    return this.timestamp != null;
+    return finished.get();
   }
 }
