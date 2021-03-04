@@ -341,7 +341,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction,
+      @NotNull SentryTransaction transaction,
       final @NotNull Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
@@ -352,10 +352,19 @@ public final class SentryClient implements ISentryClient {
 
     SentryId sentryId = transaction.getEventId();
 
-    final SentryTransaction sentryTransaction = processTransaction(transaction);
+    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      transaction = applyScope(transaction, scope);
+    } else {
+      options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Transaction was cached so not applying scope: %s", transaction.getEventId());
+    }
+
+    transaction = processTransaction(transaction);
+
     try {
       final SentryEnvelope envelope =
-          buildEnvelope(sentryTransaction, filterForTransaction(getAttachmentsFromScope(scope)));
+          buildEnvelope(transaction, filterForTransaction(getAttachmentsFromScope(scope)));
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {
@@ -414,6 +423,16 @@ public final class SentryClient implements ISentryClient {
           .log(SentryLevel.WARNING, "Dropping %d unfinished spans", unfinishedSpans.size());
     }
     transaction.getSpans().removeAll(unfinishedSpans);
+    return transaction;
+  }
+
+  private @NotNull SentryTransaction applyScope(
+    @NotNull SentryTransaction transaction, final @Nullable Scope scope) {
+    if (scope != null) {
+      if (transaction.getRequest() == null) {
+        transaction.setRequest(scope.getRequest());
+      }
+    }
     return transaction;
   }
 
