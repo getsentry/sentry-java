@@ -163,16 +163,16 @@ public final class Span implements ISpan {
   }
 
   @NotNull
-  SentryId getTraceId() {
+  public SentryId getTraceId() {
     return context.getTraceId();
   }
 
-  @NotNull
+  public @NotNull
   SpanId getSpanId() {
     return context.getSpanId();
   }
 
-  @Nullable
+  public @Nullable
   SpanId getParentSpanId() {
     return context.getParentSpanId();
   }

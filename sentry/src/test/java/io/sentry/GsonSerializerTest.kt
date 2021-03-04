@@ -440,7 +440,7 @@ class GsonSerializerTest {
         trace.setTag("myTag", "myValue")
         val transaction = SentryTracer(trace, mock())
         val span = transaction.startChild("child")
-        span.finish()
+        span.finish(SpanStatus.OK)
         transaction.finish()
 
         val stringWriter = StringWriter()
@@ -452,6 +452,14 @@ class GsonSerializerTest {
         assertNotNull(element["start_timestamp"].asString)
         assertNotNull(element["event_id"].asString)
         assertNotNull(element["spans"].asJsonArray)
+        val jsonSpan = element["spans"].asJsonArray[0]
+        assertNotNull(jsonSpan.asJsonObject["trace_id"])
+        assertNotNull(jsonSpan.asJsonObject["span_id"])
+        assertNotNull(jsonSpan.asJsonObject["parent_span_id"])
+        assertNotNull(jsonSpan.asJsonObject["op"])
+        assertNotNull(jsonSpan.asJsonObject["status"])
+        assertNotNull(jsonSpan.asJsonObject["timestamp"])
+        assertNotNull(jsonSpan.asJsonObject["start_timestamp"])
         val jsonTrace = element["contexts"].asJsonObject["trace"]
         assertNotNull(jsonTrace.asJsonObject["trace_id"].asString)
         assertNotNull(jsonTrace.asJsonObject["span_id"].asString)
