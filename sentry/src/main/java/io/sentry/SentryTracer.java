@@ -189,11 +189,15 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
   public void setRequest(@Nullable Request request) {
     hub.configureScope(scope -> scope.setRequest(request));
   }
 
   @Override
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
   public @Nullable Request getRequest() {
     final AtomicReference<Request> contexts = new AtomicReference<>();
     hub.configureScope(scope -> contexts.set(scope.getRequest()));
@@ -233,6 +237,8 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
   public @Nullable String getTransaction() {
     return this.getName();
   }
