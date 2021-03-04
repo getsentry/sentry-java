@@ -36,7 +36,8 @@ public interface ISpan {
   /**
    * Sets span timestamp marking this span as finished.
    *
-   * @return true if transaction has been successfully finished or false if finishing transaction failed
+   * @return true if transaction has been successfully finished or false if finishing transaction
+   *     failed
    */
   boolean finish();
 
@@ -44,7 +45,8 @@ public interface ISpan {
    * Sets span timestamp marking this span as finished.
    *
    * @param status - the status
-   * @return true if transaction has been successfully finished or false if finishing transaction failed
+   * @return true if transaction has been successfully finished or false if finishing transaction
+   *     failed
    */
   boolean finish(@Nullable SpanStatus status);
 

@@ -2,7 +2,6 @@ package io.sentry.spring.tracing
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
@@ -51,7 +50,7 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("customName")
             assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
-        }, eq(null))
+        })
     }
 
     @Test
@@ -60,7 +59,7 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
             assertThat(it.contexts.trace!!.operation).isEqualTo("op")
-        }, eq(null))
+        })
     }
 
     @Test
@@ -80,9 +79,10 @@ class SentryTransactionAdviceTest {
     fun `creates transaction around method in class annotated with @SentryTransaction`() {
         classAnnotatedSampleService.hello()
         verify(hub).captureTransaction(check {
+            println(it)
             assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
             assertThat(it.contexts.trace!!.operation).isEqualTo("op")
-        }, eq(null))
+        })
     }
 
     @Test
@@ -91,7 +91,7 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
             assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
-        }, eq(null))
+        })
     }
 
     @Configuration
