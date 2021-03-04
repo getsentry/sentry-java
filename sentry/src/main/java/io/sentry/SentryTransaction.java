@@ -58,7 +58,7 @@ public final class SentryTransaction extends SentryBaseEvent {
     return type;
   }
 
-  public @NotNull SpanStatus getStatus() {
+  public @Nullable SpanStatus getStatus() {
     final SpanContext trace = this.getContexts().getTrace();
     return trace != null ? trace.getStatus() : null;
   }
