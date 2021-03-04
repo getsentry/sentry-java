@@ -1026,42 +1026,6 @@ class HubTest {
         sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op", false), mock())), null)
         verify(mockClient, times(0)).captureTransaction(any(), any(), eq(null))
     }
-
-    @Test
-    fun `when transaction is set on scope, captureTransaction clears it from the scope`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-
-        val transaction = SentryTracer(TransactionContext("name", "op", true), sut)
-        sut.configureScope { it.setTransaction(transaction) }
-        val sentryTransaction = SentryTransaction(transaction)
-        sut.captureTransaction(sentryTransaction, null)
-        sut.clearTransaction(transaction)
-        sut.configureScope {
-            assertNull(it.transaction)
-        }
-    }
-
-    @Test
-    fun `when different transaction is set on scope, captureTransaction does not clear it from the scope`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-
-        val transaction = SentryTracer(TransactionContext("name", "op", true), sut)
-        val anotherTransaction = SentryTracer(TransactionContext("name", "op", true), sut)
-        sut.configureScope { it.setTransaction(anotherTransaction) }
-        sut.captureTransaction(SentryTransaction(transaction), null)
-        sut.configureScope {
-            assertNotNull(it.transaction)
-            assertEquals(anotherTransaction, it.transaction)
-        }
-    }
     //endregion
 
     //region startTransaction tests

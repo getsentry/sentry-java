@@ -7,8 +7,6 @@ import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
-import io.sentry.SentryTransaction
-import io.sentry.SpanContext
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import java.lang.RuntimeException

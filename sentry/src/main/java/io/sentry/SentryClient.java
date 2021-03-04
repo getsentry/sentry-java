@@ -352,8 +352,7 @@ public final class SentryClient implements ISentryClient {
 
     SentryId sentryId = transaction.getEventId();
 
-    final SentryTransaction sentryTransaction =
-        processTransaction(transaction);
+    final SentryTransaction sentryTransaction = processTransaction(transaction);
     try {
       final SentryEnvelope envelope =
           buildEnvelope(sentryTransaction, filterForTransaction(getAttachmentsFromScope(scope)));
@@ -363,9 +362,7 @@ public final class SentryClient implements ISentryClient {
         sentryId = SentryId.EMPTY_ID;
       }
     } catch (IOException e) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }

@@ -11,7 +11,6 @@ import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
-import io.sentry.SpanContext
 import io.sentry.TransactionContext
 import kotlin.test.BeforeTest
 import kotlin.test.Test

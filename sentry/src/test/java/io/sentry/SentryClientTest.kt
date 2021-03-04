@@ -804,7 +804,7 @@ class SentryClientTest {
         transaction.finish()
         sut.captureEvent(event, scope)
         assertNotNull(event.contexts.trace)
-        assertEquals(transaction.contexts.trace, event.contexts.trace)
+        assertEquals(transaction.root.spanContext, event.contexts.trace)
     }
 
     @Test

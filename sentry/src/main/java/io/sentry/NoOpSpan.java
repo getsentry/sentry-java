@@ -31,17 +31,21 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public void finish() {}
+  public boolean finish() {
+    return true;
+  }
 
   @Override
-  public void finish(@Nullable SpanStatus status) {}
+  public boolean finish(@Nullable SpanStatus status) {
+    return true;
+  }
 
   @Override
-  public void setOperation(@Nullable String operation) {}
+  public void setOperation(@NotNull String operation) {}
 
   @Override
-  public @Nullable String getOperation() {
-    return null;
+  public @NotNull String getOperation() {
+    return "";
   }
 
   @Override

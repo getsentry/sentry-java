@@ -12,8 +12,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
-import io.sentry.SentryTransaction
-import io.sentry.SpanContext
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext

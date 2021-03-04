@@ -49,9 +49,9 @@ public final class SentryTracer implements ITransaction {
    */
   @NotNull
   ISpan startChild(
-    final @NotNull SpanId parentSpanId,
-    final @NotNull String operation,
-    final @Nullable String description) {
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description) {
     final ISpan span = startChild(parentSpanId, operation);
     span.setDescription(description);
     return span;
@@ -79,7 +79,7 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
-    final @NotNull String operation, final @Nullable String description) {
+      final @NotNull String operation, final @Nullable String description) {
     return root.startChild(operation, description);
   }
 
@@ -89,18 +89,28 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public void finish() {
-    this.finish(this.getStatus());
+  public boolean finish() {
+    return this.finish(this.getStatus());
   }
 
   @Override
-  public void finish(@Nullable SpanStatus status) {
-    // clear the transaction from the scope atomically
-    // with manoels api
-    ((Hub) hub).clearTransaction(this);
-    root.finish(status);
-    SentryTransaction transaction = new SentryTransaction(this);
-    hub.captureTransaction(transaction, this);
+  public boolean finish(@Nullable SpanStatus status) {
+    if (root.finish(status)) {
+      hub.withScope(
+          scope -> {
+            scope.withTransaction(
+                transaction -> {
+                  if (transaction == this) {
+                    scope.clearTransaction();
+                  }
+                });
+          });
+      SentryTransaction transaction = new SentryTransaction(this);
+      hub.captureTransaction(transaction);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override

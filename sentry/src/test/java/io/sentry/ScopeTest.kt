@@ -120,7 +120,7 @@ class ScopeTest {
         assertEquals("abc", clone.fingerprint.first())
 
         assertEquals("message", clone.breadcrumbs.first().message)
-        assertEquals("transaction-name", (clone.span as Span).getTag(ISpan.NAME_TAG))
+        assertEquals("transaction-name", (clone.span as SentryTracer).getTag(ISpan.NAME_TAG))
 
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
@@ -730,5 +730,25 @@ class ScopeTest {
         assertEquals("transaction-name", scope.transactionName)
         scope.clearTransaction()
         assertNull(scope.transactionName)
+    }
+
+    @Test
+    fun `withTransaction returns the current Transaction bound to the Scope`() {
+        val scope = Scope(SentryOptions())
+        val sentryTransaction = SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+        scope.setTransaction(sentryTransaction)
+
+        scope.withTransaction {
+            assertEquals(sentryTransaction, it)
+        }
+    }
+
+    @Test
+    fun `withTransaction returns null if no transaction bound to the Scope`() {
+        val scope = Scope(SentryOptions())
+
+        scope.withTransaction {
+            assertNull(it)
+        }
     }
 }

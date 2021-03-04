@@ -1,5 +1,6 @@
 package io.sentry.samples.android;
 
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
@@ -25,13 +26,13 @@ public class MainActivity extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
+    final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
 
-    File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
-    try (InputStream inputStream =
+    final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
+    try (final InputStream inputStream =
             getApplicationContext().getResources().openRawResource(R.raw.sentry);
         FileOutputStream outputStream = new FileOutputStream(imageFile)) {
-      byte[] bytes = new byte[1024];
+      final byte[] bytes = new byte[1024];
       while (inputStream.read(bytes) != -1) {
         // To keep the sample code simple this happens on the main thread. Don't do this in a
         // real app.
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
       Sentry.captureException(e);
     }
 
-    Attachment image = new Attachment(imageFile.getAbsolutePath(), "sentry.png", "image/png");
+    final Attachment image = new Attachment(imageFile.getAbsolutePath(), "sentry.png", "image/png");
     Sentry.configureScope(
         scope -> {
           scope.addAttachment(image);
@@ -144,6 +145,13 @@ public class MainActivity extends AppCompatActivity {
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
           }
+        });
+
+    binding.openSecondActivity.setOnClickListener(
+        view -> {
+          // finishing so its completely destroyed
+          finish();
+          startActivity(new Intent(this, SecondActivity.class));
         });
 
     setContentView(binding.getRoot());

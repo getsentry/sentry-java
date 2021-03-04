@@ -3,7 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.Date;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,23 +29,25 @@ public final class Span implements ISpan {
 
   private final transient @NotNull IHub hub;
 
+  private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
+
   Span(
-    final @NotNull SentryId traceId,
-    final @Nullable SpanId parentSpanId,
-    final @NotNull SentryTracer transaction,
-    final @NotNull String operation,
-    final @NotNull IHub hub) {
+      final @NotNull SentryId traceId,
+      final @Nullable SpanId parentSpanId,
+      final @NotNull SentryTracer transaction,
+      final @NotNull String operation,
+      final @NotNull IHub hub) {
     this.context =
-      new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
+        new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   Span(
-    final @NotNull TransactionContext context,
-    final @NotNull SentryTracer sentryTracer,
-    final @NotNull IHub hub) {
+      final @NotNull TransactionContext context,
+      final @NotNull SentryTracer sentryTracer,
+      final @NotNull IHub hub) {
     this.context = Objects.requireNonNull(context, "context is required");
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
@@ -67,7 +69,7 @@ public final class Span implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(
-    final @NotNull String operation, final @Nullable String description) {
+      final @NotNull String operation, final @Nullable String description) {
     return transaction.startChild(context.getSpanId(), operation, description);
   }
 
@@ -77,17 +79,23 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public void finish() {
+  public boolean finish() {
+    return this.finish(this.context.getStatus());
+  }
+
+  @Override
+  public boolean finish(@Nullable SpanStatus status) {
+    // the span can be finished only once
+    if (!finished.compareAndSet(false, true)) {
+      return false;
+    }
+
+    this.context.setStatus(status);
     timestamp = DateUtils.getCurrentDateTime();
     if (throwable != null) {
       hub.setSpanContext(throwable, this);
     }
-  }
-
-  @Override
-  public void finish(final @Nullable SpanStatus status) {
-    this.context.setStatus(status);
-    this.finish();
+    return true;
   }
 
   @Override
@@ -137,7 +145,7 @@ public final class Span implements ISpan {
 
   @Override
   public boolean isFinished() {
-    return this.timestamp != null;
+    return finished.get();
   }
 
   @Override

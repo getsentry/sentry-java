@@ -17,4 +17,9 @@ class NoOpTransactionTest {
     fun `getSpanContext does not return null`() {
         assertNotNull(transaction.spanContext)
     }
+
+    @Test
+    fun `getOperation does not return null`() {
+        assertNotNull(transaction.operation)
+    }
 }

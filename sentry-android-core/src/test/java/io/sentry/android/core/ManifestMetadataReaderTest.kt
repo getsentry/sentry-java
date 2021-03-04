@@ -600,4 +600,54 @@ class ManifestMetadataReaderTest {
         // Assert
         assertNull(fixture.options.tracesSampleRate)
     }
+
+    @Test
+    fun `applyMetadata reads enableAutoActivityLifecycleTracing to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACES_ACTIVITY_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isEnableAutoActivityLifecycleTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads enableAutoActivityLifecycleTracing to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isEnableAutoActivityLifecycleTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads enableActivityLifecycleTracingAutoFinish to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACES_ACTIVITY_AUTO_FINISH_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isEnableActivityLifecycleTracingAutoFinish)
+    }
+
+    @Test
+    fun `applyMetadata reads enableActivityLifecycleTracingAutoFinish to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isEnableActivityLifecycleTracingAutoFinish)
+    }
 }

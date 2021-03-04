@@ -33,15 +33,20 @@ public interface ISpan {
   @NotNull
   SentryTraceHeader toSentryTrace();
 
-  /** Sets span timestamp marking this span as finished. */
-  void finish();
+  /**
+   * Sets span timestamp marking this span as finished.
+   *
+   * @return true if transaction has been successfully finished or false if finishing transaction failed
+   */
+  boolean finish();
 
   /**
    * Sets span timestamp marking this span as finished.
    *
    * @param status - the status
+   * @return true if transaction has been successfully finished or false if finishing transaction failed
    */
-  void finish(@Nullable SpanStatus status);
+  boolean finish(@Nullable SpanStatus status);
 
   /**
    * Sets span operation.

@@ -106,7 +106,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun captureEvent (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
-	public fun captureTransaction (Lio/sentry/ITransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
+	public fun captureTransaction (Lio/sentry/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
 	public fun clone ()Lio/sentry/IHub;
@@ -144,7 +144,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun captureEvent (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
-	public fun captureTransaction (Lio/sentry/ITransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
+	public fun captureTransaction (Lio/sentry/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
 	public fun clone ()Lio/sentry/IHub;
@@ -199,8 +199,8 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun captureException (Ljava/lang/Throwable;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
-	public fun captureTransaction (Lio/sentry/ITransaction;)Lio/sentry/protocol/SentryId;
-	public abstract fun captureTransaction (Lio/sentry/ITransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
+	public fun captureTransaction (Lio/sentry/SentryTransaction;)Lio/sentry/protocol/SentryId;
+	public abstract fun captureTransaction (Lio/sentry/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public abstract fun clearBreadcrumbs ()V
 	public abstract fun clone ()Lio/sentry/IHub;
@@ -263,8 +263,8 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/Scope;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;)V
 	public abstract fun captureSession (Lio/sentry/Session;Ljava/lang/Object;)V
-	public fun captureTransaction (Lio/sentry/ITransaction;)Lio/sentry/protocol/SentryId;
-	public abstract fun captureTransaction (Lio/sentry/ITransaction;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
+	public fun captureTransaction (Lio/sentry/SentryTransaction;)Lio/sentry/protocol/SentryId;
+	public abstract fun captureTransaction (Lio/sentry/SentryTransaction;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public abstract fun close ()V
 	public abstract fun flush (J)V
@@ -280,14 +280,17 @@ public abstract interface class io/sentry/ISerializer {
 }
 
 public abstract interface class io/sentry/ISpan {
-	public abstract fun finish ()V
-	public abstract fun finish (Lio/sentry/SpanStatus;)V
+	public static final field NAME_TAG Ljava/lang/String;
+	public abstract fun finish ()Z
+	public abstract fun finish (Lio/sentry/SpanStatus;)Z
 	public abstract fun getDescription ()Ljava/lang/String;
 	public abstract fun getOperation ()Ljava/lang/String;
 	public abstract fun getSpanContext ()Lio/sentry/SpanContext;
 	public abstract fun getStatus ()Lio/sentry/SpanStatus;
+	public abstract fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public abstract fun getThrowable ()Ljava/lang/Throwable;
 	public abstract fun isFinished ()Z
+	public abstract fun isSampled ()Ljava/lang/Boolean;
 	public abstract fun setDescription (Ljava/lang/String;)V
 	public abstract fun setOperation (Ljava/lang/String;)V
 	public abstract fun setStatus (Lio/sentry/SpanStatus;)V
@@ -306,7 +309,6 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun getRequest ()Lio/sentry/protocol/Request;
 	public abstract fun getSpans ()Ljava/util/List;
 	public abstract fun getTransaction ()Ljava/lang/String;
-	public abstract fun isSampled ()Ljava/lang/Boolean;
 	public abstract fun setName (Ljava/lang/String;)V
 	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
 }
@@ -346,15 +348,17 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 }
 
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
-	public fun finish ()V
-	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun finish ()Z
+	public fun finish (Lio/sentry/SpanStatus;)Z
 	public fun getDescription ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getStatus ()Lio/sentry/SpanStatus;
+	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun isFinished ()Z
+	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
@@ -366,8 +370,8 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 }
 
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
-	public fun finish ()V
-	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun finish ()Z
+	public fun finish (Lio/sentry/SpanStatus;)Z
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
@@ -379,6 +383,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStatus ()Lio/sentry/SpanStatus;
+	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun isFinished ()Z
@@ -456,6 +461,11 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun setTransaction (Lio/sentry/ITransaction;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun withTransaction (Lio/sentry/Scope$IWithTransaction;)V
+}
+
+public abstract interface class io/sentry/Scope$IWithTransaction {
+	public abstract fun accept (Lio/sentry/ITransaction;)V
 }
 
 public abstract interface class io/sentry/ScopeCallback {
@@ -571,7 +581,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Ljava/lang/Object;)V
-	public fun captureTransaction (Lio/sentry/ITransaction;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
+	public fun captureTransaction (Lio/sentry/SentryTransaction;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V
 	public fun flush (J)V
@@ -612,7 +622,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public fun getData ()[B
 	public fun getEvent (Lio/sentry/ISerializer;)Lio/sentry/SentryEvent;
 	public fun getHeader ()Lio/sentry/SentryEnvelopeItemHeader;
-	public fun getTransaction (Lio/sentry/ISerializer;)Lio/sentry/ITransaction;
+	public fun getTransaction (Lio/sentry/ISerializer;)Lio/sentry/SentryTransaction;
 }
 
 public final class io/sentry/SentryEnvelopeItemHeader {
@@ -843,27 +853,49 @@ public final class io/sentry/SentryTraceHeader {
 	public fun isSampled ()Ljava/lang/Boolean;
 }
 
-public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent, io/sentry/ITransaction {
-	public fun <init> (Ljava/lang/String;Lio/sentry/SpanContext;Lio/sentry/IHub;)V
-	public fun finish ()V
-	public fun finish (Lio/sentry/SpanStatus;)V
+public final class io/sentry/SentryTracer : io/sentry/ITransaction {
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;)V
+	public fun finish ()Z
+	public fun finish (Lio/sentry/SpanStatus;)Z
+	public fun getChildren ()Ljava/util/List;
+	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getDescription ()Ljava/lang/String;
+	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
+	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
+	public fun getStartTimestamp ()Ljava/util/Date;
 	public fun getStatus ()Lio/sentry/SpanStatus;
+	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
+	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
+	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
+	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
+}
+
+public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent {
+	public fun <init> (Lio/sentry/SentryTracer;)V
+	public fun getSpans ()Ljava/util/List;
+	public fun getStartTimestamp ()Ljava/util/Date;
+	public fun getTimestamp ()Ljava/util/Date;
+	public fun getTransaction ()Ljava/lang/String;
+	public fun getType ()Ljava/lang/String;
+	public fun isFinished ()Z
+	public fun isSampled ()Z
 }
 
 public final class io/sentry/Session {
@@ -913,14 +945,23 @@ public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration {
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/Span : io/sentry/SpanContext, io/sentry/ISpan {
-	public fun finish ()V
-	public fun finish (Lio/sentry/SpanStatus;)V
+public final class io/sentry/Span : io/sentry/ISpan {
+	public fun finish ()Z
+	public fun finish (Lio/sentry/SpanStatus;)Z
+	public fun getDescription ()Ljava/lang/String;
+	public fun getOperation ()Ljava/lang/String;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getStartTimestamp ()Ljava/util/Date;
+	public fun getStatus ()Lio/sentry/SpanStatus;
+	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun isFinished ()Z
+	public fun isSampled ()Ljava/lang/Boolean;
+	public fun setDescription (Ljava/lang/String;)V
+	public fun setOperation (Ljava/lang/String;)V
+	public fun setStatus (Lio/sentry/SpanStatus;)V
+	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
@@ -981,6 +1022,7 @@ public final class io/sentry/SpanStatus : java/lang/Enum {
 	public static final field UNKNOWN Lio/sentry/SpanStatus;
 	public static final field UNKNOWN_ERROR Lio/sentry/SpanStatus;
 	public static fun fromHttpStatusCode (I)Lio/sentry/SpanStatus;
+	public static fun fromHttpStatusCode (ILio/sentry/SpanStatus;)Lio/sentry/SpanStatus;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SpanStatus;
 	public static fun values ()[Lio/sentry/SpanStatus;
 }
