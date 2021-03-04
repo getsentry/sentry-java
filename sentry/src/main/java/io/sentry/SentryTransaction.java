@@ -33,7 +33,7 @@ public final class SentryTransaction extends SentryBaseEvent implements ITransac
 
   private final transient @NotNull SpanContext context;
 
-  private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
+  private final transient @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
   /** The {@code type} property is required in JSON payload sent to Sentry. */
   @SuppressWarnings("UnusedVariable")
