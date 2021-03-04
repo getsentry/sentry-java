@@ -5,7 +5,6 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import java.util.Collections;
 import java.util.List;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,11 +63,6 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public @NotNull List<Span> getSpans() {
     return Collections.emptyList();
-  }
-
-  @Override
-  public @Nullable Boolean isSampled() {
-    return null;
   }
 
   @Override
@@ -145,6 +139,11 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @Nullable String getTag(@NotNull String key) {
+    return null;
+  }
+
+  @Override
+  public @Nullable Boolean isSampled() {
     return null;
   }
 }

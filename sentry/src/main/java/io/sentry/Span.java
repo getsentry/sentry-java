@@ -148,7 +148,6 @@ public final class Span implements ISpan {
     return finished.get();
   }
 
-  @Override
   public @Nullable Boolean isSampled() {
     return context.getSampled();
   }

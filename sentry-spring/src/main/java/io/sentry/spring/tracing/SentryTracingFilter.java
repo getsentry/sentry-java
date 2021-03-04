@@ -73,9 +73,10 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     if (hub.isEnabled()) {
       final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
 
-      hub.configureScope(scope -> {
-        scope.setRequest(requestResolver.resolveSentryRequest(httpRequest));
-      });
+      hub.configureScope(
+          scope -> {
+            scope.setRequest(requestResolver.resolveSentryRequest(httpRequest));
+          });
 
       // at this stage we are not able to get real transaction name
       final ITransaction transaction = startTransaction(httpRequest, sentryTraceHeader);

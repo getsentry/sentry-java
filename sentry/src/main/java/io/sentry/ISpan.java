@@ -135,12 +135,4 @@ public interface ISpan {
    * @return if span has finished.
    */
   boolean isFinished();
-
-  /**
-   * Returns if transaction is sampled.
-   *
-   * @return is sampled
-   */
-  @Nullable
-  Boolean isSampled();
 }

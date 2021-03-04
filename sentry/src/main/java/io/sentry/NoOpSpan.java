@@ -89,9 +89,4 @@ public final class NoOpSpan implements ISpan {
   public boolean isFinished() {
     return false;
   }
-
-  @Override
-  public @Nullable Boolean isSampled() {
-    return null;
-  }
 }
