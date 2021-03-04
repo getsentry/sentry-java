@@ -890,6 +890,7 @@ public final class io/sentry/SentryTransaction : io/sentry/SentryBaseEvent {
 	public fun <init> (Lio/sentry/SentryTracer;)V
 	public fun getSpans ()Ljava/util/List;
 	public fun getStartTimestamp ()Ljava/util/Date;
+	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun getType ()Ljava/lang/String;

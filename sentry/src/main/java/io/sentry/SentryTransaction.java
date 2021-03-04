@@ -2,7 +2,6 @@ package io.sentry;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -59,8 +58,13 @@ public final class SentryTransaction extends SentryBaseEvent {
     return type;
   }
 
+  public @NotNull SpanStatus getStatus() {
+    final SpanContext trace = this.getContexts().getTrace();
+    return trace != null ? trace.getStatus() : null;
+  }
+
   public boolean isSampled() {
     final SpanContext trace = this.getContexts().getTrace();
-    return trace != null && Objects.equals(trace.getSampled(), Boolean.TRUE);
+    return trace != null && Boolean.TRUE.equals(trace.getSampled());
   }
 }
