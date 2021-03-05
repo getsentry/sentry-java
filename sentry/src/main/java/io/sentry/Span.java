@@ -23,14 +23,14 @@ public final class Span implements ISpan {
    * A transaction this span is attached to. Marked as transient to be ignored during JSON
    * serialization.
    */
-  private final transient @NotNull SentryTracer transaction;
+  private final @NotNull SentryTracer transaction;
 
   /** A throwable thrown during the execution of the span. */
-  private transient @Nullable Throwable throwable;
+  private @Nullable Throwable throwable;
 
-  private final transient @NotNull IHub hub;
+  private final @NotNull IHub hub;
 
-  private final transient @NotNull AtomicBoolean finished = new AtomicBoolean(false);
+  private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
   Span(
       final @NotNull SentryId traceId,
