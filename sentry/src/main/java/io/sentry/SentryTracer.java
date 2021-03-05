@@ -97,7 +97,7 @@ public final class SentryTracer implements ITransaction {
   @Override
   public boolean finish(@Nullable SpanStatus status) {
     if (root.finish(status)) {
-      hub.withScope(
+      hub.configureScope(
           scope -> {
             scope.withTransaction(
                 transaction -> {
