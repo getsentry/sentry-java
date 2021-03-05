@@ -17,7 +17,6 @@ import io.sentry.adapters.SentryLevelDeserializerAdapter;
 import io.sentry.adapters.SentryLevelSerializerAdapter;
 import io.sentry.adapters.SpanIdDeserializerAdapter;
 import io.sentry.adapters.SpanIdSerializerAdapter;
-import io.sentry.adapters.SpanSerializerAdapter;
 import io.sentry.adapters.SpanStatusDeserializerAdapter;
 import io.sentry.adapters.SpanStatusSerializerAdapter;
 import io.sentry.adapters.TimeZoneDeserializerAdapter;
@@ -103,7 +102,6 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(logger))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(logger))
-        .registerTypeAdapter(Span.class, new SpanSerializerAdapter())
         .registerTypeHierarchyAdapter(Collection.class, new CollectionAdapter())
         .registerTypeHierarchyAdapter(Map.class, new MapAdapter())
         .disableHtmlEscaping()
@@ -147,6 +145,7 @@ public final class GsonSerializer implements ISerializer {
       throws IOException {
     Objects.requireNonNull(entity, "The entity is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
+    System.out.println("Serializing object: " + gson.toJson(entity));
 
     if (logger.isEnabled(SentryLevel.DEBUG)) {
       logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(entity));

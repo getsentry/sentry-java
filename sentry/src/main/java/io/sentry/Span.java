@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -167,13 +168,15 @@ public final class Span implements ISpan {
     return context.getTraceId();
   }
 
-  public @NotNull
-  SpanId getSpanId() {
+  public @NotNull SpanId getSpanId() {
     return context.getSpanId();
   }
 
-  public @Nullable
-  SpanId getParentSpanId() {
+  public @Nullable SpanId getParentSpanId() {
     return context.getParentSpanId();
+  }
+
+  public Map<String, String> getTags() {
+    return context.getTags();
   }
 }

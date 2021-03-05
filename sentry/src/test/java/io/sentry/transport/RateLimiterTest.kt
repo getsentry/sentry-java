@@ -9,8 +9,8 @@ import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryTracer
-import io.sentry.SentryTransaction
 import io.sentry.TransactionContext
+import io.sentry.protocol.SentryTransaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

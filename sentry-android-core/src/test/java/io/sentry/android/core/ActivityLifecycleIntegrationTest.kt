@@ -16,9 +16,9 @@ import io.sentry.Scope
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
-import io.sentry.SentryTransaction
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.protocol.SentryTransaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

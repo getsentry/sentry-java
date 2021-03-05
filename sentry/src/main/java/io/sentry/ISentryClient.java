@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import org.jetbrains.annotations.Nullable;
 
 /** Sentry Client interface */

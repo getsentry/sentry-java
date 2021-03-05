@@ -21,6 +21,7 @@ import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate

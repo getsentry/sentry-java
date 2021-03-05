@@ -2,6 +2,8 @@ package io.sentry;
 
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentrySpan;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
@@ -356,8 +358,11 @@ public final class SentryClient implements ISentryClient {
       transaction = applyScope(transaction, scope);
     } else {
       options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Transaction was cached so not applying scope: %s", transaction.getEventId());
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction was cached so not applying scope: %s",
+              transaction.getEventId());
     }
 
     transaction = processTransaction(transaction);
@@ -411,8 +416,8 @@ public final class SentryClient implements ISentryClient {
         }
       }
     }
-    final List<Span> unfinishedSpans = new ArrayList<>();
-    for (Span span : transaction.getSpans()) {
+    final List<SentrySpan> unfinishedSpans = new ArrayList<>();
+    for (SentrySpan span : transaction.getSpans()) {
       if (!span.isFinished()) {
         unfinishedSpans.add(span);
       }
@@ -427,7 +432,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @NotNull SentryTransaction applyScope(
-    @NotNull SentryTransaction transaction, final @Nullable Scope scope) {
+      @NotNull SentryTransaction transaction, final @Nullable Scope scope) {
     if (scope != null) {
       if (transaction.getRequest() == null) {
         transaction.setRequest(scope.getRequest());

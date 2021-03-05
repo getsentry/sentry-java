@@ -1,8 +1,15 @@
-package io.sentry;
+package io.sentry.protocol;
 
+import io.sentry.DateUtils;
+import io.sentry.ISpan;
+import io.sentry.SentryBaseEvent;
+import io.sentry.SentryTracer;
+import io.sentry.Span;
+import io.sentry.SpanContext;
+import io.sentry.SpanStatus;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,21 +27,23 @@ public final class SentryTransaction extends SentryBaseEvent {
   private @Nullable Date timestamp;
 
   /** A list of spans within this transaction. Can be empty. */
-  private final @NotNull List<Span> spans = new CopyOnWriteArrayList<>();
+  private final @NotNull List<SentrySpan> spans = new ArrayList<>();
 
   /** The {@code type} property is required in JSON payload sent to Sentry. */
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
 
   public SentryTransaction(SentryTracer sentryTracer) {
-    this.spans.addAll(sentryTracer.getChildren());
     this.startTimestamp = sentryTracer.getStartTimestamp();
     this.timestamp = DateUtils.getCurrentDateTime();
     this.transaction = sentryTracer.getTag(ISpan.NAME_TAG);
+    for (final Span span : sentryTracer.getChildren()) {
+      this.spans.add(new SentrySpan(span));
+    }
     this.getContexts().setTrace(sentryTracer.getSpanContext());
   }
 
-  public @NotNull List<Span> getSpans() {
+  public @NotNull List<SentrySpan> getSpans() {
     return spans;
   }
 

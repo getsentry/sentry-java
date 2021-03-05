@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
