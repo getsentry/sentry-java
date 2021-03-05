@@ -365,7 +365,7 @@ public final class SentryClient implements ISentryClient {
               transaction.getEventId());
     }
 
-    transaction = processTransaction(transaction);
+    processTransaction(transaction);
 
     try {
       final SentryEnvelope envelope =

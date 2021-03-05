@@ -1131,12 +1131,17 @@ class HubTest {
     //region setSpanContext
     @Test
     fun `associates span context with throwable`() {
-        val hub = generateHub() as Hub
+        val (hub, mockClient) = getEnabledHub()
         val transaction = hub.startTransaction("aTransaction", "op")
         val span = transaction.startChild("op")
         val exception = RuntimeException()
+
         hub.setSpanContext(exception, span)
-        assertEquals(span.spanContext, hub.getSpanContext(exception))
+        hub.captureEvent(SentryEvent(exception))
+
+        verify(mockClient).captureEvent(check {
+            assertEquals(span.spanContext, it.contexts.trace)
+        }, anyOrNull(), anyOrNull())
     }
 
     @Test
