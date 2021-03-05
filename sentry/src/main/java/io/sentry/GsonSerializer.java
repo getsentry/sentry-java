@@ -145,7 +145,6 @@ public final class GsonSerializer implements ISerializer {
       throws IOException {
     Objects.requireNonNull(entity, "The entity is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
-    System.out.println("Serializing object: " + gson.toJson(entity));
 
     if (logger.isEnabled(SentryLevel.DEBUG)) {
       logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(entity));

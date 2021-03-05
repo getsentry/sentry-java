@@ -7,6 +7,7 @@ import io.sentry.SentryTracer;
 import io.sentry.Span;
 import io.sentry.SpanContext;
 import io.sentry.SpanStatus;
+import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,7 +34,8 @@ public final class SentryTransaction extends SentryBaseEvent {
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
 
-  public SentryTransaction(SentryTracer sentryTracer) {
+  public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
+    Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.startTimestamp = sentryTracer.getStartTimestamp();
     this.timestamp = DateUtils.getCurrentDateTime();
     this.transaction = sentryTracer.getTag(ISpan.NAME_TAG);
