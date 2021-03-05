@@ -3,6 +3,7 @@ package io.sentry
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,7 +15,14 @@ import kotlin.test.assertTrue
 class SentryTracerTest {
 
     private class Fixture {
-        val hub = mock<IHub>()
+        val hub: Hub
+
+        init {
+            val options = SentryOptions()
+            options.dsn = "https://key@sentry.io/proj"
+            hub = spy(Hub(options))
+            hub.bindClient(mock())
+        }
 
         fun getSut(): SentryTracer {
             return SentryTracer(TransactionContext("name", "op"), hub)
@@ -67,6 +75,14 @@ class SentryTracerTest {
         val tracer = fixture.getSut()
         tracer.finish()
         verify(fixture.hub).captureTransaction(any())
+    }
+
+    @Test
+    fun `when transaction is finished, transaction is cleared from the scope`() {
+        val tracer = fixture.getSut()
+        fixture.hub.configureScope { it.setTransaction(tracer) }
+        tracer.finish()
+        assertNull(fixture.hub.span)
     }
 
     @Test
