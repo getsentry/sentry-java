@@ -48,6 +48,8 @@ public interface ITransaction extends ISpan {
   Request getRequest();
 
   @NotNull
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
   Contexts getContexts();
 
   @NotNull

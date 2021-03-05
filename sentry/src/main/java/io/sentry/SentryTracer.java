@@ -206,6 +206,8 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
   public @NotNull Contexts getContexts() {
     final AtomicReference<Contexts> contexts = new AtomicReference<>();
     hub.configureScope(scope -> contexts.set(scope.getContexts()));

@@ -51,6 +51,8 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
   public @NotNull Contexts getContexts() {
     return new Contexts();
   }
