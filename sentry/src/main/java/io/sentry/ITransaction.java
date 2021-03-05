@@ -26,32 +26,6 @@ public interface ITransaction extends ISpan {
   @NotNull
   String getName();
 
-  /**
-   * Attaches request information to the transaction.
-   *
-   * @param request the request
-   * @deprecated use {@link Scope#setRequest(Request)}
-   */
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  void setRequest(@Nullable Request request);
-
-  /**
-   * Returns the request information from the transaction
-   *
-   * @return the request or {@code null} if not set
-   * @deprecated use {@link Scope#getRequest()}
-   */
-  @Nullable
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  Request getRequest();
-
-  @NotNull
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  Contexts getContexts();
-
   @NotNull
   @TestOnly
   List<Span> getSpans();
@@ -77,18 +51,38 @@ public interface ITransaction extends ISpan {
    *
    * @return the event id
    */
-  @Nullable
+  @NotNull
   SentryId getEventId();
 
   /**
-   * Returns the transaction name.
+   * Attaches request information to the transaction.
    *
-   * @deprecated use {@link #getName()}
-   * @return transaction name
+   * @param request the request
+   * @deprecated use {@link Scope#setRequest(Request)}
    */
-  @Nullable
-  @ApiStatus.Internal
   @Deprecated
   @ApiStatus.ScheduledForRemoval
-  String getTransaction();
+  void setRequest(@Nullable Request request);
+
+  /**
+   * Returns the request information from the transaction
+   *
+   * @return the request or {@code null} if not set
+   * @deprecated use {@link Scope#getRequest()}
+   */
+  @Nullable
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
+  Request getRequest();
+
+  /**
+   * Returns contexts asociated with the transaction.
+   *
+   * @return the contexts
+   * @deprecated use {@link Scope#getContexts()}
+   */
+  @NotNull
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
+  Contexts getContexts();
 }

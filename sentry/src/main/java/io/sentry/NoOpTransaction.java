@@ -73,15 +73,8 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @Nullable SentryId getEventId() {
-    return null;
-  }
-
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public @Nullable String getTransaction() {
-    return null;
+  public @NotNull SentryId getEventId() {
+    return SentryId.EMPTY_ID;
   }
 
   @Override

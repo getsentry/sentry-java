@@ -307,7 +307,6 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getRequest ()Lio/sentry/protocol/Request;
 	public abstract fun getSpans ()Ljava/util/List;
-	public abstract fun getTransaction ()Ljava/lang/String;
 	public abstract fun isSampled ()Ljava/lang/Boolean;
 	public abstract fun setName (Ljava/lang/String;)V
 	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
@@ -384,7 +383,6 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
-	public fun getTransaction ()Ljava/lang/String;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setDescription (Ljava/lang/String;)V
@@ -872,7 +870,6 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTimestamp ()Ljava/util/Date;
-	public fun getTransaction ()Ljava/lang/String;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setDescription (Ljava/lang/String;)V

@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryTracer implements ITransaction {
+  private final @NotNull SentryId eventId = new SentryId();
   private final @NotNull Span root;
   private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
   private final @NotNull IHub hub;
@@ -233,17 +234,8 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public @Nullable SentryId getEventId() {
-    return null;
-  }
-
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public @Nullable String getTransaction() {
-    return this.getName();
+  public @NotNull SentryId getEventId() {
+    return eventId;
   }
 
   @NotNull

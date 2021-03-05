@@ -35,6 +35,7 @@ public final class SentryTransaction extends SentryBaseEvent {
   private @NotNull final String type = "transaction";
 
   public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
+    super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.startTimestamp = sentryTracer.getStartTimestamp();
     this.timestamp = DateUtils.getCurrentDateTime();
