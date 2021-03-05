@@ -30,7 +30,7 @@ public final class Span implements ISpan {
 
   private final transient @NotNull IHub hub;
 
-  private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
+  private final transient @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
   Span(
       final @NotNull SentryId traceId,
