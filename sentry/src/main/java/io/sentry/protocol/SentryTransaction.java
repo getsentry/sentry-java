@@ -11,6 +11,8 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +36,7 @@ public final class SentryTransaction extends SentryBaseEvent {
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
 
+  @SuppressWarnings("deprecation")
   public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
     super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
@@ -43,7 +46,12 @@ public final class SentryTransaction extends SentryBaseEvent {
     for (final Span span : sentryTracer.getChildren()) {
       this.spans.add(new SentrySpan(span));
     }
-    this.getContexts().setTrace(sentryTracer.getSpanContext());
+    final Contexts contexts = this.getContexts();
+    for(Map.Entry<String, Object> entry : sentryTracer.getContexts().entrySet()) {
+      contexts.put(entry.getKey(), entry.getValue());
+    }
+    contexts.setTrace(sentryTracer.getSpanContext());
+    this.setRequest(sentryTracer.getRequest());
   }
 
   public @NotNull List<SentrySpan> getSpans() {

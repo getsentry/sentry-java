@@ -5,9 +5,12 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.protocol.App
+import io.sentry.protocol.Request
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -92,6 +95,45 @@ class SentryTracerTest {
         tracer.throwable = ex
         tracer.finish()
         verify(fixture.hub).setSpanContext(ex, tracer.root)
+    }
+
+    @Test
+    fun `when transaction with request set is finished, request is set on the transaction`() {
+        val tracer = fixture.getSut()
+        val request = Request()
+        tracer.request = request
+        tracer.finish()
+        verify(fixture.hub).captureTransaction(check {
+            assertEquals(request, it.request)
+        })
+    }
+
+    @Test
+    fun `when transaction with contexts is finished, contexts are set on the transaction`() {
+        val tracer = fixture.getSut()
+        val contexts = tracer.contexts
+        val app = App()
+        contexts.setApp(app)
+        contexts["custom"] = "value"
+        tracer.finish()
+        verify(fixture.hub).captureTransaction(check {
+            assertEquals(app, it.contexts.app)
+            assertEquals("value", it.contexts["custom"])
+            assertEquals(tracer.spanContext, it.contexts.trace)
+        })
+    }
+
+    @Test
+    fun `when transaction with contexts has overwritten trace, tracer span context is applied to transaction`() {
+        val tracer = fixture.getSut()
+        val contexts = tracer.contexts
+        val spanContext = SpanContext("op")
+        contexts.trace = spanContext
+        tracer.finish()
+        verify(fixture.hub).captureTransaction(check {
+            assertNotEquals(spanContext, it.contexts.trace)
+            assertEquals(tracer.spanContext, it.contexts.trace)
+        })
     }
 
     @Test

@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +19,8 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Span root;
   private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
   private final @NotNull IHub hub;
+  private @Nullable Request request;
+  private @NotNull Contexts contexts = new Contexts();
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     Objects.requireNonNull(context, "context is required");
@@ -193,26 +194,22 @@ public final class SentryTracer implements ITransaction {
   @Override
   @Deprecated
   @ApiStatus.ScheduledForRemoval
-  public void setRequest(@Nullable Request request) {
-    hub.configureScope(scope -> scope.setRequest(request));
+  public void setRequest(final @Nullable Request request) {
+    this.request = request;
   }
 
   @Override
   @Deprecated
   @ApiStatus.ScheduledForRemoval
   public @Nullable Request getRequest() {
-    final AtomicReference<Request> contexts = new AtomicReference<>();
-    hub.configureScope(scope -> contexts.set(scope.getRequest()));
-    return contexts.get();
+    return this.request;
   }
 
   @Override
   @Deprecated
   @ApiStatus.ScheduledForRemoval
   public @NotNull Contexts getContexts() {
-    final AtomicReference<Contexts> contexts = new AtomicReference<>();
-    hub.configureScope(scope -> contexts.set(scope.getContexts()));
-    return contexts.get();
+    return this.contexts;
   }
 
   @Override
