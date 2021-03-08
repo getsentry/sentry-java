@@ -1,5 +1,7 @@
 # Unreleased
 
+* Bump: sentry-native to 0.4.8
+
 # 4.3.0
 
 * Fix: Fix setting in-app-includes from external properties (#1291)
