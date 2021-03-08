@@ -38,11 +38,13 @@ public final class NoOpTransaction implements ITransaction {
     return NoOpSpan.getInstance();
   }
 
+  /** @deprecated use {@link Scope#setRequest(Request)} */
   @Override
   @Deprecated
   @ApiStatus.ScheduledForRemoval
   public void setRequest(@Nullable Request request) {}
 
+  /** @deprecated use {@link Scope#getRequest()} */
   @Override
   @Deprecated
   @ApiStatus.ScheduledForRemoval
@@ -50,6 +52,7 @@ public final class NoOpTransaction implements ITransaction {
     return null;
   }
 
+  /** @deprecated use {@link Scope#getContexts()} */
   @Override
   @Deprecated
   @ApiStatus.ScheduledForRemoval

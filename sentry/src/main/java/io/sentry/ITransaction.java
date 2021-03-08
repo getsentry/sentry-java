@@ -76,7 +76,7 @@ public interface ITransaction extends ISpan {
   Request getRequest();
 
   /**
-   * Returns contexts asociated with the transaction.
+   * Returns contexts associated with the transaction.
    *
    * @return the contexts
    * @deprecated use {@link Scope#getContexts()}
