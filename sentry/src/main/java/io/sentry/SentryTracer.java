@@ -92,13 +92,14 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public boolean finish() {
-    return this.finish(this.getStatus());
+  public void finish() {
+    this.finish(this.getStatus());
   }
 
   @Override
-  public boolean finish(@Nullable SpanStatus status) {
-    if (root.finish(status)) {
+  public void finish(@Nullable SpanStatus status) {
+    if (!root.isFinished()) {
+      root.finish(status);
       hub.configureScope(
           scope -> {
             scope.withTransaction(
@@ -110,9 +111,6 @@ public final class SentryTracer implements ITransaction {
           });
       SentryTransaction transaction = new SentryTransaction(this);
       hub.captureTransaction(transaction);
-      return true;
-    } else {
-      return false;
     }
   }
 

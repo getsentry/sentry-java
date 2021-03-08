@@ -80,15 +80,15 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public boolean finish() {
-    return this.finish(this.context.getStatus());
+  public void finish() {
+    this.finish(this.context.getStatus());
   }
 
   @Override
-  public boolean finish(@Nullable SpanStatus status) {
+  public void finish(@Nullable SpanStatus status) {
     // the span can be finished only once
     if (!finished.compareAndSet(false, true)) {
-      return false;
+      return;
     }
 
     this.context.setStatus(status);
@@ -96,7 +96,6 @@ public final class Span implements ISpan {
     if (throwable != null) {
       hub.setSpanContext(throwable, this);
     }
-    return true;
   }
 
   @Override
