@@ -54,20 +54,13 @@ public final class GsonSerializer implements ISerializer {
   /** the Gson instance */
   private final @NotNull Gson gson;
 
-  /** the IEnvelopeReader interface */
-  private final @NotNull IEnvelopeReader envelopeReader;
-
   /**
    * AndroidSerializer ctor
    *
    * @param options the SentryOptions object
-   * @param envelopeReader the IEnvelopeReader interface
    */
-  public GsonSerializer(
-      final @NotNull SentryOptions options, final @NotNull IEnvelopeReader envelopeReader) {
+  public GsonSerializer(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The SentryOptions object is required.");
-    this.envelopeReader =
-        Objects.requireNonNull(envelopeReader, "The IEnvelopeReader object is required.");
 
     gson = provideGson();
   }
@@ -133,7 +126,7 @@ public final class GsonSerializer implements ISerializer {
   public @Nullable SentryEnvelope deserializeEnvelope(final @NotNull InputStream inputStream) {
     Objects.requireNonNull(inputStream, "The InputStream object is required.");
     try {
-      return envelopeReader.read(inputStream);
+      return options.getEnvelopeReader().read(inputStream);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Error deserializing envelope.", e);
       return null;

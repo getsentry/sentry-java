@@ -81,7 +81,7 @@ public class SentryOptions {
   private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader();
 
   /** Serializer interface to serialize/deserialize json events */
-  private @NotNull ISerializer serializer = new GsonSerializer(this, envelopeReader);
+  private @NotNull ISerializer serializer = new GsonSerializer(this);
 
   /**
    * Sentry client name used for the HTTP authHeader and userAgent eg

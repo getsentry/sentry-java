@@ -90,7 +90,7 @@ public abstract interface class io/sentry/EventProcessor {
 }
 
 public final class io/sentry/GsonSerializer : io/sentry/ISerializer {
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/IEnvelopeReader;)V
+	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
 	public fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 	public fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V

@@ -11,7 +11,7 @@ import io.sentry.SentryOptions
  */
 inline fun checkEvent(noinline predicate: (SentryEvent) -> Unit): SentryEnvelope {
     val options = SentryOptions().apply {
-        setSerializer(GsonSerializer(SentryOptions(), envelopeReader))
+        setSerializer(GsonSerializer(SentryOptions()))
     }
     return check {
         val event = it.items.first().getEvent(options.serializer)!!

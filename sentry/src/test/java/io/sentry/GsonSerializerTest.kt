@@ -43,7 +43,8 @@ class GsonSerializerTest {
             val options = SentryOptions()
             options.setLogger(logger)
             options.setDebug(true)
-            serializer = GsonSerializer(options, EnvelopeReader())
+            options.setEnvelopeReader(EnvelopeReader())
+            serializer = GsonSerializer(options)
         }
     }
 
