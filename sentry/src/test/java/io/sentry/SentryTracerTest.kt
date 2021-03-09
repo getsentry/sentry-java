@@ -1,6 +1,5 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.spy
