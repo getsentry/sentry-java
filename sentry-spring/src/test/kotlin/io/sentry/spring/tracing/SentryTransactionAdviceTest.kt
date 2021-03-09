@@ -79,7 +79,6 @@ class SentryTransactionAdviceTest {
     fun `creates transaction around method in class annotated with @SentryTransaction`() {
         classAnnotatedSampleService.hello()
         verify(hub).captureTransaction(check {
-            println(it)
             assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
             assertThat(it.contexts.trace!!.operation).isEqualTo("op")
         })

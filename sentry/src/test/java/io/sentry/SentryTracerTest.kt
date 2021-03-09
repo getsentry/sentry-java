@@ -85,6 +85,7 @@ class SentryTracerTest {
     fun `when transaction is finished, transaction is cleared from the scope`() {
         val tracer = fixture.getSut()
         fixture.hub.configureScope { it.setTransaction(tracer) }
+        assertNotNull(fixture.hub.span)
         tracer.finish()
         assertNull(fixture.hub.span)
     }
