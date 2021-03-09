@@ -6,6 +6,7 @@
 * Fix: Initialize Sentry in Logback appender when DSN is not set in XML config (#1296)
 * Fix: Fix JUL integration SDK name (#1293)
 * Feat: Activity tracing auto instrumentation
+* Feat: Add an overload for `startTransaction` that sets the created transaction to the Scope #1313
 
 # 4.2.0
 
