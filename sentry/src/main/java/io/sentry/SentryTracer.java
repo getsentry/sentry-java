@@ -19,14 +19,15 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Span root;
   private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
   private final @NotNull IHub hub;
+  private final @NotNull Contexts contexts = new Contexts();
   private @Nullable Request request;
-  private @NotNull Contexts contexts = new Contexts();
+  private @NotNull String name;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.root = new Span(context, this, hub);
-    this.root.setTag(ISpan.NAME_TAG, context.getName());
+    this.name = context.getName();
     this.hub = hub;
   }
 
@@ -181,12 +182,12 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setName(@NotNull String name) {
-    this.root.setTag(ISpan.NAME_TAG, name);
+    this.name = name;
   }
 
   @Override
   public @NotNull String getName() {
-    return this.root.getTag(ISpan.NAME_TAG);
+    return this.name;
   }
 
   @Override

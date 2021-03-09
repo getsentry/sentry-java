@@ -120,7 +120,7 @@ class ScopeTest {
         assertEquals("abc", clone.fingerprint.first())
 
         assertEquals("message", clone.breadcrumbs.first().message)
-        assertEquals("transaction-name", (clone.span as SentryTracer).getTag(ISpan.NAME_TAG))
+        assertEquals("transaction-name", (clone.span as SentryTracer).name)
 
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])

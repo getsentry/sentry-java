@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.DateUtils;
-import io.sentry.ISpan;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryTracer;
 import io.sentry.Span;
@@ -41,7 +40,7 @@ public final class SentryTransaction extends SentryBaseEvent {
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.startTimestamp = sentryTracer.getStartTimestamp();
     this.timestamp = DateUtils.getCurrentDateTime();
-    this.transaction = sentryTracer.getTag(ISpan.NAME_TAG);
+    this.transaction = sentryTracer.getName();
     for (final Span span : sentryTracer.getChildren()) {
       this.spans.add(new SentrySpan(span));
     }

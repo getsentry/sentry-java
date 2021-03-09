@@ -77,7 +77,9 @@ class SentryTracerTest {
     fun `when transaction is finished, transaction is captured`() {
         val tracer = fixture.getSut()
         tracer.finish()
-        verify(fixture.hub).captureTransaction(any())
+        verify(fixture.hub).captureTransaction(check {
+            assertEquals(it.transaction, tracer.name)
+        })
     }
 
     @Test

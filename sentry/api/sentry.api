@@ -280,7 +280,6 @@ public abstract interface class io/sentry/ISerializer {
 }
 
 public abstract interface class io/sentry/ISpan {
-	public static final field NAME_TAG Ljava/lang/String;
 	public abstract fun finish ()V
 	public abstract fun finish (Lio/sentry/SpanStatus;)V
 	public abstract fun getDescription ()Ljava/lang/String;

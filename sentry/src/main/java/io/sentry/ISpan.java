@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 
 /** Represents performance monitoring Span. */
 public interface ISpan {
-  String NAME_TAG = "sentry-name";
   /**
    * Starts a child Span.
    *
