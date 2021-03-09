@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -36,7 +37,14 @@ class GsonSerializerTest {
 
     private class Fixture {
         val logger: ILogger = mock()
-        val serializer = GsonSerializer(logger, EnvelopeReader())
+        val serializer: ISerializer
+
+        init {
+            val options = SentryOptions()
+            options.setLogger(logger)
+            options.setDebug(true)
+            serializer = GsonSerializer(options, EnvelopeReader())
+        }
     }
 
     private lateinit var fixture: Fixture
@@ -559,6 +567,20 @@ class GsonSerializerTest {
         fixture.serializer.serialize(transaction, stringWriter)
         val element = JsonParser().parse(stringWriter.toString()).asJsonObject
         assertNull(element.asJsonObject["spans"])
+    }
+
+    @Test
+    fun `gson serializer uses logger set on SentryOptions`() {
+        val logger = mock<ILogger>()
+        val options = SentryOptions()
+        options.setLogger(logger)
+        options.setDebug(true)
+        whenever(logger.isEnabled(any())).thenReturn(true)
+
+        (options.serializer as GsonSerializer).serialize(mapOf("key" to "val"), mock())
+        verify(logger).log(any(), check {
+            assertTrue(it.startsWith("Serializing object:"))
+        }, any<Any>())
     }
 
     private fun assertSessionData(expectedSession: Session?) {

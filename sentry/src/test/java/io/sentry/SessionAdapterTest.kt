@@ -11,7 +11,7 @@ import kotlin.test.assertNull
 
 class SessionAdapterTest {
 
-    private val serializer = GsonSerializer(mock(), EnvelopeReader())
+    private val serializer = GsonSerializer(SentryOptions().apply { setLogger(mock()) }, EnvelopeReader())
 
     @Test
     fun `null timestamp does not serialize `() {

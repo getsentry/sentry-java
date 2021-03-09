@@ -5,8 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.Contexts;
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -16,10 +16,10 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class ContextsSerializerAdapter implements JsonSerializer<Contexts> {
 
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
 
-  public ContextsSerializerAdapter(@NotNull final ILogger logger) {
-    this.logger = logger;
+  public ContextsSerializerAdapter(final @NotNull SentryOptions options) {
+    this.options = options;
   }
 
   @Override
@@ -36,7 +36,7 @@ public final class ContextsSerializerAdapter implements JsonSerializer<Contexts>
           object.add(entry.getKey(), element);
         }
       } catch (JsonParseException e) {
-        logger.log(SentryLevel.ERROR, "%s context key isn't serializable.");
+        options.getLogger().log(SentryLevel.ERROR, "%s context key isn't serializable.");
       }
     }
     return object;

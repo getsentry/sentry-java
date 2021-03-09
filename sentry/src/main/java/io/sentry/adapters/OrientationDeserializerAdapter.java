@@ -4,8 +4,8 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.Device;
 import java.lang.reflect.Type;
 import java.util.Locale;
@@ -16,10 +16,10 @@ import org.jetbrains.annotations.NotNull;
 public final class OrientationDeserializerAdapter
     implements JsonDeserializer<Device.DeviceOrientation> {
 
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
 
-  public OrientationDeserializerAdapter(final @NotNull ILogger logger) {
-    this.logger = logger;
+  public OrientationDeserializerAdapter(final @NotNull SentryOptions options) {
+    this.options = options;
   }
 
   @Override
@@ -31,7 +31,7 @@ public final class OrientationDeserializerAdapter
           ? null
           : Device.DeviceOrientation.valueOf(json.getAsString().toUpperCase(Locale.ROOT));
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when deserializing DeviceOrientation", e);
+      options.getLogger().log(SentryLevel.ERROR, "Error when deserializing DeviceOrientation", e);
     }
     return null;
   }
