@@ -845,6 +845,27 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when transaction does not have SDK version set, and the SDK version is set on options, options values are applied to transactions`() {
+        fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction("name", "op")
+        sut.captureTransaction(transaction)
+        assertEquals(fixture.sentryOptions.sdkVersion, transaction.sdk)
+    }
+
+    @Test
+    fun `when transaction has SDK version set, and the SDK version is set on options, options values are not applied to transactions`() {
+        fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction("name", "op")
+        val sdkVersion = SdkVersion("transaction.sdk.name", "version")
+        transaction.sdk = sdkVersion
+        transaction.environment = "transactionEnvironment"
+        sut.captureTransaction(transaction)
+        assertEquals(sdkVersion, transaction.sdk)
+    }
+
+    @Test
     fun `when transaction does not have tags, and tags are set on options, options values are applied to transactions`() {
         fixture.sentryOptions.setTag("tag1", "value1")
         val sut = fixture.getSut()
