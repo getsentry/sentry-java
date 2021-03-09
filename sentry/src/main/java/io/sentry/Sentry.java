@@ -499,7 +499,7 @@ public final class Sentry {
   }
 
   /**
-   * Creates a Transaction and returns the instance.
+   * Creates a Transaction and returns the instance. Started transaction is set on the scope.
    *
    * @param name the transaction name
    * @param operation the operation
@@ -515,6 +515,19 @@ public final class Sentry {
    *
    * @param name the transaction name
    * @param operation the operation
+   * @param setOnScope if transaction should be set on scope
+   * @return created transaction
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull String operation, final boolean setOnScope) {
+    return getCurrentHub().startTransaction(name, operation, setOnScope);
+  }
+
+  /**
+   * Creates a Transaction and returns the instance. Started transaction is set on the scope.
+   *
+   * @param name the transaction name
+   * @param operation the operation
    * @param description the description
    * @return created transaction
    */
@@ -522,13 +535,30 @@ public final class Sentry {
       final @NotNull String name,
       final @NotNull String operation,
       final @Nullable String description) {
-    final ITransaction transaction = getCurrentHub().startTransaction(name, operation);
+    return startTransaction(name, operation, description, true);
+  }
+
+  /**
+   * Creates a Transaction and returns the instance.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param description the description
+   * @param setOnScope if transaction should be set on scope
+   * @return created transaction
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final boolean setOnScope) {
+    final ITransaction transaction = getCurrentHub().startTransaction(name, operation, setOnScope);
     transaction.setDescription(description);
     return transaction;
   }
 
   /**
-   * Creates a Transaction and returns the instance.
+   * Creates a Transaction and returns the instance. Started transaction is set on the scope.
    *
    * @param transactionContexts the transaction contexts
    * @return created transaction
@@ -539,8 +569,22 @@ public final class Sentry {
   }
 
   /**
+   * Creates a Transaction and returns the instance.
+   *
+   * @param transactionContexts the transaction contexts
+   * @param setOnScope if transaction should be set on scope
+   * @return created transaction
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts, boolean setOnScope) {
+    return getCurrentHub().startTransaction(transactionContexts, setOnScope);
+  }
+
+  /**
    * Creates a Transaction and returns the instance. Based on the passed sampling context the
    * decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * <p>Started transaction is set on the scope.
    *
    * @param name the transaction name
    * @param operation the operation
@@ -555,8 +599,28 @@ public final class Sentry {
   }
 
   /**
+   * Creates a Transaction and returns the instance. Based on the passed sampling context the
+   * decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param customSamplingContext the sampling context
+   * @param setOnScope if transaction should be set on scope
+   * @return created transaction.
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @NotNull CustomSamplingContext customSamplingContext,
+      final boolean setOnScope) {
+    return getCurrentHub().startTransaction(name, operation, customSamplingContext, setOnScope);
+  }
+
+  /**
    * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
    * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * <p>Started transaction is set on the scope.
    *
    * @param transactionContexts the transaction context
    * @param customSamplingContext the sampling context
@@ -566,6 +630,22 @@ public final class Sentry {
       final @NotNull TransactionContext transactionContexts,
       final @NotNull CustomSamplingContext customSamplingContext) {
     return getCurrentHub().startTransaction(transactionContexts, customSamplingContext);
+  }
+
+  /**
+   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
+   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * @param transactionContexts the transaction context
+   * @param customSamplingContext the sampling context
+   * @param setOnScope if transaction should be set on scope
+   * @return created transaction.
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @NotNull CustomSamplingContext customSamplingContext,
+      final boolean setOnScope) {
+    return getCurrentHub().startTransaction(transactionContexts, customSamplingContext, setOnScope);
   }
 
   /**

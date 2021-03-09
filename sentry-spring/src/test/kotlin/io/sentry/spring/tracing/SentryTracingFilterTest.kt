@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.CustomSamplingContext
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
@@ -47,10 +48,10 @@ class SentryTracingFilterTest {
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
-                whenever(hub.startTransaction(any<TransactionContext>(), any())).thenAnswer { SentryTransaction((it.arguments[0] as TransactionContext).name, it.arguments[0] as SpanContext, hub) }
+                whenever(hub.startTransaction(any(), any<CustomSamplingContext>())).thenAnswer { SentryTransaction((it.arguments[0] as TransactionContext).name, it.arguments[0] as SpanContext, hub) }
             }
             response.status = 200
-            whenever(hub.startTransaction(any<String>(), any(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
+            whenever(hub.startTransaction(any(), any(), any<CustomSamplingContext>())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
             return SentryTracingFilter(hub, sentryRequestResolver, transactionNameProvider)
         }
@@ -64,7 +65,7 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).startTransaction(eq("POST /product/12"), eq("http.server"), check {
+        verify(fixture.hub).startTransaction(eq("POST /product/12"), eq("http.server"), check<CustomSamplingContext> {
             assertNotNull(it["request"])
             assertTrue(it["request"] is HttpServletRequest)
         })

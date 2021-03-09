@@ -1,6 +1,5 @@
 package io.sentry.spring.tracing
 
-import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
@@ -9,9 +8,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTransaction
 import io.sentry.SpanContext
 import io.sentry.SpanStatus
-import io.sentry.TransactionContext
 import java.lang.RuntimeException
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -39,11 +36,6 @@ class SentrySpanAdviceTest {
 
     @Autowired
     lateinit var hub: IHub
-
-    @BeforeTest
-    fun setup() {
-        whenever(hub.startTransaction(any<TransactionContext>(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
-    }
 
     @Test
     fun `when class is annotated with @SentrySpan, every method call attaches span to existing transaction`() {
