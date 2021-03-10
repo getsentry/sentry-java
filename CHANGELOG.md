@@ -2,6 +2,7 @@
 
 * Feat: Add an overload for `startTransaction` that sets the created transaction to the Scope #1313
 * Ref: Separate user facing and protocol classes in the Performance feature (#1304)
+* Feat: Set SDK version on Transactions (#1307)
 
 # 4.3.0
 
