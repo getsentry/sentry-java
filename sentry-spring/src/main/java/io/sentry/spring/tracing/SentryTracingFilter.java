@@ -113,9 +113,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         final TransactionContext contexts =
             TransactionContext.fromSentryTrace(
                 name, "http.server", new SentryTraceHeader(sentryTraceHeader));
-        final ITransaction transaction = hub.startTransaction(contexts, customSamplingContext);
-        hub.configureScope(scope -> scope.setTransaction(transaction));
-        return transaction;
+        return hub.startTransaction(contexts, customSamplingContext);
       } catch (InvalidSentryTraceHeaderException e) {
         hub.getOptions()
             .getLogger()
