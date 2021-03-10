@@ -7,6 +7,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -131,7 +132,8 @@ public abstract class SentryBaseEvent {
     this.throwable = throwable;
   }
 
-  Map<String, String> getTags() {
+  @ApiStatus.Internal
+  public Map<String, String> getTags() {
     return tags;
   }
 

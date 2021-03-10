@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -266,7 +267,7 @@ public interface IHub {
    * @return transaction's id
    */
   @ApiStatus.Internal
-  SentryId captureTransaction(ITransaction transaction, Object hint);
+  SentryId captureTransaction(SentryTransaction transaction, Object hint);
 
   /**
    * Captures the transaction and enqueues it for sending to Sentry server.
@@ -275,7 +276,7 @@ public interface IHub {
    * @return transaction's id
    */
   @ApiStatus.Internal
-  default SentryId captureTransaction(ITransaction transaction) {
+  default SentryId captureTransaction(SentryTransaction transaction) {
     return captureTransaction(transaction, null);
   }
 
