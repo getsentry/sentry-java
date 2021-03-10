@@ -286,7 +286,21 @@ public interface IHub {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  ITransaction startTransaction(TransactionContext transactionContexts);
+  default ITransaction startTransaction(TransactionContext transactionContexts) {
+    return startTransaction(transactionContexts, true);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param transactionContexts the transaction contexts
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction
+   */
+  default ITransaction startTransaction(
+      TransactionContext transactionContexts, boolean bindToScope) {
+    return startTransaction(transactionContexts, null, bindToScope);
+  }
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
@@ -299,7 +313,26 @@ public interface IHub {
    */
   default @NotNull ITransaction startTransaction(
       String name, String operation, CustomSamplingContext customSamplingContext) {
-    return startTransaction(new TransactionContext(name, operation), customSamplingContext);
+    return startTransaction(name, operation, customSamplingContext, true);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * sampling context the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param customSamplingContext the sampling context
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction.
+   */
+  default @NotNull ITransaction startTransaction(
+      String name,
+      String operation,
+      CustomSamplingContext customSamplingContext,
+      boolean bindToScope) {
+    return startTransaction(
+        new TransactionContext(name, operation), customSamplingContext, bindToScope);
   }
 
   /**
@@ -312,8 +345,26 @@ public interface IHub {
    * @return created transaction.
    */
   @NotNull
+  default ITransaction startTransaction(
+      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
+    return startTransaction(transactionContexts, customSamplingContext, true);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * transaction and sampling contexts the decision if transaction is sampled will be taken by
+   * {@link TracesSampler}.
+   *
+   * @param transactionContexts the transaction context
+   * @param customSamplingContext the sampling context
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction.
+   */
+  @NotNull
   ITransaction startTransaction(
-      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext);
+      TransactionContext transactionContexts,
+      CustomSamplingContext customSamplingContext,
+      boolean bindToScope);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
@@ -327,6 +378,21 @@ public interface IHub {
   default @NotNull ITransaction startTransaction(
       final @NotNull String name, final @NotNull String operation) {
     return startTransaction(name, operation, null);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
+   * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
+   * {@link TracesSampler}.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction
+   */
+  default @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull String operation, final boolean bindToScope) {
+    return startTransaction(name, operation, null, bindToScope);
   }
 
   /**

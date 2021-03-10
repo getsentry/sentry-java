@@ -564,14 +564,9 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContext) {
-    return this.startTransaction(transactionContext, null);
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
-      final @Nullable CustomSamplingContext customSamplingContext) {
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final boolean bindToScope) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -589,6 +584,9 @@ public final class Hub implements IHub {
       transactionContext.setSampled(samplingDecision);
 
       transaction = new SentryTracer(transactionContext, this);
+    }
+    if (bindToScope) {
+      configureScope(scope -> scope.setTransaction(transaction));
     }
     return transaction;
   }

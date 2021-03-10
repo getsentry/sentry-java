@@ -1,5 +1,8 @@
 # Unreleased
 
+* Feat: Add an overload for `startTransaction` that sets the created transaction to the Scope #1313
+* Ref: Separate user facing and protocol classes in the Performance feature (#1304)
+* Feat: Set SDK version on Transactions (#1307)
 * Fix: Use logger set on SentryOptions in GsonSerializer (#1308)
 
 # 4.3.0
@@ -8,7 +11,6 @@
 * Fix: Initialize Sentry in Logback appender when DSN is not set in XML config (#1296)
 * Fix: Fix JUL integration SDK name (#1293)
 * Feat: Activity tracing auto instrumentation
-* Ref: Separate user facing and protocol classes in the Performance feature (#1304)
 
 # 4.2.0
 

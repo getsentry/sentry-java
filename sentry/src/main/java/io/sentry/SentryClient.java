@@ -407,6 +407,9 @@ public final class SentryClient implements ISentryClient {
     if (transaction.getEnvironment() == null) {
       transaction.setEnvironment(options.getEnvironment());
     }
+    if (transaction.getSdk() == null) {
+      transaction.setSdk(options.getSdkVersion());
+    }
     if (transaction.getTags() == null) {
       transaction.setTags(new HashMap<>(options.getTags()));
     } else {
