@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import org.jetbrains.annotations.Nullable;
 
 /** Sentry Client interface */
@@ -194,7 +195,7 @@ public interface ISentryClient {
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
-  SentryId captureTransaction(ITransaction transaction, Scope scope, Object hint);
+  SentryId captureTransaction(SentryTransaction transaction, Scope scope, Object hint);
 
   /**
    * Captures a transaction without scope nor hint.
@@ -202,7 +203,7 @@ public interface ISentryClient {
    * @param transaction the {@link ITransaction} to send
    * @return The Id (SentryId object) of the event
    */
-  default SentryId captureTransaction(ITransaction transaction) {
+  default SentryId captureTransaction(SentryTransaction transaction) {
     return captureTransaction(transaction, null, null);
   }
 }

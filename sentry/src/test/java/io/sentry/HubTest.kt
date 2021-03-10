@@ -18,6 +18,7 @@ import io.sentry.exception.InvalidDsnException
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import java.io.File
 import java.nio.file.Files
@@ -995,7 +996,7 @@ class HubTest {
         sut.bindClient(mockClient)
         sut.close()
 
-        sut.captureTransaction(SentryTransaction("name", "op"), null)
+        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock())), null)
         verify(mockClient, never()).captureTransaction(any(), any(), any())
     }
 
@@ -1009,7 +1010,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction("name", SpanContext("op", true), NoOpHub.getInstance()), null)
+        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op", true), mock())), null)
         verify(mockClient).captureTransaction(any(), any(), eq(null))
     }
 
@@ -1023,42 +1024,8 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction("name", SpanContext("op", false), NoOpHub.getInstance()), null)
+        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op", false), mock())), null)
         verify(mockClient, times(0)).captureTransaction(any(), any(), eq(null))
-    }
-
-    @Test
-    fun `when transaction is set on scope, captureTransaction clears it from the scope`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-
-        val transaction = SentryTransaction(TransactionContext("name", "op", true), sut)
-        sut.configureScope { it.setTransaction(transaction) }
-        sut.captureTransaction(transaction, null)
-        sut.configureScope {
-            assertNull(it.transaction)
-        }
-    }
-
-    @Test
-    fun `when different transaction is set on scope, captureTransaction does not clear it from the scope`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-
-        val transaction = SentryTransaction(TransactionContext("name", "op", true), sut)
-        val anotherTransaction = SentryTransaction(TransactionContext("name", "op", true), sut)
-        sut.configureScope { it.setTransaction(anotherTransaction) }
-        sut.captureTransaction(transaction, null)
-        sut.configureScope {
-            assertNotNull(it.transaction)
-            assertEquals(anotherTransaction, it.transaction)
-        }
     }
     //endregion
 
@@ -1069,8 +1036,8 @@ class HubTest {
         val contexts = TransactionContext("name", "op")
 
         val transaction = hub.startTransaction(contexts)
-        assertTrue(transaction is SentryTransaction)
-        assertEquals(contexts, transaction.context)
+        assertTrue(transaction is SentryTracer)
+        assertEquals(contexts, transaction.root.spanContext)
     }
 
     @Test
@@ -1164,12 +1131,17 @@ class HubTest {
     //region setSpanContext
     @Test
     fun `associates span context with throwable`() {
-        val hub = generateHub() as Hub
+        val (hub, mockClient) = getEnabledHub()
         val transaction = hub.startTransaction("aTransaction", "op")
         val span = transaction.startChild("op")
         val exception = RuntimeException()
+
         hub.setSpanContext(exception, span)
-        assertEquals(span.spanContext, hub.getSpanContext(exception))
+        hub.captureEvent(SentryEvent(exception))
+
+        verify(mockClient).captureEvent(check {
+            assertEquals(span.spanContext, it.contexts.trace)
+        }, anyOrNull(), anyOrNull())
     }
 
     @Test

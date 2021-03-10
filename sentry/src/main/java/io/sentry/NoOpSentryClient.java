@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import org.jetbrains.annotations.Nullable;
 
 final class NoOpSentryClient implements ISentryClient {
@@ -41,7 +42,7 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureTransaction(ITransaction transaction, Scope scope, Object hint) {
+  public SentryId captureTransaction(SentryTransaction transaction, Scope scope, Object hint) {
     return SentryId.EMPTY_ID;
   }
 }

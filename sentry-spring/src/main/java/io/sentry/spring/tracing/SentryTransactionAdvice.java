@@ -2,11 +2,9 @@ package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
-import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.ApiStatus;
@@ -78,16 +76,6 @@ public class SentryTransactionAdvice implements MethodInterceptor {
   }
 
   private boolean isTransactionActive() {
-    AtomicBoolean isTransactionActiveRef = new AtomicBoolean(false);
-
-    hub.configureScope(
-        scope -> {
-          ISpan span = scope.getSpan();
-
-          if (span != null) {
-            isTransactionActiveRef.set(true);
-          }
-        });
-    return isTransactionActiveRef.get();
+    return hub.getSpan() != null;
   }
 }

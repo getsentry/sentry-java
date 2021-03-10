@@ -1,10 +1,14 @@
-# vNext
+# Unreleased
+
+* Fix: Use logger set on SentryOptions in GsonSerializer (#1308)
+
+# 4.3.0
 
 * Fix: Fix setting in-app-includes from external properties (#1291)
 * Fix: Initialize Sentry in Logback appender when DSN is not set in XML config (#1296)
 * Fix: Fix JUL integration SDK name (#1293)
 * Feat: Activity tracing auto instrumentation
-* Fix: Use logger set on SentryOptions in GsonSerializer (#1308)
+* Ref: Separate user facing and protocol classes in the Performance feature (#1304)
 
 # 4.2.0
 

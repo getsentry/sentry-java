@@ -54,7 +54,7 @@ public interface ISpan {
    *
    * @return the operation
    */
-  @Nullable
+  @NotNull
   String getOperation();
 
   /**
@@ -69,7 +69,7 @@ public interface ISpan {
    *
    * @return the description
    */
-  @NotNull
+  @Nullable
   String getDescription();
 
   /**
@@ -117,6 +117,9 @@ public interface ISpan {
    * @param value the tag value
    */
   void setTag(@NotNull String key, @NotNull String value);
+
+  @Nullable
+  String getTag(@NotNull String key);
 
   /**
    * Returns if span has finished.
