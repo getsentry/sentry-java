@@ -4,6 +4,7 @@ import io.sentry.Stack.StackItem;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -516,7 +517,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull ITransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -554,17 +555,6 @@ public final class Hub implements IHub {
                   SentryLevel.ERROR,
                   "Error while capturing transaction with id: " + transaction.getEventId(),
                   e);
-        } finally {
-          if (item != null) {
-            final Scope scope = item.getScope();
-
-            scope.withTransaction(
-                scopeTransaction -> {
-                  if (scopeTransaction == transaction) {
-                    scope.clearTransaction();
-                  }
-                });
-          }
         }
       }
     }
@@ -574,14 +564,9 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContext) {
-    return this.startTransaction(transactionContext, null);
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
-      final @Nullable CustomSamplingContext customSamplingContext) {
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final boolean bindToScope) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -598,7 +583,10 @@ public final class Hub implements IHub {
       boolean samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSampled(samplingDecision);
 
-      transaction = new SentryTransaction(transactionContext, this);
+      transaction = new SentryTracer(transactionContext, this);
+    }
+    if (bindToScope) {
+      configureScope(scope -> scope.setTransaction(transaction));
     }
     return transaction;
   }

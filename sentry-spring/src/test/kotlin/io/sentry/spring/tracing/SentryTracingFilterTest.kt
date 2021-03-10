@@ -5,14 +5,16 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.spy
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.CustomSamplingContext
 import io.sentry.IHub
+import io.sentry.Scope
 import io.sentry.SentryOptions
-import io.sentry.SentryTransaction
-import io.sentry.SpanContext
+import io.sentry.SentryTracer
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
@@ -47,10 +49,10 @@ class SentryTracingFilterTest {
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
-                whenever(hub.startTransaction(any<TransactionContext>(), any())).thenAnswer { SentryTransaction((it.arguments[0] as TransactionContext).name, it.arguments[0] as SpanContext, hub) }
+                whenever(hub.startTransaction(any(), any<CustomSamplingContext>())).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             }
             response.status = 200
-            whenever(hub.startTransaction(any<String>(), any(), any())).thenAnswer { SentryTransaction(it.arguments[0] as String, SpanContext(it.arguments[1] as String), hub) }
+            whenever(hub.startTransaction(any(), any(), any<CustomSamplingContext>())).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
             return SentryTracingFilter(hub, sentryRequestResolver, transactionNameProvider)
         }
@@ -59,12 +61,28 @@ class SentryTracingFilterTest {
     private val fixture = Fixture()
 
     @Test
+    fun `sets the request on the scope`() {
+        val filter = fixture.getSut()
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+        verify(fixture.hub, times(1)).configureScope(check {
+            val scope = mock<Scope>()
+            it.run(scope)
+            verify(scope).setRequest(check { request ->
+                assertThat(request.url).isEqualTo("http://localhost/product/12")
+            })
+        })
+    }
+
+    @Test
     fun `creates transaction around the request`() {
         val filter = fixture.getSut()
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).startTransaction(eq("POST /product/12"), eq("http.server"), check {
+        verify(fixture.hub).startTransaction(eq("POST /product/12"), eq("http.server"), check<CustomSamplingContext> {
             assertNotNull(it["request"])
             assertTrue(it["request"] is HttpServletRequest)
         })
@@ -73,8 +91,7 @@ class SentryTracingFilterTest {
             assertThat(it.transaction).isEqualTo("POST /product/{id}")
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
             assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
-            assertThat(it.request).isNotNull()
-        }, eq(null))
+        })
     }
 
     @Test
@@ -85,7 +102,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.parentSpanId).isNull()
-        }, eq(null))
+        })
     }
 
     @Test
@@ -97,7 +114,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
-        }, eq(null))
+        })
     }
 
     @Test

@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -115,19 +116,21 @@ final class NoOpHub implements IHub {
 
   @Override
   public SentryId captureTransaction(
-      final @NotNull ITransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
   public @NotNull ITransaction startTransaction(TransactionContext transactionContexts) {
-    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
+    return NoOpTransaction.getInstance();
   }
 
   @Override
   public @NotNull ITransaction startTransaction(
-      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
-    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
+      TransactionContext transactionContexts,
+      CustomSamplingContext customSamplingContext,
+      boolean bindToScope) {
+    return NoOpTransaction.getInstance();
   }
 
   @Override

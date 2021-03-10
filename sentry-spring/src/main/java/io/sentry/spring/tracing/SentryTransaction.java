@@ -8,7 +8,7 @@ import org.springframework.core.annotation.AliasFor;
 
 /**
  * Makes annotated method execution or a method execution within an annotated class to get wrapped
- * into {@link io.sentry.SentryTransaction}.
+ * into {@link io.sentry.protocol.SentryTransaction}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
