@@ -5,6 +5,7 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import java.util.Collections;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,15 +38,24 @@ public final class NoOpTransaction implements ITransaction {
     return NoOpSpan.getInstance();
   }
 
+  /** @deprecated use {@link Scope#setRequest(Request)} */
   @Override
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
   public void setRequest(@Nullable Request request) {}
 
+  /** @deprecated use {@link Scope#getRequest()} */
   @Override
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
   public @Nullable Request getRequest() {
     return null;
   }
 
+  /** @deprecated use {@link Scope#getContexts()} */
   @Override
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
   public @NotNull Contexts getContexts() {
     return new Contexts();
   }
@@ -61,23 +71,13 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @Nullable Boolean isSampled() {
-    return null;
-  }
-
-  @Override
   public @Nullable Span getLatestActiveSpan() {
     return null;
   }
 
   @Override
-  public @Nullable SentryId getEventId() {
-    return null;
-  }
-
-  @Override
-  public @Nullable String getTransaction() {
-    return null;
+  public @NotNull SentryId getEventId() {
+    return SentryId.EMPTY_ID;
   }
 
   @Override
@@ -130,4 +130,14 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public void setTag(@NotNull String key, @NotNull String value) {}
+
+  @Override
+  public @Nullable String getTag(@NotNull String key) {
+    return null;
+  }
+
+  @Override
+  public @Nullable Boolean isSampled() {
+    return null;
+  }
 }

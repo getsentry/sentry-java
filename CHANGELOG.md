@@ -7,6 +7,7 @@
 * Fix: Fix JUL integration SDK name (#1293)
 * Feat: Activity tracing auto instrumentation
 * Feat: Set SDK version on Transactions (#1307)
+* Ref: Separate user facing and protocol classes in the Performance feature (#1304)
 
 # 4.2.0
 

@@ -26,24 +26,6 @@ public interface ITransaction extends ISpan {
   @NotNull
   String getName();
 
-  /**
-   * Attaches request information to the transaction.
-   *
-   * @param request the request
-   */
-  void setRequest(@Nullable Request request);
-
-  /**
-   * Returns the request information from the transaction
-   *
-   * @return the request or {@code null} if not set
-   */
-  @Nullable
-  Request getRequest();
-
-  @NotNull
-  Contexts getContexts();
-
   @NotNull
   @TestOnly
   List<Span> getSpans();
@@ -69,10 +51,38 @@ public interface ITransaction extends ISpan {
    *
    * @return the event id
    */
-  @Nullable
+  @NotNull
   SentryId getEventId();
 
+  /**
+   * Attaches request information to the transaction.
+   *
+   * @param request the request
+   * @deprecated use {@link Scope#setRequest(Request)}
+   */
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
+  void setRequest(@Nullable Request request);
+
+  /**
+   * Returns the request information from the transaction
+   *
+   * @return the request or {@code null} if not set
+   * @deprecated use {@link Scope#getRequest()}
+   */
   @Nullable
-  @ApiStatus.Internal
-  String getTransaction();
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
+  Request getRequest();
+
+  /**
+   * Returns contexts associated with the transaction.
+   *
+   * @return the contexts
+   * @deprecated use {@link Scope#getContexts()}
+   */
+  @NotNull
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
+  Contexts getContexts();
 }

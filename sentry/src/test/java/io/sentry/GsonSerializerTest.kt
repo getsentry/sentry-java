@@ -12,6 +12,7 @@ import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.Device
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryTransaction
 import java.io.BufferedWriter
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -434,17 +435,17 @@ class GsonSerializerTest {
 
     @Test
     fun `serializes transaction`() {
-        val trace = SpanContext("http")
+        val trace = TransactionContext("transaction-name", "http")
         trace.description = "some request"
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
-        val transaction = SentryTransaction("transaction-name", trace, mock())
-        val span = transaction.startChild("child")
-        span.finish()
-        transaction.finish()
+        val tracer = SentryTracer(trace, mock())
+        val span = tracer.startChild("child")
+        span.finish(SpanStatus.OK)
+        tracer.finish()
 
         val stringWriter = StringWriter()
-        fixture.serializer.serialize(transaction, stringWriter)
+        fixture.serializer.serialize(SentryTransaction(tracer), stringWriter)
 
         val element = JsonParser().parse(stringWriter.toString()).asJsonObject
         assertEquals("transaction-name", element["transaction"].asString)
@@ -452,13 +453,23 @@ class GsonSerializerTest {
         assertNotNull(element["start_timestamp"].asString)
         assertNotNull(element["event_id"].asString)
         assertNotNull(element["spans"].asJsonArray)
-        val jsonTrace = element["contexts"].asJsonObject["trace"]
-        assertNotNull(jsonTrace.asJsonObject["trace_id"].asString)
-        assertNotNull(jsonTrace.asJsonObject["span_id"].asString)
-        assertEquals("http", jsonTrace.asJsonObject["op"].asString)
-        assertEquals("some request", jsonTrace.asJsonObject["description"].asString)
-        assertEquals("ok", jsonTrace.asJsonObject["status"].asString)
-        assertEquals("myValue", jsonTrace.asJsonObject["tags"].asJsonObject["myTag"].asString)
+
+        val jsonSpan = element["spans"].asJsonArray[0].asJsonObject
+        assertNotNull(jsonSpan["trace_id"])
+        assertNotNull(jsonSpan["span_id"])
+        assertNotNull(jsonSpan["parent_span_id"])
+        assertEquals("child", jsonSpan["op"].asString)
+        assertNotNull("ok", jsonSpan["status"].asString)
+        assertNotNull(jsonSpan["timestamp"])
+        assertNotNull(jsonSpan["start_timestamp"])
+
+        val jsonTrace = element["contexts"].asJsonObject["trace"].asJsonObject
+        assertNotNull(jsonTrace["trace_id"].asString)
+        assertNotNull(jsonTrace["span_id"].asString)
+        assertEquals("http", jsonTrace["op"].asString)
+        assertEquals("some request", jsonTrace["description"].asString)
+        assertEquals("ok", jsonTrace["status"].asString)
+        assertEquals("myValue", jsonTrace["tags"].asJsonObject["myTag"].asString)
     }
 
     @Test
@@ -473,12 +484,28 @@ class GsonSerializerTest {
                             "trace": {
                               "trace_id": "b156a475de54423d9c1571df97ec7eb6",
                               "span_id": "0a53026963414893",
-                              "op": "http"
+                              "op": "http",
+                              "status": "ok"
                             },
                             "custom": {
                               "some-key": "some-value"
                             }
-                          }
+                          },
+                          "spans": [
+                            {
+                              "start_timestamp": "2021-03-05T08:51:12.838Z",
+                              "timestamp": "2021-03-05T08:51:12.949Z",
+                              "trace_id": "2b099185293344a5bfdd7ad89ebf9416",
+                              "span_id": "5b95c29a5ded4281",
+                              "parent_span_id": "a3b2d1d58b344b07",
+                              "op": "PersonService.create",
+                              "description": "desc",
+                              "status": "aborted",
+                              "tags": {
+                                "name": "value"
+                              }
+                            }
+                          ]
                         }"""
         val transaction = fixture.serializer.deserialize(StringReader(json), SentryTransaction::class.java)
         assertNotNull(transaction)
@@ -487,11 +514,26 @@ class GsonSerializerTest {
         assertNotNull(transaction.timestamp)
         assertNotNull(transaction.contexts)
         assertNotNull(transaction.contexts.trace)
+        assertEquals(SpanStatus.OK, transaction.status)
+        assertEquals("transaction", transaction.type)
         assertEquals("b156a475de54423d9c1571df97ec7eb6", transaction.contexts.trace!!.traceId.toString())
         assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
         assertEquals("http", transaction.contexts.trace!!.operation)
         assertNotNull(transaction.contexts["custom"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
+
+        assertNotNull(transaction.spans)
+        assertEquals(1, transaction.spans.size)
+        val span = transaction.spans[0]
+        assertNotNull(span.startTimestamp)
+        assertNotNull(span.timestamp)
+        assertEquals("2b099185293344a5bfdd7ad89ebf9416", span.traceId.toString())
+        assertEquals("5b95c29a5ded4281", span.spanId.toString())
+        assertEquals("a3b2d1d58b344b07", span.parentSpanId.toString())
+        assertEquals("PersonService.create", span.op)
+        assertEquals(SpanStatus.ABORTED, span.status)
+        assertEquals("desc", span.description)
+        assertEquals(mapOf("name" to "value"), span.tags)
     }
 
     @Test
@@ -554,7 +596,7 @@ class GsonSerializerTest {
 
     @Test
     fun `empty lists are serialized to null`() {
-        val transaction = SentryTransaction("tx", "op")
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), mock()))
         val stringWriter = StringWriter()
         fixture.serializer.serialize(transaction, stringWriter)
         val element = JsonParser().parse(stringWriter.toString()).asJsonObject

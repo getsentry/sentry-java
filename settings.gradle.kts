@@ -1,7 +1,8 @@
 rootProject.name = "sentry-root"
 rootProject.buildFileName = "build.gradle.kts"
 
-include("sentry-android",
+include(
+    "sentry-android",
     "sentry-android-ndk",
     "sentry-android-core",
     "sentry",
