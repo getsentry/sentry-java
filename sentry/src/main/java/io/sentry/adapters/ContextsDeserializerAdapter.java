@@ -5,8 +5,8 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Browser;
@@ -23,10 +23,10 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class ContextsDeserializerAdapter implements JsonDeserializer<Contexts> {
 
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
 
-  public ContextsDeserializerAdapter(@NotNull final ILogger logger) {
-    this.logger = logger;
+  public ContextsDeserializerAdapter(final @NotNull SentryOptions options) {
+    this.options = options;
   }
 
   @Override
@@ -89,7 +89,9 @@ public final class ContextsDeserializerAdapter implements JsonDeserializer<Conte
                     final Object object = context.deserialize(element, Object.class);
                     contexts.put(key, object);
                   } catch (JsonParseException e) {
-                    logger.log(SentryLevel.ERROR, e, "Error when deserializing the %s key.", key);
+                    options
+                        .getLogger()
+                        .log(SentryLevel.ERROR, e, "Error when deserializing the %s key.", key);
                   }
                 }
                 break;
@@ -99,7 +101,7 @@ public final class ContextsDeserializerAdapter implements JsonDeserializer<Conte
         return contexts;
       }
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when deserializing Contexts", e);
+      options.getLogger().log(SentryLevel.ERROR, "Error when deserializing Contexts", e);
     }
     return null;
   }

@@ -4,8 +4,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import java.lang.reflect.Type;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,10 +14,10 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class SentryLevelSerializerAdapter implements JsonSerializer<SentryLevel> {
 
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
 
-  public SentryLevelSerializerAdapter(final @NotNull ILogger logger) {
-    this.logger = logger;
+  public SentryLevelSerializerAdapter(final @NotNull SentryOptions options) {
+    this.options = options;
   }
 
   @Override
@@ -25,7 +25,7 @@ public final class SentryLevelSerializerAdapter implements JsonSerializer<Sentry
     try {
       return src == null ? null : new JsonPrimitive(src.name().toLowerCase(Locale.ROOT));
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when serializing SentryLevel", e);
+      options.getLogger().log(SentryLevel.ERROR, "Error when serializing SentryLevel", e);
     }
     return null;
   }

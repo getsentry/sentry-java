@@ -48,26 +48,19 @@ public final class GsonSerializer implements ISerializer {
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  /** the ILogger interface */
-  private final @NotNull ILogger logger;
+  /** the SentryOptions */
+  private final @NotNull SentryOptions options;
 
   /** the Gson instance */
   private final @NotNull Gson gson;
 
-  /** the IEnvelopeReader interface */
-  private final @NotNull IEnvelopeReader envelopeReader;
-
   /**
    * AndroidSerializer ctor
    *
-   * @param logger the ILogger interface
-   * @param envelopeReader the IEnvelopeReader interface
+   * @param options the SentryOptions object
    */
-  public GsonSerializer(
-      final @NotNull ILogger logger, final @NotNull IEnvelopeReader envelopeReader) {
-    this.logger = Objects.requireNonNull(logger, "The ILogger object is required.");
-    this.envelopeReader =
-        Objects.requireNonNull(envelopeReader, "The IEnvelopeReader object is required.");
+  public GsonSerializer(final @NotNull SentryOptions options) {
+    this.options = Objects.requireNonNull(options, "The SentryOptions object is required.");
 
     gson = provideGson();
   }
@@ -80,28 +73,28 @@ public final class GsonSerializer implements ISerializer {
   private @NotNull Gson provideGson() {
     return new GsonBuilder()
         .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-        .registerTypeAdapter(SentryId.class, new SentryIdSerializerAdapter(logger))
-        .registerTypeAdapter(SentryId.class, new SentryIdDeserializerAdapter(logger))
-        .registerTypeAdapter(Date.class, new DateSerializerAdapter(logger))
-        .registerTypeAdapter(Date.class, new DateDeserializerAdapter(logger))
-        .registerTypeAdapter(TimeZone.class, new TimeZoneSerializerAdapter(logger))
-        .registerTypeAdapter(TimeZone.class, new TimeZoneDeserializerAdapter(logger))
+        .registerTypeAdapter(SentryId.class, new SentryIdSerializerAdapter(options))
+        .registerTypeAdapter(SentryId.class, new SentryIdDeserializerAdapter(options))
+        .registerTypeAdapter(Date.class, new DateSerializerAdapter(options))
+        .registerTypeAdapter(Date.class, new DateDeserializerAdapter(options))
+        .registerTypeAdapter(TimeZone.class, new TimeZoneSerializerAdapter(options))
+        .registerTypeAdapter(TimeZone.class, new TimeZoneDeserializerAdapter(options))
         .registerTypeAdapter(
-            Device.DeviceOrientation.class, new OrientationSerializerAdapter(logger))
+            Device.DeviceOrientation.class, new OrientationSerializerAdapter(options))
         .registerTypeAdapter(
-            Device.DeviceOrientation.class, new OrientationDeserializerAdapter(logger))
-        .registerTypeAdapter(SentryLevel.class, new SentryLevelSerializerAdapter(logger))
-        .registerTypeAdapter(SentryLevel.class, new SentryLevelDeserializerAdapter(logger))
-        .registerTypeAdapter(Contexts.class, new ContextsDeserializerAdapter(logger))
-        .registerTypeAdapter(Contexts.class, new ContextsSerializerAdapter(logger))
+            Device.DeviceOrientation.class, new OrientationDeserializerAdapter(options))
+        .registerTypeAdapter(SentryLevel.class, new SentryLevelSerializerAdapter(options))
+        .registerTypeAdapter(SentryLevel.class, new SentryLevelDeserializerAdapter(options))
+        .registerTypeAdapter(Contexts.class, new ContextsDeserializerAdapter(options))
+        .registerTypeAdapter(Contexts.class, new ContextsSerializerAdapter(options))
         .registerTypeAdapterFactory(UnknownPropertiesTypeAdapterFactory.get())
         .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
         .registerTypeAdapter(SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
-        .registerTypeAdapter(Session.class, new SessionAdapter(logger))
-        .registerTypeAdapter(SpanId.class, new SpanIdDeserializerAdapter(logger))
-        .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(logger))
-        .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(logger))
-        .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(logger))
+        .registerTypeAdapter(Session.class, new SessionAdapter(options))
+        .registerTypeAdapter(SpanId.class, new SpanIdDeserializerAdapter(options))
+        .registerTypeAdapter(SpanId.class, new SpanIdSerializerAdapter(options))
+        .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(options))
+        .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(options))
         .registerTypeHierarchyAdapter(Collection.class, new CollectionAdapter())
         .registerTypeHierarchyAdapter(Map.class, new MapAdapter())
         .disableHtmlEscaping()
@@ -133,9 +126,9 @@ public final class GsonSerializer implements ISerializer {
   public @Nullable SentryEnvelope deserializeEnvelope(final @NotNull InputStream inputStream) {
     Objects.requireNonNull(inputStream, "The InputStream object is required.");
     try {
-      return envelopeReader.read(inputStream);
+      return options.getEnvelopeReader().read(inputStream);
     } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, "Error deserializing envelope.", e);
+      options.getLogger().log(SentryLevel.ERROR, "Error deserializing envelope.", e);
       return null;
     }
   }
@@ -146,8 +139,8 @@ public final class GsonSerializer implements ISerializer {
     Objects.requireNonNull(entity, "The entity is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
 
-    if (logger.isEnabled(SentryLevel.DEBUG)) {
-      logger.log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(entity));
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options.getLogger().log(SentryLevel.DEBUG, "Serializing object: %s", gson.toJson(entity));
     }
     gson.toJson(entity, entity.getClass(), writer);
 
@@ -187,7 +180,9 @@ public final class GsonSerializer implements ISerializer {
 
           writer.write("\n");
         } catch (Exception exception) {
-          logger.log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
         }
       }
       writer.flush();

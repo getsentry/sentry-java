@@ -17,10 +17,10 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SessionAdapter extends TypeAdapter<Session> {
 
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
 
-  public SessionAdapter(final @NotNull ILogger logger) {
-    this.logger = Objects.requireNonNull(logger, "The Logger is required.");
+  public SessionAdapter(final @NotNull SentryOptions options) {
+    this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
   }
 
   @Override
@@ -137,7 +137,7 @@ public final class SessionAdapter extends TypeAdapter<Session> {
             sidStr = reader.nextString();
             sid = UUID.fromString(sidStr);
           } catch (IllegalArgumentException e) {
-            logger.log(SentryLevel.ERROR, "%s sid is not valid.", sidStr);
+            options.getLogger().log(SentryLevel.ERROR, "%s sid is not valid.", sidStr);
           }
           break;
         case "did":
@@ -155,7 +155,7 @@ public final class SessionAdapter extends TypeAdapter<Session> {
             statusStr = StringUtils.capitalize(reader.nextString());
             status = Session.State.valueOf(statusStr);
           } catch (IllegalArgumentException e) {
-            logger.log(SentryLevel.ERROR, "%s status is not valid.", statusStr);
+            options.getLogger().log(SentryLevel.ERROR, "%s status is not valid.", statusStr);
           }
           break;
         case "errors":
@@ -204,7 +204,9 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     reader.endObject();
 
     if (status == null || started == null || release == null || release.isEmpty()) {
-      logger.log(SentryLevel.ERROR, "Session is gonna be dropped due to invalid fields.");
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Session is gonna be dropped due to invalid fields.");
       return null;
     }
 
@@ -229,7 +231,7 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     try {
       return DateUtils.getDateTime(timestamp);
     } catch (IllegalArgumentException e) {
-      logger.log(SentryLevel.ERROR, e, "Error converting session (%s) field.", field);
+      options.getLogger().log(SentryLevel.ERROR, e, "Error converting session (%s) field.", field);
     }
     return null;
   }

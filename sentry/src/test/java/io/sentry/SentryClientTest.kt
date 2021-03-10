@@ -60,7 +60,7 @@ class SentryClientTest {
             }
             setDebug(true)
             setDiagnosticLevel(SentryLevel.DEBUG)
-            setSerializer(GsonSerializer(mock(), envelopeReader))
+            setSerializer(GsonSerializer(this))
             setLogger(mock())
             maxAttachmentSize = this@Fixture.maxAttachmentSize
             setTransportFactory(factory)
