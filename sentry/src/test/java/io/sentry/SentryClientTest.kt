@@ -860,7 +860,6 @@ class SentryClientTest {
         val transaction = SentryTransaction("name", "op")
         val sdkVersion = SdkVersion("transaction.sdk.name", "version")
         transaction.sdk = sdkVersion
-        transaction.environment = "transactionEnvironment"
         sut.captureTransaction(transaction)
         assertEquals(sdkVersion, transaction.sdk)
     }
