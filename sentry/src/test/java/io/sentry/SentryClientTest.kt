@@ -849,7 +849,7 @@ class SentryClientTest {
     fun `when transaction does not have SDK version set, and the SDK version is set on options, options values are applied to transactions`() {
         fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
         val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
         sut.captureTransaction(transaction)
         assertEquals(fixture.sentryOptions.sdkVersion, transaction.sdk)
     }
@@ -858,7 +858,7 @@ class SentryClientTest {
     fun `when transaction has SDK version set, and the SDK version is set on options, options values are not applied to transactions`() {
         fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
         val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
         val sdkVersion = SdkVersion("transaction.sdk.name", "version")
         transaction.sdk = sdkVersion
         sut.captureTransaction(transaction)
