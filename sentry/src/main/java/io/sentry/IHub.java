@@ -294,12 +294,12 @@ public interface IHub {
    * Creates a Transaction bound to the current hub and returns the instance.
    *
    * @param transactionContexts the transaction contexts
-   * @param setOnScope if transaction should be set on scope
+   * @param bindToScope if transaction should be bound to scope
    * @return created transaction
    */
   default ITransaction startTransaction(
-      TransactionContext transactionContexts, boolean setOnScope) {
-    return startTransaction(transactionContexts, null, setOnScope);
+      TransactionContext transactionContexts, boolean bindToScope) {
+    return startTransaction(transactionContexts, null, bindToScope);
   }
 
   /**
@@ -323,16 +323,16 @@ public interface IHub {
    * @param name the transaction name
    * @param operation the operation
    * @param customSamplingContext the sampling context
-   * @param setOnScope if transaction should be set on scope
+   * @param bindToScope if transaction should be bound to scope
    * @return created transaction.
    */
   default @NotNull ITransaction startTransaction(
       String name,
       String operation,
       CustomSamplingContext customSamplingContext,
-      boolean setOnScope) {
+      boolean bindToScope) {
     return startTransaction(
-        new TransactionContext(name, operation), customSamplingContext, setOnScope);
+        new TransactionContext(name, operation), customSamplingContext, bindToScope);
   }
 
   /**
@@ -357,14 +357,14 @@ public interface IHub {
    *
    * @param transactionContexts the transaction context
    * @param customSamplingContext the sampling context
-   * @param setOnScope if transaction should be set on scope
+   * @param bindToScope if transaction should be bound to scope
    * @return created transaction.
    */
   @NotNull
   ITransaction startTransaction(
       TransactionContext transactionContexts,
       CustomSamplingContext customSamplingContext,
-      boolean setOnScope);
+      boolean bindToScope);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
@@ -387,12 +387,12 @@ public interface IHub {
    *
    * @param name the transaction name
    * @param operation the operation
-   * @param setOnScope if transaction should be set on scope
+   * @param bindToScope if transaction should be bound to scope
    * @return created transaction
    */
   default @NotNull ITransaction startTransaction(
-      final @NotNull String name, final @NotNull String operation, final boolean setOnScope) {
-    return startTransaction(name, operation, null, setOnScope);
+      final @NotNull String name, final @NotNull String operation, final boolean bindToScope) {
+    return startTransaction(name, operation, null, bindToScope);
   }
 
   /**

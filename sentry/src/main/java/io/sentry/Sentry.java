@@ -515,12 +515,12 @@ public final class Sentry {
    *
    * @param name the transaction name
    * @param operation the operation
-   * @param setOnScope if transaction should be set on scope
+   * @param bindToScope if transaction should be bound to scope
    * @return created transaction
    */
   public static @NotNull ITransaction startTransaction(
-      final @NotNull String name, final @NotNull String operation, final boolean setOnScope) {
-    return getCurrentHub().startTransaction(name, operation, setOnScope);
+      final @NotNull String name, final @NotNull String operation, final boolean bindToScope) {
+    return getCurrentHub().startTransaction(name, operation, bindToScope);
   }
 
   /**
@@ -544,15 +544,15 @@ public final class Sentry {
    * @param name the transaction name
    * @param operation the operation
    * @param description the description
-   * @param setOnScope if transaction should be set on scope
+   * @param bindToScope if transaction should be bound to scope
    * @return created transaction
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull String name,
       final @NotNull String operation,
       final @Nullable String description,
-      final boolean setOnScope) {
-    final ITransaction transaction = getCurrentHub().startTransaction(name, operation, setOnScope);
+      final boolean bindToScope) {
+    final ITransaction transaction = getCurrentHub().startTransaction(name, operation, bindToScope);
     transaction.setDescription(description);
     return transaction;
   }
@@ -572,12 +572,12 @@ public final class Sentry {
    * Creates a Transaction and returns the instance.
    *
    * @param transactionContexts the transaction contexts
-   * @param setOnScope if transaction should be set on scope
+   * @param bindToScope if transaction should be bound to scope
    * @return created transaction
    */
   public static @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts, boolean setOnScope) {
-    return getCurrentHub().startTransaction(transactionContexts, setOnScope);
+      final @NotNull TransactionContext transactionContexts, boolean bindToScope) {
+    return getCurrentHub().startTransaction(transactionContexts, bindToScope);
   }
 
   /**
@@ -605,15 +605,15 @@ public final class Sentry {
    * @param name the transaction name
    * @param operation the operation
    * @param customSamplingContext the sampling context
-   * @param setOnScope if transaction should be set on scope
+   * @param bindToScope if transaction should be bound to scope
    * @return created transaction.
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull CustomSamplingContext customSamplingContext,
-      final boolean setOnScope) {
-    return getCurrentHub().startTransaction(name, operation, customSamplingContext, setOnScope);
+      final boolean bindToScope) {
+    return getCurrentHub().startTransaction(name, operation, customSamplingContext, bindToScope);
   }
 
   /**
@@ -638,14 +638,15 @@ public final class Sentry {
    *
    * @param transactionContexts the transaction context
    * @param customSamplingContext the sampling context
-   * @param setOnScope if transaction should be set on scope
+   * @param bindToScope if transaction should be bound to scope
    * @return created transaction.
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
       final @NotNull CustomSamplingContext customSamplingContext,
-      final boolean setOnScope) {
-    return getCurrentHub().startTransaction(transactionContexts, customSamplingContext, setOnScope);
+      final boolean bindToScope) {
+    return getCurrentHub()
+        .startTransaction(transactionContexts, customSamplingContext, bindToScope);
   }
 
   /**

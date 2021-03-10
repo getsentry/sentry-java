@@ -566,7 +566,7 @@ public final class Hub implements IHub {
   public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean setOnScope) {
+      final boolean bindToScope) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -585,7 +585,7 @@ public final class Hub implements IHub {
 
       transaction = new SentryTracer(transactionContext, this);
     }
-    if (setOnScope) {
+    if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));
     }
     return transaction;
