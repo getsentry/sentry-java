@@ -1,7 +1,8 @@
 apply(plugin = "maven-publish")
+apply(plugin = "signing")
 
-configure<PublishingExtension> {
-    afterEvaluate {
+afterEvaluate {
+    configure<PublishingExtension> {
         publications {
             create<MavenPublication>("maven") {
                 from(components[componentName()])
@@ -35,8 +36,13 @@ configure<PublishingExtension> {
                 artifactId = project.name
             }
         }
+
+        configure<SigningExtension> {
+            sign(publications["maven"])
+        }
     }
 }
+
 
 fun componentName() = if (project.name.contains("android")) "release" else "java"
 
