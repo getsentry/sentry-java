@@ -10,7 +10,7 @@ plugins {
     id(Config.QualityPlugins.detektPlugin)
 }
 
-//apply(from = "$rootDir/gradle/publishing.gradle.kts")
+apply(from = "$rootDir/gradle/publishing.gradle.kts")
 
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
