@@ -8,6 +8,8 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
+apply(from = "$rootDir/gradle/publishing.gradle.kts")
+
 configure<JavaPluginConvention> {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8

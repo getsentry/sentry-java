@@ -8,6 +8,8 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
+//apply(from = "$rootDir/gradle/publishing.gradle.kts")
+
 var sentryNativeSrc: String = "sentry-native"
 
 android {

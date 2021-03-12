@@ -4,6 +4,8 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
+//apply(from = "$rootDir/gradle/publishing.gradle.kts")
+
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
 
