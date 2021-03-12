@@ -7,8 +7,9 @@ afterEvaluate {
             create<MavenPublication>("maven") {
                 from(components[componentName()])
                 pom {
+                    name.set("${project.group}:${project.name}")
                     description.set(Config.Sentry.description)
-                    url.set(Config.Sentry.website)
+                    url.set(Config.Sentry.repository)
                     packaging = "jar"
                     licenses {
                         license {
