@@ -4,6 +4,7 @@
 * Ref: Separate user facing and protocol classes in the Performance feature (#1304)
 * Feat: Set SDK version on Transactions (#1307)
 * Fix: Use logger set on SentryOptions in GsonSerializer (#1308)
+* Fix: Use the bindToScope correctly
 
 # 4.3.0
 
