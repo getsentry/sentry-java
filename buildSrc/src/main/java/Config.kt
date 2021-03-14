@@ -127,7 +127,7 @@ object Config {
         val issueTracker = "https://github.com/getsentry/sentry-java/issues"
         val repository = "https://github.com/getsentry/sentry-java"
         val devName = "Sentry Team and Contributors"
-        val devEmail = "oss@sentry.io"
+        val devEmail = "sdks@sentry.io"
         val scmConnection = "scm:git:git://github.com/getsentry/sentry-java.git"
         val scmDevConnection = "scm:git:ssh://github.com:getsentry/sentry-java.git"
         val scmUrl = "https://github.com/getsentry/sentry-java/tree/main"
