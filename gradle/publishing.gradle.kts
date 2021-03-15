@@ -10,7 +10,7 @@ afterEvaluate {
                     name.set("${project.group}:${project.name}")
                     description.set(Config.Sentry.description)
                     url.set(Config.Sentry.repository)
-                    packaging = "jar"
+                    packaging = packaging()
                     licenses {
                         license {
                             name.set(Config.Sentry.licence)
@@ -46,4 +46,5 @@ afterEvaluate {
 
 
 fun componentName() = if (project.name.contains("android")) "release" else "java"
+fun packaging() = if (project.name.contains("android")) "aar" else "jar"
 
