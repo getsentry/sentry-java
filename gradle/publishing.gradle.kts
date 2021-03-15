@@ -1,6 +1,16 @@
 apply(plugin = "maven-publish")
 apply(plugin = "signing")
 
+var signingEnabled: Boolean = isSigningEnabled()
+
+// add sources and javadocs jar to non-android modules
+if (project.plugins.hasPlugin("java")) {
+    configure<JavaPluginExtension> {
+        withSourcesJar()
+        withJavadocJar()
+    }
+}
+
 afterEvaluate {
     configure<PublishingExtension> {
         publications {
@@ -38,13 +48,27 @@ afterEvaluate {
             }
         }
 
-//        configure<SigningExtension> {
-//            sign(publications["maven"])
-//        }
+        if (signingEnabled) {
+            configure<SigningExtension> {
+                sign(publications["maven"])
+            }
+        }
     }
 }
 
+/**
+ * If package signing is enabled. Default: false.
+ */
+fun isSigningEnabled(): Boolean {
+    return if (project.hasProperty("signingEnabled")) {
+        with(property("signingEnabled") as String) {
+            this.toBoolean()
+        }
+    } else {
+        false
+    }
+}
 
-fun componentName() = if (project.name.contains("android")) "release" else "java"
-fun packaging() = if (project.name.contains("android")) "aar" else "jar"
-
+fun isAndroid() = project.name.contains("android")
+fun componentName() = if (isAndroid()) "release" else "java"
+fun packaging() = if (isAndroid()) "aar" else "jar"
