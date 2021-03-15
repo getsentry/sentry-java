@@ -38,9 +38,9 @@ afterEvaluate {
             }
         }
 
-        configure<SigningExtension> {
-            sign(publications["maven"])
-        }
+//        configure<SigningExtension> {
+//            sign(publications["maven"])
+//        }
     }
 }
 
