@@ -671,7 +671,12 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    this.validateRate(sampleRate);
+    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + sampleRate
+              + " is not valid. Use null to disable or values between 0.01 and 1.0.");
+    }
     this.sampleRate = sampleRate;
   }
 
@@ -685,13 +690,17 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the tracesSampleRate Can be anything between 0.01 and 1.0 or null (default), to disable
-   * it.
+   * Sets the tracesSampleRate Can be anything between 0.0 and 1.0 or null (default), to disable it.
    *
    * @param tracesSampleRate the sample rate
    */
   public void setTracesSampleRate(Double tracesSampleRate) {
-    this.validateRate(tracesSampleRate);
+    if (tracesSampleRate != null && (tracesSampleRate > 1.0 || tracesSampleRate < 0.0)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + tracesSampleRate
+              + " is not valid. Use null to disable or values between 0.0 and 1.0.");
+    }
     this.tracesSampleRate = tracesSampleRate;
   }
 
@@ -1401,15 +1410,6 @@ public class SentryOptions {
     sdkVersion.addPackage("maven:io.sentry:sentry", version);
 
     return sdkVersion;
-  }
-
-  private void validateRate(@Nullable Double rate) {
-    if (rate != null && (rate > 1.0 || rate <= 0.0)) {
-      throw new IllegalArgumentException(
-          "The value "
-              + rate
-              + " is not valid. Use null to disable or values between 0.01 (inclusive) and 1.0 (exclusive).");
-    }
   }
 
   public static final class Proxy {
