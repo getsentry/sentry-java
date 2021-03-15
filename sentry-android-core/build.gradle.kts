@@ -8,8 +8,6 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
-apply(from = "$rootDir/gradle/publishing.gradle.kts")
-
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
 
@@ -63,27 +61,6 @@ android {
     // needed because of Kotlin 1.4.x
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
-    }
-}
-
-tasks {
-    val androidJavadocs by creating(Javadoc::class) {
-        source = android.sourceSets["main"].java.getSourceFiles()
-    }
-
-    val androidJavadocsJar by creating(Jar::class) {
-        archiveClassifier.set("javadoc")
-        from(androidJavadocs.destinationDir)
-    }
-
-    val sourcesJar by creating(Jar::class) {
-        archiveClassifier.set("sources")
-        from(android.sourceSets["main"].java.srcDirs)
-    }
-
-    artifacts {
-        archives(sourcesJar)
-        archives(androidJavadocsJar)
     }
 }
 

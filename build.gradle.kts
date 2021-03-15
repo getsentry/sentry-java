@@ -20,6 +20,10 @@ buildscript {
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
         classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
+        classpath(Config.BuildPlugins.gradleMavenPublishPlugin)
+        // dokka is required by gradle-maven-publish-plugin.
+        // version 0.10.0 is the latest one compatible with Kotlin 1.3
+        classpath(Config.BuildPlugins.dokkaPlugin)
         classpath(Config.QualityPlugins.errorpronePlugin)
         classpath(Config.QualityPlugins.gradleVersionsPlugin)
 
@@ -59,6 +63,7 @@ allprojects {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing"))
         }
     }
+
 }
 
 subprojects {
@@ -83,6 +88,9 @@ subprojects {
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
             }
+        }
+        afterEvaluate {
+            apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
         }
     }
 }

@@ -18,6 +18,8 @@ object Config {
         val springDependencyManagementVersion = "1.0.10.RELEASE"
         val gretty = "org.gretty"
         val grettyVersion = "3.0.3"
+        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.14.2"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:0.10.0"
     }
 
     object Android {

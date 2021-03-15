@@ -4,8 +4,6 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
-apply(from = "$rootDir/gradle/publishing.gradle.kts")
-
 android {
     compileSdkVersion(Config.Android.compileSdkVersion)
 
@@ -25,27 +23,6 @@ android {
     buildFeatures {
         // Determines whether to generate a BuildConfig class.
         buildConfig = false
-    }
-}
-
-tasks {
-    val androidJavadocs by creating(Javadoc::class) {
-        source = android.sourceSets["main"].java.getSourceFiles()
-    }
-
-    val androidJavadocsJar by creating(Jar::class) {
-        archiveClassifier.set("javadoc")
-        from(androidJavadocs.destinationDir)
-    }
-
-    val sourcesJar by creating(Jar::class) {
-        archiveClassifier.set("sources")
-        from(android.sourceSets["main"].java.srcDirs)
-    }
-
-    artifacts {
-        archives(sourcesJar)
-        archives(androidJavadocsJar)
     }
 }
 

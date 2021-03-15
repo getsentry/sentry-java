@@ -12,7 +12,6 @@ plugins {
 }
 
 apply(plugin = Config.BuildPlugins.springDependencyManagement)
-apply(from = "$rootDir/gradle/publishing.gradle.kts")
 
 the<DependencyManagementExtension>().apply {
     imports {
