@@ -72,7 +72,8 @@ dependencies {
 
     implementation(Config.Libs.okhttpBom)
     implementation(Config.Libs.okhttp)
-    implementation(Config.Libs.okhttpInterceptor)
+// not needed
+//    implementation(Config.Libs.okhttpInterceptor)
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 

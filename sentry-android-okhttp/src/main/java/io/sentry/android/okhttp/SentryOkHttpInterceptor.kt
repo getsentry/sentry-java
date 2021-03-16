@@ -8,6 +8,7 @@ import io.sentry.Sentry
 import io.sentry.SpanStatus
 import java.io.IOException
 import okhttp3.Interceptor
+import okhttp3.RequestBody
 import okhttp3.Response
 
 class SentryOkHttpInterceptor(
@@ -32,6 +33,7 @@ class SentryOkHttpInterceptor(
         val traceHeader = span?.toSentryTrace()
 
         val response: Response
+        val requestBody: RequestBody?
 
         var code = -1
         try {
@@ -39,6 +41,7 @@ class SentryOkHttpInterceptor(
                 request = request.newBuilder().addHeader(it.name, it.value).build()
             }
 
+            requestBody = request.body
             response = chain.proceed(request)
             code = response.code
         } catch (e: IOException) {
@@ -49,7 +52,10 @@ class SentryOkHttpInterceptor(
         }
 
         // TODO: should we have a different interceptor for that?
-        addBreadcrumb(url, method, code)
+        addBreadcrumb(url, method, code, requestBody?.contentLength(), response.body?.contentLength())
+
+        // TODO: collect ideas
+        // https://github.com/square/okhttp/blob/master/okhttp-logging-interceptor/src/main/kotlin/okhttp3/logging/HttpLoggingInterceptor.kt
 
         return response
     }
@@ -57,8 +63,14 @@ class SentryOkHttpInterceptor(
     // TODO: add package to options? how do we get options? does it even make sense?
     // sdkVersion?.addPackage("maven:io.sentry:sentry-android-timber", BuildConfig.VERSION_NAME)
 
-    private fun addBreadcrumb(url: String, method: String, code: Int) {
+    private fun addBreadcrumb(url: String, method: String, code: Int, bodyLength: Long?, requestLength: Long?) {
         val crumb = Breadcrumb.http(url, method, code)
+        bodyLength?.let {
+            crumb.setData("bodyLength", it)
+        }
+        requestLength?.let {
+            crumb.setData("requestLength", it)
+        }
         hub.addBreadcrumb(crumb)
     }
 }
