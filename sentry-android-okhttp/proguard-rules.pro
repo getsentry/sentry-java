@@ -1,4 +1,4 @@
-##---------------Begin: proguard configuration for Timber  ----------
+##---------------Begin: proguard configuration for OkHttp  ----------
 
 -keep class io.sentry.android.okhttp.** { *; }
 
@@ -20,4 +20,4 @@
 -dontwarn okhttp3.internal.platform.ConscryptPlatform
 -dontwarn org.conscrypt.ConscryptHostnameVerifier
 
-##---------------End: proguard configuration for Timber  ----------
+##---------------End: proguard configuration for OkHttp  ----------
