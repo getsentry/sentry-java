@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /** Creates advice infrastructure for {@link SentrySpan} and {@link SentryTransaction}. */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Open
 public class SentryAdviceConfiguration {
 
@@ -23,9 +23,9 @@ public class SentryAdviceConfiguration {
 
   @Bean
   public @NotNull Advisor sentryTransactionAdvisor(
-      final @NotNull IHub hub,
-      final @NotNull @Qualifier("sentryTransactionPointcut") Pointcut sentryTransactionPointcut) {
-    return new DefaultPointcutAdvisor(sentryTransactionPointcut, sentryTransactionAdvice(hub));
+      final @NotNull @Qualifier("sentryTransactionPointcut") Pointcut sentryTransactionPointcut,
+      final @NotNull @Qualifier("sentryTransactionAdvice") Advice sentryTransactionAdvice) {
+    return new DefaultPointcutAdvisor(sentryTransactionPointcut, sentryTransactionAdvice);
   }
 
   @Bean
@@ -35,7 +35,8 @@ public class SentryAdviceConfiguration {
 
   @Bean
   public @NotNull Advisor sentrySpanAdvisor(
-      final IHub hub, final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut) {
-    return new DefaultPointcutAdvisor(sentrySpanPointcut, sentrySpanAdvice(hub));
+    final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut,
+      final @NotNull @Qualifier("sentrySpanAdvice") Advice sentrySpanAdvice) {
+    return new DefaultPointcutAdvisor(sentrySpanPointcut, sentrySpanAdvice);
   }
 }
