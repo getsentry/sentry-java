@@ -14,18 +14,31 @@ class SentryOkHttpInterceptor(
 // Do we need min levels?
 //        val minEventLevel: SentryLevel = SentryLevel.ERROR,
 //        val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
-        val hub: IHub = HubAdapter.getInstance(),
+        private val hub: IHub = HubAdapter.getInstance(),
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val request = chain.request()
+        var request = chain.request()
+
+        val url = request.url.toString()
+        val method = request.method
 
         // read transaction from the bound scope
-        val span = Sentry.getSpan()?.startChild("http.client", request.url.toString())
+        val activeSpan = Sentry.getSpan()
+
+        val span = activeSpan?.startChild("http.client", url)
+        span?.description = "$method $url"
+
+        val traceHeader = span?.toSentryTrace()
 
         val response: Response
+
         var code = -1
         try {
+            traceHeader?.let {
+                request = request.newBuilder().addHeader(it.name, it.value).build()
+            }
+
             response = chain.proceed(request)
             code = response.code
         } catch (e: IOException) {
@@ -34,12 +47,14 @@ class SentryOkHttpInterceptor(
         } finally {
             span?.finish(SpanStatus.fromHttpStatusCode(code, SpanStatus.INTERNAL_ERROR))
         }
-        addBreadcrumb("", "", 1)
+
+        // TODO: should we have a different interceptor for that?
+        addBreadcrumb(url, method, code)
 
         return response
     }
 
-    // TODO: add package to options? how do we get options?
+    // TODO: add package to options? how do we get options? does it even make sense?
     // sdkVersion?.addPackage("maven:io.sentry:sentry-android-timber", BuildConfig.VERSION_NAME)
 
     private fun addBreadcrumb(url: String, method: String, code: Int) {
