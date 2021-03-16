@@ -120,9 +120,6 @@ public class SentryTracingFilter extends OncePerRequestFilter {
             .log(SentryLevel.DEBUG, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
     }
-    final ITransaction transaction =
-        hub.startTransaction(name, "http.server", customSamplingContext);
-    hub.configureScope(scope -> scope.setTransaction(transaction));
-    return transaction;
+    return hub.startTransaction(name, "http.server", customSamplingContext);
   }
 }

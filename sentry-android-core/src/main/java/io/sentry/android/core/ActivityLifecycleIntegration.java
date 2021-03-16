@@ -105,8 +105,9 @@ public final class ActivityLifecycleIntegration
       // as we allow a single transaction running on the bound Scope, we finish the previous ones
       stopPreviousTransactions();
 
+      // we can only bind to the scope if there's no running transaction
       final ITransaction transaction =
-          hub.startTransaction(getActivityName(activity), "navigation");
+          hub.startTransaction(getActivityName(activity), "navigation", false);
 
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(

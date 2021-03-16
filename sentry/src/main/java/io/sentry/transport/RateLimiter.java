@@ -69,13 +69,11 @@ public final class RateLimiter {
         }
         dropItems.add(item);
       }
-      if (dropItems != null) {
-        logger.log(
-            SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
-      }
     }
 
     if (dropItems != null) {
+      logger.log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
+
       //       Need a new envelope
       List<SentryEnvelopeItem> toSend = new ArrayList<>();
       for (SentryEnvelopeItem item : envelope.getItems()) {
