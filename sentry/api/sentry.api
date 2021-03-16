@@ -32,6 +32,7 @@ public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer, 
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getType ()Ljava/lang/String;
 	public static fun http (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun http (Ljava/lang/String;Ljava/lang/String;I)Lio/sentry/Breadcrumb;
 	public fun removeData (Ljava/lang/String;)V
 	public fun setCategory (Ljava/lang/String;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V

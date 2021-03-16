@@ -21,14 +21,13 @@ class SentryOkHttpInterceptor(
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()
 
-        val url = request.url.toString()
+        var url = request.url.toString()
         val method = request.method
 
         // read transaction from the bound scope
         val activeSpan = Sentry.getSpan()
 
-        val span = activeSpan?.startChild("http.client", url)
-        span?.description = "$method $url"
+        val span = activeSpan?.startChild("http.client", "$method $url")
 
         val traceHeader = span?.toSentryTrace()
 
@@ -51,6 +50,9 @@ class SentryOkHttpInterceptor(
             span?.finish(SpanStatus.fromHttpStatusCode(code, SpanStatus.INTERNAL_ERROR))
         }
 
+        // if there was a redirect, get the new URL
+        url = response.request.url.toString()
+
         // TODO: should we have a different interceptor for that?
         addBreadcrumb(url, method, code, requestBody?.contentLength(), response.body?.contentLength())
 
@@ -65,12 +67,17 @@ class SentryOkHttpInterceptor(
 
     private fun addBreadcrumb(url: String, method: String, code: Int, bodyLength: Long?, requestLength: Long?) {
         val crumb = Breadcrumb.http(url, method, code)
-        bodyLength?.let {
-            crumb.setData("bodyLength", it)
+        if (isValidLength(bodyLength)) {
+            crumb.setData("bodyLength", bodyLength!!)
         }
-        requestLength?.let {
-            crumb.setData("requestLength", it)
+        // for some reason requestLength is always -1, check that
+        if (isValidLength(requestLength)) {
+            crumb.setData("requestLength", requestLength!!)
         }
         hub.addBreadcrumb(crumb)
+    }
+
+    private fun isValidLength(bodyLength: Long?): Boolean {
+        return bodyLength != null && bodyLength != -1L
     }
 }
