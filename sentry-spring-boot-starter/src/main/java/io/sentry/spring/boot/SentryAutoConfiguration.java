@@ -2,7 +2,6 @@ package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.EventProcessor;
-import io.sentry.Hub;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransportFactory;

@@ -35,7 +35,7 @@ public class SentryAdviceConfiguration {
 
   @Bean
   public @NotNull Advisor sentrySpanAdvisor(
-    final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut,
+      final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut,
       final @NotNull @Qualifier("sentrySpanAdvice") Advice sentrySpanAdvice) {
     return new DefaultPointcutAdvisor(sentrySpanPointcut, sentrySpanAdvice);
   }
