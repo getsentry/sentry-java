@@ -120,16 +120,6 @@ object Config {
         val SENTRY_SPRING_BOOT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
-        val userOrg = "getsentry"
-        val licence = "MIT"
-        val licenceUrl = "http://www.opensource.org/licenses/mit-license.php"
-        val issueTracker = "https://github.com/getsentry/sentry-java/issues"
-        val repository = "https://github.com/getsentry/sentry-java"
-        val devName = "Sentry Team and Contributors"
-        val devEmail = "sdks@sentry.io"
-        val scmConnection = "scm:git:git://github.com/getsentry/sentry-java.git"
-        val scmDevConnection = "scm:git:ssh://github.com:getsentry/sentry-java.git"
-        val scmUrl = "https://github.com/getsentry/sentry-java/tree/main"
         val versionNameProp = "versionName"
         val buildVersionCodeProp = "buildVersionCode"
     }
@@ -142,11 +132,6 @@ object Config {
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.4.0"
         val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
-    }
-
-    object Deploy {
-        val novodaBintrayPlugin = "com.novoda:bintray-release:1.0.3"
-        val sign = true
     }
 
     object NativePlugins {

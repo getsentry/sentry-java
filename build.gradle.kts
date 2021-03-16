@@ -2,6 +2,7 @@ import com.diffplug.spotless.LineEnding
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import com.vanniktech.maven.publish.MavenPublishPlugin
+import com.vanniktech.maven.publish.MavenPublishPluginExtension
 
 plugins {
     `java-library`
@@ -92,6 +93,14 @@ subprojects {
         }
         afterEvaluate {
             apply<MavenPublishPlugin>()
+
+            configure<MavenPublishPluginExtension> {
+//                releaseSigningEnabled = !Config.Sentry.versionNameProp.toUpperCase().endsWith("SNAPSHOT")
+                nexus {
+                    repositoryUsername = System.getenv("MAVEN_USER")
+                    repositoryUsername = System.getenv("MAVEN_PASS")
+                }
+            }
         }
     }
 }
