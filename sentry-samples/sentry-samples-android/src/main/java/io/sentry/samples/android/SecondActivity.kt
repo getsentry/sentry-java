@@ -19,9 +19,6 @@ class SecondActivity : AppCompatActivity() {
 
     private lateinit var repos: List<Repo>
 
-    // TODO: its an application interceptor
-    // whats about network interceptor, does it make sense?
-    // https://square.github.io/okhttp/interceptors/#network-interceptors
     private val client = OkHttpClient.Builder().addInterceptor(SentryOkHttpInterceptor()).build()
 
     private lateinit var binding: ActivitySecondBinding

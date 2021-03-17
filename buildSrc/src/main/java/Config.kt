@@ -1,7 +1,7 @@
 import java.math.BigDecimal
 
 object Config {
-    val kotlinVersion = "1.4.30"
+    val kotlinVersion = "1.4.10"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.3.4.RELEASE"
@@ -37,7 +37,6 @@ object Config {
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val okhttpBom = "com.squareup.okhttp3:okhttp-bom:4.9.0"
         val okhttp = "com.squareup.okhttp3:okhttp"
-        val okhttpInterceptor = "com.squareup.okhttp3:logging-interceptor"
         // only bump gson if https://github.com/google/gson/issues/1597 is fixed
         val gson = "com.google.code.gson:gson:2.8.5"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.5"
