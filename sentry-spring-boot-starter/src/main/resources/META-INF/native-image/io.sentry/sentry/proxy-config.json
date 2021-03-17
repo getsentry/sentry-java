@@ -1,0 +1,10 @@
+[
+  [
+    "org.springframework.boot.autoconfigure.SpringBootApplication",
+    "org.springframework.core.annotation.SynthesizedAnnotation"
+  ],
+  [
+    "org.springframework.boot.SpringBootConfiguration",
+    "org.springframework.core.annotation.SynthesizedAnnotation"
+  ]
+]
