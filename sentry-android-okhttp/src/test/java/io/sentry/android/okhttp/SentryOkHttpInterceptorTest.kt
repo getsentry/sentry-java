@@ -34,8 +34,7 @@ class SentryOkHttpInterceptorTest {
             }
             server.enqueue(MockResponse().setBody(responseBody).setResponseCode(httpStatusCode))
             server.start()
-            val client = OkHttpClient.Builder().addInterceptor(SentryOkHttpInterceptor(hub)).build()
-            return client
+            return OkHttpClient.Builder().addInterceptor(SentryOkHttpInterceptor(hub)).build()
         }
     }
 
