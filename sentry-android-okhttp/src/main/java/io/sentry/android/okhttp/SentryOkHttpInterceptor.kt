@@ -37,19 +37,16 @@ class SentryOkHttpInterceptor(
             span?.finish(SpanStatus.fromHttpStatusCode(code, SpanStatus.INTERNAL_ERROR))
         }
 
-        val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
-        request.body?.contentLength().ifHasValidLength {
-            breadcrumb.setData("requestBodySize", it)
+        if (code != -1) {
+            val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
+            request.body?.contentLength().ifHasValidLength {
+                breadcrumb.setData("requestBodySize", it)
+            }
+            response.body?.contentLength().ifHasValidLength {
+                breadcrumb.setData("responseBodySize", it)
+            }
+            hub.addBreadcrumb(breadcrumb)
         }
-        response.body?.contentLength().ifHasValidLength {
-            breadcrumb.setData("responseBodySize", it)
-        }
-        hub.addBreadcrumb(breadcrumb)
-
-        // TODO: collect ideas
-        // https://github.com/square/okhttp/blob/master/okhttp-logging-interceptor/src/main/kotlin/okhttp3/logging/HttpLoggingInterceptor.kt
-        // TODO: add package to options? how do we get options? does it even make sense?
-        // sdkVersion?.addPackage("maven:io.sentry:sentry-android-timber", BuildConfig.VERSION_NAME)
         return response
     }
 
