@@ -1,6 +1,7 @@
 import java.math.BigDecimal
 
 object Config {
+    // issues with Kotlin 1.4 and Dokka https://github.com/Kotlin/dokka/issues/1791
     val kotlinVersion = "1.3.72"
     val kotlinStdLib = "stdlib-jdk8"
 

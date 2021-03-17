@@ -91,13 +91,16 @@ subprojects {
         afterEvaluate {
             apply<MavenPublishPlugin>()
 
-            // username and password goes to:
+            // signing info and maven central info go to:
             // ~/.gradle/gradle.properties
+            // signing release is enabled by default, but the plugin does not sign versions ending with -SNAPSHOT
+
+            // signing info:
             // signing.keyId=id
             // signing.password=password
             // signing.secretKeyRingFile=file path
-            //
-            // access from user token
+
+            // maven central info:
             // mavenCentralRepositoryUsername=user name
             // mavenCentralRepositoryPassword=password
         }

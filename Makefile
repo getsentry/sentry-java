@@ -8,7 +8,7 @@ clean:
 
 # build and run tests
 compile:
-	./gradlew assembleRelease
+	./gradlew build
 
 # do a dry release (like a local deploy)
 # remember to add the -SNAPSHOT suffix to the version
