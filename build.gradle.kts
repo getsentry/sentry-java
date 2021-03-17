@@ -2,7 +2,6 @@ import com.diffplug.spotless.LineEnding
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import com.vanniktech.maven.publish.MavenPublishPlugin
-import com.vanniktech.maven.publish.MavenPublishPluginExtension
 
 plugins {
     `java-library`
@@ -94,13 +93,15 @@ subprojects {
         afterEvaluate {
             apply<MavenPublishPlugin>()
 
-            configure<MavenPublishPluginExtension> {
-//                releaseSigningEnabled = !Config.Sentry.versionNameProp.toUpperCase().endsWith("SNAPSHOT")
-                nexus {
-                    repositoryUsername = System.getenv("MAVEN_USER")
-                    repositoryUsername = System.getenv("MAVEN_PASS")
-                }
-            }
+            // username and password goes to:
+            // ~/.gradle/gradle.properties
+            // signing.keyId=id
+            // signing.password=password
+            // signing.secretKeyRingFile=file path
+            //
+            // access from user token
+            // mavenCentralRepositoryUsername=user name
+            // mavenCentralRepositoryPassword=password
         }
     }
 }

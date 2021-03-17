@@ -1,4 +1,4 @@
-.PHONY: all, clean compile dryRelease doRelease distZip release update stop checkFormat format
+.PHONY: all, clean compile dryRelease doRelease release update stop checkFormat format
 
 all: clean checkFormat compile dryRelease
 
@@ -21,10 +21,6 @@ dryRelease:
 doRelease:
 	./gradlew publish --no-daemon --no-parallel
 	./gradlew closeAndReleaseRepository
-
-# meant to be used with Craft
-distZip:
-	./gradlew distZip
 
 # clean, build, deploy and promote to maven central
 release: clean checkFormat compile doRelease
