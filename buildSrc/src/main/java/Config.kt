@@ -1,7 +1,7 @@
 import java.math.BigDecimal
 
 object Config {
-    val kotlinVersion = "1.4.30"
+    val kotlinVersion = "1.3.72"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.3.4.RELEASE"
@@ -19,7 +19,7 @@ object Config {
         val gretty = "org.gretty"
         val grettyVersion = "3.0.3"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.14.2"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.4.30"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:0.10.1"
     }
 
     object Android {

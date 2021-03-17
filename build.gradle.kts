@@ -100,25 +100,6 @@ subprojects {
             // access from user token
             // mavenCentralRepositoryUsername=user name
             // mavenCentralRepositoryPassword=password
-
-            // https://github.com/Kotlin/dokka/issues/1272
-            configurations.all {
-                resolutionStrategy.eachDependency {
-                    val kotlinGroup = "org.jetbrains.kotlin"
-                    if (name.contains("dokka")) {
-                        if (requested.group == kotlinGroup && requested.version != Config.kotlinVersion) {
-                            useVersion(Config.kotlinVersion)
-                            because("Dokka plugin requires kotlin version ${Config.kotlinVersion}")
-                        }
-                    } else {
-                        val kotlinV3Version = "1.3.72"
-                        if (requested.group == kotlinGroup && requested.version != kotlinV3Version) {
-                            useVersion(kotlinV3Version)
-                            because("Gradle 6.7 uses version $kotlinV3Version")
-                        }
-                    }
-                }
-            }
         }
     }
 }

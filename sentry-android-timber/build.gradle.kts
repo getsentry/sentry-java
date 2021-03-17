@@ -65,9 +65,10 @@ tasks.withType<Test> {
     }
 }
 
-kotlin {
-    explicitApi()
-}
+// only available for Kotlin v1.4
+// kotlin {
+//    explicitApi()
+// }
 
 dependencies {
     api(project(":sentry"))
