@@ -1,7 +1,7 @@
 import com.diffplug.spotless.LineEnding
+import com.vanniktech.maven.publish.MavenPublishPlugin
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import com.vanniktech.maven.publish.MavenPublishPlugin
 
 plugins {
     `java-library`
@@ -23,7 +23,6 @@ buildscript {
         classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
         classpath(Config.BuildPlugins.gradleMavenPublishPlugin)
         // dokka is required by gradle-maven-publish-plugin.
-        // version 0.10.0 is the latest one compatible with Kotlin 1.3
         classpath(Config.BuildPlugins.dokkaPlugin)
         classpath(Config.QualityPlugins.errorpronePlugin)
         classpath(Config.QualityPlugins.gradleVersionsPlugin)
@@ -64,7 +63,6 @@ allprojects {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing"))
         }
     }
-
 }
 
 subprojects {
@@ -102,6 +100,25 @@ subprojects {
             // access from user token
             // mavenCentralRepositoryUsername=user name
             // mavenCentralRepositoryPassword=password
+
+            // https://github.com/Kotlin/dokka/issues/1272
+            configurations.all {
+                resolutionStrategy.eachDependency {
+                    val kotlinGroup = "org.jetbrains.kotlin"
+                    if (name.contains("dokka")) {
+                        if (requested.group == kotlinGroup && requested.version != Config.kotlinVersion) {
+                            useVersion(Config.kotlinVersion)
+                            because("Dokka plugin requires kotlin version ${Config.kotlinVersion}")
+                        }
+                    } else {
+                        val kotlinV3Version = "1.3.72"
+                        if (requested.group == kotlinGroup && requested.version != kotlinV3Version) {
+                            useVersion(kotlinV3Version)
+                            because("Gradle 6.7 uses version $kotlinV3Version")
+                        }
+                    }
+                }
+            }
         }
     }
 }
