@@ -159,12 +159,12 @@ public class MainActivity extends AppCompatActivity {
     setContentView(binding.getRoot());
   }
 
-    @Override
-    protected void onResume() {
-      super.onResume();
-        final ISpan span = Sentry.getSpan();
-        if (span != null) {
-            span.finish(SpanStatus.OK);
-        }
+  @Override
+  protected void onResume() {
+    super.onResume();
+    final ISpan span = Sentry.getSpan();
+    if (span != null) {
+      span.finish(SpanStatus.OK);
     }
+  }
 }

@@ -3,44 +3,31 @@ package io.sentry.android.okhttp
 import io.sentry.Breadcrumb
 import io.sentry.HubAdapter
 import io.sentry.IHub
-import io.sentry.Sentry
-//import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import java.io.IOException
 import okhttp3.Interceptor
-import okhttp3.RequestBody
 import okhttp3.Response
 
 class SentryOkHttpInterceptor(
-// Do we need min levels?
-//        val minEventLevel: SentryLevel = SentryLevel.ERROR,
-//        val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
-        private val hub: IHub = HubAdapter.getInstance(),
+    private val hub: IHub = HubAdapter.getInstance()
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()
 
-        var url = request.url.toString()
+        val url = request.url.toString()
         val method = request.method
 
         // read transaction from the bound scope
-        val activeSpan = Sentry.getSpan()
-
-        val span = activeSpan?.startChild("http.client", "$method $url")
-
-        val traceHeader = span?.toSentryTrace()
+        val span = hub.span?.startChild("http.client", "$method $url")
 
         val response: Response
-        val requestBody: RequestBody?
 
         var code = -1
         try {
-            traceHeader?.let {
+            span?.toSentryTrace()?.let {
                 request = request.newBuilder().addHeader(it.name, it.value).build()
             }
-
-            requestBody = request.body
             response = chain.proceed(request)
             code = response.code
         } catch (e: IOException) {
@@ -50,34 +37,25 @@ class SentryOkHttpInterceptor(
             span?.finish(SpanStatus.fromHttpStatusCode(code, SpanStatus.INTERNAL_ERROR))
         }
 
-        // if there was a redirect, get the new URL
-        url = response.request.url.toString()
-
-        // TODO: should we have a different interceptor for that?
-        addBreadcrumb(url, method, code, requestBody?.contentLength(), response.body?.contentLength())
+        val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
+        request.body?.contentLength().ifHasValidLength {
+            breadcrumb.setData("requestBodySize", it)
+        }
+        response.body?.contentLength().ifHasValidLength {
+            breadcrumb.setData("responseBodySize", it)
+        }
+        hub.addBreadcrumb(breadcrumb)
 
         // TODO: collect ideas
         // https://github.com/square/okhttp/blob/master/okhttp-logging-interceptor/src/main/kotlin/okhttp3/logging/HttpLoggingInterceptor.kt
-
+        // TODO: add package to options? how do we get options? does it even make sense?
+        // sdkVersion?.addPackage("maven:io.sentry:sentry-android-timber", BuildConfig.VERSION_NAME)
         return response
     }
 
-    // TODO: add package to options? how do we get options? does it even make sense?
-    // sdkVersion?.addPackage("maven:io.sentry:sentry-android-timber", BuildConfig.VERSION_NAME)
-
-    private fun addBreadcrumb(url: String, method: String, code: Int, bodyLength: Long?, requestLength: Long?) {
-        val crumb = Breadcrumb.http(url, method, code)
-        if (isValidLength(bodyLength)) {
-            crumb.setData("bodyLength", bodyLength!!)
+    private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
+        if (this != null && this != -1L) {
+            fn.invoke(this)
         }
-        // for some reason requestLength is always -1, check that
-        if (isValidLength(requestLength)) {
-            crumb.setData("requestLength", requestLength!!)
-        }
-        hub.addBreadcrumb(crumb)
-    }
-
-    private fun isValidLength(bodyLength: Long?): Boolean {
-        return bodyLength != null && bodyLength != -1L
     }
 }
