@@ -19,13 +19,11 @@
   },
   {
     "name":"io.sentry.SpanContext",
-    "allDeclaredFields":true,
-    "methods":[{"name":"<init>","parameterTypes":[] }]
+    "allDeclaredFields":true
   },
   {
     "name":"io.sentry.SpanStatus",
-    "allDeclaredFields":true,
-    "methods":[{"name":"<init>","parameterTypes":[] }]
+    "allDeclaredFields":true
   },
   {
     "name":"io.sentry.SpanId",
@@ -119,8 +117,7 @@
   },
   {
     "name":"io.sentry.protocol.SentrySpan",
-    "allDeclaredFields":true,
-    "methods":[{"name":"<init>","parameterTypes":[] }]
+    "allDeclaredFields":true
   },
   {
     "name":"io.sentry.protocol.SentryStackFrame",
@@ -139,8 +136,7 @@
   },
   {
     "name":"io.sentry.protocol.SentryTransaction",
-    "allDeclaredFields":true,
-    "methods":[{"name":"<init>","parameterTypes":[] }]
+    "allDeclaredFields":true
   },
   {
     "name":"io.sentry.protocol.User",
