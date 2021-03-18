@@ -5,6 +5,7 @@
 * Feat: Set SDK version on Transactions (#1307)
 * Fix: Use logger set on SentryOptions in GsonSerializer (#1308)
 * Fix: Use the bindToScope correctly
+* Feat: GraalVM Native Image Compatibility (#1329)
 
 # 4.3.0
 
