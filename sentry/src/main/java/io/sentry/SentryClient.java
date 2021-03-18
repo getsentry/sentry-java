@@ -2,6 +2,8 @@ package io.sentry;
 
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentrySpan;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
@@ -341,7 +343,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull ITransaction transaction,
+      @NotNull SentryTransaction transaction,
       final @NotNull Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
@@ -352,26 +354,31 @@ public final class SentryClient implements ISentryClient {
 
     SentryId sentryId = transaction.getEventId();
 
-    if (transaction instanceof SentryTransaction) {
-      final SentryTransaction sentryTransaction =
-          processTransaction((SentryTransaction) transaction);
-      try {
-        final SentryEnvelope envelope =
-            buildEnvelope(sentryTransaction, filterForTransaction(getAttachmentsFromScope(scope)));
-        if (envelope != null) {
-          transport.send(envelope, hint);
-        } else {
-          sentryId = SentryId.EMPTY_ID;
-        }
-      } catch (IOException e) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
-        // if there was an error capturing the event, we return an emptyId
+    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      transaction = applyScope(transaction, scope);
+    } else {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction was cached so not applying scope: %s",
+              transaction.getEventId());
+    }
+
+    processTransaction(transaction);
+
+    try {
+      final SentryEnvelope envelope =
+          buildEnvelope(transaction, filterForTransaction(getAttachmentsFromScope(scope)));
+      if (envelope != null) {
+        transport.send(envelope, hint);
+      } else {
         sentryId = SentryId.EMPTY_ID;
       }
-    } else {
-      options.getLogger().log(SentryLevel.DEBUG, "Captured a NoOpTransaction %s", sentryId);
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
     }
 
     return sentryId;
@@ -394,11 +401,17 @@ public final class SentryClient implements ISentryClient {
 
   private @NotNull SentryTransaction processTransaction(
       final @NotNull SentryTransaction transaction) {
+    if (transaction.getPlatform() == null) {
+      transaction.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
+    }
     if (transaction.getRelease() == null) {
       transaction.setRelease(options.getRelease());
     }
     if (transaction.getEnvironment() == null) {
       transaction.setEnvironment(options.getEnvironment());
+    }
+    if (transaction.getSdk() == null) {
+      transaction.setSdk(options.getSdkVersion());
     }
     if (transaction.getTags() == null) {
       transaction.setTags(new HashMap<>(options.getTags()));
@@ -409,8 +422,8 @@ public final class SentryClient implements ISentryClient {
         }
       }
     }
-    final List<Span> unfinishedSpans = new ArrayList<>();
-    for (Span span : transaction.getSpans()) {
+    final List<SentrySpan> unfinishedSpans = new ArrayList<>();
+    for (SentrySpan span : transaction.getSpans()) {
       if (!span.isFinished()) {
         unfinishedSpans.add(span);
       }
@@ -421,6 +434,16 @@ public final class SentryClient implements ISentryClient {
           .log(SentryLevel.WARNING, "Dropping %d unfinished spans", unfinishedSpans.size());
     }
     transaction.getSpans().removeAll(unfinishedSpans);
+    return transaction;
+  }
+
+  private @NotNull SentryTransaction applyScope(
+      @NotNull SentryTransaction transaction, final @Nullable Scope scope) {
+    if (scope != null) {
+      if (transaction.getRequest() == null) {
+        transaction.setRequest(scope.getRequest());
+      }
+    }
     return transaction;
   }
 

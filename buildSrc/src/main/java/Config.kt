@@ -24,6 +24,7 @@ object Config {
         private val sdkVersion = 30
 
         val minSdkVersion = 14
+        val minSdkVersionOkHttp = 21
         val minSdkVersionNdk = 16
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
@@ -34,6 +35,8 @@ object Config {
     object Libs {
         val appCompat = "androidx.appcompat:appcompat:1.2.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
+        val okhttpBom = "com.squareup.okhttp3:okhttp-bom:4.9.0"
+        val okhttp = "com.squareup.okhttp3:okhttp"
         // only bump gson if https://github.com/google/gson/issues/1597 is fixed
         val gson = "com.google.code.gson:gson:2.8.5"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.5"
@@ -88,6 +91,7 @@ object Config {
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
         val mockitoInline = "org.mockito:mockito-inline:3.6.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
+        val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
     }
 
     object QualityPlugins {
@@ -127,7 +131,7 @@ object Config {
         val issueTracker = "https://github.com/getsentry/sentry-java/issues"
         val repository = "https://github.com/getsentry/sentry-java"
         val devName = "Sentry Team and Contributors"
-        val devEmail = "oss@sentry.io"
+        val devEmail = "sdks@sentry.io"
         val scmConnection = "scm:git:git://github.com/getsentry/sentry-java.git"
         val scmDevConnection = "scm:git:ssh://github.com:getsentry/sentry-java.git"
         val scmUrl = "https://github.com/getsentry/sentry-java/tree/main"

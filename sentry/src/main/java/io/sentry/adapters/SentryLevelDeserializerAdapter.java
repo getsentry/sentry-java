@@ -4,8 +4,8 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import java.lang.reflect.Type;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,10 +14,10 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class SentryLevelDeserializerAdapter implements JsonDeserializer<SentryLevel> {
 
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
 
-  public SentryLevelDeserializerAdapter(final @NotNull ILogger logger) {
-    this.logger = logger;
+  public SentryLevelDeserializerAdapter(final @NotNull SentryOptions options) {
+    this.options = options;
   }
 
   @Override
@@ -26,7 +26,7 @@ public final class SentryLevelDeserializerAdapter implements JsonDeserializer<Se
     try {
       return json == null ? null : SentryLevel.valueOf(json.getAsString().toUpperCase(Locale.ROOT));
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when deserializing SentryLevel", e);
+      options.getLogger().log(SentryLevel.ERROR, "Error when deserializing SentryLevel", e);
     }
     return null;
   }

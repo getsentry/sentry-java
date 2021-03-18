@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.exception.SentryEnvelopeException;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -118,7 +119,7 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
-  public @Nullable ITransaction getTransaction(final @NotNull ISerializer serializer)
+  public @Nullable SentryTransaction getTransaction(final @NotNull ISerializer serializer)
       throws Exception {
     if (header == null || header.getType() != SentryItemType.Transaction) {
       return null;

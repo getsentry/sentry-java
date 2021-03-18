@@ -15,8 +15,10 @@ import io.sentry.Hub
 import io.sentry.Scope
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.SentryTransaction
+import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.TransactionContext
+import io.sentry.protocol.SentryTransaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -31,10 +33,10 @@ class ActivityLifecycleIntegrationTest {
         val options = SentryAndroidOptions()
         val activity = mock<Activity>()
         val bundle = mock<Bundle>()
-        val transaction = SentryTransaction("name", "op", hub)
+        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
 
         fun getSut(): ActivityLifecycleIntegration {
-            whenever(hub.startTransaction(any<String>(), any())).thenReturn(transaction)
+            whenever(hub.startTransaction(any<String>(), any(), any<Boolean>())).thenReturn(transaction)
             return ActivityLifecycleIntegration(application)
         }
     }
@@ -187,7 +189,7 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
 
-        verify(fixture.hub, never()).startTransaction(any<String>(), any())
+        verify(fixture.hub, never()).startTransaction(any<String>(), any(), any<Boolean>())
     }
 
     @Test
@@ -200,7 +202,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
 
         // call only once
-        verify(fixture.hub).startTransaction(any<String>(), any())
+        verify(fixture.hub).startTransaction(any<String>(), any(), any<Boolean>())
     }
 
     @Test
@@ -213,7 +215,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(any<String>(), check {
             assertEquals("navigation", it)
-        })
+        }, any<Boolean>())
     }
 
     @Test
@@ -226,7 +228,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(check<String> {
             assertEquals("Activity", it)
-        }, any())
+        }, any(), any<Boolean>())
     }
 
     @Test
@@ -256,7 +258,7 @@ class ActivityLifecycleIntegrationTest {
 
         whenever(fixture.hub.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
-            val previousTransaction = SentryTransaction("name", "op", fixture.hub)
+            val previousTransaction = SentryTracer(TransactionContext("name", "op"), fixture.hub)
             scope.setTransaction(previousTransaction)
 
             sut.applyScope(scope, fixture.transaction)
@@ -278,7 +280,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).captureTransaction(check<SentryTransaction> {
             assertEquals(SpanStatus.OK, it.status)
-        }, eq(null))
+        })
     }
 
     @Test
@@ -295,7 +297,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).captureTransaction(check<SentryTransaction> {
             assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
-        }, eq(null))
+        })
     }
 
     @Test
@@ -330,7 +332,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
         sut.onActivityDestroyed(fixture.activity)
 
-        verify(fixture.hub).captureTransaction(any<SentryTransaction>(), eq(null))
+        verify(fixture.hub).captureTransaction(any<SentryTransaction>())
     }
 
     @Test
@@ -366,6 +368,6 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(activity, mock())
 
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
-        verify(fixture.hub).captureTransaction(any<SentryTransaction>(), eq(null))
+        verify(fixture.hub).captureTransaction(any<SentryTransaction>())
     }
 }

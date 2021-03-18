@@ -4,8 +4,8 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.SpanId;
 import java.lang.reflect.Type;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,10 +14,10 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class SpanIdDeserializerAdapter implements JsonDeserializer<SpanId> {
 
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
 
-  public SpanIdDeserializerAdapter(final @NotNull ILogger logger) {
-    this.logger = logger;
+  public SpanIdDeserializerAdapter(final @NotNull SentryOptions options) {
+    this.options = options;
   }
 
   @Override
@@ -26,7 +26,7 @@ public final class SpanIdDeserializerAdapter implements JsonDeserializer<SpanId>
     try {
       return json == null ? null : new SpanId(json.getAsString());
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when deserializing SpanId", e);
+      options.getLogger().log(SentryLevel.ERROR, "Error when deserializing SpanId", e);
     }
     return null;
   }

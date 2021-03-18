@@ -21,6 +21,7 @@ import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
@@ -59,7 +60,7 @@ class SentryClientTest {
             }
             setDebug(true)
             setDiagnosticLevel(SentryLevel.DEBUG)
-            setSerializer(GsonSerializer(mock(), envelopeReader))
+            setSerializer(GsonSerializer(this))
             setLogger(mock())
             maxAttachmentSize = this@Fixture.maxAttachmentSize
             setTransportFactory(factory)
@@ -749,7 +750,7 @@ class SentryClientTest {
     @Test
     fun `transactions are sent using connection`() {
         val sut = fixture.getSut()
-        sut.captureTransaction(SentryTransaction("a-transaction", "op"), mock(), null)
+        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("a-transaction", "op"), mock())), mock(), null)
         verify(fixture.transport).send(check {
             val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
             assertNotNull(transaction)
@@ -760,12 +761,12 @@ class SentryClientTest {
     @Test
     fun `when captureTransactions unfinished spans are removed`() {
         val sut = fixture.getSut()
-        val transaction = SentryTransaction("a-transaction", "op")
+        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), mock())
         val span1 = transaction.startChild("span1")
         span1.finish()
         val span2 = transaction.startChild("span2")
 
-        sut.captureTransaction(transaction, mock(), null)
+        sut.captureTransaction(SentryTransaction(transaction), mock(), null)
         verify(fixture.transport).send(check {
             val sentTransaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
                 assertNotNull(sentTransaction) { tx ->
@@ -778,7 +779,7 @@ class SentryClientTest {
 
     @Test
     fun `when captureTransaction with attachments`() {
-        val transaction = SentryTransaction("a-transaction", "op")
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("a-transaction", "op"), mock()))
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
 
         verifyAttachmentsInEnvelope(transaction.eventId)
@@ -786,7 +787,7 @@ class SentryClientTest {
 
     @Test
     fun `when captureTransaction with attachments not added to transaction`() {
-        val transaction = SentryTransaction("a-transaction", "op")
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("a-transaction", "op"), mock()))
         val scope = createScopeWithAttachments()
         scope.addAttachment(Attachment("hello".toByteArray(), "application/octet-stream"))
         fixture.getSut().captureTransaction(transaction, scope, null)
@@ -799,12 +800,12 @@ class SentryClientTest {
         val event = SentryEvent()
         val sut = fixture.getSut()
         val scope = createScope()
-        val transaction = SentryTransaction("name", "op")
+        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), mock())
         scope.setTransaction(transaction)
         transaction.finish()
         sut.captureEvent(event, scope)
         assertNotNull(event.contexts.trace)
-        assertEquals(transaction.contexts.trace, event.contexts.trace)
+        assertEquals(transaction.root.spanContext, event.contexts.trace)
     }
 
     @Test
@@ -812,12 +813,12 @@ class SentryClientTest {
         val event = SentryEvent()
         val sut = fixture.getSut()
         val scope = createScope()
-        val transaction = SentryTransaction("name", "op")
+        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), mock())
         scope.setTransaction(transaction)
         val span = transaction.startChild("op")
         sut.captureEvent(event, scope)
         assertNotNull(event.contexts.trace)
-        assertEquals(span, event.contexts.trace)
+        assertEquals(span.spanContext, event.contexts.trace)
     }
 
     @Test
@@ -825,7 +826,7 @@ class SentryClientTest {
         fixture.sentryOptions.release = "optionsRelease"
         fixture.sentryOptions.environment = "optionsEnvironment"
         val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("a-transaction", "op"), mock()))
         sut.captureTransaction(transaction)
         assertEquals("optionsRelease", transaction.release)
         assertEquals("optionsEnvironment", transaction.environment)
@@ -836,7 +837,7 @@ class SentryClientTest {
         fixture.sentryOptions.release = "optionsRelease"
         fixture.sentryOptions.environment = "optionsEnvironment"
         val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
         transaction.release = "transactionRelease"
         transaction.environment = "transactionEnvironment"
         sut.captureTransaction(transaction)
@@ -845,10 +846,30 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when transaction does not have SDK version set, and the SDK version is set on options, options values are applied to transactions`() {
+        fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        sut.captureTransaction(transaction)
+        assertEquals(fixture.sentryOptions.sdkVersion, transaction.sdk)
+    }
+
+    @Test
+    fun `when transaction has SDK version set, and the SDK version is set on options, options values are not applied to transactions`() {
+        fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        val sdkVersion = SdkVersion("transaction.sdk.name", "version")
+        transaction.sdk = sdkVersion
+        sut.captureTransaction(transaction)
+        assertEquals(sdkVersion, transaction.sdk)
+    }
+
+    @Test
     fun `when transaction does not have tags, and tags are set on options, options values are applied to transactions`() {
         fixture.sentryOptions.setTag("tag1", "value1")
         val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
         sut.captureTransaction(transaction)
         assertEquals(mapOf("tag1" to "value1"), transaction.tags)
     }
@@ -858,11 +879,28 @@ class SentryClientTest {
         fixture.sentryOptions.setTag("tag1", "value1")
         fixture.sentryOptions.setTag("tag2", "value2")
         val sut = fixture.getSut()
-        val transaction = SentryTransaction("name", "op")
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
         transaction.setTag("tag3", "value3")
         transaction.setTag("tag2", "transaction-tag")
         sut.captureTransaction(transaction)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "transaction-tag", "tag3" to "value3"), transaction.tags)
+    }
+
+    @Test
+    fun `captured transactions without a platform, have the default platform set`() {
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        sut.captureTransaction(transaction)
+        assertEquals("java", transaction.platform)
+    }
+
+    @Test
+    fun `captured transactions with a platform, do not get the platform overwritten`() {
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        transaction.platform = "abc"
+        sut.captureTransaction(transaction)
+        assertEquals("abc", transaction.platform)
     }
 
     private fun createScope(): Scope {

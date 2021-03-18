@@ -17,7 +17,7 @@ class SpanTest {
 
         fun getSut(): Span {
             return Span(SentryId(), SpanId(),
-                    SentryTransaction("name", "op"), "op", hub)
+                SentryTracer(TransactionContext("name", "op"), hub), "op", hub)
         }
     }
 
@@ -73,9 +73,9 @@ class SpanTest {
         val traceId = SentryId()
         val parentSpanId = SpanId()
         val span = Span(traceId, parentSpanId,
-                SentryTransaction(
-                        TransactionContext("name", "op", true), fixture.hub),
-                "op", fixture.hub)
+            SentryTracer(
+                TransactionContext("name", "op", true), fixture.hub),
+            "op", fixture.hub)
         val sentryTrace = span.toSentryTrace()
 
         assertEquals(traceId, sentryTrace.traceId)
@@ -111,8 +111,8 @@ class SpanTest {
 
     @Test
     fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
-        val transaction = SentryTransaction(
-                TransactionContext("name", "op"), fixture.hub)
+        val transaction = SentryTracer(
+            TransactionContext("name", "op"), fixture.hub)
         val span = transaction.startChild("op")
         val ex = RuntimeException()
         span.throwable = ex
@@ -138,8 +138,8 @@ class SpanTest {
         assertEquals(timestamp, span.timestamp)
     }
 
-    private fun getTransaction(): SentryTransaction {
-        return SentryTransaction("name", "op")
+    private fun getTransaction(): SentryTracer {
+        return SentryTracer(TransactionContext("name", "op"), fixture.hub)
     }
 
     private fun startChildFromSpan(): Span {

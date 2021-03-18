@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -154,7 +155,7 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureTransaction(ITransaction transaction, Object hint) {
+  public @NotNull SentryId captureTransaction(SentryTransaction transaction, Object hint) {
     return Sentry.getCurrentHub().captureTransaction(transaction, hint);
   }
 
@@ -165,14 +166,10 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @NotNull ITransaction startTransaction(
-      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
-    return Sentry.startTransaction(transactionContexts, customSamplingContext);
-  }
-
-  @Override
-  public @NotNull ITransaction startTransaction(
-      String name, String operation, CustomSamplingContext customSamplingContext) {
-    return Sentry.startTransaction(name, operation, customSamplingContext);
+      TransactionContext transactionContexts,
+      CustomSamplingContext customSamplingContext,
+      boolean bindToScope) {
+    return Sentry.startTransaction(transactionContexts, customSamplingContext, bindToScope);
   }
 
   @Override

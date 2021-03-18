@@ -97,7 +97,7 @@ class CacheStrategyTest {
     @Test
     fun `move init flag if state is ok`() {
         val options = SentryOptions().apply {
-            setSerializer(GsonSerializer(mock(), envelopeReader))
+            setSerializer(GsonSerializer(this))
         }
         val sut = fixture.getSUT(3, options)
 
@@ -177,7 +177,7 @@ class CacheStrategyTest {
 
     private fun getOptionsWithRealSerializer(): SentryOptions {
         return SentryOptions().apply {
-            setSerializer(GsonSerializer(mock(), envelopeReader))
+            setSerializer(GsonSerializer(this))
         }
     }
 }
