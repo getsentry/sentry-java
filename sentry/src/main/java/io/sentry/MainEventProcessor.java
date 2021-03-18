@@ -66,7 +66,7 @@ public final class MainEventProcessor implements EventProcessor {
       final @NotNull SentryEvent event, final @Nullable Object hint) {
     if (event.getPlatform() == null) {
       // this actually means JVM related.
-      event.setPlatform("java");
+      event.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
     }
 
     final Throwable throwable = event.getThrowable();

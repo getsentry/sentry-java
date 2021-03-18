@@ -557,6 +557,7 @@ public abstract interface class io/sentry/Sentry$OptionsConfiguration {
 }
 
 public abstract class io/sentry/SentryBaseEvent {
+	public static final field DEFAULT_PLATFORM Ljava/lang/String;
 	protected field throwable Ljava/lang/Throwable;
 	protected fun <init> ()V
 	protected fun <init> (Lio/sentry/protocol/SentryId;)V
@@ -564,6 +565,7 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOriginThrowable ()Ljava/lang/Throwable;
+	public fun getPlatform ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSdk ()Lio/sentry/protocol/SdkVersion;
@@ -573,6 +575,7 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setEventId (Lio/sentry/protocol/SentryId;)V
+	public fun setPlatform (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setSdk (Lio/sentry/protocol/SdkVersion;)V
@@ -661,7 +664,6 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun getLogger ()Ljava/lang/String;
 	public fun getMessage ()Lio/sentry/protocol/Message;
 	public fun getModule (Ljava/lang/String;)Ljava/lang/String;
-	public fun getPlatform ()Ljava/lang/String;
 	public fun getServerName ()Ljava/lang/String;
 	public fun getThreads ()Ljava/util/List;
 	public fun getTimestamp ()Ljava/util/Date;
@@ -684,7 +686,6 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun setMessage (Lio/sentry/protocol/Message;)V
 	public fun setModule (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setModules (Ljava/util/Map;)V
-	public fun setPlatform (Ljava/lang/String;)V
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setThreads (Ljava/util/List;)V
 	public fun setTransaction (Ljava/lang/String;)V
