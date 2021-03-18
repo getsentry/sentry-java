@@ -37,18 +37,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    * <p>This is supposed to be a hostname.
    */
   private String serverName;
-  /**
-   * Platform identifier of this event (defaults to "other").
-   *
-   * <p>A string representing the platform the SDK is submitting from. This will be used by the
-   * Sentry interface to customize various components in the interface, but also to enter or skip
-   * stacktrace processing.
-   *
-   * <p>Acceptable values are: `as3`, `c`, `cfml`, `cocoa`, `csharp`, `elixir`, `haskell`, `go`,
-   * `groovy`, `java`, `javascript`, `native`, `node`, `objc`, `other`, `perl`, `php`, `python`,
-   * `ruby`
-   */
-  private String platform;
 
   /**
    * Program's distribution identifier.
@@ -164,14 +152,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void setServerName(String serverName) {
     this.serverName = serverName;
-  }
-
-  public String getPlatform() {
-    return platform;
-  }
-
-  public void setPlatform(String platform) {
-    this.platform = platform;
   }
 
   public String getDist() {

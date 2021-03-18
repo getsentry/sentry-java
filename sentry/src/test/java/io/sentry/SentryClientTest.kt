@@ -886,6 +886,23 @@ class SentryClientTest {
         assertEquals(mapOf("tag1" to "value1", "tag2" to "transaction-tag", "tag3" to "value3"), transaction.tags)
     }
 
+    @Test
+    fun `captured transactions without a platform, have the default platform set`() {
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        sut.captureTransaction(transaction)
+        assertEquals("java", transaction.platform)
+    }
+
+    @Test
+    fun `captured transactions with a platform, do not get the platform overwritten`() {
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        transaction.platform = "abc"
+        sut.captureTransaction(transaction)
+        assertEquals("abc", transaction.platform)
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
