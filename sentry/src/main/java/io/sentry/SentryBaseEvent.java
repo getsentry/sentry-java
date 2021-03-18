@@ -72,7 +72,7 @@ public abstract class SentryBaseEvent {
    * `groovy`, `java`, `javascript`, `native`, `node`, `objc`, `other`, `perl`, `php`, `python`,
    * `ruby`
    */
-  private String platform;
+  private @Nullable String platform;
 
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
@@ -191,11 +191,11 @@ public abstract class SentryBaseEvent {
     this.environment = environment;
   }
 
-  public String getPlatform() {
+  public @Nullable String getPlatform() {
     return platform;
   }
 
-  public void setPlatform(String platform) {
+  public void setPlatform(final @Nullable String platform) {
     this.platform = platform;
   }
 }
