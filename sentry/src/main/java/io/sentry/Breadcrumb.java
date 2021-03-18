@@ -64,13 +64,16 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param url - the request URL
    * @param method - the request method
-   * @param code - the code result
+   * @param code - the code result. Code can be null when http request did not finish or ended with
+   *     network error
    * @return the breadcrumb
    */
   public static @NotNull Breadcrumb http(
-      final @NotNull String url, final @NotNull String method, final int code) {
+      final @NotNull String url, final @NotNull String method, final @Nullable Integer code) {
     final Breadcrumb breadcrumb = http(url, method);
-    breadcrumb.setData("status_code", code);
+    if (code != null) {
+      breadcrumb.setData("status_code", code);
+    }
     return breadcrumb;
   }
 

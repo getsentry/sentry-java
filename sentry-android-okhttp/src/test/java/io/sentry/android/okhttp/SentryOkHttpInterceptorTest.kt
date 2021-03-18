@@ -1,5 +1,6 @@
 package io.sentry.android.okhttp
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -10,10 +11,13 @@ import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.fail
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,6 +29,7 @@ class SentryOkHttpInterceptorTest {
 
     class Fixture {
         val hub = mock<IHub>()
+        val interceptor = SentryOkHttpInterceptor(hub)
         val server = MockWebServer()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
@@ -34,7 +39,7 @@ class SentryOkHttpInterceptorTest {
             }
             server.enqueue(MockResponse().setBody(responseBody).setResponseCode(httpStatusCode))
             server.start()
-            return OkHttpClient.Builder().addInterceptor(SentryOkHttpInterceptor(hub)).build()
+            return OkHttpClient.Builder().addInterceptor(interceptor).build()
         }
     }
 
@@ -85,12 +90,29 @@ class SentryOkHttpInterceptorTest {
     }
 
     @Test
-    fun `adds breadcrumb`() {
+    fun `adds breadcrumb when http calls succeeds`() {
         val sut = fixture.getSut(responseBody = "response body")
         sut.newCall(Request.Builder().post("request-body".toRequestBody("text/plain".toMediaType())).url(fixture.server.url("/hello")).build()).execute()
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
+            assertEquals("http", it.type)
             assertEquals(13L, it.data["responseBodySize"])
             assertEquals(12L, it.data["requestBodySize"])
+        })
+    }
+
+    @Test
+    fun `adds breadcrumb when http calls results in exception`() {
+        val chain = mock<Interceptor.Chain>()
+        whenever(chain.proceed(any())).thenThrow(IOException())
+        whenever(chain.request()).thenReturn(Request.Builder().get().url(fixture.server.url("/hello")).build())
+
+        try {
+            fixture.interceptor.intercept(chain)
+            fail()
+        } catch (e: IOException) {}
+
+        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
+            assertEquals("http", it.type)
         })
     }
 }

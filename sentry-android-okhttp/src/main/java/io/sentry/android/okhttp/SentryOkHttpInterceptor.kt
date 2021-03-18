@@ -21,33 +21,31 @@ class SentryOkHttpInterceptor(
         // read transaction from the bound scope
         val span = hub.span?.startChild("http.client", "$method $url")
 
-        val response: Response
+        var response: Response? = null
 
-        var code = -1
+        var code: Int? = null
         try {
             span?.toSentryTrace()?.let {
                 request = request.newBuilder().addHeader(it.name, it.value).build()
             }
             response = chain.proceed(request)
             code = response.code
+            return response
         } catch (e: IOException) {
             span?.throwable = e
             throw e
         } finally {
             span?.finish(SpanStatus.fromHttpStatusCode(code, SpanStatus.INTERNAL_ERROR))
-        }
 
-        if (code != -1) {
             val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
             request.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("requestBodySize", it)
             }
-            response.body?.contentLength().ifHasValidLength {
+            response?.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("responseBodySize", it)
             }
             hub.addBreadcrumb(breadcrumb)
         }
-        return response
     }
 
     private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
