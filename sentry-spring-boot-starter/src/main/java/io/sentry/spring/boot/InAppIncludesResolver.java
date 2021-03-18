@@ -25,7 +25,6 @@ public class InAppIncludesResolver implements ApplicationContextAware {
   @Nullable
   public List<String> resolveInAppIncludes() {
     if (applicationContext != null) {
-      // TODO: finding beans by annotation does not work in native image.
       Map<String, Object> beansWithAnnotation =
           applicationContext.getBeansWithAnnotation(SpringBootConfiguration.class);
       return beansWithAnnotation.values().stream()
