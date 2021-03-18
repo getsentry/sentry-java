@@ -32,7 +32,7 @@ public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer, 
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getType ()Ljava/lang/String;
 	public static fun http (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
-	public static fun http (Ljava/lang/String;Ljava/lang/String;I)Lio/sentry/Breadcrumb;
+	public static fun http (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)Lio/sentry/Breadcrumb;
 	public fun removeData (Ljava/lang/String;)V
 	public fun setCategory (Ljava/lang/String;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
@@ -1019,7 +1019,7 @@ public final class io/sentry/SpanStatus : java/lang/Enum {
 	public static final field UNKNOWN Lio/sentry/SpanStatus;
 	public static final field UNKNOWN_ERROR Lio/sentry/SpanStatus;
 	public static fun fromHttpStatusCode (I)Lio/sentry/SpanStatus;
-	public static fun fromHttpStatusCode (ILio/sentry/SpanStatus;)Lio/sentry/SpanStatus;
+	public static fun fromHttpStatusCode (Ljava/lang/Integer;Lio/sentry/SpanStatus;)Lio/sentry/SpanStatus;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SpanStatus;
 	public static fun values ()[Lio/sentry/SpanStatus;
 }
