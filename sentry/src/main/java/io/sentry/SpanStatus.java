@@ -91,8 +91,9 @@ public enum SpanStatus {
    * @return span status equivalent of http status code or defaultStatus if not found
    */
   public static @NotNull SpanStatus fromHttpStatusCode(
-      final int httpStatusCode, final @NotNull SpanStatus defaultStatus) {
-    final SpanStatus spanStatus = fromHttpStatusCode(httpStatusCode);
+      final @Nullable Integer httpStatusCode, final @NotNull SpanStatus defaultStatus) {
+    final SpanStatus spanStatus =
+        httpStatusCode != null ? fromHttpStatusCode(httpStatusCode) : defaultStatus;
     return spanStatus != null ? spanStatus : defaultStatus;
   }
 

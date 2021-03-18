@@ -6,6 +6,7 @@
 * Fix: Use logger set on SentryOptions in GsonSerializer (#1308)
 * Fix: Use the bindToScope correctly
 * Fix: set "java" platform to transactions #1332
+* Feat: Add OkHttp client application interceptor (#1330)
 
 # 4.3.0
 
