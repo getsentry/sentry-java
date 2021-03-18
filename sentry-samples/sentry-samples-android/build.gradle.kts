@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdkVersion(Config.Android.minSdkVersionNdk)
+        minSdkVersion(Config.Android.minSdkVersionOkHttp)
         targetSdkVersion(Config.Android.targetSdkVersion)
         versionCode = 2
         versionName = "1.1.0"
@@ -96,6 +96,7 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
     implementation(project(":sentry-android"))
+    implementation(project(":sentry-android-okhttp"))
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(project(":sentry-android")) {
