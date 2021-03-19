@@ -48,6 +48,10 @@ Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/gets
 
 [Adding Native support to our Android SDK](https://blog.sentry.io/2019/11/25/adding-native-support-to-our-android-sdk).
 
+[How to use Sentry Attachments with Mobile Applications](https://blog.sentry.io/2021/02/03/how-to-use-sentry-attachments-with-mobile-applications).
+
+[Performance Monitoring for Android Applications](https://blog.sentry.io/2021/03/18/performance-monitoring-for-android-applications).
+
 # Samples
 
 [Sample App. with Sentry Android SDK and Sentry Gradle Plugin](https://github.com/getsentry/examples/tree/master/android).
