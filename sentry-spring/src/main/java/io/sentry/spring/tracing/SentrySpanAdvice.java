@@ -26,6 +26,7 @@ public class SentrySpanAdvice implements MethodInterceptor {
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final ISpan activeSpan = hub.getSpan();
@@ -62,6 +63,7 @@ public class SentrySpanAdvice implements MethodInterceptor {
     }
   }
 
+  @SuppressWarnings("deprecation")
   private String resolveSpanOperation(
       Class<?> targetClass, Method method, @Nullable SentrySpan sentrySpan) {
     return sentrySpan == null || StringUtils.isEmpty(sentrySpan.value())

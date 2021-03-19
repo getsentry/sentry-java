@@ -15,9 +15,7 @@ android {
 
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)
-        minSdkVersion(Config.Android.minSdkVersion)
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        minSdkVersion(Config.Android.minSdkVersionOkHttp)
 
         versionName = project.version.toString()
         versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
@@ -72,7 +70,8 @@ kotlin {
 dependencies {
     api(project(":sentry"))
 
-    api(Config.Libs.timber)
+    implementation(Config.Libs.okhttpBom)
+    implementation(Config.Libs.okhttp)
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
@@ -81,6 +80,7 @@ dependencies {
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
+    testImplementation(Config.TestLibs.mockWebserver)
 }
 
 tasks.withType<Detekt> {

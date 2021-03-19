@@ -110,7 +110,7 @@ public final class Session {
         release);
   }
 
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getStarted() {
     if (started == null) {
       return null;
@@ -168,7 +168,7 @@ public final class Session {
     return duration;
   }
 
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getTimestamp() {
     final Date timestampRef = timestamp;
     return timestampRef != null ? (Date) timestampRef.clone() : null;
@@ -212,7 +212,7 @@ public final class Session {
    * @param timestamp the timestamp
    * @return duration in seconds
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private double calculateDurationTime(final @NotNull Date timestamp) {
     long diff = Math.abs(timestamp.getTime() - started.getTime());
     return (double) diff / 1000; // duration in seconds
@@ -261,7 +261,7 @@ public final class Session {
    * @param timestamp The timestamp
    * @return time stamp in milliseconds UTC
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private long getSequenceTimestamp(final @NotNull Date timestamp) {
     long sequence = timestamp.getTime();
     // if device has wrong date and time and it is nearly at the beginning of the epoch time.

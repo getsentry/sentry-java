@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * transaction.
  */
 public abstract class SentryBaseEvent {
+  public static final String DEFAULT_PLATFORM = "java";
   /**
    * Unique identifier of this event.
    *
@@ -59,6 +60,19 @@ public abstract class SentryBaseEvent {
    * <p>```json { "environment": "production" } ```
    */
   private String environment;
+
+  /**
+   * Platform identifier of this event (defaults to "other").
+   *
+   * <p>A string representing the platform the SDK is submitting from. This will be used by the
+   * Sentry interface to customize various components in the interface, but also to enter or skip
+   * stacktrace processing.
+   *
+   * <p>Acceptable values are: `as3`, `c`, `cfml`, `cocoa`, `csharp`, `elixir`, `haskell`, `go`,
+   * `groovy`, `java`, `javascript`, `native`, `node`, `objc`, `other`, `perl`, `php`, `python`,
+   * `ruby`
+   */
+  private @Nullable String platform;
 
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
@@ -175,5 +189,13 @@ public abstract class SentryBaseEvent {
 
   public void setEnvironment(String environment) {
     this.environment = environment;
+  }
+
+  public @Nullable String getPlatform() {
+    return platform;
+  }
+
+  public void setPlatform(final @Nullable String platform) {
+    this.platform = platform;
   }
 }

@@ -27,6 +27,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final Method mostSpecificMethod =
@@ -64,6 +65,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
     }
   }
 
+  @SuppressWarnings("deprecation")
   private @NotNull String resolveTransactionName(
       MethodInvocation invocation, @Nullable SentryTransaction sentryTransaction) {
     return sentryTransaction == null || StringUtils.isEmpty(sentryTransaction.value())

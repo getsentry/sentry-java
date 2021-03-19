@@ -42,7 +42,7 @@ public final class App implements IUnknownPropertiesConsumer, Cloneable {
     this.appIdentifier = appIdentifier;
   }
 
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public Date getAppStartTime() {
     final Date appStartTimeRef = appStartTime;
     return appStartTimeRef != null ? (Date) appStartTimeRef.clone() : null;

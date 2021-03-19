@@ -2,6 +2,7 @@ package io.sentry
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
@@ -106,5 +107,25 @@ class BreadcrumbTest {
         assertEquals("POST", breadcrumb.data["method"])
         assertEquals("http", breadcrumb.type)
         assertEquals("http", breadcrumb.category)
+    }
+
+    @Test
+    fun `creates HTTP breadcrumb with http status when status code is provided`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 400)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(400, breadcrumb.data["status_code"])
+    }
+
+    @Test
+    fun `creates HTTP breadcrumb without http status when code is null`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", null)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertFalse(breadcrumb.data.containsKey("status_code"))
     }
 }

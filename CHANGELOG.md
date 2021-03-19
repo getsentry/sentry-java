@@ -1,10 +1,16 @@
 # Unreleased
 
+# 4.4.0-alpha.1
+
+* Bump: sentry-native to 0.4.8
 * Feat: Add an overload for `startTransaction` that sets the created transaction to the Scope #1313
 * Ref: Separate user facing and protocol classes in the Performance feature (#1304)
 * Feat: Set SDK version on Transactions (#1307)
 * Fix: Use logger set on SentryOptions in GsonSerializer (#1308)
 * Fix: Use the bindToScope correctly
+* Fix: Allow 0.0 to be set on tracesSampleRate (#1328)
+* Fix: set "java" platform to transactions #1332
+* Feat: Add OkHttp client application interceptor (#1330)
 
 # 4.3.0
 
