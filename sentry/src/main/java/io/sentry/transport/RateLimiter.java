@@ -116,7 +116,7 @@ public final class RateLimiter {
    * @param itemType the itemType (eg event, session, etc...)
    * @return true if retry after or false otherwise
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private boolean isRetryAfter(final @NotNull String itemType) {
     final DataCategory dataCategory = getCategoryFromItemType(itemType);
     final Date currentDate = new Date(currentDateProvider.getCurrentTimeMillis());
@@ -171,7 +171,7 @@ public final class RateLimiter {
    * @param retryAfterHeader the retry after header
    * @param errorCode the error code if set
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public void updateRetryAfterLimits(
       final @Nullable String sentryRateLimitHeader,
       final @Nullable String retryAfterHeader,
@@ -233,7 +233,7 @@ public final class RateLimiter {
    * @param dataCategory the DataCategory
    * @param date the Date to be applied
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private void applyRetryAfterOnlyIfLonger(
       final @NotNull DataCategory dataCategory, final @NotNull Date date) {
     final Date oldDate = sentryRetryAfterLimit.get(dataCategory);

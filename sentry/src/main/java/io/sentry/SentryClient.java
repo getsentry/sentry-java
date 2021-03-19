@@ -577,7 +577,7 @@ public final class SentryClient implements ISentryClient {
 
   private static final class SortBreadcrumbsByDate implements Comparator<Breadcrumb> {
 
-    @SuppressWarnings("JdkObsolete")
+    @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
     @Override
     public int compare(final @NotNull Breadcrumb b1, final @NotNull Breadcrumb b2) {
       return b1.getTimestamp().compareTo(b2.getTimestamp());

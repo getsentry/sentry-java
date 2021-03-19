@@ -12,7 +12,7 @@ object Config {
         val androidGradle = "com.android.tools.build:gradle:4.1.2"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
-        val buildConfigVersion = "2.0.2"
+        val buildConfigVersion = "3.0.0"
         val springBoot = "org.springframework.boot"
         val springDependencyManagement = "io.spring.dependency-management"
         val springDependencyManagementVersion = "1.0.10.RELEASE"
@@ -39,7 +39,7 @@ object Config {
         val okhttp = "com.squareup.okhttp3:okhttp"
         // only bump gson if https://github.com/google/gson/issues/1597 is fixed
         val gson = "com.google.code.gson:gson:2.8.5"
-        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.5"
+        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.6"
 
         private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
@@ -87,9 +87,9 @@ object Config {
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
         val androidxJunit = "androidx.test.ext:junit:1.1.2"
         val androidxCoreKtx = "androidx.core:core-ktx:1.3.2"
-        val robolectric = "org.robolectric:robolectric:4.4"
+        val robolectric = "org.robolectric:robolectric:4.5.1"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val mockitoInline = "org.mockito:mockito-inline:3.6.0"
+        val mockitoInline = "org.mockito:mockito-inline:3.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
     }
@@ -100,15 +100,15 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "5.7.0"
+        val spotlessVersion = "5.11.0"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.3.0"
-        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.34.0"
+        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.36.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.14.2"
+        val detektVersion = "1.16.0"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.2.4"
+        val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.5.0"
         val binaryCompatibilityValidator = "binary-compatibility-validator"
     }
 
@@ -145,7 +145,7 @@ object Config {
         val jetbrainsAnnotations = "org.jetbrains:annotations:20.1.0"
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
-        val errorprone = "com.google.errorprone:error_prone_core:2.4.0"
+        val errorprone = "com.google.errorprone:error_prone_core:2.5.1"
         val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
     }
 
