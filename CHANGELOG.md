@@ -9,6 +9,7 @@
 * Fix: Allow 0.0 to be set on tracesSampleRate (#1328)
 * Fix: set "java" platform to transactions #1332
 * Feat: Add OkHttp client application interceptor (#1330)
+* Fix: Allow disabling tracing through SentryOptions (#1337)
 
 # 4.3.0
 
