@@ -401,6 +401,9 @@ public final class SentryClient implements ISentryClient {
 
   private @NotNull SentryTransaction processTransaction(
       final @NotNull SentryTransaction transaction) {
+    if (transaction.getPlatform() == null) {
+      transaction.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
+    }
     if (transaction.getRelease() == null) {
       transaction.setRelease(options.getRelease());
     }

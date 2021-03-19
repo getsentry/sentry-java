@@ -6,6 +6,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import io.sentry.Sentry
 import io.sentry.SpanStatus
+import io.sentry.android.okhttp.SentryOkHttpInterceptor
 import io.sentry.samples.android.databinding.ActivitySecondBinding
 import okhttp3.OkHttpClient
 import retrofit2.Call
@@ -18,7 +19,7 @@ class SecondActivity : AppCompatActivity() {
 
     private lateinit var repos: List<Repo>
 
-    private val client = OkHttpClient.Builder().addInterceptor(NetworkInterceptor()).build()
+    private val client = OkHttpClient.Builder().addInterceptor(SentryOkHttpInterceptor()).build()
 
     private lateinit var binding: ActivitySecondBinding
 
