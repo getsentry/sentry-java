@@ -1,3 +1,5 @@
+# Unreleased
+
 # 4.4.0-alpha.1
 
 * Bump: sentry-native to 0.4.8
