@@ -1,7 +1,6 @@
 import java.math.BigDecimal
 
 object Config {
-    // issues with Kotlin 1.4 and Dokka https://github.com/Kotlin/dokka/issues/1791
     val kotlinVersion = "1.4.30"
     val kotlinStdLib = "stdlib-jdk8"
 
@@ -21,6 +20,11 @@ object Config {
         val grettyVersion = "3.0.3"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.14.2"
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.4.30"
+
+        fun shouldSignArtifacts(version: String): Boolean {
+            return !(System.getenv("CI")?.toBoolean() ?: false) &&
+                    !version.toUpperCase().endsWith("SNAPSHOT")
+        }
     }
 
     object Android {

@@ -83,8 +83,10 @@ repositories {
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
     jvmTarget = "1.8"
+    languageVersion = Config.springKotlinCompatibleLanguageVersion
 }
 val compileTestKotlin: KotlinCompile by tasks
 compileTestKotlin.kotlinOptions {
     jvmTarget = "1.8"
+    languageVersion = Config.springKotlinCompatibleLanguageVersion
 }

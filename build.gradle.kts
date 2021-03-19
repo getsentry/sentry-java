@@ -1,5 +1,6 @@
 import com.diffplug.spotless.LineEnding
 import com.vanniktech.maven.publish.MavenPublishPlugin
+import com.vanniktech.maven.publish.MavenPublishPluginExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -90,6 +91,11 @@ subprojects {
         }
         afterEvaluate {
             apply<MavenPublishPlugin>()
+
+            configure<MavenPublishPluginExtension> {
+                val sign = Config.BuildPlugins.shouldSignArtifacts(project.version.toString())
+                releaseSigningEnabled = sign
+            }
 
             // signing info and maven central info go to:
             // ~/.gradle/gradle.properties
