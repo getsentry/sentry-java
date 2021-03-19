@@ -3,6 +3,7 @@ io.sentry.adapters
 io.sentry.android.core
 io.sentry.android.core.util
 io.sentry.android.ndk
+io.sentry.android.okhttp
 io.sentry.android.timber
 io.sentry.cache
 io.sentry.config
