@@ -675,7 +675,7 @@ public class SentryOptions {
       throw new IllegalArgumentException(
           "The value "
               + sampleRate
-              + " is not valid. Use null to disable or values between 0.01 and 1.0.");
+              + " is not valid. Use null to disable or values > 0.0 and <= 1.0.");
     }
     this.sampleRate = sampleRate;
   }
