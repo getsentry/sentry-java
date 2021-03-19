@@ -171,6 +171,18 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
+    fun `when traces sample rate is set to null and tracing is enabled, traces sample rate should be set to 0`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+            "sentry.enable-tracing=true"
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.isEnableTracing).isTrue()
+            assertThat(options.tracesSampleRate).isNotNull().isEqualTo(0.0)
+        }
+    }
+
+    @Test
     fun `sets sentryClientName property on SentryOptions`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {

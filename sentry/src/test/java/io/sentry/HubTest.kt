@@ -1075,7 +1075,9 @@ class HubTest {
 
     @Test
     fun `when startTransaction and no tracing sampling is configured, event is not sampled`() {
-        val hub = generateHub()
+        val hub = generateHub(Sentry.OptionsConfiguration {
+            it.tracesSampleRate = 0.0
+        })
 
         val transaction = hub.startTransaction("name", "op")
         assertFalse(transaction.isSampled!!)
@@ -1103,6 +1105,16 @@ class HubTest {
         val sut = Hub(options)
         sut.close()
         verify(executor).close(any())
+    }
+
+    @Test
+    fun `when tracesSampleRate and tracesSampler are not set on SentryOptions, startTransaction returns NoOp`() {
+        val hub = generateHub(Sentry.OptionsConfiguration {
+            it.tracesSampleRate = null
+            it.tracesSampler = null
+        })
+        val transaction = hub.startTransaction(TransactionContext("name", "op", true))
+        assertTrue(transaction is NoOpTransaction)
     }
     //endregion
 
@@ -1173,12 +1185,14 @@ class HubTest {
     }
     // endregion
 
-    private fun generateHub(): IHub {
+    private fun generateHub(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IHub {
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
             setSerializer(mock())
+            tracesSampleRate = 1.0
         }
+        optionsConfiguration?.configure(options)
         return Hub(options)
     }
 
@@ -1187,6 +1201,7 @@ class HubTest {
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
+        options.tracesSampleRate = 1.0
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)

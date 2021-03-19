@@ -103,6 +103,9 @@ public class SentryAutoConfiguration {
 
       options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME);
       options.setSdkVersion(createSdkVersion(options));
+      if (options.getTracesSampleRate() == null) {
+        options.setTracesSampleRate(0.0);
+      }
       Sentry.init(options);
       return HubAdapter.getInstance();
     }
