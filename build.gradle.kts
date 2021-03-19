@@ -99,7 +99,6 @@ subprojects {
 
             // signing info and maven central info go to:
             // ~/.gradle/gradle.properties
-            // signing release is enabled by default, but the plugin does not sign versions ending with -SNAPSHOT
 
             // signing info:
             // signing.keyId=id
