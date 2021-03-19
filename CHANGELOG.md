@@ -1,4 +1,4 @@
-# Unreleased
+# 4.4.0-alpha.1
 
 * Bump: sentry-native to 0.4.8
 * Feat: Add an overload for `startTransaction` that sets the created transaction to the Scope #1313
