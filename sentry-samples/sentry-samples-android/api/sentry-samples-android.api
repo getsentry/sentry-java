@@ -14,6 +14,7 @@ public abstract interface class io/sentry/samples/android/GitHubService {
 public class io/sentry/samples/android/MainActivity : androidx/appcompat/app/AppCompatActivity {
 	public fun <init> ()V
 	protected fun onCreate (Landroid/os/Bundle;)V
+	protected fun onResume ()V
 }
 
 public class io/sentry/samples/android/MyApplication : android/app/Application {
@@ -25,11 +26,6 @@ public class io/sentry/samples/android/NativeSample {
 	public fun <init> ()V
 	public static fun crash ()V
 	public static fun message ()V
-}
-
-public final class io/sentry/samples/android/NetworkInterceptor : okhttp3/Interceptor {
-	public fun <init> ()V
-	public fun intercept (Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;
 }
 
 public final class io/sentry/samples/android/Repo {
