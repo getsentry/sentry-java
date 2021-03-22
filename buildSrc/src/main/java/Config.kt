@@ -1,10 +1,10 @@
 import java.math.BigDecimal
 
 object Config {
-    val kotlinVersion = "1.4.10"
+    val kotlinVersion = "1.4.30"
     val kotlinStdLib = "stdlib-jdk8"
 
-    val springBootVersion = "2.3.4.RELEASE"
+    val springBootVersion = "2.4.4"
     // Spring is currently not compatible with Kotlin 1.4
     val springKotlinCompatibleLanguageVersion = "1.3"
 
@@ -15,9 +15,16 @@ object Config {
         val buildConfigVersion = "3.0.0"
         val springBoot = "org.springframework.boot"
         val springDependencyManagement = "io.spring.dependency-management"
-        val springDependencyManagementVersion = "1.0.10.RELEASE"
+        val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
         val grettyVersion = "3.0.3"
+        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.14.2"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.4.30"
+
+        fun shouldSignArtifacts(version: String): Boolean {
+            return !(System.getenv("CI")?.toBoolean() ?: false) &&
+                    !version.toUpperCase().endsWith("SNAPSHOT")
+        }
     }
 
     object Android {
@@ -122,19 +129,6 @@ object Config {
         val SENTRY_SPRING_BOOT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
-        val website = "https://sentry.io"
-        val userOrg = "getsentry"
-        val androidBintrayRepoName = "sentry-android"
-        val javaBintrayRepoName = "sentry-java"
-        val licence = "MIT"
-        val licenceUrl = "http://www.opensource.org/licenses/mit-license.php"
-        val issueTracker = "https://github.com/getsentry/sentry-java/issues"
-        val repository = "https://github.com/getsentry/sentry-java"
-        val devName = "Sentry Team and Contributors"
-        val devEmail = "sdks@sentry.io"
-        val scmConnection = "scm:git:git://github.com/getsentry/sentry-java.git"
-        val scmDevConnection = "scm:git:ssh://github.com:getsentry/sentry-java.git"
-        val scmUrl = "https://github.com/getsentry/sentry-java/tree/main"
         val versionNameProp = "versionName"
         val buildVersionCodeProp = "buildVersionCode"
     }
@@ -147,11 +141,6 @@ object Config {
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.5.1"
         val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
-    }
-
-    object Deploy {
-        val novodaBintrayPlugin = "com.novoda:bintray-release:1.0.3"
-        val sign = true
     }
 
     object NativePlugins {

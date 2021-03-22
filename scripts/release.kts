@@ -19,7 +19,7 @@
  * To execute the script two environment variables that are used by Maven have to be present: BINTRAY_USERNAME, BINTRAY_API_KEY
  *
  * Example usage (assuming that the script is executed from the `<project-root>/scripts` directory and the distribution files are in `<project-root>/dist`):
- * $ kotlinc -script release.kts -- -d ../dist  -javaRepositoryUrl https://api.bintray.com/maven/sentry/sentry-java/sentry-java/ -androidRepositoryUrl https://api.bintray.com/maven/sentry/sentry-android/sentry-java/ | sh
+ * $ kotlinc -script release.kts -- -d ../dist | sh
  *
  */
 import java.io.File
@@ -35,24 +35,14 @@ val path = argOrDefault("d", ".")
 val settingsPath = argOrDefault("s", "./settings.xml")
 
 /**
- * Bintray repository URL for non-Android projects.
+ * Maven repository URL.
  */
-val javaRepositoryUrl = requiredArg("javaRepositoryUrl")
-
-/**
- * Bintray repository URL for Android projects.
- */
-val androidRepositoryUrl = requiredArg("androidRepositoryUrl")
+val repositoryUrl = argOrDefault("repositoryUrl", "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
 
 /**
  * Maven server id in the settings.xml file.
  */
-val repositoryId = argOrDefault("repositoryId", "bintray")
-
-/**
- * If package should be published on bintray or just uploaded but not published.
- */
-val publish = if (argOrDefault("publish", "false") == "true") 1 else 0
+val repositoryId = argOrDefault("repositoryId", "ossrh")
 
 File(path)
     .listFiles { file -> file.isDirectory() }
@@ -61,21 +51,18 @@ File(path)
         val module = folder.name
 
         val file: String
-        val repositoryUrl: String
 
         val androidFile = folder.listFiles { it -> it.name.contains("release") && it.extension == "aar" }.firstOrNull()
         if (androidFile != null) {
             file = androidFile.path
-            repositoryUrl = androidRepositoryUrl
         } else {
             file = "$path/$module.jar"
-            repositoryUrl = javaRepositoryUrl
         }
         val javadocFile = "$path/$module-javadoc.jar"
         val sourcesFile = "$path/$module-sources.jar"
         val pomFile = "$path/pom-default.xml"
 
-        val command = "./mvnw deploy:deploy-file -Dfile=$file -Dfiles=$javadocFile,$sourcesFile -Dclassifiers=sources,javadoc -Dtypes=jar,jar -DpomFile=$pomFile -DrepositoryId=$repositoryId -Durl=$repositoryUrl\\;publish\\=$publish --settings $settingsPath"
+        val command = "./mvnw deploy:deploy-file -Dfile=$file -Dfiles=$javadocFile,$sourcesFile -Dclassifiers=sources,javadoc -Dtypes=jar,jar -DpomFile=$pomFile -DrepositoryId=$repositoryId -Durl=$repositoryUrl --settings $settingsPath"
         println(command)
     }
 
