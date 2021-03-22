@@ -26,6 +26,8 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -35,6 +37,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.GitProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
@@ -136,7 +139,7 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+      @Conditional(SentryTracingCondition.class)
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
           final @NotNull IHub hub, final @NotNull SentryRequestResolver sentryRequestResolver) {
@@ -148,7 +151,7 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration
-    @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+    @Conditional(SentryTracingCondition.class)
     @ConditionalOnClass(ProceedingJoinPoint.class)
     @Import(SentryAdviceConfiguration.class)
     @Open
@@ -202,5 +205,24 @@ public class SentryAutoConfiguration {
 
       return sdkVersion;
     }
+  }
+
+  static final class SentryTracingCondition extends AnyNestedCondition {
+
+    public SentryTracingCondition() {
+      super(ConfigurationPhase.REGISTER_BEAN);
+    }
+
+    @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+    @SuppressWarnings("UnusedNestedClass")
+    private static class SentryTracingEnabled {}
+
+    @ConditionalOnProperty(name = "sentry.traces-sample-rate")
+    @SuppressWarnings("UnusedNestedClass")
+    private static class SentryTracesSampleRateCondition {}
+
+    @ConditionalOnBean(SentryOptions.TracesSamplerCallback.class)
+    @SuppressWarnings("UnusedNestedClass")
+    private static class SentryTracesSamplerBeanCondition {}
   }
 }
