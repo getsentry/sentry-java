@@ -401,6 +401,9 @@ public final class SentryClient implements ISentryClient {
 
   private @NotNull SentryTransaction processTransaction(
       final @NotNull SentryTransaction transaction) {
+    if (transaction.getPlatform() == null) {
+      transaction.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
+    }
     if (transaction.getRelease() == null) {
       transaction.setRelease(options.getRelease());
     }
@@ -574,7 +577,7 @@ public final class SentryClient implements ISentryClient {
 
   private static final class SortBreadcrumbsByDate implements Comparator<Breadcrumb> {
 
-    @SuppressWarnings("JdkObsolete")
+    @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
     @Override
     public int compare(final @NotNull Breadcrumb b1, final @NotNull Breadcrumb b2) {
       return b1.getTimestamp().compareTo(b2.getTimestamp());

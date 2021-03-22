@@ -97,7 +97,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @return the timestamp
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @NotNull Date getTimestamp() {
     return (Date) timestamp.clone();
   }

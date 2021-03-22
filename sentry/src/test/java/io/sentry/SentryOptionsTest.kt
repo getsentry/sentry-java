@@ -97,6 +97,24 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when setTracesSampleRate is set to exactly 0, value is set`() {
+        val options = SentryOptions().apply {
+            this.tracesSampleRate = 0.0
+        }
+        assertEquals(0.0, options.tracesSampleRate)
+    }
+
+    @Test
+    fun `when setTracesSampleRate is set to higher than 1_0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().tracesSampleRate = 1.0000000000001 }
+    }
+
+    @Test
+    fun `when setTracesSampleRate is set to lower than 0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().tracesSampleRate = -0.0000000000001 }
+    }
+
+    @Test
     fun `when there's no cacheDirPath, outboxPath returns null`() {
         val options = SentryOptions()
         assertNull(options.outboxPath)
