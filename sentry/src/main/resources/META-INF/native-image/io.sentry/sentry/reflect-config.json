@@ -142,5 +142,22 @@
     "name":"io.sentry.protocol.User",
     "allDeclaredFields":true,
     "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.SentryEnvelope",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.SentryEnvelopeHeader",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.SentryEnvelopeItem",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.SentryEnvelopeItemHeader",
+    "allDeclaredFields":true
   }
 ]
