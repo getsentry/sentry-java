@@ -15,6 +15,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.rules.TemporaryFolder
+import kotlin.test.assertNull
 
 class SentryTest {
 
@@ -161,6 +162,46 @@ class SentryTest {
         assertEquals("name", transaction.name)
         assertEquals("op", transaction.operation)
         assertEquals("desc", transaction.description)
+    }
+
+    @Test
+    fun `continueFromHeader creates transaction from a header`() {
+        Sentry.init { it.dsn = dsn }
+
+        val sentryId = SentryId()
+        val spanId = SpanId()
+        val header = "$sentryId-$spanId-1"
+
+        val transaction = Sentry.continueFromHeader("name", "op", header) as ITransaction
+        assertEquals("name", transaction.name)
+        assertEquals("op", transaction.operation)
+        assertEquals(sentryId, transaction.spanContext.traceId)
+        assertEquals(spanId, transaction.spanContext.parentSpanId)
+        assertEquals(true, (transaction.spanContext as TransactionContext).parentSampled)
+    }
+
+    @Test
+    fun `continueFromHeader binds transaction to the scope`() {
+        Sentry.init { it.dsn = dsn }
+
+        val sentryId = SentryId()
+        val spanId = SpanId()
+        val header = "$sentryId-$spanId-1"
+
+        val transaction = Sentry.continueFromHeader("name", "op", header)
+        assertEquals(transaction, Sentry.getSpan())
+    }
+
+    @Test
+    fun `when bindToScope is false, continueFromHeader does not bind transaction to the scope`() {
+        Sentry.init { it.dsn = dsn }
+
+        val sentryId = SentryId()
+        val spanId = SpanId()
+        val header = "$sentryId-$spanId-1"
+
+        Sentry.continueFromHeader("name", "op", header, false)
+        assertNull(Sentry.getSpan())
     }
 
     private fun getTempPath(): String {

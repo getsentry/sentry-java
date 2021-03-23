@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
+import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.io.File;
@@ -665,6 +666,42 @@ public final class Sentry {
    */
   public static @Nullable ISpan getSpan() {
     return getCurrentHub().getSpan();
+  }
+
+  /**
+   * Starts a Transaction being a continuation of the span described in a `header` parameter.
+   * Started transaction is set on the scope.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param header the string representing {@link SentryTraceHeader}
+   * @return created transaction
+   */
+  public static ISpan continueFromHeader(
+      final @NotNull String name, final @NotNull String operation, final @NotNull String header)
+      throws InvalidSentryTraceHeaderException {
+    return startTransaction(
+        TransactionContext.fromSentryTrace(name, operation, new SentryTraceHeader(header)));
+  }
+
+  /**
+   * Starts a Transaction being a continuation of the span described in a `header` parameter.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param header the string representing {@link SentryTraceHeader}
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction
+   */
+  public static ISpan continueFromHeader(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @NotNull String header,
+      boolean bindToScope)
+      throws InvalidSentryTraceHeaderException {
+    return startTransaction(
+        TransactionContext.fromSentryTrace(name, operation, new SentryTraceHeader(header)),
+        bindToScope);
   }
 
   /**

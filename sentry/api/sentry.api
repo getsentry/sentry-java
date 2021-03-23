@@ -516,6 +516,8 @@ public final class io/sentry/Sentry {
 	public static fun clearBreadcrumbs ()V
 	public static fun close ()V
 	public static fun configureScope (Lio/sentry/ScopeCallback;)V
+	public static fun continueFromHeader (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
+	public static fun continueFromHeader (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lio/sentry/ISpan;
 	public static fun endSession ()V
 	public static fun flush (J)V
 	public static fun getLastEventId ()Lio/sentry/protocol/SentryId;
