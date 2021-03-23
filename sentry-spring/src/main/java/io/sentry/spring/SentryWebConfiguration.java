@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 
 /** Registers Spring Web specific Sentry beans. */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Open
 public class SentryWebConfiguration {
 

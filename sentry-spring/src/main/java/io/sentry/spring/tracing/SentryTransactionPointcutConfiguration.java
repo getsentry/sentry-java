@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /** AOP pointcut configuration for {@link SentryTransaction}. */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Open
 public class SentryTransactionPointcutConfiguration {
 

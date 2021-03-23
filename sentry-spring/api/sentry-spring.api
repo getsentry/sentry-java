@@ -72,9 +72,9 @@ public class io/sentry/spring/SentryWebConfiguration {
 public class io/sentry/spring/tracing/SentryAdviceConfiguration {
 	public fun <init> ()V
 	public fun sentrySpanAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
-	public fun sentrySpanAdvisor (Lio/sentry/IHub;Lorg/springframework/aop/Pointcut;)Lorg/springframework/aop/Advisor;
+	public fun sentrySpanAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 	public fun sentryTransactionAdvice (Lio/sentry/IHub;)Lorg/aopalliance/aop/Advice;
-	public fun sentryTransactionAdvisor (Lio/sentry/IHub;Lorg/springframework/aop/Pointcut;)Lorg/springframework/aop/Advisor;
+	public fun sentryTransactionAdvisor (Lorg/springframework/aop/Pointcut;Lorg/aopalliance/aop/Advice;)Lorg/springframework/aop/Advisor;
 }
 
 public abstract interface annotation class io/sentry/spring/tracing/SentrySpan : java/lang/annotation/Annotation {

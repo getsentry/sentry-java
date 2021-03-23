@@ -1,0 +1,163 @@
+[
+  {
+    "name":"io.sentry.Breadcrumb",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.SentryBaseEvent",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.SentryEvent",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.SentryValues",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.SpanContext",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.SpanStatus",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.SpanId",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.App",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.Browser",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.Contexts",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.DebugImage",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.DebugMeta",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.Device",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.Gpu",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.Mechanism",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.Message",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.OperatingSystem",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.Request",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SdkInfo",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SdkVersion",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SentryException",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SentryId",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SentryPackage",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SentryRuntime",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SentrySpan",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.protocol.SentryStackFrame",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SentryStackTrace",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SentryThread",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.protocol.SentryTransaction",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.protocol.User",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.SentryEnvelope",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.SentryEnvelopeHeader",
+    "allDeclaredFields":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"io.sentry.SentryEnvelopeItem",
+    "allDeclaredFields":true
+  },
+  {
+    "name":"io.sentry.SentryEnvelopeItemHeader",
+    "allDeclaredFields":true
+  }
+]

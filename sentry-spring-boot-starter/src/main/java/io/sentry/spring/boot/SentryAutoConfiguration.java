@@ -41,13 +41,13 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.client.RestTemplate;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sentry.dsn")
 @Open
 public class SentryAutoConfiguration {
 
   /** Registers general purpose Sentry related beans. */
-  @Configuration
+  @Configuration(proxyBeanMethods = false)
   @EnableConfigurationProperties(SentryProperties.class)
   @Open
   static class HubConfiguration {
@@ -108,7 +108,7 @@ public class SentryAutoConfiguration {
     }
 
     /** Registers beans specific to Spring MVC. */
-    @Configuration
+    @Configuration(proxyBeanMethods = false)
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     @Import(SentryWebConfiguration.class)
     @Open
@@ -144,27 +144,27 @@ public class SentryAutoConfiguration {
       }
     }
 
-    @Configuration
+    @Configuration(proxyBeanMethods = false)
     @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
     @ConditionalOnClass(ProceedingJoinPoint.class)
     @Import(SentryAdviceConfiguration.class)
     @Open
     static class SentryPerformanceAspectsConfiguration {
 
-      @Configuration
+      @Configuration(proxyBeanMethods = false)
       @ConditionalOnMissingBean(name = "sentryTransactionPointcut")
       @Import(SentryTransactionPointcutConfiguration.class)
       @Open
       static class SentryTransactionPointcutAutoConfiguration {}
 
-      @Configuration
+      @Configuration(proxyBeanMethods = false)
       @ConditionalOnMissingBean(name = "sentrySpanPointcut")
       @Import(SentrySpanPointcutConfiguration.class)
       @Open
       static class SentrySpanPointcutAutoConfiguration {}
     }
 
-    @Configuration
+    @Configuration(proxyBeanMethods = false)
     @AutoConfigureBefore(RestTemplateAutoConfiguration.class)
     @ConditionalOnClass(RestTemplate.class)
     @Open
@@ -175,7 +175,7 @@ public class SentryAutoConfiguration {
       }
     }
 
-    @Configuration
+    @Configuration(proxyBeanMethods = false)
     @ConditionalOnMissingBean(ITransportFactory.class)
     @ConditionalOnClass(ApacheHttpClientTransportFactory.class)
     @Open
