@@ -1,5 +1,7 @@
 # Unreleased
 
+* Feat: add continueFromHeader methods to Sentry (#1349)
+
 # 4.4.0-alpha.1
 
 * Bump: sentry-native to 0.4.8
