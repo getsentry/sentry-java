@@ -677,7 +677,7 @@ public final class Sentry {
    * @param header the string representing {@link SentryTraceHeader}
    * @return created transaction
    */
-  public static ISpan continueFromHeader(
+  public static @NotNull ISpan continueFromHeader(
       final @NotNull String name, final @NotNull String operation, final @NotNull String header)
       throws InvalidSentryTraceHeaderException {
     return startTransaction(
@@ -693,7 +693,7 @@ public final class Sentry {
    * @param bindToScope if transaction should be bound to scope
    * @return created transaction
    */
-  public static ISpan continueFromHeader(
+  public static @NotNull ISpan continueFromHeader(
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull String header,
