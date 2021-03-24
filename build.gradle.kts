@@ -1,6 +1,6 @@
 import com.diffplug.spotless.LineEnding
-import com.novoda.gradle.release.PublishExtension
-import com.novoda.gradle.release.ReleasePlugin
+import com.vanniktech.maven.publish.MavenPublishPlugin
+import com.vanniktech.maven.publish.MavenPublishPluginExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -9,6 +9,7 @@ plugins {
     id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply true
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
+    `maven-publish`
 }
 
 buildscript {
@@ -21,8 +22,10 @@ buildscript {
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
         classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
+        classpath(Config.BuildPlugins.gradleMavenPublishPlugin)
+        // dokka is required by gradle-maven-publish-plugin.
+        classpath(Config.BuildPlugins.dokkaPlugin)
         classpath(Config.QualityPlugins.errorpronePlugin)
-        classpath(Config.Deploy.novodaBintrayPlugin)
         classpath(Config.QualityPlugins.gradleVersionsPlugin)
 
         // add classpath of androidNativeBundle
@@ -86,29 +89,25 @@ subprojects {
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
             }
         }
+        afterEvaluate {
+            apply<MavenPublishPlugin>()
 
-        apply<ReleasePlugin>()
+            configure<MavenPublishPluginExtension> {
+                val sign = Config.BuildPlugins.shouldSignArtifacts(project.version.toString())
+                releaseSigningEnabled = sign
+            }
 
-        configure<PublishExtension> {
-            userOrg = Config.Sentry.userOrg
-            groupId = project.group.toString()
-            publishVersion = project.version.toString()
-            desc = Config.Sentry.description
-            website = Config.Sentry.website
-            repoName = if (project.name.contains("android")) Config.Sentry.androidBintrayRepoName else Config.Sentry.javaBintrayRepoName
-            setLicences(Config.Sentry.licence)
-            setLicenceUrls(Config.Sentry.licenceUrl)
-            issueTracker = Config.Sentry.issueTracker
-            repository = Config.Sentry.repository
-            sign = Config.Deploy.sign
-            artifactId = project.name
-            uploadName = "${project.group}:${project.name}"
-            devId = Config.Sentry.userOrg
-            devName = Config.Sentry.devName
-            devEmail = Config.Sentry.devEmail
-            scmConnection = Config.Sentry.scmConnection
-            scmDevConnection = Config.Sentry.scmDevConnection
-            scmUrl = Config.Sentry.scmUrl
+            // signing info and maven central info go to:
+            // ~/.gradle/gradle.properties
+
+            // signing info:
+            // signing.keyId=id
+            // signing.password=password
+            // signing.secretKeyRingFile=file path
+
+            // maven central info:
+            // mavenCentralRepositoryUsername=user name
+            // mavenCentralRepositoryPassword=password
         }
     }
 }

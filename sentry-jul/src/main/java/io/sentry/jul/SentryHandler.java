@@ -154,7 +154,7 @@ public final class SentryHandler extends Handler {
    * @return the sentry event
    */
   // for the Android compatibility we must use old Java Date class
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   @NotNull
   SentryEvent createEvent(final @NotNull LogRecord record) {
     final SentryEvent event = new SentryEvent(new Date(record.getMillis()));

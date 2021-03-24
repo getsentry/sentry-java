@@ -269,7 +269,7 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
     this.screenDpi = screenDpi;
   }
 
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public Date getBootTime() {
     final Date bootTimeRef = bootTime;
     return bootTimeRef != null ? (Date) bootTimeRef.clone() : null;

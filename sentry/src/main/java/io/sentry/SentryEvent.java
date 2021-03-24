@@ -133,7 +133,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     this(new SentryId(), timestamp);
   }
 
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public Date getTimestamp() {
     return (Date) timestamp.clone();
   }
