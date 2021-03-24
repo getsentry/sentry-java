@@ -1,8 +1,12 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import io.sentry.config.PropertiesProviderFactory
 import java.io.File
+import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -183,6 +187,16 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when ignored exception is not a Throwable subclass, its skipped`() {
+        val options = SentryOptions()
+        options.setIgnoredExceptionsForType(setOf(java.lang.IllegalArgumentException::class.java, Sentry::class.java))
+        assertNotNull(options.ignoredExceptionsForType) {
+            assertTrue(it.contains(java.lang.IllegalArgumentException::class.java))
+            assertEquals(1, it.size)
+        }
+    }
+
+    @Test
     fun `copies options from another SentryOptions instance`() {
         val externalOptions = SentryOptions()
         externalOptions.dsn = "http://key@localhost/proj"
@@ -253,7 +267,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertNotNull(options.proxy)
             assertEquals("proxy.example.com", options.proxy!!.host)
             assertEquals("9090", options.proxy!!.port)
@@ -275,7 +289,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertNotNull(options.proxy)
             assertEquals("proxy.example.com", options.proxy!!.host)
             assertEquals("80", options.proxy!!.port)
@@ -296,7 +310,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         } finally {
             temporaryFolder.delete()
@@ -314,7 +328,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertNotNull(options.enableUncaughtExceptionHandler)
             assertTrue(options.enableUncaughtExceptionHandler!!)
         } finally {
@@ -333,7 +347,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertNotNull(options.enableUncaughtExceptionHandler)
             assertFalse(options.enableUncaughtExceptionHandler!!)
         } finally {
@@ -351,7 +365,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertNull(options.enableUncaughtExceptionHandler)
         } finally {
             temporaryFolder.delete()
@@ -369,7 +383,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertTrue(options.isDebug)
         } finally {
             temporaryFolder.delete()
@@ -387,7 +401,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertFalse(options.isDebug)
         } finally {
             temporaryFolder.delete()
@@ -404,7 +418,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             val mergeResult = SentryOptions().apply {
                 setDebug(true)
             }
@@ -432,7 +446,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertEquals(listOf("org.springframework", "com.myapp"), options.inAppIncludes)
             assertEquals(listOf("org.jboss", "com.microsoft"), options.inAppExcludes)
         } finally {
@@ -451,7 +465,7 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertEquals(0.2, options.tracesSampleRate)
         } finally {
             temporaryFolder.delete()
@@ -469,8 +483,37 @@ class SentryOptionsTest {
         System.setProperty("sentry.properties.file", file.absolutePath)
 
         try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), mock())
             assertTrue(options.isEnableDeduplication)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with ignored exception types using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        // Setting few types of classes:
+        // - RuntimeException and IllegalStateException - valid exception classes
+        // - NonExistingClass - class that does not exist - should not trigger a failure to create options
+        // - io.sentry.Sentry - class that does not extend Throwable - should not trigger a failure
+        file.appendText("ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,com.xx.NonExistingClass,io.sentry.Sentry")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        val logger = mock<ILogger>()
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), logger)
+            assertNotNull(options.ignoredExceptionsForType) {
+                assertTrue(it.contains(RuntimeException::class.java))
+                assertTrue(it.contains(IllegalStateException::class.java))
+            }
+            verify(logger).log(eq(SentryLevel.WARNING), any<String>(), eq("com.xx.NonExistingClass"), eq("com.xx.NonExistingClass"))
+            verify(logger).log(eq(SentryLevel.WARNING), any<String>(), eq("io.sentry.Sentry"), eq("io.sentry.Sentry"))
         } finally {
             temporaryFolder.delete()
         }

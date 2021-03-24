@@ -10,8 +10,10 @@ import io.sentry.transport.NoOpTransportGate;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.net.ssl.HostnameVerifier;
@@ -35,6 +37,9 @@ public class SentryOptions {
    * means just adding data OR return null in case the event will be dropped and not sent.
    */
   private final @NotNull List<EventProcessor> eventProcessors = new CopyOnWriteArrayList<>();
+
+  /** Exceptions that once captured will not be sent to Sentry as {@link SentryEvent}. */
+  private @Nullable Set<Class<? extends Throwable>> ignoredExceptionsForType;
 
   /**
    * Code that provides middlewares, bindings or hooks into certain frameworks or environments,
@@ -267,7 +272,9 @@ public class SentryOptions {
    * @param propertiesProvider the properties provider
    * @return the sentry options
    */
-  public static @NotNull SentryOptions from(final @NotNull PropertiesProvider propertiesProvider) {
+  @SuppressWarnings("unchecked")
+  public static @NotNull SentryOptions from(
+      final @NotNull PropertiesProvider propertiesProvider, final @NotNull ILogger logger) {
     final SentryOptions options = new SentryOptions();
     options.setDsn(propertiesProvider.getProperty("dsn"));
     options.setEnvironment(propertiesProvider.getProperty("environment"));
@@ -298,6 +305,27 @@ public class SentryOptions {
     }
     for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
       options.addInAppExclude(inAppExclude);
+    }
+    for (final String ignoredExceptionType :
+        propertiesProvider.getList("ignored-exceptions-for-type")) {
+      try {
+        Class<?> clazz = Class.forName(ignoredExceptionType);
+        if (Throwable.class.isAssignableFrom(clazz)) {
+          options.addIgnoredExceptionForType((Class<? extends Throwable>) clazz);
+        } else {
+          logger.log(
+              SentryLevel.WARNING,
+              "Skipping setting %s as ignored-exception-for-type. Reason: %s does not extend Throwable",
+              ignoredExceptionType,
+              ignoredExceptionType);
+        }
+      } catch (ClassNotFoundException e) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Skipping setting %s as ignored-exception-for-type. Reason: %s class is not found",
+            ignoredExceptionType,
+            ignoredExceptionType);
+      }
     }
     return options;
   }
@@ -1268,6 +1296,60 @@ public class SentryOptions {
     this.enableDeduplication = enableDeduplication;
   }
 
+  /**
+   * Returns the list of exception classes that once captured will not be sent to Sentry as {@link
+   * SentryEvent}.
+   *
+   * @return the list of exception classes that once captured will not be sent to Sentry as {@link
+   *     SentryEvent}.
+   */
+  public @Nullable Set<Class<? extends Throwable>> getIgnoredExceptionsForType() {
+    return ignoredExceptionsForType;
+  }
+
+  /**
+   * Sets the list of exception types that once captured will not be sent to Sentry as {@link
+   * SentryEvent}.
+   *
+   * @param ignoredExceptionsForType list of ignored exception types
+   */
+  @SuppressWarnings("unchecked")
+  public void setIgnoredExceptionsForType(final @NotNull Set<Class<?>> ignoredExceptionsForType) {
+    // this method is invoked by Spring Boot integration using reflection when generic information
+    // is erased - thus we need to make sure that only valid throwable types are set.
+    final Set<Class<? extends Throwable>> ignoredExceptionTypes = new HashSet<>();
+    for (final Class<?> clazz : ignoredExceptionsForType) {
+      if (Throwable.class.isAssignableFrom(clazz)) {
+        ignoredExceptionTypes.add((Class<? extends Throwable>) clazz);
+      }
+    }
+    this.ignoredExceptionsForType = ignoredExceptionTypes;
+  }
+
+  /**
+   * Adds exception type to the list of ignored exceptions.
+   *
+   * @param exceptionType - the exception type
+   */
+  public void addIgnoredExceptionForType(final @NotNull Class<? extends Throwable> exceptionType) {
+    if (this.ignoredExceptionsForType == null) {
+      this.ignoredExceptionsForType = new HashSet<>();
+    }
+    this.ignoredExceptionsForType.add(exceptionType);
+  }
+
+  /**
+   * Checks if the type of exception given by parameter is ignored.
+   *
+   * @param throwable the throwable
+   * @return if the type of exception is ignored
+   */
+  boolean containsIgnoredExceptionForType(final @NotNull Throwable throwable) {
+    final Set<Class<? extends Throwable>> ignoredExceptionsForType = this.ignoredExceptionsForType;
+    return ignoredExceptionsForType != null
+        && ignoredExceptionsForType.contains(throwable.getClass());
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1399,6 +1481,14 @@ public class SentryOptions {
     final List<String> inAppExcludes = new ArrayList<>(options.getInAppExcludes());
     for (final String inAppExclude : inAppExcludes) {
       addInAppExclude(inAppExclude);
+    }
+    final Set<Class<? extends Throwable>> ignoredExceptionsForType =
+        options.getIgnoredExceptionsForType();
+    if (ignoredExceptionsForType != null) {
+      for (final Class<? extends Throwable> exceptionType :
+          new HashSet<>(ignoredExceptionsForType)) {
+        addIgnoredExceptionForType(exceptionType);
+      }
     }
   }
 
