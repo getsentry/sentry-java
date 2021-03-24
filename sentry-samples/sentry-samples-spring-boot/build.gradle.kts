@@ -30,7 +30,7 @@ dependencies {
     implementation(project(":sentry-logback"))
 
     // database query tracing
-    implementation(Config.Libs.datasourceProxySpringBootStarter)
+    implementation("com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.7.0")
     implementation(project(":sentry-datasource-proxy"))
     runtimeOnly(Config.TestLibs.hsqldb)
 

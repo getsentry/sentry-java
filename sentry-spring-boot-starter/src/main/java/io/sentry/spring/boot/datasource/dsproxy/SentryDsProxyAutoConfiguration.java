@@ -3,14 +3,15 @@ package io.sentry.spring.boot.datasource.dsproxy;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.dsproxy.SentryQueryExecutionListener;
+import io.sentry.spring.boot.SentryTracingCondition;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
 /** Auto-configures datasource-proxy related beans. */
@@ -18,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @AutoConfigureAfter(DataSourceAutoConfiguration.class)
 @ConditionalOnClass({DataSource.class, SentryQueryExecutionListener.class})
-@ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+@Conditional(SentryTracingCondition.class)
 @ConditionalOnBean(IHub.class)
 public class SentryDsProxyAutoConfiguration {
 

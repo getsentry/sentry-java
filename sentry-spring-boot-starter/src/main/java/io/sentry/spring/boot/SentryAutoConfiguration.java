@@ -26,8 +26,6 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -205,24 +203,5 @@ public class SentryAutoConfiguration {
 
       return sdkVersion;
     }
-  }
-
-  static final class SentryTracingCondition extends AnyNestedCondition {
-
-    public SentryTracingCondition() {
-      super(ConfigurationPhase.REGISTER_BEAN);
-    }
-
-    @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
-    @SuppressWarnings("UnusedNestedClass")
-    private static class SentryTracingEnabled {}
-
-    @ConditionalOnProperty(name = "sentry.traces-sample-rate")
-    @SuppressWarnings("UnusedNestedClass")
-    private static class SentryTracesSampleRateCondition {}
-
-    @ConditionalOnBean(SentryOptions.TracesSamplerCallback.class)
-    @SuppressWarnings("UnusedNestedClass")
-    private static class SentryTracesSamplerBeanCondition {}
   }
 }

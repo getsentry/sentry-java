@@ -76,7 +76,6 @@ object Config {
 
         val datasourceProxy = "net.ttddyy:datasource-proxy:1.7"
         val p6spy = "p6spy:p6spy:3.9.1"
-        val datasourceProxySpringBootStarter = "com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.6.2"
 
         val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.3"
 

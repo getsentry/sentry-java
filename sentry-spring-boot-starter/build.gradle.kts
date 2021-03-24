@@ -41,7 +41,6 @@ dependencies {
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.springBootStarterAop)
-    compileOnly(Config.Libs.datasourceProxySpringBootStarter)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
@@ -54,9 +53,9 @@ dependencies {
 
     // tests
     testImplementation(project(":sentry-logback"))
+    testImplementation(project(":sentry-apache-http-client-5"))
     testImplementation(project(":sentry-datasource-proxy"))
     testImplementation(project(":sentry-p6spy"))
-    testImplementation(project(":sentry-apache-http-client-5"))
     testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
@@ -67,7 +66,6 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterAop)
     testImplementation(Config.Libs.springBootStarterJdbc)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.Libs.datasourceProxySpringBootStarter)
     testImplementation(Config.TestLibs.hsqldb)
 }
 
