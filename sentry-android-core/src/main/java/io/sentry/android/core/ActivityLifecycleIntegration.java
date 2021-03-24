@@ -65,8 +65,7 @@ public final class ActivityLifecycleIntegration
   }
 
   private boolean isPerformanceEnabled(final @NotNull SentryAndroidOptions options) {
-    return ((options.getTracesSampleRate() != null || options.getTracesSampler() != null)
-        && options.isEnableAutoActivityLifecycleTracing());
+    return options.isTracingEnabled() && options.isEnableAutoActivityLifecycleTracing();
   }
 
   @Override

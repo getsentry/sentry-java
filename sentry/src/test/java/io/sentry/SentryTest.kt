@@ -155,7 +155,10 @@ class SentryTest {
 
     @Test
     fun `startTransaction sets operation and description`() {
-        Sentry.init { it.dsn = dsn }
+        Sentry.init {
+            it.dsn = dsn
+            it.tracesSampleRate = 1.0
+        }
 
         val transaction = Sentry.startTransaction("name", "op", "desc")
         assertEquals("name", transaction.name)

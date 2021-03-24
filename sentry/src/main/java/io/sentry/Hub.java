@@ -577,6 +577,12 @@ public final class Hub implements IHub {
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
+    } else if (!options.isTracingEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO, "Tracing is disabled and this 'startTransaction' returns a no-op.");
+      transaction = NoOpTransaction.getInstance();
     } else {
       final SamplingContext samplingContext =
           new SamplingContext(transactionContext, customSamplingContext);

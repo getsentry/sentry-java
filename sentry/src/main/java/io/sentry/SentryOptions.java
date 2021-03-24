@@ -1297,6 +1297,16 @@ public class SentryOptions {
   }
 
   /**
+   * Returns if tracing should be enabled. If tracing is disabled, starting transactions returns
+   * {@link NoOpTransaction}.
+   *
+   * @return if tracing is enabled.
+   */
+  public boolean isTracingEnabled() {
+    return getTracesSampleRate() != null || getTracesSampler() != null;
+  }
+
+  /**
    * Returns the list of exception classes that once captured will not be sent to Sentry as {@link
    * SentryEvent}.
    *
