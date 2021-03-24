@@ -96,8 +96,8 @@ public final class Session {
       final @NotNull String release) {
     this(
         State.Ok,
-        DateUtils.getCurrentDateTimeOrNull(),
-        DateUtils.getCurrentDateTimeOrNull(),
+        DateUtils.getCurrentDateTime(),
+        DateUtils.getCurrentDateTime(),
         0,
         distinctId,
         UUID.randomUUID(),
@@ -110,8 +110,11 @@ public final class Session {
         release);
   }
 
-  @SuppressWarnings("JdkObsolete")
-  public @NotNull Date getStarted() {
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
+  public @Nullable Date getStarted() {
+    if (started == null) {
+      return null;
+    }
     return (Date) started.clone();
   }
 
@@ -165,7 +168,7 @@ public final class Session {
     return duration;
   }
 
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getTimestamp() {
     final Date timestampRef = timestamp;
     return timestampRef != null ? (Date) timestampRef.clone() : null;
@@ -173,7 +176,7 @@ public final class Session {
 
   /** Ends a session and update its values */
   public void end() {
-    end(DateUtils.getCurrentDateTimeOrNull());
+    end(DateUtils.getCurrentDateTime());
   }
 
   /**
@@ -193,7 +196,7 @@ public final class Session {
       if (timestamp != null) {
         this.timestamp = timestamp;
       } else {
-        this.timestamp = DateUtils.getCurrentDateTimeOrNull();
+        this.timestamp = DateUtils.getCurrentDateTime();
       }
 
       if (this.timestamp != null) {
@@ -209,7 +212,7 @@ public final class Session {
    * @param timestamp the timestamp
    * @return duration in seconds
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private double calculateDurationTime(final @NotNull Date timestamp) {
     long diff = Math.abs(timestamp.getTime() - started.getTime());
     return (double) diff / 1000; // duration in seconds
@@ -243,7 +246,7 @@ public final class Session {
 
       if (sessionHasBeenUpdated) {
         init = null;
-        timestamp = DateUtils.getCurrentDateTimeOrNull();
+        timestamp = DateUtils.getCurrentDateTime();
         if (timestamp != null) {
           sequence = getSequenceTimestamp(timestamp);
         }
@@ -258,7 +261,7 @@ public final class Session {
    * @param timestamp The timestamp
    * @return time stamp in milliseconds UTC
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private long getSequenceTimestamp(final @NotNull Date timestamp) {
     long sequence = timestamp.getTime();
     // if device has wrong date and time and it is nearly at the beginning of the epoch time.

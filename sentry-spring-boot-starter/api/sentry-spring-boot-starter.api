@@ -13,9 +13,9 @@ public class io/sentry/spring/boot/SentryAutoConfiguration {
 	public fun <init> ()V
 }
 
-public class io/sentry/spring/boot/SentryLogbackAppenderAutoConfiguration : org/springframework/beans/factory/InitializingBean {
+public class io/sentry/spring/boot/SentryLogbackAppenderAutoConfiguration {
 	public fun <init> ()V
-	public fun afterPropertiesSet ()V
+	public fun sentryLogbackInitializer (Lio/sentry/spring/boot/SentryProperties;)Lio/sentry/spring/boot/SentryLogbackInitializer;
 }
 
 public class io/sentry/spring/boot/SentryProperties : io/sentry/SentryOptions {

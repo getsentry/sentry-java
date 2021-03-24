@@ -4,17 +4,16 @@ import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.ITransportFactory;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
-import io.sentry.transport.ITransport;
 import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
 @Plugin(name = "Sentry", category = "Core", elementType = "appender", printObject = true)
 public final class SentryAppender extends AbstractAppender {
   private final @Nullable String dsn;
-  private final @Nullable ITransport transport;
+  private final @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private final @NotNull IHub hub;
@@ -47,7 +46,7 @@ public final class SentryAppender extends AbstractAppender {
       final @Nullable String dsn,
       final @Nullable Level minimumBreadcrumbLevel,
       final @Nullable Level minimumEventLevel,
-      final @Nullable ITransport transport,
+      final @Nullable ITransportFactory transportFactory,
       final @NotNull IHub hub) {
     super(name, filter, null, true, null);
     this.dsn = dsn;
@@ -57,7 +56,7 @@ public final class SentryAppender extends AbstractAppender {
     if (minimumEventLevel != null) {
       this.minimumEventLevel = minimumEventLevel;
     }
-    this.transport = transport;
+    this.transportFactory = transportFactory;
     this.hub = hub;
   }
 
@@ -103,7 +102,7 @@ public final class SentryAppender extends AbstractAppender {
               options.setDsn(dsn);
               options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
               options.setSdkVersion(createSdkVersion(options));
-              Optional.ofNullable(transport).ifPresent(options::setTransport);
+              Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
             });
       } catch (IllegalArgumentException e) {
         LOGGER.info("Failed to init Sentry during appender initialization: " + e.getMessage());
@@ -131,8 +130,7 @@ public final class SentryAppender extends AbstractAppender {
   // for the Android compatibility we must use old Java Date class
   @SuppressWarnings("JdkObsolete")
   final @NotNull SentryEvent createEvent(final @NotNull LogEvent loggingEvent) {
-    final SentryEvent event =
-        new SentryEvent(DateUtils.getDateTime(new Date(loggingEvent.getTimeMillis())));
+    final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeMillis()));
     final Message message = new Message();
     message.setMessage(loggingEvent.getMessage().getFormat());
     message.setFormatted(loggingEvent.getMessage().getFormattedMessage());
@@ -207,14 +205,11 @@ public final class SentryAppender extends AbstractAppender {
   private @NotNull SdkVersion createSdkVersion(final @NotNull SentryOptions sentryOptions) {
     SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
-    if (sdkVersion == null) {
-      sdkVersion = new SdkVersion();
-    }
-
-    sdkVersion.setName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
+    final String name = BuildConfig.SENTRY_LOG4J2_SDK_NAME;
     final String version = BuildConfig.VERSION_NAME;
-    sdkVersion.setVersion(version);
-    sdkVersion.addPackage("maven:sentry-log4j2", version);
+    sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
+
+    sdkVersion.addPackage("maven:io.sentry:sentry-log4j2", version);
 
     return sdkVersion;
   }

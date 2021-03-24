@@ -79,7 +79,7 @@ final class SentryThreadFactory {
 
     final Thread currentThread = Thread.currentThread();
 
-    if (threads.size() > 0) {
+    if (!threads.isEmpty()) {
       result = new ArrayList<>();
 
       // https://issuetracker.google.com/issues/64122757
@@ -125,8 +125,12 @@ final class SentryThreadFactory {
     final List<SentryStackFrame> frames =
         sentryStackTraceFactory.getStackFrames(stackFramesElements);
 
-    if (options.isAttachStacktrace() && frames != null && frames.size() > 0) {
-      sentryThread.setStacktrace(new SentryStackTrace(frames));
+    if (options.isAttachStacktrace() && frames != null && !frames.isEmpty()) {
+      final SentryStackTrace sentryStackTrace = new SentryStackTrace(frames);
+      // threads are always gotten either via Thread.currentThread() or Thread.getAllStackTraces()
+      sentryStackTrace.setSnapshot(true);
+
+      sentryThread.setStacktrace(sentryStackTrace);
     }
 
     return sentryThread;

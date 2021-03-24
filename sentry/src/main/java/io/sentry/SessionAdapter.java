@@ -17,10 +17,10 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SessionAdapter extends TypeAdapter<Session> {
 
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
 
-  public SessionAdapter(final @NotNull ILogger logger) {
-    this.logger = Objects.requireNonNull(logger, "The Logger is required.");
+  public SessionAdapter(final @NotNull SentryOptions options) {
+    this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
   }
 
   @Override
@@ -43,8 +43,15 @@ public final class SessionAdapter extends TypeAdapter<Session> {
       writer.name("init").value(value.getInit());
     }
 
-    writer.name("started").value(DateUtils.getTimestamp(value.getStarted()));
-    writer.name("status").value(value.getStatus().name().toLowerCase(Locale.ROOT));
+    final Date started = value.getStarted();
+    if (started != null) {
+      writer.name("started").value(DateUtils.getTimestamp(started));
+    }
+
+    final Session.State status = value.getStatus();
+    if (status != null) {
+      writer.name("status").value(status.name().toLowerCase(Locale.ROOT));
+    }
 
     if (value.getSequence() != null) {
       writer.name("seq").value(value.getSequence());
@@ -125,7 +132,13 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     while (reader.hasNext()) {
       switch (reader.nextName()) {
         case "sid":
-          sid = UUID.fromString(reader.nextString());
+          String sidStr = null;
+          try {
+            sidStr = reader.nextString();
+            sid = UUID.fromString(sidStr);
+          } catch (IllegalArgumentException e) {
+            options.getLogger().log(SentryLevel.ERROR, "%s sid is not valid.", sidStr);
+          }
           break;
         case "did":
           did = reader.nextString();
@@ -137,7 +150,13 @@ public final class SessionAdapter extends TypeAdapter<Session> {
           started = converTimeStamp(reader.nextString(), "started");
           break;
         case "status":
-          status = Session.State.valueOf(StringUtils.capitalize(reader.nextString()));
+          String statusStr = null;
+          try {
+            statusStr = StringUtils.capitalize(reader.nextString());
+            status = Session.State.valueOf(statusStr);
+          } catch (IllegalArgumentException e) {
+            options.getLogger().log(SentryLevel.ERROR, "%s status is not valid.", statusStr);
+          }
           break;
         case "errors":
           errors = reader.nextInt();
@@ -185,7 +204,9 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     reader.endObject();
 
     if (status == null || started == null || release == null || release.isEmpty()) {
-      logger.log(SentryLevel.ERROR, "Session is gonna be dropped due to invalid fields.");
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Session is gonna be dropped due to invalid fields.");
       return null;
     }
 
@@ -210,7 +231,7 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     try {
       return DateUtils.getDateTime(timestamp);
     } catch (IllegalArgumentException e) {
-      logger.log(SentryLevel.ERROR, e, "Error converting session (%s) field.", field);
+      options.getLogger().log(SentryLevel.ERROR, e, "Error converting session (%s) field.", field);
     }
     return null;
   }

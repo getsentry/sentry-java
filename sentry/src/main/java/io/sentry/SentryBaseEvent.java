@@ -1,11 +1,13 @@
 package io.sentry;
 
+import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * transaction.
  */
 public abstract class SentryBaseEvent {
+  public static final String DEFAULT_PLATFORM = "java";
   /**
    * Unique identifier of this event.
    *
@@ -31,7 +34,7 @@ public abstract class SentryBaseEvent {
    */
   private @Nullable SentryId eventId;
   /** Contexts describing the environment (e.g. device, os or browser). */
-  private Contexts contexts;
+  private final @NotNull Contexts contexts = new Contexts();
   /** Information about the Sentry SDK that generated this event. */
   private @Nullable SdkVersion sdk;
   /** Information about a web request that occurred during the event. */
@@ -42,6 +45,34 @@ public abstract class SentryBaseEvent {
    * <p>A map or list of tags for this event. Each tag must be less than 200 characters.
    */
   private Map<String, String> tags;
+
+  /**
+   * The release version of the application.
+   *
+   * <p>**Release versions must be unique across all projects in your organization.** This value can
+   * be the git SHA for the given project, or a product identifier with a semantic version.
+   */
+  private String release;
+
+  /**
+   * The environment name, such as `production` or `staging`.
+   *
+   * <p>```json { "environment": "production" } ```
+   */
+  private String environment;
+
+  /**
+   * Platform identifier of this event (defaults to "other").
+   *
+   * <p>A string representing the platform the SDK is submitting from. This will be used by the
+   * Sentry interface to customize various components in the interface, but also to enter or skip
+   * stacktrace processing.
+   *
+   * <p>Acceptable values are: `as3`, `c`, `cfml`, `cocoa`, `csharp`, `elixir`, `haskell`, `go`,
+   * `groovy`, `java`, `javascript`, `native`, `node`, `objc`, `other`, `perl`, `php`, `python`,
+   * `ruby`
+   */
+  private @Nullable String platform;
 
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
@@ -62,27 +93,23 @@ public abstract class SentryBaseEvent {
     this.eventId = eventId;
   }
 
-  public Contexts getContexts() {
+  public @NotNull Contexts getContexts() {
     return contexts;
   }
 
-  public void setContexts(Contexts contexts) {
-    this.contexts = contexts;
-  }
-
-  public SdkVersion getSdk() {
+  public @Nullable SdkVersion getSdk() {
     return sdk;
   }
 
-  public void setSdk(@Nullable SdkVersion sdk) {
+  public void setSdk(final @Nullable SdkVersion sdk) {
     this.sdk = sdk;
   }
 
-  public Request getRequest() {
+  public @Nullable Request getRequest() {
     return request;
   }
 
-  public void setRequest(Request request) {
+  public void setRequest(final @Nullable Request request) {
     this.request = request;
   }
 
@@ -96,6 +123,21 @@ public abstract class SentryBaseEvent {
   }
 
   /**
+   * Returns the captured Throwable or null. If a throwable is wrapped in {@link
+   * ExceptionMechanismException}, returns unwrapped throwable.
+   *
+   * @return the Throwable or null
+   */
+  public @Nullable Throwable getOriginThrowable() {
+    final Throwable ex = throwable;
+    if (ex instanceof ExceptionMechanismException) {
+      return ((ExceptionMechanismException) ex).getThrowable();
+    } else {
+      return ex;
+    }
+  }
+
+  /**
    * Sets the Throwable
    *
    * @param throwable the Throwable or null
@@ -104,7 +146,8 @@ public abstract class SentryBaseEvent {
     this.throwable = throwable;
   }
 
-  Map<String, String> getTags() {
+  @ApiStatus.Internal
+  public Map<String, String> getTags() {
     return tags;
   }
 
@@ -130,5 +173,29 @@ public abstract class SentryBaseEvent {
       tags = new HashMap<>();
     }
     tags.put(key, value);
+  }
+
+  public String getRelease() {
+    return release;
+  }
+
+  public void setRelease(String release) {
+    this.release = release;
+  }
+
+  public String getEnvironment() {
+    return environment;
+  }
+
+  public void setEnvironment(String environment) {
+    this.environment = environment;
+  }
+
+  public @Nullable String getPlatform() {
+    return platform;
+  }
+
+  public void setPlatform(final @Nullable String platform) {
+    this.platform = platform;
   }
 }

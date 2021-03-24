@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdkVersion(Config.Android.minSdkVersionNdk)
+        minSdkVersion(Config.Android.minSdkVersionOkHttp)
         targetSdkVersion(Config.Android.targetSdkVersion)
         versionCode = 2
         versionName = "1.1.0"
@@ -84,12 +84,19 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
 }
 
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
+    implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
+
     implementation(project(":sentry-android"))
+    implementation(project(":sentry-android-okhttp"))
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(project(":sentry-android")) {
@@ -98,6 +105,8 @@ dependencies {
 //    }
 
     implementation(Config.Libs.appCompat)
+    implementation(Config.Libs.retrofit2)
+    implementation(Config.Libs.retrofit2Gson)
 
     debugImplementation(Config.Libs.leakCanary)
 }

@@ -35,8 +35,8 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     final BeanDefinitionBuilder builder =
         BeanDefinitionBuilder.genericBeanDefinition(SentryOptions.class);
 
-    if (registry.containsBeanDefinition("mockTransport")) {
-      builder.addPropertyReference("transport", "mockTransport");
+    if (registry.containsBeanDefinition("mockTransportFactory")) {
+      builder.addPropertyReference("transportFactory", "mockTransportFactory");
     }
     builder.addPropertyValue("dsn", annotationAttributes.getString("dsn"));
     builder.addPropertyValue("enableExternalConfiguration", true);
@@ -73,14 +73,11 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     final SentryOptions defaultOptions = new SentryOptions();
     SdkVersion sdkVersion = defaultOptions.getSdkVersion();
 
-    if (sdkVersion == null) {
-      sdkVersion = new SdkVersion();
-    }
-
-    sdkVersion.setName(BuildConfig.SENTRY_SPRING_SDK_NAME);
+    final String name = BuildConfig.SENTRY_SPRING_SDK_NAME;
     final String version = BuildConfig.VERSION_NAME;
-    sdkVersion.setVersion(version);
-    sdkVersion.addPackage("maven:sentry-spring", version);
+    sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
+
+    sdkVersion.addPackage("maven:io.sentry:sentry-spring", version);
 
     return sdkVersion;
   }

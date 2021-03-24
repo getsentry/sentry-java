@@ -6,17 +6,16 @@ import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
+import io.sentry.ITransportFactory;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
-import io.sentry.transport.ITransport;
 import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,21 +28,27 @@ import org.jetbrains.annotations.Nullable;
 /** Appender for logback in charge of sending the logged events to a Sentry server. */
 public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @NotNull SentryOptions options = new SentryOptions();
-  private @Nullable ITransport transport;
+  private @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
 
   @Override
   public void start() {
     if (!Sentry.isEnabled()) {
-      options.setEnableExternalConfiguration(true);
-      options.setSentryClientName(BuildConfig.SENTRY_LOGBACK_SDK_NAME);
-      options.setSdkVersion(createSdkVersion(options));
-      Optional.ofNullable(transport).ifPresent(options::setTransport);
-      try {
-        Sentry.init(options);
-      } catch (IllegalArgumentException e) {
-        addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
+      if (options.getDsn() == null || !options.getDsn().endsWith("_IS_UNDEFINED")) {
+        options.setEnableExternalConfiguration(true);
+        options.setSentryClientName(BuildConfig.SENTRY_LOGBACK_SDK_NAME);
+        options.setSdkVersion(createSdkVersion(options));
+        Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
+        try {
+          Sentry.init(options);
+        } catch (IllegalArgumentException e) {
+          addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
+        }
+      } else {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "DSN is null. SentryAppender is not being initialized");
       }
     }
     super.start();
@@ -68,8 +73,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
   // for the Android compatibility we must use old Java Date class
   @SuppressWarnings("JdkObsolete")
   final @NotNull SentryEvent createEvent(@NotNull ILoggingEvent loggingEvent) {
-    final SentryEvent event =
-        new SentryEvent(DateUtils.getDateTime(new Date(loggingEvent.getTimeStamp())));
+    final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeStamp()));
     final Message message = new Message();
     message.setMessage(loggingEvent.getMessage());
     message.setFormatted(loggingEvent.getFormattedMessage());
@@ -142,14 +146,11 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
   private @NotNull SdkVersion createSdkVersion(@NotNull SentryOptions sentryOptions) {
     SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
-    if (sdkVersion == null) {
-      sdkVersion = new SdkVersion();
-    }
-
-    sdkVersion.setName(BuildConfig.SENTRY_LOGBACK_SDK_NAME);
+    final String name = BuildConfig.SENTRY_LOGBACK_SDK_NAME;
     final String version = BuildConfig.VERSION_NAME;
-    sdkVersion.setVersion(version);
-    sdkVersion.addPackage("maven:sentry-logback", version);
+    sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
+
+    sdkVersion.addPackage("maven:io.sentry:sentry-logback", version);
 
     return sdkVersion;
   }
@@ -179,7 +180,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
   }
 
   @ApiStatus.Internal
-  void setTransport(@Nullable ITransport transport) {
-    this.transport = transport;
+  void setTransportFactory(final @Nullable ITransportFactory transportFactory) {
+    this.transportFactory = transportFactory;
   }
 }

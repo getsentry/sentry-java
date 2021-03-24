@@ -42,7 +42,7 @@ class EnvelopeCacheTest {
 
             options.setLogger(logger)
             options.setSerializer(serializer)
-            options.isDebug = true
+            options.setDebug(true)
 
             return EnvelopeCache(options)
         }

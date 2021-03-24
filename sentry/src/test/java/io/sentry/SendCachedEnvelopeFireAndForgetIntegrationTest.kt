@@ -15,7 +15,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
         var callback = mock<SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory>()
 
         init {
-            options.isDebug = true
+            options.setDebug(true)
             options.setLogger(logger)
         }
 
@@ -63,7 +63,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
     }
 
     private class CustomFactory : SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory {
-        override fun create(hub: IHub?, options: SentryOptions?): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
+        override fun create(hub: IHub, options: SentryOptions): SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget? {
             return null
         }
     }

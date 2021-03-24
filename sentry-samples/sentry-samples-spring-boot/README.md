@@ -15,5 +15,5 @@ Then, execute a command from the module directory:
 Make an HTTP request that will trigger events:
 
 ```
-curl -XPOST --user user:password http://localhost:8080/person/ -H "Content-Type:application/json" -d '{"firstName":"John","lastName":"Smith"}
+curl -XPOST --user user:password http://localhost:8080/person/ -H "Content-Type:application/json" -d '{"firstName":"John","lastName":"Smith"}'
 ```

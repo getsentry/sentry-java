@@ -39,7 +39,9 @@ final class SentryStackTraceFactory {
 
           // we don't want to add our own frames
           final String className = item.getClassName();
-          if (className.startsWith("io.sentry.") && !className.startsWith("io.sentry.samples.")) {
+          if (className.startsWith("io.sentry.")
+              && !className.startsWith("io.sentry.samples.")
+              && !className.startsWith("io.sentry.mobile.")) {
             continue;
           }
 

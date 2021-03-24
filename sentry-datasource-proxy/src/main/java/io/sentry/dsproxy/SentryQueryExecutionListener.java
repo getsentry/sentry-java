@@ -30,7 +30,7 @@ public class SentryQueryExecutionListener implements QueryExecutionListener {
       final @NotNull ExecutionInfo execInfo, final @NotNull List<QueryInfo> queryInfoList) {
     final ISpan parent = hub.getSpan();
     if (parent != null) {
-      final Span span = parent.startChild("db.query", resolveSpanDescription(queryInfoList));
+      final ISpan span = parent.startChild("db.query", resolveSpanDescription(queryInfoList));
       spans.put(execInfo.getConnectionId(), span);
     }
   }

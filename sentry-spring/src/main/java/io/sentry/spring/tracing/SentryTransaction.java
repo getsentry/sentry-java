@@ -7,15 +7,15 @@ import java.lang.annotation.Target;
 import org.springframework.core.annotation.AliasFor;
 
 /**
- * Bean method annotated with {@link SentryTransaction} gets wrapped into {@link
- * io.sentry.SentryTransaction}.
+ * Makes annotated method execution or a method execution within an annotated class to get wrapped
+ * into {@link io.sentry.protocol.SentryTransaction}.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.TYPE})
 public @interface SentryTransaction {
 
   /**
-   * Transaction name.
+   * Transaction name. If not set, transaction name is resolved as a class name and a method name.
    *
    * @return transaction name
    */
@@ -27,10 +27,10 @@ public @interface SentryTransaction {
    *
    * @return transaction operation
    */
-  String operation() default "";
+  String operation();
 
   /**
-   * Transaction name.
+   * Transaction name. If not set, transaction name is resolved as a class name and a method name.
    *
    * @return transaction name
    */

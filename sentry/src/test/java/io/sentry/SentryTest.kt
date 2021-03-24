@@ -61,22 +61,10 @@ class SentryTest {
             it.dsn = dsn
             it.cacheDirPath = getTempPath()
             sentryOptions = it
-            it.isDebug = true
+            it.setDebug(true)
         }
 
         assertTrue((sentryOptions!!.logger as DiagnosticLogger).logger is SystemOutLogger)
-    }
-
-    @Test
-    fun `Init sets GsonSerializer if serializer is NoOp`() {
-        var sentryOptions: SentryOptions? = null
-        Sentry.init {
-            it.dsn = dsn
-            it.cacheDirPath = getTempPath()
-            sentryOptions = it
-        }
-
-        assertTrue(sentryOptions!!.serializer is GsonSerializer)
     }
 
     @Test
@@ -111,7 +99,19 @@ class SentryTest {
         }
         Sentry.init {
             it.dsn = dsn
-            it.isDebug = true
+            it.setDebug(true)
+            it.setLogger(logger)
+        }
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Sentry has been already initialized. Previous configuration will be overwritten."))
+    }
+
+    @Test
+    fun `warns about multiple Sentry initializations with string overload`() {
+        val logger = mock<ILogger>()
+        Sentry.init(dsn)
+        Sentry.init {
+            it.dsn = dsn
+            it.setDebug(true)
             it.setLogger(logger)
         }
         verify(logger).log(eq(SentryLevel.WARNING), eq("Sentry has been already initialized. Previous configuration will be overwritten."))
@@ -151,6 +151,19 @@ class SentryTest {
         verify(client).captureUserFeedback(argThat {
             eventId == userFeedback.eventId
         })
+    }
+
+    @Test
+    fun `startTransaction sets operation and description`() {
+        Sentry.init {
+            it.dsn = dsn
+            it.tracesSampleRate = 1.0
+        }
+
+        val transaction = Sentry.startTransaction("name", "op", "desc")
+        assertEquals("name", transaction.name)
+        assertEquals("op", transaction.operation)
+        assertEquals("desc", transaction.description)
     }
 
     private fun getTempPath(): String {

@@ -97,6 +97,24 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when setTracesSampleRate is set to exactly 0, value is set`() {
+        val options = SentryOptions().apply {
+            this.tracesSampleRate = 0.0
+        }
+        assertEquals(0.0, options.tracesSampleRate)
+    }
+
+    @Test
+    fun `when setTracesSampleRate is set to higher than 1_0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().tracesSampleRate = 1.0000000000001 }
+    }
+
+    @Test
+    fun `when setTracesSampleRate is set to lower than 0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().tracesSampleRate = -0.0000000000001 }
+    }
+
+    @Test
     fun `when there's no cacheDirPath, outboxPath returns null`() {
         val options = SentryOptions()
         assertNull(options.outboxPath)
@@ -125,7 +143,7 @@ class SentryOptionsTest {
         assertEquals(BuildConfig.VERSION_NAME, sdkVersion.version)
 
         assertTrue(sdkVersion.packages!!.any {
-            it.name == "maven:sentry" &&
+            it.name == "maven:io.sentry:sentry" &&
             it.version == BuildConfig.VERSION_NAME
         })
     }
@@ -175,6 +193,10 @@ class SentryOptionsTest {
         externalOptions.proxy = SentryOptions.Proxy("example.com", "8090")
         externalOptions.setTag("tag1", "value1")
         externalOptions.setTag("tag2", "value2")
+        externalOptions.enableUncaughtExceptionHandler = false
+        externalOptions.tracesSampleRate = 0.5
+        externalOptions.addInAppInclude("com.app")
+        externalOptions.addInAppExclude("io.off")
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -188,6 +210,19 @@ class SentryOptionsTest {
         assertEquals("example.com", options.proxy!!.host)
         assertEquals("8090", options.proxy!!.port)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
+        assertFalse(options.enableUncaughtExceptionHandler!!)
+        assertEquals(0.5, options.tracesSampleRate)
+        assertEquals(listOf("com.app"), options.inAppIncludes)
+        assertEquals(listOf("io.off"), options.inAppExcludes)
+    }
+
+    @Test
+    fun `merging options when enableUncaughtExceptionHandler is not set preserves the default value`() {
+        val externalOptions = SentryOptions()
+        externalOptions.enableUncaughtExceptionHandler = null
+        val options = SentryOptions()
+        options.merge(externalOptions)
+        assertTrue(options.enableUncaughtExceptionHandler!!)
     }
 
     @Test
@@ -269,6 +304,123 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `creates options with uncaught handler set to true enabled using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("uncaught.handler.enabled=true")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNotNull(options.enableUncaughtExceptionHandler)
+            assertTrue(options.enableUncaughtExceptionHandler!!)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with uncaught handler set to false enabled using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("uncaught.handler.enabled=false")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNotNull(options.enableUncaughtExceptionHandler)
+            assertFalse(options.enableUncaughtExceptionHandler!!)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with uncaught handler set to null enabled using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertNull(options.enableUncaughtExceptionHandler)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with debug set to true enabled using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("debug=true")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertTrue(options.isDebug)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with debug set to false enabled using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("debug=false")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertFalse(options.isDebug)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with debug set to null enabled using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            val mergeResult = SentryOptions().apply {
+                setDebug(true)
+            }
+            mergeResult.merge(options)
+            assertTrue(mergeResult.isDebug)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `when options is initialized, Gson Serializer is set by default`() {
+        assertTrue(SentryOptions().serializer is GsonSerializer)
+    }
+
+    @Test
     fun `creates options with inAppInclude and inAppExclude using external properties`() {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()
@@ -286,5 +438,46 @@ class SentryOptionsTest {
         } finally {
             temporaryFolder.delete()
         }
+    }
+
+    @Test
+    fun `creates options with tracesSampleRate using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("traces-sample-rate=0.2")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertEquals(0.2, options.tracesSampleRate)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `creates options with enableDeduplication using external properties`() {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        file.appendText("enable-deduplication=true")
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create())
+            assertTrue(options.isEnableDeduplication)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    @Test
+    fun `when options are initialized, maxAttachmentSize is 20`() {
+        assertEquals(20 * 1024 * 1024, SentryOptions().maxAttachmentSize)
     }
 }

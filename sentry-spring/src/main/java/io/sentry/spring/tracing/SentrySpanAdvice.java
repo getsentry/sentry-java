@@ -26,6 +26,7 @@ public class SentrySpanAdvice implements MethodInterceptor {
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final ISpan activeSpan = hub.getSpan();
@@ -37,13 +38,16 @@ public class SentrySpanAdvice implements MethodInterceptor {
       final Method mostSpecificMethod =
           AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
       final Class<?> targetClass = invocation.getMethod().getDeclaringClass();
-      final ISpan span = activeSpan.startChild();
-
-      final SentrySpan sentrySpan =
-          AnnotationUtils.findAnnotation(mostSpecificMethod, SentrySpan.class);
-      span.setDescription(resolveSpanDescription(targetClass, mostSpecificMethod, sentrySpan));
-      if (sentrySpan != null && !StringUtils.isEmpty(sentrySpan.operation())) {
-        span.setOperation(sentrySpan.operation());
+      SentrySpan sentrySpan = AnnotationUtils.findAnnotation(mostSpecificMethod, SentrySpan.class);
+      if (sentrySpan == null) {
+        sentrySpan =
+            AnnotationUtils.findAnnotation(
+                mostSpecificMethod.getDeclaringClass(), SentrySpan.class);
+      }
+      final String operation = resolveSpanOperation(targetClass, mostSpecificMethod, sentrySpan);
+      final ISpan span = activeSpan.startChild(operation);
+      if (sentrySpan != null && !StringUtils.isEmpty(sentrySpan.description())) {
+        span.setDescription(sentrySpan.description());
       }
       try {
         final Object result = invocation.proceed();
@@ -59,7 +63,8 @@ public class SentrySpanAdvice implements MethodInterceptor {
     }
   }
 
-  private String resolveSpanDescription(
+  @SuppressWarnings("deprecation")
+  private String resolveSpanOperation(
       Class<?> targetClass, Method method, @Nullable SentrySpan sentrySpan) {
     return sentrySpan == null || StringUtils.isEmpty(sentrySpan.value())
         ? targetClass.getSimpleName() + "." + method.getName()

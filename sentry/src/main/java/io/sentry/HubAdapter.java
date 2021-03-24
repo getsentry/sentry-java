@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -154,25 +155,21 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public SentryId captureTransaction(SentryTransaction transaction, Object hint) {
+  public @NotNull SentryId captureTransaction(SentryTransaction transaction, Object hint) {
     return Sentry.getCurrentHub().captureTransaction(transaction, hint);
   }
 
   @Override
-  public SentryTransaction startTransaction(TransactionContext transactionContexts) {
+  public @NotNull ITransaction startTransaction(TransactionContext transactionContexts) {
     return Sentry.startTransaction(transactionContexts);
   }
 
   @Override
-  public SentryTransaction startTransaction(
-      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
-    return Sentry.startTransaction(transactionContexts, customSamplingContext);
-  }
-
-  @Override
-  public SentryTransaction startTransaction(
-      String name, CustomSamplingContext customSamplingContext) {
-    return Sentry.startTransaction(name, customSamplingContext);
+  public @NotNull ITransaction startTransaction(
+      TransactionContext transactionContexts,
+      CustomSamplingContext customSamplingContext,
+      boolean bindToScope) {
+    return Sentry.startTransaction(transactionContexts, customSamplingContext, bindToScope);
   }
 
   @Override
@@ -181,17 +178,17 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void setSpanContext(final @NotNull Throwable t, final @NotNull SpanContext sc) {
+  public void setSpanContext(final @NotNull Throwable t, final @NotNull ISpan sc) {
     Sentry.getCurrentHub().setSpanContext(t, sc);
-  }
-
-  @Override
-  public @Nullable SpanContext getSpanContext(final @NotNull Throwable ex) {
-    return Sentry.getCurrentHub().getSpanContext(ex);
   }
 
   @Override
   public @Nullable ISpan getSpan() {
     return Sentry.getCurrentHub().getSpan();
+  }
+
+  @Override
+  public @NotNull SentryOptions getOptions() {
+    return Sentry.getCurrentHub().getOptions();
   }
 }

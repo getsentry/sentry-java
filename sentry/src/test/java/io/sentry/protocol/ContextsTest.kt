@@ -10,13 +10,13 @@ class ContextsTest {
     @Test
     fun `cloning contexts wont have the same references`() {
         val contexts = Contexts()
-        contexts.app = App()
-        contexts.browser = Browser()
-        contexts.device = Device()
-        contexts.operatingSystem = OperatingSystem()
-        contexts.runtime = SentryRuntime()
-        contexts.gpu = Gpu()
-        contexts.trace = SpanContext()
+        contexts.setApp(App())
+        contexts.setBrowser(Browser())
+        contexts.setDevice(Device())
+        contexts.setOperatingSystem(OperatingSystem())
+        contexts.setRuntime(SentryRuntime())
+        contexts.setGpu(Gpu())
+        contexts.trace = SpanContext("op")
 
         val clone = contexts.clone()
 
@@ -35,7 +35,7 @@ class ContextsTest {
     fun `cloning contexts will have the same values`() {
         val contexts = Contexts()
         contexts["some-property"] = "some-value"
-        contexts.trace = SpanContext()
+        contexts.trace = SpanContext("op")
         contexts.trace!!.description = "desc"
 
         val clone = contexts.clone()

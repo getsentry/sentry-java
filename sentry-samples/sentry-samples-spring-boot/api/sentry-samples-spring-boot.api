@@ -4,6 +4,10 @@ public class io/sentry/samples/spring/boot/CustomEventProcessor : io/sentry/Even
 	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
 }
 
+public class io/sentry/samples/spring/boot/CustomJob {
+	public fun <init> ()V
+}
+
 public class io/sentry/samples/spring/boot/Person {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun getFirstName ()Ljava/lang/String;

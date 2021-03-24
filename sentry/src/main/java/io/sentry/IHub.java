@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -285,44 +286,113 @@ public interface IHub {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  SentryTransaction startTransaction(TransactionContext transactionContexts);
+  default ITransaction startTransaction(TransactionContext transactionContexts) {
+    return startTransaction(transactionContexts, true);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance.
+   *
+   * @param transactionContexts the transaction contexts
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction
+   */
+  default ITransaction startTransaction(
+      TransactionContext transactionContexts, boolean bindToScope) {
+    return startTransaction(transactionContexts, null, bindToScope);
+  }
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
-   * sampling context the decision if transaction is sampled will be taken by {@link
-   * TracingSampler}.
+   * sampling context the decision if transaction is sampled will be taken by {@link TracesSampler}.
    *
    * @param name the transaction name
+   * @param operation the operation
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  default SentryTransaction startTransaction(
-      String name, CustomSamplingContext customSamplingContext) {
-    return startTransaction(new TransactionContext(name), customSamplingContext);
+  default @NotNull ITransaction startTransaction(
+      String name, String operation, CustomSamplingContext customSamplingContext) {
+    return startTransaction(name, operation, customSamplingContext, true);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * sampling context the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param customSamplingContext the sampling context
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction.
+   */
+  default @NotNull ITransaction startTransaction(
+      String name,
+      String operation,
+      CustomSamplingContext customSamplingContext,
+      boolean bindToScope) {
+    return startTransaction(
+        new TransactionContext(name, operation), customSamplingContext, bindToScope);
   }
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
    * transaction and sampling contexts the decision if transaction is sampled will be taken by
-   * {@link TracingSampler}.
+   * {@link TracesSampler}.
    *
    * @param transactionContexts the transaction context
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  SentryTransaction startTransaction(
-      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext);
+  @NotNull
+  default ITransaction startTransaction(
+      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
+    return startTransaction(transactionContexts, customSamplingContext, true);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
+   * transaction and sampling contexts the decision if transaction is sampled will be taken by
+   * {@link TracesSampler}.
+   *
+   * @param transactionContexts the transaction context
+   * @param customSamplingContext the sampling context
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction.
+   */
+  @NotNull
+  ITransaction startTransaction(
+      TransactionContext transactionContexts,
+      CustomSamplingContext customSamplingContext,
+      boolean bindToScope);
 
   /**
    * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
    * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
-   * {@link TracingSampler}.
+   * {@link TracesSampler}.
    *
    * @param name the transaction name
+   * @param operation the operation
    * @return created transaction
    */
-  default SentryTransaction startTransaction(final @NotNull String name) {
-    return startTransaction(name, null);
+  default @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull String operation) {
+    return startTransaction(name, operation, null);
+  }
+
+  /**
+   * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
+   * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
+   * {@link TracesSampler}.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction
+   */
+  default @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull String operation, final boolean bindToScope) {
+    return startTransaction(name, operation, null, bindToScope);
   }
 
   /**
@@ -334,25 +404,14 @@ public interface IHub {
   SentryTraceHeader traceHeaders();
 
   /**
-   * Associates {@link SpanContext} with the {@link Throwable}. Used to determine in which trace the
+   * Associates {@link ISpan} with the {@link Throwable}. Used to determine in which trace the
    * exception has been thrown in framework integrations.
    *
    * @param throwable the throwable
-   * @param spanContext the span context
+   * @param span the span context
    */
   @ApiStatus.Internal
-  void setSpanContext(@NotNull Throwable throwable, @NotNull SpanContext spanContext);
-
-  /**
-   * Gets the span context for the span that was active while the throwable given by parameter was
-   * thrown.
-   *
-   * @param throwable - the throwable
-   * @return span context or {@code null} if no corresponding span context found.
-   */
-  @ApiStatus.Internal
-  @Nullable
-  SpanContext getSpanContext(Throwable throwable);
+  void setSpanContext(@NotNull Throwable throwable, @NotNull ISpan span);
 
   /**
    * Gets the current active transaction or span.
@@ -361,4 +420,12 @@ public interface IHub {
    */
   @Nullable
   ISpan getSpan();
+
+  /**
+   * Gets the {@link SentryOptions} attached to current scope.
+   *
+   * @return the options attached to current scope.
+   */
+  @NotNull
+  SentryOptions getOptions();
 }

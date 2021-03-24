@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -9,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 final class NoOpHub implements IHub {
 
   private static final NoOpHub instance = new NoOpHub();
+
+  private final @NotNull SentryOptions emptyOptions = SentryOptions.empty();
 
   private NoOpHub() {}
 
@@ -118,14 +121,16 @@ final class NoOpHub implements IHub {
   }
 
   @Override
-  public SentryTransaction startTransaction(TransactionContext transactionContexts) {
-    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
+  public @NotNull ITransaction startTransaction(TransactionContext transactionContexts) {
+    return NoOpTransaction.getInstance();
   }
 
   @Override
-  public SentryTransaction startTransaction(
-      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
-    return new SentryTransaction(transactionContexts, NoOpHub.getInstance());
+  public @NotNull ITransaction startTransaction(
+      TransactionContext transactionContexts,
+      CustomSamplingContext customSamplingContext,
+      boolean bindToScope) {
+    return NoOpTransaction.getInstance();
   }
 
   @Override
@@ -135,15 +140,15 @@ final class NoOpHub implements IHub {
 
   @Override
   public void setSpanContext(
-      final @NotNull Throwable throwable, final @NotNull SpanContext spanContext) {}
-
-  @Override
-  public @Nullable SpanContext getSpanContext(final @NotNull Throwable throwable) {
-    return null;
-  }
+      final @NotNull Throwable throwable, final @NotNull ISpan spanContext) {}
 
   @Override
   public @Nullable ISpan getSpan() {
     return null;
+  }
+
+  @Override
+  public @NotNull SentryOptions getOptions() {
+    return emptyOptions;
   }
 }

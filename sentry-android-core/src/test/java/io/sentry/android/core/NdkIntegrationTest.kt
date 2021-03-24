@@ -122,7 +122,7 @@ class NdkIntegrationTest {
     private fun getOptions(enableNdk: Boolean = true, logger: ILogger = mock(), cacheDir: String? = "abc"): SentryAndroidOptions {
         return SentryAndroidOptions().apply {
             setLogger(logger)
-            isDebug = true
+            setDebug(true)
             isEnableNdk = enableNdk
             cacheDirPath = cacheDir
         }

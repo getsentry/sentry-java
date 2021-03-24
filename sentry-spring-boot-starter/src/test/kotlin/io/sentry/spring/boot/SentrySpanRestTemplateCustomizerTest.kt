@@ -5,12 +5,11 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.SentryOptions
-import io.sentry.SentryTransaction
-import io.sentry.SpanContext
+import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.TransactionContext
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.core.IsNull
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -24,7 +23,7 @@ class SentrySpanRestTemplateCustomizerTest {
         val hub = mock<IHub>()
         val restTemplate = RestTemplate()
         var mockServer = MockRestServiceServer.createServer(restTemplate)
-        val transaction = SentryTransaction("aTransaction", SpanContext(), hub)
+        val transaction = SentryTracer(TransactionContext("aTransaction", "op", true), hub)
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK): RestTemplate {
@@ -37,7 +36,12 @@ class SentrySpanRestTemplateCustomizerTest {
 
                 mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
                     .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
-                    .andExpect(MockRestRequestMatchers.header("sentry-trace", IsNull.notNullValue()))
+                    .andExpect {
+                        // must have trace id from the parent transaction and must not contain spanId from the parent transaction
+                        assertThat(it.headers["sentry-trace"]!!.first()).startsWith(transaction.spanContext.traceId.toString())
+                            .endsWith("-1")
+                            .doesNotContain(transaction.spanContext.spanId.toString())
+                    }
                     .andRespond(MockRestResponseCreators.withStatus(status).body("OK").contentType(MediaType.APPLICATION_JSON))
             } else {
                 mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
@@ -58,8 +62,8 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(result).isEqualTo("OK")
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
-        assertThat(span.operation).isEqualTo("http")
-        assertThat(span.description).isEqualTo("GET /test/{id}")
+        assertThat(span.operation).isEqualTo("http.client")
+        assertThat(span.description).isEqualTo("GET /test/123")
         assertThat(span.status).isEqualTo(SpanStatus.OK)
         fixture.mockServer.verify()
     }
@@ -71,8 +75,8 @@ class SentrySpanRestTemplateCustomizerTest {
         } catch (e: Throwable) {}
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
-        assertThat(span.operation).isEqualTo("http")
-        assertThat(span.description).isEqualTo("GET /test/{id}")
+        assertThat(span.operation).isEqualTo("http.client")
+        assertThat(span.description).isEqualTo("GET /test/123")
         assertThat(span.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
         fixture.mockServer.verify()
     }
@@ -94,14 +98,5 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(restTemplate.interceptors).hasSize(1)
         fixture.customizer.customize(restTemplate)
         assertThat(restTemplate.interceptors).hasSize(1)
-    }
-
-    @Test
-    fun `normalizes URI to contain leading slash`() {
-        val result = fixture.getSut(isTransactionActive = true).getForObject("test/{id}", String::class.java, 123)
-
-        assertThat(result).isEqualTo("OK")
-        assertThat(fixture.transaction.spans.first().description).isEqualTo("GET /test/{id}")
-        fixture.mockServer.verify()
     }
 }

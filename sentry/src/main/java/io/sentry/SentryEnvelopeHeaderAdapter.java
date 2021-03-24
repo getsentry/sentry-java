@@ -11,12 +11,14 @@ import java.io.IOException;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelopeHeader> {
 
   @Override
-  public void write(JsonWriter writer, SentryEnvelopeHeader value) throws IOException {
+  public void write(final @NotNull JsonWriter writer, final @Nullable SentryEnvelopeHeader value)
+      throws IOException {
     if (value == null) {
       writer.nullValue();
       return;
@@ -88,8 +90,9 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
         && !sdkVersion.getVersion().isEmpty();
   }
 
+  @SuppressWarnings("deprecation")
   @Override
-  public SentryEnvelopeHeader read(JsonReader reader) throws IOException {
+  public @Nullable SentryEnvelopeHeader read(final @NotNull JsonReader reader) throws IOException {
     if (reader.peek() == JsonToken.NULL) {
       reader.nextNull();
       return null;
@@ -121,7 +124,10 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
                   reader.beginArray();
 
                   while (reader.hasNext()) {
-                    sdkVersion.addIntegration(reader.nextString());
+                    final String integration = reader.nextString();
+                    if (integration != null) {
+                      sdkVersion.addIntegration(integration);
+                    }
                   }
                   reader.endArray();
                   break;
@@ -147,7 +153,10 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
                           reader.skipValue();
                       }
                     }
-                    sdkVersion.addPackage(name, version);
+                    // packages should not contain null names or versions
+                    if (name != null && version != null) {
+                      sdkVersion.addPackage(name, version);
+                    }
 
                     // packages item
                     reader.endObject();

@@ -8,9 +8,11 @@ public interface ISpan {
   /**
    * Starts a child Span.
    *
+   * @param operation - new span operation name
    * @return a new transaction span
    */
-  Span startChild();
+  @NotNull
+  ISpan startChild(@NotNull String operation);
 
   /**
    * Starts a child Span.
@@ -19,24 +21,41 @@ public interface ISpan {
    * @param description - new span description name
    * @return a new transaction span
    */
-  Span startChild(String operation, String description);
+  @NotNull
+  ISpan startChild(@NotNull String operation, @Nullable String description);
 
   /**
    * Returns a string that could be sent as a sentry-trace header.
    *
    * @return SentryTraceHeader.
    */
+  @NotNull
   SentryTraceHeader toSentryTrace();
 
   /** Sets span timestamp marking this span as finished. */
   void finish();
 
   /**
+   * Sets span timestamp marking this span as finished.
+   *
+   * @param status - the status
+   */
+  void finish(@Nullable SpanStatus status);
+
+  /**
    * Sets span operation.
    *
    * @param operation - the operation
    */
-  void setOperation(@Nullable String operation);
+  void setOperation(@NotNull String operation);
+
+  /**
+   * Returns the span operation.
+   *
+   * @return the operation
+   */
+  @NotNull
+  String getOperation();
 
   /**
    * Sets span description.
@@ -46,11 +65,27 @@ public interface ISpan {
   void setDescription(@Nullable String description);
 
   /**
+   * Returns the span description.
+   *
+   * @return the description
+   */
+  @Nullable
+  String getDescription();
+
+  /**
    * Sets span status.
    *
    * @param status - the status.
    */
   void setStatus(@Nullable SpanStatus status);
+
+  /**
+   * Returns the span status
+   *
+   * @return the status
+   */
+  @Nullable
+  SpanStatus getStatus();
 
   /**
    * Sets the throwable that was thrown during the execution of the span.
@@ -82,4 +117,14 @@ public interface ISpan {
    * @param value the tag value
    */
   void setTag(@NotNull String key, @NotNull String value);
+
+  @Nullable
+  String getTag(@NotNull String key);
+
+  /**
+   * Returns if span has finished.
+   *
+   * @return if span has finished.
+   */
+  boolean isFinished();
 }

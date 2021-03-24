@@ -1,9 +1,11 @@
 package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.CustomSamplingContext;
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
@@ -22,7 +24,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
 
 /**
- * Creates {@link io.sentry.SentryTransaction} around HTTP request executions.
+ * Creates {@link ITransaction} around HTTP request executions.
  *
  * <p>Only requests that have {@link HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE} request
  * attribute set are turned into transactions. This attribute is set in {@link
@@ -34,19 +36,31 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   /** Operation used by {@link SentryTransaction} created in {@link SentryTracingFilter}. */
   private static final String TRANSACTION_OP = "http.server";
 
-  private final @NotNull TransactionNameProvider transactionNameProvider =
-      new TransactionNameProvider();
+  private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IHub hub;
-  private final @NotNull SentryOptions options;
   private final @NotNull SentryRequestResolver requestResolver;
+
+  public SentryTracingFilter() {
+    this(HubAdapter.getInstance());
+  }
+
+  public SentryTracingFilter(
+      final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
+    this(hub, requestResolver, new TransactionNameProvider());
+  }
 
   public SentryTracingFilter(
       final @NotNull IHub hub,
-      final @NotNull SentryOptions options,
-      final @NotNull SentryRequestResolver requestResolver) {
+      final @NotNull SentryRequestResolver requestResolver,
+      final @NotNull TransactionNameProvider transactionNameProvider) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.options = Objects.requireNonNull(options, "options is required");
     this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver is required");
+    this.transactionNameProvider =
+        Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
+  }
+
+  SentryTracingFilter(final @NotNull IHub hub) {
+    this(hub, new SentryRequestResolver(hub), new TransactionNameProvider());
   }
 
   @Override
@@ -56,42 +70,56 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
 
-    final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
+    if (hub.isEnabled()) {
+      final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
 
-    // at this stage we are not able to get real transaction name
-    final io.sentry.SentryTransaction transaction =
-        startTransaction(
-            httpRequest.getMethod() + " " + httpRequest.getRequestURI(), sentryTraceHeader);
-    try {
-      filterChain.doFilter(httpRequest, httpResponse);
-    } finally {
-      // after all filters run, templated path pattern is available in request attribute
-      final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
-      // if transaction name is not resolved, the request has not been processed by a controller and
-      // we should not report it to Sentry
-      if (transactionName != null) {
-        transaction.setName(transactionName);
-        transaction.setOperation(TRANSACTION_OP);
-        transaction.setRequest(requestResolver.resolveSentryRequest(httpRequest));
-        transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
-        transaction.finish();
+      hub.configureScope(
+          scope -> {
+            scope.setRequest(requestResolver.resolveSentryRequest(httpRequest));
+          });
+
+      // at this stage we are not able to get real transaction name
+      final ITransaction transaction = startTransaction(httpRequest, sentryTraceHeader);
+      try {
+        filterChain.doFilter(httpRequest, httpResponse);
+      } finally {
+        // after all filters run, templated path pattern is available in request attribute
+        final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
+        // if transaction name is not resolved, the request has not been processed by a controller
+        // and
+        // we should not report it to Sentry
+        if (transactionName != null) {
+          transaction.setName(transactionName);
+          transaction.setOperation(TRANSACTION_OP);
+          transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
+          transaction.finish();
+        }
       }
+    } else {
+      filterChain.doFilter(httpRequest, httpResponse);
     }
   }
 
-  private io.sentry.SentryTransaction startTransaction(
-      final @NotNull String name, final @Nullable String sentryTraceHeader) {
+  private ITransaction startTransaction(
+      final @NotNull HttpServletRequest request, final @Nullable String sentryTraceHeader) {
+
+    final String name = request.getMethod() + " " + request.getRequestURI();
+
+    final CustomSamplingContext customSamplingContext = new CustomSamplingContext();
+    customSamplingContext.set("request", request);
+
     if (sentryTraceHeader != null) {
       try {
         final TransactionContext contexts =
-            TransactionContext.fromSentryTrace(name, new SentryTraceHeader(sentryTraceHeader));
-        return hub.startTransaction(contexts);
+            TransactionContext.fromSentryTrace(
+                name, "http.server", new SentryTraceHeader(sentryTraceHeader));
+        return hub.startTransaction(contexts, customSamplingContext);
       } catch (InvalidSentryTraceHeaderException e) {
-        options
+        hub.getOptions()
             .getLogger()
             .log(SentryLevel.DEBUG, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
     }
-    return hub.startTransaction(name);
+    return hub.startTransaction(name, "http.server", customSamplingContext);
   }
 }

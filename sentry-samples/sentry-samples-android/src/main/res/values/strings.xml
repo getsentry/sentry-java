@@ -2,6 +2,7 @@
   <string name="app_name">Sentry sample</string>
   <string name="crash_from_java">Crash from Java (UncaughtException)</string>
   <string name="send_message">Send Message</string>
+  <string name="add_attachment">Add Attachment</string>
   <string name="send_user_feedback">Send User Feedback</string>
   <string name="capture_exception">Capture Exception</string>
   <string name="breadcrumb">Breadcrumb</string>
@@ -10,4 +11,7 @@
   <string name="crash_from_native">Crash from native (segfault)</string>
   <string name="capture_from_native">Capture event from native</string>
   <string name="anr">ANR</string>
+  <string name="do_request">Do Request</string>
+  <string name="open_second_activity">Open Second Activity</string>
+  <string name="back_main">Back to Main Activity</string>
 </resources>

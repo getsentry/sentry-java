@@ -9,10 +9,22 @@ import kotlin.test.assertNull
 
 class DuplicateEventDetectionEventProcessorTest {
 
-    val processor = DuplicateEventDetectionEventProcessor(SentryOptions())
+    class Fixture {
+        fun getSut(enableDeduplication: Boolean? = null): DuplicateEventDetectionEventProcessor {
+            val options = SentryOptions().apply {
+                if (enableDeduplication != null) {
+                    this.setEnableDeduplication(enableDeduplication)
+                }
+            }
+            return DuplicateEventDetectionEventProcessor(options)
+        }
+    }
+
+    var fixture = Fixture()
 
     @Test
     fun `does not drop event if no previous event with same exception was processed`() {
+        val processor = fixture.getSut()
         processor.process(SentryEvent(), null)
 
         val result = processor.process(SentryEvent(RuntimeException()), null)
@@ -22,6 +34,7 @@ class DuplicateEventDetectionEventProcessorTest {
 
     @Test
     fun `drops event with the same exception`() {
+        val processor = fixture.getSut()
         val event = SentryEvent(RuntimeException())
         processor.process(event, null)
 
@@ -31,16 +44,18 @@ class DuplicateEventDetectionEventProcessorTest {
 
     @Test
     fun `drops event with mechanism exception having an exception that has already been processed`() {
+        val processor = fixture.getSut()
         val event = SentryEvent(RuntimeException())
         processor.process(event, null)
 
-        val result = processor.process(SentryEvent(ExceptionMechanismException(Mechanism(), event.throwable, null)), null)
+        val result = processor.process(SentryEvent(ExceptionMechanismException(Mechanism(), event.throwable!!, Thread.currentThread())), null)
         assertNull(result)
     }
 
     @Test
     fun `drops event with exception that has already been processed with event with mechanism exception`() {
-        val sentryEvent = SentryEvent(ExceptionMechanismException(Mechanism(), RuntimeException(), null))
+        val processor = fixture.getSut()
+        val sentryEvent = SentryEvent(ExceptionMechanismException(Mechanism(), RuntimeException(), Thread.currentThread()))
         processor.process(sentryEvent, null)
 
         val result = processor.process(SentryEvent((sentryEvent.throwable as ExceptionMechanismException).throwable), null)
@@ -50,6 +65,7 @@ class DuplicateEventDetectionEventProcessorTest {
 
     @Test
     fun `drops event with the cause equal to exception in already processed event`() {
+        val processor = fixture.getSut()
         val event = SentryEvent(RuntimeException())
         processor.process(event, null)
 
@@ -60,11 +76,20 @@ class DuplicateEventDetectionEventProcessorTest {
 
     @Test
     fun `drops event with any of the causes has been already processed`() {
+        val processor = fixture.getSut()
         val event = SentryEvent(RuntimeException())
         processor.process(event, null)
 
         val result = processor.process(SentryEvent(RuntimeException(RuntimeException(event.throwable))), null)
 
         assertNull(result)
+    }
+
+    @Test
+    fun `does not deduplicate is deduplication is disabled`() {
+        val processor = fixture.getSut(enableDeduplication = false)
+        val event = SentryEvent(RuntimeException())
+        assertNotNull(processor.process(event, null))
+        assertNotNull(processor.process(event, null))
     }
 }

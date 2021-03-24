@@ -37,25 +37,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    * <p>This is supposed to be a hostname.
    */
   private String serverName;
-  /**
-   * Platform identifier of this event (defaults to "other").
-   *
-   * <p>A string representing the platform the SDK is submitting from. This will be used by the
-   * Sentry interface to customize various components in the interface, but also to enter or skip
-   * stacktrace processing.
-   *
-   * <p>Acceptable values are: `as3`, `c`, `cfml`, `cocoa`, `csharp`, `elixir`, `haskell`, `go`,
-   * `groovy`, `java`, `javascript`, `native`, `node`, `objc`, `other`, `perl`, `php`, `python`,
-   * `ruby`
-   */
-  private String platform;
-  /**
-   * The release version of the application.
-   *
-   * <p>**Release versions must be unique across all projects in your organization.** This value can
-   * be the git SHA for the given project, or a product identifier with a semantic version.
-   */
-  private String release;
+
   /**
    * Program's distribution identifier.
    *
@@ -87,12 +69,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    * `UserView`), in a task queue it might be the function + module name.
    */
   private String transaction;
-  /**
-   * The environment name, such as `production` or `staging`.
-   *
-   * <p>```json { "environment": "production" } ```
-   */
-  private String environment;
+
   /** Information about the user who triggered this event. */
   private User user;
   /**
@@ -135,7 +112,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   SentryEvent(SentryId eventId, final Date timestamp) {
     super(eventId);
     this.timestamp = timestamp;
-    this.setContexts(new Contexts());
   }
 
   /**
@@ -149,7 +125,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   }
 
   public SentryEvent() {
-    this(new SentryId(), DateUtils.getCurrentDateTimeOrNull());
+    this(new SentryId(), DateUtils.getCurrentDateTime());
   }
 
   @TestOnly
@@ -157,7 +133,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     this(new SentryId(), timestamp);
   }
 
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public Date getTimestamp() {
     return (Date) timestamp.clone();
   }
@@ -176,22 +152,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void setServerName(String serverName) {
     this.serverName = serverName;
-  }
-
-  public String getPlatform() {
-    return platform;
-  }
-
-  public void setPlatform(String platform) {
-    this.platform = platform;
-  }
-
-  public String getRelease() {
-    return release;
-  }
-
-  public void setRelease(String release) {
-    this.release = release;
   }
 
   public String getDist() {
@@ -244,14 +204,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void setTransaction(String transaction) {
     this.transaction = transaction;
-  }
-
-  public String getEnvironment() {
-    return environment;
-  }
-
-  public void setEnvironment(String environment) {
-    this.environment = environment;
   }
 
   public User getUser() {

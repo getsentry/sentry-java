@@ -59,9 +59,27 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
     return breadcrumb;
   }
 
+  /**
+   * Creates HTTP breadcrumb.
+   *
+   * @param url - the request URL
+   * @param method - the request method
+   * @param code - the code result. Code can be null when http request did not finish or ended with
+   *     network error
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb http(
+      final @NotNull String url, final @NotNull String method, final @Nullable Integer code) {
+    final Breadcrumb breadcrumb = http(url, method);
+    if (code != null) {
+      breadcrumb.setData("status_code", code);
+    }
+    return breadcrumb;
+  }
+
   /** Breadcrumb ctor */
   public Breadcrumb() {
-    this(DateUtils.getCurrentDateTimeOrNull());
+    this(DateUtils.getCurrentDateTime());
   }
 
   /**
@@ -79,7 +97,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @return the timestamp
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @NotNull Date getTimestamp() {
     return (Date) timestamp.clone();
   }

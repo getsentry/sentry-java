@@ -46,7 +46,7 @@ class SentrySpringDsProxyTracingIntegrationTest {
             verify(transport, atLeastOnce()).send(checkTransaction { transaction ->
                 assertThat(transaction.spans).hasSize(1)
                 val span = transaction.spans.first()
-                assertThat(span.operation).isEqualTo("db.query")
+                assertThat(span.op).isEqualTo("db.query")
                 assertThat(span.description).isEqualTo(TracingController.QUERY)
             })
         }

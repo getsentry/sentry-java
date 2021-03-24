@@ -1,4 +1,4 @@
-.PHONY: clean compile dryRelease doRelease release update stop checkFormat
+.PHONY: all, clean compile dryRelease doRelease release update stop checkFormat format
 
 all: clean checkFormat compile dryRelease
 
@@ -11,18 +11,19 @@ compile:
 	./gradlew build
 
 # do a dry release (like a local deploy)
+# remember to add the -SNAPSHOT suffix to the version
 dryRelease:
-	./gradlew bintrayUpload -PbintrayUser=dryUser -PbintrayKey=dryKey
+	./gradlew publishToMavenLocal --no-daemon --no-parallel
 
-# deploy the current build to bintray, jcenter and maven central
+# deploy the current build to maven central
+# remember to remove the -SNAPSHOT suffix from the version
+# promotes the release to maven central
 doRelease:
-	./gradlew bintrayUpload -PbintrayUser="$(BINTRAY_USERNAME)" -PbintrayKey="$(BINTRAY_KEY)" -PmavenCentralUser="$(MAVEN_USER)" -PmavenCentralPassword="$(MAVEN_PASS)" -PmavenCentralSync=true -PdryRun=false --info
+	./gradlew publish --no-daemon --no-parallel
+	./gradlew closeAndReleaseRepository
 
-distZip:
-	./gradlew distZip
-
-# deep clean, build and deploy to bintray, jcenter and maven central
-release: clean checkFormat compile dryRelease distZip
+# clean, build, deploy and promote to maven central
+release: clean checkFormat compile doRelease
 
 # check for dependencies update
 update:
@@ -33,5 +34,10 @@ update:
 stop:
 	./gradlew --stop
 
+# Spotless check's code
 checkFormat:
 	./gradlew spotlessJavaCheck spotlessKotlinCheck
+
+# Spotless format's code
+format:
+	./gradlew spotlessApply

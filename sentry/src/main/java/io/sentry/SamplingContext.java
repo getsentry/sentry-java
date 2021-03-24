@@ -9,14 +9,14 @@ import org.jetbrains.annotations.Nullable;
  * is going to be sampled.
  */
 public final class SamplingContext {
-  private final @NotNull TransactionContext transactionContexts;
+  private final @NotNull TransactionContext transactionContext;
   private final @Nullable CustomSamplingContext customSamplingContext;
 
   public SamplingContext(
-      final @NotNull TransactionContext transactionContexts,
+      final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext) {
-    this.transactionContexts =
-        Objects.requireNonNull(transactionContexts, "transactionContexts is required");
+    this.transactionContext =
+        Objects.requireNonNull(transactionContext, "transactionContexts is required");
     this.customSamplingContext = customSamplingContext;
   }
 
@@ -24,7 +24,7 @@ public final class SamplingContext {
     return customSamplingContext;
   }
 
-  public @NotNull TransactionContext getTransactionContexts() {
-    return transactionContexts;
+  public @NotNull TransactionContext getTransactionContext() {
+    return transactionContext;
   }
 }

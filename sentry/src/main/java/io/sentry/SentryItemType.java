@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.SentryTransaction;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal

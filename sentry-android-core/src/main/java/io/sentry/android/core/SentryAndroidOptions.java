@@ -1,6 +1,10 @@
 package io.sentry.android.core;
 
+import io.sentry.ISpan;
+import io.sentry.Scope;
+import io.sentry.Sentry;
 import io.sentry.SentryOptions;
+import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,25 +37,67 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
+  /**
+   * Enables the Auto instrumentation for Activity lifecycle tracing.
+   *
+   * <ul>
+   *   <li>It also requires setting {@link SentryOptions#getTracesSampleRate()} or {@link
+   *       SentryOptions#getTracesSampler()}.
+   * </ul>
+   *
+   * <ul>
+   *   It starts a transaction before each Activity's onCreate method is called
+   *   (onActivityPreCreated).
+   *   <li>The transaction's name is the Activity's name, e.g. MainActivity.
+   *   <li>The transaction's operation is navigation.
+   * </ul>
+   *
+   * <ul>
+   *   It finishes the transaction after each activity's onResume method is called
+   *   (onActivityPostResumed), this depends on {@link
+   *   SentryAndroidOptions#enableActivityLifecycleTracingAutoFinish}.
+   *   <li>If {@link SentryAndroidOptions#enableActivityLifecycleTracingAutoFinish} is disabled, you
+   *       may finish the transaction manually.
+   *   <li>If the transaction is not finished either automatically or manually, we finish it
+   *       automatically when each Activity's onDestroy method is called (onActivityDestroyed).
+   *   <li>If the previous transaction is not finished when a new Activity is being shown, we finish
+   *       it automatically before the new Activity's onCreate is called (onActivityPreCreated).
+   *   <li>The transaction status will be {@link SpanStatus#OK} if none is set.
+   * </ul>
+   *
+   * The transaction is automatically bound to the {@link Scope}, but only if there's no transaction
+   * already bound to the Scope.
+   */
+  private boolean enableAutoActivityLifecycleTracing = true;
+
+  /**
+   * Enables the Auto instrumentation for Activity lifecycle tracing, but specifically when to
+   * finish the transaction, read {@link SentryAndroidOptions#enableAutoActivityLifecycleTracing}.
+   *
+   * <p>If you require a specific lifecycle to finish a transaction or even after the Activity is
+   * fully rendered but still waiting for an IO operation, you could call {@link ISpan#finish()}
+   * yourself on {@link Sentry#getSpan()}, be sure that you've finished all of your manually created
+   * Spans.
+   */
+  private boolean enableActivityLifecycleTracingAutoFinish = true;
+
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
+    setAttachServerName(false);
   }
 
   private @NotNull SdkVersion createSdkVersion() {
     SdkVersion sdkVersion = getSdkVersion();
 
-    if (sdkVersion == null) {
-      sdkVersion = new SdkVersion();
-    }
+    final String name = BuildConfig.SENTRY_ANDROID_SDK_NAME;
+    final String version = BuildConfig.VERSION_NAME;
+    sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-    sdkVersion.setName(BuildConfig.SENTRY_ANDROID_SDK_NAME);
-    String version = BuildConfig.VERSION_NAME;
-    sdkVersion.setVersion(version);
-    sdkVersion.addPackage("maven:sentry-android-core", version);
+    sdkVersion.addPackage("maven:io.sentry:sentry-android-core", version);
 
     return sdkVersion;
   }
@@ -172,5 +218,22 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setDebugImagesLoader(final @NotNull IDebugImagesLoader debugImagesLoader) {
     this.debugImagesLoader =
         debugImagesLoader != null ? debugImagesLoader : NoOpDebugImagesLoader.getInstance();
+  }
+
+  public boolean isEnableAutoActivityLifecycleTracing() {
+    return enableAutoActivityLifecycleTracing;
+  }
+
+  public void setEnableAutoActivityLifecycleTracing(boolean enableAutoActivityLifecycleTracing) {
+    this.enableAutoActivityLifecycleTracing = enableAutoActivityLifecycleTracing;
+  }
+
+  public boolean isEnableActivityLifecycleTracingAutoFinish() {
+    return enableActivityLifecycleTracingAutoFinish;
+  }
+
+  public void setEnableActivityLifecycleTracingAutoFinish(
+      boolean enableActivityLifecycleTracingAutoFinish) {
+    this.enableActivityLifecycleTracingAutoFinish = enableActivityLifecycleTracingAutoFinish;
   }
 }

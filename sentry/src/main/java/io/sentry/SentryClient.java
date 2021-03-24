@@ -2,9 +2,9 @@ package io.sentry;
 
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.SentryId;
-import io.sentry.transport.Connection;
+import io.sentry.protocol.SentrySpan;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
-import io.sentry.transport.NoOpTransport;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
@@ -27,7 +27,7 @@ public final class SentryClient implements ISentryClient {
   private boolean enabled;
 
   private final @NotNull SentryOptions options;
-  private final @NotNull Connection connection;
+  private final @NotNull ITransport transport;
   private final @Nullable Random random;
 
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
@@ -38,24 +38,19 @@ public final class SentryClient implements ISentryClient {
   }
 
   SentryClient(final @NotNull SentryOptions options) {
-    this(options, null);
-  }
-
-  public SentryClient(final @NotNull SentryOptions options, @Nullable Connection connection) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
 
-    ITransport transport = options.getTransport();
-    if (transport instanceof NoOpTransport) {
-      transport = HttpTransportFactory.create(options);
-      options.setTransport(transport);
+    ITransportFactory transportFactory = options.getTransportFactory();
+    if (transportFactory instanceof NoOpTransportFactory) {
+      transportFactory = new AsyncHttpTransportFactory();
+      options.setTransportFactory(transportFactory);
     }
 
-    if (connection == null) {
-      connection = AsyncConnectionFactory.create(options, options.getEnvelopeDiskCache());
-    }
-    this.connection = connection;
-    random = options.getSampleRate() == null ? null : new Random();
+    final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
+    transport = transportFactory.create(options, requestDetailsResolver.resolve());
+
+    this.random = options.getSampleRate() == null ? null : new Random();
   }
 
   @Override
@@ -114,10 +109,10 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(event, session);
+      final SentryEnvelope envelope = buildEnvelope(event, getAttachmentsFromScope(scope), session);
 
       if (envelope != null) {
-        connection.send(envelope, hint);
+        transport.send(envelope, hint);
       }
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
@@ -129,13 +124,25 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private @Nullable SentryEnvelope buildEnvelope(final @Nullable SentryBaseEvent event)
-      throws IOException {
-    return this.buildEnvelope(event, null);
+  private List<Attachment> getAttachmentsFromScope(@Nullable Scope scope) {
+    if (scope != null) {
+      return scope.getAttachments();
+    } else {
+      return null;
+    }
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent event, final @Nullable Session session) throws IOException {
+      final @Nullable SentryBaseEvent event, final @Nullable List<Attachment> attachments)
+      throws IOException {
+    return this.buildEnvelope(event, attachments, null);
+  }
+
+  private @Nullable SentryEnvelope buildEnvelope(
+      final @Nullable SentryBaseEvent event,
+      final @Nullable List<Attachment> attachments,
+      final @Nullable Session session)
+      throws IOException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -151,6 +158,14 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelopeItem sessionItem =
           SentryEnvelopeItem.fromSession(options.getSerializer(), session);
       envelopeItems.add(sessionItem);
+    }
+
+    if (attachments != null) {
+      for (final Attachment attachment : attachments) {
+        final SentryEnvelopeItem attachmentItem =
+            SentryEnvelopeItem.fromAttachment(attachment, options.getMaxAttachmentSize());
+        envelopeItems.add(attachmentItem);
+      }
     }
 
     if (!envelopeItems.isEmpty()) {
@@ -207,7 +222,7 @@ public final class SentryClient implements ISentryClient {
 
     try {
       final SentryEnvelope envelope = buildEnvelope(userFeedback);
-      connection.send(envelope);
+      transport.send(envelope);
     } catch (IOException e) {
       options
           .getLogger()
@@ -318,7 +333,7 @@ public final class SentryClient implements ISentryClient {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     try {
-      connection.send(envelope, hint);
+      transport.send(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
       return SentryId.EMPTY_ID;
@@ -328,7 +343,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction,
+      @NotNull SentryTransaction transaction,
       final @NotNull Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
@@ -339,22 +354,97 @@ public final class SentryClient implements ISentryClient {
 
     SentryId sentryId = transaction.getEventId();
 
-    try {
-      final SentryEnvelope envelope = buildEnvelope(transaction);
+    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      transaction = applyScope(transaction, scope);
+    } else {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction was cached so not applying scope: %s",
+              transaction.getEventId());
+    }
 
+    processTransaction(transaction);
+
+    try {
+      final SentryEnvelope envelope =
+          buildEnvelope(transaction, filterForTransaction(getAttachmentsFromScope(scope)));
       if (envelope != null) {
-        connection.send(envelope, hint);
+        transport.send(envelope, hint);
       } else {
         sentryId = SentryId.EMPTY_ID;
       }
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
-
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }
 
     return sentryId;
+  }
+
+  private @Nullable List<Attachment> filterForTransaction(@Nullable List<Attachment> attachments) {
+    if (attachments == null) {
+      return null;
+    }
+
+    List<Attachment> attachmentsToSend = new ArrayList<>();
+    for (Attachment attachment : attachments) {
+      if (attachment.isAddToTransactions()) {
+        attachmentsToSend.add(attachment);
+      }
+    }
+
+    return attachmentsToSend;
+  }
+
+  private @NotNull SentryTransaction processTransaction(
+      final @NotNull SentryTransaction transaction) {
+    if (transaction.getPlatform() == null) {
+      transaction.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
+    }
+    if (transaction.getRelease() == null) {
+      transaction.setRelease(options.getRelease());
+    }
+    if (transaction.getEnvironment() == null) {
+      transaction.setEnvironment(options.getEnvironment());
+    }
+    if (transaction.getSdk() == null) {
+      transaction.setSdk(options.getSdkVersion());
+    }
+    if (transaction.getTags() == null) {
+      transaction.setTags(new HashMap<>(options.getTags()));
+    } else {
+      for (Map.Entry<String, String> item : options.getTags().entrySet()) {
+        if (!transaction.getTags().containsKey(item.getKey())) {
+          transaction.setTag(item.getKey(), item.getValue());
+        }
+      }
+    }
+    final List<SentrySpan> unfinishedSpans = new ArrayList<>();
+    for (SentrySpan span : transaction.getSpans()) {
+      if (!span.isFinished()) {
+        unfinishedSpans.add(span);
+      }
+    }
+    if (!unfinishedSpans.isEmpty()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Dropping %d unfinished spans", unfinishedSpans.size());
+    }
+    transaction.getSpans().removeAll(unfinishedSpans);
+    return transaction;
+  }
+
+  private @NotNull SentryTransaction applyScope(
+      @NotNull SentryTransaction transaction, final @Nullable Scope scope) {
+    if (scope != null) {
+      if (transaction.getRequest() == null) {
+        transaction.setRequest(scope.getRequest());
+      }
+    }
+    return transaction;
   }
 
   private @Nullable SentryEvent applyScope(
@@ -365,6 +455,9 @@ public final class SentryClient implements ISentryClient {
       }
       if (event.getUser() == null) {
         event.setUser(scope.getUser());
+      }
+      if (event.getRequest() == null) {
+        event.setRequest(scope.getRequest());
       }
       if (event.getFingerprints() == null) {
         event.setFingerprints(scope.getFingerprint());
@@ -459,7 +552,7 @@ public final class SentryClient implements ISentryClient {
 
     try {
       flush(options.getShutdownTimeout());
-      connection.close();
+      transport.close();
     } catch (IOException e) {
       options
           .getLogger()
@@ -470,7 +563,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void flush(final long timeoutMillis) {
-    // TODO: Flush transport
+    transport.flush(timeoutMillis);
   }
 
   private boolean sample() {
@@ -484,7 +577,7 @@ public final class SentryClient implements ISentryClient {
 
   private static final class SortBreadcrumbsByDate implements Comparator<Breadcrumb> {
 
-    @SuppressWarnings("JdkObsolete")
+    @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
     @Override
     public int compare(final @NotNull Breadcrumb b1, final @NotNull Breadcrumb b2) {
       return b1.getTimestamp().compareTo(b2.getTimestamp());

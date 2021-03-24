@@ -62,6 +62,15 @@ public final class Sentry {
   /**
    * Initializes the SDK
    *
+   * @param dsn The Sentry DSN
+   */
+  public static void init(final @NotNull String dsn) {
+    init(options -> options.setDsn(dsn));
+  }
+
+  /**
+   * Initializes the SDK
+   *
    * @param clazz OptionsContainer for SentryOptions
    * @param optionsConfiguration configuration options callback
    * @param <T> class that extends SentryOptions
@@ -199,10 +208,6 @@ public final class Sentry {
 
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
-
-    if (options.getSerializer() instanceof NoOpSerializer) {
-      options.setSerializer(new GsonSerializer(logger, options.getEnvelopeReader()));
-    }
 
     // this should be after setting serializers
     if (options.getCacheDirPath() != null && !options.getCacheDirPath().isEmpty()) {
@@ -494,53 +499,154 @@ public final class Sentry {
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance.
+   * Creates a Transaction and returns the instance. Started transaction is set on the scope.
    *
    * @param name the transaction name
-   * @return created transaction or {@code null} if {@link Hub} is disabled.
+   * @param operation the operation
+   * @return created transaction
    */
-  public static @Nullable SentryTransaction startTransaction(final @NotNull String name) {
-    return getCurrentHub().startTransaction(name);
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull String operation) {
+    return getCurrentHub().startTransaction(name, operation);
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance.
+   * Creates a Transaction and returns the instance.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name, final @NotNull String operation, final boolean bindToScope) {
+    return getCurrentHub().startTransaction(name, operation, bindToScope);
+  }
+
+  /**
+   * Creates a Transaction and returns the instance. Started transaction is set on the scope.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param description the description
+   * @return created transaction
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @Nullable String description) {
+    return startTransaction(name, operation, description, true);
+  }
+
+  /**
+   * Creates a Transaction and returns the instance.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param description the description
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final boolean bindToScope) {
+    final ITransaction transaction = getCurrentHub().startTransaction(name, operation, bindToScope);
+    transaction.setDescription(description);
+    return transaction;
+  }
+
+  /**
+   * Creates a Transaction and returns the instance. Started transaction is set on the scope.
    *
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  public static @Nullable SentryTransaction startTransaction(
+  public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts) {
     return getCurrentHub().startTransaction(transactionContexts);
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
-   * sampling context the decision if transaction is sampled will be taken by {@link
-   * TracingSampler}.
+   * Creates a Transaction and returns the instance.
    *
-   * @param name the transaction name
-   * @param customSamplingContext the sampling context
-   * @return created transaction.
+   * @param transactionContexts the transaction contexts
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction
    */
-  public static @Nullable SentryTransaction startTransaction(
-      final @NotNull String name, final @NotNull CustomSamplingContext customSamplingContext) {
-    return getCurrentHub().startTransaction(name, customSamplingContext);
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts, boolean bindToScope) {
+    return getCurrentHub().startTransaction(transactionContexts, bindToScope);
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
-   * transaction and sampling contexts the decision if transaction is sampled will be taken by
-   * {@link TracingSampler}.
+   * Creates a Transaction and returns the instance. Based on the passed sampling context the
+   * decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * <p>Started transaction is set on the scope.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param customSamplingContext the sampling context
+   * @return created transaction.
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @NotNull CustomSamplingContext customSamplingContext) {
+    return getCurrentHub().startTransaction(name, operation, customSamplingContext);
+  }
+
+  /**
+   * Creates a Transaction and returns the instance. Based on the passed sampling context the
+   * decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * @param name the transaction name
+   * @param operation the operation
+   * @param customSamplingContext the sampling context
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction.
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final @NotNull CustomSamplingContext customSamplingContext,
+      final boolean bindToScope) {
+    return getCurrentHub().startTransaction(name, operation, customSamplingContext, bindToScope);
+  }
+
+  /**
+   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
+   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * <p>Started transaction is set on the scope.
    *
    * @param transactionContexts the transaction context
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  public static @Nullable SentryTransaction startTransaction(
+  public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
       final @NotNull CustomSamplingContext customSamplingContext) {
     return getCurrentHub().startTransaction(transactionContexts, customSamplingContext);
+  }
+
+  /**
+   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
+   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   *
+   * @param transactionContexts the transaction context
+   * @param customSamplingContext the sampling context
+   * @param bindToScope if transaction should be bound to scope
+   * @return created transaction.
+   */
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @NotNull CustomSamplingContext customSamplingContext,
+      final boolean bindToScope) {
+    return getCurrentHub()
+        .startTransaction(transactionContexts, customSamplingContext, bindToScope);
   }
 
   /**

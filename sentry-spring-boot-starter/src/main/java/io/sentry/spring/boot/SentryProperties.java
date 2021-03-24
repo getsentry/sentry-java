@@ -15,11 +15,16 @@ public class SentryProperties extends SentryOptions {
   /** Weather to use Git commit id as a release. */
   private boolean useGitCommitIdAsRelease = true;
 
-  /** Turns tracing on or off. Default is disabled. */
-  private boolean enableTracing;
+  /**
+   * Turns tracing on or off. Default is disabled.
+   *
+   * @deprecated use {{@link SentryProperties#setTracesSampleRate(Double)} } or create {@link
+   *     io.sentry.SentryOptions.TracesSamplerCallback} bean instead
+   */
+  @Deprecated private boolean enableTracing;
 
   /** Report all or only uncaught web exceptions. */
-  private int exceptionResolverOrder = Integer.MIN_VALUE;
+  private int exceptionResolverOrder = 1;
 
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
@@ -32,10 +37,12 @@ public class SentryProperties extends SentryOptions {
     this.useGitCommitIdAsRelease = useGitCommitIdAsRelease;
   }
 
+  @Deprecated
   public boolean isEnableTracing() {
     return enableTracing;
   }
 
+  @Deprecated
   public void setEnableTracing(boolean enableTracing) {
     this.enableTracing = enableTracing;
   }

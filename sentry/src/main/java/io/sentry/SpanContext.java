@@ -27,7 +27,7 @@ public class SpanContext implements Cloneable {
   private transient @Nullable Boolean sampled;
 
   /** Short code identifying the type of operation the span is measuring. */
-  protected @Nullable String op;
+  protected @NotNull String op;
 
   /**
    * Longer description of the span's operation, which uniquely identifies the span but is
@@ -41,28 +41,34 @@ public class SpanContext implements Cloneable {
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
 
-  public SpanContext(@Nullable Boolean sampled) {
-    this(new SentryId(), new SpanId(), null, sampled);
+  public SpanContext(final @NotNull String operation, final @Nullable Boolean sampled) {
+    this(new SentryId(), new SpanId(), operation, null, sampled);
   }
 
-  /** Creates trace context with defered sampling decision. */
-  public SpanContext() {
-    this(new SentryId(), new SpanId(), null, null);
+  /**
+   * Creates trace context with defered sampling decision.
+   *
+   * @param operation the operation
+   */
+  public SpanContext(final @NotNull String operation) {
+    this(new SentryId(), new SpanId(), operation, null, null);
   }
 
   public SpanContext(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
+      final @NotNull String operation,
       final @Nullable SpanId parentSpanId,
       final @Nullable Boolean sampled) {
     this.traceId = Objects.requireNonNull(traceId, "traceId is required");
     this.spanId = Objects.requireNonNull(spanId, "spanId is required");
+    this.op = Objects.requireNonNull(operation, "operation is required");
     this.parentSpanId = parentSpanId;
     this.sampled = sampled;
   }
 
-  public void setOperation(final @Nullable String operation) {
-    this.op = operation;
+  public void setOperation(final @NotNull String operation) {
+    this.op = Objects.requireNonNull(operation, "operation is required");
   }
 
   public void setTag(final @NotNull String name, final @NotNull String value) {
@@ -71,21 +77,21 @@ public class SpanContext implements Cloneable {
     this.tags.put(name, value);
   }
 
-  public void setDescription(@Nullable String description) {
+  public void setDescription(final @Nullable String description) {
     this.description = description;
   }
 
-  public void setStatus(@Nullable SpanStatus status) {
+  public void setStatus(final @Nullable SpanStatus status) {
     this.status = status;
   }
 
   @NotNull
-  SentryId getTraceId() {
+  public SentryId getTraceId() {
     return traceId;
   }
 
   @NotNull
-  SpanId getSpanId() {
+  public SpanId getSpanId() {
     return spanId;
   }
 
@@ -95,7 +101,7 @@ public class SpanContext implements Cloneable {
     return parentSpanId;
   }
 
-  public @Nullable String getOperation() {
+  public @NotNull String getOperation() {
     return op;
   }
 
@@ -115,7 +121,7 @@ public class SpanContext implements Cloneable {
     return sampled;
   }
 
-  public void setSampled(Boolean sampled) {
+  void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
   }
 

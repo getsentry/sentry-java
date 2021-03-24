@@ -2,10 +2,9 @@ package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
-import io.sentry.ISpan;
+import io.sentry.ITransaction;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.ApiStatus;
@@ -15,7 +14,10 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
-/** Reports every bean method annotated with {@link SentryTransaction} */
+/**
+ * Reports execution of every bean method annotated with {@link SentryTransaction} or a execution of
+ * a bean method within a class annotated with {@link SentryTransaction}.
+ */
 @ApiStatus.Internal
 @Open
 public class SentryTransactionAdvice implements MethodInterceptor {
@@ -25,13 +27,20 @@ public class SentryTransactionAdvice implements MethodInterceptor {
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final Method mostSpecificMethod =
         AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
 
-    final @Nullable SentryTransaction sentryTransaction =
+    @Nullable
+    SentryTransaction sentryTransaction =
         AnnotationUtils.findAnnotation(mostSpecificMethod, SentryTransaction.class);
+    if (sentryTransaction == null) {
+      sentryTransaction =
+          AnnotationUtils.findAnnotation(
+              mostSpecificMethod.getDeclaringClass(), SentryTransaction.class);
+    }
 
     final String name = resolveTransactionName(invocation, sentryTransaction);
 
@@ -41,10 +50,13 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       // transaction is already active, we do not start new transaction
       return invocation.proceed();
     } else {
-      final io.sentry.SentryTransaction transaction = hub.startTransaction(name);
+      String operation;
       if (sentryTransaction != null && !StringUtils.isEmpty(sentryTransaction.operation())) {
-        transaction.setOperation(sentryTransaction.operation());
+        operation = sentryTransaction.operation();
+      } else {
+        operation = "bean";
       }
+      final ITransaction transaction = hub.startTransaction(name, operation);
       try {
         return invocation.proceed();
       } finally {
@@ -53,6 +65,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
     }
   }
 
+  @SuppressWarnings("deprecation")
   private @NotNull String resolveTransactionName(
       MethodInvocation invocation, @Nullable SentryTransaction sentryTransaction) {
     return sentryTransaction == null || StringUtils.isEmpty(sentryTransaction.value())
@@ -63,16 +76,6 @@ public class SentryTransactionAdvice implements MethodInterceptor {
   }
 
   private boolean isTransactionActive() {
-    AtomicBoolean isTransactionActiveRef = new AtomicBoolean(false);
-
-    hub.configureScope(
-        scope -> {
-          ISpan span = scope.getSpan();
-
-          if (span != null) {
-            isTransactionActiveRef.set(true);
-          }
-        });
-    return isTransactionActiveRef.get();
+    return hub.getSpan() != null;
   }
 }

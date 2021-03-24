@@ -226,9 +226,8 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
       }
     }
 
-    try (final OutputStream outputStream = new FileOutputStream(file);
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-      serializer.serialize(envelope, writer);
+    try (final OutputStream outputStream = new FileOutputStream(file)) {
+      serializer.serialize(envelope, outputStream);
     } catch (Exception e) {
       options
           .getLogger()

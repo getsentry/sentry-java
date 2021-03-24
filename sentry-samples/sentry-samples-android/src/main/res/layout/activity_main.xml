@@ -22,6 +22,12 @@
     android:layout_height="wrap_content"
     android:text="@string/send_user_feedback" />
 
+  <Button
+    android:id="@+id/add_attachment"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/add_attachment" />
+
   <Button android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/capture_exception"
@@ -56,4 +62,9 @@
         android:layout_height="wrap_content"
         android:id="@+id/native_capture"
         android:text="@string/capture_from_native"/>
+
+  <Button android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:id="@+id/open_second_activity"
+      android:text="@string/open_second_activity"/>
 </LinearLayout>

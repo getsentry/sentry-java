@@ -16,7 +16,7 @@ class NdkScopeObserverTest {
     private class Fixture {
         val nativeScope = mock<INativeScope>()
         val options = SentryOptions().apply {
-            setSerializer(GsonSerializer(mock(), mock()))
+            setSerializer(GsonSerializer(mock()))
         }
 
         fun getSut(): NdkScopeObserver {

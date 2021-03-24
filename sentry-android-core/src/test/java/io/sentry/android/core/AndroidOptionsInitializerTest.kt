@@ -163,7 +163,7 @@ class AndroidOptionsInitializerTest {
         val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
         val logger = mock<ILogger>()
         val sentryOptions = SentryAndroidOptions().apply {
-            isDebug = true
+            setDebug(true)
         }
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(), createClassMock())
@@ -180,7 +180,7 @@ class AndroidOptionsInitializerTest {
         val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
         val logger = mock<ILogger>()
         val sentryOptions = SentryAndroidOptions().apply {
-            isDebug = true
+            setDebug(true)
         }
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(14), createClassMock())
@@ -197,7 +197,7 @@ class AndroidOptionsInitializerTest {
         val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
         val logger = mock<ILogger>()
         val sentryOptions = SentryAndroidOptions().apply {
-            isDebug = true
+            setDebug(true)
         }
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(), createClassMockThrows(UnsatisfiedLinkError()))
@@ -213,7 +213,7 @@ class AndroidOptionsInitializerTest {
         val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
         val logger = mock<ILogger>()
         val sentryOptions = SentryAndroidOptions().apply {
-            isDebug = true
+            setDebug(true)
         }
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(), createClassMockThrows(ClassNotFoundException()))
@@ -229,7 +229,7 @@ class AndroidOptionsInitializerTest {
         val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
         val logger = mock<ILogger>()
         val sentryOptions = SentryAndroidOptions().apply {
-            isDebug = true
+            setDebug(true)
         }
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(), createClassMockThrows(RuntimeException()))
@@ -298,7 +298,7 @@ class AndroidOptionsInitializerTest {
         whenever(mockContext.applicationContext).thenReturn(null)
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.integrations.firstOrNull { it is ActivityBreadcrumbsIntegration }
+        val actual = sentryOptions.integrations.firstOrNull { it is ActivityLifecycleIntegration }
         assertNull(actual)
     }
 

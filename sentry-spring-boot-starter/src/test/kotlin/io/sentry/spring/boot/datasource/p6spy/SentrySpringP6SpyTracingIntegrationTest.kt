@@ -1,7 +1,11 @@
 package io.sentry.spring.boot.datasource.p6spy
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.atLeastOnce
+import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ITransportFactory
 import io.sentry.spring.boot.datasource.dsproxy.SentryDsProxyAutoConfiguration
 import io.sentry.test.checkTransaction
 import io.sentry.transport.ITransport
@@ -26,12 +30,12 @@ import org.springframework.web.bind.annotation.RestController
 @SpringBootTest(
     classes = [TracingApp::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true", "sentry.traces-sample-rate=1.0"]
+    properties = ["sentry.dsn=http://key@localhost/proj", "debug=true","sentry.enable-tracing=true", "sentry.traces-sample-rate=1.0"]
 )
 class SentrySpringP6SpyTracingIntegrationTest {
 
     @MockBean
-    lateinit var transport: ITransport
+    lateinit var transportFactory: ITransportFactory
 
     @LocalServerPort
     lateinit var port: Integer
@@ -39,6 +43,8 @@ class SentrySpringP6SpyTracingIntegrationTest {
     @Test
     fun `attaches span from database query call to transaction`() {
         val restTemplate = TestRestTemplate()
+        val transport = mock<ITransport>()
+        whenever(transportFactory.create(any(), any())).thenReturn(transport)
 
         restTemplate.getForEntity("http://localhost:$port/p6spy", String::class.java)
 
@@ -46,9 +52,9 @@ class SentrySpringP6SpyTracingIntegrationTest {
             verify(transport, atLeastOnce()).send(checkTransaction { transaction ->
                 assertThat(transaction.spans).hasSize(1)
                 val span = transaction.spans.first()
-                assertThat(span.operation).isEqualTo("db.query")
+                assertThat(span.op).isEqualTo("db.query")
                 assertThat(span.description).isEqualTo(TracingController.QUERY)
-            })
+            }, any())
         }
     }
 }

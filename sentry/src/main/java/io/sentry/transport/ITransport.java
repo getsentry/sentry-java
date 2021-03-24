@@ -6,7 +6,16 @@ import java.io.IOException;
 
 /** A transport is in charge of sending the event to the Sentry server. */
 public interface ITransport extends Closeable {
-  boolean isRetryAfter(String type);
+  void send(SentryEnvelope envelope, Object hint) throws IOException;
 
-  TransportResult send(SentryEnvelope envelope) throws IOException;
+  default void send(SentryEnvelope envelope) throws IOException {
+    send(envelope, null);
+  }
+
+  /**
+   * Flushes events queued up, but keeps the client enabled. Not implemented yet.
+   *
+   * @param timeoutMillis time in milliseconds
+   */
+  void flush(long timeoutMillis);
 }

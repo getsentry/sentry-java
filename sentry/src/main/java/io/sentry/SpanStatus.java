@@ -1,5 +1,6 @@
 package io.sentry;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public enum SpanStatus {
@@ -73,13 +74,27 @@ public enum SpanStatus {
    * @param httpStatusCode the http status code
    * @return span status equivalent of http status code or null if not found
    */
-  public static @Nullable SpanStatus fromHttpStatusCode(int httpStatusCode) {
+  public static @Nullable SpanStatus fromHttpStatusCode(final int httpStatusCode) {
     for (final SpanStatus status : SpanStatus.values()) {
       if (status.matches(httpStatusCode)) {
         return status;
       }
     }
     return null;
+  }
+
+  /**
+   * Creates {@link SpanStatus} from HTTP status code.
+   *
+   * @param httpStatusCode the http status code
+   * @param defaultStatus the default SpanStatus
+   * @return span status equivalent of http status code or defaultStatus if not found
+   */
+  public static @NotNull SpanStatus fromHttpStatusCode(
+      final @Nullable Integer httpStatusCode, final @NotNull SpanStatus defaultStatus) {
+    final SpanStatus spanStatus =
+        httpStatusCode != null ? fromHttpStatusCode(httpStatusCode) : defaultStatus;
+    return spanStatus != null ? spanStatus : defaultStatus;
   }
 
   private boolean matches(int httpStatusCode) {

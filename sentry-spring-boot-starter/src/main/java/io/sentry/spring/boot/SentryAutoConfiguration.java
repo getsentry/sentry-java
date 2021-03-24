@@ -4,33 +4,30 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.EventProcessor;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.ITransportFactory;
 import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
+import io.sentry.spring.SentrySpringRequestListener;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
-import io.sentry.spring.tracing.SentrySpan;
-import io.sentry.spring.tracing.SentrySpanAdvice;
+import io.sentry.spring.tracing.SentryAdviceConfiguration;
+import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
-import io.sentry.spring.tracing.SentryTransaction;
-import io.sentry.spring.tracing.SentryTransactionAdvice;
-import io.sentry.transport.ITransport;
+import io.sentry.spring.tracing.SentryTransactionPointcutConfiguration;
 import io.sentry.transport.ITransportGate;
+import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
 import java.util.List;
-import org.aopalliance.aop.Advice;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.aop.Advisor;
-import org.springframework.aop.Pointcut;
-import org.springframework.aop.support.DefaultPointcutAdvisor;
-import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -40,19 +37,20 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.GitProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.client.RestTemplate;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sentry.dsn")
 @Open
 public class SentryAutoConfiguration {
 
   /** Registers general purpose Sentry related beans. */
-  @Configuration
+  @Configuration(proxyBeanMethods = false)
   @EnableConfigurationProperties(SentryProperties.class)
   @Open
   static class HubConfiguration {
@@ -69,7 +67,7 @@ public class SentryAutoConfiguration {
         final @NotNull List<Integration> integrations,
         final @NotNull ObjectProvider<ITransportGate> transportGate,
         final @NotNull List<SentryUserProvider> sentryUserProviders,
-        final @NotNull ObjectProvider<ITransport> transport,
+        final @NotNull ObjectProvider<ITransportFactory> transportFactory,
         final @NotNull InAppIncludesResolver inAppPackagesResolver) {
       return options -> {
         beforeSendCallback.ifAvailable(options::setBeforeSend);
@@ -80,9 +78,9 @@ public class SentryAutoConfiguration {
         sentryUserProviders.forEach(
             sentryUserProvider ->
                 options.addEventProcessor(
-                    new SentryUserProviderEventProcessor(sentryUserProvider)));
+                    new SentryUserProviderEventProcessor(options, sentryUserProvider)));
         transportGate.ifAvailable(options::setTransportGate);
-        transport.ifAvailable(options::setTransport);
+        transportFactory.ifAvailable(options::setTransportFactory);
         inAppPackagesResolver.resolveInAppIncludes().forEach(options::addInAppInclude);
       };
     }
@@ -108,16 +106,31 @@ public class SentryAutoConfiguration {
 
       options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME);
       options.setSdkVersion(createSdkVersion(options));
+      if (options.getTracesSampleRate() == null) {
+        options.setTracesSampleRate(0.0);
+      }
       Sentry.init(options);
       return HubAdapter.getInstance();
     }
 
     /** Registers beans specific to Spring MVC. */
-    @Configuration
+    @Configuration(proxyBeanMethods = false)
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     @Import(SentryWebConfiguration.class)
     @Open
     static class SentryWebMvcConfiguration {
+
+      @Bean
+      public @NotNull SentryRequestResolver sentryRequestResolver(final @NotNull IHub hub) {
+        return new SentryRequestResolver(hub);
+      }
+
+      @Bean
+      public @NotNull SentrySpringRequestListener sentrySpringRequestListener(
+          final @NotNull IHub sentryHub, final @NotNull SentryRequestResolver requestResolver) {
+        return new SentrySpringRequestListener(sentryHub, requestResolver);
+      }
+
       @Bean
       @ConditionalOnMissingBean
       public @NotNull SentryExceptionResolver sentryExceptionResolver(
@@ -126,80 +139,38 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+      @Conditional(SentryTracingCondition.class)
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
-          final @NotNull IHub hub,
-          final @NotNull SentryOptions options,
-          final @NotNull SentryRequestResolver sentryRequestResolver) {
+          final @NotNull IHub hub, final @NotNull SentryRequestResolver sentryRequestResolver) {
         FilterRegistrationBean<SentryTracingFilter> filter =
-            new FilterRegistrationBean<>(
-                new SentryTracingFilter(hub, options, sentryRequestResolver));
+            new FilterRegistrationBean<>(new SentryTracingFilter(hub, sentryRequestResolver));
         filter.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return filter;
       }
     }
 
-    @Configuration
-    @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+    @Configuration(proxyBeanMethods = false)
+    @Conditional(SentryTracingCondition.class)
     @ConditionalOnClass(ProceedingJoinPoint.class)
+    @Import(SentryAdviceConfiguration.class)
     @Open
     static class SentryPerformanceAspectsConfiguration {
 
-      /**
-       * Pointcut around which transactions are created.
-       *
-       * <p>This bean is can be replaced with user defined pointcut by specifying a {@link Pointcut}
-       * bean with name "sentryTransactionPointcut".
-       *
-       * @return pointcut used by {@link SentryTransactionAdvice}.
-       */
-      @Bean
+      @Configuration(proxyBeanMethods = false)
       @ConditionalOnMissingBean(name = "sentryTransactionPointcut")
-      public @NotNull Pointcut sentryTransactionPointcut() {
-        return new AnnotationMatchingPointcut(null, SentryTransaction.class);
-      }
+      @Import(SentryTransactionPointcutConfiguration.class)
+      @Open
+      static class SentryTransactionPointcutAutoConfiguration {}
 
-      @Bean
-      public @NotNull Advice sentryTransactionAdvice(final @NotNull IHub hub) {
-        return new SentryTransactionAdvice(hub);
-      }
-
-      @Bean
-      public @NotNull Advisor sentryTransactionAdvisor(
-          final @NotNull IHub hub,
-          final @NotNull @Qualifier("sentryTransactionPointcut") Pointcut
-                  sentryTransactionPointcut) {
-        return new DefaultPointcutAdvisor(sentryTransactionPointcut, sentryTransactionAdvice(hub));
-      }
-
-      /**
-       * Pointcut around which spans are created.
-       *
-       * <p>This bean is can be replaced with user defined pointcut by specifying a {@link Pointcut}
-       * bean with name "sentrySpanPointcut".
-       *
-       * @return pointcut used by {@link SentrySpanAdvice}.
-       */
-      @Bean
+      @Configuration(proxyBeanMethods = false)
       @ConditionalOnMissingBean(name = "sentrySpanPointcut")
-      public @NotNull Pointcut sentrySpanPointcut() {
-        return new AnnotationMatchingPointcut(null, SentrySpan.class);
-      }
-
-      @Bean
-      public @NotNull Advice sentrySpanAdvice(final @NotNull IHub hub) {
-        return new SentrySpanAdvice(hub);
-      }
-
-      @Bean
-      public @NotNull Advisor sentrySpanAdvisor(
-          IHub hub, final @NotNull @Qualifier("sentrySpanPointcut") Pointcut sentrySpanPointcut) {
-        return new DefaultPointcutAdvisor(sentrySpanPointcut, sentrySpanAdvice(hub));
-      }
+      @Import(SentrySpanPointcutConfiguration.class)
+      @Open
+      static class SentrySpanPointcutAutoConfiguration {}
     }
 
-    @Configuration
+    @Configuration(proxyBeanMethods = false)
     @AutoConfigureBefore(RestTemplateAutoConfiguration.class)
     @ConditionalOnClass(RestTemplate.class)
     @Open
@@ -210,20 +181,48 @@ public class SentryAutoConfiguration {
       }
     }
 
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnMissingBean(ITransportFactory.class)
+    @ConditionalOnClass(ApacheHttpClientTransportFactory.class)
+    @Open
+    static class ApacheHttpClientTransportFactoryAutoconfiguration {
+
+      @Bean
+      public @NotNull ApacheHttpClientTransportFactory apacheHttpClientTransportFactory() {
+        return new ApacheHttpClientTransportFactory();
+      }
+    }
+
     private static @NotNull SdkVersion createSdkVersion(
         final @NotNull SentryOptions sentryOptions) {
       SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
-      if (sdkVersion == null) {
-        sdkVersion = new SdkVersion();
-      }
-
-      sdkVersion.setName(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME);
+      final String name = BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME;
       final String version = BuildConfig.VERSION_NAME;
-      sdkVersion.setVersion(version);
-      sdkVersion.addPackage("maven:sentry-spring-boot-starter", version);
+      sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
+
+      sdkVersion.addPackage("maven:io.sentry:sentry-spring-boot-starter", version);
 
       return sdkVersion;
     }
+  }
+
+  static final class SentryTracingCondition extends AnyNestedCondition {
+
+    public SentryTracingCondition() {
+      super(ConfigurationPhase.REGISTER_BEAN);
+    }
+
+    @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
+    @SuppressWarnings("UnusedNestedClass")
+    private static class SentryTracingEnabled {}
+
+    @ConditionalOnProperty(name = "sentry.traces-sample-rate")
+    @SuppressWarnings("UnusedNestedClass")
+    private static class SentryTracesSampleRateCondition {}
+
+    @ConditionalOnBean(SentryOptions.TracesSamplerCallback.class)
+    @SuppressWarnings("UnusedNestedClass")
+    private static class SentryTracesSamplerBeanCondition {}
   }
 }

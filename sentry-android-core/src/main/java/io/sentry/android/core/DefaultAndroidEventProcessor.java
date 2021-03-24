@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -66,9 +67,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @TestOnly static final String ANDROID_ID = "androidId";
   @TestOnly static final String KERNEL_VERSION = "kernelVersion";
   @TestOnly static final String EMULATOR = "emulator";
+  @TestOnly static final String SIDE_LOADED = "sideLoaded";
 
   // it could also be a parameter and get from Sentry.init(...)
-  private static final @Nullable Date appStartTime = DateUtils.getCurrentDateTimeOrNull();
+  private static final @Nullable Date appStartTime = DateUtils.getCurrentDateTime();
 
   @TestOnly final Context context;
 
@@ -126,6 +128,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // its not IO, but it has been cached in the old version as well
     map.put(EMULATOR, isEmulator());
 
+    final Map<String, String> sideLoadedInfo = getSideLoadedInfo();
+    if (sideLoadedInfo != null) {
+      map.put(SIDE_LOADED, sideLoadedInfo);
+    }
+
     return map;
   }
 
@@ -142,18 +149,41 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     // userId should be set even if event is Cached as the userId is static and won't change anyway.
-    if (event.getUser() == null) {
+    final User user = event.getUser();
+    if (user == null) {
       event.setUser(getDefaultUser());
+    } else if (user.getId() == null) {
+      user.setId(getDeviceId());
     }
 
     if (event.getContexts().getDevice() == null) {
       event.getContexts().setDevice(getDevice());
     }
-    if (event.getContexts().getOperatingSystem() == null) {
-      event.getContexts().setOperatingSystem(getOperatingSystem());
-    }
+
+    mergeOS(event);
+
+    setSideLoadedInfo(event);
 
     return event;
+  }
+
+  private void mergeOS(final @NotNull SentryEvent event) {
+    final OperatingSystem currentOS = event.getContexts().getOperatingSystem();
+    final OperatingSystem androidOS = getOperatingSystem();
+
+    // make Android OS the main OS using the 'os' key
+    event.getContexts().setOperatingSystem(androidOS);
+
+    if (currentOS != null) {
+      // add additional OS which was already part of the SentryEvent (eg Linux read from NDK)
+      String osNameKey = currentOS.getName();
+      if (osNameKey != null && !osNameKey.isEmpty()) {
+        osNameKey = "os_" + osNameKey.trim().toLowerCase(Locale.ROOT);
+      } else {
+        osNameKey = "os_1";
+      }
+      event.getContexts().put(osNameKey, currentOS);
+    }
   }
 
   // Data to be applied to events that was created in the running process
@@ -387,9 +417,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @SuppressWarnings("JdkObsolete")
   private @Nullable Date getBootTime() {
     try {
-      // if user changes time, will give a wrong answer, consider ACTION_TIME_CHANGED
-      return DateUtils.getDateTime(
-          new Date(System.currentTimeMillis() - SystemClock.elapsedRealtime()));
+      // if user changes the clock, will give a wrong answer, consider ACTION_TIME_CHANGED.
+      // currentTimeMillis returns UTC already
+      return DateUtils.getDateTime(System.currentTimeMillis() - SystemClock.elapsedRealtime());
     } catch (IllegalArgumentException e) {
       logger.log(SentryLevel.ERROR, e, "Error getting the device's boot time.");
     }
@@ -881,5 +911,56 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     return null;
+  }
+
+  @SuppressWarnings("deprecation")
+  private @Nullable Map<String, String> getSideLoadedInfo() {
+    String packageName = null;
+    try {
+      final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
+      final PackageManager packageManager = context.getPackageManager();
+
+      if (packageInfo != null && packageManager != null) {
+        packageName = packageInfo.packageName;
+
+        // getInstallSourceInfo requires INSTALL_PACKAGES permission which is only given to system
+        // apps.
+        final String installerPackageName = packageManager.getInstallerPackageName(packageName);
+
+        final Map<String, String> sideLoadedInfo = new HashMap<>();
+
+        if (installerPackageName != null) {
+          sideLoadedInfo.put("isSideLoaded", "false");
+          // could be amazon, google play etc
+          sideLoadedInfo.put("installerStore", installerPackageName);
+        } else {
+          // if it's installed via adb, system apps or untrusted sources
+          sideLoadedInfo.put("isSideLoaded", "true");
+        }
+
+        return sideLoadedInfo;
+      }
+    } catch (IllegalArgumentException e) {
+      // it'll never be thrown as we are querying its own App's package.
+      logger.log(SentryLevel.DEBUG, "%s package isn't installed.", packageName);
+    }
+
+    return null;
+  }
+
+  @SuppressWarnings("unchecked")
+  private void setSideLoadedInfo(final @NotNull SentryEvent event) {
+    try {
+      final Object sideLoadedInfo = contextData.get().get(SIDE_LOADED);
+
+      if (sideLoadedInfo instanceof Map) {
+        for (final Map.Entry<String, String> entry :
+            ((Map<String, String>) sideLoadedInfo).entrySet()) {
+          event.setTag(entry.getKey(), entry.getValue());
+        }
+      }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+    }
   }
 }

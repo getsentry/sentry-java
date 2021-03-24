@@ -5,12 +5,13 @@
   <br />
 </p>
 
+_Bad software is everywhere, and we're tired of it. Sentry is on a mission to help developers write better software faster, so we can get back to enjoying technology. If you want to join us [<kbd>**Check out our open positions**</kbd>](https://sentry.io/careers/)_
+
 Sentry SDK for Java and Android
 ===========
-[![AppVeyor](https://img.shields.io/appveyor/build/sentry/sentry-java?label=AppVeyor)](https://ci.appveyor.com/project/sentry/sentry-java)
 [![GH Workflow](https://img.shields.io/github/workflow/status/getsentry/sentry-java/Workflow%20Ubuntu%20macOS?label=GH%20Workflow)](https://github.com/getsentry/sentry-java/actions)
-[![Tests](https://img.shields.io/appveyor/tests/sentry/sentry-java/ref/sentry-java-2?compact_message)](https://ci.appveyor.com/project/sentry/sentry-java/branch/ref/sentry-java-2/tests)
 [![codecov](https://codecov.io/gh/getsentry/sentry-java/branch/ref/sentry-java-2/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-java)
+[![Discord Chat](https://img.shields.io/discord/621778831602221064?logo=discord&logoColor=ffffff&color=7389D8)](https://discord.gg/PXa5Apfe7K)  
 
 |      Packages          | Bintray | Maven Central | Android API |
 | ---------------------- | ------- | ------- | ------- |
@@ -27,21 +28,17 @@ Sentry SDK for Java and Android
 
 
 
-# Java SDK 3.0 Docs
+# Useful links and docs
 
-The Java SDK documentation [can be found on docs.sentry.io](https://docs.sentry.io/platforms/java/).
+Current Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
 
 Java SDK version 1.x [can still be found here](https://docs.sentry.io/clients/java/).
 
-Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
+Migration page from [sentry-android 1.x and 2.x to sentry-android 4.x](https://docs.sentry.io/platforms/android/migration/).
 
-# Android Docs
-
-That's the initial page of the release [2.x and its docs](https://docs.sentry.io/platforms/android).
+Migration page from [sentry 1.x to sentry 4.x](https://docs.sentry.io/platforms/java/migration/).
 
 Releases from sentry-android [2.x and its changelogs](https://github.com/getsentry/sentry-android/releases).
-
-Migration page from [sentry-android 1.x and 2.x to sentry-android 3.x](https://docs.sentry.io/platforms/android/migration/).
 
 Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/getsentry/sentry-android-gradle-plugin)
 
@@ -51,9 +48,17 @@ Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/gets
 
 [Adding Native support to our Android SDK](https://blog.sentry.io/2019/11/25/adding-native-support-to-our-android-sdk).
 
+[How to use Sentry Attachments with Mobile Applications](https://blog.sentry.io/2021/02/03/how-to-use-sentry-attachments-with-mobile-applications).
+
+[Performance Monitoring for Android Applications](https://blog.sentry.io/2021/03/18/performance-monitoring-for-android-applications).
+
+[Close the Loop with User Feedback](https://blog.sentry.io/2021/02/16/close-the-loop-with-user-feedback).
+
 # Samples
 
 [Sample App. with Sentry Android SDK and Sentry Gradle Plugin](https://github.com/getsentry/examples/tree/master/android).
+
+[Sample App. with Sentry Java SDK](https://github.com/getsentry/examples/tree/master/java).
 
 [Sample for Development](https://github.com/getsentry/sentry-java/tree/main/sentry-samples).
 
@@ -82,7 +87,7 @@ Since version 3.0.0 of this SDK, Sentry version >= v20.6.0 is required. This onl
 * [![Java Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg?label=java%20docs)](https://docs.sentry.io/platforms/java/)
 * [![Android Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg?label=android%20docs)](https://docs.sentry.io/platforms/android/)
 * [![Forum](https://img.shields.io/badge/forum-sentry-green.svg)](https://forum.sentry.io/c/sdks)
-* [![Discord](https://img.shields.io/discord/621778831602221064)](https://discord.gg/Ww9hbqr)
+* [![Discord Chat](https://img.shields.io/discord/621778831602221064?logo=discord&logoColor=ffffff&color=7389D8)](https://discord.gg/PXa5Apfe7K)  
 * [![Stack Overflow](https://img.shields.io/badge/stack%20overflow-sentry-green.svg)](http://stackoverflow.com/questions/tagged/sentry)
 * [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-sentry-green.svg)](https://github.com/getsentry/.github/blob/master/CODE_OF_CONDUCT.md)
 * [![Twitter Follow](https://img.shields.io/twitter/follow/getsentry?label=getsentry&style=social)](https://twitter.com/intent/follow?screen_name=getsentry)
