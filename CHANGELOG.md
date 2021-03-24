@@ -1,5 +1,7 @@
 # Unreleased
 
+* Feat: Add option to ignore exceptions by type. #1352
+
 # 4.4.0-alpha.1
 
 * Bump: sentry-native to 0.4.8
