@@ -31,6 +31,7 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.TestLibs.hsqldb)
 }
 
 configure<SourceSetContainer> {
