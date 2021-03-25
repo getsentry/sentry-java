@@ -18,7 +18,6 @@ include(
     "sentry-datasource-proxy",
     "sentry-p6spy",
     "sentry-spring-boot-starter",
-    "sentry-android-timber",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-jul",
