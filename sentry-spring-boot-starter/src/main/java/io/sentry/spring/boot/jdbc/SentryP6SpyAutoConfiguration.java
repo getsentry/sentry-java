@@ -1,8 +1,8 @@
-package io.sentry.spring.boot.datasource.dsproxy;
+package io.sentry.spring.boot.jdbc;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
-import io.sentry.dsproxy.SentryQueryExecutionListener;
+import io.sentry.p6spy.SentryJdbcEventListener;
 import io.sentry.spring.boot.SentryTracingCondition;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
@@ -14,18 +14,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
-/** Auto-configures datasource-proxy related beans. */
+/** Auto-configures P6Spy related beans. */
 @Open
 @Configuration
 @AutoConfigureAfter(DataSourceAutoConfiguration.class)
-@ConditionalOnClass({DataSource.class, SentryQueryExecutionListener.class})
+@ConditionalOnClass({DataSource.class, SentryJdbcEventListener.class})
 @Conditional(SentryTracingCondition.class)
 @ConditionalOnBean(IHub.class)
-public class SentryDsProxyAutoConfiguration {
+public class SentryP6SpyAutoConfiguration {
 
   @Bean
-  public @NotNull SentryQueryExecutionListener sentryQueryExecutionListener(
-      final @NotNull IHub hub) {
-    return new SentryQueryExecutionListener(hub);
+  public @NotNull SentryJdbcEventListener sentryJdbcEventListener(final @NotNull IHub hub) {
+    return new SentryJdbcEventListener(hub);
   }
 }

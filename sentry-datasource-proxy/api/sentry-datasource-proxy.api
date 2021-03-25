@@ -1,4 +1,5 @@
 public class io/sentry/dsproxy/SentryQueryExecutionListener : net/ttddyy/dsproxy/listener/QueryExecutionListener {
+	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun afterQuery (Lnet/ttddyy/dsproxy/ExecutionInfo;Ljava/util/List;)V
 	public fun beforeQuery (Lnet/ttddyy/dsproxy/ExecutionInfo;Ljava/util/List;)V

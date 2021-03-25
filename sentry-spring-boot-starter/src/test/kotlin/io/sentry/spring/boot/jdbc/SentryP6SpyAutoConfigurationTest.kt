@@ -1,4 +1,4 @@
-package io.sentry.spring.boot.datasource.p6spy
+package io.sentry.spring.boot.jdbc
 
 import io.sentry.p6spy.SentryJdbcEventListener
 import io.sentry.spring.boot.SentryAutoConfiguration

@@ -7,12 +7,12 @@ import io.sentry.IHub
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import org.hsqldb.jdbc.JDBCDataSource
 import javax.sql.DataSource
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.hsqldb.jdbc.JDBCDataSource
 
 class SentryJdbcEventListenerTest {
 

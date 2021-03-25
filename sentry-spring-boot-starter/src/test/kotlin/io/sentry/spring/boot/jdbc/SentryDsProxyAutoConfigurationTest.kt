@@ -1,4 +1,4 @@
-package io.sentry.spring.boot.datasource.dsproxy
+package io.sentry.spring.boot.jdbc
 
 import io.sentry.dsproxy.SentryQueryExecutionListener
 import io.sentry.spring.boot.SentryAutoConfiguration

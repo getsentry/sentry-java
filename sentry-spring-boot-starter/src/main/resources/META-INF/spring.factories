@@ -1,5 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 io.sentry.spring.boot.SentryAutoConfiguration,\
 io.sentry.spring.boot.SentryLogbackAppenderAutoConfiguration,\
-io.sentry.spring.boot.datasource.dsproxy.SentryDsProxyAutoConfiguration, \
-io.sentry.spring.boot.datasource.p6spy.SentryP6SpyAutoConfiguration
+io.sentry.spring.boot.jdbc.SentryDsProxyAutoConfiguration, \
+io.sentry.spring.boot.jdbc.SentryP6SpyAutoConfiguration
