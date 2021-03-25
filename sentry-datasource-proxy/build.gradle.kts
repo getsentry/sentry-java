@@ -17,7 +17,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 dependencies {
     api(project(":sentry"))
-    implementation(Config.Libs.datasourceProxy)
+    api(Config.Libs.datasourceProxy)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
