@@ -3,6 +3,7 @@ package io.sentry.p6spy;
 import com.jakewharton.nopen.annotation.Open;
 import com.p6spy.engine.common.StatementInformation;
 import com.p6spy.engine.event.SimpleJdbcEventListener;
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.Span;
@@ -21,6 +22,10 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
 
   public SentryJdbcEventListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+  }
+
+  public SentryJdbcEventListener() {
+    this(HubAdapter.getInstance());
   }
 
   @Override

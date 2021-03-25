@@ -1,6 +1,7 @@
 package io.sentry.dsproxy;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.Span;
@@ -23,6 +24,10 @@ public class SentryQueryExecutionListener implements QueryExecutionListener {
 
   public SentryQueryExecutionListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+  }
+
+  public SentryQueryExecutionListener() {
+    this(HubAdapter.getInstance());
   }
 
   @Override
