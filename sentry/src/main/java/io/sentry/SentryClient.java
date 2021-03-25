@@ -60,19 +60,6 @@ public final class SentryClient implements ISentryClient {
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
-    SentryId sentryId = SentryId.EMPTY_ID;
-
-    if (event.getThrowable() != null
-        && options.containsIgnoredExceptionForType(event.getThrowable())) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Event was dropped as the exception %s is ignored",
-              event.getThrowable().getClass());
-      return sentryId;
-    }
-
     if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
       // Event has already passed through here before it was cached
       // Going through again could be reading data that is no longer relevant
@@ -107,7 +94,19 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
+    SentryId sentryId = SentryId.EMPTY_ID;
+
     if (event != null) {
+      if (event.getOriginThrowable() != null
+          && options.containsIgnoredExceptionForType(event.getOriginThrowable())) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped as the exception %s is ignored",
+                event.getOriginThrowable().getClass());
+        return sentryId;
+      }
       event = executeBeforeSend(event, hint);
 
       if (event == null) {
