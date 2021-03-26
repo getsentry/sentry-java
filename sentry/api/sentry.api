@@ -802,7 +802,6 @@ public class io/sentry/SentryOptions {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setFlushTimeoutMillis (J)V
 	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
-	public fun setIgnoredExceptionsForType (Ljava/util/Set;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V

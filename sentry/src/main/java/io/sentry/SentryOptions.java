@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
@@ -39,7 +40,8 @@ public class SentryOptions {
   private final @NotNull List<EventProcessor> eventProcessors = new CopyOnWriteArrayList<>();
 
   /** Exceptions that once captured will not be sent to Sentry as {@link SentryEvent}. */
-  private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType = new HashSet<>();
+  private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
+      new CopyOnWriteArraySet<>();
 
   /**
    * Code that provides middlewares, bindings or hooks into certain frameworks or environments,
