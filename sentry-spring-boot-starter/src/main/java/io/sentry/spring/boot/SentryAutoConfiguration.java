@@ -109,6 +109,11 @@ public class SentryAutoConfiguration {
       if (options.getTracesSampleRate() == null) {
         options.setTracesSampleRate(0.0);
       }
+      // Spring Boot sets ignored exceptions in runtime using reflection - where the generic
+      // information is lost
+      // its technically possible to set non-throwable class to `ignoredExceptionsForType` set
+      // here we make sure that only classes that extend throwable are set on this field
+      options.getIgnoredExceptionsForType().removeIf(it -> !Throwable.class.isAssignableFrom(it));
       Sentry.init(options);
       return HubAdapter.getInstance();
     }

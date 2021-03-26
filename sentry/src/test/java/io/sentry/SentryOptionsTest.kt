@@ -187,16 +187,6 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when ignored exception is not a Throwable subclass, its skipped`() {
-        val options = SentryOptions()
-        options.setIgnoredExceptionsForType(setOf(java.lang.IllegalArgumentException::class.java, Sentry::class.java))
-        assertNotNull(options.ignoredExceptionsForType) {
-            assertTrue(it.contains(java.lang.IllegalArgumentException::class.java))
-            assertEquals(1, it.size)
-        }
-    }
-
-    @Test
     fun `copies options from another SentryOptions instance`() {
         val externalOptions = SentryOptions()
         externalOptions.dsn = "http://key@localhost/proj"
@@ -366,10 +356,8 @@ class SentryOptionsTest {
         // - NonExistingClass - class that does not exist - should not trigger a failure to create options
         // - io.sentry.Sentry - class that does not extend Throwable - should not trigger a failure
         withPropertiesFile("ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,com.xx.NonExistingClass,io.sentry.Sentry", logger) { options ->
-            assertNotNull(options.ignoredExceptionsForType) {
-                assertTrue(it.contains(RuntimeException::class.java))
-                assertTrue(it.contains(IllegalStateException::class.java))
-            }
+            assertTrue(options.ignoredExceptionsForType.contains(RuntimeException::class.java))
+            assertTrue(options.ignoredExceptionsForType.contains(IllegalStateException::class.java))
             verify(logger).log(eq(SentryLevel.WARNING), any<String>(), eq("com.xx.NonExistingClass"), eq("com.xx.NonExistingClass"))
             verify(logger).log(eq(SentryLevel.WARNING), any<String>(), eq("io.sentry.Sentry"), eq("io.sentry.Sentry"))
         }
