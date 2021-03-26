@@ -94,15 +94,25 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
+    SentryId sentryId = SentryId.EMPTY_ID;
+
     if (event != null) {
+      if (event.getOriginThrowable() != null
+          && options.containsIgnoredExceptionForType(event.getOriginThrowable())) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped as the exception %s is ignored",
+                event.getOriginThrowable().getClass());
+        return sentryId;
+      }
       event = executeBeforeSend(event, hint);
 
       if (event == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
       }
     }
-
-    SentryId sentryId = SentryId.EMPTY_ID;
 
     if (event != null) {
       sentryId = event.getEventId();

@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.InvalidDsnException
 import io.sentry.exception.SentryEnvelopeException
@@ -29,6 +30,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
+import java.lang.IllegalStateException
 import java.lang.RuntimeException
 import java.nio.charset.Charset
 import java.util.Arrays
@@ -901,6 +903,14 @@ class SentryClientTest {
         transaction.platform = "abc"
         sut.captureTransaction(transaction)
         assertEquals("abc", transaction.platform)
+    }
+
+    @Test
+    fun `when exception type is ignored, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredExceptionForType(IllegalStateException::class.java)
+        val sut = fixture.getSut()
+        sut.captureException(IllegalStateException())
+        verifyZeroInteractions(fixture.transport)
     }
 
     private fun createScope(): Scope {

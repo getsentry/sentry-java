@@ -1,8 +1,12 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import io.sentry.config.PropertiesProviderFactory
 import java.io.File
+import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -241,177 +245,79 @@ class SentryOptionsTest {
 
     @Test
     fun `creates options with proxy using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("proxy.host=proxy.example.com\n")
-        file.appendText("proxy.port=9090\n")
-        file.appendText("proxy.user=some-user\n")
-        file.appendText("proxy.pass=some-pass")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertNotNull(options.proxy)
-            assertEquals("proxy.example.com", options.proxy!!.host)
-            assertEquals("9090", options.proxy!!.port)
-            assertEquals("some-user", options.proxy!!.user)
-            assertEquals("some-pass", options.proxy!!.pass)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile(listOf("proxy.host=proxy.example.com", "proxy.port=9090", "proxy.user=some-user", "proxy.pass=some-pass")) {
+            assertNotNull(it.proxy) { proxy ->
+                assertEquals("proxy.example.com", proxy.host)
+                assertEquals("9090", proxy.port)
+                assertEquals("some-user", proxy.user)
+                assertEquals("some-pass", proxy.pass)
+            }
         }
     }
 
     @Test
     fun `when proxy port is not set default proxy port is used`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("proxy.host=proxy.example.com\n")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertNotNull(options.proxy)
-            assertEquals("proxy.example.com", options.proxy!!.host)
-            assertEquals("80", options.proxy!!.port)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile("proxy.host=proxy.example.com") {
+            assertNotNull(it.proxy)
+            assertEquals("proxy.example.com", it.proxy!!.host)
+            assertEquals("80", it.proxy!!.port)
         }
     }
 
     @Test
     fun `creates options with tags using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("tags.tag1=value1\n")
-        file.appendText("tags.tag2=value2")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile(listOf("tags.tag1=value1", "tags.tag2=value2")) {
+            assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), it.tags)
         }
     }
 
     @Test
     fun `creates options with uncaught handler set to true enabled using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("uncaught.handler.enabled=true")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertNotNull(options.enableUncaughtExceptionHandler)
-            assertTrue(options.enableUncaughtExceptionHandler!!)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile("uncaught.handler.enabled=true") { options ->
+            assertNotNull(options.enableUncaughtExceptionHandler) {
+                assertTrue(it)
+            }
         }
     }
 
     @Test
     fun `creates options with uncaught handler set to false enabled using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("uncaught.handler.enabled=false")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertNotNull(options.enableUncaughtExceptionHandler)
-            assertFalse(options.enableUncaughtExceptionHandler!!)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile("uncaught.handler.enabled=false") { options ->
+            assertNotNull(options.enableUncaughtExceptionHandler) {
+                assertFalse(it)
+            }
         }
     }
 
     @Test
     fun `creates options with uncaught handler set to null enabled using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertNull(options.enableUncaughtExceptionHandler)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile {
+            assertNull(it.enableUncaughtExceptionHandler)
         }
     }
 
     @Test
     fun `creates options with debug set to true enabled using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("debug=true")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertTrue(options.isDebug)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile("debug=true") {
+            assertTrue(it.isDebug)
         }
     }
 
     @Test
     fun `creates options with debug set to false enabled using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("debug=false")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertFalse(options.isDebug)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile("debug=false") {
+            assertFalse(it.isDebug)
         }
     }
 
     @Test
     fun `creates options with debug set to null enabled using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
+        withPropertiesFile() {
             val mergeResult = SentryOptions().apply {
                 setDebug(true)
             }
-            mergeResult.merge(options)
+            mergeResult.merge(it)
             assertTrue(mergeResult.isDebug)
-        } finally {
-            temporaryFolder.delete()
         }
     }
 
@@ -422,62 +328,64 @@ class SentryOptionsTest {
 
     @Test
     fun `creates options with inAppInclude and inAppExclude using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("in-app-includes=org.springframework,com.myapp\n")
-        file.appendText("in-app-excludes=org.jboss,com.microsoft")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertEquals(listOf("org.springframework", "com.myapp"), options.inAppIncludes)
-            assertEquals(listOf("org.jboss", "com.microsoft"), options.inAppExcludes)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile(listOf("in-app-includes=org.springframework,com.myapp", "in-app-excludes=org.jboss,com.microsoft")) {
+            assertEquals(listOf("org.springframework", "com.myapp"), it.inAppIncludes)
+            assertEquals(listOf("org.jboss", "com.microsoft"), it.inAppExcludes)
         }
     }
 
     @Test
     fun `creates options with tracesSampleRate using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("traces-sample-rate=0.2")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
-
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertEquals(0.2, options.tracesSampleRate)
-        } finally {
-            temporaryFolder.delete()
+        withPropertiesFile("traces-sample-rate=0.2") {
+            assertEquals(0.2, it.tracesSampleRate)
         }
     }
 
     @Test
     fun `creates options with enableDeduplication using external properties`() {
-        // create a sentry.properties file in temporary folder
-        val temporaryFolder = TemporaryFolder()
-        temporaryFolder.create()
-        val file = temporaryFolder.newFile("sentry.properties")
-        file.appendText("enable-deduplication=true")
-        // set location of the sentry.properties file
-        System.setProperty("sentry.properties.file", file.absolutePath)
+        withPropertiesFile("enable-deduplication=true") {
+            assertTrue(it.isEnableDeduplication)
+        }
+    }
 
-        try {
-            val options = SentryOptions.from(PropertiesProviderFactory.create())
-            assertTrue(options.isEnableDeduplication)
-        } finally {
-            temporaryFolder.delete()
+    @Test
+    fun `creates options with ignored exception types using external properties`() {
+        val logger = mock<ILogger>()
+        // Setting few types of classes:
+        // - RuntimeException and IllegalStateException - valid exception classes
+        // - NonExistingClass - class that does not exist - should not trigger a failure to create options
+        // - io.sentry.Sentry - class that does not extend Throwable - should not trigger a failure
+        withPropertiesFile("ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,com.xx.NonExistingClass,io.sentry.Sentry", logger) { options ->
+            assertTrue(options.ignoredExceptionsForType.contains(RuntimeException::class.java))
+            assertTrue(options.ignoredExceptionsForType.contains(IllegalStateException::class.java))
+            verify(logger).log(eq(SentryLevel.WARNING), any<String>(), eq("com.xx.NonExistingClass"), eq("com.xx.NonExistingClass"))
+            verify(logger).log(eq(SentryLevel.WARNING), any<String>(), eq("io.sentry.Sentry"), eq("io.sentry.Sentry"))
         }
     }
 
     @Test
     fun `when options are initialized, maxAttachmentSize is 20`() {
         assertEquals(20 * 1024 * 1024, SentryOptions().maxAttachmentSize)
+    }
+
+    private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (SentryOptions) -> Unit) {
+        // create a sentry.properties file in temporary folder
+        val temporaryFolder = TemporaryFolder()
+        temporaryFolder.create()
+        val file = temporaryFolder.newFile("sentry.properties")
+        textLines.forEach { file.appendText("$it\n") }
+        // set location of the sentry.properties file
+        System.setProperty("sentry.properties.file", file.absolutePath)
+
+        try {
+            val options = SentryOptions.from(PropertiesProviderFactory.create(), logger)
+            fn.invoke(options)
+        } finally {
+            temporaryFolder.delete()
+        }
+    }
+
+    private fun withPropertiesFile(text: String, logger: ILogger = mock(), fn: (SentryOptions) -> Unit) {
+        withPropertiesFile(listOf(text), logger, fn)
     }
 }

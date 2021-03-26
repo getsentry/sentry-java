@@ -184,7 +184,7 @@ public final class Sentry {
 
   private static boolean initConfigurations(final @NotNull SentryOptions options) {
     if (options.isEnableExternalConfiguration()) {
-      options.merge(SentryOptions.from(PropertiesProviderFactory.create()));
+      options.merge(SentryOptions.from(PropertiesProviderFactory.create(), options.getLogger()));
     }
 
     final String dsn = options.getDsn();
