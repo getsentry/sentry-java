@@ -33,7 +33,9 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
 
   @Override
   public void close() throws IOException {
-    runtime.removeShutdownHook(thread);
+    if (thread != null) {
+      runtime.removeShutdownHook(thread);
+    }
   }
 
   @VisibleForTesting

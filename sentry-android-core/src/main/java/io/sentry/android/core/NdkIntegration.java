@@ -75,7 +75,7 @@ public final class NdkIntegration implements Integration, Closeable {
 
   @Override
   public void close() throws IOException {
-    if (sentryNdkClass != null && options.isEnableNdk()) {
+    if (options != null && options.isEnableNdk() && sentryNdkClass != null) {
       try {
         final Method method = sentryNdkClass.getMethod("close");
         method.invoke(null, new Object[0]);
