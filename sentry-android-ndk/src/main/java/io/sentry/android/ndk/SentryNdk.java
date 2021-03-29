@@ -22,11 +22,23 @@ public final class SentryNdk {
 
   private static native void initSentryNative(@NotNull final SentryAndroidOptions options);
 
+  private static native void shutdown();
+
+  /**
+   * Init the NDK integration
+   *
+   * @param options the SentryAndroidOptions
+   */
   public static void init(@NotNull final SentryAndroidOptions options) {
     SentryNdkUtil.addPackage(options.getSdkVersion());
     initSentryNative(options);
     options.addScopeObserver(new NdkScopeObserver(options));
 
     options.setDebugImagesLoader(new DebugImagesLoader(options, new NativeModuleListLoader()));
+  }
+
+  /** Closes the NDK integration */
+  public static void close() {
+    shutdown();
   }
 }
