@@ -5,5 +5,9 @@ class SentryNdk {
         @JvmStatic
         fun init(options: SentryAndroidOptions) {
         }
+
+        @JvmStatic
+        fun close() {
+        }
     }
 }

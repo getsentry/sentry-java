@@ -79,6 +79,8 @@ public final class NdkIntegration implements Integration, Closeable {
       try {
         final Method method = sentryNdkClass.getMethod("close");
         method.invoke(null, new Object[0]);
+
+        options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration removed.");
       } catch (NoSuchMethodException e) {
         options
             .getLogger()
