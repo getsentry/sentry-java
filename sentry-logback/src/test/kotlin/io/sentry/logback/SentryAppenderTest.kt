@@ -23,12 +23,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.awaitility.kotlin.await
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-import kotlin.test.assertNull
 
 class SentryAppenderTest {
     private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {

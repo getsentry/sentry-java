@@ -91,7 +91,8 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
     }
 
     // remove keys with null values, there is no sense to send these keys to Sentry
-    final Map<String, String> mdcProperties = loggingEvent.getMDCPropertyMap().entrySet().stream()
+    final Map<String, String> mdcProperties =
+        loggingEvent.getMDCPropertyMap().entrySet().stream()
             .filter(it -> it.getValue() != null)
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     if (!mdcProperties.isEmpty()) {
