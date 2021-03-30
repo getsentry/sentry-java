@@ -90,6 +90,14 @@ android {
     }
 }
 
+task<Wrapper>("wrapper") {
+    gradleVersion = "6.8.3"
+}
+
+task("prepareKotlinBuildScriptModel") {
+
+}
+
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
