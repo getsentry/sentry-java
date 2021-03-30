@@ -391,3 +391,8 @@ Java_io_sentry_android_ndk_NativeModuleListLoader_nativeLoadModuleList(JNIEnv *e
 
     return image_list;
 }
+
+JNIEXPORT void JNICALL
+Java_io_sentry_android_ndk_SentryNdk_shutdown(JNIEnv *env, jclass cls) {
+    sentry_shutdown();
+}

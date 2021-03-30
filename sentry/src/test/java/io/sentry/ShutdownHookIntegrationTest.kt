@@ -7,13 +7,45 @@ import kotlin.test.Test
 
 class ShutdownHookIntegrationTest {
 
+    private class Fixture {
+        val runtime = mock<Runtime>()
+        val options = mock<SentryOptions>()
+        val hub = mock<IHub>()
+
+        fun getSut(): ShutdownHookIntegration {
+            return ShutdownHookIntegration(runtime)
+        }
+    }
+
+    private val fixture = Fixture()
+
     @Test
     fun `registration attaches shutdown hook to runtime`() {
-        val runtime = mock<Runtime>()
-        val integration = ShutdownHookIntegration(runtime)
+        val integration = fixture.getSut()
 
-        integration.register(NoOpHub.getInstance(), SentryOptions())
+        integration.register(fixture.hub, fixture.options)
 
-        verify(runtime).addShutdownHook(any())
+        verify(fixture.runtime).addShutdownHook(any())
+    }
+
+    @Test
+    fun `registration removes shutdown hook from runtime`() {
+        val integration = fixture.getSut()
+
+        integration.register(fixture.hub, fixture.options)
+        integration.close()
+
+        verify(fixture.runtime).removeShutdownHook(any())
+    }
+
+    @Test
+    fun `hook calls close`() {
+        val integration = fixture.getSut()
+
+        integration.register(fixture.hub, fixture.options)
+        integration.hook.start()
+        integration.hook.join()
+
+        verify(fixture.hub).close()
     }
 }
