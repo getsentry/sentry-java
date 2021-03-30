@@ -90,6 +90,10 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
+
+    testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
+    }
 }
 
 task<Wrapper>("wrapper") {
@@ -119,10 +123,11 @@ dependencies {
     implementation(Config.Libs.retrofit2Gson)
 
     debugImplementation(Config.Libs.leakCanary)
-    
+
     androidTestImplementation(Config.TestLibs.androidxRunner)
     androidTestImplementation(Config.TestLibs.androidxJunit)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    androidTestUtil("androidx.test:orchestrator:1.3.0")
 
     androidTestImplementation("com.microsoft.appcenter:espresso-test-extension:1.4")
 }
