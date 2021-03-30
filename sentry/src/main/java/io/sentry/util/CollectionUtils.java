@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Util class for Collections */
@@ -37,7 +38,7 @@ public final class CollectionUtils {
    * @param <V> the type of map values
    * @return the shallow copy of map
    */
-  public static <K, V> @Nullable Map<K, V> shallowCopy(@Nullable Map<K, V> map) {
+  public static <K, V> @Nullable Map<K, @NotNull V> shallowCopy(@Nullable Map<K, @NotNull V> map) {
     if (map != null) {
       return new ConcurrentHashMap<>(map);
     } else {

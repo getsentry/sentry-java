@@ -16,6 +16,7 @@
 * Fix: set "java" platform to transactions #1332
 * Feat: Add OkHttp client application interceptor (#1330)
 * Fix: Allow disabling tracing through SentryOptions (#1337)
+* Fix: Accept only non null value maps (#1366)
 
 # 4.3.0
 
