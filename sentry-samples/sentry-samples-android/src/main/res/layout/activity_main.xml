@@ -6,6 +6,22 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+  <Button android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/init_sdk"
+    android:text="Init SDK"/>
+
+  <Button android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/button_copy_file"
+    android:text="Copy File"/>
+
+  <TextView
+    android:id="@+id/text_view_copy_file"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="--"/>
+
     <Button android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/crash_from_java"

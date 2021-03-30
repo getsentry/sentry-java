@@ -30,6 +30,8 @@ android {
         ndk {
             abiFilters.addAll(Config.Android.abiFilters)
         }
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {
@@ -117,4 +119,15 @@ dependencies {
     implementation(Config.Libs.retrofit2Gson)
 
     debugImplementation(Config.Libs.leakCanary)
+
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("com.android.support:support-annotations:28.0.0")
+    androidTestImplementation("com.android.support.test:runner:1.0.2")
+
+    androidTestImplementation(Config.TestLibs.kotlinTestJunit)
+    androidTestImplementation(Config.TestLibs.androidxCore)
+    androidTestImplementation(Config.TestLibs.androidxRunner)
+    androidTestImplementation(Config.TestLibs.androidxJunit)
+
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
 }
