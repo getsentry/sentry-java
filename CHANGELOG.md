@@ -2,6 +2,7 @@
 
 * Feat: Add option to ignore exceptions by type (#1352)
 * Feat: Sentry closes Android NDK and ShutdownHook integrations (#1358)
+* Fix: Accept only non null value maps (#1368)
 
 # 4.4.0-alpha.1
 
@@ -16,7 +17,6 @@
 * Fix: set "java" platform to transactions #1332
 * Feat: Add OkHttp client application interceptor (#1330)
 * Fix: Allow disabling tracing through SentryOptions (#1337)
-* Fix: Accept only non null value maps (#1366)
 
 # 4.3.0
 
