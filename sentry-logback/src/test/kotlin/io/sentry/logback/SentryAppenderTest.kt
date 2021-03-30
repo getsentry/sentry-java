@@ -28,6 +28,7 @@ import org.awaitility.kotlin.await
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import kotlin.test.assertNull
 
 class SentryAppenderTest {
     private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {
@@ -200,6 +201,20 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `ignore set tags with null values from MDC`() {
+        fixture = Fixture(minimumEventLevel = Level.WARN)
+        MDC.put("key1", null)
+        MDC.put("key2", null)
+        fixture.logger.warn("testing MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertNull(event.contexts["MDC"])
             }, anyOrNull())
         }
     }
