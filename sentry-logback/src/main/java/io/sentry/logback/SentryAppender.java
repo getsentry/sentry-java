@@ -13,7 +13,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
-import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -91,8 +90,10 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
       event.setExtra("thread_name", loggingEvent.getThreadName());
     }
 
-    final Map<String, String> mdcProperties =
-        CollectionUtils.shallowCopy(loggingEvent.getMDCPropertyMap());
+    // remove keys with null values, there is no sense to send these keys to Sentry
+    final Map<String, String> mdcProperties = loggingEvent.getMDCPropertyMap().entrySet().stream()
+            .filter(it -> it.getValue() != null)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     if (!mdcProperties.isEmpty()) {
       event.getContexts().put("MDC", mdcProperties);
     }
