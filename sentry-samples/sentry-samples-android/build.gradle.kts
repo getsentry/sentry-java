@@ -130,4 +130,5 @@ dependencies {
     androidTestImplementation(Config.TestLibs.androidxJunit)
 
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    androidTestImplementation("com.microsoft.appcenter:espresso-test-extension:1.4")
 }
