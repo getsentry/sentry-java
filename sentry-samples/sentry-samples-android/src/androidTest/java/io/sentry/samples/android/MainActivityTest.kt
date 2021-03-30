@@ -38,6 +38,7 @@ class MainActivityTest {
         reportHelper.label("initSdkAndCrash")
 
         onView(withId(R.id.init_sdk)).perform(click())
+        Thread.sleep(5000)
         onView(withId(R.id.native_crash)).perform(click())
     }
 

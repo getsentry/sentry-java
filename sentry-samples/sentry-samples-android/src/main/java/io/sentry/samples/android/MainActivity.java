@@ -178,36 +178,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
-
-    File cacheFile = new File(this.getCacheDir(), "sentry");
-    String[] files = cacheFile.list();
-
-    File envelopeFile = null;
-    for (String filename : files) {
-      if (filename.endsWith("envelope")) {
-        envelopeFile = new File(cacheFile, filename);
-        break;
-      }
-    }
-    if (envelopeFile != null && envelopeFile.exists() && !envelopeFile.isDirectory()) {
-      //Read text from file
-      StringBuilder text = new StringBuilder();
-
-      try {
-        BufferedReader br = new BufferedReader(new FileReader(envelopeFile));
-        String line;
-
-        while ((line = br.readLine()) != null) {
-          text.append(line);
-          text.append('\n');
-        }
-        br.close();
-      }
-      catch (IOException e) {
-        //You'll need to add proper error handling here
-      }
-      System.out.println(text);
-    }
   }
 
   boolean moveNativeCrashEnvelopeFile() {
