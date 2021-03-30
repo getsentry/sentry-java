@@ -9,6 +9,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.microsoft.appcenter.espresso.Factory
+import com.microsoft.appcenter.espresso.ReportHelper
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -23,7 +24,7 @@ class MainActivityTest {
         = ActivityScenarioRule(MainActivity::class.java)
 
     @get:Rule
-    val reportHelper = Factory.getReportHelper()
+    val reportHelper: ReportHelper = Factory.getReportHelper()
 
     @After
     fun tearDown() {
