@@ -1,6 +1,7 @@
 # Unreleased
 
 * Feat: Add option to ignore exceptions by type (#1352)
+* Fix: Fix NPE when MDC contains null values (#1364)
 
 # 4.4.0-alpha.1
 
