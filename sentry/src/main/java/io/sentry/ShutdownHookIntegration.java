@@ -1,13 +1,18 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.io.Closeable;
+import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /** Registers hook that closes {@link Hub} when main thread shuts down. */
-public final class ShutdownHookIntegration implements Integration {
+public final class ShutdownHookIntegration implements Integration, Closeable {
 
   private final @NotNull Runtime runtime;
+
+  private @NotNull Thread thread;
 
   @TestOnly
   public ShutdownHookIntegration(final @NotNull Runtime runtime) {
@@ -22,6 +27,20 @@ public final class ShutdownHookIntegration implements Integration {
   public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     Objects.requireNonNull(hub, "Hub is required");
 
-    runtime.addShutdownHook(new Thread(() -> hub.close()));
+    thread = new Thread(() -> hub.close());
+    runtime.addShutdownHook(thread);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (thread != null) {
+      runtime.removeShutdownHook(thread);
+    }
+  }
+
+  @VisibleForTesting
+  @NotNull
+  Thread getHook() {
+    return thread;
   }
 }

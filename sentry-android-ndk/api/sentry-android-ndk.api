@@ -17,6 +17,7 @@ public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/IScopeObse
 }
 
 public final class io/sentry/android/ndk/SentryNdk {
+	public static fun close ()V
 	public static fun init (Lio/sentry/android/core/SentryAndroidOptions;)V
 }
 
