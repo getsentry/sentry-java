@@ -41,10 +41,10 @@ public final class Scope implements Cloneable {
   private @NotNull Queue<Breadcrumb> breadcrumbs;
 
   /** Scope's tags */
-  private @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
+  private @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
   /** Scope's extras */
-  private @NotNull Map<String, Object> extra = new ConcurrentHashMap<>();
+  private @NotNull Map<String, @NotNull Object> extra = new ConcurrentHashMap<>();
 
   /** Scope's event processor list */
   private @NotNull List<EventProcessor> eventProcessors = new CopyOnWriteArrayList<>();
@@ -537,7 +537,7 @@ public final class Scope implements Cloneable {
 
     final Map<String, String> tagsRef = tags;
 
-    final Map<String, String> tagsClone = new ConcurrentHashMap<>();
+    final Map<String, @NotNull String> tagsClone = new ConcurrentHashMap<>();
 
     for (Map.Entry<String, String> item : tagsRef.entrySet()) {
       if (item != null) {
@@ -549,7 +549,7 @@ public final class Scope implements Cloneable {
 
     final Map<String, Object> extraRef = extra;
 
-    Map<String, Object> extraClone = new ConcurrentHashMap<>();
+    Map<String, @NotNull Object> extraClone = new ConcurrentHashMap<>();
 
     for (Map.Entry<String, Object> item : extraRef.entrySet()) {
       if (item != null) {

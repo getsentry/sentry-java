@@ -23,7 +23,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   private @Nullable String type;
 
   /** Data associated with this breadcrumb. */
-  private @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+  private @NotNull Map<String, @NotNull Object> data = new ConcurrentHashMap<>();
 
   /** Dotted strings that indicate what the crumb is or where it comes from. */
   private @Nullable String category;
@@ -222,7 +222,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    */
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(@Nullable Map<String, Object> unknown) {
+  public void acceptUnknownProperties(@Nullable Map<String, @NotNull Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 

@@ -32,7 +32,7 @@ public final class App implements IUnknownPropertiesConsumer, Cloneable {
   private String appBuild;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private Map<String, @NotNull Object> unknown;
 
   public String getAppIdentifier() {
     return appIdentifier;
@@ -99,7 +99,7 @@ public final class App implements IUnknownPropertiesConsumer, Cloneable {
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(Map<String, @NotNull Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
