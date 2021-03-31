@@ -23,6 +23,7 @@
         android:theme="@style/AppTheme"
         android:allowNativeHeapPointerTagging="false"
         android:extractNativeLibs="true"
+        android:forceQueryable="true"
         tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
         <activity android:name=".MainActivity">
@@ -100,6 +101,12 @@
 
         <!--    how to disable the app components breadcrumbs integration-->
         <!--    <meta-data android:name="io.sentry.breadcrumbs.app-components" android:value="false" />-->
+
+      <service
+        android:enabled="true"
+        android:name=".NativeCrashService"
+        android:process=":externalProcess">
+      </service>
 
     </application>
 </manifest>

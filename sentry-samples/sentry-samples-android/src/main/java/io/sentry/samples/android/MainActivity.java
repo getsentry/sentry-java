@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
           Sentry.setUser(user);
         });
 
-    binding.nativeCrash.setOnClickListener(view -> NativeSample.crash());
+    binding.nativeCrash.setOnClickListener(view -> startService(new Intent(this, NativeCrashService.class)));
 
     binding.nativeCapture.setOnClickListener(view -> NativeSample.message());
 

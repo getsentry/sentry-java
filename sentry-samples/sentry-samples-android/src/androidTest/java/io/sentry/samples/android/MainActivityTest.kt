@@ -36,6 +36,7 @@ class MainActivityTest {
         onView(withId(R.id.init_sdk)).perform(click())
         Thread.sleep(5000)
         onView(withId(R.id.native_crash)).perform(click())
+        Thread.sleep(5000)
     }
 
     // Check if an envelope is there and we can move it to the cache
