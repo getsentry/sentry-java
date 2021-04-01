@@ -29,30 +29,24 @@ class MainActivityTest {
 
     // Tests are run in alphabetical order...
 
-    // This one is supposed to fail, as we crash the app to test if an envelope was created
+    // We crash in a service to test if an envelope was created.
     @Test
     fun a_initSdkAndCrash() {
         reportHelper.label("initSdkAndCrash")
-
-        onView(withId(R.id.init_sdk)).perform(click())
-        Thread.sleep(5000)
         onView(withId(R.id.native_crash)).perform(click())
-        Thread.sleep(5000)
 
         // Close either app or android dialog
         val mDevice: UiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         mDevice.pressBack()
     }
 
-    // Check if an envelope is there and we can move it to the cache
+    // Check if envelope file is here.
     @Test
     fun b_checkIfFileExists() {
-        reportHelper.label("checkIfFileExists")
-
-        Thread.sleep(5000)
-
         onView(withId(R.id.button_copy_file)).perform(click())
         onView(withId(R.id.text_view_copy_file))
             .check(matches(withText("SUCCESS")))
+
+        reportHelper.label("checkIfFileExists")
     }
 }

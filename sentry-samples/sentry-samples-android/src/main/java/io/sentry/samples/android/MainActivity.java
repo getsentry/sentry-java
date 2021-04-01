@@ -1,6 +1,8 @@
 package io.sentry.samples.android;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
@@ -60,12 +62,6 @@ public class MainActivity extends AppCompatActivity {
         scope -> {
           scope.addAttachment(image);
         });
-
-    binding.initSdk.setOnClickListener( view -> {
-      SentryAndroid.init(this, options -> {
-        System.out.println("SentryAndroid.init");
-      });
-    });
 
     binding.buttonCopyFile.setOnClickListener( view -> {
       boolean success = moveNativeCrashEnvelopeFile();
@@ -150,7 +146,11 @@ public class MainActivity extends AppCompatActivity {
           Sentry.setUser(user);
         });
 
-    binding.nativeCrash.setOnClickListener(view -> startService(new Intent(this, NativeCrashService.class)));
+    binding.nativeCrash.setOnClickListener(view -> {
+      Intent intent = new Intent(this, NativeCrashService.class);
+      intent.putExtra("FOOBAR", "FOO");
+      startService(intent);
+    });
 
     binding.nativeCapture.setOnClickListener(view -> NativeSample.message());
 
@@ -198,8 +198,8 @@ public class MainActivity extends AppCompatActivity {
   @Nullable
   File nativeCrashEnvelopeFileSource() {
     try {
-      File outbox = new File(this.getCacheDir(), "sentry/outbox");
-      return outbox.listFiles()[0];
+      File hiddenFolder = new File(this.getCacheDir(), "/sentry/.sentry-native");
+      return hiddenFolder.listFiles()[0];
     } catch (Exception exception) {
       return null;
     }
