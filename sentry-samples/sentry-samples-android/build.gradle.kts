@@ -128,7 +128,8 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.3.0")
     androidTestImplementation(Config.TestLibs.androidxJunit)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
-    //androidTestUtil("androidx.test:orchestrator:1.4.0-alpha05")
+    androidTestImplementation("com.android.support.test.uiautomator:uiautomator-v18:2.1.3")
+    //androidTestUtil("androidx.test:orchestrator:1.3.0")
     androidTestImplementation("com.microsoft.appcenter:espresso-test-extension:1.4")
 
 }
