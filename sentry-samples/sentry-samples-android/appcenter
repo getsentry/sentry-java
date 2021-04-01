@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Usage
+# ./appcenter androidBuildToolsVersion keyAlias keyPass appCenterApp appCenterDevice
+# Sample
+# ./appcenter 29.0.3 keyAlias keyPass denrase/Sentry-Android-Sample e669fa3b # Nexus 5 Andorid 11
+
+# Create Debug APK
+
+./gradlew clean
+./gradlew assembleDebug
+
+# Run Tests so Test APK is Built
+
+./gradlew connectedAndroidTest
+
+# Sign APK
+
+~/Library/Android/sdk/build-tools/$1/apksigner sign --ks sentry-samples-android-keystore --ks-pass pass:$2 --key-pass pass:$3 --in build/outputs/apk/debug/sentry-samples-android-debug.apk --out build/outputs/apk/debug/sentry-samples-android-debug.apk
+
+# Sign Test APK
+
+~/Library/Android/sdk/build-tools/$1/apksigner sign --ks sentry-samples-android-keystore --ks-pass pass:$2 --key-pass pass:$3 --in build/outputs/apk/androidTest/debug/sentry-samples-android-debug-androidTest.apk --out build/outputs/apk/androidTest/debug/sentry-samples-android-debug-androidTest.apk
+
+# Upload to AppCenter
+
+appcenter test run espresso --app "$4" --devices $5 --app-path build/outputs/apk/debug/sentry-samples-android-debug.apk --test-series "master" --locale "en_US" --build-dir build/outputs/apk/androidTest/debug
