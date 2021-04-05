@@ -47,7 +47,7 @@ public class SentryQueryExecutionListener implements QueryExecutionListener {
   }
 
   @Override
-  public void afterQuery(ExecutionInfo execInfo, List<QueryInfo> queryInfoList) {
+  public void afterQuery(final @NotNull ExecutionInfo execInfo, final @NotNull List<QueryInfo> queryInfoList) {
     final ISpan span = spans.get(execInfo.getConnectionId());
     if (span != null) {
       if (execInfo.getThrowable() != null) {

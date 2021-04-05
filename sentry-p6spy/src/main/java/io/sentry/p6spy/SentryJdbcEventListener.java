@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** P6Spy JDBC event listener that creates {@link Span}s around database queries. */
 @Open
@@ -30,7 +31,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   }
 
   @Override
-  public void onBeforeAnyExecute(StatementInformation statementInformation) {
+  public void onBeforeAnyExecute(final @NotNull StatementInformation statementInformation) {
     final ISpan parent = hub.getSpan();
     if (parent != null) {
       final ISpan span = parent.startChild("db", statementInformation.getSql());
@@ -40,7 +41,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
 
   @Override
   public void onAfterAnyExecute(
-      StatementInformation statementInformation, long timeElapsedNanos, SQLException e) {
+      final @NotNull StatementInformation statementInformation, long timeElapsedNanos, final @Nullable SQLException e) {
     final ISpan span = spans.get(statementInformation.getConnectionInformation().getConnectionId());
     if (span != null) {
       if (e != null) {
