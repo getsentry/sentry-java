@@ -20,7 +20,8 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   private final @NotNull IHub hub;
-  private final @NotNull Map<Integer, ISpan> spans = Collections.synchronizedMap(new WeakHashMap<>());
+  private final @NotNull Map<Integer, ISpan> spans =
+      Collections.synchronizedMap(new WeakHashMap<>());
 
   public SentryJdbcEventListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
@@ -41,7 +42,9 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
 
   @Override
   public void onAfterAnyExecute(
-      final @NotNull StatementInformation statementInformation, long timeElapsedNanos, final @Nullable SQLException e) {
+      final @NotNull StatementInformation statementInformation,
+      long timeElapsedNanos,
+      final @Nullable SQLException e) {
     final ISpan span = spans.get(statementInformation.getConnectionInformation().getConnectionId());
     if (span != null) {
       if (e != null) {
