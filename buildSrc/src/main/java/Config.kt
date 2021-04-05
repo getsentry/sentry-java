@@ -152,4 +152,8 @@ object Config {
         val nativeBundlePlugin = "com.ydq.android.gradle.build.tool:nativeBundle:1.0.7"
         val nativeBundleExport = "com.ydq.android.gradle.native-aar.export"
     }
+
+    object SamplesLibs {
+        val datasourceProxySpringBootStarter = "com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.7.0"
+    }
 }
