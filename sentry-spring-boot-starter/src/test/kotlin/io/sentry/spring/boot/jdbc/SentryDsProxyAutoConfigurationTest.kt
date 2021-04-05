@@ -12,11 +12,11 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner
 class SentryDsProxyAutoConfigurationTest {
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java, SentryDsProxyAutoConfiguration::class.java))
+        .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
 
     @Test
     fun `when Datasource is not on the classpath, does not create datasource-proxy beans`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
-            .withClassLoader(FilteredClassLoader(DataSource::class.java))
+        contextRunner.withClassLoader(FilteredClassLoader(DataSource::class.java))
             .run {
                 Assertions.assertThat(it).doesNotHaveBean(SentryQueryExecutionListener::class.java)
             }
@@ -24,8 +24,7 @@ class SentryDsProxyAutoConfigurationTest {
 
     @Test
     fun `when SentryQueryExecutionListener is not on the classpath, does not create datasource-proxy beans`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
-            .withClassLoader(FilteredClassLoader(SentryQueryExecutionListener::class.java))
+        contextRunner.withClassLoader(FilteredClassLoader(SentryQueryExecutionListener::class.java))
             .run {
                 Assertions.assertThat(it).doesNotHaveBean(SentryQueryExecutionListener::class.java)
             }
@@ -33,8 +32,7 @@ class SentryDsProxyAutoConfigurationTest {
 
     @Test
     fun `when Datasource and SentryQueryExecutionListener are on the classpath, creates datasource-proxy beans`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
-            .run {
+        contextRunner.run {
                 Assertions.assertThat(it).hasSingleBean(SentryQueryExecutionListener::class.java)
             }
     }
