@@ -33,12 +33,14 @@ final class EnvironmentVariablePropertiesProvider implements PropertiesProvider 
   public @NotNull Map<String, String> getMap(final @NotNull String property) {
     final String prefix = propertyToEnvironmentVariableName(property) + "_";
 
-    final Map<String, String> result = new ConcurrentHashMap<>();
+    final Map<String, @NotNull String> result = new ConcurrentHashMap<>();
     for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
       final String key = entry.getKey();
       if (key.startsWith(prefix)) {
         final String value = StringUtils.removeSurrounding(entry.getValue(), "\"");
-        result.put(key.substring(prefix.length()).toLowerCase(Locale.ROOT), value);
+        if (value != null) {
+          result.put(key.substring(prefix.length()).toLowerCase(Locale.ROOT), value);
+        }
       }
     }
     return result;

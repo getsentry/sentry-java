@@ -5,9 +5,9 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.SentryLevel
-import io.sentry.SentryOptions
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -15,6 +15,9 @@ import kotlin.test.assertTrue
 class NdkIntegrationTest {
 
     private class Fixture {
+        val hub = mock<IHub>()
+        val logger = mock<ILogger>()
+
         fun getSut(clazz: Class<*>? = SentryNdk::class.java): NdkIntegration {
             return NdkIntegration(clazz)
         }
@@ -26,25 +29,39 @@ class NdkIntegrationTest {
     fun `NdkIntegration calls init method`() {
         val integration = fixture.getSut()
 
-        val logger = mock<ILogger>()
-        val options = getOptions(logger = logger)
+        val options = getOptions()
 
-        integration.register(mock(), options)
+        integration.register(fixture.hub, options)
 
-        verify(logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
         assertTrue(options.isEnableNdk)
+    }
+
+    @Test
+    fun `NdkIntegration calls close method`() {
+        val integration = fixture.getSut()
+
+        val options = getOptions()
+
+        integration.register(fixture.hub, options)
+
+        assertTrue(options.isEnableNdk)
+
+        integration.close()
+
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+        assertFalse(options.isEnableNdk)
     }
 
     @Test
     fun `NdkIntegration won't init if ndk integration is disabled`() {
         val integration = fixture.getSut()
 
-        val logger = mock<ILogger>()
-        val options = getOptions(enableNdk = false, logger = logger)
+        val options = getOptions(enableNdk = false)
 
-        integration.register(mock(), options)
+        integration.register(fixture.hub, options)
 
-        verify(logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
 
         assertFalse(options.isEnableNdk)
     }
@@ -53,12 +70,11 @@ class NdkIntegrationTest {
     fun `NdkIntegration won't init if SentryNdk class is not available`() {
         val integration = fixture.getSut(null)
 
-        val logger = mock<ILogger>()
-        val options = getOptions(logger = logger)
+        val options = getOptions()
 
-        integration.register(mock(), options)
+        integration.register(fixture.hub, options)
 
-        verify(logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
 
         assertFalse(options.isEnableNdk)
     }
@@ -67,13 +83,28 @@ class NdkIntegrationTest {
     fun `NdkIntegration won't init if init method is not available`() {
         val integration = fixture.getSut(SentryNdkNoInit::class.java)
 
-        val logger = mock<ILogger>()
-        val options = getOptions(logger = logger)
+        val options = getOptions()
 
-        integration.register(mock(), options)
+        integration.register(fixture.hub, options)
 
-        verify(logger).log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), any())
 
+        assertFalse(options.isEnableNdk)
+    }
+
+    @Test
+    fun `NdkIntegration won't close if close method is not available`() {
+        val integration = fixture.getSut(SentryNdkNoClose::class.java)
+
+        val options = getOptions()
+
+        integration.register(fixture.hub, options)
+
+        assertTrue(options.isEnableNdk)
+
+        integration.close()
+
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), any())
         assertFalse(options.isEnableNdk)
     }
 
@@ -81,12 +112,11 @@ class NdkIntegrationTest {
     fun `NdkIntegration won't init if init throws`() {
         val integration = fixture.getSut(SentryNdkThrows::class.java)
 
-        val logger = mock<ILogger>()
-        val options = getOptions(logger = logger)
+        val options = getOptions()
 
-        integration.register(mock(), options)
+        integration.register(fixture.hub, options)
 
-        verify(logger).log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), any())
 
         assertFalse(options.isEnableNdk)
     }
@@ -95,12 +125,11 @@ class NdkIntegrationTest {
     fun `NdkIntegration won't init if cache dir is null`() {
         val integration = fixture.getSut()
 
-        val logger = mock<ILogger>()
-        val options = getOptions(logger = logger, cacheDir = null)
+        val options = getOptions(cacheDir = null)
 
-        integration.register(mock(), options)
+        integration.register(fixture.hub, options)
 
-        verify(logger).log(eq(SentryLevel.ERROR), any())
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), any())
 
         assertFalse(options.isEnableNdk)
     }
@@ -109,19 +138,18 @@ class NdkIntegrationTest {
     fun `NdkIntegration won't init if cache dir is empty`() {
         val integration = fixture.getSut()
 
-        val logger = mock<ILogger>()
-        val options = getOptions(logger = logger, cacheDir = "")
+        val options = getOptions(cacheDir = "")
 
-        integration.register(mock(), options)
+        integration.register(fixture.hub, options)
 
-        verify(logger).log(eq(SentryLevel.ERROR), any())
+        verify(fixture.logger).log(eq(SentryLevel.ERROR), any())
 
         assertFalse(options.isEnableNdk)
     }
 
-    private fun getOptions(enableNdk: Boolean = true, logger: ILogger = mock(), cacheDir: String? = "abc"): SentryAndroidOptions {
+    private fun getOptions(enableNdk: Boolean = true, cacheDir: String? = "abc"): SentryAndroidOptions {
         return SentryAndroidOptions().apply {
-            setLogger(logger)
+            setLogger(fixture.logger)
             setDebug(true)
             isEnableNdk = enableNdk
             cacheDirPath = cacheDir
@@ -133,8 +161,16 @@ class NdkIntegrationTest {
     private class SentryNdkThrows {
         companion object {
             @JvmStatic
-            fun init(options: SentryOptions) {
+            fun init(options: SentryAndroidOptions) {
                 throw RuntimeException("damn")
+            }
+        }
+    }
+
+    private class SentryNdkNoClose {
+        companion object {
+            @JvmStatic
+            fun init(options: SentryAndroidOptions) {
             }
         }
     }

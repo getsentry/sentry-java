@@ -23,6 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.awaitility.kotlin.await
 import org.slf4j.Logger
@@ -200,6 +201,20 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `ignore set tags with null values from MDC`() {
+        fixture = Fixture(minimumEventLevel = Level.WARN)
+        MDC.put("key1", null)
+        MDC.put("key2", null)
+        fixture.logger.warn("testing MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertNull(event.contexts["MDC"])
             }, anyOrNull())
         }
     }

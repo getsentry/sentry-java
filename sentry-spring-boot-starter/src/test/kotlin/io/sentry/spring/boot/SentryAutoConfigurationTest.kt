@@ -27,6 +27,7 @@ import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
+import java.lang.RuntimeException
 import javax.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -142,7 +143,8 @@ class SentryAutoConfigurationTest {
             "sentry.enable-tracing=true",
             "sentry.traces-sample-rate=0.3",
             "sentry.tags.tag1=tag1-value",
-            "sentry.tags.tag2=tag2-value"
+            "sentry.tags.tag2=tag2-value",
+            "sentry.ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,io.sentry.Sentry"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -169,6 +171,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.isEnableTracing).isTrue()
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
+            assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
         }
     }
 

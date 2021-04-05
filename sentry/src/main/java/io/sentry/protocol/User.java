@@ -33,10 +33,10 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    * Additional arbitrary fields, as stored in the database (and sometimes as sent by clients). All
    * data from `self.other` should end up here after store normalization.
    */
-  private @Nullable Map<String, String> other;
+  private @Nullable Map<String, @NotNull String> other;
 
   /** unknown fields, only internal usage. */
-  private @Nullable Map<String, Object> unknown;
+  private @Nullable Map<String, @NotNull Object> unknown;
 
   /**
    * Gets the e-mail address of the user.
@@ -115,7 +115,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @return the other user data.
    */
-  public @Nullable Map<String, String> getOthers() {
+  public @Nullable Map<String, @NotNull String> getOthers() {
     return other;
   }
 
@@ -124,7 +124,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param other the other user related data..
    */
-  public void setOthers(final @Nullable Map<String, String> other) {
+  public void setOthers(final @Nullable Map<String, @NotNull String> other) {
     if (other != null) {
       this.other = new ConcurrentHashMap<>(other);
     } else {
@@ -139,7 +139,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    */
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, @NotNull Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
@@ -150,7 +150,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    */
   @TestOnly
   @Nullable
-  Map<String, Object> getUnknown() {
+  Map<String, @NotNull Object> getUnknown() {
     return unknown;
   }
 

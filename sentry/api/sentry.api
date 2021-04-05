@@ -719,11 +719,12 @@ public final class io/sentry/SentryLevel : java/lang/Enum {
 public class io/sentry/SentryOptions {
 	public fun <init> ()V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
+	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addInAppExclude (Ljava/lang/String;)V
 	public fun addInAppInclude (Ljava/lang/String;)V
 	public fun addIntegration (Lio/sentry/Integration;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
-	public static fun from (Lio/sentry/config/PropertiesProvider;)Lio/sentry/SentryOptions;
+	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/SentryOptions;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getCacheDirPath ()Ljava/lang/String;
@@ -740,6 +741,7 @@ public class io/sentry/SentryOptions {
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getFlushTimeoutMillis ()J
 	public fun getHostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
+	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getIntegrations ()Ljava/util/List;
@@ -934,9 +936,10 @@ public final class io/sentry/SessionAdapter : com/google/gson/TypeAdapter {
 	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
 }
 
-public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration {
+public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Runtime;)V
+	public fun close ()V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 

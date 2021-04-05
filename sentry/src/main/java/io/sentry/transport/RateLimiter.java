@@ -45,7 +45,8 @@ public final class RateLimiter {
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
   private final @NotNull ILogger logger;
-  private final @NotNull Map<DataCategory, Date> sentryRetryAfterLimit = new ConcurrentHashMap<>();
+  private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
+      new ConcurrentHashMap<>();
 
   public RateLimiter(
       final @NotNull ICurrentDateProvider currentDateProvider, final @NotNull ILogger logger) {
