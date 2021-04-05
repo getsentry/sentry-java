@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 
 /** Auto-configures P6Spy related beans. */
 @Open
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @AutoConfigureAfter(DataSourceAutoConfiguration.class)
 @ConditionalOnClass({DataSource.class, SentryJdbcEventListener.class})
 @Conditional(SentryTracingCondition.class)

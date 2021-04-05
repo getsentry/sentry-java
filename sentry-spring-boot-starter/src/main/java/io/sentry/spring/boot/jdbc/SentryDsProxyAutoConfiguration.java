@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 
 /** Auto-configures datasource-proxy related beans. */
 @Open
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @AutoConfigureAfter(DataSourceAutoConfiguration.class)
 @ConditionalOnClass({DataSource.class, SentryQueryExecutionListener.class})
 @Conditional(SentryTracingCondition.class)
