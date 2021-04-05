@@ -7,6 +7,8 @@ import io.sentry.ISpan;
 import io.sentry.Span;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -20,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 @Open
 public class SentryQueryExecutionListener implements QueryExecutionListener {
   private final @NotNull IHub hub;
-  private final @NotNull Map<String, ISpan> spans = new WeakHashMap<>();
+  private final @NotNull Map<String, ISpan> spans = Collections.synchronizedMap(new WeakHashMap<>());
 
   public SentryQueryExecutionListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");

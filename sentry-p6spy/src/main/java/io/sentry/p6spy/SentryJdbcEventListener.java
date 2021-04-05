@@ -10,6 +10,7 @@ import io.sentry.Span;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 @Open
 public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   private final @NotNull IHub hub;
-  private final @NotNull Map<Integer, ISpan> spans = new WeakHashMap<>();
+  private final @NotNull Map<Integer, ISpan> spans = Collections.synchronizedMap(new WeakHashMap<>());
 
   public SentryJdbcEventListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
