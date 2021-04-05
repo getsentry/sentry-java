@@ -59,7 +59,7 @@ class SentryJdbcEventListenerTest {
         assertEquals(2, fixture.tx.children.size)
         fixture.tx.children.forEach {
             assertEquals(SpanStatus.OK, it.status)
-            assertEquals("db.query", it.operation)
+            assertEquals("db", it.operation)
         }
         assertEquals("INSERT INTO foo VALUES (1)", fixture.tx.children[0].description)
         assertEquals("INSERT INTO foo VALUES (2)", fixture.tx.children[1].description)
@@ -78,7 +78,7 @@ class SentryJdbcEventListenerTest {
 
         assertEquals(1, fixture.tx.children.size)
         assertEquals("INSERT INTO foo VALUES ('x')", fixture.tx.children[0].description)
-        assertEquals("db.query", fixture.tx.children[0].operation)
+        assertEquals("db", fixture.tx.children[0].operation)
         assertEquals(SpanStatus.INTERNAL_ERROR, fixture.tx.children[0].status)
     }
 
