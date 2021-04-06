@@ -5,6 +5,7 @@
 * Feat: Sentry closes Android NDK and ShutdownHook integrations (#1358)
 * Enhancement: Allow inheritance of SentryHandler class in sentry-jul package(#1367)
 * Fix: Accept only non null value maps (#1368)
+* Bump: Upgrade Apache HttpComponents Core to 5.0.3
 
 # 4.4.0-alpha.1
 
