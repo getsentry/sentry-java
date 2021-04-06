@@ -1052,13 +1052,13 @@ class HubTest {
     }
 
     @Test
-    fun `when startTransaction without bindToScope set, transaction is attached to the scope`() {
+    fun `when startTransaction without bindToScope set, transaction is not attached to the scope`() {
         val hub = generateHub()
 
-        val transaction = hub.startTransaction("name", "op")
+        hub.startTransaction("name", "op")
 
         hub.configureScope {
-            assertEquals(transaction, it.span)
+            assertNull(it.span)
         }
     }
 

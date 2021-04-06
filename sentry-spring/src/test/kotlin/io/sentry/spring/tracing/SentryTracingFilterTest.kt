@@ -49,10 +49,10 @@ class SentryTracingFilterTest {
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
-                whenever(hub.startTransaction(any(), any<CustomSamplingContext>())).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
+                whenever(hub.startTransaction(any(), any<CustomSamplingContext>(), eq(true))).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             }
             response.status = 200
-            whenever(hub.startTransaction(any(), any(), any<CustomSamplingContext>())).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
+            whenever(hub.startTransaction(any(), any(), any(), eq(true))).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
             return SentryTracingFilter(hub, sentryRequestResolver, transactionNameProvider)
         }
@@ -85,7 +85,7 @@ class SentryTracingFilterTest {
         verify(fixture.hub).startTransaction(eq("POST /product/12"), eq("http.server"), check<CustomSamplingContext> {
             assertNotNull(it["request"])
             assertTrue(it["request"] is HttpServletRequest)
-        })
+        }, eq(true))
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("POST /product/{id}")

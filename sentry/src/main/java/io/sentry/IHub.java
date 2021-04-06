@@ -281,17 +281,17 @@ public interface IHub {
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance.
+   * Creates a Transaction and returns the instance.
    *
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
   default ITransaction startTransaction(TransactionContext transactionContexts) {
-    return startTransaction(transactionContexts, true);
+    return startTransaction(transactionContexts, false);
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance.
+   * Creates a Transaction and returns the instance.
    *
    * @param transactionContexts the transaction contexts
    * @param bindToScope if transaction should be bound to scope
@@ -303,8 +303,8 @@ public interface IHub {
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
-   * sampling context the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   * Creates a Transaction and returns the instance. Based on the passed sampling context the
+   * decision if transaction is sampled will be taken by {@link TracesSampler}.
    *
    * @param name the transaction name
    * @param operation the operation
@@ -313,12 +313,12 @@ public interface IHub {
    */
   default @NotNull ITransaction startTransaction(
       String name, String operation, CustomSamplingContext customSamplingContext) {
-    return startTransaction(name, operation, customSamplingContext, true);
+    return startTransaction(name, operation, customSamplingContext, false);
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
-   * sampling context the decision if transaction is sampled will be taken by {@link TracesSampler}.
+   * Creates a Transaction and returns the instance. Based on the passed sampling context the
+   * decision if transaction is sampled will be taken by {@link TracesSampler}.
    *
    * @param name the transaction name
    * @param operation the operation
@@ -336,9 +336,8 @@ public interface IHub {
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
-   * transaction and sampling contexts the decision if transaction is sampled will be taken by
-   * {@link TracesSampler}.
+   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
+   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
    *
    * @param transactionContexts the transaction context
    * @param customSamplingContext the sampling context
@@ -347,13 +346,12 @@ public interface IHub {
   @NotNull
   default ITransaction startTransaction(
       TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
-    return startTransaction(transactionContexts, customSamplingContext, true);
+    return startTransaction(transactionContexts, customSamplingContext, false);
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the passed
-   * transaction and sampling contexts the decision if transaction is sampled will be taken by
-   * {@link TracesSampler}.
+   * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
+   * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
    *
    * @param transactionContexts the transaction context
    * @param customSamplingContext the sampling context
@@ -367,7 +365,7 @@ public interface IHub {
       boolean bindToScope);
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
+   * Creates a Transaction and returns the instance. Based on the {@link
    * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
    * {@link TracesSampler}.
    *
@@ -381,7 +379,7 @@ public interface IHub {
   }
 
   /**
-   * Creates a Transaction bound to the current hub and returns the instance. Based on the {@link
+   * Creates a Transaction and returns the instance. Based on the {@link
    * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
    * {@link TracesSampler}.
    *
