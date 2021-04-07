@@ -23,7 +23,6 @@
         android:theme="@style/AppTheme"
         android:allowNativeHeapPointerTagging="false"
         android:extractNativeLibs="true"
-        android:forceQueryable="true"
         tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
         <activity android:name=".MainActivity">
