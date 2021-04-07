@@ -92,14 +92,6 @@ android {
     }
 }
 
-task<Wrapper>("wrapper") {
-    gradleVersion = "6.8.3"
-}
-
-task("prepareKotlinBuildScriptModel") {
-
-}
-
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
@@ -125,7 +117,6 @@ dependencies {
     androidTestImplementation(Config.TestLibs.androidxJunit)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
     androidTestImplementation("com.android.support.test.uiautomator:uiautomator-v18:2.1.3")
-    //androidTestUtil("androidx.test:orchestrator:1.3.0")
     androidTestImplementation("com.microsoft.appcenter:espresso-test-extension:1.4")
 
 }
