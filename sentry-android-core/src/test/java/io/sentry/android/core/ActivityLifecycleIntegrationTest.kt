@@ -36,7 +36,7 @@ class ActivityLifecycleIntegrationTest {
         val transaction = SentryTracer(TransactionContext("name", "op"), hub)
 
         fun getSut(): ActivityLifecycleIntegration {
-            whenever(hub.startTransaction(any<String>(), any(), any<Boolean>())).thenReturn(transaction)
+            whenever(hub.startTransaction(any<String>(), any())).thenReturn(transaction)
             return ActivityLifecycleIntegration(application)
         }
     }
@@ -189,7 +189,7 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
 
-        verify(fixture.hub, never()).startTransaction(any<String>(), any(), any<Boolean>())
+        verify(fixture.hub, never()).startTransaction(any<String>(), any())
     }
 
     @Test
@@ -202,7 +202,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
 
         // call only once
-        verify(fixture.hub).startTransaction(any<String>(), any(), any<Boolean>())
+        verify(fixture.hub).startTransaction(any<String>(), any())
     }
 
     @Test
@@ -215,7 +215,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(any<String>(), check {
             assertEquals("navigation", it)
-        }, any<Boolean>())
+        })
     }
 
     @Test
@@ -228,7 +228,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(check<String> {
             assertEquals("Activity", it)
-        }, any(), any<Boolean>())
+        }, any())
     }
 
     @Test

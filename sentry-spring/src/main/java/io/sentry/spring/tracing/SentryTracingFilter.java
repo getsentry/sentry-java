@@ -113,13 +113,13 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         final TransactionContext contexts =
             TransactionContext.fromSentryTrace(
                 name, "http.server", new SentryTraceHeader(sentryTraceHeader));
-        return hub.startTransaction(contexts, customSamplingContext);
+        return hub.startTransaction(contexts, customSamplingContext, true);
       } catch (InvalidSentryTraceHeaderException e) {
         hub.getOptions()
             .getLogger()
             .log(SentryLevel.DEBUG, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
     }
-    return hub.startTransaction(name, "http.server", customSamplingContext);
+    return hub.startTransaction(name, "http.server", customSamplingContext, true);
   }
 }
