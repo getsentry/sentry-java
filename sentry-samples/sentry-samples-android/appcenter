@@ -7,12 +7,12 @@
 
 # Create Debug APK
 
-./gradlew clean
-./gradlew assembleDebug
+../../gradlew :sentry-samples:sentry-samples-android:clean
+../../gradlew :sentry-samples:sentry-samples-android:assembleDebug
 
 # Run Tests so Test APK is Built
 
-./gradlew connectedAndroidTest
+../../gradlew :sentry-samples:sentry-samples-android:connectedAndroidTest
 
 # Sign APK
 
