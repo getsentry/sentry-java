@@ -90,10 +90,6 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
-
-//    testOptions {
-//        execution = "ANDROIDX_TEST_ORCHESTRATOR"
-//    }
 }
 
 task<Wrapper>("wrapper") {
