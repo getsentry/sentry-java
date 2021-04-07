@@ -64,7 +64,7 @@ public final class SentryClient implements ISentryClient {
       // Event has already passed through here before it was cached
       // Going through again could be reading data that is no longer relevant
       // i.e proguard id, app version, threads
-      event = applyScope(event, scope, hint);
+      event = (SentryEvent) applyScope(event, scope, hint);
 
       if (event == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by applyScope");
@@ -75,7 +75,7 @@ public final class SentryClient implements ISentryClient {
           .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
     }
 
-    event = processEvent(event, hint, options.getEventProcessors());
+    event = (SentryEvent) processEvent(event, hint, options.getEventProcessors());
 
     Session session = null;
 
@@ -188,8 +188,8 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Nullable
-  private SentryEvent processEvent(
-      @NotNull SentryEvent event,
+  private SentryBaseEvent processEvent(
+      @NotNull SentryBaseEvent event,
       final @Nullable Object hint,
       final @NotNull List<EventProcessor> eventProcessors) {
     for (EventProcessor processor : eventProcessors) {
@@ -365,7 +365,7 @@ public final class SentryClient implements ISentryClient {
     SentryId sentryId = transaction.getEventId();
 
     if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
-      transaction = applyScope(transaction, scope);
+      transaction = (SentryTransaction) applyScope(transaction, scope, hint);
     } else {
       options
           .getLogger()
@@ -375,7 +375,17 @@ public final class SentryClient implements ISentryClient {
               transaction.getEventId());
     }
 
-    processTransaction(transaction);
+    if (transaction == null) {
+      // TODO; log it
+      return SentryId.EMPTY_ID;
+    }
+
+    transaction = processTransaction(transaction, hint);
+
+    if (transaction == null) {
+      // TODO; log it
+      return SentryId.EMPTY_ID;
+    }
 
     try {
       final SentryEnvelope envelope =
@@ -409,31 +419,18 @@ public final class SentryClient implements ISentryClient {
     return attachmentsToSend;
   }
 
-  private @NotNull SentryTransaction processTransaction(
-      final @NotNull SentryTransaction transaction) {
-    if (transaction.getPlatform() == null) {
-      transaction.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
+  private @Nullable SentryTransaction processTransaction(
+      @NotNull SentryTransaction transaction,
+      final @Nullable Object hint) {
+    transaction = (SentryTransaction) processEvent(transaction, hint, options.getEventProcessors());
+
+    if (transaction == null) {
+      // log it
+      return null;
     }
-    if (transaction.getRelease() == null) {
-      transaction.setRelease(options.getRelease());
-    }
-    if (transaction.getEnvironment() == null) {
-      transaction.setEnvironment(options.getEnvironment());
-    }
-    if (transaction.getSdk() == null) {
-      transaction.setSdk(options.getSdkVersion());
-    }
-    if (transaction.getTags() == null) {
-      transaction.setTags(new HashMap<>(options.getTags()));
-    } else {
-      for (Map.Entry<String, String> item : options.getTags().entrySet()) {
-        if (!transaction.getTags().containsKey(item.getKey())) {
-          transaction.setTag(item.getKey(), item.getValue());
-        }
-      }
-    }
+
     final List<SentrySpan> unfinishedSpans = new ArrayList<>();
-    for (SentrySpan span : transaction.getSpans()) {
+    for (final SentrySpan span : transaction.getSpans()) {
       if (!span.isFinished()) {
         unfinishedSpans.add(span);
       }
@@ -442,23 +439,14 @@ public final class SentryClient implements ISentryClient {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Dropping %d unfinished spans", unfinishedSpans.size());
-    }
-    transaction.getSpans().removeAll(unfinishedSpans);
-    return transaction;
-  }
 
-  private @NotNull SentryTransaction applyScope(
-      @NotNull SentryTransaction transaction, final @Nullable Scope scope) {
-    if (scope != null) {
-      if (transaction.getRequest() == null) {
-        transaction.setRequest(scope.getRequest());
-      }
+      transaction.getSpans().removeAll(unfinishedSpans);
     }
     return transaction;
   }
 
-  private @Nullable SentryEvent applyScope(
-      @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
+  private @Nullable SentryBaseEvent applyScope(
+      @NotNull SentryBaseEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     if (scope != null) {
       if (event.getTransaction() == null) {
         event.setTransaction(scope.getTransactionName());
@@ -469,29 +457,12 @@ public final class SentryClient implements ISentryClient {
       if (event.getRequest() == null) {
         event.setRequest(scope.getRequest());
       }
-      if (event.getFingerprints() == null) {
-        event.setFingerprints(scope.getFingerprint());
-      }
-      if (event.getBreadcrumbs() == null) {
-        event.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
-      } else {
-        sortBreadcrumbsByDate(event, scope.getBreadcrumbs());
-      }
       if (event.getTags() == null) {
         event.setTags(new HashMap<>(scope.getTags()));
       } else {
         for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
           if (!event.getTags().containsKey(item.getKey())) {
             event.getTags().put(item.getKey(), item.getValue());
-          }
-        }
-      }
-      if (event.getExtras() == null) {
-        event.setExtras(new HashMap<>(scope.getExtras()));
-      } else {
-        for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
-          if (!event.getExtras().containsKey(item.getKey())) {
-            event.getExtras().put(item.getKey(), item.getValue());
           }
         }
       }
@@ -506,10 +477,34 @@ public final class SentryClient implements ISentryClient {
             .getLogger()
             .log(SentryLevel.ERROR, "An error has occurred when cloning Contexts", e);
       }
-      // Level from scope exceptionally take precedence over the event
-      if (scope.getLevel() != null) {
-        event.setLevel(scope.getLevel());
+
+      if (event.isSentryEvent()) {
+        if (((SentryEvent)event).getFingerprints() == null) {
+          ((SentryEvent)event).setFingerprints(scope.getFingerprint());
+        }
+
+        if (((SentryEvent)event).getBreadcrumbs() == null) {
+          ((SentryEvent)event).setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+        } else {
+          sortBreadcrumbsByDate(((SentryEvent)event), scope.getBreadcrumbs());
+        }
+
+        if (((SentryEvent)event).getExtras() == null) {
+          ((SentryEvent)event).setExtras(new HashMap<>(scope.getExtras()));
+        } else {
+          for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
+            if (!((SentryEvent)event).getExtras().containsKey(item.getKey())) {
+              ((SentryEvent)event).getExtras().put(item.getKey(), item.getValue());
+            }
+          }
+        }
+
+        // Level from scope exceptionally take precedence over the event
+        if (scope.getLevel() != null) {
+          ((SentryEvent)event).setLevel(scope.getLevel());
+        }
       }
+
       // Set trace data from active span to connect events with transactions
       final ISpan span = scope.getSpan();
       if (event.getContexts().getTrace() == null && span != null) {

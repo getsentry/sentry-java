@@ -2,7 +2,7 @@ package io.sentry.spring;
 
 import io.sentry.EventProcessor;
 import io.sentry.IpAddressUtils;
-import io.sentry.SentryEvent;
+import io.sentry.SentryBaseEvent;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
@@ -25,7 +25,7 @@ public final class SentryUserProviderEventProcessor implements EventProcessor {
   }
 
   @Override
-  public SentryEvent process(final @NotNull SentryEvent event, final @Nullable Object hint) {
+  public SentryBaseEvent process(final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
     final User user = sentryUserProvider.provideUser();
     if (user != null) {
       final User existingUser = Optional.ofNullable(event.getUser()).orElseGet(User::new);

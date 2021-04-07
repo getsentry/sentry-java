@@ -17,30 +17,21 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryTransaction extends SentryBaseEvent {
-  /** The transaction name. */
-  @SuppressWarnings("UnusedVariable")
-  private @Nullable String transaction;
 
   /** The moment in time when span was started. */
   private final @NotNull Date startTimestamp;
 
-  /** The moment in time when span has ended. */
-  private @Nullable Date timestamp;
-
   /** A list of spans within this transaction. Can be empty. */
   private final @NotNull List<SentrySpan> spans = new ArrayList<>();
-
-  /** The {@code type} property is required in JSON payload sent to Sentry. */
-  @SuppressWarnings("UnusedVariable")
-  private @NotNull final String type = "transaction";
 
   @SuppressWarnings("deprecation")
   public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
     super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
+    setType("transaction");
     this.startTimestamp = sentryTracer.getStartTimestamp();
-    this.timestamp = DateUtils.getCurrentDateTime();
-    this.transaction = sentryTracer.getName();
+    setTimestamp(DateUtils.getCurrentDateTime());
+    setTransaction(sentryTracer.getName());
     for (final Span span : sentryTracer.getChildren()) {
       this.spans.add(new SentrySpan(span));
     }
@@ -57,23 +48,11 @@ public final class SentryTransaction extends SentryBaseEvent {
   }
 
   public boolean isFinished() {
-    return this.timestamp != null;
-  }
-
-  public @Nullable String getTransaction() {
-    return transaction;
+    return getTimestamp() != null;
   }
 
   public @NotNull Date getStartTimestamp() {
     return startTimestamp;
-  }
-
-  public @Nullable Date getTimestamp() {
-    return timestamp;
-  }
-
-  public @NotNull String getType() {
-    return type;
   }
 
   public @Nullable SpanStatus getStatus() {

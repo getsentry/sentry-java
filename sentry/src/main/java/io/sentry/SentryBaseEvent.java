@@ -5,6 +5,9 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.User;
+
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -76,6 +79,58 @@ public abstract class SentryBaseEvent {
 
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
+
+  /**
+   * Server or device name the event was generated on.
+   *
+   * <p>This is supposed to be a hostname.
+   */
+  private String serverName;
+
+
+  /**
+   * Program's distribution identifier.
+   *
+   * <p>The distribution of the application.
+   *
+   * <p>Distributions are used to disambiguate build or deployment variants of the same release of
+   * an application. For example, the dist can be the build number of an XCode build or the version
+   * code of an Android build.
+   */
+  private String dist;
+
+  /** Information about the user who triggered this event. */
+  private User user;
+
+  /**
+   * Transaction name of the event.
+   *
+   * <p>For example, in a web app, this might be the route name (`"/users/<username>/"` or
+   * `UserView`), in a task queue it might be the function + module name.
+   */
+  private String transaction;
+
+  /**
+   * Timestamp when the event was created.
+   *
+   * <p>Indicates when the event was created in the Sentry SDK. The format is either a string as
+   * defined in [RFC 3339](https://tools.ietf.org/html/rfc3339) or a numeric (integer or float)
+   * value representing the number of seconds that have elapsed since the [Unix
+   * epoch](https://en.wikipedia.org/wiki/Unix_time).
+   *
+   * <p>Sub-microsecond precision is not preserved with numeric values due to precision limitations
+   * with floats (at least in our systems). With that caveat in mind, just send whatever is easiest
+   * to produce.
+   *
+   * <p>All timestamps in the event protocol are formatted this way.
+   *
+   * <p>```json { "timestamp": "2011-05-02T17:41:36Z" } { "timestamp": 1304358096.0 } ```
+   * or The moment in time when span has ended.
+   */
+  private @Nullable Date timestamp;
+
+  /** The {@code type} property is required in JSON payload sent to Sentry. */
+  private @Nullable String type;
 
   protected SentryBaseEvent(final @NotNull SentryId eventId) {
     this.eventId = eventId;
@@ -197,5 +252,58 @@ public abstract class SentryBaseEvent {
 
   public void setPlatform(final @Nullable String platform) {
     this.platform = platform;
+  }
+
+  public String getServerName() {
+    return serverName;
+  }
+
+  public void setServerName(String serverName) {
+    this.serverName = serverName;
+  }
+
+  public String getDist() {
+    return dist;
+  }
+
+  public void setDist(String dist) {
+    this.dist = dist;
+  }
+
+  public User getUser() {
+    return user;
+  }
+
+  public void setUser(User user) {
+    this.user = user;
+  }
+
+  public String getTransaction() {
+    return transaction;
+  }
+
+  public void setTransaction(String transaction) {
+    this.transaction = transaction;
+  }
+
+  public boolean isSentryEvent() {
+    return this instanceof SentryEvent;
+  }
+
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
+  public @Nullable Date getTimestamp() {
+    return timestamp != null ? (Date) timestamp.clone() : null;
+  }
+
+  public void setTimestamp(final @Nullable Date timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public void setType(final @Nullable String type) {
+    this.type = type;
+  }
+
+  public @Nullable String getType() {
+    return type;
   }
 }

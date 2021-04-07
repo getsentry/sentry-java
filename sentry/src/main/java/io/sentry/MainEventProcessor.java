@@ -15,12 +15,6 @@ import org.jetbrains.annotations.Nullable;
 public final class MainEventProcessor implements EventProcessor {
 
   /**
-   * Default value for {@link User#getIpAddress()} set when event does not have user and ip address
-   * set and when {@link SentryOptions#isSendDefaultPii()} is set to true.
-   */
-  public static final String DEFAULT_IP_ADDRESS = "{{auto}}";
-
-  /**
    * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
    * SentryOptions} do not have the environment field set.
    */
@@ -62,16 +56,16 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+  public @NotNull SentryBaseEvent process(
+      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
     if (event.getPlatform() == null) {
       // this actually means JVM related.
       event.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
     }
 
     final Throwable throwable = event.getThrowable();
-    if (throwable != null) {
-      event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
+    if (throwable != null && event.isSentryEvent()) {
+      ((SentryEvent)event).setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
     }
 
     if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
@@ -88,7 +82,7 @@ public final class MainEventProcessor implements EventProcessor {
     return event;
   }
 
-  private void processNonCachedEvent(final @NotNull SentryEvent event) {
+  private void processNonCachedEvent(final @NotNull SentryBaseEvent event) {
     if (event.getRelease() == null) {
       event.setRelease(options.getRelease());
     }
@@ -112,31 +106,33 @@ public final class MainEventProcessor implements EventProcessor {
       }
     }
 
-    if (event.getThreads() == null) {
-      // collecting threadIds that came from the exception mechanism, so we can mark threads as
-      // crashed properly
-      List<Long> mechanismThreadIds = null;
+    if (event.isSentryEvent()) {
+      if (((SentryEvent)event).getThreads() == null) {
+        // collecting threadIds that came from the exception mechanism, so we can mark threads as
+        // crashed properly
+        List<Long> mechanismThreadIds = null;
 
-      final boolean hasExceptions =
-          event.getExceptions() != null && !event.getExceptions().isEmpty();
+        final boolean hasExceptions =
+                ((SentryEvent)event).getExceptions() != null && !((SentryEvent)event).getExceptions().isEmpty();
 
-      if (hasExceptions) {
-        for (final SentryException item : event.getExceptions()) {
-          if (item.getMechanism() != null && item.getThreadId() != null) {
-            if (mechanismThreadIds == null) {
-              mechanismThreadIds = new ArrayList<>();
+        if (hasExceptions) {
+          for (final SentryException item : ((SentryEvent)event).getExceptions()) {
+            if (item.getMechanism() != null && item.getThreadId() != null) {
+              if (mechanismThreadIds == null) {
+                mechanismThreadIds = new ArrayList<>();
+              }
+              mechanismThreadIds.add(item.getThreadId());
             }
-            mechanismThreadIds.add(item.getThreadId());
           }
         }
-      }
 
-      if (options.isAttachThreads()) {
-        event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
-      } else if (options.isAttachStacktrace() && !hasExceptions) {
-        // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
-        // if there are no exceptions, exceptions have its own stack traces.
-        event.setThreads(sentryThreadFactory.getCurrentThread());
+        if (options.isAttachThreads()) {
+          ((SentryEvent)event).setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
+        } else if (options.isAttachStacktrace() && !hasExceptions) {
+          // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
+          // if there are no exceptions, exceptions have its own stack traces.
+          ((SentryEvent)event).setThreads(sentryThreadFactory.getCurrentThread());
+        }
       }
     }
     if (options.isSendDefaultPii()) {

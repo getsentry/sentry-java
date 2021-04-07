@@ -22,6 +22,7 @@ import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
 import io.sentry.ILogger;
+import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.util.ConnectivityChecker;
@@ -137,8 +138,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+  public @NotNull SentryBaseEvent process(
+          final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
     if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
       processNonCachedEvent(event);
     } else {
@@ -167,7 +168,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return event;
   }
 
-  private void mergeOS(final @NotNull SentryEvent event) {
+  private void mergeOS(final @NotNull SentryBaseEvent event) {
     final OperatingSystem currentOS = event.getContexts().getOperatingSystem();
     final OperatingSystem androidOS = getOperatingSystem();
 
@@ -187,14 +188,22 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   // Data to be applied to events that was created in the running process
-  private void processNonCachedEvent(final @NotNull SentryEvent event) {
+  private void processNonCachedEvent(final @NotNull SentryBaseEvent event) {
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
     }
     setAppExtras(app);
 
-    mergeDebugImages(event);
+    if (event.isSentryEvent()) {
+      mergeDebugImages((SentryEvent) event);
+
+      if (((SentryEvent) event).getThreads() != null) {
+        for (SentryThread thread : ((SentryEvent)event).getThreads()) {
+          thread.setCurrent(MainThreadChecker.isMainThread(thread));
+        }
+      }
+    }
 
     PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
     if (packageInfo != null) {
@@ -207,12 +216,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     event.getContexts().setApp(app);
-
-    if (event.getThreads() != null) {
-      for (SentryThread thread : event.getThreads()) {
-        thread.setCurrent(MainThreadChecker.isMainThread(thread));
-      }
-    }
   }
 
   private void mergeDebugImages(final @NotNull SentryEvent event) {
@@ -949,7 +952,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("unchecked")
-  private void setSideLoadedInfo(final @NotNull SentryEvent event) {
+  private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
     try {
       final Object sideLoadedInfo = contextData.get().get(SIDE_LOADED);
 

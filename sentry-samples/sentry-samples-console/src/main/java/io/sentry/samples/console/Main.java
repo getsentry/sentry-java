@@ -5,6 +5,7 @@ import io.sentry.EventProcessor;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
+import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
@@ -166,10 +167,12 @@ public class Main {
 
   private static class SomeEventProcessor implements EventProcessor {
     @Override
-    public SentryEvent process(SentryEvent event, Object hint) {
+    public SentryBaseEvent process(SentryBaseEvent event, Object hint) {
       // Here you can modify the event as you need
-      if (event.getLevel() != null && event.getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
-        event.addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));
+      if (event.isSentryEvent()) {
+          if (((SentryEvent)event).getLevel() != null && ((SentryEvent)event).getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
+              ((SentryEvent)event).addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));
+          }
       }
 
       return event;
