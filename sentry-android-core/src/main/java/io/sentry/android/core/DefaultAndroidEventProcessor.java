@@ -139,7 +139,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryBaseEvent process(
-          final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
+      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
     if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
       processNonCachedEvent(event);
     } else {
@@ -199,7 +199,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       mergeDebugImages((SentryEvent) event);
 
       if (((SentryEvent) event).getThreads() != null) {
-        for (SentryThread thread : ((SentryEvent)event).getThreads()) {
+        for (SentryThread thread : ((SentryEvent) event).getThreads()) {
           thread.setCurrent(MainThreadChecker.isMainThread(thread));
         }
       }

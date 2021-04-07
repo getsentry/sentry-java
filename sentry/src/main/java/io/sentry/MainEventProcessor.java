@@ -65,7 +65,7 @@ public final class MainEventProcessor implements EventProcessor {
 
     final Throwable throwable = event.getThrowable();
     if (throwable != null && event.isSentryEvent()) {
-      ((SentryEvent)event).setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
+      ((SentryEvent) event).setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
     }
 
     if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
@@ -107,16 +107,17 @@ public final class MainEventProcessor implements EventProcessor {
     }
 
     if (event.isSentryEvent()) {
-      if (((SentryEvent)event).getThreads() == null) {
+      if (((SentryEvent) event).getThreads() == null) {
         // collecting threadIds that came from the exception mechanism, so we can mark threads as
         // crashed properly
         List<Long> mechanismThreadIds = null;
 
         final boolean hasExceptions =
-                ((SentryEvent)event).getExceptions() != null && !((SentryEvent)event).getExceptions().isEmpty();
+            ((SentryEvent) event).getExceptions() != null
+                && !((SentryEvent) event).getExceptions().isEmpty();
 
         if (hasExceptions) {
-          for (final SentryException item : ((SentryEvent)event).getExceptions()) {
+          for (final SentryException item : ((SentryEvent) event).getExceptions()) {
             if (item.getMechanism() != null && item.getThreadId() != null) {
               if (mechanismThreadIds == null) {
                 mechanismThreadIds = new ArrayList<>();
@@ -127,11 +128,13 @@ public final class MainEventProcessor implements EventProcessor {
         }
 
         if (options.isAttachThreads()) {
-          ((SentryEvent)event).setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
+          ((SentryEvent) event)
+              .setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
         } else if (options.isAttachStacktrace() && !hasExceptions) {
-          // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
+          // when attachStacktrace is enabled, we attach only the current thread and its stack
+          // traces,
           // if there are no exceptions, exceptions have its own stack traces.
-          ((SentryEvent)event).setThreads(sentryThreadFactory.getCurrentThread());
+          ((SentryEvent) event).setThreads(sentryThreadFactory.getCurrentThread());
         }
       }
     }

@@ -6,7 +6,6 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -87,7 +86,6 @@ public abstract class SentryBaseEvent {
    */
   private String serverName;
 
-
   /**
    * Program's distribution identifier.
    *
@@ -124,8 +122,8 @@ public abstract class SentryBaseEvent {
    *
    * <p>All timestamps in the event protocol are formatted this way.
    *
-   * <p>```json { "timestamp": "2011-05-02T17:41:36Z" } { "timestamp": 1304358096.0 } ```
-   * or The moment in time when span has ended.
+   * <p>```json { "timestamp": "2011-05-02T17:41:36Z" } { "timestamp": 1304358096.0 } ``` or The
+   * moment in time when span has ended.
    */
   private @Nullable Date timestamp;
 

@@ -170,9 +170,11 @@ public class Main {
     public SentryBaseEvent process(SentryBaseEvent event, Object hint) {
       // Here you can modify the event as you need
       if (event.isSentryEvent()) {
-          if (((SentryEvent)event).getLevel() != null && ((SentryEvent)event).getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
-              ((SentryEvent)event).addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));
-          }
+        if (((SentryEvent) event).getLevel() != null
+            && ((SentryEvent) event).getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
+          ((SentryEvent) event)
+              .addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));
+        }
       }
 
       return event;

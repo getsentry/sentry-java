@@ -420,8 +420,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryTransaction processTransaction(
-      @NotNull SentryTransaction transaction,
-      final @Nullable Object hint) {
+      @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     transaction = (SentryTransaction) processEvent(transaction, hint, options.getEventProcessors());
 
     if (transaction == null) {
@@ -479,29 +478,29 @@ public final class SentryClient implements ISentryClient {
       }
 
       if (event.isSentryEvent()) {
-        if (((SentryEvent)event).getFingerprints() == null) {
-          ((SentryEvent)event).setFingerprints(scope.getFingerprint());
+        if (((SentryEvent) event).getFingerprints() == null) {
+          ((SentryEvent) event).setFingerprints(scope.getFingerprint());
         }
 
-        if (((SentryEvent)event).getBreadcrumbs() == null) {
-          ((SentryEvent)event).setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+        if (((SentryEvent) event).getBreadcrumbs() == null) {
+          ((SentryEvent) event).setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
         } else {
-          sortBreadcrumbsByDate(((SentryEvent)event), scope.getBreadcrumbs());
+          sortBreadcrumbsByDate(((SentryEvent) event), scope.getBreadcrumbs());
         }
 
-        if (((SentryEvent)event).getExtras() == null) {
-          ((SentryEvent)event).setExtras(new HashMap<>(scope.getExtras()));
+        if (((SentryEvent) event).getExtras() == null) {
+          ((SentryEvent) event).setExtras(new HashMap<>(scope.getExtras()));
         } else {
           for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
-            if (!((SentryEvent)event).getExtras().containsKey(item.getKey())) {
-              ((SentryEvent)event).getExtras().put(item.getKey(), item.getValue());
+            if (!((SentryEvent) event).getExtras().containsKey(item.getKey())) {
+              ((SentryEvent) event).getExtras().put(item.getKey(), item.getValue());
             }
           }
         }
 
         // Level from scope exceptionally take precedence over the event
         if (scope.getLevel() != null) {
-          ((SentryEvent)event).setLevel(scope.getLevel());
+          ((SentryEvent) event).setLevel(scope.getLevel());
         }
       }
 

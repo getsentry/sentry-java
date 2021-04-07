@@ -25,7 +25,8 @@ public final class SentryUserProviderEventProcessor implements EventProcessor {
   }
 
   @Override
-  public SentryBaseEvent process(final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
+  public SentryBaseEvent process(
+      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
     final User user = sentryUserProvider.provideUser();
     if (user != null) {
       final User existingUser = Optional.ofNullable(event.getUser()).orElseGet(User::new);
