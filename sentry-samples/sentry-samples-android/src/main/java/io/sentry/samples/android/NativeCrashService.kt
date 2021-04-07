@@ -25,8 +25,8 @@ class NativeCrashService : Service() {
     }
 
     private fun handleStart() {
-        SentryAndroid.init(this) { options ->
-            options.dsn = "https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559"
+        SentryAndroid.init(this) {
+            //
         }
 
         // Dispatch async so method, and therefore START_NOT_STICKY, can return.

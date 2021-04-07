@@ -117,7 +117,7 @@ dependencies {
 
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
     androidTestImplementation("com.android.support.test.uiautomator:uiautomator-v18:2.1.3")
-    
+
     androidTestImplementation("com.microsoft.appcenter:espresso-test-extension:1.4")
 
 }
