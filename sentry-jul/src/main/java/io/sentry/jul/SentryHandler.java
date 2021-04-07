@@ -1,5 +1,6 @@
 package io.sentry.jul;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
@@ -25,7 +26,8 @@ import org.jetbrains.annotations.TestOnly;
 import org.slf4j.MDC;
 
 /** Logging handler in charge of sending the java.util.logging records to a Sentry server. */
-public final class SentryHandler extends Handler {
+@Open
+public class SentryHandler extends Handler {
   /** Name of the {@link SentryEvent} extra property containing the Thread id. */
   public static final String THREAD_ID = "thread_id";
   /**

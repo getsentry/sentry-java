@@ -256,7 +256,7 @@ public class SentryOptions {
   private boolean enableExternalConfiguration;
 
   /** Tags applied to every event and transaction */
-  private final @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
   /** max attachment size in bytes. */
   private long maxAttachmentSize = 20 * 1024 * 1024;

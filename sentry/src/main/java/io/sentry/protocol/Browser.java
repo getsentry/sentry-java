@@ -16,7 +16,7 @@ public final class Browser implements IUnknownPropertiesConsumer, Cloneable {
   private String version;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private Map<String, @NotNull Object> unknown;
 
   public String getName() {
     return name;
@@ -41,7 +41,7 @@ public final class Browser implements IUnknownPropertiesConsumer, Cloneable {
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(Map<String, @NotNull Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 

@@ -39,7 +39,7 @@ public class SpanContext implements Cloneable {
   protected @Nullable SpanStatus status;
 
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
-  protected @NotNull Map<String, String> tags = new ConcurrentHashMap<>();
+  protected @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
   public SpanContext(final @NotNull String operation, final @Nullable Boolean sampled) {
     this(new SentryId(), new SpanId(), operation, null, sampled);

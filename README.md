@@ -54,6 +54,8 @@ Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/gets
 
 [Close the Loop with User Feedback](https://blog.sentry.io/2021/02/16/close-the-loop-with-user-feedback).
 
+[A Sanity Listicle for Mobile Developers](https://blog.sentry.io/2021/03/30/a-sanity-listicle-for-mobile-developers/).
+
 # Samples
 
 [Sample App. with Sentry Android SDK and Sentry Gradle Plugin](https://github.com/getsentry/examples/tree/master/android).
@@ -72,11 +74,6 @@ For example, if you had `sentry-native` checked-out in a sibling directory to th
 
 which will be picked up by `gradle` and used instead of the git submodule.
 This directory is also included in `.gitignore` not to be shown as pending changes.
-
-# Android: Note on multiple crash reporting SDKs
-
-Installing multiple crash reporting SDKs isn't supported. They race each other on taking the signal handler (for native crashes) and it often results in only 1 of the SDKs capturing the error. This is also due to the limitations of what can run there (like allocating memory etc) and how long the app lives.
-This limitation also affects the Java layer, given that the operating system will kill the app before more than one SDK is able to process the crash and save the error to storage.
 
 # Sentry Self Hosted Compatibility
 

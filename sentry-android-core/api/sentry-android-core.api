@@ -66,9 +66,10 @@ public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 	public abstract fun loadDebugImages ()Ljava/util/List;
 }
 
-public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration {
+public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration, java/io/Closeable {
 	public static final field SENTRY_NDK_CLASS_NAME Ljava/lang/String;
 	public fun <init> (Ljava/lang/Class;)V
+	public fun close ()V
 	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
