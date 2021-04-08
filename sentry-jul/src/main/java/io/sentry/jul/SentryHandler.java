@@ -8,7 +8,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
-import io.sentry.util.CollectionUtils;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
