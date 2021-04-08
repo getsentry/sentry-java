@@ -5,6 +5,7 @@
 * Feat: Sentry closes Android NDK and ShutdownHook integrations (#1358)
 * Enhancement: Allow inheritance of SentryHandler class in sentry-jul package(#1367)
 * Fix: Accept only non null value maps (#1368)
+* Enhancement: Make NoOpHub public (#1379)
 * Fix: Do not bind transactions to scope by default. (#1376)
 
 # 4.4.0-alpha.1

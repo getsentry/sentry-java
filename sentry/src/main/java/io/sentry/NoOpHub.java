@@ -7,7 +7,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class NoOpHub implements IHub {
+public final class NoOpHub implements IHub {
 
   private static final NoOpHub instance = new NoOpHub();
 
