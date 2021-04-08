@@ -1,8 +1,8 @@
 # Unreleased
 
 * Feat: Add option to ignore exceptions by type (#1352)
-* Fix: Fix NPE when MDC contains null values (#1364)
-* Fix: Avoid NPE when MDC contains null values(#1385)
+* Fix: Fix NPE when MDC contains null values (sentry-logback) (#1364)
+* Fix: Avoid NPE when MDC contains null values (sentry-jul) (#1385)
 * Feat: Sentry closes Android NDK and ShutdownHook integrations (#1358)
 * Enhancement: Allow inheritance of SentryHandler class in sentry-jul package(#1367)
 * Fix: Accept only non null value maps (#1368)
