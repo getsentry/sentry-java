@@ -186,9 +186,13 @@ public class SentryHandler extends Handler {
     }
     final Map<String, String> mdcProperties = MDC.getMDCAdapter().getCopyOfContextMap();
     if (mdcProperties != null && !mdcProperties.isEmpty()) {
-      event.getContexts().put("MDC", mdcProperties.entrySet().stream()
-        .filter(it -> it.getValue() != null)
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+      event
+          .getContexts()
+          .put(
+              "MDC",
+              mdcProperties.entrySet().stream()
+                  .filter(it -> it.getValue() != null)
+                  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
     event.setExtra(THREAD_ID, record.getThreadID());
     return event;
