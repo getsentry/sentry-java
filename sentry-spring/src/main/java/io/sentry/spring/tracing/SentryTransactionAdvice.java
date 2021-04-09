@@ -56,7 +56,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       } else {
         operation = "bean";
       }
-      final ITransaction transaction = hub.startTransaction(name, operation);
+      final ITransaction transaction = hub.startTransaction(name, operation, true);
       try {
         return invocation.proceed();
       } finally {

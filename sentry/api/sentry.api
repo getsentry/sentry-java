@@ -340,6 +340,45 @@ public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
 	public fun read (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 }
 
+public final class io/sentry/NoOpHub : io/sentry/IHub {
+	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Ljava/lang/Object;)V
+	public fun bindClient (Lio/sentry/ISentryClient;)V
+	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
+	public fun captureEvent (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
+	public fun captureException (Ljava/lang/Throwable;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
+	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
+	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
+	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
+	public fun clearBreadcrumbs ()V
+	public fun clone ()Lio/sentry/IHub;
+	public synthetic fun clone ()Ljava/lang/Object;
+	public fun close ()V
+	public fun configureScope (Lio/sentry/ScopeCallback;)V
+	public fun endSession ()V
+	public fun flush (J)V
+	public static fun getInstance ()Lio/sentry/NoOpHub;
+	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
+	public fun getOptions ()Lio/sentry/SentryOptions;
+	public fun getSpan ()Lio/sentry/ISpan;
+	public fun isEnabled ()Z
+	public fun popScope ()V
+	public fun pushScope ()V
+	public fun removeExtra (Ljava/lang/String;)V
+	public fun removeTag (Ljava/lang/String;)V
+	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setFingerprint (Ljava/util/List;)V
+	public fun setLevel (Lio/sentry/SentryLevel;)V
+	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;)V
+	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTransaction (Ljava/lang/String;)V
+	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun startSession ()V
+	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
+	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
+	public fun withScope (Lio/sentry/ScopeCallback;)V
+}
+
 public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public static fun getInstance ()Lio/sentry/NoOpLogger;
 	public fun isEnabled (Lio/sentry/SentryLevel;)Z

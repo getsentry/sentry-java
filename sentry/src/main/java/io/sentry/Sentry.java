@@ -524,7 +524,7 @@ public final class Sentry {
   }
 
   /**
-   * Creates a Transaction and returns the instance. Started transaction is set on the scope.
+   * Creates a Transaction and returns the instance.
    *
    * @param name the transaction name
    * @param operation the operation
@@ -535,7 +535,7 @@ public final class Sentry {
       final @NotNull String name,
       final @NotNull String operation,
       final @Nullable String description) {
-    return startTransaction(name, operation, description, true);
+    return startTransaction(name, operation, description, false);
   }
 
   /**
@@ -558,7 +558,7 @@ public final class Sentry {
   }
 
   /**
-   * Creates a Transaction and returns the instance. Started transaction is set on the scope.
+   * Creates a Transaction and returns the instance.
    *
    * @param transactionContexts the transaction contexts
    * @return created transaction
@@ -583,8 +583,6 @@ public final class Sentry {
   /**
    * Creates a Transaction and returns the instance. Based on the passed sampling context the
    * decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * <p>Started transaction is set on the scope.
    *
    * @param name the transaction name
    * @param operation the operation
@@ -619,8 +617,6 @@ public final class Sentry {
   /**
    * Creates a Transaction and returns the instance. Based on the passed transaction and sampling
    * contexts the decision if transaction is sampled will be taken by {@link TracesSampler}.
-   *
-   * <p>Started transaction is set on the scope.
    *
    * @param transactionContexts the transaction context
    * @param customSamplingContext the sampling context
