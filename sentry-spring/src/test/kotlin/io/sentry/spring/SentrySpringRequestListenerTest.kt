@@ -11,26 +11,26 @@ import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
-import javax.servlet.ServletRequestEvent
-import kotlin.test.Test
-import org.assertj.core.api.Assertions
-import org.springframework.http.MediaType
-import org.springframework.mock.web.MockHttpServletRequest
-import org.springframework.mock.web.MockServletContext
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import java.net.URI
+import javax.servlet.ServletRequestEvent
 import javax.servlet.http.HttpServletRequest
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.assertj.core.api.Assertions
+import org.springframework.http.MediaType
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockServletContext
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
 class SentrySpringRequestListenerTest {
     private class Fixture {
         val hub = mock<IHub>()
         val event = mock<ServletRequestEvent>()
-        lateinit var scope:Scope
+        lateinit var scope: Scope
 
         fun getSut(request: HttpServletRequest? = null, options: SentryOptions = SentryOptions()): SentrySpringRequestListener {
             scope = Scope(options)

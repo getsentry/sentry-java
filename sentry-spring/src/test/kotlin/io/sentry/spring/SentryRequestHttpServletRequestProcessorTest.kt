@@ -9,11 +9,7 @@ import java.net.URI
 import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
-import org.springframework.http.MediaType
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.web.servlet.HandlerMapping

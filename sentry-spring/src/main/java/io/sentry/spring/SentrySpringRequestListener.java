@@ -60,8 +60,7 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
       hub.configureScope(
           scope -> {
             scope.setRequest(requestResolver.resolveSentryRequest(request));
-            scope.addEventProcessor(
-                new SentryRequestHttpServletRequestProcessor(request));
+            scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
           });
     }
   }
