@@ -166,6 +166,7 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 * Enhancement: Add the ability to register multiple OptionsConfiguration beans (#1093)
 * Fix: Append DebugImage list if event already has it
 * Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event
+* Feat: Database query tracing with datasource-proxy (#1095)
 
 # 4.0.0-alpha.1
 
