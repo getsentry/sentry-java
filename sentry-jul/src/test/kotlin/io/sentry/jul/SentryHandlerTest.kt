@@ -288,6 +288,19 @@ class SentryHandlerTest {
     }
 
     @Test
+    fun `ignore set tags with null values from MDC`() {
+        fixture = Fixture(minimumEventLevel = Level.WARNING)
+        MDC.put("key", null)
+        fixture.logger.warning("testing MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertFalse(event.contexts.containsKey("MDC"))
+            }, anyOrNull())
+        }
+    }
+
+    @Test
     fun `does not create MDC context when no MDC tags are set`() {
         fixture = Fixture(minimumEventLevel = Level.WARNING)
         fixture.logger.warning("testing without MDC tags")
