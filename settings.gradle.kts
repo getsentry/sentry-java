@@ -15,8 +15,6 @@ include(
     "sentry-servlet",
     "sentry-apache-http-client-5",
     "sentry-spring",
-    "sentry-datasource-proxy",
-    "sentry-p6spy",
     "sentry-spring-boot-starter",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
