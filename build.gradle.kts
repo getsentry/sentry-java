@@ -16,7 +16,6 @@ buildscript {
     repositories {
         google()
         jcenter()
-        maven { setUrl("https://dl.bintray.com/maranda/maven/") }
         maven { setUrl("https://kotlin.bintray.com/kotlinx") }
     }
     dependencies {
