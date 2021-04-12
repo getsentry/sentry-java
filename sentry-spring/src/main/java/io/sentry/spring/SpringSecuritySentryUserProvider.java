@@ -29,9 +29,7 @@ public final class SpringSecuritySentryUserProvider implements SentryUserProvide
   public @Nullable User provideUser() {
     if (hub.getOptions().isSendDefaultPii()) {
       final SecurityContext context = SecurityContextHolder.getContext();
-      if (context != null
-          && context.getAuthentication() != null
-          && context.getAuthentication() != null) {
+      if (context != null && context.getAuthentication() != null) {
         final User user = new User();
         user.setUsername(context.getAuthentication().getName());
         return user;
