@@ -64,6 +64,7 @@ object Config {
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
         val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
         val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
+        val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
@@ -73,7 +74,12 @@ object Config {
         val aspectj = "org.aspectj:aspectjweaver"
         val servletApi = "javax.servlet:javax.servlet-api"
 
+        val datasourceProxy = "net.ttddyy:datasource-proxy:1.7"
+        val p6spy = "p6spy:p6spy:3.9.1"
+
         val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.3"
+        val apacheHttpCore = "org.apache.httpcomponents.core5:httpcore5:5.0.3"
+        val apacheHttpCoreH2 = "org.apache.httpcomponents.core5:httpcore5-h2:5.0.3"
 
         private val retrofit2Version = "2.9.0"
         private val retrofit2Group = "com.squareup.retrofit2"
@@ -99,6 +105,7 @@ object Config {
         val mockitoInline = "org.mockito:mockito-inline:3.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
+        val hsqldb = "org.hsqldb:hsqldb:2.5.1"
     }
 
     object QualityPlugins {
@@ -146,5 +153,9 @@ object Config {
     object NativePlugins {
         val nativeBundlePlugin = "com.ydq.android.gradle.build.tool:nativeBundle:1.0.7"
         val nativeBundleExport = "com.ydq.android.gradle.native-aar.export"
+    }
+
+    object SamplesLibs {
+        val datasourceProxySpringBootStarter = "com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.7.0"
     }
 }

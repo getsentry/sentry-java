@@ -8,7 +8,9 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.io.Closeable;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +22,8 @@ public final class Hub implements IHub {
   private volatile boolean isEnabled;
   private final @NotNull Stack stack;
   private final @NotNull TracesSampler tracesSampler;
-  private final @NotNull WeakHashMap<Throwable, ISpan> throwableToSpan = new WeakHashMap<>();
+  private final @NotNull Map<Throwable, ISpan> throwableToSpan =
+      Collections.synchronizedMap(new WeakHashMap<>());
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));

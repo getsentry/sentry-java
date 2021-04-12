@@ -7,7 +7,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 
 /**
- * Verifies is [SentryEnvelope] contains first event matching a predicate.
+ * Verifies that [SentryEnvelope] contains first event matching a predicate.
  */
 inline fun checkEvent(noinline predicate: (SentryEvent) -> Unit): SentryEnvelope {
     val options = SentryOptions().apply {

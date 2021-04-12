@@ -15,14 +15,11 @@ configure<JavaPluginConvention> {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.springKotlinCompatibleLanguageVersion
 }
 
 dependencies {
     api(project(":sentry"))
-    api(Config.Libs.apacheHttpClient)
-    api(Config.Libs.apacheHttpCore)
-    api(Config.Libs.apacheHttpCoreH2)
+    api(Config.Libs.datasourceProxy)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -31,11 +28,12 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
-    testImplementation(Config.Libs.apacheHttpClient)
     testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.TestLibs.hsqldb)
 }
 
 configure<SourceSetContainer> {

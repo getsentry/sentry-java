@@ -6,8 +6,10 @@
 * Feat: Sentry closes Android NDK and ShutdownHook integrations (#1358)
 * Enhancement: Allow inheritance of SentryHandler class in sentry-jul package(#1367)
 * Fix: Accept only non null value maps (#1368)
+* Bump: Upgrade Apache HttpComponents Core to 5.0.3 (#1375)
 * Enhancement: Make NoOpHub public (#1379)
 * Fix: Do not bind transactions to scope by default. (#1376)
+* Fix: fix Hub thread safety (#1388)
 
 # 4.4.0-alpha.1
 
@@ -165,6 +167,7 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 * Enhancement: Add the ability to register multiple OptionsConfiguration beans (#1093)
 * Fix: Append DebugImage list if event already has it
 * Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event
+* Feat: Database query tracing with datasource-proxy (#1095)
 
 # 4.0.0-alpha.1
 
