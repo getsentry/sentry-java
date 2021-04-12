@@ -15,8 +15,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 @Configuration
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-  // this API is meant to be consumed by non-browser clients thus the CSRF protection is not needed
-  // .
+  // this API is meant to be consumed by non-browser clients thus the CSRF protection is not needed.
   @Override
   @SuppressWarnings("lgtm[java/spring-disabled-csrf-protection]")
   protected void configure(final @NotNull HttpSecurity http) throws Exception {
