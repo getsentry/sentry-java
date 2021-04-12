@@ -35,6 +35,8 @@ class MainActivityTest {
         reportHelper.label("initSdkAndCrash")
         onView(withId(R.id.native_crash)).perform(click())
 
+        Thread.sleep(5000)
+
         // Close either app or android dialog
         val mDevice: UiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         mDevice.pressBack()
