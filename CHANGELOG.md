@@ -1,4 +1,4 @@
-# Unreleased
+# 4.4.0-alpha.2
 
 * Feat: Add option to ignore exceptions by type (#1352)
 * Fix: Fix NPE when MDC contains null values (sentry-logback) (#1364)
