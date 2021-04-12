@@ -9,6 +9,8 @@
 * Bump: Upgrade Apache HttpComponents Core to 5.0.3 (#1375)
 * Enhancement: Make NoOpHub public (#1379)
 * Fix: Do not bind transactions to scope by default. (#1376)
+* Fix: fix Hub thread safety (#1388)
+* Fix: SentryTransactionAdvice should operate on the new scope (#1389)
 
 # 4.4.0-alpha.1
 
