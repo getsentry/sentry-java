@@ -17,6 +17,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 /**
@@ -55,7 +56,7 @@ public class SentryUserFilter implements Filter {
     chain.doFilter(request, response);
   }
 
-  private void apply(User existingUser, User user) {
+  private void apply(final @NotNull User existingUser, final @Nullable User user) {
     if (user != null) {
       Optional.ofNullable(user.getEmail()).ifPresent(existingUser::setEmail);
       Optional.ofNullable(user.getId()).ifPresent(existingUser::setId);
@@ -73,7 +74,7 @@ public class SentryUserFilter implements Filter {
   }
 
   @VisibleForTesting
-  public List<SentryUserProvider> getSentryUserProviders() {
+  public @NotNull List<SentryUserProvider> getSentryUserProviders() {
     return sentryUserProviders;
   }
 }
