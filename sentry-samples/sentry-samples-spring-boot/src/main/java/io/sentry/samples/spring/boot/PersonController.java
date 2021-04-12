@@ -1,5 +1,6 @@
 package io.sentry.samples.spring.boot;
 
+import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,7 +27,7 @@ public class PersonController {
   }
 
   @PostMapping
-  Person create(@RequestBody Person person) {
+  Person create(@RequestBody Person person, HttpServletRequest request) {
     return personService.create(person);
   }
 }

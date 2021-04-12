@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.test.checkEvent
@@ -23,8 +24,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
+import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.Ordered
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -156,6 +159,15 @@ open class App {
 
     @Bean
     open fun sentrySpringRequestListener() = SentrySpringRequestListener()
+
+    @Bean
+    open fun springSecuritySentryUserProvider(hub: IHub) = SpringSecuritySentryUserProvider(hub)
+
+    @Bean
+    open fun sentryUserFilter(hub: IHub, sentryUserProviders: List<SentryUserProvider>) = FilterRegistrationBean<SentryUserFilter>().apply {
+        this.filter = SentryUserFilter(hub, sentryUserProviders)
+        this.order = Ordered.LOWEST_PRECEDENCE
+    }
 }
 
 @RestController

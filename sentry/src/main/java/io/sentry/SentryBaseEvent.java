@@ -5,6 +5,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.User;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -39,6 +40,8 @@ public abstract class SentryBaseEvent {
   private @Nullable SdkVersion sdk;
   /** Information about a web request that occurred during the event. */
   private @Nullable Request request;
+  /** Information about the user who triggered this event. */
+  private User user;
   /**
    * Custom tags for this event.
    *
@@ -197,5 +200,13 @@ public abstract class SentryBaseEvent {
 
   public void setPlatform(final @Nullable String platform) {
     this.platform = platform;
+  }
+
+  public User getUser() {
+    return user;
+  }
+
+  public void setUser(User user) {
+    this.user = user;
   }
 }

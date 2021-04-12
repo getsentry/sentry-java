@@ -26,6 +26,8 @@ public class SentryProperties extends SentryOptions {
   /** Report all or only uncaught web exceptions. */
   private int exceptionResolverOrder = 1;
 
+  private Integer userFilterOrder;
+
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
 
@@ -65,6 +67,14 @@ public class SentryProperties extends SentryOptions {
    */
   public void setExceptionResolverOrder(int exceptionResolverOrder) {
     this.exceptionResolverOrder = exceptionResolverOrder;
+  }
+
+  public Integer getUserFilterOrder() {
+    return userFilterOrder;
+  }
+
+  public void setUserFilterOrder(Integer userFilterOrder) {
+    this.userFilterOrder = userFilterOrder;
   }
 
   public Logging getLogging() {

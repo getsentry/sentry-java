@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    implementation(Config.Libs.springBootStarterSecurity)
+//    implementation(Config.Libs.springBootStarterSecurity)
     implementation(Config.Libs.springBootStarterWeb)
     implementation(Config.Libs.springBootStarterJdbc)
     implementation(Config.Libs.springBootStarterAop)

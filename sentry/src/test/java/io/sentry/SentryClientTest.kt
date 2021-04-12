@@ -913,6 +913,18 @@ class SentryClientTest {
         verifyZeroInteractions(fixture.transport)
     }
 
+    @Test
+    fun `when captureTransaction with scope, transaction should user data`() {
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), mock()))
+        val scope = createScope()
+
+        val sut = fixture.getSut()
+
+        sut.captureTransaction(transaction, scope, null)
+        assertNotNull(transaction.user)
+        assertEquals("id", transaction.user.id)
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
