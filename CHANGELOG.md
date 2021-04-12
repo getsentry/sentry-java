@@ -10,6 +10,7 @@
 * Enhancement: Make NoOpHub public (#1379)
 * Fix: Do not bind transactions to scope by default. (#1376)
 * Fix: fix Hub thread safety (#1388)
+* Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
 
 # 4.4.0-alpha.1
 
