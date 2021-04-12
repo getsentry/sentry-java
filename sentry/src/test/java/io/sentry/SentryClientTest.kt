@@ -914,7 +914,7 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when captureTransaction with scope, transaction should user data`() {
+    fun `when captureTransaction with scope, transaction should use user data`() {
         val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), mock()))
         val scope = createScope()
 

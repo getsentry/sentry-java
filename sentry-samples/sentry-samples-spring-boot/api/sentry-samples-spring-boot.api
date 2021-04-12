@@ -23,8 +23,10 @@ public class io/sentry/samples/spring/boot/PersonService {
 	public fun <init> (Lorg/springframework/jdbc/core/JdbcTemplate;)V
 }
 
-public class io/sentry/samples/spring/boot/SecurityConfiguration {
+public class io/sentry/samples/spring/boot/SecurityConfiguration : org/springframework/security/config/annotation/web/configuration/WebSecurityConfigurerAdapter {
 	public fun <init> ()V
+	protected fun configure (Lorg/springframework/security/config/annotation/web/builders/HttpSecurity;)V
+	public fun userDetailsService ()Lorg/springframework/security/core/userdetails/UserDetailsService;
 }
 
 public class io/sentry/samples/spring/boot/SentryDemoApplication {
