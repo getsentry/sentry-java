@@ -31,7 +31,7 @@ public class SentryProperties extends SentryOptions {
    * org.springframework.core.Ordered.LOWEST_PRECEDENCE}, if Spring Security is auto-configured, its
    * guaranteed to run after Spring Security filter chain.
    */
-  private Integer userFilterOrder;
+  private @Nullable Integer userFilterOrder;
 
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
@@ -74,15 +74,15 @@ public class SentryProperties extends SentryOptions {
     this.exceptionResolverOrder = exceptionResolverOrder;
   }
 
-  public Integer getUserFilterOrder() {
+  public @Nullable Integer getUserFilterOrder() {
     return userFilterOrder;
   }
 
-  public void setUserFilterOrder(Integer userFilterOrder) {
+  public void setUserFilterOrder(final @Nullable Integer userFilterOrder) {
     this.userFilterOrder = userFilterOrder;
   }
 
-  public Logging getLogging() {
+  public @NotNull Logging getLogging() {
     return logging;
   }
 

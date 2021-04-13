@@ -128,7 +128,7 @@ public class SentryAutoConfiguration {
       @Bean
       @ConditionalOnClass(SecurityContextHolder.class)
       @Order(1)
-      public SpringSecuritySentryUserProvider springSecuritySentryUserProvider(
+      public @NotNull SpringSecuritySentryUserProvider springSecuritySentryUserProvider(
           final @NotNull IHub hub) {
         return new SpringSecuritySentryUserProvider(hub);
       }
@@ -147,7 +147,7 @@ public class SentryAutoConfiguration {
        */
       @Bean
       @ConditionalOnBean(SentryUserProvider.class)
-      FilterRegistrationBean<SentryUserFilter> sentryUserFilter(
+      public @NotNull FilterRegistrationBean<SentryUserFilter> sentryUserFilter(
           final @NotNull IHub hub,
           final @NotNull SentryProperties sentryProperties,
           final @NotNull List<SentryUserProvider> sentryUserProvider,

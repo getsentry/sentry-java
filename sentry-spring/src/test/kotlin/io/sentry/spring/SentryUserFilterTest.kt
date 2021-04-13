@@ -39,13 +39,13 @@ class SentryUserFilterTest {
     @Test
     fun `sets provided user data on the scope`() {
         val filter = fixture.getSut(userProviders = listOf(SentryUserProvider {
-            val user = User()
-            user.username = "john.doe"
-            user.id = "user-id"
-            user.ipAddress = "192.168.0.1"
-            user.email = "john.doe@example.com"
-            user.others = mapOf("key" to "value")
-            user
+            User().apply {
+                username = "john.doe"
+                id = "user-id"
+                ipAddress = "192.168.0.1"
+                email = "john.doe@example.com"
+                others = mapOf("key" to "value")
+            }
         }))
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -62,13 +62,13 @@ class SentryUserFilterTest {
     @Test
     fun `when processor returns empty User, user data is not changed`() {
         val filter = fixture.getSut(userProviders = listOf(SentryUserProvider {
-            val user = User()
-            user.username = "john.doe"
-            user.id = "user-id"
-            user.ipAddress = "192.168.0.1"
-            user.email = "john.doe@example.com"
-            user.others = mapOf("key" to "value")
-            user
+            User().apply {
+                username = "john.doe"
+                id = "user-id"
+                ipAddress = "192.168.0.1"
+                email = "john.doe@example.com"
+                others = mapOf("key" to "value")
+            }
         }, SentryUserProvider { User() }))
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -85,13 +85,13 @@ class SentryUserFilterTest {
     @Test
     fun `when processor returns null, user data is not changed`() {
         val filter = fixture.getSut(userProviders = listOf(SentryUserProvider {
-            val user = User()
-            user.username = "john.doe"
-            user.id = "user-id"
-            user.ipAddress = "192.168.0.1"
-            user.email = "john.doe@example.com"
-            user.others = mapOf("key" to "value")
-            user
+            User().apply {
+                username = "john.doe"
+                id = "user-id"
+                ipAddress = "192.168.0.1"
+                email = "john.doe@example.com"
+                others = mapOf("key" to "value")
+            }
         }, SentryUserProvider { null }))
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -108,13 +108,13 @@ class SentryUserFilterTest {
     @Test
     fun `merges user#others with existing user#others set on SentryEvent`() {
         val filter = fixture.getSut(userProviders = listOf(SentryUserProvider {
-            val user = User()
-            user.others = mapOf("key" to "value")
-            user
+            User().apply {
+                others = mapOf("key" to "value")
+            }
         }, SentryUserProvider {
-            val user = User()
-            user.others = mapOf("new-key" to "new-value")
-            user
+            User().apply {
+                others = mapOf("new-key" to "new-value")
+            }
         }))
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -127,9 +127,9 @@ class SentryUserFilterTest {
     @Test
     fun `when isSendDefaultPii is true and user is set with custom ip address, user ip is unchanged`() {
         val filter = fixture.getSut(isSendDefaultPii = true, userProviders = listOf(SentryUserProvider {
-            val user = User()
-            user.ipAddress = "192.168.0.1"
-            user
+            User().apply {
+                ipAddress = "192.168.0.1"
+            }
         }))
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -142,9 +142,9 @@ class SentryUserFilterTest {
     @Test
     fun `when isSendDefaultPii is true and user is set with {{auto}} ip address, user ip is set to null`() {
         val filter = fixture.getSut(isSendDefaultPii = true, userProviders = listOf(SentryUserProvider {
-            val user = User()
-            user.ipAddress = "{{auto}}"
-            user
+            User().apply {
+                ipAddress = "{{auto}}"
+            }
         }))
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
