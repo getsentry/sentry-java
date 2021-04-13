@@ -20,17 +20,22 @@ import org.springframework.web.client.RestTemplate
 
 class SentrySpanRestTemplateCustomizerTest {
     class Fixture {
+        val sentryOptions = SentryOptions()
         val hub = mock<IHub>()
         val restTemplate = RestTemplate()
         var mockServer = MockRestServiceServer.createServer(restTemplate)
         val transaction = SentryTracer(TransactionContext("aTransaction", "op", true), hub)
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
 
+        init {
+            whenever(hub.options).thenReturn(sentryOptions)
+        }
+
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK): RestTemplate {
             customizer.customize(restTemplate)
 
             if (isTransactionActive) {
-                val scope = Scope(SentryOptions())
+                val scope = Scope(sentryOptions)
                 scope.setTransaction(transaction)
                 whenever(hub.span).thenReturn(transaction)
 

@@ -788,6 +788,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxQueueSize ()I
+	public fun getMaxSpans ()I
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getReadTimeoutMillis ()I
@@ -845,6 +846,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxQueueSize (I)V
+	public fun setMaxSpans (I)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
 	public fun setRelease (Ljava/lang/String;)V
