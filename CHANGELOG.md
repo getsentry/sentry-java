@@ -13,6 +13,7 @@
 * Fix: Do not bind transactions to scope by default. (#1376)
 * Fix: fix Hub thread safety (#1388)
 * Fix: SentryTransactionAdvice should operate on the new scope (#1389)
+* Feat: configure max spans per transaction (#1394)
 
 # 4.4.0-alpha.1
 
