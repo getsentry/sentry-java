@@ -24,7 +24,7 @@ public class WebConfig {
    * @return RestTemplate
    */
   @Bean
-  RestTemplate restTemplate(IHub hub) {
+  RestTemplate restTemplate(final IHub hub) {
     RestTemplate restTemplate = new RestTemplate();
     SentrySpanClientHttpRequestInterceptor sentryRestTemplateInterceptor =
         new SentrySpanClientHttpRequestInterceptor(hub);
