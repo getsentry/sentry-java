@@ -42,17 +42,3 @@ public class io/sentry/spring/boot/SentryProperties$Logging {
 	public fun setMinimumEventLevel (Lorg/slf4j/event/Level;)V
 }
 
-public final class io/sentry/spring/boot/SentryTracingCondition : org/springframework/boot/autoconfigure/condition/AnyNestedCondition {
-	public fun <init> ()V
-}
-
-public class io/sentry/spring/boot/jdbc/SentryDsProxyAutoConfiguration {
-	public fun <init> ()V
-	public fun sentryQueryExecutionListener (Lio/sentry/IHub;)Lio/sentry/dsproxy/SentryQueryExecutionListener;
-}
-
-public class io/sentry/spring/boot/jdbc/SentryP6SpyAutoConfiguration {
-	public fun <init> ()V
-	public fun sentryJdbcEventListener (Lio/sentry/IHub;)Lio/sentry/p6spy/SentryJdbcEventListener;
-}
-

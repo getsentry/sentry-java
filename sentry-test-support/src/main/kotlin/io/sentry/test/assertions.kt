@@ -9,7 +9,7 @@ import io.sentry.protocol.SentryTransaction
 import java.lang.AssertionError
 
 /**
- * Verifies that [SentryEnvelope] contains first event matching a predicate.
+ * Verifies is [SentryEnvelope] contains first event matching a predicate.
  */
 fun checkEvent(predicate: (SentryEvent) -> Unit): SentryEnvelope {
     val options = SentryOptions().apply {
