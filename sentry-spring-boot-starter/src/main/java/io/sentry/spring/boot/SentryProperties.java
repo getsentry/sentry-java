@@ -26,6 +26,11 @@ public class SentryProperties extends SentryOptions {
   /** Report all or only uncaught web exceptions. */
   private int exceptionResolverOrder = 1;
 
+  /**
+   * Defines the {@link io.sentry.spring.SentryUserFilter} order. The default value is {@link
+   * org.springframework.core.Ordered.LOWEST_PRECEDENCE}, if Spring Security is auto-configured, its
+   * guaranteed to run after Spring Security filter chain.
+   */
   private Integer userFilterOrder;
 
   /** Logging framework integration properties. */
