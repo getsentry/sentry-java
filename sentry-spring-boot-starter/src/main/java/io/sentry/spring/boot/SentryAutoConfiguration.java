@@ -35,7 +35,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.GitProperties;
@@ -142,7 +141,6 @@ public class SentryAutoConfiguration {
        * @param hub the Sentry hub
        * @param sentryProperties the Sentry properties
        * @param sentryUserProvider the user provider
-       * @param securityProperties the Spring Security properties
        * @return {@link SentryUserFilter} registration bean
        */
       @Bean
@@ -150,26 +148,17 @@ public class SentryAutoConfiguration {
       public @NotNull FilterRegistrationBean<SentryUserFilter> sentryUserFilter(
           final @NotNull IHub hub,
           final @NotNull SentryProperties sentryProperties,
-          final @NotNull List<SentryUserProvider> sentryUserProvider,
-          final @NotNull Optional<SecurityProperties> securityProperties) {
+          final @NotNull List<SentryUserProvider> sentryUserProvider) {
         final FilterRegistrationBean<SentryUserFilter> filter = new FilterRegistrationBean<>();
         filter.setFilter(new SentryUserFilter(hub, sentryUserProvider));
-        filter.setOrder(resolveUserFilterOrder(sentryProperties, securityProperties));
+        filter.setOrder(resolveUserFilterOrder(sentryProperties));
         return filter;
       }
 
       private @NotNull Integer resolveUserFilterOrder(
-          final @NotNull SentryProperties sentryProperties,
-          final @NotNull Optional<SecurityProperties> securityProperties) {
+          final @NotNull SentryProperties sentryProperties) {
         return Optional.ofNullable(sentryProperties.getUserFilterOrder())
-            .orElseGet(
-                () ->
-                    securityProperties
-                        .map(
-                            props ->
-                                props.getFilter().getOrder()
-                                    + 10) // filter should run after security filters
-                        .orElse(Ordered.LOWEST_PRECEDENCE));
+            .orElse(Ordered.LOWEST_PRECEDENCE);
       }
 
       @Bean

@@ -38,9 +38,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
-import org.springframework.boot.autoconfigure.security.SecurityProperties
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.info.GitProperties
@@ -593,26 +590,6 @@ class SentryAutoConfigurationTest {
             .run {
                 val filter = it.getBean("sentryUserFilter", FilterRegistrationBean::class.java)
                 assertThat(filter.order).isEqualTo(Ordered.LOWEST_PRECEDENCE)
-            }
-    }
-
-    @Test
-    fun `with Spring Security on the classpath, sentryUserFilter runs after Spring Security filters`() {
-        contextRunner.withUserConfiguration(SecurityAutoConfiguration::class.java, SecurityFilterAutoConfiguration::class.java)
-            .withPropertyValues("sentry.dsn=http://key@localhost/proj")
-            .run {
-                val filter = it.getBean("sentryUserFilter", FilterRegistrationBean::class.java)
-                assertThat(filter.order).isEqualTo(SecurityProperties.DEFAULT_FILTER_ORDER + 10)
-            }
-    }
-
-    @Test
-    fun `with Spring Security on the classpath, and configured Security filter order, sentryUserFilter runs after Spring Security filters`() {
-        contextRunner.withUserConfiguration(SecurityAutoConfiguration::class.java, SecurityFilterAutoConfiguration::class.java)
-            .withPropertyValues("sentry.dsn=http://key@localhost/proj", "spring.security.filter.order=-70")
-            .run {
-                val filter = it.getBean("sentryUserFilter", FilterRegistrationBean::class.java)
-                assertThat(filter.order).isEqualTo(-60)
             }
     }
 
