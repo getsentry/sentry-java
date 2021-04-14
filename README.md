@@ -18,8 +18,11 @@ Sentry SDK for Java and Android
 | sentry-android | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android) | 16 |
 | sentry-android-core | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-core) | 14 |
 | sentry-android-ndk | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-ndk/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-ndk) | 16 |
+| sentry-android-okhttp | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-okhttp/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-okhttp) | 21 |
 | sentry-android-timber | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-timber/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-timber) | 14 |
+| sentry-apache-http-client-5 | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apache-http-client-5/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apache-http-client-5) |
 | sentry | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry) | 14 |
+| sentry-jul | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jul/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jul) |
 | sentry-servlet  | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet) | |
 | sentry-spring-boot-starter | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-starter/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot-starter) |
 | sentry-spring | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring) |
