@@ -18,7 +18,7 @@ class ApacheHttpClientTransportFactoryTest {
     }
 
     @Test
-    fun `options timeouts are used when creating ApacheHttpClientTransport`() {
+    fun `options timeouts are applied to http client`() {
         val factory = ApacheHttpClientTransportFactory()
         val options = SentryOptions().apply {
             this.connectionTimeoutMillis = 1500
