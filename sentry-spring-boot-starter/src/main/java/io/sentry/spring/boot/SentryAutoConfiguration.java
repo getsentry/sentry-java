@@ -194,9 +194,9 @@ public class SentryAutoConfiguration {
       @Conditional(SentryTracingCondition.class)
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
-          final @NotNull IHub hub, final @NotNull SentryRequestResolver sentryRequestResolver) {
+          final @NotNull IHub hub) {
         FilterRegistrationBean<SentryTracingFilter> filter =
-            new FilterRegistrationBean<>(new SentryTracingFilter(hub, sentryRequestResolver));
+            new FilterRegistrationBean<>(new SentryTracingFilter(hub));
         filter.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return filter;
       }

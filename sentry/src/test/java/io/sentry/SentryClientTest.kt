@@ -68,8 +68,11 @@ class SentryClientTest {
             setTransportFactory(factory)
         }
 
+        val hub = mock<IHub>()
+
         init {
             whenever(factory.create(any(), any())).thenReturn(transport)
+            whenever(hub.options).thenReturn(sentryOptions)
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
@@ -763,7 +766,7 @@ class SentryClientTest {
     @Test
     fun `when captureTransactions unfinished spans are removed`() {
         val sut = fixture.getSut()
-        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), mock())
+        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), fixture.hub)
         val span1 = transaction.startChild("span1")
         span1.finish()
         val span2 = transaction.startChild("span2")
@@ -815,7 +818,7 @@ class SentryClientTest {
         val event = SentryEvent()
         val sut = fixture.getSut()
         val scope = createScope()
-        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), mock())
+        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), fixture.hub)
         scope.setTransaction(transaction)
         val span = transaction.startChild("op")
         sut.captureEvent(event, scope)

@@ -5,21 +5,18 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.spy
-import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.CustomSamplingContext
 import io.sentry.IHub
-import io.sentry.Scope
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryId
-import io.sentry.spring.SentryRequestResolver
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
@@ -36,7 +33,6 @@ class SentryTracingFilterTest {
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
-        val sentryRequestResolver = spy(SentryRequestResolver(hub))
         val transactionNameProvider = spy(TransactionNameProvider())
 
         init {
@@ -54,27 +50,11 @@ class SentryTracingFilterTest {
             response.status = 200
             whenever(hub.startTransaction(any(), any(), any(), eq(true))).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
-            return SentryTracingFilter(hub, sentryRequestResolver, transactionNameProvider)
+            return SentryTracingFilter(hub, transactionNameProvider)
         }
     }
 
     private val fixture = Fixture()
-
-    @Test
-    fun `sets the request on the scope`() {
-        val filter = fixture.getSut()
-
-        filter.doFilter(fixture.request, fixture.response, fixture.chain)
-
-        verify(fixture.chain).doFilter(fixture.request, fixture.response)
-        verify(fixture.hub, times(1)).configureScope(check {
-            val scope = mock<Scope>()
-            it.run(scope)
-            verify(scope).setRequest(check { request ->
-                assertThat(request.url).isEqualTo("http://localhost/product/12")
-            })
-        })
-    }
 
     @Test
     fun `creates transaction around the request`() {
@@ -127,7 +107,6 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).isEnabled
         verifyNoMoreInteractions(fixture.hub)
-        verifyZeroInteractions(fixture.sentryRequestResolver)
         verifyZeroInteractions(fixture.transactionNameProvider)
     }
 }

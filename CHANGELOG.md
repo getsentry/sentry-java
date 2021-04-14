@@ -1,5 +1,8 @@
 # Unreleased
 
+* Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
+* Fix: set user on the transaction (#1390)
+
 # 4.4.0-alpha.2
 
 * Feat: Add option to ignore exceptions by type (#1352)
@@ -13,8 +16,7 @@
 * Fix: Do not bind transactions to scope by default. (#1376)
 * Fix: fix Hub thread safety (#1388)
 * Fix: SentryTransactionAdvice should operate on the new scope (#1389)
-* Fix: set user on the transaction (#1390)
-
+* Feat: configure max spans per transaction (#1394)
 
 # 4.4.0-alpha.1
 

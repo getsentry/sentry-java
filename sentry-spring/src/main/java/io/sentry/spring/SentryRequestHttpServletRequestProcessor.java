@@ -9,26 +9,20 @@ import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Attaches information about HTTP request to {@link SentryEvent}. */
+/** Attaches transaction name from the HTTP request to {@link SentryEvent}. */
 @Open
 public class SentryRequestHttpServletRequestProcessor implements EventProcessor {
   private final @NotNull HttpServletRequest request;
-  private final @NotNull SentryRequestResolver sentryRequestResolver;
   private final @NotNull TransactionNameProvider transactionNameProvider =
       new TransactionNameProvider();
 
-  public SentryRequestHttpServletRequestProcessor(
-      final @NotNull HttpServletRequest request,
-      final @NotNull SentryRequestResolver sentryRequestResolver) {
+  public SentryRequestHttpServletRequestProcessor(final @NotNull HttpServletRequest request) {
     this.request = Objects.requireNonNull(request, "request is required");
-    this.sentryRequestResolver =
-        Objects.requireNonNull(sentryRequestResolver, "sentryRequestResolver are required");
   }
 
   @Override
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
-    event.setRequest(sentryRequestResolver.resolveSentryRequest(request));
     if (event.getTransaction() == null) {
       event.setTransaction(transactionNameProvider.provideTransactionName(request));
     }
