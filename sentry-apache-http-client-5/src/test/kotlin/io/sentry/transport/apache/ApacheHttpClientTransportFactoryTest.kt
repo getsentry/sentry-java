@@ -11,10 +11,8 @@ import org.apache.hc.client5.http.impl.async.InternalHttpAsyncClient
 class ApacheHttpClientTransportFactoryTest {
 
     class Fixture {
-        fun getSut(options: SentryOptions = SentryOptions()): ApacheHttpClientTransport {
-            val factory = ApacheHttpClientTransportFactory()
-            return factory.create(options, mock()) as ApacheHttpClientTransport
-        }
+        fun getSut(options: SentryOptions = SentryOptions()) =
+            ApacheHttpClientTransportFactory().create(options, mock()) as ApacheHttpClientTransport
     }
 
     private val fixture = Fixture()
