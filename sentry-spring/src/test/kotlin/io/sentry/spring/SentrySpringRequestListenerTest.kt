@@ -117,8 +117,9 @@ class SentrySpringRequestListenerTest {
 
     @Test
     fun `when sendDefaultPii is set to true, attaches cookies information to Scope request`() {
-        val sentryOptions = SentryOptions()
-        sentryOptions.isSendDefaultPii = true
+        val sentryOptions = SentryOptions().apply {
+            isSendDefaultPii = true
+        }
 
         val listener = fixture.getSut(request = MockMvcRequestBuilders
             .get(URI.create("http://example.com?param1=xyz"))
@@ -135,8 +136,9 @@ class SentrySpringRequestListenerTest {
 
     @Test
     fun `when sendDefaultPii is set to false, does not attach cookies to Scope request`() {
-        val sentryOptions = SentryOptions()
-        sentryOptions.isSendDefaultPii = false
+        val sentryOptions = SentryOptions().apply {
+            isSendDefaultPii = false
+        }
 
         val listener = fixture.getSut(request = MockMvcRequestBuilders
             .get(URI.create("http://example.com?param1=xyz"))
@@ -152,8 +154,9 @@ class SentrySpringRequestListenerTest {
 
     @Test
     fun `when sendDefaultPii is set to false, does not attach sensitive headers`() {
-        val sentryOptions = SentryOptions()
-        sentryOptions.isSendDefaultPii = false
+        val sentryOptions = SentryOptions().apply {
+            isSendDefaultPii = false
+        }
 
         val listener = fixture.getSut(request = MockMvcRequestBuilders
             .get(URI.create("http://example.com?param1=xyz"))
