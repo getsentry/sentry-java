@@ -452,6 +452,8 @@ public final class SentryClient implements ISentryClient {
     if (scope != null) {
       if (transaction.getRequest() == null) {
         transaction.setRequest(scope.getRequest());
+      }
+      if (transaction.getUser() == null) {
         transaction.setUser(scope.getUser());
       }
     }
