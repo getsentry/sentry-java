@@ -1,6 +1,7 @@
 # Unreleased
 
 * Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
+* Fix: set correct transaction status for unhandled exceptions in SentryTracingFilter (#1406)
 
 # 4.4.0-alpha.2
 
