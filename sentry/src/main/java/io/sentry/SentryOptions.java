@@ -268,6 +268,9 @@ public class SentryOptions {
    */
   private Boolean enableDeduplication = true;
 
+  /** Maximum number of spans that can be atteched to single transaction. */
+  private int maxSpans = 1000;
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -1336,6 +1339,26 @@ public class SentryOptions {
    */
   boolean containsIgnoredExceptionForType(final @NotNull Throwable throwable) {
     return this.ignoredExceptionsForType.contains(throwable.getClass());
+  }
+
+  /**
+   * Returns the maximum number of spans that can be attached to single transaction.
+   *
+   * @return the maximum number of spans that can be attached to single transaction.
+   */
+  @ApiStatus.Experimental
+  public int getMaxSpans() {
+    return maxSpans;
+  }
+
+  /**
+   * Sets the maximum number of spans that can be attached to single transaction.
+   *
+   * @param maxSpans maximum number of spans that can be attached to single transaction.
+   */
+  @ApiStatus.Experimental
+  public void setMaxSpans(int maxSpans) {
+    this.maxSpans = maxSpans;
   }
 
   /** The BeforeSend callback */

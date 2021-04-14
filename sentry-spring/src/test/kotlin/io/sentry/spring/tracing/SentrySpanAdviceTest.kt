@@ -9,6 +9,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import java.lang.RuntimeException
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -36,6 +37,11 @@ class SentrySpanAdviceTest {
 
     @Autowired
     lateinit var hub: IHub
+
+    @BeforeTest
+    fun setup() {
+        whenever(hub.options).thenReturn(SentryOptions())
+    }
 
     @Test
     fun `when class is annotated with @SentrySpan, every method call attaches span to existing transaction`() {
