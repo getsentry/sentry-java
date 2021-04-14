@@ -2,6 +2,7 @@ package io.sentry.transport.apache
 
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.SentryOptions
+import io.sentry.test.getProperty
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -36,13 +37,4 @@ class ApacheHttpClientTransportFactoryTest {
 
     private fun ApacheHttpClientTransport.getClient(): InternalHttpAsyncClient = this.getProperty("httpclient")
     private fun InternalHttpAsyncClient.getRequestConfig(): RequestConfig = this.getProperty("defaultConfig")
-
-    private inline fun <reified T> Any.getProperty(name: String): T =
-        try {
-            this::class.java.getDeclaredField(name)
-        } catch (_: NoSuchFieldException) {
-            this::class.java.superclass.getDeclaredField(name)
-        }.apply {
-            this.isAccessible = true
-        }.get(this) as T
 }
