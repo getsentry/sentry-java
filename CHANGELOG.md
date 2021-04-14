@@ -1,5 +1,7 @@
 # Unreleased
 
+* Fix: Activity tracing auto instrumentation for Android API < 29
+
 # 4.4.0-alpha.2
 
 * Feat: Add option to ignore exceptions by type (#1352)
