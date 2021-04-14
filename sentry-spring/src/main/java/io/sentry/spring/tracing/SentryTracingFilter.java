@@ -67,16 +67,22 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final ITransaction transaction = startTransaction(httpRequest, sentryTraceHeader);
       try {
         filterChain.doFilter(httpRequest, httpResponse);
+      } catch (Exception e) {
+        // exceptions that are not handled by Spring
+        transaction.setStatus(SpanStatus.INTERNAL_ERROR);
       } finally {
         // after all filters run, templated path pattern is available in request attribute
         final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
         // if transaction name is not resolved, the request has not been processed by a controller
-        // and
-        // we should not report it to Sentry
+        // and we should not report it to Sentry
         if (transactionName != null) {
           transaction.setName(transactionName);
           transaction.setOperation(TRANSACTION_OP);
-          transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
+          // if exception has been thrown, transaction status is already set to INTERNAL_ERROR, and
+          // httpResponse.getStatus() returns 200.
+          if (transaction.getStatus() == null) {
+            transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
+          }
           transaction.finish();
         }
       }
