@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
@@ -32,6 +33,10 @@ class SentryOkHttpInterceptorTest {
         val interceptor = SentryOkHttpInterceptor(hub)
         val server = MockWebServer()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+
+        init {
+            whenever(hub.options).thenReturn(SentryOptions())
+        }
 
         fun getSut(isSpanActive: Boolean = true, httpStatusCode: Int = 201, responseBody: String = "success"): OkHttpClient {
             if (isSpanActive) {

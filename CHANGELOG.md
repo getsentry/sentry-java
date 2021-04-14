@@ -1,5 +1,9 @@
 # Unreleased
 
+* Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
+
+# 4.4.0-alpha.2
+
 * Feat: Add option to ignore exceptions by type (#1352)
 * Fix: Fix NPE when MDC contains null values (sentry-logback) (#1364)
 * Fix: Avoid NPE when MDC contains null values (sentry-jul) (#1385)
@@ -10,7 +14,8 @@
 * Enhancement: Make NoOpHub public (#1379)
 * Fix: Do not bind transactions to scope by default. (#1376)
 * Fix: fix Hub thread safety (#1388)
-* Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
+* Fix: SentryTransactionAdvice should operate on the new scope (#1389)
+* Feat: configure max spans per transaction (#1394)
 
 # 4.4.0-alpha.1
 

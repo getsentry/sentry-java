@@ -19,21 +19,13 @@ repositories {
 dependencies {
     implementation(Config.Libs.springBootStarterSecurity)
     implementation(Config.Libs.springBootStarterWeb)
-    implementation(Config.Libs.springBootStarterJdbc)
     implementation(Config.Libs.springBootStarterAop)
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBootStarter)
-
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(project(":sentry-spring-boot-starter"))
     implementation(project(":sentry-logback"))
-
-    // database query tracing
-    implementation(Config.SamplesLibs.datasourceProxySpringBootStarter)
-    implementation(project(":sentry-datasource-proxy"))
-    runtimeOnly(Config.TestLibs.hsqldb)
-
     testImplementation(Config.Libs.springBootStarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
