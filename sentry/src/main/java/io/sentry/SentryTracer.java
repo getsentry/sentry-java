@@ -78,13 +78,24 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
-    return root.startChild(operation);
+    return this.startChild(operation, null);
   }
 
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    return root.startChild(operation, description);
+    if (children.size() < hub.getOptions().getMaxSpans()) {
+      return root.startChild(operation, description);
+    } else {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
+              operation,
+              description);
+      return NoOpSpan.getInstance();
+    }
   }
 
   @Override

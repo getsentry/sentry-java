@@ -10,7 +10,6 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
-import io.sentry.spring.SentryRequestResolver;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import javax.servlet.FilterChain;
@@ -38,29 +37,20 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IHub hub;
-  private final @NotNull SentryRequestResolver requestResolver;
 
   public SentryTracingFilter() {
     this(HubAdapter.getInstance());
   }
 
   public SentryTracingFilter(
-      final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
-    this(hub, requestResolver, new TransactionNameProvider());
-  }
-
-  public SentryTracingFilter(
-      final @NotNull IHub hub,
-      final @NotNull SentryRequestResolver requestResolver,
-      final @NotNull TransactionNameProvider transactionNameProvider) {
+      final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver is required");
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
   }
 
-  SentryTracingFilter(final @NotNull IHub hub) {
-    this(hub, new SentryRequestResolver(hub), new TransactionNameProvider());
+  public SentryTracingFilter(final @NotNull IHub hub) {
+    this(hub, new TransactionNameProvider());
   }
 
   @Override
@@ -72,11 +62,6 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
     if (hub.isEnabled()) {
       final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
-
-      hub.configureScope(
-          scope -> {
-            scope.setRequest(requestResolver.resolveSentryRequest(httpRequest));
-          });
 
       // at this stage we are not able to get real transaction name
       final ITransaction transaction = startTransaction(httpRequest, sentryTraceHeader);
