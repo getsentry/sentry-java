@@ -87,6 +87,17 @@ class SentryTracingFilterTest {
     }
 
     @Test
+    fun `sets UNKNOWN span status for response status that dont match predefined span statuses`() {
+        val filter = fixture.getSut(status = 302)
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.hub).captureTransaction(check {
+            assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.UNKNOWN)
+        })
+    }
+
+    @Test
     fun `when sentry trace is not present, transaction does not have parentSpanId set`() {
         val filter = fixture.getSut()
 
