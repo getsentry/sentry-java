@@ -3,6 +3,7 @@
 * Fix: use connection and read timeouts in ApacheHttpClient based transport (#1397)
 * Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
 * Fix: handle network errors in SentrySpanClientHttpRequestInterceptor (#1407)
+* Fix: set scope on transaction (#1409)
 
 # 4.4.0-alpha.2
 
