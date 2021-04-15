@@ -1,11 +1,14 @@
 package io.sentry.samples.android
 
+import android.content.Context
 import android.support.test.uiautomator.UiDevice
+import android.support.test.uiautomator.UiSelector
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.*
+import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.microsoft.appcenter.espresso.Factory
@@ -38,8 +41,15 @@ class MainActivityTest {
         Thread.sleep(5000)
 
         // Close either app or android dialog
-        val mDevice: UiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        mDevice.pressBack()
+
+
+        val mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val uiObject = mDevice.findObject(UiSelector().text("OK"))
+        if (uiObject.exists()) {
+            uiObject.click()
+        } else {
+            mDevice.pressBack()
+        }
     }
 
     // Check if envelope file is here.
@@ -51,4 +61,6 @@ class MainActivityTest {
 
         reportHelper.label("checkIfFileExists")
     }
+
+
 }
