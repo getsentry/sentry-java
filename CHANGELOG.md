@@ -1,6 +1,9 @@
 # Unreleased
 
-* Fix: Activity tracing auto instrumentation for Android API < 29
+* Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)
+* Fix: use connection and read timeouts in ApacheHttpClient based transport (#1397)
+* Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
+* Fix: handle network errors in SentrySpanClientHttpRequestInterceptor (#1407)
 
 # 4.4.0-alpha.2
 
@@ -15,6 +18,7 @@
 * Fix: Do not bind transactions to scope by default. (#1376)
 * Fix: fix Hub thread safety (#1388)
 * Fix: SentryTransactionAdvice should operate on the new scope (#1389)
+* Feat: configure max spans per transaction (#1394)
 
 # 4.4.0-alpha.1
 
@@ -172,6 +176,7 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 * Enhancement: Add the ability to register multiple OptionsConfiguration beans (#1093)
 * Fix: Append DebugImage list if event already has it
 * Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event
+* Feat: Database query tracing with datasource-proxy (#1095)
 
 # 4.0.0-alpha.1
 
