@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
@@ -128,6 +129,7 @@ class SentryTracingFilterTest {
 
         try {
             filter.doFilter(fixture.request, fixture.response, fixture.chain)
+            fail("filter is expected to rethrow exception")
         } catch (_: Exception) {
         }
         verify(fixture.hub).captureTransaction(check {

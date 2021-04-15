@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
@@ -138,13 +139,21 @@ class SentrySpringIntegrationTest {
     fun `attaches span context to events triggered within transaction`() {
         val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 
-        restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
-
+        val response = restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.contexts.trace).isNotNull()
             }, anyOrNull())
         }
+    }
+
+    @Test
+    fun `tracing filter does not overwrite resposne status code`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        val response = restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
     }
 
     @Test

@@ -70,6 +70,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       } catch (Exception e) {
         // exceptions that are not handled by Spring
         transaction.setStatus(SpanStatus.INTERNAL_ERROR);
+        throw e;
       } finally {
         // after all filters run, templated path pattern is available in request attribute
         final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
