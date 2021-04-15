@@ -1,6 +1,6 @@
 # Unreleased
 
-* Fix: Activity tracing auto instrumentation for Android API < 29
+* Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)
 * Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
 
 # 4.4.0-alpha.2
