@@ -44,11 +44,18 @@ class MainActivityTest {
 
 
         val mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        val uiObject = mDevice.findObject(UiSelector().text("OK"))
-        if (uiObject.exists()) {
-            uiObject.click()
-        } else {
-            mDevice.pressBack()
+        val okButton = mDevice.findObject(UiSelector().text("OK"))
+        val closeAppButton = mDevice.findObject(UiSelector().text("Close app"))
+        when {
+            okButton.exists() -> {
+                okButton.click()
+            }
+            closeAppButton.exists() -> {
+                closeAppButton.click()
+            }
+            else -> {
+                mDevice.pressBack()
+            }
         }
     }
 
