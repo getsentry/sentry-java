@@ -139,8 +139,8 @@ class SentrySpringIntegrationTest {
     fun `attaches span context to events triggered within transaction`() {
         val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 
-        val response = restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
-        assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+        restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
+
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
                 assertThat(event.contexts.trace).isNotNull()
