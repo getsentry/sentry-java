@@ -3,6 +3,7 @@ package io.sentry.samples.android
 import android.support.test.uiautomator.UiDevice
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.rules.ActivityScenarioRule
@@ -33,8 +34,7 @@ class MainActivityTest {
     @Test
     fun a_initSdkAndCrash() {
         reportHelper.label("initSdkAndCrash")
-        onView(withId(R.id.native_crash)).perform(click())
-
+        onView(withId(R.id.native_crash)).perform(scrollTo(), click())
         Thread.sleep(5000)
 
         // Close either app or android dialog

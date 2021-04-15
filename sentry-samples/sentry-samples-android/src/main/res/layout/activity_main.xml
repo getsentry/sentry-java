@@ -1,48 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  tools:context=".MainActivity">
+
+  <LinearLayout
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context=".MainActivity">
-
-  <Button android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:id="@+id/button_copy_file"
-    android:text="Copy Envelope File"/>
-
-  <TextView
-    android:id="@+id/text_view_copy_file"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="--"/>
+    android:orientation="vertical">
 
     <Button android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/crash_from_java"
-        android:text="@string/crash_from_java"/>
+      android:layout_height="wrap_content"
+      android:id="@+id/button_copy_file"
+      android:text="Copy Envelope File"/>
+
+    <TextView
+      android:id="@+id/text_view_copy_file"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="--"/>
 
     <Button android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/send_message"
-        android:text="@string/send_message"/>
+      android:layout_height="wrap_content"
+      android:id="@+id/crash_from_java"
+      android:text="@string/crash_from_java"/>
 
-  <Button
-    android:id="@+id/send_user_feedback"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="@string/send_user_feedback" />
+    <Button android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:id="@+id/send_message"
+      android:text="@string/send_message"/>
 
-  <Button
-    android:id="@+id/add_attachment"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="@string/add_attachment" />
+    <Button
+      android:id="@+id/send_user_feedback"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/send_user_feedback" />
 
-  <Button android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/capture_exception"
-        android:text="@string/capture_exception"/>
+    <Button
+      android:id="@+id/add_attachment"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/add_attachment" />
+
+    <Button android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:id="@+id/capture_exception"
+      android:text="@string/capture_exception"/>
 
     <Button android:layout_width="wrap_content"
       android:layout_height="wrap_content"
@@ -60,22 +65,26 @@
       android:text="@string/unset_user"/>
 
     <Button android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/anr"
-        android:text="@string/anr"/>
+      android:layout_height="wrap_content"
+      android:id="@+id/anr"
+      android:text="@string/anr"/>
 
     <Button android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/native_crash"
-        android:text="@string/crash_from_native"/>
+      android:layout_height="wrap_content"
+      android:id="@+id/native_crash"
+      android:text="@string/crash_from_native"/>
 
     <Button android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/native_capture"
-        android:text="@string/capture_from_native"/>
+      android:layout_height="wrap_content"
+      android:id="@+id/native_capture"
+      android:text="@string/capture_from_native"/>
 
-  <Button android:layout_width="wrap_content"
+    <Button android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:id="@+id/open_second_activity"
       android:text="@string/open_second_activity"/>
-</LinearLayout>
+  </LinearLayout>
+
+</ScrollView>
+
+
