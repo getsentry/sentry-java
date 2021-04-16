@@ -266,7 +266,9 @@ class SentryClientTest {
         assertEquals("extra", event.extras["extra"])
         assertEquals("tags", event.tags["tags"])
         assertEquals("fp", event.fingerprints[0])
-        assertEquals("id", event.user.id)
+        assertNotNull(event.user) {
+            assertEquals("id", it.id)
+        }
         assertEquals(SentryLevel.FATAL, event.level)
         assertNotNull(event.request) {
             assertEquals("post", it.method)
@@ -324,7 +326,9 @@ class SentryClientTest {
 
         assertEquals("eventTransaction", event.transaction)
 
-        assertEquals("eventId", event.user.id)
+        assertNotNull(event.user) {
+            assertEquals("eventId", it.id)
+        }
 
         assertEquals(SentryLevel.FATAL, event.level)
     }
@@ -924,8 +928,9 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         sut.captureTransaction(transaction, scope, null)
-        assertNotNull(transaction.user)
-        assertEquals("id", transaction.user.id)
+        assertNotNull(transaction.user) {
+            assertEquals("id", it.id)
+        }
     }
 
     private fun createScope(): Scope {

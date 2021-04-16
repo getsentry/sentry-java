@@ -202,11 +202,11 @@ public abstract class SentryBaseEvent {
     this.platform = platform;
   }
 
-  public User getUser() {
+  public @Nullable User getUser() {
     return user;
   }
 
-  public void setUser(User user) {
+  public void setUser(final @Nullable User user) {
     this.user = user;
   }
 }
