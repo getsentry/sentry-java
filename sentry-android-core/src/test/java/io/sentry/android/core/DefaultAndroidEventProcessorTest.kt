@@ -213,8 +213,9 @@ class DefaultAndroidEventProcessorTest {
             setUser(user)
         }
         event = sut.process(event, null)
-        assertNotNull(event.user)
-        assertNotNull(event.user.id)
+        assertNotNull(event.user) {
+            assertNotNull(it.id)
+        }
     }
 
     @Test
