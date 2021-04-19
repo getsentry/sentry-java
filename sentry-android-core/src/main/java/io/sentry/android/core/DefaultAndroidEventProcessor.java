@@ -316,7 +316,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     device.setModelId(Build.ID);
     setArchitectures(device);
 
-    // likely to be applied only if applyScopeData
     Intent batteryIntent = getBatteryIntent();
     if (batteryIntent != null) {
       device.setBatteryLevel(getBatteryLevel(batteryIntent));
@@ -324,7 +323,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
     }
 
-    // likely to be applied only if applyScopeData
     Boolean connected;
     switch (ConnectivityChecker.getConnectionStatus(context, logger)) {
       case NOT_CONNECTED:
@@ -360,7 +358,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       // compatibility
     }
 
-    // likely to be applied only if applyScopeData
     // this way of getting the size of storage might be problematic for storages bigger than 2GB
     // check the use of https://developer.android.com/reference/java/io/File.html#getFreeSpace%28%29
     File internalStorageFile = context.getExternalFilesDir(null);
@@ -370,7 +367,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       device.setFreeStorage(getUnusedInternalStorage(internalStorageStat));
     }
 
-    // likely to be applied only if applyScopeData
     StatFs externalStorageStat = getExternalStorageStat(internalStorageFile);
     if (externalStorageStat != null) {
       device.setExternalStorageSize(getTotalExternalStorage(externalStorageStat));
@@ -385,7 +381,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       device.setScreenDpi(displayMetrics.densityDpi);
     }
 
-    // likely to be applied only if applyScopeData
     device.setBootTime(getBootTime());
 
     device.setTimezone(getTimeZone());
@@ -397,7 +392,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       device.setLanguage(Locale.getDefault().toString()); // eg en_US
     }
 
-    // likely to be applied only if applyScopeData
     if (device.getConnectionType() == null) {
       // wifi, ethernet or cellular, null if none
       device.setConnectionType(

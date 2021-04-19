@@ -289,4 +289,15 @@ class DefaultAndroidEventProcessorTest {
         assertSame(osNoName, (event.contexts["os_1"] as OperatingSystem))
         assertEquals("Android", event.contexts.operatingSystem!!.name)
     }
+
+    @Test
+    fun `When hint is Cached, memory data should not be applied`() {
+        val sut = fixture.getSut(context)
+
+        var event = SentryEvent()
+        event = sut.process(event, CachedEvent())
+
+        assertNull(event.contexts.device!!.freeMemory)
+        assertNull(event.contexts.device!!.isLowMemory)
+    }
 }
