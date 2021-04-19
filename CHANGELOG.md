@@ -6,6 +6,7 @@
 * Fix: set correct transaction status for unhandled exceptions in SentryTracingFilter (#1406)
 * Fix: handle network errors in SentrySpanClientHttpRequestInterceptor (#1407)
 * Fix: set scope on transaction (#1409)
+* Fix: Apply user from the scope to transaction (#1424)
 
 # 4.4.0-alpha.2
 
