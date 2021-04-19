@@ -74,6 +74,8 @@ object Config {
         val servletApi = "javax.servlet:javax.servlet-api"
 
         val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.3"
+        val apacheHttpCore = "org.apache.httpcomponents.core5:httpcore5:5.0.3"
+        val apacheHttpCoreH2 = "org.apache.httpcomponents.core5:httpcore5-h2:5.0.3"
 
         private val retrofit2Version = "2.9.0"
         private val retrofit2Group = "com.squareup.retrofit2"

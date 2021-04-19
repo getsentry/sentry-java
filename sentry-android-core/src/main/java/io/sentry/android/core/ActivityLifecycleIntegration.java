@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import android.app.Activity;
 import android.app.Application;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,13 +32,21 @@ public final class ActivityLifecycleIntegration
 
   private boolean performanceEnabled = false;
 
+  private boolean isAllActivityCallbacksAvailable;
+
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
   private final @NotNull WeakHashMap<Activity, ITransaction> activitiesWithOngoingTransactions =
       new WeakHashMap<>();
 
-  public ActivityLifecycleIntegration(final @NotNull Application application) {
+  public ActivityLifecycleIntegration(
+      final @NotNull Application application, final @NotNull IBuildInfoProvider buildInfoProvider) {
     this.application = Objects.requireNonNull(application, "Application is required");
+    Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
+      isAllActivityCallbacksAvailable = true;
+    }
   }
 
   @Override
@@ -106,7 +115,7 @@ public final class ActivityLifecycleIntegration
 
       // we can only bind to the scope if there's no running transaction
       final ITransaction transaction =
-          hub.startTransaction(getActivityName(activity), "navigation", false);
+          hub.startTransaction(getActivityName(activity), "navigation");
 
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
@@ -162,16 +171,25 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityPreCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    // if activity has global fields being init. and
-    // they are slow, this won't count the whole fields/ctor initialization time, but only
-    // when onCreate is actually called.
-    startTracing(activity);
+
+    // only executed if API >= 29 otherwise it happens on onActivityCreated
+    if (isAllActivityCallbacksAvailable) {
+      // if activity has global fields being init. and
+      // they are slow, this won't count the whole fields/ctor initialization time, but only
+      // when onCreate is actually called.
+      startTracing(activity);
+    }
   }
 
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
     addBreadcrumb(activity, "created");
+
+    // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
+    if (!isAllActivityCallbacksAvailable) {
+      startTracing(activity);
+    }
   }
 
   @Override
@@ -182,13 +200,21 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityResumed(final @NonNull Activity activity) {
     addBreadcrumb(activity, "resumed");
+
+    // fallback call for API < 29 compatibility, otherwise it happens on onActivityPostResumed
+    if (!isAllActivityCallbacksAvailable) {
+      stopTracing(activity, options.isEnableActivityLifecycleTracingAutoFinish());
+    }
   }
 
   @Override
   public synchronized void onActivityPostResumed(final @NonNull Activity activity) {
-    // this should be called only when onResume has been executed already, which means
-    // the UI is responsive at this moment.
-    stopTracing(activity, options.isEnableActivityLifecycleTracingAutoFinish());
+    // only executed if API >= 29 otherwise it happens on onActivityResumed
+    if (isAllActivityCallbacksAvailable) {
+      // this should be called only when onResume has been executed already, which means
+      // the UI is responsive at this moment.
+      stopTracing(activity, options.isEnableActivityLifecycleTracingAutoFinish());
+    }
   }
 
   @Override

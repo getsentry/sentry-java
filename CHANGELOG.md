@@ -1,10 +1,25 @@
 # Unreleased
 
+* Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)
+* Fix: use connection and read timeouts in ApacheHttpClient based transport (#1397)
+* Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
+* Fix: handle network errors in SentrySpanClientHttpRequestInterceptor (#1407)
+* Fix: set scope on transaction (#1409)
+
+# 4.4.0-alpha.2
+
 * Feat: Add option to ignore exceptions by type (#1352)
-* Fix: Fix NPE when MDC contains null values (#1364)
+* Fix: NPE when MDC contains null values (sentry-logback) (#1364)
+* Fix: Avoid NPE when MDC contains null values (sentry-jul) (#1385)
 * Feat: Sentry closes Android NDK and ShutdownHook integrations (#1358)
 * Enhancement: Allow inheritance of SentryHandler class in sentry-jul package(#1367)
 * Fix: Accept only non null value maps (#1368)
+* Bump: Upgrade Apache HttpComponents Core to 5.0.3 (#1375)
+* Enhancement: Make NoOpHub public (#1379)
+* Fix: Do not bind transactions to scope by default. (#1376)
+* Fix: Hub thread safety (#1388)
+* Fix: SentryTransactionAdvice should operate on the new scope (#1389)
+* Feat: configure max spans per transaction (#1394)
 
 # 4.4.0-alpha.1
 
@@ -22,9 +37,9 @@
 
 # 4.3.0
 
-* Fix: Fix setting in-app-includes from external properties (#1291)
+* Fix: setting in-app-includes from external properties (#1291)
 * Fix: Initialize Sentry in Logback appender when DSN is not set in XML config (#1296)
-* Fix: Fix JUL integration SDK name (#1293)
+* Fix: JUL integration SDK name (#1293)
 * Feat: Activity tracing auto instrumentation
 
 # 4.2.0
@@ -45,7 +60,7 @@
 * Enchancement: Simplify configuring Logback integration when environment variable with the DSN is not set (#1271)
 * Fix: Prevent NoOpHub from creating heavy SentryOptions objects (#1272)
 * Enchancement: Add Request to the Scope. #1270
-* Fix: Fix SentryTransaction#getStatus NPE (#1273)
+* Fix: SentryTransaction#getStatus NPE (#1273)
 * Enchancement: Optimize SentryTracingFilter when hub is disabled.
 * Fix: Discard unfinished Spans before sending them over to Sentry (#1279)
 * Fix: Interrupt the thread in QueuedThreadPoolExecutor (#1276)
@@ -60,7 +75,7 @@ Breaking Changes:
 
 * Improve Kotlin compatibility for SdkVersion (#1213)
 * Feat: Support logging via JUL (#1211)
-* Fix: Fix returning Sentry trace header from Span (#1217)
+* Fix: returning Sentry trace header from Span (#1217)
 * Fix: Remove misleading error logs (#1222)
 
 # 4.0.0
@@ -162,6 +177,7 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 * Enhancement: Add the ability to register multiple OptionsConfiguration beans (#1093)
 * Fix: Append DebugImage list if event already has it
 * Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event
+* Feat: Database query tracing with datasource-proxy (#1095)
 
 # 4.0.0-alpha.1
 

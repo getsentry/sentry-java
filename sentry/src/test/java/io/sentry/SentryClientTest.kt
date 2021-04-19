@@ -68,8 +68,11 @@ class SentryClientTest {
             setTransportFactory(factory)
         }
 
+        val hub = mock<IHub>()
+
         init {
             whenever(factory.create(any(), any())).thenReturn(transport)
+            whenever(hub.options).thenReturn(sentryOptions)
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
@@ -752,7 +755,7 @@ class SentryClientTest {
     @Test
     fun `transactions are sent using connection`() {
         val sut = fixture.getSut()
-        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("a-transaction", "op"), mock())), mock(), null)
+        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("a-transaction", "op"), mock())), Scope(fixture.sentryOptions), null)
         verify(fixture.transport).send(check {
             val transaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
             assertNotNull(transaction)
@@ -763,19 +766,19 @@ class SentryClientTest {
     @Test
     fun `when captureTransactions unfinished spans are removed`() {
         val sut = fixture.getSut()
-        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), mock())
+        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), fixture.hub)
         val span1 = transaction.startChild("span1")
         span1.finish()
         val span2 = transaction.startChild("span2")
 
-        sut.captureTransaction(SentryTransaction(transaction), mock(), null)
+        sut.captureTransaction(SentryTransaction(transaction), Scope(fixture.sentryOptions), null)
         verify(fixture.transport).send(check {
             val sentTransaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
-                assertNotNull(sentTransaction) { tx ->
-                    val sentSpanIds = tx.spans.map { span -> span.spanId }
-                    assertTrue(sentSpanIds.contains(span1.spanContext.spanId))
-                    assertFalse(sentSpanIds.contains(span2.spanContext.spanId))
-                }
+            assertNotNull(sentTransaction) { tx ->
+                val sentSpanIds = tx.spans.map { span -> span.spanId }
+                assertTrue(sentSpanIds.contains(span1.spanContext.spanId))
+                assertFalse(sentSpanIds.contains(span2.spanContext.spanId))
+            }
         }, eq(null))
     }
 
@@ -798,6 +801,28 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when captureTransaction scope is applied to transaction`() {
+        val sut = fixture.getSut()
+        val scope = Scope(fixture.sentryOptions)
+        scope.setTag("tag1", "value1")
+        scope.setContexts("context-key", "context-value")
+        scope.request = Request().apply {
+            url = "/url"
+        }
+        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("a-transaction", "op"), mock())), scope, null)
+        verify(fixture.transport).send(check { envelope ->
+            val transaction = envelope.items.first().getTransaction(fixture.sentryOptions.serializer)
+            assertNotNull(transaction) {
+                assertEquals("value1", it.getTag("tag1"))
+                assertEquals(mapOf("value" to "context-value"), it.contexts["context-key"])
+                assertNotNull(it.request) { request ->
+                    assertEquals("/url", request.url)
+                }
+            }
+        }, eq(null))
+    }
+
+    @Test
     fun `when scope's active span is a transaction, transaction context is applied to an event`() {
         val event = SentryEvent()
         val sut = fixture.getSut()
@@ -815,7 +840,7 @@ class SentryClientTest {
         val event = SentryEvent()
         val sut = fixture.getSut()
         val scope = createScope()
-        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), mock())
+        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), fixture.hub)
         scope.setTransaction(transaction)
         val span = transaction.startChild("op")
         sut.captureEvent(event, scope)
@@ -961,17 +986,18 @@ class SentryClientTest {
         return Session("dis", User(), "env", release)
     }
 
-    private val userFeedback: UserFeedback get() {
-        val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-        val userFeedback = UserFeedback(eventId)
-        userFeedback.apply {
-            name = "John"
-            email = "john@me.com"
-            comments = "comment"
-        }
+    private val userFeedback: UserFeedback
+        get() {
+            val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
+            val userFeedback = UserFeedback(eventId)
+            userFeedback.apply {
+                name = "John"
+                email = "john@me.com"
+                comments = "comment"
+            }
 
-        return userFeedback
-    }
+            return userFeedback
+        }
 
     internal class CustomTransportGate : ITransportGate {
         override fun isConnected(): Boolean = false
@@ -1019,7 +1045,7 @@ class SentryClientTest {
 
             val attachmentItemTooBig = attachmentItems.last()
             assertFailsWith<SentryEnvelopeException>("Getting data from attachment should" +
-                    "throw an exception, because the attachment is too big.") {
+                "throw an exception, because the attachment is too big.") {
                 attachmentItemTooBig.data
             }
         }, isNull())

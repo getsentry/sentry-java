@@ -2,7 +2,9 @@ package io.sentry.spring.tracing
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
@@ -41,7 +43,8 @@ class SentryTransactionAdviceTest {
 
     @BeforeTest
     fun setup() {
-        whenever(hub.startTransaction(any<String>(), any())).thenAnswer { io.sentry.SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
+        reset(hub)
+        whenever(hub.startTransaction(any<String>(), any(), eq(true))).thenAnswer { io.sentry.SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
     }
 
     @Test
@@ -91,6 +94,18 @@ class SentryTransactionAdviceTest {
             assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
             assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
         })
+    }
+
+    @Test
+    fun `pushes the scope when advice starts`() {
+        classAnnotatedSampleService.hello()
+        verify(hub).pushScope()
+    }
+
+    @Test
+    fun `pops the scope when advice finishes`() {
+        classAnnotatedSampleService.hello()
+        verify(hub).popScope()
     }
 
     @Configuration

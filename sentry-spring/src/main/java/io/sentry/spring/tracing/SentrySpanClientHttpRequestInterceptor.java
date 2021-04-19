@@ -39,8 +39,14 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
     request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
     try {
       final ClientHttpResponse response = execution.execute(request, body);
+      // handles both success and error responses
       span.setStatus(SpanStatus.fromHttpStatusCode(response.getRawStatusCode()));
       return response;
+    } catch (Exception e) {
+      // handles cases like connection errors
+      span.setThrowable(e);
+      span.setStatus(SpanStatus.INTERNAL_ERROR);
+      throw e;
     } finally {
       span.finish();
     }

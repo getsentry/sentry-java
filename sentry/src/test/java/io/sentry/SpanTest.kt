@@ -3,6 +3,7 @@ package io.sentry
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,6 +15,10 @@ class SpanTest {
 
     private class Fixture {
         val hub = mock<IHub>()
+
+        init {
+            whenever(hub.options).thenReturn(SentryOptions())
+        }
 
         fun getSut(): Span {
             return Span(SentryId(), SpanId(),

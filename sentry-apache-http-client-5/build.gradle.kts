@@ -21,6 +21,8 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     api(project(":sentry"))
     api(Config.Libs.apacheHttpClient)
+    api(Config.Libs.apacheHttpCore)
+    api(Config.Libs.apacheHttpCoreH2)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

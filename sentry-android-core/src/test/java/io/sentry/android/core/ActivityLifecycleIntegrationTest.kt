@@ -5,7 +5,6 @@ import android.app.Application
 import android.os.Bundle
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
@@ -18,7 +17,6 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import io.sentry.protocol.SentryTransaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -34,10 +32,12 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         val bundle = mock<Bundle>()
         val transaction = SentryTracer(TransactionContext("name", "op"), hub)
+        val buildInfo = mock<IBuildInfoProvider>()
 
-        fun getSut(): ActivityLifecycleIntegration {
-            whenever(hub.startTransaction(any<String>(), any(), any<Boolean>())).thenReturn(transaction)
-            return ActivityLifecycleIntegration(application)
+        fun getSut(apiVersion: Int = 29): ActivityLifecycleIntegration {
+            whenever(hub.startTransaction(any<String>(), any())).thenReturn(transaction)
+            whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
+            return ActivityLifecycleIntegration(application, buildInfo)
         }
     }
 
@@ -189,7 +189,7 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
 
-        verify(fixture.hub, never()).startTransaction(any<String>(), any(), any<Boolean>())
+        verify(fixture.hub, never()).startTransaction(any<String>(), any())
     }
 
     @Test
@@ -202,7 +202,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
 
         // call only once
-        verify(fixture.hub).startTransaction(any<String>(), any(), any<Boolean>())
+        verify(fixture.hub).startTransaction(any<String>(), any())
     }
 
     @Test
@@ -215,7 +215,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(any<String>(), check {
             assertEquals("navigation", it)
-        }, any<Boolean>())
+        })
     }
 
     @Test
@@ -228,7 +228,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(check<String> {
             assertEquals("Activity", it)
-        }, any(), any<Boolean>())
+        }, any())
     }
 
     @Test
@@ -278,7 +278,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
         sut.onActivityPostResumed(fixture.activity)
 
-        verify(fixture.hub).captureTransaction(check<SentryTransaction> {
+        verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.OK, it.status)
         })
     }
@@ -295,7 +295,7 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityPostResumed(fixture.activity)
 
-        verify(fixture.hub).captureTransaction(check<SentryTransaction> {
+        verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
         })
     }
@@ -310,7 +310,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
         sut.onActivityPostResumed(fixture.activity)
 
-        verify(fixture.hub, never()).captureTransaction(any<SentryTransaction>(), eq(null))
+        verify(fixture.hub, never()).captureTransaction(any())
     }
 
     @Test
@@ -320,7 +320,7 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityPostResumed(fixture.activity)
 
-        verify(fixture.hub, never()).captureTransaction(any<SentryTransaction>(), eq(null))
+        verify(fixture.hub, never()).captureTransaction(any())
     }
 
     @Test
@@ -332,7 +332,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
         sut.onActivityDestroyed(fixture.activity)
 
-        verify(fixture.hub).captureTransaction(any<SentryTransaction>())
+        verify(fixture.hub).captureTransaction(any())
     }
 
     @Test
@@ -368,6 +368,56 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(activity, mock())
 
         sut.onActivityPreCreated(fixture.activity, fixture.bundle)
-        verify(fixture.hub).captureTransaction(any<SentryTransaction>())
+        verify(fixture.hub).captureTransaction(any())
+    }
+
+    @Test
+    fun `do not start transaction on created if API 29`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+
+        verify(fixture.hub, never()).startTransaction(any<String>(), any())
+    }
+
+    @Test
+    fun `do not stop transaction on resumed if API 29`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, mock())
+        sut.onActivityResumed(activity)
+
+        verify(fixture.hub, never()).captureTransaction(any())
+    }
+
+    @Test
+    fun `start transaction on created if API less than 29`() {
+        val sut = fixture.getSut(14)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+
+        verify(fixture.hub).startTransaction(any<String>(), any())
+    }
+
+    @Test
+    fun `stop transaction on resumed if API 29 less than 29`() {
+        val sut = fixture.getSut(14)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+        sut.onActivityResumed(activity)
+
+        verify(fixture.hub).captureTransaction(any())
     }
 }
