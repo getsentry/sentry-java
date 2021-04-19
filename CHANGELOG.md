@@ -5,6 +5,7 @@
 * Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
 * Fix: handle network errors in SentrySpanClientHttpRequestInterceptor (#1407)
 * Fix: set scope on transaction (#1409)
+* do not set free memory and is low memory fields when it's a NDK hard crash (#1399)
 
 # 4.4.0-alpha.2
 
