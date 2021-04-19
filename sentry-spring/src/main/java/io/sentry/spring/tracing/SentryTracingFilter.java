@@ -82,8 +82,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
           // if exception has been thrown, transaction status is already set to INTERNAL_ERROR, and
           // httpResponse.getStatus() returns 200.
           if (transaction.getStatus() == null) {
-            transaction.setStatus(
-                SpanStatus.fromHttpStatusCode(httpResponse.getStatus(), SpanStatus.UNKNOWN));
+            transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
           }
           transaction.finish();
         }
