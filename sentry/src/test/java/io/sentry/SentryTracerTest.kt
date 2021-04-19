@@ -17,21 +17,47 @@ import kotlin.test.assertTrue
 class SentryTracerTest {
 
     private class Fixture {
+        val options = SentryOptions()
         val hub: Hub
 
         init {
-            val options = SentryOptions()
             options.dsn = "https://key@sentry.io/proj"
             hub = spy(Hub(options))
             hub.bindClient(mock())
         }
 
-        fun getSut(): SentryTracer {
+        fun getSut(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {}): SentryTracer {
+            optionsConfiguration.configure(options)
             return SentryTracer(TransactionContext("name", "op"), hub)
         }
     }
 
     private val fixture = Fixture()
+
+    @Test
+    fun `does not add more spans than configured in options`() {
+        val tracer = fixture.getSut(Sentry.OptionsConfiguration {
+            it.maxSpans = 2
+            it.setDebug(true)
+            it.setLogger(SystemOutLogger())
+        })
+        tracer.startChild("child1")
+        tracer.startChild("child2")
+        tracer.startChild("child3")
+        assertEquals(2, tracer.children.size)
+    }
+
+    @Test
+    fun `when span limit is reached, startChild returns NoOpSpan`() {
+        val tracer = fixture.getSut(Sentry.OptionsConfiguration {
+            it.maxSpans = 2
+            it.setDebug(true)
+            it.setLogger(SystemOutLogger())
+        })
+        tracer.startChild("child1")
+        tracer.startChild("child2")
+        assertTrue(tracer.startChild("child3") is NoOpSpan)
+    }
 
     @Test
     fun `when transaction is created, startTimestamp is set`() {

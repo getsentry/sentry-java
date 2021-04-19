@@ -39,12 +39,14 @@ class GsonSerializerTest {
     private class Fixture {
         val logger: ILogger = mock()
         val serializer: ISerializer
+        val hub = mock<IHub>()
 
         init {
             val options = SentryOptions()
             options.setLogger(logger)
             options.setDebug(true)
             options.setEnvelopeReader(EnvelopeReader())
+            whenever(hub.options).thenReturn(options)
             serializer = GsonSerializer(options)
         }
     }
@@ -448,7 +450,7 @@ class GsonSerializerTest {
         trace.description = "some request"
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
-        val tracer = SentryTracer(trace, mock())
+        val tracer = SentryTracer(trace, fixture.hub)
         val span = tracer.startChild("child")
         span.finish(SpanStatus.OK)
         tracer.finish()
@@ -605,7 +607,7 @@ class GsonSerializerTest {
 
     @Test
     fun `empty lists are serialized to null`() {
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), mock()))
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), fixture.hub))
         val stringWriter = StringWriter()
         fixture.serializer.serialize(transaction, stringWriter)
         val element = JsonParser().parse(stringWriter.toString()).asJsonObject

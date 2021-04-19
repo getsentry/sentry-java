@@ -32,7 +32,7 @@ public class io/sentry/spring/SentryInitBeanPostProcessor : org/springframework/
 }
 
 public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sentry/EventProcessor {
-	public fun <init> (Ljavax/servlet/http/HttpServletRequest;Lio/sentry/spring/SentryRequestResolver;)V
+	public fun <init> (Ljavax/servlet/http/HttpServletRequest;)V
 	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
 }
 
@@ -104,8 +104,8 @@ public class io/sentry/spring/tracing/SentryTracingConfiguration {
 
 public class io/sentry/spring/tracing/SentryTracingFilter : org/springframework/web/filter/OncePerRequestFilter {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;)V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;Lio/sentry/spring/tracing/TransactionNameProvider;)V
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/tracing/TransactionNameProvider;)V
 	protected fun doFilterInternal (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljavax/servlet/FilterChain;)V
 }
 
