@@ -84,8 +84,8 @@ class SentrySpringIntegrationTest {
                 assertThat(event.request).isNotNull()
                 assertThat(event.request!!.url).isEqualTo("http://localhost:$port/hello")
                 assertThat(event.user).isNotNull()
-                assertThat(event.user.username).isEqualTo("user")
-                assertThat(event.user.ipAddress).isEqualTo("169.128.0.1")
+                assertThat(event.user!!.username).isEqualTo("user")
+                assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
             }, anyOrNull())
         }
     }
@@ -101,7 +101,8 @@ class SentrySpringIntegrationTest {
 
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
-                assertThat(event.user.ipAddress).isEqualTo("169.128.0.1")
+                assertThat(event.user).isNotNull()
+                assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
             }, anyOrNull())
         }
     }
