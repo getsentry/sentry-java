@@ -3,6 +3,7 @@
 * Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)
 * Fix: use connection and read timeouts in ApacheHttpClient based transport (#1397)
 * Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
+* Fix: set correct transaction status for unhandled exceptions in SentryTracingFilter (#1406)
 * Fix: handle network errors in SentrySpanClientHttpRequestInterceptor (#1407)
 * Fix: set scope on transaction (#1409)
 
