@@ -76,7 +76,7 @@ public abstract class SentryBaseEvent {
   private @Nullable String platform;
 
   /** Information about the user who triggered this event. */
-  private User user;
+  private @Nullable User user;
 
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
