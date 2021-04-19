@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           distribution: 'adopt'
-          java-version: 1.8
+          java-version: '8'
 
       # use sequential key when bumping dependencies till single lock file is out of preview
       # https://docs.gradle.org/current/userguide/dependency_locking.html#single_lock_file_per_project
