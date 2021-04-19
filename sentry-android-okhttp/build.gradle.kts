@@ -89,6 +89,6 @@ tasks.withType<Detekt> {
 }
 
 configure<DetektExtension> {
-    failFast = true
     buildUponDefaultConfig = true
+    allRules = true
 }
