@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.hints.DiskFlushNotification;
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
@@ -447,27 +448,15 @@ public final class SentryClient implements ISentryClient {
     return transaction;
   }
 
-  private @NotNull SentryTransaction applyScope(
-      @NotNull SentryTransaction transaction, final @Nullable Scope scope) {
-    if (scope != null) {
-      if (transaction.getRequest() == null) {
-        transaction.setRequest(scope.getRequest());
-      }
-    }
-    return transaction;
-  }
-
   private @Nullable SentryEvent applyScope(
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     if (scope != null) {
+      applyScope(event, scope);
       if (event.getTransaction() == null) {
         event.setTransaction(scope.getTransactionName());
       }
       if (event.getUser() == null) {
         event.setUser(scope.getUser());
-      }
-      if (event.getRequest() == null) {
-        event.setRequest(scope.getRequest());
       }
       if (event.getFingerprints() == null) {
         event.setFingerprints(scope.getFingerprint());
@@ -477,15 +466,6 @@ public final class SentryClient implements ISentryClient {
       } else {
         sortBreadcrumbsByDate(event, scope.getBreadcrumbs());
       }
-      if (event.getTags() == null) {
-        event.setTags(new HashMap<>(scope.getTags()));
-      } else {
-        for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
-          if (!event.getTags().containsKey(item.getKey())) {
-            event.getTags().put(item.getKey(), item.getValue());
-          }
-        }
-      }
       if (event.getExtras() == null) {
         event.setExtras(new HashMap<>(scope.getExtras()));
       } else {
@@ -494,17 +474,6 @@ public final class SentryClient implements ISentryClient {
             event.getExtras().put(item.getKey(), item.getValue());
           }
         }
-      }
-      try {
-        for (Map.Entry<String, Object> entry : scope.getContexts().clone().entrySet()) {
-          if (!event.getContexts().containsKey(entry.getKey())) {
-            event.getContexts().put(entry.getKey(), entry.getValue());
-          }
-        }
-      } catch (CloneNotSupportedException e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "An error has occurred when cloning Contexts", e);
       }
       // Level from scope exceptionally take precedence over the event
       if (scope.getLevel() != null) {
@@ -519,6 +488,37 @@ public final class SentryClient implements ISentryClient {
       event = processEvent(event, hint, scope.getEventProcessors());
     }
     return event;
+  }
+
+  private <T extends SentryBaseEvent> T applyScope(
+      final @NotNull T sentryBaseEvent, final @Nullable Scope scope) {
+    if (scope != null) {
+      if (sentryBaseEvent.getRequest() == null) {
+        sentryBaseEvent.setRequest(scope.getRequest());
+      }
+      if (sentryBaseEvent.getTags() == null) {
+        sentryBaseEvent.setTags(new HashMap<>(scope.getTags()));
+      } else {
+        for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
+          if (!sentryBaseEvent.getTags().containsKey(item.getKey())) {
+            sentryBaseEvent.getTags().put(item.getKey(), item.getValue());
+          }
+        }
+      }
+      final Contexts contexts = sentryBaseEvent.getContexts();
+      try {
+        for (Map.Entry<String, Object> entry : scope.getContexts().clone().entrySet()) {
+          if (!contexts.containsKey(entry.getKey())) {
+            contexts.put(entry.getKey(), entry.getValue());
+          }
+        }
+      } catch (CloneNotSupportedException e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "An error has occurred when cloning Contexts", e);
+      }
+    }
+    return sentryBaseEvent;
   }
 
   private void sortBreadcrumbsByDate(
