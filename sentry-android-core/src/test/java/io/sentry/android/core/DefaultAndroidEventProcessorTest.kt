@@ -300,4 +300,15 @@ class DefaultAndroidEventProcessorTest {
         assertNull(event.contexts.device!!.freeMemory)
         assertNull(event.contexts.device!!.isLowMemory)
     }
+
+    @Test
+    fun `When hint is not Cached, memory data should be applied`() {
+        val sut = fixture.getSut(context)
+
+        var event = SentryEvent()
+        event = sut.process(event, null)
+
+        assertNotNull(event.contexts.device!!.freeMemory)
+        assertNotNull(event.contexts.device!!.isLowMemory)
+    }
 }
