@@ -7,11 +7,17 @@ import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
+import io.sentry.SentryOptions
+import io.sentry.SpanStatus
+import io.sentry.spring.tracing.SentryTracingConfiguration
+import io.sentry.spring.tracing.SentryTransaction
 import io.sentry.test.checkEvent
+import io.sentry.test.checkTransaction
 import io.sentry.transport.ITransport
-import java.lang.RuntimeException
+import java.lang.Exception
 import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
@@ -25,6 +31,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -37,6 +44,7 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
+import org.springframework.stereotype.Service
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -52,6 +60,12 @@ class SentrySpringIntegrationTest {
 
     @Autowired
     lateinit var transport: ITransport
+
+    @Autowired
+    lateinit var someService: SomeService
+
+    @Autowired
+    lateinit var hub: IHub
 
     @LocalServerPort
     lateinit var port: Integer
@@ -136,10 +150,51 @@ class SentrySpringIntegrationTest {
             verifyZeroInteractions(transport)
         }
     }
+
+    @Test
+    fun `calling a method annotated with @SentryTransaction creates transaction`() {
+        someService.aMethod()
+        await.untilAsserted {
+            verify(transport).send(checkTransaction {
+                assertThat(it.status).isEqualTo(SpanStatus.OK)
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `calling a method annotated with @SentryTransaction throwing exception associates Sentry event with transaction`() {
+        try {
+            someService.aMethodThrowing()
+        } catch (e: Exception) {
+            hub.captureException(e)
+        }
+        await.untilAsserted {
+            verify(transport).send(checkEvent {
+                assertThat(it.contexts.trace).isNotNull
+                assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `calling a method annotated with @SentryTransaction, where an inner span is created within transaction, throwing exception associates Sentry event with inner span`() {
+        try {
+            someService.aMethodWithInnerSpanThrowing()
+        } catch (e: Exception) {
+            hub.captureException(e)
+        }
+        await.untilAsserted {
+            verify(transport).send(checkEvent {
+                assertThat(it.contexts.trace).isNotNull
+                assertThat(it.contexts.trace!!.operation).isEqualTo("child-op")
+            }, anyOrNull())
+        }
+    }
 }
 
 @SpringBootApplication
 @EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true)
+@Import(SentryTracingConfiguration::class)
 open class App {
 
     private val transport = mock<ITransport>()
@@ -156,6 +211,37 @@ open class App {
 
     @Bean
     open fun sentrySpringRequestListener() = SentrySpringRequestListener()
+
+    @Bean
+    open fun tracesSamplerCallback() = SentryOptions.TracesSamplerCallback {
+        1.0
+    }
+}
+
+@Service
+open class SomeService {
+
+    @SentryTransaction(operation = "bean")
+    open fun aMethod() { Thread.sleep(100) }
+
+    @SentryTransaction(operation = "bean")
+    open fun aMethodThrowing() {
+        throw RuntimeException("oops")
+    }
+
+    @SentryTransaction(operation = "bean")
+    open fun aMethodWithInnerSpanThrowing() {
+        val span = Sentry.getSpan()!!.startChild("child-op")
+        try {
+            throw RuntimeException("oops")
+        } catch (e: Exception) {
+            span.status = SpanStatus.INTERNAL_ERROR
+            span.throwable = e
+            throw e
+        } finally {
+            span.finish()
+        }
+    }
 }
 
 @RestController
