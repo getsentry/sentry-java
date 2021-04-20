@@ -3,6 +3,7 @@ package io.sentry.spring.tracing;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
+import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -59,7 +60,12 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       hub.pushScope();
       final ITransaction transaction = hub.startTransaction(name, operation, true);
       try {
-        return invocation.proceed();
+        final Object result = invocation.proceed();
+        transaction.setStatus(SpanStatus.OK);
+        return result;
+      } catch (Exception e) {
+        transaction.setStatus(SpanStatus.INTERNAL_ERROR);
+        throw e;
       } finally {
         transaction.finish();
         hub.popScope();
