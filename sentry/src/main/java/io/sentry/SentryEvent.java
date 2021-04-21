@@ -64,9 +64,12 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    * <p>```json { "fingerprint": ["myrpc", "POST", "/foo.bar"] }
    */
   private List<String> fingerprint;
+
+  // TODO: should breadcrumbs be part of a transaction?
   /** List of breadcrumbs recorded before this event. */
   private List<Breadcrumb> breadcrumbs;
 
+  // TODO: should extras be part of a transaction?
   /**
    * Arbitrary extra information set by the user.
    *
