@@ -139,7 +139,12 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @Override
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+    final boolean applyScopeData = ApplyScopeUtils.shouldApplyScopeData(hint);
+
+    // we only set memory data if it's not a hard crash, when it's a hard crash the event is
+    // enriched on restart, so non static data might be wrong, eg lowMemory or availMem will
+    // be different if the App. crashes because of OOM.
+    if (applyScopeData) {
       processNonCachedEvent(event);
     } else {
       logger.log(
@@ -157,7 +162,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     if (event.getContexts().getDevice() == null) {
-      event.getContexts().setDevice(getDevice());
+      event.getContexts().setDevice(getDevice(applyScopeData));
     }
 
     mergeOS(event);
@@ -302,7 +307,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   // we can get some inspiration here
   // https://github.com/flutter/plugins/blob/master/packages/device_info/android/src/main/java/io/flutter/plugins/deviceinfo/DeviceInfoPlugin.java
-  private @NotNull Device getDevice() {
+  private @NotNull Device getDevice(final boolean applyScopeData) {
     // TODO: missing usable memory
 
     Device device = new Device();
@@ -320,6 +325,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       device.setCharging(isCharging(batteryIntent));
       device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
     }
+
     Boolean connected;
     switch (ConnectivityChecker.getConnectionStatus(context, logger)) {
       case NOT_CONNECTED:
@@ -347,8 +353,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (memInfo != null) {
       // in bytes
       device.setMemorySize(getMemorySize(memInfo));
-      device.setFreeMemory(memInfo.availMem);
-      device.setLowMemory(memInfo.lowMemory);
+      if (applyScopeData) {
+        device.setFreeMemory(memInfo.availMem);
+        device.setLowMemory(memInfo.lowMemory);
+      }
       // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
       // compatibility
     }
@@ -377,6 +385,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     device.setBootTime(getBootTime());
+
     device.setTimezone(getTimeZone());
 
     if (device.getId() == null) {
@@ -385,6 +394,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (device.getLanguage() == null) {
       device.setLanguage(Locale.getDefault().toString()); // eg en_US
     }
+
     if (device.getConnectionType() == null) {
       // wifi, ethernet or cellular, null if none
       device.setConnectionType(
