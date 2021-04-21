@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.App
 import io.sentry.protocol.Request
+import io.sentry.util.Pair
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -122,7 +123,7 @@ class SentryTracerTest {
         val ex = RuntimeException()
         tracer.throwable = ex
         tracer.finish()
-        verify(fixture.hub).setSpanContext(ex, tracer.root)
+        verify(fixture.hub).setSpanContext(ex, Pair(tracer.root, "name"))
     }
 
     @Test
@@ -284,7 +285,7 @@ class SentryTracerTest {
         transaction.finish(SpanStatus.UNKNOWN_ERROR)
 
         // call only once
-        verify(fixture.hub).setSpanContext(ex, transaction.root)
+        verify(fixture.hub).setSpanContext(ex, Pair(transaction.root, "name"))
         verify(fixture.hub).captureTransaction(check {
             assertEquals(transaction.root.spanContext, it.contexts.trace)
         })

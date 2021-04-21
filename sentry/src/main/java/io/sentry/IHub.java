@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.Pair;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -402,14 +403,14 @@ public interface IHub {
   SentryTraceHeader traceHeaders();
 
   /**
-   * Associates {@link ISpan} with the {@link Throwable}. Used to determine in which trace the
-   * exception has been thrown in framework integrations.
+   * Associates {@link ISpan} and the transaction name with the {@link Throwable}. Used to determine
+   * in which trace the exception has been thrown in framework integrations.
    *
    * @param throwable the throwable
-   * @param span the span context
+   * @param span a pair of span context and transaction name
    */
   @ApiStatus.Internal
-  void setSpanContext(@NotNull Throwable throwable, @NotNull ISpan span);
+  void setSpanContext(@NotNull Throwable throwable, @NotNull Pair<ISpan, String> span);
 
   /**
    * Gets the current active transaction or span.

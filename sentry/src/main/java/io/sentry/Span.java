@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
+import io.sentry.util.Pair;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -94,7 +95,7 @@ public final class Span implements ISpan {
     this.context.setStatus(status);
     timestamp = DateUtils.getCurrentDateTime();
     if (throwable != null) {
-      hub.setSpanContext(throwable, this);
+      hub.setSpanContext(throwable, new Pair<>(this, this.transaction.getName()));
     }
   }
 

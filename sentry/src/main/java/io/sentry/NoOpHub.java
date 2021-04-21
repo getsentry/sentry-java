@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.Pair;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -140,7 +141,7 @@ public final class NoOpHub implements IHub {
 
   @Override
   public void setSpanContext(
-      final @NotNull Throwable throwable, final @NotNull ISpan spanContext) {}
+      final @NotNull Throwable throwable, final @NotNull Pair<ISpan, String> spanContext) {}
 
   @Override
   public @Nullable ISpan getSpan() {
