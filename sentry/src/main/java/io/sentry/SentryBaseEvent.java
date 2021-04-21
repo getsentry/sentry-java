@@ -77,6 +77,24 @@ public abstract class SentryBaseEvent {
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
 
+  /**
+   * Server or device name the event was generated on.
+   *
+   * <p>This is supposed to be a hostname.
+   */
+  private String serverName;
+
+  /**
+   * Program's distribution identifier.
+   *
+   * <p>The distribution of the application.
+   *
+   * <p>Distributions are used to disambiguate build or deployment variants of the same release of
+   * an application. For example, the dist can be the build number of an XCode build or the version
+   * code of an Android build.
+   */
+  private String dist;
+
   protected SentryBaseEvent(final @NotNull SentryId eventId) {
     this.eventId = eventId;
   }
@@ -197,5 +215,21 @@ public abstract class SentryBaseEvent {
 
   public void setPlatform(final @Nullable String platform) {
     this.platform = platform;
+  }
+
+  public String getServerName() {
+    return serverName;
+  }
+
+  public void setServerName(String serverName) {
+    this.serverName = serverName;
+  }
+
+  public String getDist() {
+    return dist;
+  }
+
+  public void setDist(String dist) {
+    this.dist = dist;
   }
 }

@@ -31,23 +31,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   private final Date timestamp;
 
   private Message message;
-  /**
-   * Server or device name the event was generated on.
-   *
-   * <p>This is supposed to be a hostname.
-   */
-  private String serverName;
 
-  /**
-   * Program's distribution identifier.
-   *
-   * <p>The distribution of the application.
-   *
-   * <p>Distributions are used to disambiguate build or deployment variants of the same release of
-   * an application. For example, the dist can be the build number of an XCode build or the version
-   * code of an Android build.
-   */
-  private String dist;
   /** Logger that created the event. */
   private String logger;
   /** Threads that were active when the event occurred. */
@@ -144,22 +128,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void setMessage(Message message) {
     this.message = message;
-  }
-
-  public String getServerName() {
-    return serverName;
-  }
-
-  public void setServerName(String serverName) {
-    this.serverName = serverName;
-  }
-
-  public String getDist() {
-    return dist;
-  }
-
-  public void setDist(String dist) {
-    this.dist = dist;
   }
 
   public String getLogger() {

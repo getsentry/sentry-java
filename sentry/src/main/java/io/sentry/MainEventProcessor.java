@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryException;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
@@ -13,12 +14,6 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class MainEventProcessor implements EventProcessor {
-
-  /**
-   * Default value for {@link User#getIpAddress()} set when event does not have user and ip address
-   * set and when {@link SentryOptions#isSendDefaultPii()} is set to true.
-   */
-  public static final String DEFAULT_IP_ADDRESS = "{{auto}}";
 
   /**
    * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
@@ -64,10 +59,7 @@ public final class MainEventProcessor implements EventProcessor {
   @Override
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
-    if (event.getPlatform() == null) {
-      // this actually means JVM related.
-      event.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
-    }
+    setPlatform(event);
 
     final Throwable throwable = event.getThrowable();
     if (throwable != null) {
@@ -112,6 +104,7 @@ public final class MainEventProcessor implements EventProcessor {
       }
     }
 
+    // special
     if (event.getThreads() == null) {
       // collecting threadIds that came from the exception mechanism, so we can mark threads as
       // crashed properly
@@ -150,6 +143,20 @@ public final class MainEventProcessor implements EventProcessor {
     }
     if (options.isAttachServerName() && hostnameCache != null && event.getServerName() == null) {
       event.setServerName(hostnameCache.getHostname());
+    }
+  }
+
+  @Override
+  public @Nullable SentryTransaction process(@NotNull SentryTransaction transaction, @Nullable Object hint) {
+    setPlatform(transaction);
+
+    return transaction;
+  }
+
+  private void setPlatform(final @NotNull SentryBaseEvent event) {
+    if (event.getPlatform() == null) {
+      // this actually means JVM related.
+      event.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
     }
   }
 }
