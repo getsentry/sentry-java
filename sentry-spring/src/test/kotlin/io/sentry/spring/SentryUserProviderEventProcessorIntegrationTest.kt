@@ -39,7 +39,7 @@ class SentryUserProviderEventProcessorIntegrationTest {
                 await.untilAsserted {
                     verify(transport).send(checkEvent { event: SentryEvent ->
                         assertThat(event.user).isNotNull
-                        assertThat(event.user.username).isEqualTo("john.smith")
+                        assertThat(event.user!!.username).isEqualTo("john.smith")
                     }, anyOrNull())
                 }
             }
