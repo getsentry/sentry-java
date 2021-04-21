@@ -8,6 +8,7 @@
 * Fix: set scope on transaction (#1409)
 * Fix: Apply user from the scope to transaction (#1424)
 * Fix: Pass maxBreadcrumbs config. to sentry-native (#1425)
+* Bump: sentry-native to 0.4.9
 
 # 4.4.0-alpha.2
 
