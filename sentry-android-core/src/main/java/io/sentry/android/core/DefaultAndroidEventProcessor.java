@@ -141,6 +141,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       final @NotNull SentryEvent event, final @Nullable Object hint) {
     final boolean applyScopeData = ApplyScopeUtils.shouldApplyScopeData(hint);
 
+    // we only set memory data if it's not a hard crash, when it's a hard crash the event is
+    // enriched on restart, so non static data might be wrong, eg lowMemory or availMem will
+    // be different if the App. crashes because of OOM.
     if (applyScopeData) {
       processNonCachedEvent(event);
     } else {
