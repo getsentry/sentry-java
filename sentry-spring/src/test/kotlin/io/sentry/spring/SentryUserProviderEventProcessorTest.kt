@@ -37,12 +37,13 @@ class SentryUserProviderEventProcessorTest {
         val result = processor.process(event, null)
 
         assertNotNull(result)
-        assertNotNull(result.user)
-        assertEquals("john.doe", result.user.username)
-        assertEquals("user-id", result.user.id)
-        assertEquals("192.168.0.1", result.user.ipAddress)
-        assertEquals("john.doe@example.com", result.user.email)
-        assertEquals(mapOf("key" to "value"), result.user.others)
+        assertNotNull(result.user) {
+            assertEquals("john.doe", it.username)
+            assertEquals("user-id", it.id)
+            assertEquals("192.168.0.1", it.ipAddress)
+            assertEquals("john.doe@example.com", it.email)
+            assertEquals(mapOf("key" to "value"), it.others)
+        }
     }
 
     @Test
@@ -62,12 +63,13 @@ class SentryUserProviderEventProcessorTest {
         val result = processor.process(event, null)
 
         assertNotNull(result)
-        assertNotNull(result.user)
-        assertEquals("john.doe", result.user.username)
-        assertEquals("user-id", result.user.id)
-        assertEquals("192.168.0.1", result.user.ipAddress)
-        assertEquals("john.doe@example.com", result.user.email)
-        assertEquals(mapOf("key" to "value"), result.user.others)
+        assertNotNull(result.user) {
+            assertEquals("john.doe", it.username)
+            assertEquals("user-id", it.id)
+            assertEquals("192.168.0.1", it.ipAddress)
+            assertEquals("john.doe@example.com", it.email)
+            assertEquals(mapOf("key" to "value"), it.others)
+        }
     }
 
     @Test
@@ -78,22 +80,24 @@ class SentryUserProviderEventProcessorTest {
         }
 
         val event = SentryEvent()
-        event.user = User()
-        event.user.username = "jane.smith"
-        event.user.id = "jane-smith"
-        event.user.ipAddress = "192.168.0.3"
-        event.user.email = "jane.smith@example.com"
-        event.user.others = mapOf("key" to "value")
+        event.user = User().apply {
+            username = "jane.smith"
+            id = "jane-smith"
+            ipAddress = "192.168.0.3"
+            email = "jane.smith@example.com"
+            others = mapOf("key" to "value")
+        }
 
         val result = processor.process(event, null)
 
         assertNotNull(result)
-        assertNotNull(result.user)
-        assertEquals("jane.smith", result.user.username)
-        assertEquals("jane-smith", result.user.id)
-        assertEquals("192.168.0.3", result.user.ipAddress)
-        assertEquals("jane.smith@example.com", result.user.email)
-        assertEquals(mapOf("key" to "value"), result.user.others)
+        assertNotNull(result.user) {
+            assertEquals("jane.smith", it.username)
+            assertEquals("jane-smith", it.id)
+            assertEquals("192.168.0.3", it.ipAddress)
+            assertEquals("jane.smith@example.com", it.email)
+            assertEquals(mapOf("key" to "value"), it.others)
+        }
     }
 
     @Test
@@ -103,22 +107,24 @@ class SentryUserProviderEventProcessorTest {
         }
 
         val event = SentryEvent()
-        event.user = User()
-        event.user.username = "jane.smith"
-        event.user.id = "jane-smith"
-        event.user.ipAddress = "192.168.0.3"
-        event.user.email = "jane.smith@example.com"
-        event.user.others = mapOf("key" to "value")
+        event.user = User().apply {
+            username = "jane.smith"
+            id = "jane-smith"
+            ipAddress = "192.168.0.3"
+            email = "jane.smith@example.com"
+            others = mapOf("key" to "value")
+        }
 
         val result = processor.process(event, null)
 
         assertNotNull(result)
-        assertNotNull(result.user)
-        assertEquals("jane.smith", result.user.username)
-        assertEquals("jane-smith", result.user.id)
-        assertEquals("192.168.0.3", result.user.ipAddress)
-        assertEquals("jane.smith@example.com", result.user.email)
-        assertEquals(mapOf("key" to "value"), result.user.others)
+        assertNotNull(result.user) {
+            assertEquals("jane.smith", it.username)
+            assertEquals("jane-smith", it.id)
+            assertEquals("192.168.0.3", it.ipAddress)
+            assertEquals("jane.smith@example.com", it.email)
+            assertEquals(mapOf("key" to "value"), it.others)
+        }
     }
 
     @Test
@@ -130,14 +136,16 @@ class SentryUserProviderEventProcessorTest {
         }
 
         val event = SentryEvent()
-        event.user = User()
-        event.user.others = mapOf("new-key" to "new-value")
+        event.user = User().apply {
+            others = mapOf("new-key" to "new-value")
+        }
 
         val result = processor.process(event, null)
 
         assertNotNull(result)
-        assertNotNull(result.user)
-        assertEquals(mapOf("key" to "value", "new-key" to "new-value"), result.user.others)
+        assertNotNull(result.user) {
+            assertEquals(mapOf("key" to "value", "new-key" to "new-value"), it.others)
+        }
     }
 
     @Test
@@ -169,7 +177,9 @@ class SentryUserProviderEventProcessorTest {
         val result = processor.process(event, null)
 
         assertNotNull(result)
-        assertEquals(user.ipAddress, result.user.ipAddress)
+        assertNotNull(result.user) {
+            assertEquals(user.ipAddress, it.ipAddress)
+        }
     }
 
     @Test
@@ -186,6 +196,8 @@ class SentryUserProviderEventProcessorTest {
         val result = processor.process(event, null)
 
         assertNotNull(result)
-        assertNull(result.user.ipAddress)
+        assertNotNull(result.user) {
+            assertNull(it.ipAddress)
+        }
     }
 }
