@@ -193,6 +193,7 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
     jmethodID environment_mid = (*env)->GetMethodID(env, options_cls, "getEnvironment",
                                                     "()Ljava/lang/String;");
     jmethodID dist_mid = (*env)->GetMethodID(env, options_cls, "getDist", "()Ljava/lang/String;");
+    jmethodID max_crumbs_mid = (*env)->GetMethodID(env, options_cls, "getMaxBreadcrumbs", "()I");
 
     jstring outbox_path_j = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options,
                                                                outbox_path_mid);
@@ -202,6 +203,7 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
     jstring environment = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options,
                                                              environment_mid);
     jstring dist = (jstring) (*env)->CallObjectMethod(env, sentry_sdk_options, dist_mid);
+    jint max_crumbs = (jint) (*env)->CallIntMethod(env, sentry_sdk_options, max_crumbs_mid);
 
     ENSURE(outbox_path_j);
     const char *outbox_path_str = (*env)->GetStringUTFChars(env, outbox_path_j, 0);
@@ -229,6 +231,8 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
 
     sentry_options_set_transport(options, transport);
     sentry_options_set_debug(options, debug);
+    sentry_options_set_max_breadcrumbs(options, max_crumbs);
+
     const char *dsn_str = (*env)->GetStringUTFChars(env, dsn, 0);
     sentry_options_set_dsn(options, dsn_str);
     (*env)->ReleaseStringUTFChars(env, dsn, dsn_str);

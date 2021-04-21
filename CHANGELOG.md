@@ -7,6 +7,7 @@
 * Fix: handle network errors in SentrySpanClientHttpRequestInterceptor (#1407)
 * Fix: set scope on transaction (#1409)
 * Fix: Apply user from the scope to transaction (#1424)
+* Fix: Pass maxBreadcrumbs config. to sentry-native (#1425)
 
 # 4.4.0-alpha.2
 
