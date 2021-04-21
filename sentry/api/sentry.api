@@ -612,6 +612,7 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
 	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun getUser ()Lio/sentry/protocol/User;
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setEventId (Lio/sentry/protocol/SentryId;)V
@@ -622,6 +623,7 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTags (Ljava/util/Map;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
+	public fun setUser (Lio/sentry/protocol/User;)V
 }
 
 public final class io/sentry/SentryClient : io/sentry/ISentryClient {
@@ -709,7 +711,6 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun getUser ()Lio/sentry/protocol/User;
 	public fun isCrashed ()Z
 	public fun isErrored ()Z
 	public fun removeExtra (Ljava/lang/String;)V
@@ -729,7 +730,6 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setThreads (Ljava/util/List;)V
 	public fun setTransaction (Ljava/lang/String;)V
-	public fun setUser (Lio/sentry/protocol/User;)V
 }
 
 public final class io/sentry/SentryItemType : java/lang/Enum {
