@@ -13,6 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+// TODO: check if I need to support process(SentryTransaction) here
 public final class SentryUserProviderEventProcessor implements EventProcessor {
   private final @NotNull SentryOptions options;
   private final @NotNull SentryUserProvider sentryUserProvider;

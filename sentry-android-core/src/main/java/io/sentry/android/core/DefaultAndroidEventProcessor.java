@@ -22,6 +22,7 @@ import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
 import io.sentry.ILogger;
+import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.util.ConnectivityChecker;
@@ -34,6 +35,7 @@ import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.SentryThread;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
@@ -139,15 +141,38 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @Override
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+    if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
+      mergeDebugImages(event);
+      setThreads(event);
+    }
+
+    setCommons(event, true);
+
+    return event;
+  }
+
+  private void setCommons(final @NotNull SentryBaseEvent event, final boolean doIO) {
+    mergeUser(event);
+    setDevice(event, doIO);
+    mergeOS(event);
+    setSideLoadedInfo(event);
+  }
+
+  private boolean shouldApplyScopeData(
+      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
+    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      return true;
     } else {
       logger.log(
           SentryLevel.DEBUG,
           "Event was cached so not applying data relevant to the current app execution/version: %s",
           event.getEventId());
+      return false;
     }
+  }
 
+  private void mergeUser(final @NotNull SentryBaseEvent event) {
     // userId should be set even if event is Cached as the userId is static and won't change anyway.
     final User user = event.getUser();
     if (user == null) {
@@ -155,19 +180,15 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     } else if (user.getId() == null) {
       user.setId(getDeviceId());
     }
-
-    if (event.getContexts().getDevice() == null) {
-      event.getContexts().setDevice(getDevice());
-    }
-
-    mergeOS(event);
-
-    setSideLoadedInfo(event);
-
-    return event;
   }
 
-  private void mergeOS(final @NotNull SentryEvent event) {
+  private void setDevice(final @NotNull SentryBaseEvent event, final boolean doIO) {
+    if (event.getContexts().getDevice() == null) {
+      event.getContexts().setDevice(getDevice(doIO));
+    }
+  }
+
+  private void mergeOS(final @NotNull SentryBaseEvent event) {
     final OperatingSystem currentOS = event.getContexts().getOperatingSystem();
     final OperatingSystem androidOS = getOperatingSystem();
 
@@ -187,31 +208,39 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   // Data to be applied to events that was created in the running process
-  private void processNonCachedEvent(final @NotNull SentryEvent event) {
+  private void processNonCachedEvent(final @NotNull SentryBaseEvent event) {
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
     }
     setAppExtras(app);
 
-    mergeDebugImages(event);
-
-    PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
-    if (packageInfo != null) {
-      String versionCode = ContextUtils.getVersionCode(packageInfo);
-
-      if (event.getDist() == null) {
-        event.setDist(versionCode);
-      }
-      setAppPackageInfo(app, packageInfo);
-    }
+    setPackageInfo(event, app);
 
     event.getContexts().setApp(app);
+  }
 
+  private void setThreads(final @NotNull SentryEvent event) {
     if (event.getThreads() != null) {
       for (SentryThread thread : event.getThreads()) {
         thread.setCurrent(MainThreadChecker.isMainThread(thread));
       }
+    }
+  }
+
+  private void setPackageInfo(final @NotNull SentryBaseEvent event, final @NotNull App app) {
+    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
+    if (packageInfo != null) {
+      String versionCode = ContextUtils.getVersionCode(packageInfo);
+
+      setDist(event, versionCode);
+      setAppPackageInfo(app, packageInfo);
+    }
+  }
+
+  private void setDist(final @NotNull SentryBaseEvent event, final @NotNull String versionCode) {
+    if (event.getDist() == null) {
+      event.setDist(versionCode);
     }
   }
 
@@ -302,7 +331,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   // we can get some inspiration here
   // https://github.com/flutter/plugins/blob/master/packages/device_info/android/src/main/java/io/flutter/plugins/deviceinfo/DeviceInfoPlugin.java
-  private @NotNull Device getDevice() {
+  private @NotNull Device getDevice(final boolean doIO) {
     // TODO: missing usable memory
 
     Device device = new Device();
@@ -314,24 +343,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     device.setModelId(Build.ID);
     setArchitectures(device);
 
-    Intent batteryIntent = getBatteryIntent();
-    if (batteryIntent != null) {
-      device.setBatteryLevel(getBatteryLevel(batteryIntent));
-      device.setCharging(isCharging(batteryIntent));
-      device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
+    // setting such values require IO hence we don't run for transactions
+    if (doIO) {
+      setDeviceIO(device);
     }
-    Boolean connected;
-    switch (ConnectivityChecker.getConnectionStatus(context, logger)) {
-      case NOT_CONNECTED:
-        connected = false;
-        break;
-      case CONNECTED:
-        connected = true;
-        break;
-      default:
-        connected = null;
-    }
-    device.setOnline(connected);
+
     device.setOrientation(getOrientation());
 
     try {
@@ -341,31 +357,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       }
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Error getting emulator.", e);
-    }
-
-    ActivityManager.MemoryInfo memInfo = getMemInfo();
-    if (memInfo != null) {
-      // in bytes
-      device.setMemorySize(getMemorySize(memInfo));
-      device.setFreeMemory(memInfo.availMem);
-      device.setLowMemory(memInfo.lowMemory);
-      // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
-      // compatibility
-    }
-
-    // this way of getting the size of storage might be problematic for storages bigger than 2GB
-    // check the use of https://developer.android.com/reference/java/io/File.html#getFreeSpace%28%29
-    File internalStorageFile = context.getExternalFilesDir(null);
-    if (internalStorageFile != null) {
-      StatFs internalStorageStat = new StatFs(internalStorageFile.getPath());
-      device.setStorageSize(getTotalInternalStorage(internalStorageStat));
-      device.setFreeStorage(getUnusedInternalStorage(internalStorageStat));
-    }
-
-    StatFs externalStorageStat = getExternalStorageStat(internalStorageFile);
-    if (externalStorageStat != null) {
-      device.setExternalStorageSize(getTotalExternalStorage(externalStorageStat));
-      device.setExternalFreeStorage(getUnusedExternalStorage(externalStorageStat));
     }
 
     DisplayMetrics displayMetrics = getDisplayMetrics();
@@ -385,13 +376,61 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (device.getLanguage() == null) {
       device.setLanguage(Locale.getDefault().toString()); // eg en_US
     }
+
+    return device;
+  }
+
+  private void setDeviceIO(final @NotNull Device device) {
+    final Intent batteryIntent = getBatteryIntent();
+    if (batteryIntent != null) {
+      device.setBatteryLevel(getBatteryLevel(batteryIntent));
+      device.setCharging(isCharging(batteryIntent));
+      device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
+    }
+
+    Boolean connected;
+    switch (ConnectivityChecker.getConnectionStatus(context, logger)) {
+      case NOT_CONNECTED:
+        connected = false;
+        break;
+      case CONNECTED:
+        connected = true;
+        break;
+      default:
+        connected = null;
+    }
+    device.setOnline(connected);
+
+    final ActivityManager.MemoryInfo memInfo = getMemInfo();
+    if (memInfo != null) {
+      // in bytes
+      device.setMemorySize(getMemorySize(memInfo));
+      device.setFreeMemory(memInfo.availMem);
+      device.setLowMemory(memInfo.lowMemory);
+      // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
+      // compatibility
+    }
+
+    // this way of getting the size of storage might be problematic for storages bigger than 2GB
+    // check the use of https://developer.android.com/reference/java/io/File.html#getFreeSpace%28%29
+    final File internalStorageFile = context.getExternalFilesDir(null);
+    if (internalStorageFile != null) {
+      StatFs internalStorageStat = new StatFs(internalStorageFile.getPath());
+      device.setStorageSize(getTotalInternalStorage(internalStorageStat));
+      device.setFreeStorage(getUnusedInternalStorage(internalStorageStat));
+    }
+
+    final StatFs externalStorageStat = getExternalStorageStat(internalStorageFile);
+    if (externalStorageStat != null) {
+      device.setExternalStorageSize(getTotalExternalStorage(externalStorageStat));
+      device.setExternalFreeStorage(getUnusedExternalStorage(externalStorageStat));
+    }
+
     if (device.getConnectionType() == null) {
       // wifi, ethernet or cellular, null if none
       device.setConnectionType(
           ConnectivityChecker.getConnectionType(context, logger, buildInfoProvider));
     }
-
-    return device;
   }
 
   @SuppressWarnings("ObsoleteSdkInt")
@@ -949,7 +988,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @SuppressWarnings("unchecked")
-  private void setSideLoadedInfo(final @NotNull SentryEvent event) {
+  private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
     try {
       final Object sideLoadedInfo = contextData.get().get(SIDE_LOADED);
 
@@ -962,5 +1001,17 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Error getting side loaded info.", e);
     }
+  }
+
+  @Override
+  public @Nullable SentryTransaction process(
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+    if (shouldApplyScopeData(transaction, hint)) {
+      processNonCachedEvent(transaction);
+    }
+
+    setCommons(transaction, false);
+
+    return transaction;
   }
 }

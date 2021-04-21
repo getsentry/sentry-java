@@ -54,6 +54,18 @@ public final class SentryClient implements ISentryClient {
     this.random = options.getSampleRate() == null ? null : new Random();
   }
 
+  private boolean shouldApplyScopeData(
+      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
+    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      return true;
+    } else {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
+      return false;
+    }
+  }
+
   @Override
   public @NotNull SentryId captureEvent(
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
@@ -61,7 +73,7 @@ public final class SentryClient implements ISentryClient {
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+    if (shouldApplyScopeData(event, hint)) {
       // Event has already passed through here before it was cached
       // Going through again could be reading data that is no longer relevant
       // i.e proguard id, app version, threads
@@ -70,10 +82,6 @@ public final class SentryClient implements ISentryClient {
       if (event == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by applyScope");
       }
-    } else {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
     }
 
     event = processEvent(event, hint, options.getEventProcessors());
@@ -193,7 +201,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event,
       final @Nullable Object hint,
       final @NotNull List<EventProcessor> eventProcessors) {
-    for (EventProcessor processor : eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
       try {
         event = processor.process(event, hint);
       } catch (Exception e) {
@@ -217,6 +225,37 @@ public final class SentryClient implements ISentryClient {
       }
     }
     return event;
+  }
+
+  @Nullable
+  private SentryTransaction processTransaction(
+      @NotNull SentryTransaction transaction,
+      final @Nullable Object hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        transaction = processor.process(transaction, hint);
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing transaction by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (transaction == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Transaction was dropped by a processor: %s",
+                processor.getClass().getName());
+        break;
+      }
+    }
+    return transaction;
   }
 
   @Override
@@ -365,15 +404,25 @@ public final class SentryClient implements ISentryClient {
 
     SentryId sentryId = transaction.getEventId();
 
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+    if (shouldApplyScopeData(transaction, hint)) {
       transaction = applyScope(transaction, scope);
-    } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Transaction was cached so not applying scope: %s",
-              transaction.getEventId());
+
+      if (transaction != null) {
+        transaction = processTransaction(transaction, hint, scope.getEventProcessors());
+      }
+
+      if (transaction == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Transaction was dropped by applyScope");
+      }
+    }
+
+    if (transaction != null) {
+      transaction = processTransaction(transaction, hint, options.getEventProcessors());
+    }
+
+    if (transaction == null) {
+      options.getLogger().log(SentryLevel.DEBUG, "Transaction was dropped by Event processors.");
+      return SentryId.EMPTY_ID;
     }
 
     processTransaction(transaction);
@@ -412,27 +461,6 @@ public final class SentryClient implements ISentryClient {
 
   private @NotNull SentryTransaction processTransaction(
       final @NotNull SentryTransaction transaction) {
-    if (transaction.getPlatform() == null) {
-      transaction.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
-    }
-    if (transaction.getRelease() == null) {
-      transaction.setRelease(options.getRelease());
-    }
-    if (transaction.getEnvironment() == null) {
-      transaction.setEnvironment(options.getEnvironment());
-    }
-    if (transaction.getSdk() == null) {
-      transaction.setSdk(options.getSdkVersion());
-    }
-    if (transaction.getTags() == null) {
-      transaction.setTags(new HashMap<>(options.getTags()));
-    } else {
-      for (Map.Entry<String, String> item : options.getTags().entrySet()) {
-        if (!transaction.getTags().containsKey(item.getKey())) {
-          transaction.setTag(item.getKey(), item.getValue());
-        }
-      }
-    }
     final List<SentrySpan> unfinishedSpans = new ArrayList<>();
     for (SentrySpan span : transaction.getSpans()) {
       if (!span.isFinished()) {
@@ -452,11 +480,9 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     if (scope != null) {
       applyScope(event, scope);
+
       if (event.getTransaction() == null) {
         event.setTransaction(scope.getTransactionName());
-      }
-      if (event.getUser() == null) {
-        event.setUser(scope.getUser());
       }
       if (event.getFingerprints() == null) {
         event.setFingerprints(scope.getFingerprint());

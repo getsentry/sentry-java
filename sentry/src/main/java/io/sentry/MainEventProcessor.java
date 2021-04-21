@@ -6,6 +6,7 @@ import io.sentry.protocol.User;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -59,11 +60,21 @@ public final class MainEventProcessor implements EventProcessor {
   @Override
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
-    setPlatform(event);
+    setCommons(event);
     setExceptions(event);
 
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+    if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
+      setThreads(event);
+    }
+
+    return event;
+  }
+
+  private boolean shouldApplyScopeData(
+      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
+    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      return true;
     } else {
       options
           .getLogger()
@@ -71,28 +82,34 @@ public final class MainEventProcessor implements EventProcessor {
               SentryLevel.DEBUG,
               "Event was cached so not applying data relevant to the current app execution/version: %s",
               event.getEventId());
+      return false;
     }
-
-    return event;
   }
 
-  private void processNonCachedEvent(final @NotNull SentryEvent event) {
+  private void processNonCachedEvent(final @NotNull SentryBaseEvent event) {
     setRelease(event);
     setEnvironment(event);
     setServerName(event);
     setDist(event);
     setSdk(event);
     setTags(event);
-    setThreads(event);
     mergeUser(event);
   }
 
   @Override
   public @Nullable SentryTransaction process(
       final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
-    setPlatform(transaction);
+    setCommons(transaction);
+
+    if (shouldApplyScopeData(transaction, hint)) {
+      processNonCachedEvent(transaction);
+    }
 
     return transaction;
+  }
+
+  private void setCommons(final @NotNull SentryBaseEvent event) {
+    setPlatform(event);
   }
 
   private void setPlatform(final @NotNull SentryBaseEvent event) {
@@ -138,9 +155,13 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   private void setTags(final @NotNull SentryBaseEvent event) {
-    for (final Map.Entry<String, String> tag : options.getTags().entrySet()) {
-      if (event.getTag(tag.getKey()) == null) {
-        event.setTag(tag.getKey(), tag.getValue());
+    if (event.getTags() == null) {
+      event.setTags(new HashMap<>(options.getTags()));
+    } else {
+      for (Map.Entry<String, String> item : options.getTags().entrySet()) {
+        if (!event.getTags().containsKey(item.getKey())) {
+          event.setTag(item.getKey(), item.getValue());
+        }
       }
     }
   }
