@@ -60,11 +60,7 @@ public final class MainEventProcessor implements EventProcessor {
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
     setPlatform(event);
-
-    final Throwable throwable = event.getThrowable();
-    if (throwable != null) {
-      event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
-    }
+    setExceptions(event);
 
     if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
       processNonCachedEvent(event);
@@ -81,30 +77,94 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   private void processNonCachedEvent(final @NotNull SentryEvent event) {
+    setRelease(event);
+    setEnvironment(event);
+    setServerName(event);
+    setDist(event);
+    setSdk(event);
+    setTags(event);
+    setThreads(event);
+    mergeUser(event);
+  }
+
+  @Override
+  public @Nullable SentryTransaction process(
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+    setPlatform(transaction);
+
+    return transaction;
+  }
+
+  private void setPlatform(final @NotNull SentryBaseEvent event) {
+    if (event.getPlatform() == null) {
+      // this actually means JVM related.
+      event.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
+    }
+  }
+
+  private void setRelease(final @NotNull SentryBaseEvent event) {
     if (event.getRelease() == null) {
       event.setRelease(options.getRelease());
     }
+  }
+
+  private void setEnvironment(final @NotNull SentryBaseEvent event) {
     if (event.getEnvironment() == null) {
       event.setEnvironment(
           options.getEnvironment() != null ? options.getEnvironment() : DEFAULT_ENVIRONMENT);
     }
+  }
+
+  private void setServerName(final @NotNull SentryBaseEvent event) {
     if (event.getServerName() == null) {
       event.setServerName(options.getServerName());
     }
+
+    if (options.isAttachServerName() && hostnameCache != null && event.getServerName() == null) {
+      event.setServerName(hostnameCache.getHostname());
+    }
+  }
+
+  private void setDist(final @NotNull SentryBaseEvent event) {
     if (event.getDist() == null) {
       event.setDist(options.getDist());
     }
+  }
+
+  private void setSdk(final @NotNull SentryBaseEvent event) {
     if (event.getSdk() == null) {
       event.setSdk(options.getSdkVersion());
     }
+  }
 
+  private void setTags(final @NotNull SentryBaseEvent event) {
     for (final Map.Entry<String, String> tag : options.getTags().entrySet()) {
       if (event.getTag(tag.getKey()) == null) {
         event.setTag(tag.getKey(), tag.getValue());
       }
     }
+  }
 
-    // special
+  private void mergeUser(final @NotNull SentryBaseEvent event) {
+    if (options.isSendDefaultPii()) {
+      if (event.getUser() == null) {
+        final User user = new User();
+        user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
+        event.setUser(user);
+      } else if (event.getUser().getIpAddress() == null) {
+        event.getUser().setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
+      }
+    }
+  }
+
+  private void setExceptions(final @NotNull SentryEvent event) {
+    final Throwable throwable = event.getThrowable();
+    if (throwable != null) {
+      event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
+    }
+  }
+
+  private void setThreads(final @NotNull SentryEvent event) {
     if (event.getThreads() == null) {
       // collecting threadIds that came from the exception mechanism, so we can mark threads as
       // crashed properly
@@ -131,32 +191,6 @@ public final class MainEventProcessor implements EventProcessor {
         // if there are no exceptions, exceptions have its own stack traces.
         event.setThreads(sentryThreadFactory.getCurrentThread());
       }
-    }
-    if (options.isSendDefaultPii()) {
-      if (event.getUser() == null) {
-        final User user = new User();
-        user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
-        event.setUser(user);
-      } else if (event.getUser().getIpAddress() == null) {
-        event.getUser().setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
-      }
-    }
-    if (options.isAttachServerName() && hostnameCache != null && event.getServerName() == null) {
-      event.setServerName(hostnameCache.getHostname());
-    }
-  }
-
-  @Override
-  public @Nullable SentryTransaction process(@NotNull SentryTransaction transaction, @Nullable Object hint) {
-    setPlatform(transaction);
-
-    return transaction;
-  }
-
-  private void setPlatform(final @NotNull SentryBaseEvent event) {
-    if (event.getPlatform() == null) {
-      // this actually means JVM related.
-      event.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
     }
   }
 }

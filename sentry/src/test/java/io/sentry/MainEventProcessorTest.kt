@@ -215,19 +215,22 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(sendDefaultPii = true)
         val event = SentryEvent()
         sut.process(event, null)
-        assertNotNull(event.user)
-        assertEquals("{{auto}}", event.user.ipAddress)
+        assertNotNull(event.user) {
+            assertEquals("{{auto}}", it.ipAddress)
+        }
     }
 
     @Test
     fun `when event has ip address set and sendDefaultPii is set to true, keeps original ip address`() {
         val sut = fixture.getSut(sendDefaultPii = true)
         val event = SentryEvent()
-        event.user = User()
-        event.user.ipAddress = "192.168.0.1"
+        event.user = User().apply {
+            ipAddress = "192.168.0.1"
+        }
         sut.process(event, null)
-        assertNotNull(event.user)
-        assertEquals("192.168.0.1", event.user.ipAddress)
+        assertNotNull(event.user) {
+            assertEquals("192.168.0.1", it.ipAddress)
+        }
     }
 
     @Test
@@ -236,8 +239,9 @@ class MainEventProcessorTest {
         val event = SentryEvent()
         event.user = User()
         sut.process(event, null)
-        assertNotNull(event.user)
-        assertNull(event.user.ipAddress)
+        assertNotNull(event.user) {
+            assertNull(it.ipAddress)
+        }
     }
 
     @Test

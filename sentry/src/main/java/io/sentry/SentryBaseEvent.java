@@ -5,6 +5,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.User;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -73,6 +74,9 @@ public abstract class SentryBaseEvent {
    * `ruby`
    */
   private @Nullable String platform;
+
+  /** Information about the user who triggered this event. */
+  private @Nullable User user;
 
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
@@ -231,5 +235,13 @@ public abstract class SentryBaseEvent {
 
   public void setDist(String dist) {
     this.dist = dist;
+  }
+
+  public @Nullable User getUser() {
+    return user;
+  }
+
+  public void setUser(final @Nullable User user) {
+    this.user = user;
   }
 }

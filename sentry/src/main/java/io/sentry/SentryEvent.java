@@ -54,8 +54,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    */
   private String transaction;
 
-  /** Information about the user who triggered this event. */
-  private User user;
   /**
    * Manual fingerprint override.
    *
@@ -172,14 +170,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void setTransaction(String transaction) {
     this.transaction = transaction;
-  }
-
-  public User getUser() {
-    return user;
-  }
-
-  public void setUser(User user) {
-    this.user = user;
   }
 
   public List<String> getFingerprints() {
