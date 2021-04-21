@@ -1,7 +1,9 @@
 package io.sentry.util;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class Pair<A, B> {
   private final @Nullable A first;
   private final @Nullable B second;
