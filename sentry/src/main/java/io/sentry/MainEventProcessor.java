@@ -97,7 +97,7 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @Nullable SentryTransaction process(
+  public @NotNull SentryTransaction process(
       final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     setCommons(transaction);
 

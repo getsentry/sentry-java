@@ -26,10 +26,7 @@ class MainEventProcessorTest {
             dsn = dsnString
             release = "release"
             dist = "dist"
-            sdkVersion = SdkVersion().apply {
-                name = "test"
-                version = "1.2.3"
-            }
+            sdkVersion = SdkVersion("test", "1.2.3")
         }
         val getLocalhost = mock<InetAddress>()
 

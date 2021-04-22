@@ -20,7 +20,8 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
   }
 
   @Override
-  public SentryEvent process(final @NotNull SentryEvent event, final @Nullable Object hint) {
+  public @Nullable SentryEvent process(
+      final @NotNull SentryEvent event, final @Nullable Object hint) {
     if (options.isEnableDeduplication()) {
       final Throwable throwable = event.getOriginThrowable();
       if (throwable != null) {

@@ -2,8 +2,10 @@ package io.sentry.spring;
 
 import io.sentry.EventProcessor;
 import io.sentry.IpAddressUtils;
+import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.Map;
@@ -13,7 +15,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-// TODO: check if I need to support process(SentryTransaction) here
 public final class SentryUserProviderEventProcessor implements EventProcessor {
   private final @NotNull SentryOptions options;
   private final @NotNull SentryUserProvider sentryUserProvider;
@@ -26,7 +27,20 @@ public final class SentryUserProviderEventProcessor implements EventProcessor {
   }
 
   @Override
-  public SentryEvent process(final @NotNull SentryEvent event, final @Nullable Object hint) {
+  public @NotNull SentryEvent process(
+      final @NotNull SentryEvent event, final @Nullable Object hint) {
+    mergeUser(event);
+
+    return event;
+  }
+
+  @NotNull
+  @ApiStatus.Internal
+  public SentryUserProvider getSentryUserProvider() {
+    return sentryUserProvider;
+  }
+
+  private void mergeUser(final @NotNull SentryBaseEvent event) {
     final User user = sentryUserProvider.provideUser();
     if (user != null) {
       final User existingUser = Optional.ofNullable(event.getUser()).orElseGet(User::new);
@@ -52,12 +66,13 @@ public final class SentryUserProviderEventProcessor implements EventProcessor {
         existingUser.setIpAddress(null);
       }
     }
-    return event;
   }
 
-  @NotNull
-  @ApiStatus.Internal
-  public SentryUserProvider getSentryUserProvider() {
-    return sentryUserProvider;
+  @Override
+  public @NotNull SentryTransaction process(
+      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+    mergeUser(transaction);
+
+    return transaction;
   }
 }

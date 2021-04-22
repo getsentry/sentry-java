@@ -394,7 +394,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      final @NotNull Scope scope,
+      final @Nullable Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
@@ -407,7 +407,7 @@ public final class SentryClient implements ISentryClient {
     if (shouldApplyScopeData(transaction, hint)) {
       transaction = applyScope(transaction, scope);
 
-      if (transaction != null) {
+      if (transaction != null && scope != null) {
         transaction = processTransaction(transaction, hint, scope.getEventProcessors());
       }
 
@@ -487,20 +487,6 @@ public final class SentryClient implements ISentryClient {
       if (event.getFingerprints() == null) {
         event.setFingerprints(scope.getFingerprint());
       }
-      if (event.getBreadcrumbs() == null) {
-        event.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
-      } else {
-        sortBreadcrumbsByDate(event, scope.getBreadcrumbs());
-      }
-      if (event.getExtras() == null) {
-        event.setExtras(new HashMap<>(scope.getExtras()));
-      } else {
-        for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
-          if (!event.getExtras().containsKey(item.getKey())) {
-            event.getExtras().put(item.getKey(), item.getValue());
-          }
-        }
-      }
       // Level from scope exceptionally take precedence over the event
       if (scope.getLevel() != null) {
         event.setLevel(scope.getLevel());
@@ -534,6 +520,20 @@ public final class SentryClient implements ISentryClient {
           }
         }
       }
+      if (sentryBaseEvent.getBreadcrumbs() == null) {
+        sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+      } else {
+        sortBreadcrumbsByDate(sentryBaseEvent, scope.getBreadcrumbs());
+      }
+      if (sentryBaseEvent.getExtras() == null) {
+        sentryBaseEvent.setExtras(new HashMap<>(scope.getExtras()));
+      } else {
+        for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
+          if (!sentryBaseEvent.getExtras().containsKey(item.getKey())) {
+            sentryBaseEvent.getExtras().put(item.getKey(), item.getValue());
+          }
+        }
+      }
       final Contexts contexts = sentryBaseEvent.getContexts();
       try {
         for (Map.Entry<String, Object> entry : scope.getContexts().clone().entrySet()) {
@@ -551,7 +551,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private void sortBreadcrumbsByDate(
-      final @NotNull SentryEvent event, final @NotNull Collection<Breadcrumb> breadcrumbs) {
+      final @NotNull SentryBaseEvent event, final @NotNull Collection<Breadcrumb> breadcrumbs) {
     final List<Breadcrumb> sortedBreadcrumbs = event.getBreadcrumbs();
 
     if (!breadcrumbs.isEmpty()) {

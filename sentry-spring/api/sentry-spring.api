@@ -62,6 +62,7 @@ public final class io/sentry/spring/SentryUserProviderEventProcessor : io/sentry
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/spring/SentryUserProvider;)V
 	public fun getSentryUserProvider ()Lio/sentry/spring/SentryUserProvider;
 	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public class io/sentry/spring/SentryWebConfiguration {

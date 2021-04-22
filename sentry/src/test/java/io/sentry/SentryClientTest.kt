@@ -56,10 +56,7 @@ class SentryClientTest {
 
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
-            sdkVersion = SdkVersion().apply {
-                name = "test"
-                version = "1.2.3"
-            }
+            sdkVersion = SdkVersion("test", "1.2.3")
             setDebug(true)
             setDiagnosticLevel(SentryLevel.DEBUG)
             setSerializer(GsonSerializer(this))
@@ -544,7 +541,7 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = createScope()
         val processor = mock<EventProcessor>()
-        whenever(processor.process(any(), anyOrNull())).thenReturn(event)
+        whenever(processor.process(any<SentryEvent>(), anyOrNull())).thenReturn(event)
         scope.addEventProcessor(processor)
 
         val sut = fixture.getSut()

@@ -2,3 +2,7 @@ public final class io/sentry/test/AssertionsKt {
 	public static final fun checkEvent (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
 }
 
+public final class io/sentry/test/ReflectionKt {
+	public static final fun getCtor (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
+}
+

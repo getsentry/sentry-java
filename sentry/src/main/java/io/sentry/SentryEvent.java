@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.*;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -64,18 +63,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    * <p>```json { "fingerprint": ["myrpc", "POST", "/foo.bar"] }
    */
   private List<String> fingerprint;
-
-  // TODO: should breadcrumbs be part of a transaction?
-  /** List of breadcrumbs recorded before this event. */
-  private List<Breadcrumb> breadcrumbs;
-
-  // TODO: should extras be part of a transaction?
-  /**
-   * Arbitrary extra information set by the user.
-   *
-   * <p>```json { "extra": { "my_key": 1, "some_other_value": "foo bar" } }```
-   */
-  private Map<String, Object> extra;
 
   private Map<String, Object> unknown;
   /**
@@ -181,53 +168,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void setFingerprints(List<String> fingerprint) {
     this.fingerprint = fingerprint;
-  }
-
-  public List<Breadcrumb> getBreadcrumbs() {
-    return breadcrumbs;
-  }
-
-  public void setBreadcrumbs(List<Breadcrumb> breadcrumbs) {
-    this.breadcrumbs = breadcrumbs;
-  }
-
-  public void addBreadcrumb(Breadcrumb breadcrumb) {
-    if (breadcrumbs == null) {
-      breadcrumbs = new ArrayList<>();
-    }
-    breadcrumbs.add(breadcrumb);
-  }
-
-  public void addBreadcrumb(final @Nullable String message) {
-    this.addBreadcrumb(new Breadcrumb(message));
-  }
-
-  Map<String, Object> getExtras() {
-    return extra;
-  }
-
-  public void setExtras(Map<String, Object> extra) {
-    this.extra = extra;
-  }
-
-  public void setExtra(String key, Object value) {
-    if (extra == null) {
-      extra = new HashMap<>();
-    }
-    extra.put(key, value);
-  }
-
-  public void removeExtra(@NotNull String key) {
-    if (extra != null) {
-      extra.remove(key);
-    }
-  }
-
-  public @Nullable Object getExtra(final @NotNull String key) {
-    if (extra != null) {
-      return extra.get(key);
-    }
-    return null;
   }
 
   @ApiStatus.Internal

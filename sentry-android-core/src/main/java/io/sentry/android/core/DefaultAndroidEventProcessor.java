@@ -157,9 +157,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setCommons(
-      final @NotNull SentryBaseEvent event, final boolean doIO, final boolean applyScopeData) {
+      final @NotNull SentryBaseEvent event,
+      final boolean errorEvent,
+      final boolean applyScopeData) {
     mergeUser(event);
-    setDevice(event, doIO, applyScopeData);
+    setDevice(event, errorEvent, applyScopeData);
     mergeOS(event);
     setSideLoadedInfo(event);
   }
@@ -188,9 +190,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setDevice(
-      final @NotNull SentryBaseEvent event, final boolean doIO, final boolean applyScopeData) {
+      final @NotNull SentryBaseEvent event,
+      final boolean errorEvent,
+      final boolean applyScopeData) {
     if (event.getContexts().getDevice() == null) {
-      event.getContexts().setDevice(getDevice(doIO, applyScopeData));
+      event.getContexts().setDevice(getDevice(errorEvent, applyScopeData));
     }
   }
 
@@ -337,7 +341,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   // we can get some inspiration here
   // https://github.com/flutter/plugins/blob/master/packages/device_info/android/src/main/java/io/flutter/plugins/deviceinfo/DeviceInfoPlugin.java
-  private @NotNull Device getDevice(final boolean doIO, final boolean applyScopeData) {
+  private @NotNull Device getDevice(final boolean errorEvent, final boolean applyScopeData) {
     // TODO: missing usable memory
 
     Device device = new Device();
@@ -350,7 +354,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     setArchitectures(device);
 
     // setting such values require IO hence we don't run for transactions
-    if (doIO) {
+    if (errorEvent) {
       setDeviceIO(device, applyScopeData);
     }
 
@@ -1012,7 +1016,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @Nullable SentryTransaction process(
+  public @NotNull SentryTransaction process(
       final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     final boolean applyScopeData = shouldApplyScopeData(transaction, hint);
 
