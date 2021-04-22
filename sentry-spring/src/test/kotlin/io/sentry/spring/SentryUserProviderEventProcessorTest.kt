@@ -1,7 +1,11 @@
 package io.sentry.spring
 
+import com.nhaarman.mockitokotlin2.mock
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryTracer
+import io.sentry.TransactionContext
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,10 +15,12 @@ import kotlin.test.assertNull
 class SentryUserProviderEventProcessorTest {
 
     class Fixture {
+        val sentryTracer = SentryTracer(TransactionContext("", ""), mock())
 
         fun getSut(isSendDefaultPii: Boolean = false, userProvider: () -> User?): SentryUserProviderEventProcessor {
-            val options = SentryOptions()
-            options.isSendDefaultPii = isSendDefaultPii
+            val options = SentryOptions().apply {
+                setSendDefaultPii(isSendDefaultPii)
+            }
             return SentryUserProviderEventProcessor(options, userProvider)
         }
     }
@@ -199,5 +205,14 @@ class SentryUserProviderEventProcessorTest {
         assertNotNull(result.user) {
             assertNull(it.ipAddress)
         }
+    }
+
+    @Test
+    fun `Transaction sets the user`() {
+        val processor = fixture.getSut(isSendDefaultPii = true) {
+            User()
+        }
+
+        assertNotNull(processor.process(SentryTransaction(fixture.sentryTracer), null))
     }
 }
