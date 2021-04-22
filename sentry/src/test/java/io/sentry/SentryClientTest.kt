@@ -266,7 +266,9 @@ class SentryClientTest {
         assertEquals("extra", event.extras["extra"])
         assertEquals("tags", event.tags["tags"])
         assertEquals("fp", event.fingerprints[0])
-        assertEquals("id", event.user.id)
+        assertNotNull(event.user) {
+            assertEquals("id", it.id)
+        }
         assertEquals(SentryLevel.FATAL, event.level)
         assertNotNull(event.request) {
             assertEquals("post", it.method)
@@ -324,7 +326,9 @@ class SentryClientTest {
 
         assertEquals("eventTransaction", event.transaction)
 
-        assertEquals("eventId", event.user.id)
+        assertNotNull(event.user) {
+            assertEquals("eventId", it.id)
+        }
 
         assertEquals(SentryLevel.FATAL, event.level)
     }
@@ -820,6 +824,19 @@ class SentryClientTest {
                 }
             }
         }, eq(null))
+    }
+
+    @Test
+    fun `when captureTransaction with scope, transaction should use user data`() {
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), mock()))
+        val scope = createScope()
+
+        val sut = fixture.getSut()
+
+        sut.captureTransaction(transaction, scope, null)
+        assertNotNull(transaction.user) {
+            assertEquals("id", it.id)
+        }
     }
 
     @Test

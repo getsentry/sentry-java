@@ -213,8 +213,9 @@ class DefaultAndroidEventProcessorTest {
             setUser(user)
         }
         event = sut.process(event, null)
-        assertNotNull(event.user)
-        assertNotNull(event.user.id)
+        assertNotNull(event.user) {
+            assertNotNull(it.id)
+        }
     }
 
     @Test
@@ -288,5 +289,27 @@ class DefaultAndroidEventProcessorTest {
 
         assertSame(osNoName, (event.contexts["os_1"] as OperatingSystem))
         assertEquals("Android", event.contexts.operatingSystem!!.name)
+    }
+
+    @Test
+    fun `When hint is Cached, memory data should not be applied`() {
+        val sut = fixture.getSut(context)
+
+        var event = SentryEvent()
+        event = sut.process(event, CachedEvent())
+
+        assertNull(event.contexts.device!!.freeMemory)
+        assertNull(event.contexts.device!!.isLowMemory)
+    }
+
+    @Test
+    fun `When hint is not Cached, memory data should be applied`() {
+        val sut = fixture.getSut(context)
+
+        var event = SentryEvent()
+        event = sut.process(event, null)
+
+        assertNotNull(event.contexts.device!!.freeMemory)
+        assertNotNull(event.contexts.device!!.isLowMemory)
     }
 }
