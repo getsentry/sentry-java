@@ -637,7 +637,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(span, "span is required");
     // the most inner span should be assigned to a throwable
     if (!throwableToSpan.containsKey(throwable)) {
-      this.throwableToSpan.put(throwable, span);
+      throwableToSpan.put(throwable, span);
     }
   }
 

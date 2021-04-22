@@ -29,9 +29,9 @@ fun checkTransaction(predicate: (SentryTransaction) -> Unit): SentryEnvelope {
         setSerializer(GsonSerializer(SentryOptions()))
     }
     return check {
-        val event = it.items.first().getTransaction(options.serializer)
-        if (event != null) {
-            predicate(event)
+        val transaction = it.items.first().getTransaction(options.serializer)
+        if (transaction != null) {
+            predicate(transaction)
         } else {
             throw AssertionError("transaction is null")
         }
