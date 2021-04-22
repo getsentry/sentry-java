@@ -26,7 +26,7 @@ public class CustomEventProcessor implements EventProcessor {
   }
 
   @Override
-  public SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
     final SentryRuntime runtime = new SentryRuntime();
     runtime.setVersion(javaVersion);
     runtime.setName(javaVendor);

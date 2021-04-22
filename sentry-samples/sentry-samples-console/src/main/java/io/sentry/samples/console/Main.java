@@ -1,5 +1,6 @@
 package io.sentry.samples.console;
 
+import com.sun.istack.internal.NotNull;
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
 import io.sentry.ISpan;
@@ -166,7 +167,7 @@ public class Main {
 
   private static class SomeEventProcessor implements EventProcessor {
     @Override
-    public SentryEvent process(SentryEvent event, Object hint) {
+    public @NotNull SentryEvent process(SentryEvent event, Object hint) {
       // Here you can modify the event as you need
       if (event.getLevel() != null && event.getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
         event.addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));
