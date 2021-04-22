@@ -410,7 +410,7 @@ public interface IHub {
    * @param transactionName the transaction name
    */
   @ApiStatus.Internal
-  void setSpanContext(@NotNull Throwable throwable, @NotNull ISpan span, String transactionName);
+  void setSpanContext(@NotNull Throwable throwable, @NotNull ISpan span, @NotNull String transactionName);
 
   /**
    * Gets the current active transaction or span.
