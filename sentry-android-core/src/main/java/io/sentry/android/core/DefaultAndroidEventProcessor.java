@@ -141,20 +141,25 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @Override
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
-    if (shouldApplyScopeData(event, hint)) {
+    final boolean applyScopeData = shouldApplyScopeData(event, hint);
+    if (applyScopeData) {
+      // we only set memory data if it's not a hard crash, when it's a hard crash the event is
+      // enriched on restart, so non static data might be wrong, eg lowMemory or availMem will
+      // be different if the App. crashes because of OOM.
       processNonCachedEvent(event);
       mergeDebugImages(event);
       setThreads(event);
     }
 
-    setCommons(event, true);
+    setCommons(event, true, applyScopeData);
 
     return event;
   }
 
-  private void setCommons(final @NotNull SentryBaseEvent event, final boolean doIO) {
+  private void setCommons(
+      final @NotNull SentryBaseEvent event, final boolean doIO, final boolean applyScopeData) {
     mergeUser(event);
-    setDevice(event, doIO);
+    setDevice(event, doIO, applyScopeData);
     mergeOS(event);
     setSideLoadedInfo(event);
   }
@@ -182,9 +187,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
   }
 
-  private void setDevice(final @NotNull SentryBaseEvent event, final boolean doIO) {
+  private void setDevice(
+      final @NotNull SentryBaseEvent event, final boolean doIO, final boolean applyScopeData) {
     if (event.getContexts().getDevice() == null) {
-      event.getContexts().setDevice(getDevice(doIO));
+      event.getContexts().setDevice(getDevice(doIO, applyScopeData));
     }
   }
 
@@ -331,7 +337,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   // we can get some inspiration here
   // https://github.com/flutter/plugins/blob/master/packages/device_info/android/src/main/java/io/flutter/plugins/deviceinfo/DeviceInfoPlugin.java
-  private @NotNull Device getDevice(final boolean doIO) {
+  private @NotNull Device getDevice(final boolean doIO, final boolean applyScopeData) {
     // TODO: missing usable memory
 
     Device device = new Device();
@@ -345,7 +351,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     // setting such values require IO hence we don't run for transactions
     if (doIO) {
-      setDeviceIO(device);
+      setDeviceIO(device, applyScopeData);
     }
 
     device.setOrientation(getOrientation());
@@ -380,7 +386,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return device;
   }
 
-  private void setDeviceIO(final @NotNull Device device) {
+  private void setDeviceIO(final @NotNull Device device, final boolean applyScopeData) {
     final Intent batteryIntent = getBatteryIntent();
     if (batteryIntent != null) {
       device.setBatteryLevel(getBatteryLevel(batteryIntent));
@@ -405,8 +411,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (memInfo != null) {
       // in bytes
       device.setMemorySize(getMemorySize(memInfo));
-      device.setFreeMemory(memInfo.availMem);
-      device.setLowMemory(memInfo.lowMemory);
+      if (applyScopeData) {
+        device.setFreeMemory(memInfo.availMem);
+        device.setLowMemory(memInfo.lowMemory);
+      }
       // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
       // compatibility
     }
@@ -1006,11 +1014,13 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @Override
   public @Nullable SentryTransaction process(
       final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
-    if (shouldApplyScopeData(transaction, hint)) {
+    final boolean applyScopeData = shouldApplyScopeData(transaction, hint);
+
+    if (applyScopeData) {
       processNonCachedEvent(transaction);
     }
 
-    setCommons(transaction, false);
+    setCommons(transaction, false, applyScopeData);
 
     return transaction;
   }
