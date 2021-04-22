@@ -645,7 +645,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(transactionName, "transactionName is required");
     // the most inner span should be assigned to a throwable
     if (!throwableToSpan.containsKey(throwable)) {
-      this.throwableToSpan.put(throwable, new Pair<>(span, transactionName));
+      throwableToSpan.put(throwable, new Pair<>(span, transactionName));
     }
   }
 
