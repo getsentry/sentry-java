@@ -5,7 +5,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
-import io.sentry.util.Pair
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -124,7 +123,7 @@ class SpanTest {
         span.throwable = ex
         span.finish()
 
-        verify(fixture.hub).setSpanContext(ex, Pair(span, "name"))
+        verify(fixture.hub).setSpanContext(ex, span, "name")
     }
 
     @Test
@@ -139,7 +138,7 @@ class SpanTest {
         span.finish(SpanStatus.UNKNOWN_ERROR)
 
         // call only once
-        verify(fixture.hub).setSpanContext(any(), any())
+        verify(fixture.hub).setSpanContext(any(), any(), any())
         assertEquals(SpanStatus.OK, span.status)
         assertEquals(timestamp, span.timestamp)
     }

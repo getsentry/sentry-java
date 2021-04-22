@@ -314,7 +314,7 @@ class HubTest {
         val exception = RuntimeException()
         val span = mock<Span>()
         whenever(span.spanContext).thenReturn(SpanContext("op"))
-        sut.setSpanContext(exception, io.sentry.util.Pair(span, "tx-name"))
+        sut.setSpanContext(exception, span, "tx-name")
 
         val event = SentryEvent(exception)
 
@@ -330,7 +330,7 @@ class HubTest {
         val exception = RuntimeException()
         val span = mock<Span>()
         whenever(span.spanContext).thenReturn(SpanContext("op"))
-        sut.setSpanContext(exception, io.sentry.util.Pair(span, "tx-name"))
+        sut.setSpanContext(exception, span, "tx-name")
 
         val event = SentryEvent(exception)
         val originalSpanContext = SpanContext("op")
@@ -435,7 +435,7 @@ class HubTest {
         val throwable = Throwable()
         val span = mock<Span>()
         whenever(span.spanContext).thenReturn(SpanContext("op"))
-        sut.setSpanContext(throwable, io.sentry.util.Pair(span, "tx-name"))
+        sut.setSpanContext(throwable, span, "tx-name")
 
         sut.captureException(throwable)
         verify(mockClient).captureEvent(check {
@@ -449,7 +449,7 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         val span = mock<Span>()
         whenever(span.spanContext).thenReturn(SpanContext("op"))
-        sut.setSpanContext(Throwable(), io.sentry.util.Pair(span, "tx-name"))
+        sut.setSpanContext(Throwable(), span, "tx-name")
 
         sut.captureException(Throwable())
         verify(mockClient).captureEvent(check {
@@ -1171,7 +1171,7 @@ class HubTest {
         val span = transaction.startChild("op")
         val exception = RuntimeException()
 
-        hub.setSpanContext(exception, io.sentry.util.Pair(span, "tx-name"))
+        hub.setSpanContext(exception, span, "tx-name")
         hub.captureEvent(SentryEvent(exception))
 
         verify(mockClient).captureEvent(check {

@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
-import io.sentry.util.Pair;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -407,10 +406,11 @@ public interface IHub {
    * in which trace the exception has been thrown in framework integrations.
    *
    * @param throwable the throwable
-   * @param span a pair of span context and transaction name
+   * @param span the span context
+   * @param transactionName the transaction name
    */
   @ApiStatus.Internal
-  void setSpanContext(@NotNull Throwable throwable, @NotNull Pair<ISpan, String> span);
+  void setSpanContext(@NotNull Throwable throwable, @NotNull ISpan span, String transactionName);
 
   /**
    * Gets the current active transaction or span.

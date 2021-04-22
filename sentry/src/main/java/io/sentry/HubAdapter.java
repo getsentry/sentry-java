@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
-import io.sentry.util.Pair;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -179,8 +178,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void setSpanContext(final @NotNull Throwable t, final @NotNull Pair<ISpan, String> sc) {
-    Sentry.getCurrentHub().setSpanContext(t, sc);
+  public void setSpanContext(
+      final @NotNull Throwable t,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName) {
+    Sentry.getCurrentHub().setSpanContext(t, span, transactionName);
   }
 
   @Override

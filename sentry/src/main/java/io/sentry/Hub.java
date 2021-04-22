@@ -637,12 +637,15 @@ public final class Hub implements IHub {
   @Override
   @ApiStatus.Internal
   public void setSpanContext(
-      final @NotNull Throwable throwable, final @NotNull Pair<ISpan, String> span) {
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName) {
     Objects.requireNonNull(throwable, "throwable is required");
     Objects.requireNonNull(span, "span is required");
+    Objects.requireNonNull(transactionName, "transactionName is required");
     // the most inner span should be assigned to a throwable
     if (!throwableToSpan.containsKey(throwable)) {
-      this.throwableToSpan.put(throwable, span);
+      this.throwableToSpan.put(throwable, new Pair<>(span, transactionName));
     }
   }
 
