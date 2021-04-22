@@ -81,6 +81,7 @@ public final class SentryClient implements ISentryClient {
 
       if (event == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by applyScope");
+        return SentryId.EMPTY_ID;
       }
     }
 
@@ -103,8 +104,6 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
-    SentryId sentryId = SentryId.EMPTY_ID;
-
     if (event != null) {
       if (event.getOriginThrowable() != null
           && options.containsIgnoredExceptionForType(event.getOriginThrowable())) {
@@ -114,7 +113,7 @@ public final class SentryClient implements ISentryClient {
                 SentryLevel.DEBUG,
                 "Event was dropped as the exception %s is ignored",
                 event.getOriginThrowable().getClass());
-        return sentryId;
+        return SentryId.EMPTY_ID;
       }
       event = executeBeforeSend(event, hint);
 
@@ -123,7 +122,8 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
-    if (event != null) {
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (event != null && event.getEventId() != null) {
       sentryId = event.getEventId();
     }
 
@@ -402,7 +402,10 @@ public final class SentryClient implements ISentryClient {
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
-    SentryId sentryId = transaction.getEventId();
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (transaction.getEventId() != null) {
+      sentryId = transaction.getEventId();
+    }
 
     if (shouldApplyScopeData(transaction, hint)) {
       transaction = applyScope(transaction, scope);
