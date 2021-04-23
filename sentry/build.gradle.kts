@@ -28,7 +28,7 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     errorproneJavac(Config.CompileOnly.errorProneJavac8)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-    errorprone("com.uber.nullaway:nullaway:0.9.1")
+    errorprone(Config.CompileOnly.errorProneNullAway)
 
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))

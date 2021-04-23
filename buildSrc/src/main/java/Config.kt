@@ -143,6 +143,7 @@ object Config {
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.5.1"
         val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
+        val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.1"
     }
 
     object NativePlugins {
