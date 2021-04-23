@@ -774,7 +774,7 @@ class SentryClientTest {
 
     @Test
     fun `exception thrown by an event processor is handled gracefully`() {
-        fixture.sentryOptions.addEventProcessor { _, _ -> throw RuntimeException() }
+        fixture.sentryOptions.addEventProcessor(eventProcessorThrows())
         val sut = fixture.getSut()
         sut.captureEvent(SentryEvent())
     }
@@ -1100,5 +1100,13 @@ class SentryClientTest {
 
     internal class DiskFlushNotificationHint : DiskFlushNotification {
         override fun markFlushed() {}
+    }
+
+    private fun eventProcessorThrows(): EventProcessor {
+        return object : EventProcessor {
+            override fun process(event: SentryEvent, hint: Any?): SentryEvent? {
+                throw RuntimeException()
+            }
+        }
     }
 }
