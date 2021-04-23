@@ -6,6 +6,7 @@
 * Fix: set correct transaction status for unhandled exceptions in SentryTracingFilter (#1406)
 * Fix: handle network errors in SentrySpanClientHttpRequestInterceptor (#1407)
 * Fix: set scope on transaction (#1409)
+* Fix: set status and associate events with transactions (#1426)
 * Fix: Do not set free memory and is low memory fields when it's a NDK hard crash (#1399)
 * Fix: Apply user from the scope to transaction (#1424)
 * Fix: Pass maxBreadcrumbs config. to sentry-native (#1425)

@@ -122,7 +122,7 @@ class SentryTracerTest {
         val ex = RuntimeException()
         tracer.throwable = ex
         tracer.finish()
-        verify(fixture.hub).setSpanContext(ex, tracer.root)
+        verify(fixture.hub).setSpanContext(ex, tracer.root, "name")
     }
 
     @Test
@@ -284,7 +284,7 @@ class SentryTracerTest {
         transaction.finish(SpanStatus.UNKNOWN_ERROR)
 
         // call only once
-        verify(fixture.hub).setSpanContext(ex, transaction.root)
+        verify(fixture.hub).setSpanContext(ex, transaction.root, "name")
         verify(fixture.hub).captureTransaction(check {
             assertEquals(transaction.root.spanContext, it.contexts.trace)
         })
