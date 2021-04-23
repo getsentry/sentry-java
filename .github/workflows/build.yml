@@ -29,19 +29,15 @@ jobs:
           distribution: 'adopt'
           java-version: '8'
 
-      # use sequential key when bumping dependencies till single lock file is out of preview
-      # https://docs.gradle.org/current/userguide/dependency_locking.html#single_lock_file_per_project
-      - name: Cache Gradle Caches
-        uses: actions/cache@v1
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
         with:
-          path: ~/.gradle/caches/
-          key: cache-gradle-cache-3
-
-      - name: Cache Gradle Wrapper
-        uses: actions/cache@v1
-        with:
-          path: ~/.gradle/wrapper/
-          key: cache-gradle-wrapper-3
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       # Clean, check formatting, build and do a dry release
       - name: Make all
