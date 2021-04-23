@@ -57,6 +57,5 @@ class AppTest {
         assertNotNull(clone.unknown) {
             assertEquals("unknown", it["unknown"])
         }
-
     }
 }

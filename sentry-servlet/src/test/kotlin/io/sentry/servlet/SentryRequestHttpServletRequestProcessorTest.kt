@@ -91,12 +91,14 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertNotNull(event.request) {
-            assertFalse(it.headers.containsKey("X-FORWARDED-FOR"))
-            assertFalse(it.headers.containsKey("Authorization"))
-            assertFalse(it.headers.containsKey("authorization"))
-            assertFalse(it.headers.containsKey("Cookies"))
-            assertTrue(it.headers.containsKey("some-header"))
+        assertNotNull(event.request) { request ->
+            assertNotNull(request.headers) {
+                assertFalse(it.containsKey("X-FORWARDED-FOR"))
+                assertFalse(it.containsKey("Authorization"))
+                assertFalse(it.containsKey("authorization"))
+                assertFalse(it.containsKey("Cookies"))
+                assertTrue(it.containsKey("some-header"))
+            }
         }
     }
 }
