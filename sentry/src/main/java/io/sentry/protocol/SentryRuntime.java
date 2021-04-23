@@ -6,15 +6,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class SentryRuntime implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "runtime";
 
   /** Runtime name. */
-  private String name;
+  private @Nullable String name;
   /** Runtime version string. */
-  private String version;
+  private @Nullable String version;
   /**
    * Unprocessed runtime info.
    *
@@ -22,43 +23,44 @@ public final class SentryRuntime implements IUnknownPropertiesConsumer, Cloneabl
    * Sentry will attempt to parse `name` and `version` from this string, if they are not explicitly
    * given.
    */
-  private String rawDescription;
+  private @Nullable String rawDescription;
 
   @SuppressWarnings("unused")
-  private Map<String, @NotNull Object> unknown;
+  private @Nullable Map<String, @NotNull Object> unknown;
 
-  public String getName() {
+  public @Nullable String getName() {
     return name;
   }
 
-  public void setName(String name) {
+  public void setName(final @Nullable String name) {
     this.name = name;
   }
 
-  public String getVersion() {
+  public @Nullable String getVersion() {
     return version;
   }
 
-  public void setVersion(String version) {
+  public void setVersion(final @Nullable String version) {
     this.version = version;
   }
 
-  public String getRawDescription() {
+  public @Nullable String getRawDescription() {
     return rawDescription;
   }
 
-  public void setRawDescription(String rawDescription) {
+  public void setRawDescription(final @Nullable String rawDescription) {
     this.rawDescription = rawDescription;
   }
 
   @TestOnly
+  @Nullable
   Map<String, Object> getUnknown() {
     return unknown;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, @NotNull Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 

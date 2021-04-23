@@ -56,7 +56,7 @@ public final class SentrySpan {
     return spanId;
   }
 
-  public @NotNull SpanId getParentSpanId() {
+  public @Nullable SpanId getParentSpanId() {
     return parentSpanId;
   }
 
