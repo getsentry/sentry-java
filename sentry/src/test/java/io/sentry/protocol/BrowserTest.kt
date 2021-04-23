@@ -33,6 +33,8 @@ class BrowserTest {
 
         assertEquals("browser name", clone.name)
         assertEquals("browser version", clone.version)
-        assertEquals("unknown", clone.unknown["unknown"])
+        assertNotNull(clone.unknown) {
+            assertEquals("unknown", it["unknown"])
+        }
     }
 }

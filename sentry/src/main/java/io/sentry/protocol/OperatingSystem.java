@@ -6,15 +6,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class OperatingSystem implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "os";
 
   /** Name of the operating system. */
-  private String name;
+  private @Nullable String name;
   /** Version of the operating system. */
-  private String version;
+  private @Nullable String version;
   /**
    * Unprocessed operating system info.
    *
@@ -22,77 +23,78 @@ public final class OperatingSystem implements IUnknownPropertiesConsumer, Clonea
    * runtimes, Sentry will attempt to parse `name` and `version` from this string, if they are not
    * explicitly given.
    */
-  private String rawDescription;
+  private @Nullable String rawDescription;
   /** Internal build number of the operating system. */
-  private String build;
+  private @Nullable String build;
   /**
    * Current kernel version.
    *
    * <p>This is typically the entire output of the `uname` syscall.
    */
-  private String kernelVersion;
+  private @Nullable String kernelVersion;
   /** Indicator if the OS is rooted (mobile mostly). */
-  private Boolean rooted;
+  private @Nullable Boolean rooted;
 
   @SuppressWarnings("unused")
-  private Map<String, @NotNull Object> unknown;
+  private @Nullable Map<String, @NotNull Object> unknown;
 
-  public String getName() {
+  public @Nullable String getName() {
     return name;
   }
 
-  public void setName(String name) {
+  public void setName(final @Nullable String name) {
     this.name = name;
   }
 
-  public String getVersion() {
+  public @Nullable String getVersion() {
     return version;
   }
 
-  public void setVersion(String version) {
+  public void setVersion(final @Nullable String version) {
     this.version = version;
   }
 
-  public String getRawDescription() {
+  public @Nullable String getRawDescription() {
     return rawDescription;
   }
 
-  public void setRawDescription(String rawDescription) {
+  public void setRawDescription(final @Nullable String rawDescription) {
     this.rawDescription = rawDescription;
   }
 
-  public String getBuild() {
+  public @Nullable String getBuild() {
     return build;
   }
 
-  public void setBuild(String build) {
+  public void setBuild(final @Nullable String build) {
     this.build = build;
   }
 
-  public String getKernelVersion() {
+  public @Nullable String getKernelVersion() {
     return kernelVersion;
   }
 
-  public void setKernelVersion(String kernelVersion) {
+  public void setKernelVersion(final @Nullable String kernelVersion) {
     this.kernelVersion = kernelVersion;
   }
 
-  public Boolean isRooted() {
+  public @Nullable Boolean isRooted() {
     return rooted;
   }
 
-  public void setRooted(Boolean rooted) {
+  public void setRooted(final @Nullable Boolean rooted) {
     this.rooted = rooted;
   }
 
   @TestOnly
+  @Nullable
   Map<String, Object> getUnknown() {
     return unknown;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, @NotNull Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 

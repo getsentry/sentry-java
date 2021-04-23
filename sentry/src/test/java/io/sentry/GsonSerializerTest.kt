@@ -235,7 +235,7 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        assertEquals("Europe/Vienna", actual!!.contexts.device!!.timezone.id)
+        assertEquals("Europe/Vienna", actual!!.contexts.device!!.timezone!!.id)
     }
 
     @Test
