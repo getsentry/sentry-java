@@ -87,7 +87,7 @@ public final class io/sentry/EnvelopeSender : io/sentry/IEnvelopeSender {
 }
 
 public abstract interface class io/sentry/EventProcessor {
-	public abstract fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 }
 
