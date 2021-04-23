@@ -51,9 +51,9 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
    * <p>The query string can be declared either as part of the `url`, or separately in
    * `query_string`.
    */
-  private String url;
+  private @Nullable String url;
   /** HTTP request method. */
-  private String method;
+  private @Nullable String method;
   /**
    * The query string component of the URL.
    *
@@ -63,27 +63,27 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
    * <p>If the query string is not declared and part of the `url`, Sentry moves it to the query
    * string.
    */
-  private String queryString;
+  private @Nullable String queryString;
   /**
    * Request data in any format that makes sense.
    *
    * <p>SDKs should discard large and binary bodies by default. Can be given as string or structural
    * data of any serializable format.
    */
-  private Object data;
+  private @Nullable Object data;
   /**
    * The cookie values.
    *
    * <p>Can be given unparsed as string, as dictionary, or as a list of tuples.
    */
-  private String cookies;
+  private @Nullable String cookies;
   /**
    * A dictionary of submitted headers.
    *
    * <p>If a header appears multiple times it, needs to be merged according to the HTTP standard for
    * header merging. Header names are treated case-insensitively by Sentry.
    */
-  private Map<String, String> headers;
+  private @Nullable Map<String, String> headers;
   /**
    * Server environment data, such as CGI/WSGI.
    *
@@ -92,74 +92,74 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
    *
    * <p>Sentry will explicitly look for `REMOTE_ADDR` to extract an IP address.
    */
-  private Map<String, String> env;
+  private @Nullable Map<String, String> env;
 
-  private Map<String, String> other;
+  private @Nullable Map<String, String> other;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
-  public String getUrl() {
+  public @Nullable String getUrl() {
     return url;
   }
 
-  public void setUrl(String url) {
+  public void setUrl(final @Nullable String url) {
     this.url = url;
   }
 
-  public String getMethod() {
+  public @Nullable String getMethod() {
     return method;
   }
 
-  public void setMethod(String method) {
+  public void setMethod(final @Nullable String method) {
     this.method = method;
   }
 
-  public String getQueryString() {
+  public @Nullable String getQueryString() {
     return queryString;
   }
 
-  public void setQueryString(String queryString) {
+  public void setQueryString(final @Nullable String queryString) {
     this.queryString = queryString;
   }
 
-  public Object getData() {
+  public @Nullable Object getData() {
     return data;
   }
 
-  public void setData(Object data) {
+  public void setData(final @Nullable Object data) {
     this.data = data;
   }
 
-  public String getCookies() {
+  public @Nullable String getCookies() {
     return cookies;
   }
 
-  public void setCookies(String cookies) {
+  public void setCookies(final @Nullable String cookies) {
     this.cookies = cookies;
   }
 
-  public Map<String, String> getHeaders() {
+  public @Nullable Map<String, String> getHeaders() {
     return headers;
   }
 
-  public void setHeaders(Map<String, String> headers) {
+  public void setHeaders(final @Nullable Map<String, String> headers) {
     this.headers = headers;
   }
 
-  public Map<String, String> getEnvs() {
+  public @Nullable Map<String, String> getEnvs() {
     return env;
   }
 
-  public void setEnvs(Map<String, String> env) {
+  public void setEnvs(final @Nullable Map<String, String> env) {
     this.env = env;
   }
 
-  public Map<String, String> getOthers() {
+  public @Nullable Map<String, String> getOthers() {
     return other;
   }
 
-  public void setOthers(Map<String, String> other) {
+  public void setOthers(final @Nullable Map<String, String> other) {
     this.other = other;
   }
 

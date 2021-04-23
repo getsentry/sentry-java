@@ -48,10 +48,15 @@ class AppTest {
         assertEquals("app build", clone.appBuild)
         assertEquals("app identifier", clone.appIdentifier)
         assertEquals("app name", clone.appName)
-        assertEquals(date.time, clone.appStartTime.time)
+        assertNotNull(clone.appStartTime) {
+            assertEquals(date.time, it.time)
+        }
         assertEquals("app version", clone.appVersion)
         assertEquals("build type", clone.buildType)
         assertEquals("device app hash", clone.deviceAppHash)
-        assertEquals("unknown", clone.unknown["unknown"])
+        assertNotNull(clone.unknown) {
+            assertEquals("unknown", it["unknown"])
+        }
+
     }
 }

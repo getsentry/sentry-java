@@ -7,92 +7,94 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class App implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "app";
 
   /** Version-independent application identifier, often a dotted bundle ID. */
-  private String appIdentifier;
+  private @Nullable String appIdentifier;
   /**
    * Start time of the app.
    *
    * <p>Formatted UTC timestamp when the user started the application.
    */
-  private Date appStartTime;
+  private @Nullable Date appStartTime;
   /** Application-specific device identifier. */
-  private String deviceAppHash;
+  private @Nullable String deviceAppHash;
   /** String identifying the kind of build. For example, `testflight`. */
-  private String buildType;
+  private @Nullable String buildType;
   /** Application name as it appears on the platform. */
-  private String appName;
+  private @Nullable String appName;
   /** Application version as it appears on the platform. */
-  private String appVersion;
+  private @Nullable String appVersion;
   /** Internal build ID as it appears on the platform. */
-  private String appBuild;
+  private @Nullable String appBuild;
 
   @SuppressWarnings("unused")
-  private Map<String, @NotNull Object> unknown;
+  private @Nullable Map<String, @NotNull Object> unknown;
 
-  public String getAppIdentifier() {
+  public @Nullable String getAppIdentifier() {
     return appIdentifier;
   }
 
-  public void setAppIdentifier(String appIdentifier) {
+  public void setAppIdentifier(final @Nullable String appIdentifier) {
     this.appIdentifier = appIdentifier;
   }
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-  public Date getAppStartTime() {
+  public @Nullable Date getAppStartTime() {
     final Date appStartTimeRef = appStartTime;
     return appStartTimeRef != null ? (Date) appStartTimeRef.clone() : null;
   }
 
-  public void setAppStartTime(Date appStartTime) {
+  public void setAppStartTime(final @Nullable Date appStartTime) {
     this.appStartTime = appStartTime;
   }
 
-  public String getDeviceAppHash() {
+  public @Nullable String getDeviceAppHash() {
     return deviceAppHash;
   }
 
-  public void setDeviceAppHash(String deviceAppHash) {
+  public void setDeviceAppHash(final @Nullable String deviceAppHash) {
     this.deviceAppHash = deviceAppHash;
   }
 
-  public String getBuildType() {
+  public @Nullable String getBuildType() {
     return buildType;
   }
 
-  public void setBuildType(String buildType) {
+  public void setBuildType(final @Nullable String buildType) {
     this.buildType = buildType;
   }
 
-  public String getAppName() {
+  public @Nullable String getAppName() {
     return appName;
   }
 
-  public void setAppName(String appName) {
+  public void setAppName(final @Nullable String appName) {
     this.appName = appName;
   }
 
-  public String getAppVersion() {
+  public @Nullable String getAppVersion() {
     return appVersion;
   }
 
-  public void setAppVersion(String appVersion) {
+  public void setAppVersion(final @Nullable String appVersion) {
     this.appVersion = appVersion;
   }
 
-  public String getAppBuild() {
+  public @Nullable String getAppBuild() {
     return appBuild;
   }
 
-  public void setAppBuild(String appBuild) {
+  public void setAppBuild(final @Nullable String appBuild) {
     this.appBuild = appBuild;
   }
 
   @TestOnly
+  @Nullable
   Map<String, Object> getUnknown() {
     return unknown;
   }
