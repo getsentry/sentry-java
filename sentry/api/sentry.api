@@ -127,7 +127,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
-	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;)V
+	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
@@ -165,7 +165,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
-	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;)V
+	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
@@ -218,7 +218,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setFingerprint (Ljava/util/List;)V
 	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
-	public abstract fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;)V
+	public abstract fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setTransaction (Ljava/lang/String;)V
 	public abstract fun setUser (Lio/sentry/protocol/User;)V
@@ -368,7 +368,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
-	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;)V
+	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
@@ -1869,6 +1869,12 @@ public final class io/sentry/util/LogUtils {
 
 public final class io/sentry/util/Objects {
 	public static fun requireNonNull (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class io/sentry/util/Pair {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Object;)V
+	public fun getFirst ()Ljava/lang/Object;
+	public fun getSecond ()Ljava/lang/Object;
 }
 
 public final class io/sentry/util/StringUtils {
