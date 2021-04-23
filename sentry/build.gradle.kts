@@ -1,3 +1,4 @@
+import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -27,6 +28,7 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     errorproneJavac(Config.CompileOnly.errorProneJavac8)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone("com.uber.nullaway:nullaway:0.9.1")
 
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
@@ -79,6 +81,13 @@ buildConfig {
 }
 
 val generateBuildConfig by tasks
-tasks.withType<JavaCompile>().configureEach {
+tasks.withType<JavaCompile>() {
     dependsOn(generateBuildConfig)
+    // remove the if condition if you want to run NullAway on test code
+    if (!name.toLowerCase().contains("test")) {
+        options.errorprone {
+            check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+            option("NullAway:AnnotatedPackages", "io.sentry.protocol")
+        }
+    }
 }
