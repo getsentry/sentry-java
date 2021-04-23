@@ -6,7 +6,9 @@ import org.jetbrains.annotations.Nullable;
 
 public interface EventProcessor {
   @Nullable
-  SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint);
+  default SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
+    return event;
+  }
 
   @Nullable
   default SentryTransaction process(@NotNull SentryTransaction transaction, @Nullable Object hint) {
