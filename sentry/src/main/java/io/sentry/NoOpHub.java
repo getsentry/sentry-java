@@ -140,7 +140,9 @@ public final class NoOpHub implements IHub {
 
   @Override
   public void setSpanContext(
-      final @NotNull Throwable throwable, final @NotNull ISpan spanContext) {}
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan spanContext,
+      final @NotNull String transactionName) {}
 
   @Override
   public @Nullable ISpan getSpan() {
