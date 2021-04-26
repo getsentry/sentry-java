@@ -150,7 +150,7 @@ class DefaultAndroidEventProcessorTest {
         }
         // refactor and mock data later on
         event = sut.process(event, null)
-        assertTrue(event.threads.first().isCurrent)
+        assertTrue(event.threads.first().isCurrent == true)
     }
 
     @Test
@@ -165,7 +165,7 @@ class DefaultAndroidEventProcessorTest {
         }
         // refactor and mock data later on
         event = sut.process(event, null)
-        assertFalse(event.threads.first().isCurrent)
+        assertFalse(event.threads.first().isCurrent == true)
     }
 
     @Test

@@ -3,6 +3,8 @@ package io.sentry.protocol;
 import io.sentry.IUnknownPropertiesConsumer;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A process thread of an event.
@@ -19,24 +21,24 @@ import org.jetbrains.annotations.ApiStatus;
  * {} } ] } } ```
  */
 public final class SentryThread implements IUnknownPropertiesConsumer {
-  private Long id;
-  private Integer priority;
-  private String name;
-  private String state;
-  private Boolean crashed;
-  private Boolean current;
-  private Boolean daemon;
-  private SentryStackTrace stacktrace;
+  private @Nullable Long id;
+  private @Nullable Integer priority;
+  private @Nullable String name;
+  private @Nullable String state;
+  private @Nullable Boolean crashed;
+  private @Nullable Boolean current;
+  private @Nullable Boolean daemon;
+  private @Nullable SentryStackTrace stacktrace;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
   /**
    * Gets the Id of the thread.
    *
    * @return the thread id.
    */
-  public Long getId() {
+  public @Nullable Long getId() {
     return id;
   }
 
@@ -45,7 +47,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @param id the thread id.
    */
-  public void setId(Long id) {
+  public void setId(final @Nullable Long id) {
     this.id = id;
   }
 
@@ -54,7 +56,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return the name of the thread.
    */
-  public String getName() {
+  public @Nullable String getName() {
     return name;
   }
 
@@ -63,7 +65,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @param name the name of the thread.
    */
-  public void setName(String name) {
+  public void setName(final @Nullable String name) {
     this.name = name;
   }
 
@@ -72,7 +74,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return whether it was the crashed thread.
    */
-  public Boolean isCrashed() {
+  public @Nullable Boolean isCrashed() {
     return crashed;
   }
 
@@ -81,7 +83,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @param crashed whether it was the crashed thread.
    */
-  public void setCrashed(Boolean crashed) {
+  public void setCrashed(final @Nullable Boolean crashed) {
     this.crashed = crashed;
   }
 
@@ -90,7 +92,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return whether the thread was in the foreground.
    */
-  public Boolean isCurrent() {
+  public @Nullable Boolean isCurrent() {
     return current;
   }
 
@@ -99,7 +101,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @param current whether the thread was in the foreground.
    */
-  public void setCurrent(Boolean current) {
+  public void setCurrent(final @Nullable Boolean current) {
     this.current = current;
   }
 
@@ -108,7 +110,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return the thread stacktrace.
    */
-  public SentryStackTrace getStacktrace() {
+  public @Nullable SentryStackTrace getStacktrace() {
     return stacktrace;
   }
 
@@ -117,7 +119,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @param stacktrace the thread stacktrace.
    */
-  public void setStacktrace(SentryStackTrace stacktrace) {
+  public void setStacktrace(final @Nullable SentryStackTrace stacktrace) {
     this.stacktrace = stacktrace;
   }
 
@@ -126,7 +128,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return the thread priority.
    */
-  public Integer getPriority() {
+  public @Nullable Integer getPriority() {
     return priority;
   }
 
@@ -135,7 +137,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @param priority of the thread.
    */
-  public void setPriority(Integer priority) {
+  public void setPriority(final @Nullable Integer priority) {
     this.priority = priority;
   }
 
@@ -144,7 +146,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return if this is a daemon thread.
    */
-  public Boolean isDaemon() {
+  public @Nullable Boolean isDaemon() {
     return daemon;
   }
 
@@ -153,7 +155,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @param daemon true if the thread is daemon thread. Otherwise false.
    */
-  public void setDaemon(Boolean daemon) {
+  public void setDaemon(final @Nullable Boolean daemon) {
     this.daemon = daemon;
   }
 
@@ -162,7 +164,7 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @return the state of the thread.
    */
-  public String getState() {
+  public @Nullable String getState() {
     return state;
   }
 
@@ -171,13 +173,13 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
    *
    * @param state the state of the thread.
    */
-  public void setState(String state) {
+  public void setState(final @Nullable String state) {
     this.state = state;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 }

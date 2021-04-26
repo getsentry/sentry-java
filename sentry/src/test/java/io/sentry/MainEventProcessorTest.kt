@@ -64,7 +64,9 @@ class MainEventProcessorTest {
         event = sut.process(event, null)
 
         assertSame(crashedThread.id, event.exceptions.first().threadId)
-        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed)
+        assertNotNull(event.threads) {
+            assertTrue(it.first { t -> t.id == crashedThread.id }.isCrashed == true)
+        }
         assertFalse(event.exceptions.first().mechanism.isHandled)
     }
 
@@ -76,7 +78,7 @@ class MainEventProcessorTest {
         var event = generateCrashedEvent(crashedThread)
         event = sut.process(event, null)
 
-        assertTrue(event.threads.any { it.isCrashed })
+        assertTrue(event.threads.any { it.isCrashed == true })
     }
 
     @Test
@@ -90,7 +92,7 @@ class MainEventProcessorTest {
         assertEquals("environment", event.environment)
         assertEquals("dist", event.dist)
         assertEquals("server", event.serverName)
-        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed)
+        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed == true)
     }
 
     @Test
@@ -104,7 +106,7 @@ class MainEventProcessorTest {
         assertEquals("environment", event.environment)
         assertEquals("dist", event.dist)
         assertEquals("server", event.serverName)
-        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed)
+        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed == true)
     }
 
     @Test
@@ -149,7 +151,7 @@ class MainEventProcessorTest {
         assertEquals("environment", event.environment)
         assertEquals("dist", event.dist)
         assertEquals("server", event.serverName)
-        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed)
+        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed == true)
     }
 
     @Test

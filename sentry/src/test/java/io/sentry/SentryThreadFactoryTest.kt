@@ -29,7 +29,7 @@ class SentryThreadFactoryTest {
     @Test
     fun `when currentThreads is called, current thread is marked crashed`() {
         val sut = fixture.getSut()
-        assertEquals(1, sut.getCurrentThreads(null)!!.filter { it.isCrashed }.count())
+        assertEquals(1, sut.getCurrentThreads(null)!!.filter { it.isCrashed == true }.count())
     }
 
     @Test
@@ -41,19 +41,19 @@ class SentryThreadFactoryTest {
     @Test
     fun `when currentThreads is called, some thread stack frames are captured`() {
         val sut = fixture.getSut()
-        assertTrue(sut.getCurrentThreads(null)!!.filter { it.stacktrace != null }.any { it.stacktrace.frames!!.count() > 0 })
+        assertTrue(sut.getCurrentThreads(null)!!.filter { it.stacktrace != null }.any { it.stacktrace!!.frames!!.count() > 0 })
     }
 
     @Test
     fun `when currentThreads is called, stack traces are snapshot`() {
         val sut = fixture.getSut()
-        assertTrue(sut.getCurrentThreads(null)!!.filter { it.stacktrace != null }.any { it.stacktrace.snapshot == true })
+        assertTrue(sut.getCurrentThreads(null)!!.filter { it.stacktrace != null }.any { it.stacktrace!!.snapshot == true })
     }
 
     @Test
     fun `when currentThreads and attachStacktrace is disabled, stack frames are not captured`() {
         val sut = fixture.getSut(false)
-        assertFalse(sut.getCurrentThreads(null)!!.filter { it.stacktrace != null }.any { it.stacktrace.frames!!.count() > 0 })
+        assertFalse(sut.getCurrentThreads(null)!!.filter { it.stacktrace != null }.any { it.stacktrace!!.frames!!.count() > 0 })
     }
 
     @Test
@@ -86,7 +86,7 @@ class SentryThreadFactoryTest {
 
         val threads = sut.getCurrentThreads(threadList, threadIds)
 
-        assertNotNull(threads!!.firstOrNull { it.isCrashed })
+        assertNotNull(threads!!.firstOrNull { it.isCrashed == true })
     }
 
     @Test
