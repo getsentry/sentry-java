@@ -30,9 +30,9 @@ jobs:
         run: |
           ./gradlew aggregateJavadocs
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@4.1.1
+        uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gh-pages
-          folder: build/docs/javadoc
-          clean: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: build/docs/javadoc
+          CLEAN: true
