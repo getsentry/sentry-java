@@ -41,3 +41,7 @@ checkFormat:
 # Spotless format's code
 format:
 	./gradlew spotlessApply
+
+# Binary compatibility validator
+api:
+	./gradlew apiDump

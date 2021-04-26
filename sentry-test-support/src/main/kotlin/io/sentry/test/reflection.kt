@@ -1,5 +1,7 @@
 package io.sentry.test
 
+import java.lang.reflect.Constructor
+
 inline fun <reified T : Any> T.injectForField(name: String, value: Any?) {
     T::class.java.getDeclaredField(name)
         .apply { isAccessible = true }
@@ -19,3 +21,8 @@ inline fun <reified T> Any.getProperty(name: String): T =
     }.apply {
         this.isAccessible = true
     }.get(this) as T
+
+fun String.getCtor(ctorTypes: Array<Class<*>>): Constructor<*> {
+    val clazz = Class.forName(this)
+    return clazz.getConstructor(*ctorTypes)
+}

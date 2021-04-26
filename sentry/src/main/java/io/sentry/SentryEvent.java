@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.*;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -31,23 +30,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   private final Date timestamp;
 
   private Message message;
-  /**
-   * Server or device name the event was generated on.
-   *
-   * <p>This is supposed to be a hostname.
-   */
-  private String serverName;
 
-  /**
-   * Program's distribution identifier.
-   *
-   * <p>The distribution of the application.
-   *
-   * <p>Distributions are used to disambiguate build or deployment variants of the same release of
-   * an application. For example, the dist can be the build number of an XCode build or the version
-   * code of an Android build.
-   */
-  private String dist;
   /** Logger that created the event. */
   private String logger;
   /** Threads that were active when the event occurred. */
@@ -80,15 +63,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    * <p>```json { "fingerprint": ["myrpc", "POST", "/foo.bar"] }
    */
   private List<String> fingerprint;
-  /** List of breadcrumbs recorded before this event. */
-  private List<Breadcrumb> breadcrumbs;
-
-  /**
-   * Arbitrary extra information set by the user.
-   *
-   * <p>```json { "extra": { "my_key": 1, "some_other_value": "foo bar" } }```
-   */
-  private Map<String, Object> extra;
 
   private Map<String, Object> unknown;
   /**
@@ -144,22 +118,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     this.message = message;
   }
 
-  public String getServerName() {
-    return serverName;
-  }
-
-  public void setServerName(String serverName) {
-    this.serverName = serverName;
-  }
-
-  public String getDist() {
-    return dist;
-  }
-
-  public void setDist(String dist) {
-    this.dist = dist;
-  }
-
   public String getLogger() {
     return logger;
   }
@@ -210,53 +168,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
 
   public void setFingerprints(List<String> fingerprint) {
     this.fingerprint = fingerprint;
-  }
-
-  public List<Breadcrumb> getBreadcrumbs() {
-    return breadcrumbs;
-  }
-
-  public void setBreadcrumbs(List<Breadcrumb> breadcrumbs) {
-    this.breadcrumbs = breadcrumbs;
-  }
-
-  public void addBreadcrumb(Breadcrumb breadcrumb) {
-    if (breadcrumbs == null) {
-      breadcrumbs = new ArrayList<>();
-    }
-    breadcrumbs.add(breadcrumb);
-  }
-
-  public void addBreadcrumb(final @Nullable String message) {
-    this.addBreadcrumb(new Breadcrumb(message));
-  }
-
-  Map<String, Object> getExtras() {
-    return extra;
-  }
-
-  public void setExtras(Map<String, Object> extra) {
-    this.extra = extra;
-  }
-
-  public void setExtra(String key, Object value) {
-    if (extra == null) {
-      extra = new HashMap<>();
-    }
-    extra.put(key, value);
-  }
-
-  public void removeExtra(@NotNull String key) {
-    if (extra != null) {
-      extra.remove(key);
-    }
-  }
-
-  public @Nullable Object getExtra(final @NotNull String key) {
-    if (extra != null) {
-      return extra.get(key);
-    }
-    return null;
   }
 
   @ApiStatus.Internal

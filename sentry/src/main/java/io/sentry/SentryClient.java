@@ -54,6 +54,18 @@ public final class SentryClient implements ISentryClient {
     this.random = options.getSampleRate() == null ? null : new Random();
   }
 
+  private boolean shouldApplyScopeData(
+      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
+    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      return true;
+    } else {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
+      return false;
+    }
+  }
+
   @Override
   public @NotNull SentryId captureEvent(
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
@@ -61,7 +73,7 @@ public final class SentryClient implements ISentryClient {
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+    if (shouldApplyScopeData(event, hint)) {
       // Event has already passed through here before it was cached
       // Going through again could be reading data that is no longer relevant
       // i.e proguard id, app version, threads
@@ -69,11 +81,8 @@ public final class SentryClient implements ISentryClient {
 
       if (event == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by applyScope");
+        return SentryId.EMPTY_ID;
       }
-    } else {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
     }
 
     event = processEvent(event, hint, options.getEventProcessors());
@@ -95,8 +104,6 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
-    SentryId sentryId = SentryId.EMPTY_ID;
-
     if (event != null) {
       if (event.getOriginThrowable() != null
           && options.containsIgnoredExceptionForType(event.getOriginThrowable())) {
@@ -106,7 +113,7 @@ public final class SentryClient implements ISentryClient {
                 SentryLevel.DEBUG,
                 "Event was dropped as the exception %s is ignored",
                 event.getOriginThrowable().getClass());
-        return sentryId;
+        return SentryId.EMPTY_ID;
       }
       event = executeBeforeSend(event, hint);
 
@@ -115,7 +122,8 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
-    if (event != null) {
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (event != null && event.getEventId() != null) {
       sentryId = event.getEventId();
     }
 
@@ -193,7 +201,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event,
       final @Nullable Object hint,
       final @NotNull List<EventProcessor> eventProcessors) {
-    for (EventProcessor processor : eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
       try {
         event = processor.process(event, hint);
       } catch (Exception e) {
@@ -217,6 +225,37 @@ public final class SentryClient implements ISentryClient {
       }
     }
     return event;
+  }
+
+  @Nullable
+  private SentryTransaction processTransaction(
+      @NotNull SentryTransaction transaction,
+      final @Nullable Object hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        transaction = processor.process(transaction, hint);
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing transaction by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (transaction == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Transaction was dropped by a processor: %s",
+                processor.getClass().getName());
+        break;
+      }
+    }
+    return transaction;
   }
 
   @Override
@@ -355,7 +394,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      final @NotNull Scope scope,
+      final @Nullable Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
@@ -363,17 +402,30 @@ public final class SentryClient implements ISentryClient {
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
-    SentryId sentryId = transaction.getEventId();
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (transaction.getEventId() != null) {
+      sentryId = transaction.getEventId();
+    }
 
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+    if (shouldApplyScopeData(transaction, hint)) {
       transaction = applyScope(transaction, scope);
-    } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Transaction was cached so not applying scope: %s",
-              transaction.getEventId());
+
+      if (transaction != null && scope != null) {
+        transaction = processTransaction(transaction, hint, scope.getEventProcessors());
+      }
+
+      if (transaction == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Transaction was dropped by applyScope");
+      }
+    }
+
+    if (transaction != null) {
+      transaction = processTransaction(transaction, hint, options.getEventProcessors());
+    }
+
+    if (transaction == null) {
+      options.getLogger().log(SentryLevel.DEBUG, "Transaction was dropped by Event processors.");
+      return SentryId.EMPTY_ID;
     }
 
     processTransaction(transaction);
@@ -412,27 +464,6 @@ public final class SentryClient implements ISentryClient {
 
   private @NotNull SentryTransaction processTransaction(
       final @NotNull SentryTransaction transaction) {
-    if (transaction.getPlatform() == null) {
-      transaction.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
-    }
-    if (transaction.getRelease() == null) {
-      transaction.setRelease(options.getRelease());
-    }
-    if (transaction.getEnvironment() == null) {
-      transaction.setEnvironment(options.getEnvironment());
-    }
-    if (transaction.getSdk() == null) {
-      transaction.setSdk(options.getSdkVersion());
-    }
-    if (transaction.getTags() == null) {
-      transaction.setTags(new HashMap<>(options.getTags()));
-    } else {
-      for (Map.Entry<String, String> item : options.getTags().entrySet()) {
-        if (!transaction.getTags().containsKey(item.getKey())) {
-          transaction.setTag(item.getKey(), item.getValue());
-        }
-      }
-    }
     final List<SentrySpan> unfinishedSpans = new ArrayList<>();
     for (SentrySpan span : transaction.getSpans()) {
       if (!span.isFinished()) {
@@ -452,28 +483,12 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
     if (scope != null) {
       applyScope(event, scope);
+
       if (event.getTransaction() == null) {
         event.setTransaction(scope.getTransactionName());
       }
-      if (event.getUser() == null) {
-        event.setUser(scope.getUser());
-      }
       if (event.getFingerprints() == null) {
         event.setFingerprints(scope.getFingerprint());
-      }
-      if (event.getBreadcrumbs() == null) {
-        event.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
-      } else {
-        sortBreadcrumbsByDate(event, scope.getBreadcrumbs());
-      }
-      if (event.getExtras() == null) {
-        event.setExtras(new HashMap<>(scope.getExtras()));
-      } else {
-        for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
-          if (!event.getExtras().containsKey(item.getKey())) {
-            event.getExtras().put(item.getKey(), item.getValue());
-          }
-        }
       }
       // Level from scope exceptionally take precedence over the event
       if (scope.getLevel() != null) {
@@ -508,6 +523,20 @@ public final class SentryClient implements ISentryClient {
           }
         }
       }
+      if (sentryBaseEvent.getBreadcrumbs() == null) {
+        sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+      } else {
+        sortBreadcrumbsByDate(sentryBaseEvent, scope.getBreadcrumbs());
+      }
+      if (sentryBaseEvent.getExtras() == null) {
+        sentryBaseEvent.setExtras(new HashMap<>(scope.getExtras()));
+      } else {
+        for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
+          if (!sentryBaseEvent.getExtras().containsKey(item.getKey())) {
+            sentryBaseEvent.getExtras().put(item.getKey(), item.getValue());
+          }
+        }
+      }
       final Contexts contexts = sentryBaseEvent.getContexts();
       try {
         for (Map.Entry<String, Object> entry : scope.getContexts().clone().entrySet()) {
@@ -525,7 +554,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private void sortBreadcrumbsByDate(
-      final @NotNull SentryEvent event, final @NotNull Collection<Breadcrumb> breadcrumbs) {
+      final @NotNull SentryBaseEvent event, final @NotNull Collection<Breadcrumb> breadcrumbs) {
     final List<Breadcrumb> sortedBreadcrumbs = event.getBreadcrumbs();
 
     if (!breadcrumbs.isEmpty()) {

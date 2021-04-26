@@ -221,7 +221,7 @@ class ScopeTest {
         scope.addBreadcrumb(Breadcrumb())
         scope.setTag("some", "tag")
         scope.setExtra("some", "extra")
-        scope.addEventProcessor { event, _ -> event }
+        scope.addEventProcessor(eventProcessor())
         scope.addAttachment(Attachment("path"))
 
         scope.clear()
@@ -749,6 +749,14 @@ class ScopeTest {
 
         scope.withTransaction {
             assertNull(it)
+        }
+    }
+
+    private fun eventProcessor(): EventProcessor {
+        return object : EventProcessor {
+            override fun process(event: SentryEvent, hint: Any?): SentryEvent? {
+                return event
+            }
         }
     }
 }

@@ -6,7 +6,9 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -80,6 +82,34 @@ public abstract class SentryBaseEvent {
 
   /** The captured Throwable */
   protected transient @Nullable Throwable throwable;
+
+  /**
+   * Server or device name the event was generated on.
+   *
+   * <p>This is supposed to be a hostname.
+   */
+  private String serverName;
+
+  /**
+   * Program's distribution identifier.
+   *
+   * <p>The distribution of the application.
+   *
+   * <p>Distributions are used to disambiguate build or deployment variants of the same release of
+   * an application. For example, the dist can be the build number of an XCode build or the version
+   * code of an Android build.
+   */
+  private String dist;
+
+  /** List of breadcrumbs recorded before this event. */
+  private List<Breadcrumb> breadcrumbs;
+
+  /**
+   * Arbitrary extra information set by the user.
+   *
+   * <p>```json { "extra": { "my_key": 1, "some_other_value": "foo bar" } }```
+   */
+  private Map<String, Object> extra;
 
   protected SentryBaseEvent(final @NotNull SentryId eventId) {
     this.eventId = eventId;
@@ -203,11 +233,74 @@ public abstract class SentryBaseEvent {
     this.platform = platform;
   }
 
+  public String getServerName() {
+    return serverName;
+  }
+
+  public void setServerName(String serverName) {
+    this.serverName = serverName;
+  }
+
+  public String getDist() {
+    return dist;
+  }
+
+  public void setDist(String dist) {
+    this.dist = dist;
+  }
+
   public @Nullable User getUser() {
     return user;
   }
 
   public void setUser(final @Nullable User user) {
     this.user = user;
+  }
+
+  public List<Breadcrumb> getBreadcrumbs() {
+    return breadcrumbs;
+  }
+
+  public void setBreadcrumbs(List<Breadcrumb> breadcrumbs) {
+    this.breadcrumbs = breadcrumbs;
+  }
+
+  public void addBreadcrumb(Breadcrumb breadcrumb) {
+    if (breadcrumbs == null) {
+      breadcrumbs = new ArrayList<>();
+    }
+    breadcrumbs.add(breadcrumb);
+  }
+
+  Map<String, Object> getExtras() {
+    return extra;
+  }
+
+  public void setExtras(Map<String, Object> extra) {
+    this.extra = extra;
+  }
+
+  public void setExtra(String key, Object value) {
+    if (extra == null) {
+      extra = new HashMap<>();
+    }
+    extra.put(key, value);
+  }
+
+  public void removeExtra(@NotNull String key) {
+    if (extra != null) {
+      extra.remove(key);
+    }
+  }
+
+  public @Nullable Object getExtra(final @NotNull String key) {
+    if (extra != null) {
+      return extra.get(key);
+    }
+    return null;
+  }
+
+  public void addBreadcrumb(final @Nullable String message) {
+    this.addBreadcrumb(new Breadcrumb(message));
   }
 }

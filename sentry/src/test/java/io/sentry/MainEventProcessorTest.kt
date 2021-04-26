@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import java.lang.RuntimeException
 import java.net.InetAddress
@@ -26,12 +27,10 @@ class MainEventProcessorTest {
             dsn = dsnString
             release = "release"
             dist = "dist"
-            sdkVersion = SdkVersion().apply {
-                name = "test"
-                version = "1.2.3"
-            }
+            sdkVersion = SdkVersion("test", "1.2.3")
         }
         val getLocalhost = mock<InetAddress>()
+        val sentryTracer = SentryTracer(TransactionContext("", ""), mock())
 
         fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap(), sendDefaultPii: Boolean? = null, serverName: String? = "server", host: String? = null, resolveHostDelay: Long? = null, hostnameCacheDuration: Long = 10): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
@@ -340,6 +339,36 @@ class MainEventProcessorTest {
         val event = SentryEvent()
         processor.process(event, null)
         assertEquals("optionsHost", event.serverName)
+    }
+
+    @Test
+    fun `Server name is set on transaction`() {
+        val processor = fixture.getSut(serverName = "optionsHost")
+
+        var transaction = SentryTransaction(fixture.sentryTracer)
+        transaction = processor.process(transaction, null)
+
+        assertEquals("optionsHost", transaction.serverName)
+    }
+
+    @Test
+    fun `Dist is set on transaction`() {
+        val processor = fixture.getSut()
+
+        var transaction = SentryTransaction(fixture.sentryTracer)
+        transaction = processor.process(transaction, null)
+
+        assertEquals("dist", transaction.dist)
+    }
+
+    @Test
+    fun `User is merged on transaction`() {
+        val processor = fixture.getSut(sendDefaultPii = true)
+
+        var transaction = SentryTransaction(fixture.sentryTracer)
+        transaction = processor.process(transaction, null)
+
+        assertNotNull(transaction.user)
     }
 
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {
