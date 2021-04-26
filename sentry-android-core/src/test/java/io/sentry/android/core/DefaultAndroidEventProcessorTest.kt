@@ -351,7 +351,7 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `Transaction sets device's context`() {
+    fun `Device's context is set on transactions`() {
         val sut = fixture.getSut(context)
 
         assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), null)) {
@@ -360,7 +360,7 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `Transaction sets device's OS`() {
+    fun `Device's OS is set on transactions`() {
         val sut = fixture.getSut(context)
 
         assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), null)) {

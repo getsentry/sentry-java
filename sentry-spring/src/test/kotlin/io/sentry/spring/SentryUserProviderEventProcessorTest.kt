@@ -208,11 +208,13 @@ class SentryUserProviderEventProcessorTest {
     }
 
     @Test
-    fun `Transaction sets the user`() {
+    fun `User is set on transaction`() {
         val processor = fixture.getSut(isSendDefaultPii = true) {
             User()
         }
 
-        assertNotNull(processor.process(SentryTransaction(fixture.sentryTracer), null))
+        val result = processor.process(SentryTransaction(fixture.sentryTracer), null)
+
+        assertNotNull(result.user)
     }
 }

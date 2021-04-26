@@ -342,7 +342,7 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `Transaction sets server name`() {
+    fun `Server name is set on transaction`() {
         val processor = fixture.getSut(serverName = "optionsHost")
 
         var transaction = SentryTransaction(fixture.sentryTracer)
@@ -352,7 +352,7 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `Transaction sets dist`() {
+    fun `Dist is set on transaction`() {
         val processor = fixture.getSut()
 
         var transaction = SentryTransaction(fixture.sentryTracer)
@@ -362,7 +362,7 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `Transaction merges user`() {
+    fun `User is merged on transaction`() {
         val processor = fixture.getSut(sendDefaultPii = true)
 
         var transaction = SentryTransaction(fixture.sentryTracer)
