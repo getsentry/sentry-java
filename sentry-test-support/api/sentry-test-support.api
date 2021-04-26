@@ -1,5 +1,6 @@
 public final class io/sentry/test/AssertionsKt {
 	public static final fun checkEvent (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
+	public static final fun checkTransaction (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
 }
 
 public final class io/sentry/test/ReflectionKt {

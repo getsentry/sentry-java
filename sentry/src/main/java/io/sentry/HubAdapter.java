@@ -178,8 +178,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void setSpanContext(final @NotNull Throwable t, final @NotNull ISpan sc) {
-    Sentry.getCurrentHub().setSpanContext(t, sc);
+  public void setSpanContext(
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName) {
+    Sentry.getCurrentHub().setSpanContext(throwable, span, transactionName);
   }
 
   @Override

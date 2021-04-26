@@ -12,10 +12,12 @@ import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
+import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -53,6 +55,15 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("customName")
             assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
+            assertThat(it.status).isEqualTo(SpanStatus.OK)
+        })
+    }
+
+    @Test
+    fun `when method annotated with @SentryTransaction throws exception, sets error status on transaction`() {
+        assertThrows<RuntimeException> { sampleService.methodThrowingException() }
+        verify(hub).captureTransaction(check {
+            assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
         })
     }
 
@@ -133,6 +144,9 @@ class SentryTransactionAdviceTest {
 
         @SentryTransaction(operation = "op")
         open fun methodWithoutTransactionNameSet() = Unit
+
+        @SentryTransaction(operation = "op")
+        open fun methodThrowingException(): Nothing = throw RuntimeException()
     }
 
     @SentryTransaction(operation = "op")

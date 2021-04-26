@@ -7,6 +7,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
+import io.sentry.util.Pair;
 import java.io.Closeable;
 import java.util.Collections;
 import java.util.List;
@@ -22,7 +23,7 @@ public final class Hub implements IHub {
   private volatile boolean isEnabled;
   private final @NotNull Stack stack;
   private final @NotNull TracesSampler tracesSampler;
-  private final @NotNull Map<Throwable, ISpan> throwableToSpan =
+  private final @NotNull Map<Throwable, Pair<ISpan, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
 
   public Hub(final @NotNull SentryOptions options) {
@@ -174,10 +175,13 @@ public final class Hub implements IHub {
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
     if (event.getThrowable() != null) {
-      final ISpan span = throwableToSpan.get(event.getThrowable());
-      if (span != null) {
+      final Pair<ISpan, String> pair = throwableToSpan.get(event.getThrowable());
+      if (pair != null) {
         if (event.getContexts().getTrace() == null) {
-          event.getContexts().setTrace(span.getSpanContext());
+          event.getContexts().setTrace(pair.getFirst().getSpanContext());
+        }
+        if (event.getTransaction() == null) {
+          event.setTransaction(pair.getSecond());
         }
       }
     }
@@ -632,18 +636,25 @@ public final class Hub implements IHub {
 
   @Override
   @ApiStatus.Internal
-  public void setSpanContext(final @NotNull Throwable throwable, final @NotNull ISpan span) {
+  public void setSpanContext(
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName) {
     Objects.requireNonNull(throwable, "throwable is required");
     Objects.requireNonNull(span, "span is required");
-    this.throwableToSpan.put(throwable, span);
+    Objects.requireNonNull(transactionName, "transactionName is required");
+    // the most inner span should be assigned to a throwable
+    if (!throwableToSpan.containsKey(throwable)) {
+      throwableToSpan.put(throwable, new Pair<>(span, transactionName));
+    }
   }
 
   @Nullable
   SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
-    final ISpan span = this.throwableToSpan.get(throwable);
+    final Pair<ISpan, String> span = this.throwableToSpan.get(throwable);
     if (span != null) {
-      return span.getSpanContext();
+      return span.getFirst().getSpanContext();
     }
     return null;
   }
