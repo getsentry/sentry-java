@@ -12,6 +12,7 @@ import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.spring.tracing.SentrySpan
 import io.sentry.test.checkEvent
+import io.sentry.test.checkTransaction
 import io.sentry.transport.ITransport
 import java.lang.RuntimeException
 import org.assertj.core.api.Assertions.assertThat
@@ -52,7 +53,7 @@ import org.springframework.web.bind.annotation.RestController
 @SpringBootTest(
     classes = [App::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.enable-tracing=true"]
+    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.enable-tracing=true", "sentry.traces-sample-rate=1.0"]
 )
 class SentrySpringIntegrationTest {
 
@@ -164,6 +165,20 @@ class SentrySpringIntegrationTest {
         restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
         verify(hub, never()).captureEvent(any())
+    }
+
+    @Test
+    fun `sets user on transaction`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkTransaction { transaction ->
+                assertThat(transaction.user).isNotNull()
+                assertThat(transaction.user!!.username).isEqualTo("user")
+            }, anyOrNull())
+        }
     }
 }
 

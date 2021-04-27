@@ -15,6 +15,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Deprecated: instead of using event processor for setting user on events and transactions, user
+ * should be set on the scope using {@link SentryUserFilter}.
+ */
 public final class SentryUserProviderEventProcessor implements EventProcessor {
   private final @NotNull SentryOptions options;
   private final @NotNull SentryUserProvider sentryUserProvider;

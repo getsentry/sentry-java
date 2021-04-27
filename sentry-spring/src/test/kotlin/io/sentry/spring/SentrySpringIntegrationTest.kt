@@ -3,9 +3,9 @@ package io.sentry.spring
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.ITransportFactory
@@ -13,6 +13,7 @@ import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.spring.tracing.SentryTracingConfiguration
+import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.spring.tracing.SentryTransaction
 import io.sentry.test.checkEvent
 import io.sentry.test.checkTransaction
@@ -29,9 +30,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.server.LocalServerPort
+import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Lazy
+import org.springframework.core.Ordered
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -148,7 +152,9 @@ class SentrySpringIntegrationTest {
         restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
         await.during(Duration.ofSeconds(2)).untilAsserted {
-            verifyZeroInteractions(transport)
+            verify(transport, never()).send(checkEvent { event ->
+                assertThat(event).isNotNull()
+            }, anyOrNull())
         }
     }
 
@@ -191,6 +197,20 @@ class SentrySpringIntegrationTest {
             }, anyOrNull())
         }
     }
+
+    @Test
+    fun `sets user on transaction`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/hello", String::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkTransaction { transaction ->
+                assertThat(transaction.user).isNotNull()
+                assertThat(transaction.user!!.username).isEqualTo("user")
+            }, anyOrNull())
+        }
+    }
 }
 
 @SpringBootApplication
@@ -217,13 +237,27 @@ open class App {
     open fun tracesSamplerCallback() = SentryOptions.TracesSamplerCallback {
         1.0
     }
+
+    @Bean
+    open fun sentryUserFilter(hub: IHub, @Lazy sentryUserProviders: List<SentryUserProvider>) = FilterRegistrationBean<SentryUserFilter>().apply {
+        this.filter = SentryUserFilter(hub, sentryUserProviders)
+        this.order = Ordered.LOWEST_PRECEDENCE
+    }
+
+    @Bean
+    open fun sentryTracingFilter(hub: IHub) = FilterRegistrationBean<SentryTracingFilter>().apply {
+        this.filter = SentryTracingFilter(hub)
+        this.order = Ordered.HIGHEST_PRECEDENCE
+    }
 }
 
 @Service
 open class SomeService {
 
     @SentryTransaction(operation = "bean")
-    open fun aMethod() { Thread.sleep(100) }
+    open fun aMethod() {
+        Thread.sleep(100)
+    }
 
     @SentryTransaction(operation = "bean")
     open fun aMethodThrowing() {

@@ -20,8 +20,9 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
+import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
-import io.sentry.spring.SentryUserProviderEventProcessor
+import io.sentry.spring.SpringSecuritySentryUserProvider
 import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
@@ -319,11 +320,12 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
             .withConfiguration(UserConfigurations.of(SentryUserProviderConfiguration::class.java))
             .run {
-                val options = it.getBean(SentryProperties::class.java)
-                val userProviderEventProcessors = options.eventProcessors.filterIsInstance<SentryUserProviderEventProcessor>()
-                assertEquals(2, userProviderEventProcessors.size)
-                assertTrue(userProviderEventProcessors[0].sentryUserProvider is HttpServletRequestSentryUserProvider)
-                assertTrue(userProviderEventProcessors[1].sentryUserProvider is CustomSentryUserProvider)
+                val options = it.getBean("sentryUserFilter", FilterRegistrationBean::class.java).filter as SentryUserFilter
+                val userProviderEventProcessors = options.sentryUserProviders
+                assertEquals(3, userProviderEventProcessors.size)
+                assertTrue(userProviderEventProcessors[0] is HttpServletRequestSentryUserProvider)
+                assertTrue(userProviderEventProcessors[1] is SpringSecuritySentryUserProvider)
+                assertTrue(userProviderEventProcessors[2] is CustomSentryUserProvider)
             }
     }
 
@@ -332,11 +334,12 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
             .withConfiguration(UserConfigurations.of(SentryHighestOrderUserProviderConfiguration::class.java))
             .run {
-                val options = it.getBean(SentryProperties::class.java)
-                val userProviderEventProcessors = options.eventProcessors.filterIsInstance<SentryUserProviderEventProcessor>()
-                assertEquals(2, userProviderEventProcessors.size)
-                assertTrue(userProviderEventProcessors[0].sentryUserProvider is CustomSentryUserProvider)
-                assertTrue(userProviderEventProcessors[1].sentryUserProvider is HttpServletRequestSentryUserProvider)
+                val options = it.getBean("sentryUserFilter", FilterRegistrationBean::class.java).filter as SentryUserFilter
+                val userProviderEventProcessors = options.sentryUserProviders
+                assertEquals(3, userProviderEventProcessors.size)
+                assertTrue(userProviderEventProcessors[0] is CustomSentryUserProvider)
+                assertTrue(userProviderEventProcessors[1] is HttpServletRequestSentryUserProvider)
+                assertTrue(userProviderEventProcessors[2] is SpringSecuritySentryUserProvider)
             }
     }
 

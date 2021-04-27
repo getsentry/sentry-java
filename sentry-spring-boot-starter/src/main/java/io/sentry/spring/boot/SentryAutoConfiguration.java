@@ -12,9 +12,11 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
 import io.sentry.spring.SentrySpringRequestListener;
+import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
+import io.sentry.spring.SpringSecuritySentryUserProvider;
 import io.sentry.spring.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
@@ -22,6 +24,8 @@ import io.sentry.spring.tracing.SentryTransactionPointcutConfiguration;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
 import java.util.List;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.ObjectProvider;
@@ -42,6 +46,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration(proxyBeanMethods = false)
@@ -124,6 +129,43 @@ public class SentryAutoConfiguration {
     @Import(SentryWebConfiguration.class)
     @Open
     static class SentryWebMvcConfiguration {
+
+      @Bean
+      @ConditionalOnClass(SecurityContextHolder.class)
+      @Order(1)
+      public @NotNull SpringSecuritySentryUserProvider springSecuritySentryUserProvider(
+          final @NotNull SentryOptions sentryOptions) {
+        return new SpringSecuritySentryUserProvider(sentryOptions);
+      }
+
+      /**
+       * Configures {@link SentryUserFilter}. By default it runs as the last filter in order to make
+       * sure that all potential authentication information is propagated to {@link
+       * HttpServletRequest#getUserPrincipal()}. If Spring Security is auto-configured, its order is
+       * set to run after Spring Security.
+       *
+       * @param hub the Sentry hub
+       * @param sentryProperties the Sentry properties
+       * @param sentryUserProvider the user provider
+       * @return {@link SentryUserFilter} registration bean
+       */
+      @Bean
+      @ConditionalOnBean(SentryUserProvider.class)
+      public @NotNull FilterRegistrationBean<SentryUserFilter> sentryUserFilter(
+          final @NotNull IHub hub,
+          final @NotNull SentryProperties sentryProperties,
+          final @NotNull List<SentryUserProvider> sentryUserProvider) {
+        final FilterRegistrationBean<SentryUserFilter> filter = new FilterRegistrationBean<>();
+        filter.setFilter(new SentryUserFilter(hub, sentryUserProvider));
+        filter.setOrder(resolveUserFilterOrder(sentryProperties));
+        return filter;
+      }
+
+      private @NotNull Integer resolveUserFilterOrder(
+          final @NotNull SentryProperties sentryProperties) {
+        return Optional.ofNullable(sentryProperties.getUserFilterOrder())
+            .orElse(Ordered.LOWEST_PRECEDENCE);
+      }
 
       @Bean
       public @NotNull SentryRequestResolver sentryRequestResolver(final @NotNull IHub hub) {
