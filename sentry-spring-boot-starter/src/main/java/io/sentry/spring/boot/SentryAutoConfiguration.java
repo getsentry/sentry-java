@@ -14,7 +14,6 @@ import io.sentry.spring.SentryRequestResolver;
 import io.sentry.spring.SentrySpringRequestListener;
 import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
-import io.sentry.spring.SentryUserProviderEventProcessor;
 import io.sentry.spring.SentryWebConfiguration;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
 import io.sentry.spring.tracing.SentryAdviceConfiguration;
@@ -71,7 +70,6 @@ public class SentryAutoConfiguration {
         final @NotNull List<EventProcessor> eventProcessors,
         final @NotNull List<Integration> integrations,
         final @NotNull ObjectProvider<ITransportGate> transportGate,
-        final @NotNull List<SentryUserProvider> sentryUserProviders,
         final @NotNull ObjectProvider<ITransportFactory> transportFactory,
         final @NotNull InAppIncludesResolver inAppPackagesResolver) {
       return options -> {
@@ -80,10 +78,6 @@ public class SentryAutoConfiguration {
         tracesSamplerCallback.ifAvailable(options::setTracesSampler);
         eventProcessors.forEach(options::addEventProcessor);
         integrations.forEach(options::addIntegration);
-        sentryUserProviders.forEach(
-            sentryUserProvider ->
-                options.addEventProcessor(
-                    new SentryUserProviderEventProcessor(options, sentryUserProvider)));
         transportGate.ifAvailable(options::setTransportGate);
         transportFactory.ifAvailable(options::setTransportFactory);
         inAppPackagesResolver.resolveInAppIncludes().forEach(options::addInAppInclude);
