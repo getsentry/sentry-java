@@ -30,6 +30,7 @@ class SentryOkHttpInterceptor(
             }
             response = chain.proceed(request)
             code = response.code
+            span?.status = SpanStatus.fromHttpStatusCode(code)
             return response
         } catch (e: IOException) {
             span?.apply {
@@ -38,8 +39,7 @@ class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
-            span?.finish(SpanStatus.fromHttpStatusCode(code, SpanStatus.INTERNAL_ERROR))
-
+            span?.finish()
             val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
             request.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("requestBodySize", it)
