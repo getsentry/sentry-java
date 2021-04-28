@@ -106,7 +106,7 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `OptionsConfiguration is not created if custom one with name sentryOptionsConfigurationz is provided`() {
+    fun `OptionsConfiguration is not created if custom one with name sentryOptionsConfiguration is provided`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withUserConfiguration(OverridingOptionsConfigurationConfiguration::class.java)
             .run {
