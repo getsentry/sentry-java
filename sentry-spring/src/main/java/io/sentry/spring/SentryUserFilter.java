@@ -66,7 +66,7 @@ public class SentryUserFilter implements Filter {
         if (existingUser.getOthers() == null) {
           existingUser.setOthers(new ConcurrentHashMap<>());
         }
-        for (Map.Entry<String, String> entry : userFromProvider.getOthers().entrySet()) {
+        for (final Map.Entry<String, String> entry : userFromProvider.getOthers().entrySet()) {
           existingUser.getOthers().put(entry.getKey(), entry.getValue());
         }
       }
