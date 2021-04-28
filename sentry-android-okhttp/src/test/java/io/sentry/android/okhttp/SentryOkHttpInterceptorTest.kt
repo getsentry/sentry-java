@@ -17,6 +17,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.test.fail
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -25,6 +26,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 
 class SentryOkHttpInterceptorTest {
 
@@ -38,22 +40,25 @@ class SentryOkHttpInterceptorTest {
             whenever(hub.options).thenReturn(SentryOptions())
         }
 
-        fun getSut(isSpanActive: Boolean = true, httpStatusCode: Int = 201, responseBody: String = "success"): OkHttpClient {
+        fun getSut(isSpanActive: Boolean = true, httpStatusCode: Int = 201, responseBody: String = "success", socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN): OkHttpClient {
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
-            server.enqueue(MockResponse().setBody(responseBody).setResponseCode(httpStatusCode))
+            server.enqueue(MockResponse().setBody(responseBody).setSocketPolicy(socketPolicy).setResponseCode(httpStatusCode))
             server.start()
             return OkHttpClient.Builder().addInterceptor(interceptor).build()
         }
     }
 
-    val fixture = Fixture()
+    private val fixture = Fixture()
+
+    private val getRequest = { Request.Builder().get().url(fixture.server.url("/hello")).build() }
+    private val postRequest = { Request.Builder().post("request-body".toRequestBody("text/plain".toMediaType())).url(fixture.server.url("/hello")).build() }
 
     @Test
     fun `when there is an active span, adds sentry trace header to the request`() {
         val sut = fixture.getSut()
-        sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
+        sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
     }
@@ -61,7 +66,7 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `when there is no active span, does not add sentry trace header to the request`() {
         val sut = fixture.getSut(isSpanActive = false)
-        sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
+        sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
     }
@@ -69,35 +74,42 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `does not overwrite response body`() {
         val sut = fixture.getSut()
-        val response = sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
+        val response = sut.newCall(getRequest()).execute()
         assertEquals("success", response.body?.string())
     }
 
     @Test
     fun `creates a span around the request`() {
         val sut = fixture.getSut()
-        val url = fixture.server.url("/hello")
-        sut.newCall(Request.Builder().get().url(url).build()).execute()
+        val request = getRequest()
+        sut.newCall(request).execute()
         assertEquals(1, fixture.sentryTracer.children.size)
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertEquals("http.client", httpClientSpan.operation)
-        assertEquals("GET $url", httpClientSpan.description)
+        assertEquals("GET ${request.url}", httpClientSpan.description)
         assertEquals(SpanStatus.OK, httpClientSpan.status)
     }
 
     @Test
     fun `maps http status code to SpanStatus`() {
         val sut = fixture.getSut(httpStatusCode = 400)
-        val url = fixture.server.url("/hello")
-        sut.newCall(Request.Builder().get().url(url).build()).execute()
+        sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertEquals(SpanStatus.INVALID_ARGUMENT, httpClientSpan.status)
     }
 
     @Test
+    fun `does not map unmapped http status code to SpanStatus`() {
+        val sut = fixture.getSut(httpStatusCode = 502)
+        sut.newCall(getRequest()).execute()
+        val httpClientSpan = fixture.sentryTracer.children.first()
+        assertNull(httpClientSpan.status)
+    }
+
+    @Test
     fun `adds breadcrumb when http calls succeeds`() {
         val sut = fixture.getSut(responseBody = "response body")
-        sut.newCall(Request.Builder().post("request-body".toRequestBody("text/plain".toMediaType())).url(fixture.server.url("/hello")).build()).execute()
+        sut.newCall(postRequest()).execute()
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
             assertEquals(13L, it.data["responseBodySize"])
@@ -109,7 +121,7 @@ class SentryOkHttpInterceptorTest {
     fun `adds breadcrumb when http calls results in exception`() {
         val chain = mock<Interceptor.Chain>()
         whenever(chain.proceed(any())).thenThrow(IOException())
-        whenever(chain.request()).thenReturn(Request.Builder().get().url(fixture.server.url("/hello")).build())
+        whenever(chain.request()).thenReturn(getRequest())
 
         try {
             fixture.interceptor.intercept(chain)
@@ -119,5 +131,16 @@ class SentryOkHttpInterceptorTest {
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
         })
+    }
+
+    @Test
+    fun `sets status and throwable when call results in IOException`() {
+        val sut = fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_AT_START)
+        try {
+            sut.newCall(getRequest()).execute()
+        } catch (e: IOException) {}
+        val httpClientSpan = fixture.sentryTracer.children.first()
+        assertEquals(SpanStatus.INTERNAL_ERROR, httpClientSpan.status)
+        assertTrue(httpClientSpan.throwable is IOException)
     }
 }
