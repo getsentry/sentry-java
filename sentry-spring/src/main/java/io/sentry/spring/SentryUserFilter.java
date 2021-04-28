@@ -52,7 +52,7 @@ public class SentryUserFilter implements Filter {
         user.setIpAddress(null);
       }
     }
-    hub.configureScope(scope -> scope.setUser(user));
+    hub.setUser(user);
     chain.doFilter(request, response);
   }
 

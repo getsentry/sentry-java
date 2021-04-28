@@ -1,17 +1,15 @@
 package io.sentry.spring
 
-import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
-import io.sentry.Scope
-import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.protocol.User
 import javax.servlet.FilterChain
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
@@ -22,14 +20,12 @@ class SentryUserFilterTest {
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
-        val options = SentryOptions()
-        val scope = Scope(options)
 
         fun getSut(isSendDefaultPii: Boolean = false, userProviders: List<SentryUserProvider>): SentryUserFilter {
-            val options = SentryOptions()
-            options.isSendDefaultPii = isSendDefaultPii
+            val options = SentryOptions().apply {
+                this.isSendDefaultPii = isSendDefaultPii
+            }
             whenever(hub.options).thenReturn(options)
-            whenever(hub.configureScope(any())).thenAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
             return SentryUserFilter(hub, userProviders)
         }
     }
@@ -52,9 +48,9 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        assertNotNull(fixture.scope.user) {
+        verify(fixture.hub).setUser(check {
             assertEquals(sampleUser, it)
-        }
+        })
     }
 
     @Test
@@ -65,9 +61,9 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        assertNotNull(fixture.scope.user) {
+        verify(fixture.hub).setUser(check {
             assertEquals(sampleUser, it)
-        }
+        })
     }
 
     @Test
@@ -78,9 +74,9 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        assertNotNull(fixture.scope.user) {
+        verify(fixture.hub).setUser(check {
             assertEquals(sampleUser, it)
-        }
+        })
     }
 
     @Test
@@ -97,9 +93,9 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        assertNotNull(fixture.scope.user) {
+        verify(fixture.hub).setUser(check {
             assertEquals(mapOf("key" to "value", "new-key" to "new-value"), it.others)
-        }
+        })
     }
 
     @Test
@@ -112,9 +108,9 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        assertNotNull(fixture.scope.user) {
+        verify(fixture.hub).setUser(check {
             assertEquals("192.168.0.1", it.ipAddress)
-        }
+        })
     }
 
     @Test
@@ -127,9 +123,9 @@ class SentryUserFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        assertNotNull(fixture.scope.user) {
+        verify(fixture.hub).setUser(check {
             assertNull(it.ipAddress)
-        }
+        })
     }
 
     private fun assertEquals(user1: User, user2: User) {
