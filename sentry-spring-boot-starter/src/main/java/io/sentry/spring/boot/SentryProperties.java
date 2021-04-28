@@ -26,6 +26,13 @@ public class SentryProperties extends SentryOptions {
   /** Report all or only uncaught web exceptions. */
   private int exceptionResolverOrder = 1;
 
+  /**
+   * Defines the {@link io.sentry.spring.SentryUserFilter} order. The default value is {@link
+   * org.springframework.core.Ordered.LOWEST_PRECEDENCE}, if Spring Security is auto-configured, its
+   * guaranteed to run after Spring Security filter chain.
+   */
+  private @Nullable Integer userFilterOrder;
+
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
 
@@ -67,7 +74,15 @@ public class SentryProperties extends SentryOptions {
     this.exceptionResolverOrder = exceptionResolverOrder;
   }
 
-  public Logging getLogging() {
+  public @Nullable Integer getUserFilterOrder() {
+    return userFilterOrder;
+  }
+
+  public void setUserFilterOrder(final @Nullable Integer userFilterOrder) {
+    this.userFilterOrder = userFilterOrder;
+  }
+
+  public @NotNull Logging getLogging() {
     return logging;
   }
 
