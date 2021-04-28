@@ -56,17 +56,17 @@ public class SentryUserFilter implements Filter {
     chain.doFilter(request, response);
   }
 
-  private void apply(final @NotNull User existingUser, final @Nullable User user) {
-    if (user != null) {
-      Optional.ofNullable(user.getEmail()).ifPresent(existingUser::setEmail);
-      Optional.ofNullable(user.getId()).ifPresent(existingUser::setId);
-      Optional.ofNullable(user.getIpAddress()).ifPresent(existingUser::setIpAddress);
-      Optional.ofNullable(user.getUsername()).ifPresent(existingUser::setUsername);
-      if (user.getOthers() != null && !user.getOthers().isEmpty()) {
+  private void apply(final @NotNull User existingUser, final @Nullable User userFromProvider) {
+    if (userFromProvider != null) {
+      Optional.ofNullable(userFromProvider.getEmail()).ifPresent(existingUser::setEmail);
+      Optional.ofNullable(userFromProvider.getId()).ifPresent(existingUser::setId);
+      Optional.ofNullable(userFromProvider.getIpAddress()).ifPresent(existingUser::setIpAddress);
+      Optional.ofNullable(userFromProvider.getUsername()).ifPresent(existingUser::setUsername);
+      if (userFromProvider.getOthers() != null && !userFromProvider.getOthers().isEmpty()) {
         if (existingUser.getOthers() == null) {
           existingUser.setOthers(new ConcurrentHashMap<>());
         }
-        for (Map.Entry<String, String> entry : user.getOthers().entrySet()) {
+        for (Map.Entry<String, String> entry : userFromProvider.getOthers().entrySet()) {
           existingUser.getOthers().put(entry.getKey(), entry.getValue());
         }
       }
