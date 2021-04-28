@@ -127,7 +127,8 @@ class SentrySpringIntegrationTest {
                 assertThat(event.exceptions).isNotEmpty
                 val ex = event.exceptions.first()
                 assertThat(ex.value).isEqualTo("something went wrong")
-                assertThat(ex.mechanism.isHandled).isFalse()
+                assertThat(ex.mechanism).isNotNull()
+                assertThat(ex.mechanism!!.isHandled).isFalse()
             }, anyOrNull())
         }
     }

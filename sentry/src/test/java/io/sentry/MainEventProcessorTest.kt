@@ -66,7 +66,9 @@ class MainEventProcessorTest {
         assertNotNull(event.threads) {
             assertTrue(it.first { t -> t.id == crashedThread.id }.isCrashed == true)
         }
-        assertFalse(event.exceptions.first().mechanism.isHandled)
+        assertNotNull(event.exceptions.first().mechanism) {
+            assertFalse(it.isHandled)
+        }
     }
 
     @Test

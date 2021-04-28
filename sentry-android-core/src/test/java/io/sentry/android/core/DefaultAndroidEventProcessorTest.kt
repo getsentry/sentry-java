@@ -106,8 +106,10 @@ class DefaultAndroidEventProcessorTest {
 
         assertNotNull(sut.process(SentryEvent(), null)) {
             assertNotNull(it.contexts.app)
-            assertEquals("test", it.debugMeta.images[0].uuid)
             assertNotNull(it.dist)
+            assertNotNull(it.debugMeta.images) { images ->
+                assertEquals("test", images[0].uuid)
+            }
         }
     }
 
@@ -129,7 +131,9 @@ class DefaultAndroidEventProcessorTest {
         }
 
         assertNotNull(sut.process(event, null)) {
-            assertEquals("test", it.debugMeta.images[0].uuid)
+            assertNotNull(it.debugMeta.images) { images ->
+                assertEquals("test", images[0].uuid)
+            }
         }
     }
 
@@ -148,8 +152,10 @@ class DefaultAndroidEventProcessorTest {
         }
 
         assertNotNull(sut.process(event, null)) {
-            assertEquals("abc", it.debugMeta.images.first().uuid)
-            assertEquals("test", it.debugMeta.images.last().uuid)
+            assertNotNull(it.debugMeta.images) { images ->
+                assertEquals("abc", images.first().uuid)
+                assertEquals("test", images.last().uuid)
+            }
         }
     }
 
