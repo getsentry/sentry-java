@@ -3,6 +3,7 @@ package io.sentry.samples.spring;
 import io.sentry.spring.tracing.SentryTracingFilter;
 import javax.servlet.Filter;
 import org.springframework.web.filter.DelegatingFilterProxy;
+import org.springframework.web.filter.RequestContextFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 public class AppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
@@ -30,6 +31,15 @@ public class AppInitializer extends AbstractAnnotationConfigDispatcherServletIni
     // filter required by Spring Security
     DelegatingFilterProxy springSecurityFilterChain = new DelegatingFilterProxy();
     springSecurityFilterChain.setTargetBeanName("springSecurityFilterChain");
-    return new Filter[] {sentryTracingFilter, springSecurityFilterChain};
+    // sets request on RequestContextHolder
+    RequestContextFilter requestContextFilter = new RequestContextFilter();
+
+    // sets Sentry user on the scope
+    DelegatingFilterProxy sentryUserFilterProxy = new DelegatingFilterProxy();
+    sentryUserFilterProxy.setTargetBeanName("sentryUserFilter");
+
+    return new Filter[] {
+      sentryTracingFilter, springSecurityFilterChain, requestContextFilter, sentryUserFilterProxy
+    };
   }
 }
