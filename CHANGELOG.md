@@ -12,7 +12,7 @@
 * Fix: Pass maxBreadcrumbs config. to sentry-native (#1425)
 * Fix: Run event processors and enrich transactions with contexts (#1430)
 * Bump: sentry-native to 0.4.9 (#1431)
-* Fix: Set user on transaction (#1443)
+* Fix: Set user on transaction in Spring & Spring Boot integrations (#1443)
 
 # 4.4.0-alpha.2
 
