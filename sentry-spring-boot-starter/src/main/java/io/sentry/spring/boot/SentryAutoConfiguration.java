@@ -124,6 +124,14 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryWebMvcConfiguration {
 
+      /**
+       * Configures {@link SpringSecuritySentryUserProvider} only if Spring Security is on the
+       * classpath. Its order is set to be higher than {@link
+       * SentryWebConfiguration#httpServletRequestSentryUserProvider(SentryOptions)}
+       *
+       * @param sentryOptions the Sentry options
+       * @return {@link SpringSecuritySentryUserProvider}
+       */
       @Bean
       @ConditionalOnClass(SecurityContextHolder.class)
       @Order(1)
