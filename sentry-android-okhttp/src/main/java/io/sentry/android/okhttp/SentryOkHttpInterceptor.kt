@@ -32,7 +32,10 @@ class SentryOkHttpInterceptor(
             code = response.code
             return response
         } catch (e: IOException) {
-            span?.throwable = e
+            span?.apply {
+                this.throwable = e
+                this.status = SpanStatus.INTERNAL_ERROR
+            }
             throw e
         } finally {
             span?.finish(SpanStatus.fromHttpStatusCode(code, SpanStatus.INTERNAL_ERROR))

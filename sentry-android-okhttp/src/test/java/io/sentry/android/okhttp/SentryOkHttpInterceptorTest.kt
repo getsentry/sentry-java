@@ -17,6 +17,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.test.fail
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -25,6 +26,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 
 class SentryOkHttpInterceptorTest {
 
@@ -38,11 +40,11 @@ class SentryOkHttpInterceptorTest {
             whenever(hub.options).thenReturn(SentryOptions())
         }
 
-        fun getSut(isSpanActive: Boolean = true, httpStatusCode: Int = 201, responseBody: String = "success"): OkHttpClient {
+        fun getSut(isSpanActive: Boolean = true, httpStatusCode: Int = 201, responseBody: String = "success", socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN): OkHttpClient {
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
-            server.enqueue(MockResponse().setBody(responseBody).setResponseCode(httpStatusCode))
+            server.enqueue(MockResponse().setBody(responseBody).setSocketPolicy(socketPolicy).setResponseCode(httpStatusCode))
             server.start()
             return OkHttpClient.Builder().addInterceptor(interceptor).build()
         }
@@ -119,5 +121,16 @@ class SentryOkHttpInterceptorTest {
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
         })
+    }
+
+    @Test
+    fun `sets status and throwable when call results in IOException`() {
+        val sut = fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_AT_START)
+        try {
+            sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
+        } catch (e: IOException) {}
+        val httpClientSpan = fixture.sentryTracer.children.first()
+        assertEquals(SpanStatus.INTERNAL_ERROR, httpClientSpan.status)
+        assertTrue(httpClientSpan.throwable is IOException)
     }
 }
