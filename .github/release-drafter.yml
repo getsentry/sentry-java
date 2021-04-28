@@ -1,8 +1,0 @@
-template: |
-  ## What’s Changed
-
-  $CHANGES
-
-  Packages were released on [mavenCentral](https://repo.maven.apache.org/maven2/io/sentry/)
-
-  We'd love to get feedback.

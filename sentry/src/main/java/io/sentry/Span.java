@@ -94,7 +94,7 @@ public final class Span implements ISpan {
     this.context.setStatus(status);
     timestamp = DateUtils.getCurrentDateTime();
     if (throwable != null) {
-      hub.setSpanContext(throwable, this);
+      hub.setSpanContext(throwable, this, this.transaction.getName());
     }
   }
 

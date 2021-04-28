@@ -3,6 +3,7 @@ package io.sentry.samples.spring.boot;
 import io.sentry.EventProcessor;
 import io.sentry.SentryEvent;
 import io.sentry.protocol.SentryRuntime;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +26,7 @@ public class CustomEventProcessor implements EventProcessor {
   }
 
   @Override
-  public SentryEvent process(SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
     final SentryRuntime runtime = new SentryRuntime();
     runtime.setVersion(javaVersion);
     runtime.setName(javaVendor);

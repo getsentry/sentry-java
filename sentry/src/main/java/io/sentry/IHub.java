@@ -402,14 +402,16 @@ public interface IHub {
   SentryTraceHeader traceHeaders();
 
   /**
-   * Associates {@link ISpan} with the {@link Throwable}. Used to determine in which trace the
-   * exception has been thrown in framework integrations.
+   * Associates {@link ISpan} and the transaction name with the {@link Throwable}. Used to determine
+   * in which trace the exception has been thrown in framework integrations.
    *
    * @param throwable the throwable
    * @param span the span context
+   * @param transactionName the transaction name
    */
   @ApiStatus.Internal
-  void setSpanContext(@NotNull Throwable throwable, @NotNull ISpan span);
+  void setSpanContext(
+      @NotNull Throwable throwable, @NotNull ISpan span, @NotNull String transactionName);
 
   /**
    * Gets the current active transaction or span.
