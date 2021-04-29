@@ -83,11 +83,8 @@ buildConfig {
 val generateBuildConfig by tasks
 tasks.withType<JavaCompile>() {
     dependsOn(generateBuildConfig)
-    // remove the if condition if you want to run NullAway on test code
-    if (!name.toLowerCase().contains("test")) {
-        options.errorprone {
-            check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
-            option("NullAway:AnnotatedPackages", "io.sentry.protocol")
-        }
+    options.errorprone {
+        check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+        option("NullAway:AnnotatedPackages", "io.sentry.protocol")
     }
 }

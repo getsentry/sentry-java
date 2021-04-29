@@ -79,7 +79,7 @@ class SentryExceptionFactoryTest {
         val sentryExceptions = fixture.getSut().getSentryExceptions(throwable)
         assertNotNull(sentryExceptions[0].mechanism) {
             assertEquals("anr", it.type)
-            assertFalse(it.isHandled)
+            assertFalse(it.isHandled!!)
         }
         assertNull(sentryExceptions[0].stacktrace?.snapshot)
     }

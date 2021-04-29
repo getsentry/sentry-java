@@ -77,7 +77,7 @@ class UncaughtExceptionHandlerIntegrationTest {
             val e = (invocation.arguments[1] as ExceptionMechanismException)
             assertNotNull(e)
             assertNotNull(e.exceptionMechanism)
-            assertTrue(e.exceptionMechanism.isHandled)
+            assertTrue(e.exceptionMechanism.isHandled!!)
             SentryId.EMPTY_ID
         }
         val options = SentryOptions().noFlushTimeout()

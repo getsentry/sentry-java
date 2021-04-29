@@ -176,7 +176,7 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 

@@ -3,6 +3,7 @@ package io.sentry.protocol;
 import io.sentry.IUnknownPropertiesConsumer;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
  * well as mechanism-specific values.
  */
 public final class Mechanism implements IUnknownPropertiesConsumer {
-  private final transient Thread thread;
+  private final transient @Nullable Thread thread;
   /**
    * Mechanism type (required).
    *
@@ -24,15 +25,15 @@ public final class Mechanism implements IUnknownPropertiesConsumer {
    * <p>In the Python SDK this is merely the name of the framework integration that produced the
    * exception, while for native it is e.g. `"minidump"` or `"applecrashreport"`.
    */
-  private String type;
+  private @Nullable String type;
   /**
    * Optional human-readable description of the error mechanism.
    *
    * <p>May include a possible hint on how to solve this error.
    */
-  private String description;
+  private @Nullable String description;
   /** Link to online resources describing this error. */
-  private String helpLink;
+  private @Nullable String helpLink;
   /**
    * Flag indicating whether this exception was handled.
    *
@@ -45,94 +46,95 @@ public final class Mechanism implements IUnknownPropertiesConsumer {
    * <p>- Exceptions captured using `capture_exception` (called from user code) are `handled=true`
    * as the user explicitly captured the exception (and therefore kind of handled it)
    */
-  private Boolean handled;
+  private @Nullable Boolean handled;
   /** Operating system or runtime meta information. */
-  private Map<String, Object> meta;
+  private @Nullable Map<String, Object> meta;
   /**
    * Arbitrary extra data that might help the user understand the error thrown by this mechanism.
    */
-  private Map<String, Object> data;
+  private @Nullable Map<String, Object> data;
   /**
    * If this is set then the exception is not a real exception but some form of synthetic error for
    * instance from a signal handler, a hard segfault or similar where type and value are not useful
    * for grouping or display purposes.
    */
-  private Boolean synthetic;
+  private @Nullable Boolean synthetic;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
   public Mechanism() {
     this(null);
   }
 
-  public Mechanism(@Nullable Thread thread) {
+  public Mechanism(final @Nullable Thread thread) {
     this.thread = thread;
   }
 
-  public String getType() {
+  public @Nullable String getType() {
     return type;
   }
 
-  public void setType(String type) {
+  public void setType(final @Nullable String type) {
     this.type = type;
   }
 
-  public String getDescription() {
+  public @Nullable String getDescription() {
     return description;
   }
 
-  public void setDescription(String description) {
+  public void setDescription(final @Nullable String description) {
     this.description = description;
   }
 
-  public String getHelpLink() {
+  public @Nullable String getHelpLink() {
     return helpLink;
   }
 
-  public void setHelpLink(String helpLink) {
+  public void setHelpLink(final @Nullable String helpLink) {
     this.helpLink = helpLink;
   }
 
-  public Boolean isHandled() {
+  public @Nullable Boolean isHandled() {
     return handled;
   }
 
-  public void setHandled(Boolean handled) {
+  public void setHandled(final @Nullable Boolean handled) {
     this.handled = handled;
   }
 
-  public Map<String, Object> getMeta() {
+  public @Nullable Map<String, Object> getMeta() {
     return meta;
   }
 
-  public void setMeta(Map<String, Object> meta) {
+  public void setMeta(final @Nullable Map<String, Object> meta) {
     this.meta = meta;
   }
 
-  public Map<String, Object> getData() {
+  public @Nullable Map<String, Object> getData() {
     return data;
   }
 
-  public void setData(Map<String, Object> data) {
+  public void setData(final @Nullable Map<String, Object> data) {
     this.data = data;
   }
 
+  @Nullable
   Thread getThread() {
     return thread;
   }
 
-  public Boolean getSynthetic() {
+  public @Nullable Boolean getSynthetic() {
     return synthetic;
   }
 
-  public void setSynthetic(Boolean synthetic) {
+  public void setSynthetic(final @Nullable Boolean synthetic) {
     this.synthetic = synthetic;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 }

@@ -352,7 +352,7 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, @NotNull Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
