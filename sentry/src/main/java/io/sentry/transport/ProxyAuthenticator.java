@@ -4,6 +4,7 @@ import io.sentry.util.Objects;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 final class ProxyAuthenticator extends Authenticator {
   private final @NotNull String user;
@@ -21,18 +22,18 @@ final class ProxyAuthenticator extends Authenticator {
   }
 
   @Override
-  protected PasswordAuthentication getPasswordAuthentication() {
+  protected @Nullable PasswordAuthentication getPasswordAuthentication() {
     if (getRequestorType() == RequestorType.PROXY) {
       return new PasswordAuthentication(user, password.toCharArray());
     }
     return null;
   }
 
-  String getUser() {
+  @NotNull String getUser() {
     return user;
   }
 
-  String getPassword() {
+  @NotNull String getPassword() {
     return password;
   }
 }

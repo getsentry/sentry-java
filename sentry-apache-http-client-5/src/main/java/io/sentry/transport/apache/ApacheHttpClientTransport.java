@@ -25,6 +25,7 @@ import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.io.CloseMode;
 import org.apache.hc.core5.util.TimeValue;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * {@link ITransport} implementation that executes request asynchronously in a non-blocking manner
@@ -62,7 +63,7 @@ public final class ApacheHttpClientTransport implements ITransport {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public void send(SentryEnvelope envelope, Object hint) throws IOException {
+  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint) throws IOException {
     if (isSchedulingAllowed()) {
       final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
 
