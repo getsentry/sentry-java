@@ -19,7 +19,7 @@ public final class CollectionUtils {
    * @param data the Iterable
    * @return iterator size
    */
-  public static int size(Iterable<?> data) {
+  public static int size(final @NotNull Iterable<?> data) {
     if (data instanceof Collection) {
       return ((Collection<?>) data).size();
     }
