@@ -1,4 +1,5 @@
 import java.math.BigDecimal
+import java.util.Locale
 
 object Config {
     val kotlinVersion = "1.4.30"
@@ -23,7 +24,7 @@ object Config {
 
         fun shouldSignArtifacts(version: String): Boolean {
             return !(System.getenv("CI")?.toBoolean() ?: false) &&
-                    !version.toUpperCase().endsWith("SNAPSHOT")
+                    !version.toUpperCase(Locale.ROOT).endsWith("SNAPSHOT")
         }
     }
 
