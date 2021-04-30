@@ -133,7 +133,8 @@ class SentrySpringIntegrationTest {
 
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
-                assertThat(event.message.message).isEqualTo("event from logger")
+                assertThat(event.message).isNotNull()
+                assertThat(event.message!!.message).isEqualTo("event from logger")
             }, anyOrNull())
         }
     }

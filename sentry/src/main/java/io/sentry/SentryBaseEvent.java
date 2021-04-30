@@ -47,7 +47,7 @@ public abstract class SentryBaseEvent {
    *
    * <p>A map or list of tags for this event. Each tag must be less than 200 characters.
    */
-  private Map<String, String> tags;
+  private @Nullable Map<String, String> tags;
 
   /**
    * The release version of the application.
@@ -55,14 +55,14 @@ public abstract class SentryBaseEvent {
    * <p>**Release versions must be unique across all projects in your organization.** This value can
    * be the git SHA for the given project, or a product identifier with a semantic version.
    */
-  private String release;
+  private @Nullable String release;
 
   /**
    * The environment name, such as `production` or `staging`.
    *
    * <p>```json { "environment": "production" } ```
    */
-  private String environment;
+  private @Nullable String environment;
 
   /**
    * Platform identifier of this event (defaults to "other").
@@ -88,7 +88,7 @@ public abstract class SentryBaseEvent {
    *
    * <p>This is supposed to be a hostname.
    */
-  private String serverName;
+  private @Nullable String serverName;
 
   /**
    * Program's distribution identifier.
@@ -99,17 +99,17 @@ public abstract class SentryBaseEvent {
    * an application. For example, the dist can be the build number of an XCode build or the version
    * code of an Android build.
    */
-  private String dist;
+  private @Nullable String dist;
 
   /** List of breadcrumbs recorded before this event. */
-  private List<Breadcrumb> breadcrumbs;
+  private @Nullable List<Breadcrumb> breadcrumbs;
 
   /**
    * Arbitrary extra information set by the user.
    *
    * <p>```json { "extra": { "my_key": 1, "some_other_value": "foo bar" } }```
    */
-  private Map<String, Object> extra;
+  private @Nullable Map<String, Object> extra;
 
   protected SentryBaseEvent(final @NotNull SentryId eventId) {
     this.eventId = eventId;
@@ -181,11 +181,11 @@ public abstract class SentryBaseEvent {
   }
 
   @ApiStatus.Internal
-  public Map<String, String> getTags() {
+  public @Nullable Map<String, String> getTags() {
     return tags;
   }
 
-  public void setTags(Map<String, String> tags) {
+  public void setTags(@Nullable Map<String, String> tags) {
     this.tags = tags;
   }
 
@@ -202,26 +202,26 @@ public abstract class SentryBaseEvent {
     return null;
   }
 
-  public void setTag(String key, String value) {
+  public void setTag(final @NotNull String key, final @NotNull String value) {
     if (tags == null) {
       tags = new HashMap<>();
     }
     tags.put(key, value);
   }
 
-  public String getRelease() {
+  public @Nullable String getRelease() {
     return release;
   }
 
-  public void setRelease(String release) {
+  public void setRelease(final @Nullable String release) {
     this.release = release;
   }
 
-  public String getEnvironment() {
+  public @Nullable String getEnvironment() {
     return environment;
   }
 
-  public void setEnvironment(String environment) {
+  public void setEnvironment(final @Nullable String environment) {
     this.environment = environment;
   }
 
@@ -233,19 +233,19 @@ public abstract class SentryBaseEvent {
     this.platform = platform;
   }
 
-  public String getServerName() {
+  public @Nullable String getServerName() {
     return serverName;
   }
 
-  public void setServerName(String serverName) {
+  public void setServerName(final @Nullable String serverName) {
     this.serverName = serverName;
   }
 
-  public String getDist() {
+  public @Nullable String getDist() {
     return dist;
   }
 
-  public void setDist(String dist) {
+  public void setDist(final @Nullable String dist) {
     this.dist = dist;
   }
 
@@ -257,15 +257,15 @@ public abstract class SentryBaseEvent {
     this.user = user;
   }
 
-  public List<Breadcrumb> getBreadcrumbs() {
+  public @Nullable List<Breadcrumb> getBreadcrumbs() {
     return breadcrumbs;
   }
 
-  public void setBreadcrumbs(List<Breadcrumb> breadcrumbs) {
+  public void setBreadcrumbs(final @Nullable List<Breadcrumb> breadcrumbs) {
     this.breadcrumbs = breadcrumbs;
   }
 
-  public void addBreadcrumb(Breadcrumb breadcrumb) {
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
     if (breadcrumbs == null) {
       breadcrumbs = new ArrayList<>();
     }
@@ -276,18 +276,18 @@ public abstract class SentryBaseEvent {
     return extra;
   }
 
-  public void setExtras(Map<String, Object> extra) {
+  public void setExtras(final @Nullable Map<String, Object> extra) {
     this.extra = extra;
   }
 
-  public void setExtra(String key, Object value) {
+  public void setExtra(final @NotNull String key, final @NotNull Object value) {
     if (extra == null) {
       extra = new HashMap<>();
     }
     extra.put(key, value);
   }
 
-  public void removeExtra(@NotNull String key) {
+  public void removeExtra(final @NotNull String key) {
     if (extra != null) {
       extra.remove(key);
     }

@@ -160,7 +160,7 @@ class SentryClientTest {
         sut.captureEvent(actual)
         verify(fixture.transport).send(check {
             val event = getEventFromData(it.items.first().data)
-            assertEquals("test", event.tags["test"])
+            assertEquals("test", event.tags!!["test"])
         }, anyOrNull())
         verifyNoMoreInteractions(fixture.transport)
     }
@@ -175,10 +175,12 @@ class SentryClientTest {
         val actual = SentryEvent()
         sut.captureEvent(actual)
 
-        assertEquals("test", actual.breadcrumbs.first().data["sentry:message"])
-        assertEquals("SentryClient", actual.breadcrumbs.first().category)
-        assertEquals(SentryLevel.ERROR, actual.breadcrumbs.first().level)
-        assertEquals("BeforeSend callback failed.", actual.breadcrumbs.first().message)
+        assertNotNull(actual.breadcrumbs) {
+            assertEquals("test", it.first().data["sentry:message"])
+            assertEquals("SentryClient", it.first().category)
+            assertEquals(SentryLevel.ERROR, it.first().level)
+            assertEquals("BeforeSend callback failed.", it.first().message)
+        }
     }
 
     @Test
@@ -198,7 +200,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val actual = "actual message"
         sut.captureMessage(actual, null)
-        assertEquals(actual, sentEvent!!.message.formatted)
+        assertEquals(actual, sentEvent!!.message!!.formatted)
     }
 
     @Test
@@ -260,9 +262,9 @@ class SentryClientTest {
         val sut = fixture.getSut()
 
         sut.captureEvent(event, scope)
-        assertEquals("message", event.breadcrumbs[0].message)
+        assertEquals("message", event.breadcrumbs!![0].message)
         assertEquals("extra", event.extras["extra"])
-        assertEquals("tags", event.tags["tags"])
+        assertEquals("tags", event.tags!!["tags"])
         assertEquals("fp", event.fingerprints[0])
         assertNotNull(event.user) {
             assertEquals("id", it.id)
@@ -291,9 +293,11 @@ class SentryClientTest {
 
         sut.captureEvent(event, scope)
 
-        assertSame(b1, event.breadcrumbs[0])
-        assertSame(b2, event.breadcrumbs[1])
-        assertSame(b3, event.breadcrumbs[2])
+        assertNotNull(event.breadcrumbs) {
+            assertSame(b1, it[0])
+            assertSame(b2, it[1])
+            assertSame(b3, it[2])
+        }
     }
 
     @Test
@@ -307,16 +311,20 @@ class SentryClientTest {
         sut.captureEvent(event, scope)
 
         // breadcrumbs are appending
-        assertEquals("eventMessage", event.breadcrumbs[0].message)
-        assertEquals("message", event.breadcrumbs[1].message)
+        assertNotNull(event.breadcrumbs) {
+            assertEquals("eventMessage", it[0].message)
+            assertEquals("message", it[1].message)
+        }
 
         // extras are appending
         assertEquals("eventExtra", event.extras["eventExtra"])
         assertEquals("extra", event.extras["extra"])
 
         // tags are appending
-        assertEquals("eventTag", event.tags["eventTag"])
-        assertEquals("tags", event.tags["tags"])
+        assertNotNull(event.tags) {
+            assertEquals("eventTag", it["eventTag"])
+            assertEquals("tags", it["tags"])
+        }
 
         // fingerprint is replaced
         assertEquals("eventFp", event.fingerprints[0])
@@ -347,7 +355,9 @@ class SentryClientTest {
         assertEquals("eventExtra", event.extras["eventExtra"])
 
         // tags are appending
-        assertEquals("eventTag", event.tags["eventTag"])
+        assertNotNull(event.tags) {
+            assertEquals("eventTag", it["eventTag"])
+        }
     }
 
     @Test
@@ -848,7 +858,9 @@ class SentryClientTest {
                 assertNotNull(it.request) { request ->
                     assertEquals("/url", request.url)
                 }
-                assertEquals("message", it.breadcrumbs.first().message)
+                assertNotNull(it.breadcrumbs) { breadcrumbs ->
+                    assertEquals("message", breadcrumbs.first().message)
+                }
                 assertEquals("b", it.getExtra("a"))
             }
         }, eq(null))

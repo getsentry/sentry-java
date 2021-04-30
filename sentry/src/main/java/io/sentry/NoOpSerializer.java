@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +34,8 @@ final class NoOpSerializer implements ISerializer {
   public <T> void serialize(@NotNull T entity, @NotNull Writer writer) throws IOException {}
 
   @Override
-  public void serialize(@NotNull SentryEnvelope envelope, @NotNull OutputStream outputStream) throws Exception {}
+  public void serialize(@NotNull SentryEnvelope envelope, @NotNull OutputStream outputStream)
+      throws Exception {}
 
   @Override
   public @NotNull String serialize(@NotNull Map<String, Object> data) throws Exception {

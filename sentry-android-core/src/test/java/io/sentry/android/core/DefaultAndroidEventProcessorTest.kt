@@ -107,8 +107,10 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(SentryEvent(), null)) {
             assertNotNull(it.contexts.app)
             assertNotNull(it.dist)
-            assertNotNull(it.debugMeta.images) { images ->
-                assertEquals("test", images[0].uuid)
+            assertNotNull(it.debugMeta) { debugMeta ->
+                assertNotNull(debugMeta.images) { images ->
+                    assertEquals("test", images[0].uuid)
+                }
             }
         }
     }
@@ -131,8 +133,10 @@ class DefaultAndroidEventProcessorTest {
         }
 
         assertNotNull(sut.process(event, null)) {
-            assertNotNull(it.debugMeta.images) { images ->
-                assertEquals("test", images[0].uuid)
+            assertNotNull(it.debugMeta) { debugMeta ->
+                assertNotNull(debugMeta.images) { images ->
+                    assertEquals("test", images[0].uuid)
+                }
             }
         }
     }
@@ -152,9 +156,11 @@ class DefaultAndroidEventProcessorTest {
         }
 
         assertNotNull(sut.process(event, null)) {
-            assertNotNull(it.debugMeta.images) { images ->
-                assertEquals("abc", images.first().uuid)
-                assertEquals("test", images.last().uuid)
+            assertNotNull(it.debugMeta) { debugMeta ->
+                assertNotNull(debugMeta.images) { images ->
+                    assertEquals("abc", images.first().uuid)
+                    assertEquals("test", images.last().uuid)
+                }
             }
         }
     }
@@ -171,7 +177,9 @@ class DefaultAndroidEventProcessorTest {
         }
 
         assertNotNull(sut.process(event, null)) {
-            assertTrue(it.threads.first().isCurrent == true)
+            assertNotNull(it.threads) { threads ->
+                assertTrue(threads.first().isCurrent == true)
+            }
         }
     }
 
@@ -186,7 +194,9 @@ class DefaultAndroidEventProcessorTest {
         }
 
         assertNotNull(sut.process(event, null)) {
-            assertFalse(it.threads.first().isCurrent == true)
+            assertNotNull(it.threads) { threads ->
+                assertFalse(threads.first().isCurrent == true)
+            }
         }
     }
 

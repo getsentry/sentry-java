@@ -79,7 +79,7 @@ class MainEventProcessorTest {
         var event = generateCrashedEvent(crashedThread)
         event = sut.process(event, null)
 
-        assertTrue(event.threads.any { it.isCrashed == true })
+        assertTrue(event.threads!!.any { it.isCrashed == true })
     }
 
     @Test
@@ -93,7 +93,7 @@ class MainEventProcessorTest {
         assertEquals("environment", event.environment)
         assertEquals("dist", event.dist)
         assertEquals("server", event.serverName)
-        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed == true)
+        assertTrue(event.threads!!.first { t -> t.id == crashedThread.id }.isCrashed == true)
     }
 
     @Test
@@ -107,7 +107,7 @@ class MainEventProcessorTest {
         assertEquals("environment", event.environment)
         assertEquals("dist", event.dist)
         assertEquals("server", event.serverName)
-        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed == true)
+        assertTrue(event.threads!!.first { t -> t.id == crashedThread.id }.isCrashed == true)
     }
 
     @Test
@@ -152,7 +152,7 @@ class MainEventProcessorTest {
         assertEquals("environment", event.environment)
         assertEquals("dist", event.dist)
         assertEquals("server", event.serverName)
-        assertTrue(event.threads.first { t -> t.id == crashedThread.id }.isCrashed == true)
+        assertTrue(event.threads!!.first { t -> t.id == crashedThread.id }.isCrashed == true)
     }
 
     @Test
@@ -182,7 +182,7 @@ class MainEventProcessorTest {
         var event = SentryEvent()
         event = sut.process(event, null)
 
-        assertEquals(1, event.threads.count())
+        assertEquals(1, event.threads!!.count())
     }
 
     @Test
@@ -269,8 +269,8 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(tags = mapOf("tag1" to "value1", "tag2" to "value2"))
         val event = SentryEvent()
         sut.process(event, null)
-        assertEquals("value1", event.tags["tag1"])
-        assertEquals("value2", event.tags["tag2"])
+        assertEquals("value1", event.tags!!["tag1"])
+        assertEquals("value2", event.tags!!["tag2"])
     }
 
     @Test
@@ -279,8 +279,8 @@ class MainEventProcessorTest {
         val event = SentryEvent()
         event.setTag("tag2", "event-tag-value")
         sut.process(event, null)
-        assertEquals("value1", event.tags["tag1"])
-        assertEquals("event-tag-value", event.tags["tag2"])
+        assertEquals("value1", event.tags!!["tag1"])
+        assertEquals("event-tag-value", event.tags!!["tag2"])
     }
 
     @Test

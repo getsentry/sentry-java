@@ -101,6 +101,7 @@ object Config {
         val mockitoInline = "org.mockito:mockito-inline:3.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
+        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.11.1"
     }
 
     object QualityPlugins {

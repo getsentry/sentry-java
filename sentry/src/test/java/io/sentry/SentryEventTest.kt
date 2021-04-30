@@ -10,6 +10,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryEventTest {
@@ -71,7 +72,9 @@ class SentryEventTest {
     fun `adds breadcrumb with string as a parameter`() {
         val event = SentryEvent()
         event.addBreadcrumb("breadcrumb")
-        assertEquals(1, event.breadcrumbs.filter { it.message == "breadcrumb" }.size)
+        assertNotNull(event.breadcrumbs) {
+            assertEquals(1, it.filter { it.message == "breadcrumb" }.size)
+        }
     }
 
     @Test
