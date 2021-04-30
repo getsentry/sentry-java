@@ -4,6 +4,7 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -12,7 +13,7 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
 
   private final @NotNull Runtime runtime;
 
-  private @NotNull Thread thread;
+  private @Nullable Thread thread;
 
   @TestOnly
   public ShutdownHookIntegration(final @NotNull Runtime runtime) {
