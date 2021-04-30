@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.mock
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,5 +44,5 @@ class NoOpSentryClientTest {
 
     @Test
     fun `captureTransaction returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(null))
+        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock()))
 }

@@ -394,7 +394,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      final @Nullable Scope scope,
+      final @NotNull Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 

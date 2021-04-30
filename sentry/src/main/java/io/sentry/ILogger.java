@@ -12,7 +12,7 @@ public interface ILogger {
    * @param message The message.
    * @param args The optional arguments to format the message.
    */
-  void log(SentryLevel level, String message, Object... args);
+  void log(@Nullable SentryLevel level, @Nullable String message, @Nullable Object... args);
 
   /**
    * Logs a message with the specified level, message and optional arguments.
@@ -21,7 +21,7 @@ public interface ILogger {
    * @param message The message.
    * @param throwable The throwable to log.
    */
-  void log(SentryLevel level, String message, Throwable throwable);
+  void log(@Nullable SentryLevel level, @Nullable String message, @Nullable Throwable throwable);
 
   /**
    * Logs a message with the specified level, throwable, message and optional arguments.

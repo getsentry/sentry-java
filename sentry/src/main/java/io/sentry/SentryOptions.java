@@ -209,7 +209,7 @@ public class SentryOptions {
   private String distinctId;
 
   /** The server name used in the Sentry messages. */
-  private String serverName;
+  private @Nullable String serverName;
 
   /** Automatically resolve server name. */
   private boolean attachServerName = true;
@@ -266,7 +266,7 @@ public class SentryOptions {
    * deduplication prevents from receiving the same exception multiple times when there is more than
    * one framework active that captures errors, for example Logback and Spring Boot.
    */
-  private Boolean enableDeduplication = true;
+  private @Nullable Boolean enableDeduplication = true;
 
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
@@ -727,7 +727,7 @@ public class SentryOptions {
    *
    * @param tracesSampleRate the sample rate
    */
-  public void setTracesSampleRate(Double tracesSampleRate) {
+  public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
     if (tracesSampleRate != null && (tracesSampleRate > 1.0 || tracesSampleRate < 0.0)) {
       throw new IllegalArgumentException(
           "The value "

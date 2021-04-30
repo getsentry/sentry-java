@@ -25,7 +25,8 @@ public interface IHub {
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
-  SentryId captureEvent(SentryEvent event, @Nullable Object hint);
+  @NotNull
+  SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint);
 
   /**
    * Captures the event.
@@ -33,7 +34,7 @@ public interface IHub {
    * @param event the event
    * @return The Id (SentryId object) of the event
    */
-  default SentryId captureEvent(SentryEvent event) {
+  default @NotNull SentryId captureEvent(@NotNull SentryEvent event) {
     return captureEvent(event, null);
   }
 
@@ -43,7 +44,7 @@ public interface IHub {
    * @param message The message to send.
    * @return The Id (SentryId object) of the event
    */
-  default SentryId captureMessage(String message) {
+  default @NotNull SentryId captureMessage(@NotNull String message) {
     return captureMessage(message, SentryLevel.INFO);
   }
 
@@ -54,7 +55,8 @@ public interface IHub {
    * @param level The message level.
    * @return The Id (SentryId object) of the event
    */
-  SentryId captureMessage(String message, SentryLevel level);
+  @NotNull
+  SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level);
 
   /**
    * Captures an envelope.
@@ -63,7 +65,8 @@ public interface IHub {
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
-  SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint);
+  @NotNull
+  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Object hint);
 
   /**
    * Captures an envelope.
@@ -71,7 +74,7 @@ public interface IHub {
    * @param envelope the SentryEnvelope to send.
    * @return The Id (SentryId object) of the event
    */
-  default SentryId captureEnvelope(SentryEnvelope envelope) {
+  default @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope) {
     return captureEnvelope(envelope, null);
   }
 
@@ -82,7 +85,8 @@ public interface IHub {
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
-  SentryId captureException(Throwable throwable, @Nullable Object hint);
+  @NotNull
+  SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint);
 
   /**
    * Captures the exception.
@@ -90,7 +94,7 @@ public interface IHub {
    * @param throwable The exception.
    * @return The Id (SentryId object) of the event
    */
-  default SentryId captureException(Throwable throwable) {
+  default @NotNull SentryId captureException(@NotNull Throwable throwable) {
     return captureException(throwable, null);
   }
 
@@ -99,7 +103,7 @@ public interface IHub {
    *
    * @param userFeedback The user feedback to send to Sentry.
    */
-  void captureUserFeedback(UserFeedback userFeedback);
+  void captureUserFeedback(@NotNull UserFeedback userFeedback);
 
   /** Starts a new session. If there's a running session, it ends it before starting the new one. */
   void startSession();
@@ -116,14 +120,14 @@ public interface IHub {
    * @param breadcrumb the breadcrumb
    * @param hint SDK specific but provides high level information about the origin of the event
    */
-  void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint);
+  void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint);
 
   /**
    * Adds a breadcrumb to the current Scope
    *
    * @param breadcrumb the breadcrumb
    */
-  default void addBreadcrumb(Breadcrumb breadcrumb) {
+  default void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
     addBreadcrumb(breadcrumb, null);
   }
 
@@ -154,28 +158,28 @@ public interface IHub {
    *
    * @param level the Sentry level
    */
-  void setLevel(SentryLevel level);
+  void setLevel(@Nullable SentryLevel level);
 
   /**
    * Sets the name of the current transaction to the current Scope.
    *
    * @param transaction the transaction
    */
-  void setTransaction(String transaction);
+  void setTransaction(@Nullable String transaction);
 
   /**
    * Shallow merges user configuration (email, username, etc) to the current Scope.
    *
    * @param user the user
    */
-  void setUser(User user);
+  void setUser(@Nullable User user);
 
   /**
    * Sets the fingerprint to group specific events together to the current Scope.
    *
    * @param fingerprint the fingerprints
    */
-  void setFingerprint(List<String> fingerprint);
+  void setFingerprint(@NotNull List<String> fingerprint);
 
   /** Deletes current breadcrumbs from the current scope. */
   void clearBreadcrumbs();
@@ -186,14 +190,14 @@ public interface IHub {
    * @param key the key
    * @param value the value
    */
-  void setTag(String key, String value);
+  void setTag(@NotNull String key, @NotNull String value);
 
   /**
    * Removes the tag to a string value to the current Scope
    *
    * @param key the key
    */
-  void removeTag(String key);
+  void removeTag(@NotNull String key);
 
   /**
    * Sets the extra key to an arbitrary value to the current Scope, overwriting a potential previous
@@ -202,20 +206,21 @@ public interface IHub {
    * @param key the key
    * @param value the value
    */
-  void setExtra(String key, String value);
+  void setExtra(@NotNull String key, @NotNull String value);
 
   /**
    * Removes the extra key to an arbitrary value to the current Scope
    *
    * @param key the key
    */
-  void removeExtra(String key);
+  void removeExtra(@NotNull String key);
 
   /**
    * Last event id recorded in the current scope
    *
    * @return last SentryId
    */
+  @Nullable
   SentryId getLastEventId();
 
   /** Pushes a new scope while inheriting the current scope's data. */
@@ -229,21 +234,21 @@ public interface IHub {
    *
    * @param callback the callback
    */
-  void withScope(ScopeCallback callback);
+  void withScope(@NotNull ScopeCallback callback);
 
   /**
    * Configures the scope through the callback.
    *
    * @param callback The configure scope callback.
    */
-  void configureScope(ScopeCallback callback);
+  void configureScope(@NotNull ScopeCallback callback);
 
   /**
    * Binds a different client to the hub
    *
    * @param client the client.
    */
-  void bindClient(ISentryClient client);
+  void bindClient(@NotNull ISentryClient client);
 
   /**
    * Flushes events queued up, but keeps the Hub enabled. Not implemented yet.
@@ -257,6 +262,7 @@ public interface IHub {
    *
    * @return the cloned Hub
    */
+  @NotNull
   IHub clone();
 
   /**
@@ -267,7 +273,8 @@ public interface IHub {
    * @return transaction's id
    */
   @ApiStatus.Internal
-  SentryId captureTransaction(SentryTransaction transaction, Object hint);
+  @NotNull
+  SentryId captureTransaction(@NotNull SentryTransaction transaction, @Nullable Object hint);
 
   /**
    * Captures the transaction and enqueues it for sending to Sentry server.
@@ -276,7 +283,7 @@ public interface IHub {
    * @return transaction's id
    */
   @ApiStatus.Internal
-  default SentryId captureTransaction(SentryTransaction transaction) {
+  default @NotNull SentryId captureTransaction(@NotNull SentryTransaction transaction) {
     return captureTransaction(transaction, null);
   }
 
@@ -286,7 +293,7 @@ public interface IHub {
    * @param transactionContexts the transaction contexts
    * @return created transaction
    */
-  default ITransaction startTransaction(TransactionContext transactionContexts) {
+  default @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts) {
     return startTransaction(transactionContexts, false);
   }
 
@@ -297,8 +304,8 @@ public interface IHub {
    * @param bindToScope if transaction should be bound to scope
    * @return created transaction
    */
-  default ITransaction startTransaction(
-      TransactionContext transactionContexts, boolean bindToScope) {
+  default @NotNull ITransaction startTransaction(
+      @NotNull TransactionContext transactionContexts, boolean bindToScope) {
     return startTransaction(transactionContexts, null, bindToScope);
   }
 
@@ -312,7 +319,9 @@ public interface IHub {
    * @return created transaction.
    */
   default @NotNull ITransaction startTransaction(
-      String name, String operation, CustomSamplingContext customSamplingContext) {
+      @NotNull String name,
+      @NotNull String operation,
+      @Nullable CustomSamplingContext customSamplingContext) {
     return startTransaction(name, operation, customSamplingContext, false);
   }
 
@@ -327,9 +336,9 @@ public interface IHub {
    * @return created transaction.
    */
   default @NotNull ITransaction startTransaction(
-      String name,
-      String operation,
-      CustomSamplingContext customSamplingContext,
+      @NotNull String name,
+      @NotNull String operation,
+      @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope) {
     return startTransaction(
         new TransactionContext(name, operation), customSamplingContext, bindToScope);
@@ -343,9 +352,9 @@ public interface IHub {
    * @param customSamplingContext the sampling context
    * @return created transaction.
    */
-  @NotNull
-  default ITransaction startTransaction(
-      TransactionContext transactionContexts, CustomSamplingContext customSamplingContext) {
+  default @NotNull ITransaction startTransaction(
+      @NotNull TransactionContext transactionContexts,
+      @Nullable CustomSamplingContext customSamplingContext) {
     return startTransaction(transactionContexts, customSamplingContext, false);
   }
 
@@ -360,8 +369,8 @@ public interface IHub {
    */
   @NotNull
   ITransaction startTransaction(
-      TransactionContext transactionContexts,
-      CustomSamplingContext customSamplingContext,
+      @NotNull TransactionContext transactionContexts,
+      @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope);
 
   /**

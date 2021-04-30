@@ -257,17 +257,6 @@ class HubTest {
 
     //region captureEvent tests
     @Test
-    fun `when captureEvent is called and event is null, lastEventId is empty`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        sut.captureEvent(null)
-        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
-    }
-
-    @Test
     fun `when captureEvent is called on disabled client, do nothing`() {
         val (sut, mockClient) = getEnabledHub()
         sut.close()
@@ -357,17 +346,6 @@ class HubTest {
 
     //region captureMessage tests
     @Test
-    fun `when captureMessage is called and event is null, lastEventId is empty`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        sut.captureMessage(null)
-        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
-    }
-
-    @Test
     fun `when captureMessage is called on disabled client, do nothing`() {
         val (sut, mockClient) = getEnabledHub()
         sut.close()
@@ -393,17 +371,6 @@ class HubTest {
     //endregion
 
     //region captureException tests
-    @Test
-    fun `when captureException is called and exception is null, lastEventId is empty`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        sut.captureException(null)
-        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
-    }
-
     @Test
     fun `when captureException is called on disabled client, do nothing`() {
         val (sut, mockClient) = getEnabledHub()
@@ -700,18 +667,6 @@ class HubTest {
     }
 
     @Test
-    fun `when setFingerprint is called with null parameter, do nothing`() {
-        val hub = generateHub()
-        var scope: Scope? = null
-        hub.configureScope {
-            scope = it
-        }
-
-        hub.setFingerprint(null)
-        assertEquals(0, scope?.fingerprint?.count())
-    }
-
-    @Test
     fun `when setFingerprint is called, fingerprint is set`() {
         val hub = generateHub()
         var scope: Scope? = null
@@ -772,18 +727,6 @@ class HubTest {
     }
 
     @Test
-    fun `when setTag is called with null parameters, do nothing`() {
-        val hub = generateHub()
-        var scope: Scope? = null
-        hub.configureScope {
-            scope = it
-        }
-
-        hub.setTag(null, null)
-        assertEquals(0, scope?.tags?.count())
-    }
-
-    @Test
     fun `when setTag is called, tag is set`() {
         val hub = generateHub()
         var scope: Scope? = null
@@ -811,18 +754,6 @@ class HubTest {
     }
 
     @Test
-    fun `when setExtra is called with null parameters, do nothing`() {
-        val hub = generateHub()
-        var scope: Scope? = null
-        hub.configureScope {
-            scope = it
-        }
-
-        hub.setExtra(null, null)
-        assertEquals(0, scope?.extras?.count())
-    }
-
-    @Test
     fun `when setExtra is called, extra is set`() {
         val hub = generateHub()
         var scope: Scope? = null
@@ -836,16 +767,6 @@ class HubTest {
     //endregion
 
     //region captureEnvelope tests
-    @Test
-    fun `when captureEnvelope is called and envelope is null, throws IllegalArgumentException`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        assertFailsWith<IllegalArgumentException> { sut.captureEnvelope(null) }
-    }
-
     @Test
     fun `when captureEnvelope is called on disabled client, do nothing`() {
         val options = SentryOptions()

@@ -11,7 +11,10 @@ final class AndroidLogger implements ILogger {
 
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
-  public void log(SentryLevel level, String message, Object... args) {
+  public void log(
+      final @Nullable SentryLevel level,
+      final @Nullable String message,
+      final @Nullable Object... args) {
     Log.println(toLogcatLevel(level), tag, String.format(message, args));
   }
 

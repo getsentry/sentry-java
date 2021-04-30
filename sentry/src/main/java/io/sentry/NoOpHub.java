@@ -25,27 +25,28 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public SentryId captureEvent(SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public SentryId captureMessage(String message, SentryLevel level) {
+  public @NotNull SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {
+  public @NotNull SentryId captureEnvelope(
+      @NotNull SentryEnvelope envelope, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public SentryId captureException(Throwable throwable, @Nullable Object hint) {
+  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) {}
+  public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 
   @Override
   public void startSession() {}
@@ -57,7 +58,7 @@ public final class NoOpHub implements IHub {
   public void close() {}
 
   @Override
-  public void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint) {}
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint) {}
 
   @Override
   public void setLevel(SentryLevel level) {}
@@ -69,22 +70,22 @@ public final class NoOpHub implements IHub {
   public void setUser(User user) {}
 
   @Override
-  public void setFingerprint(List<String> fingerprint) {}
+  public void setFingerprint(@NotNull List<String> fingerprint) {}
 
   @Override
   public void clearBreadcrumbs() {}
 
   @Override
-  public void setTag(String key, String value) {}
+  public void setTag(@NotNull String key, @NotNull String value) {}
 
   @Override
-  public void removeTag(String key) {}
+  public void removeTag(@NotNull String key) {}
 
   @Override
-  public void setExtra(String key, String value) {}
+  public void setExtra(@NotNull String key, @NotNull String value) {}
 
   @Override
-  public void removeExtra(String key) {}
+  public void removeExtra(@NotNull String key) {}
 
   @Override
   public SentryId getLastEventId() {
@@ -98,36 +99,36 @@ public final class NoOpHub implements IHub {
   public void popScope() {}
 
   @Override
-  public void withScope(ScopeCallback callback) {}
+  public void withScope(@NotNull ScopeCallback callback) {}
 
   @Override
-  public void configureScope(ScopeCallback callback) {}
+  public void configureScope(@NotNull ScopeCallback callback) {}
 
   @Override
-  public void bindClient(ISentryClient client) {}
+  public void bindClient(@NotNull ISentryClient client) {}
 
   @Override
   public void flush(long timeoutMillis) {}
 
   @Override
-  public IHub clone() {
+  public @NotNull IHub clone() {
     return instance;
   }
 
   @Override
-  public SentryId captureTransaction(
+  public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(TransactionContext transactionContexts) {
+  public @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts) {
     return NoOpTransaction.getInstance();
   }
 
   @Override
   public @NotNull ITransaction startTransaction(
-      TransactionContext transactionContexts,
+      @NotNull TransactionContext transactionContexts,
       CustomSamplingContext customSamplingContext,
       boolean bindToScope) {
     return NoOpTransaction.getInstance();

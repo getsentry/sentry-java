@@ -63,7 +63,8 @@ public final class ApacheHttpClientTransport implements ITransport {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint) throws IOException {
+  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+      throws IOException {
     if (isSchedulingAllowed()) {
       final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
 

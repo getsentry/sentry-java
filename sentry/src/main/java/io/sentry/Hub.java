@@ -122,7 +122,7 @@ public final class Hub implements IHub {
 
   @ApiStatus.Internal
   @Override
-  public SentryId captureEnvelope(
+  public @NotNull SentryId captureEnvelope(
       final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
@@ -177,10 +177,10 @@ public final class Hub implements IHub {
     if (event.getThrowable() != null) {
       final Pair<ISpan, String> pair = throwableToSpan.get(event.getThrowable());
       if (pair != null) {
-        if (event.getContexts().getTrace() == null) {
+        if (event.getContexts().getTrace() == null && pair.getFirst() != null) {
           event.getContexts().setTrace(pair.getFirst().getSpanContext());
         }
-        if (event.getTransaction() == null) {
+        if (event.getTransaction() == null && pair.getSecond() != null) {
           event.setTransaction(pair.getSecond());
         }
       }
@@ -188,7 +188,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) {
+  public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
     if (!isEnabled()) {
       options
           .getLogger()
