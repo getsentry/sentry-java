@@ -30,7 +30,10 @@ public final class ContextsDeserializerAdapter implements JsonDeserializer<Conte
   }
 
   @Override
-  public Contexts deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+  public @Nullable Contexts deserialize(
+      final @Nullable JsonElement json,
+      final @NotNull Type typeOfT,
+      final @NotNull JsonDeserializationContext context)
       throws JsonParseException {
     try {
       if (json != null && !json.isJsonNull()) {

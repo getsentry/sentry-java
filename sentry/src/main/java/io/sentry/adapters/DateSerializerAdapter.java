@@ -11,6 +11,7 @@ import java.lang.reflect.Type;
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class DateSerializerAdapter implements JsonSerializer<Date> {
@@ -22,7 +23,10 @@ public final class DateSerializerAdapter implements JsonSerializer<Date> {
   }
 
   @Override
-  public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext context) {
+  public @Nullable JsonElement serialize(
+      final @Nullable Date src,
+      final @NotNull Type typeOfSrc,
+      final @NotNull JsonSerializationContext context) {
     try {
       return src == null ? null : new JsonPrimitive(DateUtils.getTimestamp(src));
     } catch (Exception e) {
