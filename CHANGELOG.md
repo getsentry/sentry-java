@@ -1,4 +1,4 @@
-# Unreleased
+# 5.0.0-beta.1
 
 * Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)
 * Fix: use connection and read timeouts in ApacheHttpClient based transport (#1397)
