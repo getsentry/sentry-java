@@ -16,7 +16,8 @@ public final class StdoutTransport implements ITransport {
   }
 
   @Override
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint) throws IOException {
+  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+      throws IOException {
     Objects.requireNonNull(envelope, "SentryEnvelope is required");
 
     try {

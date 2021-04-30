@@ -63,7 +63,8 @@ public final class AsyncHttpTransport implements ITransport {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint) throws IOException {
+  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+      throws IOException {
     // For now no caching on envelopes
     IEnvelopeCache currentEnvelopeCache = envelopeCache;
     boolean cached = false;

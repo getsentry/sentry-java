@@ -18,7 +18,8 @@ public final class NoOpTransport implements ITransport {
   private NoOpTransport() {}
 
   @Override
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint) throws IOException {}
+  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+      throws IOException {}
 
   @Override
   public void flush(long timeoutMillis) {}

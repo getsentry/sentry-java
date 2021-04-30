@@ -29,11 +29,13 @@ final class ProxyAuthenticator extends Authenticator {
     return null;
   }
 
-  @NotNull String getUser() {
+  @NotNull
+  String getUser() {
     return user;
   }
 
-  @NotNull String getPassword() {
+  @NotNull
+  String getPassword() {
     return password;
   }
 }
