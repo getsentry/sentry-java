@@ -2,6 +2,10 @@
 
 * Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)
 
+Breaking Changes:
+
+* Remove Settings.Secure.ANDROID_ID in favor of generated installationId (#1455)
+
 # 5.0.0-beta.1
 
 * Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)
