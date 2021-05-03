@@ -87,6 +87,10 @@ public final class EnvelopeReader implements IEnvelopeReader {
             deserializeEnvelopeItemHeader(
                 envelopeBytes, itemHeaderStartOffset, lineBreakIndex - itemHeaderStartOffset);
 
+        if (itemHeader == null) {
+          throw new IllegalArgumentException(
+              "Item header at index '" + items.size() + "' is null.");
+        }
         if (itemHeader.getLength() <= 0) {
           throw new IllegalArgumentException(
               "Item header at index '"
@@ -137,7 +141,8 @@ public final class EnvelopeReader implements IEnvelopeReader {
     }
   }
 
-  private @Nullable SentryEnvelopeHeader deserializeEnvelopeHeader(final @NotNull byte[] buffer, int offset, int length) {
+  private @Nullable SentryEnvelopeHeader deserializeEnvelopeHeader(
+      final @NotNull byte[] buffer, int offset, int length) {
     String json = new String(buffer, offset, length, UTF_8);
     return gson.fromJson(json, SentryEnvelopeHeader.class);
   }

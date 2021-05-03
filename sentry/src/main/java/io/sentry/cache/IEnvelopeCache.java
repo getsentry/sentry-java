@@ -1,7 +1,6 @@
 package io.sentry.cache;
 
 import io.sentry.SentryEnvelope;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
