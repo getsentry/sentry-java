@@ -1,5 +1,7 @@
 # Unreleased
 
+* Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)
+
 Breaking Changes:
 
 * Remove: Settings.Secure.ANDROID_ID in favor of generated installationId (#1455)
