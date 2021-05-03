@@ -28,7 +28,7 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     errorproneJavac(Config.CompileOnly.errorProneJavac8)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-//    errorprone(Config.CompileOnly.errorProneNullAway)
+    errorprone(Config.CompileOnly.errorProneNullAway)
 
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
@@ -84,8 +84,8 @@ buildConfig {
 val generateBuildConfig by tasks
 tasks.withType<JavaCompile>() {
     dependsOn(generateBuildConfig)
-//    options.errorprone {
-//        check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
-//        option("NullAway:AnnotatedPackages", "io.sentry")
-//    }
+    options.errorprone {
+        check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+        option("NullAway:AnnotatedPackages", "io.sentry")
+    }
 }

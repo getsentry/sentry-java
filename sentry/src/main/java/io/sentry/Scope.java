@@ -112,11 +112,14 @@ public final class Scope implements Cloneable {
    *
    * @param transaction the transaction
    */
-  // todo: make nullable, unset transaction if null
-  public void setTransaction(final @NotNull String transaction) {
+  public void setTransaction(final @Nullable String transaction) {
     final ITransaction tx = this.transaction;
     if (tx != null) {
-      tx.setName(transaction);
+      if (transaction != null) {
+        tx.setName(transaction);
+      } else {
+        this.setTransaction((ITransaction) null);
+      }
     }
     this.transactionName = transaction;
   }
@@ -144,9 +147,9 @@ public final class Scope implements Cloneable {
    *
    * @param transaction the transaction
    */
-  public void setTransaction(final @NotNull ITransaction transaction) {
+  public void setTransaction(final @Nullable ITransaction transaction) {
     synchronized (transactionLock) {
-      this.transaction = Objects.requireNonNull(transaction, "transaction is required");
+      this.transaction = transaction;
     }
   }
 
