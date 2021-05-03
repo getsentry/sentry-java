@@ -1,5 +1,8 @@
 # Unreleased
 
+Breaking Changes:
+
+* Remove: Settings.Secure.ANDROID_ID in favor of generated installationId (#1455)
 * Rename: enableSessionTracking to enableAutoSessionTracking (#1457)
 
 # 5.0.0-beta.1

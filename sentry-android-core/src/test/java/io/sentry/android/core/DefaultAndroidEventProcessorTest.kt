@@ -16,7 +16,6 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
-import io.sentry.android.core.DefaultAndroidEventProcessor.ANDROID_ID
 import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.PROGUARD_UUID
@@ -263,7 +262,6 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(contextData)
         assertEquals("test", (contextData[PROGUARD_UUID] as Array<*>)[0])
         assertNotNull(contextData[ROOTED])
-        assertNotNull(contextData[ANDROID_ID])
         assertNotNull(contextData[KERNEL_VERSION])
         assertNotNull(contextData[EMULATOR])
         assertNotNull(contextData[SIDE_LOADED])
