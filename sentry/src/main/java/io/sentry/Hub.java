@@ -192,7 +192,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
+  public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     if (!isEnabled()) {
       options
           .getLogger()

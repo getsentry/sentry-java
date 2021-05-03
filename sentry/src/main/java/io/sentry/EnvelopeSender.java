@@ -34,7 +34,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   }
 
   @Override
-  protected void processFile(@NotNull File file, @Nullable Object hint) {
+  protected void processFile(final @NotNull File file, final @Nullable Object hint) {
     if (!file.isFile()) {
       logger.log(SentryLevel.DEBUG, "'%s' is not a file.", file.getAbsolutePath());
       return;
@@ -102,18 +102,18 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   }
 
   @Override
-  protected boolean isRelevantFileName(String fileName) {
+  protected boolean isRelevantFileName(final @NotNull String fileName) {
     return fileName.endsWith(EnvelopeCache.SUFFIX_ENVELOPE_FILE);
   }
 
   @Override
-  public void processEnvelopeFile(@NotNull String path, @Nullable Object hint) {
+  public void processEnvelopeFile(final @NotNull String path, final @Nullable Object hint) {
     Objects.requireNonNull(path, "Path is required.");
 
     processFile(new File(path), hint);
   }
 
-  private void safeDelete(File file, String errorMessageSuffix) {
+  private void safeDelete(final @NotNull File file, final @NotNull String errorMessageSuffix) {
     try {
       if (!file.delete()) {
         logger.log(

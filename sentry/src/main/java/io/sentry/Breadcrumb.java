@@ -222,7 +222,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    */
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(@Nullable Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(@NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 

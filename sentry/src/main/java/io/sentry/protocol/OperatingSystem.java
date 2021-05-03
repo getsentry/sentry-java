@@ -94,7 +94,7 @@ public final class OperatingSystem implements IUnknownPropertiesConsumer, Clonea
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
