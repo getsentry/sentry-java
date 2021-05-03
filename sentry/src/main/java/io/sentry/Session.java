@@ -55,7 +55,7 @@ public final class Session {
   private final @Nullable String environment;
 
   /** the App's release */
-  private final @NotNull String release;
+  private final @Nullable String release;
 
   /** The session lock, ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
@@ -73,7 +73,7 @@ public final class Session {
       final @Nullable String ipAddress,
       final @Nullable String userAgent,
       final @Nullable String environment,
-      final @NotNull String release) {
+      final @Nullable String release) {
     this.status = status;
     this.started = started;
     this.timestamp = timestamp;
@@ -93,7 +93,7 @@ public final class Session {
       @Nullable String distinctId,
       final @Nullable User user,
       final @Nullable String environment,
-      final @NotNull String release) {
+      final @Nullable String release) {
     this(
         State.Ok,
         DateUtils.getCurrentDateTime(),
@@ -138,7 +138,7 @@ public final class Session {
     return environment;
   }
 
-  public @NotNull String getRelease() {
+  public @Nullable String getRelease() {
     return release;
   }
 

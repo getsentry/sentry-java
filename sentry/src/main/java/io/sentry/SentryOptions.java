@@ -206,7 +206,7 @@ public class SentryOptions {
   private long sessionTrackingIntervalMillis = 30000; // 30s
 
   /** The distinct Id (generated Guid) used for session tracking */
-  private String distinctId;
+  private @Nullable String distinctId;
 
   /** The server name used in the Sentry messages. */
   private @Nullable String serverName;
@@ -220,7 +220,7 @@ public class SentryOptions {
   private @Nullable Boolean enableUncaughtExceptionHandler = true;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
-  private @NotNull ISentryExecutorService executorService;
+  private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
   /** connection timeout in milliseconds. */
   private int connectionTimeoutMillis = 5000;
@@ -960,7 +960,7 @@ public class SentryOptions {
    * @return the distinct Id
    */
   @ApiStatus.Internal
-  public String getDistinctId() {
+  public @Nullable String getDistinctId() {
     return distinctId;
   }
 
@@ -970,7 +970,7 @@ public class SentryOptions {
    * @param distinctId the distinct Id
    */
   @ApiStatus.Internal
-  public void setDistinctId(String distinctId) {
+  public void setDistinctId(final @Nullable String distinctId) {
     this.distinctId = distinctId;
   }
 
