@@ -66,7 +66,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @TestOnly static final String PROGUARD_UUID = "proGuardUuids";
   @TestOnly static final String ROOTED = "rooted";
-  @TestOnly static final String ANDROID_ID = "androidId";
   @TestOnly static final String KERNEL_VERSION = "kernelVersion";
   @TestOnly static final String EMULATOR = "emulator";
   @TestOnly static final String SIDE_LOADED = "sideLoaded";
@@ -116,11 +115,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     map.put(ROOTED, rootChecker.isDeviceRooted());
-
-    String androidId = getAndroidId();
-    if (androidId != null) {
-      map.put(ANDROID_ID, androidId);
-    }
 
     String kernelVersion = getKernelVersion();
     if (kernelVersion != null) {
@@ -896,38 +890,11 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private @Nullable String getDeviceId() {
     try {
-      Object androidId = contextData.get().get(ANDROID_ID);
-
-      if (androidId != null) {
-        return (String) androidId;
-      }
+      return Installation.id(context);
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Error getting androidId.", e);
     }
     return null;
-  }
-
-  @SuppressWarnings("HardwareIds")
-  private @Nullable String getAndroidId() {
-    // Android 29 has changed and -> Avoid using hardware identifiers, find another way in the
-    // future
-    String androidId =
-        Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-
-    //    https://android-developers.googleblog.com/2011/03/identifying-app-installations.html
-    if (androidId == null
-        || androidId.isEmpty()
-        || androidId.toLowerCase(Locale.ROOT).contentEquals("9774d56d682e549c")) {
-      try {
-        androidId = Installation.id(context);
-      } catch (RuntimeException e) {
-        logger.log(SentryLevel.ERROR, "Could not generate device Id.", e);
-
-        return null;
-      }
-    }
-
-    return androidId;
   }
 
   private @Nullable String[] getProguardUUIDs() {
