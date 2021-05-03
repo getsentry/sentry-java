@@ -25,6 +25,7 @@ android {
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
+        buildConfigField("String", "SENTRY_TIMBER_SDK_NAME", "\"${Config.Sentry.SENTRY_TIMBER_SDK_NAME}\"")
     }
 
     buildTypes {
