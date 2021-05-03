@@ -1,6 +1,6 @@
 # Unreleased
 
-* Rename: Rename enableSessionTracking to enableAutoSessionTracking
+* Rename: enableSessionTracking to enableAutoSessionTracking (#1457)
 
 # 5.0.0-beta.1
 
