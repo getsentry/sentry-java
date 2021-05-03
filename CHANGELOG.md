@@ -2,7 +2,7 @@
 
 Breaking Changes:
 
-* Remove Settings.Secure.ANDROID_ID in favor of generated installationId 
+* Remove Settings.Secure.ANDROID_ID in favor of generated installationId (#1455)
 
 # 5.0.0-beta.1
 
