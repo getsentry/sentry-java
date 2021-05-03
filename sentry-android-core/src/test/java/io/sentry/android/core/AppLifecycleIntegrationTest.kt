@@ -41,7 +41,7 @@ class AppLifecycleIntegrationTest {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions().apply {
             isEnableAppLifecycleBreadcrumbs = false
-            isEnableSessionTracking = false
+            isEnableAutoSessionTracking = false
         }
 
         sut.register(fixture.hub, options)

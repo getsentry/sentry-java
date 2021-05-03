@@ -197,7 +197,7 @@ public class SentryOptions {
   private boolean attachStacktrace = true;
 
   /** Whether to enable or disable automatic session tracking. */
-  private boolean enableSessionTracking = true;
+  private boolean enableAutoSessionTracking = true;
 
   /**
    * The session tracking interval in millis. This is the interval to end a session if the App goes
@@ -887,17 +887,31 @@ public class SentryOptions {
    *
    * @return true if enabled or false otherwise
    */
-  public boolean isEnableSessionTracking() {
-    return enableSessionTracking;
+  public boolean isEnableAutoSessionTracking() {
+    return enableAutoSessionTracking;
   }
 
   /**
    * Enable or disable the automatic session tracking
    *
-   * @param enableSessionTracking true if enabled or false otherwise
+   * @param enableAutoSessionTracking true if enabled or false otherwise
    */
-  public void setEnableSessionTracking(boolean enableSessionTracking) {
-    this.enableSessionTracking = enableSessionTracking;
+  public void setEnableAutoSessionTracking(final boolean enableAutoSessionTracking) {
+    this.enableAutoSessionTracking = enableAutoSessionTracking;
+  }
+
+  /** @deprecated use {@link SentryOptions#isEnableAutoSessionTracking()} */
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
+  public boolean isEnableSessionTracking() {
+    return enableAutoSessionTracking;
+  }
+
+  /** @deprecated use {@link SentryOptions#setEnableAutoSessionTracking(boolean)} */
+  @Deprecated
+  @ApiStatus.ScheduledForRemoval
+  public void setEnableSessionTracking(final boolean enableSessionTracking) {
+    setEnableAutoSessionTracking(enableSessionTracking);
   }
 
   /**
