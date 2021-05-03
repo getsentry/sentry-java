@@ -305,7 +305,7 @@ public final class Sentry {
    *
    * @param userFeedback The user feedback to send to Sentry.
    */
-  public static void captureUserFeedback(UserFeedback userFeedback) {
+  public static void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     getCurrentHub().captureUserFeedback(userFeedback);
   }
 

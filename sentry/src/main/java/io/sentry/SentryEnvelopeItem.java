@@ -48,6 +48,7 @@ public final class SentryEnvelopeItem {
   }
 
   // TODO: Should be a Stream
+  @SuppressWarnings("NullAway")
   public @NotNull byte[] getData() throws Exception {
     if (data == null && dataFactory != null) {
       data = dataFactory.call();
@@ -247,11 +248,15 @@ public final class SentryEnvelopeItem {
       this.dataFactory = dataFactory;
     }
 
-    public @Nullable byte[] getBytes() throws Exception {
-      if (bytes == null) {
+    public @NotNull byte[] getBytes() throws Exception {
+      if (bytes == null && dataFactory != null) {
         bytes = dataFactory.call();
       }
-      return bytes;
+      return orEmptyArray(bytes);
+    }
+
+    private static @NotNull byte[] orEmptyArray(final @Nullable byte[] bytes) {
+      return bytes != null ? bytes : new byte[] {};
     }
   }
 }

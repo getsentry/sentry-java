@@ -134,16 +134,15 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     }
   }
 
-  public void setThreads(List<SentryThread> threads) {
+  public void setThreads(final @Nullable List<SentryThread> threads) {
     this.threads = new SentryValues<>(threads);
   }
 
-  @Nullable
-  public List<SentryException> getExceptions() {
+  public @Nullable List<SentryException> getExceptions() {
     return exception == null ? null : exception.getValues();
   }
 
-  public void setExceptions(List<SentryException> exception) {
+  public void setExceptions(final @Nullable List<SentryException> exception) {
     this.exception = new SentryValues<>(exception);
   }
 

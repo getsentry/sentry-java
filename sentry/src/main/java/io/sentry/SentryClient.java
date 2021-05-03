@@ -388,7 +388,12 @@ public final class SentryClient implements ISentryClient {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
       return SentryId.EMPTY_ID;
     }
-    return envelope.getHeader().getEventId();
+    final SentryId eventId = envelope.getHeader().getEventId();
+    if (eventId != null) {
+      return eventId;
+    } else {
+      return SentryId.EMPTY_ID;
+    }
   }
 
   @Override

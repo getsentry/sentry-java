@@ -56,7 +56,12 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
 
     try (final InputStream is = new BufferedInputStream(new FileInputStream(file))) {
       SentryEnvelope envelope = serializer.deserializeEnvelope(is);
-      hub.captureEnvelope(envelope, hint);
+      if (envelope == null) {
+        logger.log(
+            SentryLevel.ERROR, "Failed to deserialize cached envelope %s", file.getAbsolutePath());
+      } else {
+        hub.captureEnvelope(envelope, hint);
+      }
 
       if (hint instanceof Flushable) {
         if (!((Flushable) hint).waitFlush()) {

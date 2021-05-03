@@ -135,7 +135,11 @@ public final class Hub implements IHub {
               "Instance is disabled and this 'captureEnvelope' call is a no-op.");
     } else {
       try {
-        sentryId = stack.peek().getClient().captureEnvelope(envelope, hint);
+        final SentryId capturedEnvelopeId =
+            stack.peek().getClient().captureEnvelope(envelope, hint);
+        if (capturedEnvelopeId != null) {
+          sentryId = capturedEnvelopeId;
+        }
       } catch (Exception e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
       }
