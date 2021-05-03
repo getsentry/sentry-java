@@ -42,7 +42,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
         .log(
             SentryLevel.DEBUG,
             "enableSessionTracking enabled: %s",
-            this.options.isEnableSessionTracking());
+            this.options.isEnableAutoSessionTracking());
 
     this.options
         .getLogger()
@@ -51,7 +51,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
             "enableAppLifecycleBreadcrumbs enabled: %s",
             this.options.isEnableAppLifecycleBreadcrumbs());
 
-    if (this.options.isEnableSessionTracking() || this.options.isEnableAppLifecycleBreadcrumbs()) {
+    if (this.options.isEnableAutoSessionTracking()
+        || this.options.isEnableAppLifecycleBreadcrumbs()) {
       try {
         Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
         Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
@@ -82,7 +83,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
         new LifecycleWatcher(
             hub,
             this.options.getSessionTrackingIntervalMillis(),
-            this.options.isEnableSessionTracking(),
+            this.options.isEnableAutoSessionTracking(),
             this.options.isEnableAppLifecycleBreadcrumbs());
     ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
     options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");

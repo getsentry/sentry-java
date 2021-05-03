@@ -1,5 +1,7 @@
 # Unreleased
 
+* Enhancement: Rename enableSessionTracking to enableAutoSessionTracking
+
 # 5.0.0-beta.1
 
 * Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)

@@ -28,7 +28,11 @@ final class ManifestMetadataReader {
   static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
   static final String RELEASE = "io.sentry.release";
   static final String ENVIRONMENT = "io.sentry.environment";
+
+  // TODO: remove on 6.x in favor of SESSION_AUTO_TRACKING_ENABLE
   static final String SESSION_TRACKING_ENABLE = "io.sentry.session-tracking.enable";
+
+  static final String AUTO_SESSION_TRACKING_ENABLE = "io.sentry.auto-session-tracking.enable";
   static final String SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS =
       "io.sentry.session-tracking.timeout-interval-millis";
 
@@ -81,8 +85,14 @@ final class ManifestMetadataReader {
 
         options.setAnrEnabled(readBool(metadata, logger, ANR_ENABLE, options.isAnrEnabled()));
 
-        options.setEnableSessionTracking(
-            readBool(metadata, logger, SESSION_TRACKING_ENABLE, options.isEnableSessionTracking()));
+        // deprecated
+        final boolean enableSessionTracking =
+            readBool(
+                metadata, logger, SESSION_TRACKING_ENABLE, options.isEnableAutoSessionTracking());
+
+        // use enableAutoSessionTracking as fallback
+        options.setEnableAutoSessionTracking(
+            readBool(metadata, logger, AUTO_SESSION_TRACKING_ENABLE, enableSessionTracking));
 
         if (options.getSampleRate() == null) {
           final Double sampleRate = readDouble(metadata, logger, SAMPLE_RATE);
