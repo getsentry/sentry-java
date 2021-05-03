@@ -94,9 +94,6 @@ subprojects {
             configure<MavenPublishPluginExtension> {
                 val sign = Config.BuildPlugins.shouldSignArtifacts(project.version.toString())
                 releaseSigningEnabled = sign
-                nexus {
-                    stagingProfile = Config.Sentry.group
-                }
             }
 
             // signing info and maven central info go to:
@@ -108,8 +105,8 @@ subprojects {
             // signing.secretKeyRingFile=file path
 
             // maven central info:
-            // mavenCentralRepositoryUsername=user name
-            // mavenCentralRepositoryPassword=password
+            // mavenCentralUsername=user name
+            // mavenCentralPassword=password
         }
     }
 }

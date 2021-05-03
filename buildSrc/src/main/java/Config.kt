@@ -18,9 +18,9 @@ object Config {
         val springDependencyManagement = "io.spring.dependency-management"
         val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
-        val grettyVersion = "3.0.3"
-        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.14.2"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.4.30"
+        val grettyVersion = "3.0.4"
+        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.15.1"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
 
         fun shouldSignArtifacts(version: String): Boolean {
             return !(System.getenv("CI")?.toBoolean() ?: false) &&
