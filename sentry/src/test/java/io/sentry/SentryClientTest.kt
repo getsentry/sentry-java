@@ -24,6 +24,7 @@ import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.callMethod
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import java.io.ByteArrayInputStream
@@ -199,7 +200,7 @@ class SentryClientTest {
         fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
         val sut = fixture.getSut()
         val actual = "actual message"
-        sut.captureMessage(actual, null)
+        sut.callMethod("captureMessage", parameterTypes = arrayOf(String::class.java, SentryLevel::class.java, Scope::class.java), actual, null, null)
         assertEquals(actual, sentEvent!!.message!!.formatted)
     }
 
@@ -208,7 +209,7 @@ class SentryClientTest {
         var sentEvent: SentryEvent? = null
         fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
         val sut = fixture.getSut()
-        sut.captureMessage(null, SentryLevel.DEBUG)
+        sut.callMethod("captureMessage", parameterTypes = arrayOf(String::class.java, SentryLevel::class.java), null, SentryLevel.DEBUG)
         assertEquals(SentryLevel.DEBUG, sentEvent!!.level)
     }
 

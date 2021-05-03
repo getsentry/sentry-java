@@ -394,7 +394,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      final @NotNull Scope scope,
+      final @Nullable Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
@@ -505,7 +505,7 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
-  private <T extends SentryBaseEvent> T applyScope(
+  private <T extends SentryBaseEvent> @NotNull T applyScope(
       final @NotNull T sentryBaseEvent, final @Nullable Scope scope) {
     if (scope != null) {
       if (sentryBaseEvent.getRequest() == null) {
