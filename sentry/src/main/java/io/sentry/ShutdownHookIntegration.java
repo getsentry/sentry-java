@@ -40,7 +40,7 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
   }
 
   @VisibleForTesting
-  @NotNull
+  @Nullable
   Thread getHook() {
     return thread;
   }

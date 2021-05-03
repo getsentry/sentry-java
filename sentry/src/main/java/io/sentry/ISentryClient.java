@@ -176,7 +176,8 @@ public interface ISentryClient {
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
-  SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint);
+  @Nullable
+  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Object hint);
 
   /**
    * Captures an envelope.
@@ -184,7 +185,7 @@ public interface ISentryClient {
    * @param envelope the SentryEnvelope to send.
    * @return The Id (SentryId object) of the event
    */
-  default SentryId captureEnvelope(SentryEnvelope envelope) {
+  default @Nullable SentryId captureEnvelope(@NotNull SentryEnvelope envelope) {
     return captureEnvelope(envelope, null);
   }
 

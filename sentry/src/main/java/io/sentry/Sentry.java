@@ -210,7 +210,9 @@ public final class Sentry {
     // eg release, distinctId, sentryClientName
 
     // this should be after setting serializers
-    if (options.getCacheDirPath() != null && !options.getCacheDirPath().isEmpty()) {
+    if (options.getOutboxPath() != null
+        && options.getCacheDirPath() != null
+        && !options.getCacheDirPath().isEmpty()) {
       final File cacheDir = new File(options.getCacheDirPath());
       cacheDir.mkdirs();
 

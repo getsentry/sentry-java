@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import kotlin.test.Test
+import kotlin.test.assertNotNull
 
 class ShutdownHookIntegrationTest {
 
@@ -43,8 +44,10 @@ class ShutdownHookIntegrationTest {
         val integration = fixture.getSut()
 
         integration.register(fixture.hub, fixture.options)
-        integration.hook.start()
-        integration.hook.join()
+        assertNotNull(integration.hook) {
+            it.start()
+            it.join()
+        }
 
         verify(fixture.hub).close()
     }

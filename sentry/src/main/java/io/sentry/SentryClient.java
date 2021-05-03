@@ -143,7 +143,7 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private List<Attachment> getAttachmentsFromScope(@Nullable Scope scope) {
+  private @Nullable List<Attachment> getAttachmentsFromScope(@Nullable Scope scope) {
     if (scope != null) {
       return scope.getAttachments();
     } else {
@@ -378,7 +378,7 @@ public final class SentryClient implements ISentryClient {
 
   @ApiStatus.Internal
   @Override
-  public @Nullable SentryId captureEnvelope(
+  public @NotNull SentryId captureEnvelope(
       final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
@@ -557,7 +557,7 @@ public final class SentryClient implements ISentryClient {
       final @NotNull SentryBaseEvent event, final @NotNull Collection<Breadcrumb> breadcrumbs) {
     final List<Breadcrumb> sortedBreadcrumbs = event.getBreadcrumbs();
 
-    if (!breadcrumbs.isEmpty()) {
+    if (sortedBreadcrumbs != null && !breadcrumbs.isEmpty()) {
       sortedBreadcrumbs.addAll(breadcrumbs);
       Collections.sort(sortedBreadcrumbs, sortBreadcrumbsByDate);
     }
@@ -581,7 +581,9 @@ public final class SentryClient implements ISentryClient {
         breadcrumb.setMessage("BeforeSend callback failed.");
         breadcrumb.setCategory("SentryClient");
         breadcrumb.setLevel(SentryLevel.ERROR);
-        breadcrumb.setData("sentry:message", e.getMessage());
+        if (e.getMessage() != null) {
+          breadcrumb.setData("sentry:message", e.getMessage());
+        }
         event.addBreadcrumb(breadcrumb);
       }
     }

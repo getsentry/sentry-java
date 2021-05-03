@@ -38,7 +38,7 @@ final class NoOpSentryClient implements ISentryClient {
   public void captureSession(Session session, @Nullable Object hint) {}
 
   @Override
-  public SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {
+  public SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
