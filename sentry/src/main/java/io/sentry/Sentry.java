@@ -217,7 +217,7 @@ public final class Sentry {
       final File outboxDir = new File(options.getOutboxPath());
       outboxDir.mkdirs();
 
-      options.setEnvelopeDiskCache(new EnvelopeCache(options));
+      options.setEnvelopeDiskCache(EnvelopeCache.create(options));
     } else {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
@@ -639,7 +639,7 @@ public final class Sentry {
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
-      final @NotNull CustomSamplingContext customSamplingContext,
+      final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
     return getCurrentHub()
         .startTransaction(transactionContexts, customSamplingContext, bindToScope);

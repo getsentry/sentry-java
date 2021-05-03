@@ -61,13 +61,13 @@ public final class NoOpHub implements IHub {
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint) {}
 
   @Override
-  public void setLevel(SentryLevel level) {}
+  public void setLevel(@Nullable SentryLevel level) {}
 
   @Override
-  public void setTransaction(String transaction) {}
+  public void setTransaction(@Nullable String transaction) {}
 
   @Override
-  public void setUser(User user) {}
+  public void setUser(@Nullable User user) {}
 
   @Override
   public void setFingerprint(@NotNull List<String> fingerprint) {}
@@ -88,7 +88,7 @@ public final class NoOpHub implements IHub {
   public void removeExtra(@NotNull String key) {}
 
   @Override
-  public SentryId getLastEventId() {
+  public @NotNull SentryId getLastEventId() {
     return SentryId.EMPTY_ID;
   }
 
@@ -129,7 +129,7 @@ public final class NoOpHub implements IHub {
   @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContexts,
-      CustomSamplingContext customSamplingContext,
+      @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope) {
     return NoOpTransaction.getInstance();
   }

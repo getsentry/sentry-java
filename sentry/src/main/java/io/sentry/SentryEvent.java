@@ -138,6 +138,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     this.threads = new SentryValues<>(threads);
   }
 
+  @Nullable
   public List<SentryException> getExceptions() {
     return exception == null ? null : exception.getValues();
   }
@@ -162,11 +163,11 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     this.transaction = transaction;
   }
 
-  public @NotNull List<String> getFingerprints() {
+  public @Nullable List<String> getFingerprints() {
     return fingerprint;
   }
 
-  public void setFingerprints(final @NotNull List<String> fingerprint) {
+  public void setFingerprints(final @Nullable List<String> fingerprint) {
     this.fingerprint = fingerprint;
   }
 

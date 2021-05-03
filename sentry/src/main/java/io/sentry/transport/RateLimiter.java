@@ -203,7 +203,10 @@ public final class RateLimiter {
               for (final String catItem : categories) {
                 DataCategory dataCategory = DataCategory.Unknown;
                 try {
-                  dataCategory = DataCategory.valueOf(StringUtils.capitalize(catItem));
+                  final String catItemCapitalized = StringUtils.capitalize(catItem);
+                  if (catItemCapitalized != null) {
+                    dataCategory = DataCategory.valueOf(catItemCapitalized);
+                  }
                 } catch (IllegalArgumentException e) {
                   logger.log(INFO, e, "Unknown category: %s", catItem);
                 }

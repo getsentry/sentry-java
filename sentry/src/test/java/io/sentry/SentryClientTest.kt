@@ -263,9 +263,13 @@ class SentryClientTest {
 
         sut.captureEvent(event, scope)
         assertEquals("message", event.breadcrumbs!![0].message)
-        assertEquals("extra", event.extras["extra"])
+        assertNotNull(event.extras) {
+            assertEquals("extra", it["extra"])
+        }
         assertEquals("tags", event.tags!!["tags"])
-        assertEquals("fp", event.fingerprints[0])
+        assertNotNull(event.fingerprints) {
+            assertEquals("fp", it[0])
+        }
         assertNotNull(event.user) {
             assertEquals("id", it.id)
         }
@@ -317,8 +321,10 @@ class SentryClientTest {
         }
 
         // extras are appending
-        assertEquals("eventExtra", event.extras["eventExtra"])
-        assertEquals("extra", event.extras["extra"])
+        assertNotNull(event.extras) {
+            assertEquals("eventExtra", it["eventExtra"])
+            assertEquals("extra", it["extra"])
+        }
 
         // tags are appending
         assertNotNull(event.tags) {
@@ -327,8 +333,10 @@ class SentryClientTest {
         }
 
         // fingerprint is replaced
-        assertEquals("eventFp", event.fingerprints[0])
-        assertEquals(1, event.fingerprints.size)
+        assertNotNull(event.fingerprints) {
+            assertEquals("eventFp", it[0])
+            assertEquals(1, it.size)
+        }
 
         assertEquals("eventTransaction", event.transaction)
 
@@ -352,7 +360,9 @@ class SentryClientTest {
         sut.captureEvent(event, scope)
 
         // extras are appending
-        assertEquals("eventExtra", event.extras["eventExtra"])
+        assertNotNull(event.extras) {
+            assertEquals("eventExtra", it["eventExtra"])
+        }
 
         // tags are appending
         assertNotNull(event.tags) {

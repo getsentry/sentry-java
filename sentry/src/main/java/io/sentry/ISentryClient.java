@@ -198,7 +198,7 @@ public interface ISentryClient {
    */
   @NotNull
   SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @NotNull Scope scope, @Nullable Object hint);
+      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Object hint);
 
   /**
    * Captures a transaction without scope nor hint.

@@ -1,29 +1,32 @@
 package io.sentry.exception;
 
+import org.jetbrains.annotations.Nullable;
+
 public final class InvalidDsnException extends RuntimeException {
   private static final long serialVersionUID = 412945154259913013L;
-  private final String dsn;
+  private final @Nullable String dsn;
 
-  public InvalidDsnException(String dsn) {
+  public InvalidDsnException(final @Nullable String dsn) {
     this.dsn = dsn;
   }
 
-  public InvalidDsnException(String dsn, String message) {
+  public InvalidDsnException(final @Nullable String dsn, final @Nullable String message) {
     super(message);
     this.dsn = dsn;
   }
 
-  public InvalidDsnException(String dsn, String message, Throwable cause) {
+  public InvalidDsnException(
+      final @Nullable String dsn, final @Nullable String message, final @Nullable Throwable cause) {
     super(message, cause);
     this.dsn = dsn;
   }
 
-  public InvalidDsnException(String dsn, Throwable cause) {
+  public InvalidDsnException(final @Nullable String dsn, final @Nullable Throwable cause) {
     super(cause);
     this.dsn = dsn;
   }
 
-  public String getDsn() {
+  public @Nullable String getDsn() {
     return dsn;
   }
 }

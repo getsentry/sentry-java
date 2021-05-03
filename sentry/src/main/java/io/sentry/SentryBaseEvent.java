@@ -272,6 +272,7 @@ public abstract class SentryBaseEvent {
     breadcrumbs.add(breadcrumb);
   }
 
+  @Nullable
   Map<String, Object> getExtras() {
     return extra;
   }

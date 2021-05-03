@@ -15,6 +15,7 @@ import io.sentry.SentryOptions;
 import io.sentry.Session;
 import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
+import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -54,8 +55,22 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
 
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
-  public EnvelopeCache(final @NotNull SentryOptions options) {
-    super(options, options.getCacheDirPath(), options.getCacheDirSize());
+  public static IEnvelopeCache create(final @NotNull SentryOptions options) {
+    final String cacheDirPath = options.getCacheDirPath();
+    final int cacheDirSize = options.getCacheDirSize();
+    if (cacheDirPath == null) {
+      options.getLogger().log(WARNING, "cacheDirPath is null, returning NoOpEnvelopeCache");
+      return NoOpEnvelopeCache.getInstance();
+    } else {
+      return new EnvelopeCache(options, cacheDirPath, cacheDirSize);
+    }
+  }
+
+  private EnvelopeCache(
+      final @NotNull SentryOptions options,
+      final @NotNull String cacheDirPath,
+      final @NotNull int cacheDirSize) {
+    super(options, cacheDirPath, cacheDirSize);
   }
 
   @Override

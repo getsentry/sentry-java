@@ -220,7 +220,7 @@ public interface IHub {
    *
    * @return last SentryId
    */
-  @Nullable
+  @NotNull
   SentryId getLastEventId();
 
   /** Pushes a new scope while inheriting the current scope's data. */

@@ -1220,7 +1220,7 @@ public final class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCach
 	public static final field PREFIX_CURRENT_SESSION_FILE Ljava/lang/String;
 	public static final field SUFFIX_ENVELOPE_FILE Ljava/lang/String;
 	protected static final field UTF_8 Ljava/nio/charset/Charset;
-	public fun <init> (Lio/sentry/SentryOptions;)V
+	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/cache/IEnvelopeCache;
 	public fun discard (Lio/sentry/SentryEnvelope;)V
 	public fun iterator ()Ljava/util/Iterator;
 	public fun store (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)V

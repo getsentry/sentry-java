@@ -653,7 +653,7 @@ public final class Hub implements IHub {
   SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
     final Pair<ISpan, String> span = this.throwableToSpan.get(throwable);
-    if (span != null) {
+    if (span != null && span.getFirst() != null) {
       return span.getFirst().getSpanContext();
     }
     return null;

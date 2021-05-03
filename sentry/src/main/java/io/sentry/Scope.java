@@ -112,6 +112,7 @@ public final class Scope implements Cloneable {
    *
    * @param transaction the transaction
    */
+  // todo: make nullable, unset transaction if null
   public void setTransaction(final @NotNull String transaction) {
     final ITransaction tx = this.transaction;
     if (tx != null) {
@@ -245,7 +246,9 @@ public final class Scope implements Cloneable {
               "The BeforeBreadcrumbCallback callback threw an exception. It will be added as breadcrumb and continue.",
               e);
 
-      breadcrumb.setData("sentry:message", e.getMessage());
+      if (e.getMessage() != null) {
+        breadcrumb.setData("sentry:message", e.getMessage());
+      }
     }
     return breadcrumb;
   }
