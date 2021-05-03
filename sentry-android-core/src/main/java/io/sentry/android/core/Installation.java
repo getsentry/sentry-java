@@ -21,7 +21,8 @@ final class Installation {
   private Installation() {}
 
   /**
-   * Generates a random UUID and writes to a file to be used as an unique installationId.
+   * Generates a random UUID and writes to a file to be used as an unique installationId. Reads the
+   * installationId if already exists.
    *
    * @param context the Context
    * @return the generated installationId

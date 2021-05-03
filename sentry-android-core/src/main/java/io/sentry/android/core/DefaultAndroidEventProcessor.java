@@ -892,7 +892,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     try {
       return Installation.id(context);
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error getting androidId.", e);
+      logger.log(SentryLevel.ERROR, "Error getting installationId.", e);
     }
     return null;
   }
