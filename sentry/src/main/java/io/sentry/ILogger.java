@@ -31,7 +31,11 @@ public interface ILogger {
    * @param message The message.
    * @param args the formatting arguments
    */
-  void log(SentryLevel level, Throwable throwable, String message, Object... args);
+  void log(
+      @Nullable SentryLevel level,
+      @Nullable Throwable throwable,
+      @Nullable String message,
+      @Nullable Object... args);
 
   /**
    * Whether this logger is enabled for the specified SentryLevel.

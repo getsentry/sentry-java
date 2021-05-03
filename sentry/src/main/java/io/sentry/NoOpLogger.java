@@ -14,13 +14,19 @@ public final class NoOpLogger implements ILogger {
   private NoOpLogger() {}
 
   @Override
-  public void log(SentryLevel level, String message, Object... args) {}
+  public void log(
+      @Nullable SentryLevel level, @Nullable String message, @Nullable Object... args) {}
 
   @Override
-  public void log(SentryLevel level, String message, Throwable throwable) {}
+  public void log(
+      @Nullable SentryLevel level, @Nullable String message, @Nullable Throwable throwable) {}
 
   @Override
-  public void log(SentryLevel level, Throwable throwable, String message, Object... args) {}
+  public void log(
+      @Nullable SentryLevel level,
+      @Nullable Throwable throwable,
+      @Nullable String message,
+      @Nullable Object... args) {}
 
   @Override
   public boolean isEnabled(@Nullable SentryLevel level) {

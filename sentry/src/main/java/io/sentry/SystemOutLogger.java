@@ -17,7 +17,10 @@ public final class SystemOutLogger implements ILogger {
    */
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
-  public void log(SentryLevel level, String message, Object... args) {
+  public void log(
+      final @Nullable SentryLevel level,
+      final @Nullable String message,
+      final @Nullable Object... args) {
     System.out.println(String.format("%s: %s", level, String.format(message, args)));
   }
 
@@ -30,7 +33,10 @@ public final class SystemOutLogger implements ILogger {
    */
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
-  public void log(SentryLevel level, String message, Throwable throwable) {
+  public void log(
+      final @Nullable SentryLevel level,
+      final @Nullable String message,
+      final @Nullable Throwable throwable) {
     if (throwable == null) {
       this.log(level, message);
     } else {
@@ -51,7 +57,11 @@ public final class SystemOutLogger implements ILogger {
    */
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
-  public void log(SentryLevel level, Throwable throwable, String message, Object... args) {
+  public void log(
+      final @Nullable SentryLevel level,
+      final @Nullable Throwable throwable,
+      final @Nullable String message,
+      final @Nullable Object... args) {
     if (throwable == null) {
       this.log(level, message, args);
     } else {

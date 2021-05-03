@@ -20,12 +20,19 @@ final class AndroidLogger implements ILogger {
 
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
-  public void log(SentryLevel level, Throwable throwable, String message, Object... args) {
+  public void log(
+      final @Nullable SentryLevel level,
+      final @Nullable Throwable throwable,
+      final @Nullable String message,
+      final @Nullable Object... args) {
     log(level, String.format(message, args), throwable);
   }
 
   @Override
-  public void log(SentryLevel level, String message, Throwable throwable) {
+  public void log(
+      final @Nullable SentryLevel level,
+      final @Nullable String message,
+      final @Nullable Throwable throwable) {
 
     switch (level) {
       case INFO:
@@ -52,7 +59,7 @@ final class AndroidLogger implements ILogger {
     return true;
   }
 
-  private int toLogcatLevel(SentryLevel sentryLevel) {
+  private int toLogcatLevel(final @Nullable SentryLevel sentryLevel) {
     switch (sentryLevel) {
       case INFO:
         return Log.INFO;
