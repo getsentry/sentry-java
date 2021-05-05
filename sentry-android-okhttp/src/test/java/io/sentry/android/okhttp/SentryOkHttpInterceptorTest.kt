@@ -40,10 +40,12 @@ class SentryOkHttpInterceptorTest {
             whenever(hub.options).thenReturn(SentryOptions())
         }
 
-        fun getSut(isSpanActive: Boolean = true,
-                   httpStatusCode: Int = 201,
-                   responseBody: String = "success",
-                   socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN): OkHttpClient {
+        fun getSut(
+            isSpanActive: Boolean = true,
+            httpStatusCode: Int = 201,
+            responseBody: String = "success",
+            socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN
+        ): OkHttpClient {
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
