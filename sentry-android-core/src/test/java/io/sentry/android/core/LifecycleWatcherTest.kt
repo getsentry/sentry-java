@@ -25,8 +25,8 @@ class LifecycleWatcherTest {
         val hub = mock<IHub>()
         val dateProvider = mock<ICurrentDateProvider>()
 
-        fun getSUT(sessionIntervalMillis: Long = 0L, enableSessionTracking: Boolean = true, enableAppLifecycleBreadcrumbs: Boolean = true): LifecycleWatcher {
-            return LifecycleWatcher(hub, sessionIntervalMillis, enableSessionTracking, enableAppLifecycleBreadcrumbs, dateProvider)
+        fun getSUT(sessionIntervalMillis: Long = 0L, enableAutoSessionTracking: Boolean = true, enableAppLifecycleBreadcrumbs: Boolean = true): LifecycleWatcher {
+            return LifecycleWatcher(hub, sessionIntervalMillis, enableAutoSessionTracking, enableAppLifecycleBreadcrumbs, dateProvider)
         }
     }
 
@@ -82,14 +82,14 @@ class LifecycleWatcherTest {
 
     @Test
     fun `When session tracking is disabled, do not start session`() {
-        val watcher = fixture.getSUT(enableSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
+        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub, never()).startSession()
     }
 
     @Test
     fun `When session tracking is disabled, do not end session`() {
-        val watcher = fixture.getSUT(enableSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
+        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStop(fixture.ownerMock)
         assertNull(watcher.timerTask)
         verify(fixture.hub, never()).endSession()
@@ -123,14 +123,14 @@ class LifecycleWatcherTest {
 
     @Test
     fun `When session tracking is disabled, do not add breadcrumb on start`() {
-        val watcher = fixture.getSUT(enableSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
+        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `When session tracking is disabled, do not add breadcrumb on stop`() {
-        val watcher = fixture.getSUT(enableSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
+        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStop(fixture.ownerMock)
         assertNull(watcher.timerTask)
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
@@ -138,7 +138,7 @@ class LifecycleWatcherTest {
 
     @Test
     fun `When app lifecycle breadcrumbs is enabled, add breadcrumb on start`() {
-        val watcher = fixture.getSUT(enableSessionTracking = false)
+        val watcher = fixture.getSUT(enableAutoSessionTracking = false)
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("app.lifecycle", it.category)
@@ -150,14 +150,14 @@ class LifecycleWatcherTest {
 
     @Test
     fun `When app lifecycle breadcrumbs is disabled, do not add breadcrumb on start`() {
-        val watcher = fixture.getSUT(enableSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
+        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `When app lifecycle breadcrumbs is enabled, add breadcrumb on stop`() {
-        val watcher = fixture.getSUT(enableSessionTracking = false)
+        val watcher = fixture.getSUT(enableAutoSessionTracking = false)
         watcher.onStop(fixture.ownerMock)
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("app.lifecycle", it.category)
@@ -169,7 +169,7 @@ class LifecycleWatcherTest {
 
     @Test
     fun `When app lifecycle breadcrumbs is disabled, do not add breadcrumb on stop`() {
-        val watcher = fixture.getSUT(enableSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
+        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         watcher.onStop(fixture.ownerMock)
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }

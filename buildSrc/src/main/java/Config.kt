@@ -1,4 +1,5 @@
 import java.math.BigDecimal
+import java.util.Locale
 
 object Config {
     val kotlinVersion = "1.4.30"
@@ -17,13 +18,13 @@ object Config {
         val springDependencyManagement = "io.spring.dependency-management"
         val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
-        val grettyVersion = "3.0.3"
-        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.14.2"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.4.30"
+        val grettyVersion = "3.0.4"
+        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.15.1"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
 
         fun shouldSignArtifacts(version: String): Boolean {
             return !(System.getenv("CI")?.toBoolean() ?: false) &&
-                    !version.toUpperCase().endsWith("SNAPSHOT")
+                    !version.toUpperCase(Locale.ROOT).endsWith("SNAPSHOT")
         }
     }
 
@@ -124,6 +125,7 @@ object Config {
     object Sentry {
         val SENTRY_JAVA_SDK_NAME = "sentry.java"
         val SENTRY_ANDROID_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.android"
+        val SENTRY_TIMBER_SDK_NAME = "$SENTRY_ANDROID_SDK_NAME.timber"
         val SENTRY_LOGBACK_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.logback"
         val SENTRY_JUL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jul"
         val SENTRY_LOG4J2_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.log4j2"

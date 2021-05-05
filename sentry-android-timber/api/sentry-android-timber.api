@@ -2,6 +2,7 @@ public final class io/sentry/android/timber/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
 	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field SENTRY_TIMBER_SDK_NAME Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
 	public fun <init> ()V
 }

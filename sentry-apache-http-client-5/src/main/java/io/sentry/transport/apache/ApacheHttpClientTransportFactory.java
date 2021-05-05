@@ -57,7 +57,7 @@ public final class ApacheHttpClientTransportFactory implements ITransportFactory
                     // the time to wait for a connection from the connection manager/pool
                     .setConnectionRequestTimeout(
                         options.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS)
-                    // the time waiting for data – after establishing the connection; maximum time
+                    // the time waiting for data, after establishing the connection; maximum time
                     // of inactivity between two data packets
                     .setResponseTimeout(options.getReadTimeoutMillis(), TimeUnit.MILLISECONDS)
                     .build())

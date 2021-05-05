@@ -1,5 +1,15 @@
 # Unreleased
 
+* Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)
+* Fix: When AppLifecycleIntegration is closed, it should remove observer using UI thread (#1459)
+
+Breaking Changes:
+
+* Remove: Settings.Secure.ANDROID_ID in favor of generated installationId (#1455)
+* Rename: enableSessionTracking to enableAutoSessionTracking (#1457)
+
+# 5.0.0-beta.1
+
 * Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)
 * Fix: use connection and read timeouts in ApacheHttpClient based transport (#1397)
 * Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
