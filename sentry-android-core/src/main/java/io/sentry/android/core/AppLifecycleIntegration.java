@@ -89,10 +89,20 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
   }
 
+  private void removeObserver() {
+    ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcher);
+  }
+
   @Override
   public void close() throws IOException {
     if (watcher != null) {
-      ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcher);
+      if (MainThreadChecker.isMainThread()) {
+        removeObserver();
+      } else {
+        // some versions of the androidx lifecycle-process require this to be executed on the main
+        // thread.
+        handler.post(() -> removeObserver());
+      }
       watcher = null;
       if (options != null) {
         options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration removed.");

@@ -16,10 +16,10 @@ class AppLifecycleIntegrationTest {
 
     private class Fixture {
         val hub = mock<IHub>()
+        val handler = mock<IHandler>()
+        val options = SentryAndroidOptions()
+
         fun getSut(): AppLifecycleIntegration {
-            return AppLifecycleIntegration()
-        }
-        fun getSut(handler: IHandler): AppLifecycleIntegration {
             return AppLifecycleIntegration(handler)
         }
     }
@@ -29,9 +29,8 @@ class AppLifecycleIntegrationTest {
     @Test
     fun `When AppLifecycleIntegration is added, lifecycle watcher should be started`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions()
 
-        sut.register(fixture.hub, options)
+        sut.register(fixture.hub, fixture.options)
 
         assertNotNull(sut.watcher)
     }
@@ -39,12 +38,12 @@ class AppLifecycleIntegrationTest {
     @Test
     fun `When SessionTracking and AppLifecycle breadcrumbs are disabled, lifecycle watcher should not be started`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions().apply {
+        fixture.options.apply {
             isEnableAppLifecycleBreadcrumbs = false
             isEnableAutoSessionTracking = false
         }
 
-        sut.register(fixture.hub, options)
+        sut.register(fixture.hub, fixture.options)
 
         assertNull(sut.watcher)
     }
@@ -52,9 +51,8 @@ class AppLifecycleIntegrationTest {
     @Test
     fun `When AppLifecycleIntegration is closed, lifecycle watcher should be closed`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions()
 
-        sut.register(fixture.hub, options)
+        sut.register(fixture.hub, fixture.options)
 
         assertNotNull(sut.watcher)
 
@@ -64,19 +62,36 @@ class AppLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When AppLifecycleIntegration is called from a background thread, post on the main thread`() {
-        val handler = mock<IHandler>()
-        val sut = fixture.getSut(handler)
-        val options = SentryAndroidOptions()
+    fun `When AppLifecycleIntegration is registered from a background thread, post on the main thread`() {
+        val sut = fixture.getSut()
         val latch = CountDownLatch(1)
 
         Thread {
-            sut.register(fixture.hub, options)
+            sut.register(fixture.hub, fixture.options)
             latch.countDown()
         }.start()
 
         latch.await()
 
-        verify(handler).post(any())
+        verify(fixture.handler).post(any())
+    }
+
+    @Test
+    fun `When AppLifecycleIntegration is closed from a background thread, post on the main thread`() {
+        val sut = fixture.getSut()
+        val latch = CountDownLatch(1)
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNotNull(sut.watcher)
+
+        Thread {
+            sut.close()
+            latch.countDown()
+        }.start()
+
+        latch.await()
+
+        verify(fixture.handler).post(any())
     }
 }
