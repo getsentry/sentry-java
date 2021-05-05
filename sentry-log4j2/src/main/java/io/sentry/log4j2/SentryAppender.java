@@ -71,12 +71,12 @@ public final class SentryAppender extends AbstractAppender {
    * @return The SentryAppender.
    */
   @PluginFactory
-  public static SentryAppender createAppender(
-      @PluginAttribute("name") final String name,
-      @PluginAttribute("minimumBreadcrumbLevel") final Level minimumBreadcrumbLevel,
-      @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
-      @PluginAttribute("dsn") final String dsn,
-      @PluginElement("filter") final Filter filter) {
+  public static @Nullable SentryAppender createAppender(
+      @Nullable @PluginAttribute("name") final String name,
+      @Nullable @PluginAttribute("minimumBreadcrumbLevel") final Level minimumBreadcrumbLevel,
+      @Nullable @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
+      @Nullable @PluginAttribute("dsn") final String dsn,
+      @Nullable @PluginElement("filter") final Filter filter) {
 
     if (name == null) {
       LOGGER.error("No name provided for SentryAppender");
@@ -150,7 +150,7 @@ public final class SentryAppender extends AbstractAppender {
 
     final Map<String, String> contextData =
         CollectionUtils.shallowCopy(loggingEvent.getContextData().toMap());
-    if (!contextData.isEmpty()) {
+    if (contextData != null && !contextData.isEmpty()) {
       event.getContexts().put("Context Data", contextData);
     }
 

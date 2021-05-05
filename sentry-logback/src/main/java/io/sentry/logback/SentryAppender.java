@@ -158,7 +158,9 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
   }
 
   public void setOptions(final @Nullable SentryOptions options) {
-    this.options = options;
+    if (options != null) {
+      this.options = options;
+    }
   }
 
   public void setMinimumBreadcrumbLevel(final @Nullable Level minimumBreadcrumbLevel) {
