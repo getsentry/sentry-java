@@ -2,6 +2,7 @@
 
 * Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)
 * Fix: When AppLifecycleIntegration is closed, it should remove observer using UI thread (#1459)
+* Bump: AGP to 4.2.0
 
 Breaking Changes:
 
