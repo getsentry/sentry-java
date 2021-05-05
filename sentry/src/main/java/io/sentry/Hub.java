@@ -6,6 +6,7 @@ import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.io.Closeable;
@@ -175,7 +176,8 @@ public final class Hub implements IHub {
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
     if (event.getThrowable() != null) {
-      final Pair<ISpan, String> pair = throwableToSpan.get(event.getThrowable());
+      final Pair<ISpan, String> pair =
+          throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
       if (pair != null) {
         if (event.getContexts().getTrace() == null) {
           event.getContexts().setTrace(pair.getFirst().getSpanContext());

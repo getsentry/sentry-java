@@ -325,6 +325,22 @@ class HubTest {
     }
 
     @Test
+    fun `when captureEvent is called and event has exception which root cause has been previously attached with span context, sets span context to the event`() {
+        val (sut, mockClient) = getEnabledHub()
+        val rootCause = RuntimeException()
+        val span = mock<Span>()
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
+        sut.setSpanContext(rootCause, span, "tx-name")
+
+        val event = SentryEvent(RuntimeException(rootCause))
+
+        val hint = { }
+        sut.captureEvent(event, hint)
+        assertEquals(span.spanContext, event.contexts.trace)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+    }
+
+    @Test
     fun `when captureEvent is called and event has exception which has been previously attached with span context and trace context already set, does not set new span context to the event`() {
         val (sut, mockClient) = getEnabledHub()
         val exception = RuntimeException()
