@@ -81,7 +81,7 @@ public final class TempSensorBreadcrumbsIntegration
   }
 
   @Override
-  public void onSensorChanged(SensorEvent event) {
+  public void onSensorChanged(final @NotNull SensorEvent event) {
     final float[] values = event.values;
     // return if data is not available or zero'ed
     if (values == null || values.length == 0 || values[0] == 0f) {

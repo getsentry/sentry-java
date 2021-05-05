@@ -9,10 +9,11 @@ import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 final class Installation {
-  @TestOnly static String deviceId = null;
+  @TestOnly static @Nullable String deviceId = null;
 
   @TestOnly static final String INSTALLATION = "INSTALLATION";
   private static final Charset UTF_8 = Charset.forName("UTF-8");

@@ -29,6 +29,7 @@ final class AndroidLogger implements ILogger {
   }
 
   @Override
+  @SuppressWarnings("NullAway") // TODO: once logger is fixed in parent branch
   public void log(
       final @Nullable SentryLevel level,
       final @Nullable String message,
@@ -59,6 +60,7 @@ final class AndroidLogger implements ILogger {
     return true;
   }
 
+  @SuppressWarnings("NullAway") // TODO: once logger is fixed in parent branch
   private int toLogcatLevel(final @Nullable SentryLevel sentryLevel) {
     switch (sentryLevel) {
       case INFO:

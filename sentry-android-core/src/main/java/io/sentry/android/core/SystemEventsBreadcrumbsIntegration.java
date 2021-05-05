@@ -101,7 +101,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   }
 
   @SuppressWarnings("deprecation")
-  private static List<String> getDefaultActions() {
+  private static @NotNull List<String> getDefaultActions() {
     final List<String> actions = new ArrayList<>();
     actions.add(ACTION_APPWIDGET_DELETED);
     actions.add(ACTION_APPWIDGET_DISABLED);
