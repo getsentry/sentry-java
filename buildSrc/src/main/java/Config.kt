@@ -116,7 +116,8 @@ object Config {
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.36.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.16.0"
+        // use RC2 to drop jcenter because of kotlinx-html
+        val detektVersion = "1.17.0-RC2"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.5.0"
         val binaryCompatibilityValidator = "binary-compatibility-validator"
