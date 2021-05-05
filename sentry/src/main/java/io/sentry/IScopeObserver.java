@@ -10,7 +10,7 @@ public interface IScopeObserver {
 
   void addBreadcrumb(@NotNull Breadcrumb crumb);
 
-  void setTag(@NotNull String key, @Nullable String value);
+  void setTag(@NotNull String key, @NotNull String value);
 
   void removeTag(@NotNull String key);
 
