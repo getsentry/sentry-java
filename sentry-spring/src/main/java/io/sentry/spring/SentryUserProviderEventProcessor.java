@@ -55,12 +55,14 @@ public final class SentryUserProviderEventProcessor implements EventProcessor {
       Optional.ofNullable(user.getIpAddress()).ifPresent(existingUser::setIpAddress);
       Optional.ofNullable(user.getUsername()).ifPresent(existingUser::setUsername);
       if (user.getOthers() != null && !user.getOthers().isEmpty()) {
-        if (existingUser.getOthers() == null) {
-          existingUser.setOthers(new ConcurrentHashMap<>());
+        Map<String, String> existingUserOthers = existingUser.getOthers();
+        if (existingUserOthers == null) {
+          existingUserOthers = new ConcurrentHashMap<>();
         }
         for (Map.Entry<String, String> entry : user.getOthers().entrySet()) {
-          existingUser.getOthers().put(entry.getKey(), entry.getValue());
+          existingUserOthers.put(entry.getKey(), entry.getValue());
         }
+        existingUser.setOthers(existingUserOthers);
       }
       event.setUser(existingUser);
     }

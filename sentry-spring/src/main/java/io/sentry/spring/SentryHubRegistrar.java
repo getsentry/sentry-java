@@ -19,7 +19,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
 
   @Override
   public void registerBeanDefinitions(
-      AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+      final @NotNull AnnotationMetadata importingClassMetadata, final @NotNull BeanDefinitionRegistry registry) {
     final AnnotationAttributes annotationAttributes =
         AnnotationAttributes.fromMap(
             importingClassMetadata.getAnnotationAttributes(EnableSentry.class.getName()));
@@ -31,7 +31,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
   }
 
   private void registerSentryOptions(
-      BeanDefinitionRegistry registry, AnnotationAttributes annotationAttributes) {
+      final @NotNull BeanDefinitionRegistry registry, final @NotNull AnnotationAttributes annotationAttributes) {
     final BeanDefinitionBuilder builder =
         BeanDefinitionBuilder.genericBeanDefinition(SentryOptions.class);
 
@@ -49,7 +49,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     registry.registerBeanDefinition("sentryOptions", builder.getBeanDefinition());
   }
 
-  private void registerSentryHubBean(BeanDefinitionRegistry registry) {
+  private void registerSentryHubBean(final @NotNull BeanDefinitionRegistry registry) {
     final BeanDefinitionBuilder builder =
         BeanDefinitionBuilder.genericBeanDefinition(HubAdapter.class);
     builder.setInitMethodName("getInstance");
