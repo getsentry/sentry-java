@@ -45,35 +45,52 @@ val repositoryUrl = argOrDefault("repositoryUrl", "https://oss.sonatype.org/serv
 val repositoryId = argOrDefault("repositoryId", "ossrh")
 
 File(path)
-    .listFiles { file -> file.isDirectory() }
-    .forEach { folder ->
-        val path = folder.path
-        val module = folder.name
+        .listFiles { file -> file.isDirectory() }
+        .forEach { folder ->
+            val path = folder.path
+            val module = folder.name
 
-        val file: String
+            val file: String
 
-        val androidFile = folder.listFiles { it -> it.name.contains("release") && it.extension == "aar" }.firstOrNull()
-        if (androidFile != null) {
-            file = androidFile.path
-        } else {
-            file = "$path/$module.jar"
+            val androidFile = folder
+                    .listFiles { it -> it.name.contains("release") && it.extension == "aar" }
+                    .firstOrNull()
+
+            if (androidFile != null) {
+                file = androidFile.path
+            } else {
+                file = "$path/$module.jar"
+            }
+
+            val javadocFile = "$path/$module-javadoc.jar"
+            val sourcesFile = "$path/$module-sources.jar"
+            val pomFile = "$path/pom-default.xml"
+
+            // requires GnuPG installed to sign files
+            // using 'gpg:sign-and-deploy-file' because 'deploy:deploy-file' does not upload
+            // .asc files.
+            // TODO: find out where to set keyId, password and secretKeyRingFile if you have
+            // more than one.
+            val command = "./mvnw gpg:sign-and-deploy-file " +
+                    "-Dfile=$file " +
+                    "-Dfiles=$javadocFile,$sourcesFile " +
+                    "-Dclassifiers=sources,javadoc " +
+                    "-Dtypes=jar,jar " +
+                    "-DpomFile=$pomFile " +
+                    "-DrepositoryId=$repositoryId " +
+                    "-Durl=$repositoryUrl " +
+                    "--settings $settingsPath"
+            println(command)
         }
-        val javadocFile = "$path/$module-javadoc.jar"
-        val sourcesFile = "$path/$module-sources.jar"
-        val pomFile = "$path/pom-default.xml"
-
-        val command = "./mvnw deploy:deploy-file -Dfile=$file -Dfiles=$javadocFile,$sourcesFile -Dclassifiers=sources,javadoc -Dtypes=jar,jar -DpomFile=$pomFile -DrepositoryId=$repositoryId -Durl=$repositoryUrl --settings $settingsPath"
-        println(command)
-    }
 
 /**
  * Returns the value for a command line argument passed with -argName flag or throws an exception if not provided.
  */
 fun Release.requiredArg(argName: String) =
-    if (args.contains("-$argName")) args[1 + args.indexOf("-$argName")] else throw Error("$argName parameter must be provided")
+        if (args.contains("-$argName")) args[1 + args.indexOf("-$argName")] else throw Error("$argName parameter must be provided")
 
 /**
  * Returns the value for a command line argument passed with -argName flag or returns the default value.
  */
 fun Release.argOrDefault(argName: String, default: String) =
-    if (args.contains("-$argName")) args[1 + args.indexOf("-$argName")] else default
+        if (args.contains("-$argName")) args[1 + args.indexOf("-$argName")] else default

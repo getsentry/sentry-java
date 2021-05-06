@@ -105,17 +105,13 @@ subprojects {
             apply<MavenPublishPlugin>()
 
             configure<MavenPublishPluginExtension> {
-                val sign = Config.BuildPlugins.shouldSignArtifacts(project.version.toString())
-                releaseSigningEnabled = sign
+                // signing is done when uploading files to MC
+                // via gpg:sign-and-deploy-file (release.kts)
+                releaseSigningEnabled = false
             }
 
-            // signing info and maven central info go to:
+            // maven central info go to:
             // ~/.gradle/gradle.properties
-
-            // signing info:
-            // signing.keyId=id
-            // signing.password=password
-            // signing.secretKeyRingFile=file path
 
             // maven central info:
             // mavenCentralUsername=user name
