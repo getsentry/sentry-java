@@ -10,7 +10,7 @@ object Config {
     val springKotlinCompatibleLanguageVersion = "1.3"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:4.1.3"
+        val androidGradle = "com.android.tools.build:gradle:4.2.0"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.0"
@@ -116,7 +116,8 @@ object Config {
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.36.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.16.0"
+        // use RC2 to drop jcenter because of kotlinx-html
+        val detektVersion = "1.17.0-RC2"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.5.0"
         val binaryCompatibilityValidator = "binary-compatibility-validator"

@@ -15,8 +15,6 @@ plugins {
 buildscript {
     repositories {
         google()
-        jcenter()
-        maven { setUrl("https://kotlin.bintray.com/kotlinx") }
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
@@ -43,7 +41,6 @@ apply(plugin = Config.QualityPlugins.binaryCompatibilityValidator)
 allprojects {
     repositories {
         google()
-        jcenter()
         mavenCentral()
     }
     group = Config.Sentry.group
