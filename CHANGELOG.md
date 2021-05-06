@@ -1,3 +1,5 @@
+# Unreleased
+
 # 5.0.0-beta.2
 
 * Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)
