@@ -35,9 +35,7 @@ object UnzipUtils {
                         val dir = File(filePath)
                         dir.mkdir()
                     }
-
                 }
-
             }
         }
     }
