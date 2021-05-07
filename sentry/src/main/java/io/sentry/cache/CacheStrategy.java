@@ -120,7 +120,7 @@ abstract class CacheStrategy {
       final @NotNull File currentFile, final @NotNull File[] notDeletedFiles) {
     final SentryEnvelope currentEnvelope = readEnvelope(currentFile);
 
-    if (currentEnvelope != null && !isValidEnvelope(currentEnvelope)) {
+    if (currentEnvelope == null || !isValidEnvelope(currentEnvelope)) {
       return;
     }
 
@@ -219,10 +219,7 @@ abstract class CacheStrategy {
     return null;
   }
 
-  private @Nullable Session getFirstSession(final @Nullable SentryEnvelope envelope) {
-    if (envelope == null) {
-      return null;
-    }
+  private @Nullable Session getFirstSession(final @NotNull SentryEnvelope envelope) {
     for (final SentryEnvelopeItem item : envelope.getItems()) {
       if (!isSessionType(item)) {
         continue;
