@@ -66,40 +66,52 @@ subprojects {
     if (!this.name.contains("sample") && this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
 
+        val sep = File.separator
+
         configure<DistributionContainer> {
             this.getByName("main").contents {
                 // non android modules
-                from("build/libs")
-                from("build/publications/maven")
+                from("build${sep}libs")
+                from("build${sep}publications${sep}maven")
                 // android modules
-                from("build/outputs/aar")
-                from("build/publications/release")
+                from("build${sep}outputs${sep}aar")
+                from("build${sep}publications${sep}release")
             }
         }
+
+        val rootDir = this.project.rootProject.projectDir
+        val distDir = File("${rootDir}${sep}distributions")
+
+        // create dir if it does not exist
+        distDir.mkdirs()
+
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
-                val distributionFilePath = "${this.project.buildDir}/distributions/${this.project.name}-${this.project.version}.zip"
+                val distributionFilePath = "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
                 val file = File(distributionFilePath)
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
+
+                val newFile = File("${distDir}${sep}${file.name}")
+                file.copyTo(newFile, overwrite = true)
+
+                UnzipUtils.unzip(newFile, distDir.path)
+                newFile.delete()
             }
         }
+
         afterEvaluate {
             apply<MavenPublishPlugin>()
 
             configure<MavenPublishPluginExtension> {
-                val sign = Config.BuildPlugins.shouldSignArtifacts(project.version.toString())
-                releaseSigningEnabled = sign
+                // signing is done when uploading files to MC
+                // via gpg:sign-and-deploy-file (release.kts)
+                releaseSigningEnabled = false
             }
 
-            // signing info and maven central info go to:
+            // maven central info go to:
             // ~/.gradle/gradle.properties
-
-            // signing info:
-            // signing.keyId=id
-            // signing.password=password
-            // signing.secretKeyRingFile=file path
 
             // maven central info:
             // mavenCentralUsername=user name

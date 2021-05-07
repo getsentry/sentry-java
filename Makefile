@@ -19,7 +19,9 @@ dryRelease:
 # remember to remove the -SNAPSHOT suffix from the version
 # promotes the release to maven central
 doRelease:
-	./gradlew publish --no-daemon
+	cd scripts
+	kotlinc -script release.kts -- -d ../distributions | sh
+	cd ..
 	./gradlew closeAndReleaseRepository
 
 # clean, build, deploy and promote to maven central
