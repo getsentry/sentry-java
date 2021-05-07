@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +35,8 @@ public final class SentryTransaction extends SentryBaseEvent {
   /** The {@code type} property is required in JSON payload sent to Sentry. */
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
+
+  private @NotNull Map<String, @NotNull Object> measurements = new ConcurrentHashMap<>();
 
   @SuppressWarnings("deprecation")
   public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
@@ -84,5 +88,9 @@ public final class SentryTransaction extends SentryBaseEvent {
   public boolean isSampled() {
     final SpanContext trace = this.getContexts().getTrace();
     return trace != null && Boolean.TRUE.equals(trace.getSampled());
+  }
+
+  public @NotNull Map<String, @NotNull Object> getMeasurements() {
+    return measurements;
   }
 }

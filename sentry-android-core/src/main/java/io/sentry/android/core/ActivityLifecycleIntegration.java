@@ -7,6 +7,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
+import io.sentry.DateUtils;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.Integration;
@@ -14,9 +15,11 @@ import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.protocol.Contexts;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +36,9 @@ public final class ActivityLifecycleIntegration
   private boolean performanceEnabled = false;
 
   private boolean isAllActivityCallbacksAvailable;
+
+  // does it need to be atomic? its only in the main thread
+  private boolean isAppStartUp = false;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
@@ -199,6 +205,11 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityResumed(final @NonNull Activity activity) {
+    if (!isAppStartUp) {
+      isAppStartUp = true;
+      transactionAppStartUp(DateUtils.getCurrentDateTime());
+    }
+
     addBreadcrumb(activity, "resumed");
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPostResumed
@@ -253,5 +264,14 @@ public final class ActivityLifecycleIntegration
   @NotNull
   WeakHashMap<Activity, ITransaction> getActivitiesWithOngoingTransactions() {
     return activitiesWithOngoingTransactions;
+  }
+
+  @SuppressWarnings("deprecation")
+  private void transactionAppStartUp(final @NotNull Date appStartTimeEnd) {
+    // figure out if cold/warm/hot
+    final ITransaction transaction = hub.startTransaction("app_start_time_test", "cold");
+    // we need to find a way to pass values or create a transaction with custom start time
+    transaction.getContexts().put("sentry:app_start_time_end", appStartTimeEnd);
+    transaction.finish(SpanStatus.OK);
   }
 }

@@ -70,9 +70,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @TestOnly static final String EMULATOR = "emulator";
   @TestOnly static final String SIDE_LOADED = "sideLoaded";
 
-  // it could also be a parameter and get from Sentry.init(...)
-  private static final @Nullable Date appStartTime = DateUtils.getCurrentDateTime();
-
   @TestOnly final Context context;
 
   @TestOnly final Future<Map<String, Object>> contextData;
@@ -299,7 +296,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private void setAppExtras(final @NotNull App app) {
     app.setAppName(getApplicationName());
-    app.setAppStartTime(appStartTime);
+    // get getAppStartTime as ctor param
+    app.setAppStartTime(SentryPerformanceProvider.getAppStartTime());
   }
 
   @SuppressWarnings("deprecation")
