@@ -107,7 +107,7 @@ class SentryEnvelopeTest {
 {"content_type":"application/json","type":"event"}
 {}""".toInputStream()
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
-        assertEquals("Item header at index '0' has an invalid value: '0'.", exception.message)
+        assertEquals("Item header at index '0' is null or empty.", exception.message)
     }
 
     @Test

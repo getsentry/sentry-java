@@ -89,11 +89,7 @@ public final class EnvelopeReader implements IEnvelopeReader {
 
         if (itemHeader == null || itemHeader.getLength() <= 0) {
           throw new IllegalArgumentException(
-              "Item header at index '"
-                  + items.size()
-                  + "' has an invalid value: '"
-                  + itemHeader
-                  + "'.");
+              "Item header at index '" + items.size() + "' is null or empty.");
         }
 
         payloadEndOffsetExclusive = lineBreakIndex + itemHeader.getLength() + 1;

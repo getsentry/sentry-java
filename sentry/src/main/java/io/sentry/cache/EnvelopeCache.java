@@ -69,7 +69,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
   private EnvelopeCache(
       final @NotNull SentryOptions options,
       final @NotNull String cacheDirPath,
-      final @NotNull int cacheDirSize) {
+      final int cacheDirSize) {
     super(options, cacheDirPath, cacheDirSize);
   }
 

@@ -210,18 +210,17 @@ public final class Sentry {
     // eg release, distinctId, sentryClientName
 
     // this should be after setting serializers
-    if (options.getOutboxPath() != null
-        && options.getCacheDirPath() != null
-        && !options.getCacheDirPath().isEmpty()) {
-      final File cacheDir = new File(options.getCacheDirPath());
-      cacheDir.mkdirs();
-
+    if (options.getOutboxPath() != null) {
       final File outboxDir = new File(options.getOutboxPath());
       outboxDir.mkdirs();
-
-      options.setEnvelopeDiskCache(EnvelopeCache.create(options));
     } else {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
+    }
+
+    if (options.getCacheDirPath() != null && !options.getCacheDirPath().isEmpty()) {
+      final File cacheDir = new File(options.getCacheDirPath());
+      cacheDir.mkdirs();
+      options.setEnvelopeDiskCache(EnvelopeCache.create(options));
     }
 
     return true;

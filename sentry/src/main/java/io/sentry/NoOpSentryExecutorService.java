@@ -9,7 +9,7 @@ final class NoOpSentryExecutorService implements ISentryExecutorService {
 
   private NoOpSentryExecutorService() {}
 
-  public static ISentryExecutorService getInstance() {
+  public static @NotNull ISentryExecutorService getInstance() {
     return instance;
   }
 

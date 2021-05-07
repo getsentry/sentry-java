@@ -181,11 +181,13 @@ public final class Hub implements IHub {
     if (event.getThrowable() != null) {
       final Pair<ISpan, String> pair = throwableToSpan.get(event.getThrowable());
       if (pair != null) {
-        if (event.getContexts().getTrace() == null && pair.getFirst() != null) {
-          event.getContexts().setTrace(pair.getFirst().getSpanContext());
+        final ISpan span = pair.getFirst();
+        if (event.getContexts().getTrace() == null && span != null) {
+          event.getContexts().setTrace(span.getSpanContext());
         }
-        if (event.getTransaction() == null && pair.getSecond() != null) {
-          event.setTransaction(pair.getSecond());
+        final String transactionName = pair.getSecond();
+        if (event.getTransaction() == null && transactionName != null) {
+          event.setTransaction(transactionName);
         }
       }
     }
@@ -264,10 +266,7 @@ public final class Hub implements IHub {
             ((Closeable) integration).close();
           }
         }
-        final ISentryExecutorService executorService = options.getExecutorService();
-        if (executorService != null) {
-          executorService.close(options.getShutdownTimeout());
-        }
+        options.getExecutorService().close(options.getShutdownTimeout());
 
         // Close the top-most client
         final StackItem item = stack.peek();
@@ -661,9 +660,12 @@ public final class Hub implements IHub {
   @Nullable
   SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
-    final Pair<ISpan, String> span = this.throwableToSpan.get(throwable);
-    if (span != null && span.getFirst() != null) {
-      return span.getFirst().getSpanContext();
+    final Pair<ISpan, String> pair = this.throwableToSpan.get(throwable);
+    if (pair != null) {
+      final ISpan span = pair.getFirst();
+      if (span != null) {
+        return span.getSpanContext();
+      }
     }
     return null;
   }
