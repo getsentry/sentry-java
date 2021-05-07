@@ -1255,14 +1255,6 @@ public final class io/sentry/exception/ExceptionMechanismException : java/lang/R
 	public fun isSnapshot ()Z
 }
 
-public final class io/sentry/exception/InvalidDsnException : java/lang/RuntimeException {
-	public fun <init> (Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
-	public fun getDsn ()Ljava/lang/String;
-}
-
 public final class io/sentry/exception/InvalidSentryTraceHeaderException : java/lang/Exception {
 	public fun <init> (Ljava/lang/String;)V
 	public fun getSentryTraceHeader ()Ljava/lang/String;

@@ -14,7 +14,6 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.exception.InvalidDsnException
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
@@ -487,7 +486,7 @@ class HubTest {
     fun `when captureUserFeedback is called and client throws, don't crash`() {
         val (sut, mockClient) = getEnabledHub()
 
-        whenever(mockClient.captureUserFeedback(any())).doThrow(InvalidDsnException(""))
+        whenever(mockClient.captureUserFeedback(any())).doThrow(IllegalArgumentException(""))
 
         sut.captureUserFeedback(userFeedback)
     }

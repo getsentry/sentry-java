@@ -1,6 +1,6 @@
 package io.sentry
 
-import io.sentry.exception.InvalidDsnException
+import java.lang.IllegalArgumentException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -59,19 +59,19 @@ class DsnTest {
 
     @Test
     fun `when no project id exists, throws exception`() {
-        val ex = assertFailsWith<InvalidDsnException> { Dsn("http://key@host/") }
+        val ex = assertFailsWith<IllegalArgumentException> { Dsn("http://key@host/") }
         assertEquals("java.lang.IllegalArgumentException: Invalid DSN: A Project Id is required.", ex.message)
     }
 
     @Test
     fun `when no key exists, throws exception`() {
-        val ex = assertFailsWith<InvalidDsnException> { Dsn("http://host/id") }
+        val ex = assertFailsWith<IllegalArgumentException> { Dsn("http://host/id") }
         assertEquals("java.lang.IllegalArgumentException: Invalid DSN: No public key provided.", ex.message)
     }
 
     @Test
     fun `when only passing secret key, throws exception`() {
-        val ex = assertFailsWith<InvalidDsnException> { Dsn("https://:secret@host/path/id") }
+        val ex = assertFailsWith<IllegalArgumentException> { Dsn("https://:secret@host/path/id") }
         assertEquals("java.lang.IllegalArgumentException: Invalid DSN: No public key provided.", ex.message)
     }
 

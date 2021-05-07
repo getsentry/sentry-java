@@ -12,7 +12,6 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.exception.InvalidDsnException
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
@@ -31,6 +30,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
+import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.lang.RuntimeException
 import java.nio.charset.Charset
@@ -99,7 +99,7 @@ class SentryClientTest {
     fun `when dsn is an invalid string, client throws`() {
         fixture.sentryOptions.setTransportFactory(NoOpTransportFactory.getInstance())
         fixture.sentryOptions.dsn = "invalid-dsn"
-        assertFailsWith<InvalidDsnException> { fixture.getSut() }
+        assertFailsWith<IllegalArgumentException> { fixture.getSut() }
     }
 
     @Test
