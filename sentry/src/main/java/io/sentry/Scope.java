@@ -112,16 +112,16 @@ public final class Scope implements Cloneable {
    *
    * @param transaction the transaction
    */
-  public void setTransaction(final @Nullable String transaction) {
-    final ITransaction tx = this.transaction;
-    if (tx != null) {
-      if (transaction != null) {
+  public void setTransaction(final @NotNull String transaction) {
+    if (transaction != null) {
+      final ITransaction tx = this.transaction;
+      if (tx != null) {
         tx.setName(transaction);
-      } else {
-        this.setTransaction((ITransaction) null);
       }
+      this.transactionName = transaction;
+    } else {
+      options.getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
     }
-    this.transactionName = transaction;
   }
 
   /**

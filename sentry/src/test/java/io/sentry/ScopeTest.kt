@@ -682,14 +682,13 @@ class ScopeTest {
     }
 
     @Test
-    fun `Scope setTransaction with null clears transaction`() {
+    fun `Scope setTransaction with null does not clear transaction`() {
         val scope = Scope(SentryOptions())
         val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
         scope.transaction = transaction
-        // todo: potentially we can improve the api here
-        scope.setTransaction(null as String?)
-        assertNull(scope.transaction)
-        assertNull(scope.transactionName)
+        scope.callMethod("setTransaction", String::class.java, null)
+        assertNotNull(scope.transaction)
+        assertNotNull(scope.transactionName)
     }
 
     @Test

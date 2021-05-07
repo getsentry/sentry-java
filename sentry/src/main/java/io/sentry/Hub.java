@@ -314,8 +314,10 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'setTransaction' call is a no-op.");
-    } else {
+    } else if (transaction != null) {
       stack.peek().getScope().setTransaction(transaction);
+    } else {
+      options.getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
     }
   }
 
