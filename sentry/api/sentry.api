@@ -1860,8 +1860,13 @@ public final class io/sentry/util/ApplyScopeUtils {
 }
 
 public final class io/sentry/util/CollectionUtils {
+	public static fun filterMapEntries (Ljava/util/Map;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/Map;
 	public static fun shallowCopy (Ljava/util/Map;)Ljava/util/Map;
 	public static fun size (Ljava/lang/Iterable;)I
+}
+
+public abstract interface class io/sentry/util/CollectionUtils$Predicate {
+	public abstract fun test (Ljava/lang/Object;)Z
 }
 
 public final class io/sentry/util/LogUtils {

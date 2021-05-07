@@ -19,6 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.awaitility.kotlin.await
 import org.slf4j.MDC
@@ -290,12 +291,31 @@ class SentryHandlerTest {
     @Test
     fun `ignore set tags with null values from MDC`() {
         fixture = Fixture(minimumEventLevel = Level.WARNING)
-        MDC.put("key", null)
+        MDC.put("key1", null)
+        MDC.put("key2", "value")
         fixture.logger.warning("testing MDC tags")
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
-                assertFalse(event.contexts.containsKey("MDC"))
+                assertNotNull(event.contexts["MDC"]) {
+                    val contextData = it as Map<*, *>
+                    assertNull(contextData["key1"])
+                    assertEquals("value", contextData["key2"])
+                }
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `does not set MDC if all context entries are null`() {
+        fixture = Fixture(minimumEventLevel = Level.WARNING)
+        MDC.put("key1", null)
+        MDC.put("key2", null)
+        fixture.logger.warning("testing MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertNull(event.contexts["MDC"])
             }, anyOrNull())
         }
     }

@@ -5,6 +5,8 @@
 * Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)
 * Fix: When AppLifecycleIntegration is closed, it should remove observer using UI thread (#1459)
 * Bump: AGP to 4.2.0 (#1460)
+* Fix: NPE when adding Context Data with null values for log4j2 (#1465)
+
 
 Breaking Changes:
 
