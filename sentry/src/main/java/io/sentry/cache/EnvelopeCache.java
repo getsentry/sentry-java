@@ -55,7 +55,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
 
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
-  public static IEnvelopeCache create(final @NotNull SentryOptions options) {
+  public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
     final int cacheDirSize = options.getCacheDirSize();
     if (cacheDirPath == null) {
