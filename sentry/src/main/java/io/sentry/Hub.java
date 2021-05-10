@@ -645,16 +645,19 @@ public final class Hub implements IHub {
     Objects.requireNonNull(throwable, "throwable is required");
     Objects.requireNonNull(span, "span is required");
     Objects.requireNonNull(transactionName, "transactionName is required");
+    // to match any cause, span context is always attached to the root cause of the exception
+    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
     // the most inner span should be assigned to a throwable
-    if (!throwableToSpan.containsKey(throwable)) {
-      throwableToSpan.put(throwable, new Pair<>(span, transactionName));
+    if (!throwableToSpan.containsKey(rootCause)) {
+      throwableToSpan.put(rootCause, new Pair<>(span, transactionName));
     }
   }
 
   @Nullable
   SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
-    final Pair<ISpan, String> span = this.throwableToSpan.get(throwable);
+    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
+    final Pair<ISpan, String> span = this.throwableToSpan.get(rootCause);
     if (span != null) {
       return span.getFirst().getSpanContext();
     }
