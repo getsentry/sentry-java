@@ -154,6 +154,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else if (SentryItemType.Transaction.equals(item.getHeader().getType())) {
+
+        // TODO(denrase): DRY
+        
         try (final Reader eventReader =
                new BufferedReader(
                  new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
