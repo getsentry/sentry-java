@@ -89,4 +89,33 @@ class SentryEventTest {
         event.throwable = ex
         assertEquals(ex, event.originThrowable)
     }
+
+    @Test
+    fun `addBreadcrumbs copies elements to SentryEvent and does not change the event breadcrumbs reference`() {
+        val event = SentryEvent()
+        event.addBreadcrumb("breadcrumb")
+        val eventBreadcrumbs = event.breadcrumbs
+
+        val breadcrumbsList = listOf(Breadcrumb(), Breadcrumb())
+        event.addBreadcrumbs(breadcrumbsList)
+
+        assertEquals(3, event.breadcrumbs.size)
+        assertEquals(eventBreadcrumbs, event.breadcrumbs)
+        assertNotEquals(breadcrumbsList, event.breadcrumbs)
+    }
+
+    @Test
+    fun `addTags copies elements to SentryEvent and does not change the event tags reference`() {
+        val event = SentryEvent()
+        event.addTag("key1", "value1")
+        val eventTags = event.tags
+
+        val tagsMap = mapOf("key2" to "value2", "key3" to "value3")
+        event.addTags(tagsMap)
+
+        assertEquals(3, event.tags.size)
+        assertEquals(eventTags, event.tags)
+        assertNotEquals(tagsMap, event.tags)
+
+    }
 }

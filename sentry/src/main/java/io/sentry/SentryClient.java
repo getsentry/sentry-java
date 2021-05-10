@@ -515,7 +515,7 @@ public final class SentryClient implements ISentryClient {
         sentryBaseEvent.setUser(scope.getUser());
       }
       if (sentryBaseEvent.getTags() == null) {
-        sentryBaseEvent.setTags(new HashMap<>(scope.getTags()));
+        sentryBaseEvent.addTags(new HashMap<>(scope.getTags()));
       } else {
         for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
           if (!sentryBaseEvent.getTags().containsKey(item.getKey())) {
@@ -524,7 +524,7 @@ public final class SentryClient implements ISentryClient {
         }
       }
       if (sentryBaseEvent.getBreadcrumbs() == null) {
-        sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+        sentryBaseEvent.addBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
       } else {
         sortBreadcrumbsByDate(sentryBaseEvent, scope.getBreadcrumbs());
       }

@@ -974,7 +974,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       if (sideLoadedInfo instanceof Map) {
         for (final Map.Entry<String, String> entry :
             ((Map<String, String>) sideLoadedInfo).entrySet()) {
-          event.setTag(entry.getKey(), entry.getValue());
+          event.addTag(entry.getKey(), entry.getValue());
         }
       }
     } catch (Exception e) {

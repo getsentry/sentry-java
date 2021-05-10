@@ -600,7 +600,7 @@ class GsonSerializerTest {
     @Test
     fun `empty maps are serialized to null`() {
         val event = SentryEvent()
-        event.tags = emptyMap()
+        event.addTags(emptyMap())
         val element = JsonParser().parse(serializeToString(event)).asJsonObject
         assertNull(element.asJsonObject["tags"])
     }

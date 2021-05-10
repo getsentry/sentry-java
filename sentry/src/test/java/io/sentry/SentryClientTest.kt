@@ -152,7 +152,7 @@ class SentryClientTest {
     @Test
     fun `when beforeSend is returns new instance, new instance is sent`() {
         val expected = SentryEvent().apply {
-            setTag("test", "test")
+            addTag("test", "test")
         }
         fixture.sentryOptions.setBeforeSend { _, _ -> expected }
         val sut = fixture.getSut()
@@ -286,7 +286,7 @@ class SentryClientTest {
 
         val b3 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.003Z"))
         val event = SentryEvent().apply {
-            breadcrumbs = mutableListOf(b3)
+            addBreadcrumbs(mutableListOf(b3))
         }
 
         sut.captureEvent(event, scope)
@@ -952,8 +952,8 @@ class SentryClientTest {
         fixture.sentryOptions.setTag("tag2", "value2")
         val sut = fixture.getSut()
         val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
-        transaction.setTag("tag3", "value3")
-        transaction.setTag("tag2", "transaction-tag")
+        transaction.addTag("tag3", "value3")
+        transaction.addTag("tag2", "transaction-tag")
         sut.captureTransaction(transaction)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "transaction-tag", "tag3" to "value3"), transaction.tags)
     }
@@ -1017,7 +1017,7 @@ class SentryClientTest {
                 message = "eventMessage"
             })
             setExtra("eventExtra", "eventExtra")
-            setTag("eventTag", "eventTag")
+            addTag("eventTag", "eventTag")
             fingerprints = listOf("eventFp")
             transaction = "eventTransaction"
             level = SentryLevel.DEBUG

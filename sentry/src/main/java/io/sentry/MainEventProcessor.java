@@ -156,11 +156,11 @@ public final class MainEventProcessor implements EventProcessor {
 
   private void setTags(final @NotNull SentryBaseEvent event) {
     if (event.getTags() == null) {
-      event.setTags(new HashMap<>(options.getTags()));
+      event.addTags(new HashMap<>(options.getTags()));
     } else {
       for (Map.Entry<String, String> item : options.getTags().entrySet()) {
         if (!event.getTags().containsKey(item.getKey())) {
-          event.setTag(item.getKey(), item.getValue());
+          event.addTag(item.getKey(), item.getValue());
         }
       }
     }
