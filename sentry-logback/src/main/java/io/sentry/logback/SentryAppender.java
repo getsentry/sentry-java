@@ -88,7 +88,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
     }
 
     if (loggingEvent.getThreadName() != null) {
-      event.setExtra("thread_name", loggingEvent.getThreadName());
+      event.addExtra("thread_name", loggingEvent.getThreadName());
     }
 
     // remove keys with null values, there is no sense to send these keys to Sentry

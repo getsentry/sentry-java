@@ -1016,9 +1016,9 @@ class SentryClientTest {
             addBreadcrumb(Breadcrumb().apply {
                 message = "eventMessage"
             })
-            setExtra("eventExtra", "eventExtra")
+            addExtra("eventExtra", "eventExtra")
             addTag("eventTag", "eventTag")
-            fingerprints = listOf("eventFp")
+            addFingerprints(listOf("eventFp"))
             transaction = "eventTransaction"
             level = SentryLevel.DEBUG
             user = User().apply {

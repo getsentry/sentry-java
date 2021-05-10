@@ -288,11 +288,18 @@ public abstract class SentryBaseEvent {
     return extra;
   }
 
-  public void setExtras(Map<String, Object> extra) {
-    this.extra = extra;
+  public void addExtras(Map<String, Object> extra) {
+    if (extra != null) {
+      if (this.extra == null) {
+        this.extra = new HashMap<>();
+      }
+      for (final Map.Entry<String, Object> entry : extra.entrySet()) {
+        this.extra.put(entry.getKey(), entry.getValue());
+      }
+    }
   }
 
-  public void setExtra(String key, Object value) {
+  public void addExtra(String key, Object value) {
     if (extra == null) {
       extra = new HashMap<>();
     }

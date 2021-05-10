@@ -193,7 +193,7 @@ public class SentryHandler extends Handler {
         event.getContexts().put("MDC", mdcProperties);
       }
     }
-    event.setExtra(THREAD_ID, record.getThreadID());
+    event.addExtra(THREAD_ID, record.getThreadID());
     return event;
   }
 

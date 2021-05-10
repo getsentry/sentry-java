@@ -105,6 +105,20 @@ class SentryEventTest {
     }
 
     @Test
+    fun `addFingerprints copies elements to SentryEvent and does not change the event fingerprint reference`() {
+        val event = SentryEvent()
+        event.addFingerprints(listOf("fingerprint1"))
+        val eventFingerprints = event.fingerprints
+
+        val fingerprints = listOf("fingerprint2", "fingerprint3")
+        event.addFingerprints(fingerprints)
+
+        assertEquals(3, event.fingerprints.size)
+        assertNotEquals(fingerprints, event.fingerprints)
+        assertEquals(eventFingerprints, event.fingerprints)
+    }
+
+    @Test
     fun `addTags copies elements to SentryEvent and does not change the event tags reference`() {
         val event = SentryEvent()
         event.addTag("key1", "value1")
@@ -116,6 +130,19 @@ class SentryEventTest {
         assertEquals(3, event.tags.size)
         assertEquals(eventTags, event.tags)
         assertNotEquals(tagsMap, event.tags)
+    }
 
+    @Test
+    fun `addExtras copies elements to SentryEvent and does not change the event extras reference`() {
+        val event = SentryEvent()
+        event.addExtra("key1", "value1")
+        val eventExtras = event.extras
+
+        val extrasMap = mapOf("key2" to "value2", "key3" to "value3")
+        event.addExtras(extrasMap)
+
+        assertEquals(3, event.extras.size)
+        assertEquals(eventExtras, event.extras)
+        assertNotEquals(extrasMap, event.extras)
     }
 }

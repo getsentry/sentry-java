@@ -488,7 +488,7 @@ public final class SentryClient implements ISentryClient {
         event.setTransaction(scope.getTransactionName());
       }
       if (event.getFingerprints() == null) {
-        event.setFingerprints(scope.getFingerprint());
+        event.addFingerprints(scope.getFingerprint());
       }
       // Level from scope exceptionally take precedence over the event
       if (scope.getLevel() != null) {
@@ -529,7 +529,7 @@ public final class SentryClient implements ISentryClient {
         sortBreadcrumbsByDate(sentryBaseEvent, scope.getBreadcrumbs());
       }
       if (sentryBaseEvent.getExtras() == null) {
-        sentryBaseEvent.setExtras(new HashMap<>(scope.getExtras()));
+        sentryBaseEvent.addExtras(new HashMap<>(scope.getExtras()));
       } else {
         for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
           if (!sentryBaseEvent.getExtras().containsKey(item.getKey())) {
