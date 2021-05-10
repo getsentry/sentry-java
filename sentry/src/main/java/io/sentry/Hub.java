@@ -226,15 +226,18 @@ public final class Hub implements IHub {
     } else {
       final StackItem item = this.stack.peek();
       final Scope.SessionPair pair = item.getScope().startSession();
+      if (pair != null) {
+        // TODO: add helper overload `captureSessions` to pass a list of sessions and submit a
+        // single envelope
+        // Or create the envelope here with both items and call `captureEnvelope`
+        if (pair.getPrevious() != null) {
+          item.getClient().captureSession(pair.getPrevious(), new SessionEndHint());
+        }
 
-      // TODO: add helper overload `captureSessions` to pass a list of sessions and submit a
-      // single envelope
-      // Or create the envelope here with both items and call `captureEnvelope`
-      if (pair.getPrevious() != null) {
-        item.getClient().captureSession(pair.getPrevious(), new SessionEndHint());
+        item.getClient().captureSession(pair.getCurrent(), new SessionStartHint());
+      } else {
+        options.getLogger().log(SentryLevel.WARNING, "Session could not be started.");
       }
-
-      item.getClient().captureSession(pair.getCurrent(), new SessionStartHint());
     }
   }
 

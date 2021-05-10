@@ -889,6 +889,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -904,6 +905,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -918,6 +920,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -936,6 +939,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -951,6 +955,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -965,6 +970,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -981,6 +987,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
