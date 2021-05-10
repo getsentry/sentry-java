@@ -1,4 +1,5 @@
 import java.math.BigDecimal
+import java.util.Locale
 
 object Config {
     val kotlinVersion = "1.4.30"
@@ -9,7 +10,7 @@ object Config {
     val springKotlinCompatibleLanguageVersion = "1.3"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:4.1.3"
+        val androidGradle = "com.android.tools.build:gradle:4.2.0"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.0"
@@ -17,13 +18,13 @@ object Config {
         val springDependencyManagement = "io.spring.dependency-management"
         val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
-        val grettyVersion = "3.0.3"
-        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.14.2"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.4.30"
+        val grettyVersion = "3.0.4"
+        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.15.1"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
 
         fun shouldSignArtifacts(version: String): Boolean {
             return !(System.getenv("CI")?.toBoolean() ?: false) &&
-                    !version.toUpperCase().endsWith("SNAPSHOT")
+                    !version.toUpperCase(Locale.ROOT).endsWith("SNAPSHOT")
         }
     }
 
@@ -116,7 +117,8 @@ object Config {
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.36.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.16.0"
+        // use RC2 to drop jcenter because of kotlinx-html
+        val detektVersion = "1.17.0-RC2"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.5.0"
         val binaryCompatibilityValidator = "binary-compatibility-validator"
@@ -125,6 +127,7 @@ object Config {
     object Sentry {
         val SENTRY_JAVA_SDK_NAME = "sentry.java"
         val SENTRY_ANDROID_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.android"
+        val SENTRY_TIMBER_SDK_NAME = "$SENTRY_ANDROID_SDK_NAME.timber"
         val SENTRY_LOGBACK_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.logback"
         val SENTRY_JUL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jul"
         val SENTRY_LOG4J2_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.log4j2"

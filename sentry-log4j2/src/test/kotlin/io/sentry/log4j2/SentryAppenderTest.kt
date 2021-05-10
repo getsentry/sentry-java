@@ -20,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
@@ -225,6 +226,38 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `ignore set tags with null values from ThreadContext`() {
+        val logger = fixture.getSut(minimumEventLevel = Level.WARN)
+        ThreadContext.put("key1", null)
+        ThreadContext.put("key2", "value")
+        logger.warn("testing MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertNotNull(event.contexts["Context Data"]) {
+                    val contextData = it as Map<*, *>
+                    assertNull(contextData["key1"])
+                    assertEquals("value", contextData["key2"])
+                }
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `does not set context data if all context entries are null`() {
+        val logger = fixture.getSut(minimumEventLevel = Level.WARN)
+        ThreadContext.put("key1", null)
+        ThreadContext.put("key2", null)
+        logger.warn("testing MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertNull(event.contexts["Context Data"])
             }, anyOrNull())
         }
     }

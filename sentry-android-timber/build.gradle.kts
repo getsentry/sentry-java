@@ -25,6 +25,7 @@ android {
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
+        buildConfigField("String", "SENTRY_TIMBER_SDK_NAME", "\"${Config.Sentry.SENTRY_TIMBER_SDK_NAME}\"")
     }
 
     buildTypes {
@@ -32,11 +33,6 @@ android {
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {

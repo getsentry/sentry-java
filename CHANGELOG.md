@@ -1,5 +1,20 @@
 # Unreleased
 
+# 5.0.0-beta.2
+
+* Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)
+* Fix: When AppLifecycleIntegration is closed, it should remove observer using UI thread (#1459)
+* Bump: AGP to 4.2.0 (#1460)
+* Fix: NPE when adding Context Data with null values for log4j2 (#1465)
+
+
+Breaking Changes:
+
+* Remove: Settings.Secure.ANDROID_ID in favor of generated installationId (#1455)
+* Rename: enableSessionTracking to enableAutoSessionTracking (#1457)
+
+# 5.0.0-beta.1
+
 * Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)
 * Fix: use connection and read timeouts in ApacheHttpClient based transport (#1397)
 * Ref: Refactor converting HttpServletRequest to Sentry Request in Spring integration (#1387)
@@ -12,6 +27,7 @@
 * Fix: Pass maxBreadcrumbs config. to sentry-native (#1425)
 * Fix: Run event processors and enrich transactions with contexts (#1430)
 * Bump: sentry-native to 0.4.9 (#1431)
+* Fix: Set Span status for OkHttp integration (#1447)
 * Fix: Set user on transaction in Spring & Spring Boot integrations (#1443)
 * Ref: nullability annotations to Sentry module (#1439)
 

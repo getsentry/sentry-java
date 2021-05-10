@@ -113,7 +113,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(fixture.options.isEnableSessionTracking)
+        assertFalse(fixture.options.isEnableAutoSessionTracking)
     }
 
     @Test
@@ -125,7 +125,20 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(fixture.options.isEnableSessionTracking)
+        assertTrue(fixture.options.isEnableAutoSessionTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads auto session tracking to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.AUTO_SESSION_TRACKING_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isEnableAutoSessionTracking)
     }
 
     @Test

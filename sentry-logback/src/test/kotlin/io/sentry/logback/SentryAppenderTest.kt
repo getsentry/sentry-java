@@ -211,6 +211,24 @@ class SentryAppenderTest {
     fun `ignore set tags with null values from MDC`() {
         fixture = Fixture(minimumEventLevel = Level.WARN)
         MDC.put("key1", null)
+        MDC.put("key2", "value")
+        fixture.logger.warn("testing MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertNotNull(event.contexts["MDC"]) {
+                    val contextData = it as Map<*, *>
+                    assertNull(contextData["key1"])
+                    assertEquals("value", contextData["key2"])
+                }
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `does not set MDC if all context entries are null`() {
+        fixture = Fixture(minimumEventLevel = Level.WARN)
+        MDC.put("key1", null)
         MDC.put("key2", null)
         fixture.logger.warn("testing MDC tags")
 

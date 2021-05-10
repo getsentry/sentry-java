@@ -811,6 +811,7 @@ public class io/sentry/SentryOptions {
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
 	public fun isDebug ()Z
+	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnableNdk ()Z
@@ -832,6 +833,7 @@ public class io/sentry/SentryOptions {
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
+	public fun setEnableAutoSessionTracking (Z)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnableNdk (Z)V
@@ -1850,8 +1852,13 @@ public final class io/sentry/util/ApplyScopeUtils {
 }
 
 public final class io/sentry/util/CollectionUtils {
+	public static fun filterMapEntries (Ljava/util/Map;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/Map;
 	public static fun shallowCopy (Ljava/util/Map;)Ljava/util/Map;
 	public static fun size (Ljava/lang/Iterable;)I
+}
+
+public abstract interface class io/sentry/util/CollectionUtils$Predicate {
+	public abstract fun test (Ljava/lang/Object;)Z
 }
 
 public final class io/sentry/util/LogUtils {
