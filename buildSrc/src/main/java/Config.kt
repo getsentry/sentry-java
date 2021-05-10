@@ -52,6 +52,7 @@ object Config {
         private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
         val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
+        val androidxCore = "androidx.core:core:1.3.2"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
         val logbackVersion = "1.2.3"

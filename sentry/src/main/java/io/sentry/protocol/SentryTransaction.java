@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,14 +35,19 @@ public final class SentryTransaction extends SentryBaseEvent {
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
 
-  private @NotNull Map<String, @NotNull Object> measurements = new ConcurrentHashMap<>();
+  private @NotNull final Map<String, @NotNull MeasurementValue> measurements =
+      new ConcurrentHashMap<>();
 
+  @ApiStatus.Internal
   @SuppressWarnings("deprecation")
-  public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
+  public SentryTransaction(
+      final @NotNull SentryTracer sentryTracer,
+      final @NotNull Date startTimestamp,
+      final @Nullable Date timestamp) {
     super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
-    this.startTimestamp = sentryTracer.getStartTimestamp();
-    this.timestamp = DateUtils.getCurrentDateTime();
+    this.startTimestamp = startTimestamp;
+    this.timestamp = timestamp;
     this.transaction = sentryTracer.getName();
     for (final Span span : sentryTracer.getChildren()) {
       this.spans.add(new SentrySpan(span));
@@ -54,6 +58,10 @@ public final class SentryTransaction extends SentryBaseEvent {
     }
     contexts.setTrace(sentryTracer.getSpanContext());
     this.setRequest(sentryTracer.getRequest());
+  }
+
+  public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
+    this(sentryTracer, sentryTracer.getStartTimestamp(), DateUtils.getCurrentDateTime());
   }
 
   public @NotNull List<SentrySpan> getSpans() {
@@ -90,7 +98,7 @@ public final class SentryTransaction extends SentryBaseEvent {
     return trace != null && Boolean.TRUE.equals(trace.getSampled());
   }
 
-  public @NotNull Map<String, @NotNull Object> getMeasurements() {
+  public @NotNull Map<String, @NotNull MeasurementValue> getMeasurements() {
     return measurements;
   }
 }
