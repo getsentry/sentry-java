@@ -4,6 +4,7 @@ import io.sentry.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -85,7 +86,7 @@ public final class SentryStackTrace implements IUnknownPropertiesConsumer {
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(final @Nullable Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 

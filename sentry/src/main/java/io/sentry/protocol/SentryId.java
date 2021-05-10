@@ -20,7 +20,7 @@ public final class SentryId {
     this.uuid = uuid;
   }
 
-  public SentryId(String sentryIdString) {
+  public SentryId(final @NotNull String sentryIdString) {
     this.uuid = fromStringSentryId(sentryIdString);
   }
 
@@ -30,7 +30,7 @@ public final class SentryId {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final @Nullable Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SentryId sentryId = (SentryId) o;
@@ -42,11 +42,7 @@ public final class SentryId {
     return uuid.hashCode();
   }
 
-  private UUID fromStringSentryId(String sentryIdString) {
-    if (sentryIdString == null) {
-      return null;
-    }
-
+  private @NotNull UUID fromStringSentryId(@NotNull String sentryIdString) {
     if (sentryIdString.length() == 32) {
       // expected format, SentryId is a UUID without dashes
       sentryIdString =

@@ -10,6 +10,7 @@ import java.lang.reflect.Type;
 import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class TimeZoneDeserializerAdapter implements JsonDeserializer<TimeZone> {
@@ -21,7 +22,10 @@ public final class TimeZoneDeserializerAdapter implements JsonDeserializer<TimeZ
   }
 
   @Override
-  public TimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+  public @Nullable TimeZone deserialize(
+      final @Nullable JsonElement json,
+      final @NotNull Type typeOfT,
+      final @NotNull JsonDeserializationContext context)
       throws JsonParseException {
     try {
       return json == null ? null : TimeZone.getTimeZone(json.getAsString());

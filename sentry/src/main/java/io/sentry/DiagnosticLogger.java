@@ -47,8 +47,8 @@ public final class DiagnosticLogger implements ILogger {
    */
   @Override
   public void log(
-      final @Nullable SentryLevel level,
-      final @Nullable String message,
+      final @NotNull SentryLevel level,
+      final @NotNull String message,
       final @Nullable Object... args) {
     if (logger != null && isEnabled(level)) {
       logger.log(level, message, args);
@@ -64,8 +64,8 @@ public final class DiagnosticLogger implements ILogger {
    */
   @Override
   public void log(
-      final @Nullable SentryLevel level,
-      final @Nullable String message,
+      final @NotNull SentryLevel level,
+      final @NotNull String message,
       final @Nullable Throwable throwable) {
     if (logger != null && isEnabled(level)) {
       logger.log(level, message, throwable);
@@ -82,9 +82,9 @@ public final class DiagnosticLogger implements ILogger {
    */
   @Override
   public void log(
-      final @Nullable SentryLevel level,
+      final @NotNull SentryLevel level,
       final @Nullable Throwable throwable,
-      final @Nullable String message,
+      final @NotNull String message,
       final @Nullable Object... args) {
     if (logger != null && isEnabled(level)) {
       logger.log(level, throwable, message, args);

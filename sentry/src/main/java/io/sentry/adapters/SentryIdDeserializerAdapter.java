@@ -10,6 +10,7 @@ import io.sentry.protocol.SentryId;
 import java.lang.reflect.Type;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryIdDeserializerAdapter implements JsonDeserializer<SentryId> {
@@ -21,7 +22,10 @@ public final class SentryIdDeserializerAdapter implements JsonDeserializer<Sentr
   }
 
   @Override
-  public SentryId deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+  public @Nullable SentryId deserialize(
+      final @Nullable JsonElement json,
+      final @NotNull Type typeOfT,
+      final @NotNull JsonDeserializationContext context)
       throws JsonParseException {
     try {
       return json == null ? null : new SentryId(json.getAsString());

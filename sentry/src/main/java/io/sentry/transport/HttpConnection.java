@@ -274,6 +274,7 @@ final class HttpConnection {
   }
 
   @TestOnly
+  @Nullable
   Proxy getProxy() {
     return proxy;
   }

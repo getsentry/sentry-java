@@ -11,6 +11,7 @@ import java.lang.reflect.Type;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class OrientationSerializerAdapter
@@ -23,8 +24,10 @@ public final class OrientationSerializerAdapter
   }
 
   @Override
-  public JsonElement serialize(
-      Device.DeviceOrientation src, Type typeOfSrc, JsonSerializationContext context) {
+  public @Nullable JsonElement serialize(
+      final @Nullable Device.DeviceOrientation src,
+      final @NotNull Type typeOfSrc,
+      final @NotNull JsonSerializationContext context) {
     try {
       return src == null ? null : new JsonPrimitive(src.name().toLowerCase(Locale.ROOT));
     } catch (Exception e) {

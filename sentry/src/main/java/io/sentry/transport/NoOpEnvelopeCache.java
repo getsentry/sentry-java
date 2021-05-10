@@ -15,10 +15,10 @@ public final class NoOpEnvelopeCache implements IEnvelopeCache {
   }
 
   @Override
-  public void store(SentryEnvelope envelope, @Nullable Object hint) {}
+  public void store(@NotNull SentryEnvelope envelope, @Nullable Object hint) {}
 
   @Override
-  public void discard(SentryEnvelope envelope) {}
+  public void discard(@NotNull SentryEnvelope envelope) {}
 
   @NotNull
   @Override

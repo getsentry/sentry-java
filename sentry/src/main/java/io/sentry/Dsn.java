@@ -1,52 +1,53 @@
 package io.sentry;
 
-import io.sentry.exception.InvalidDsnException;
 import java.net.URI;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class Dsn {
-  private final String projectId;
-  private final String path;
-  private final String secretKey;
-  private final String publicKey;
-  private final URI sentryUri;
+  private final @NotNull String projectId;
+  private final @Nullable String path;
+  private final @Nullable String secretKey;
+  private final @NotNull String publicKey;
+  private final @NotNull URI sentryUri;
 
   /*
   / The project ID which the authenticated user is bound to.
   */
-  public String getProjectId() {
+  public @NotNull String getProjectId() {
     return projectId;
   }
 
   /*
   / An optional path of which Sentry is hosted
   */
-  public String getPath() {
+  public @Nullable String getPath() {
     return path;
   }
 
   /*
   / The optional secret key to authenticate the SDK.
   */
-  public String getSecretKey() {
+  public @Nullable String getSecretKey() {
     return secretKey;
   }
 
   /*
   / The required public key to authenticate the SDK.
   */
-  public String getPublicKey() {
+  public @NotNull String getPublicKey() {
     return publicKey;
   }
 
   /*
   / The URI used to communicate with Sentry
   */
+  @NotNull
   URI getSentryUri() {
     return sentryUri;
   }
 
-  Dsn(@Nullable String dsn) throws InvalidDsnException {
+  Dsn(@Nullable String dsn) throws IllegalArgumentException {
     try {
       URI uri = new URI(dsn).normalize();
       String userInfo = uri.getUserInfo();
@@ -83,7 +84,7 @@ final class Dsn {
               null,
               null);
     } catch (Exception e) {
-      throw new InvalidDsnException(dsn, e);
+      throw new IllegalArgumentException(e);
     }
   }
 }

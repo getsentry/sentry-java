@@ -210,16 +210,17 @@ public final class Sentry {
     // eg release, distinctId, sentryClientName
 
     // this should be after setting serializers
+    if (options.getOutboxPath() != null) {
+      final File outboxDir = new File(options.getOutboxPath());
+      outboxDir.mkdirs();
+    } else {
+      logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
+    }
+
     if (options.getCacheDirPath() != null && !options.getCacheDirPath().isEmpty()) {
       final File cacheDir = new File(options.getCacheDirPath());
       cacheDir.mkdirs();
-
-      final File outboxDir = new File(options.getOutboxPath());
-      outboxDir.mkdirs();
-
-      options.setEnvelopeDiskCache(new EnvelopeCache(options));
-    } else {
-      logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
+      options.setEnvelopeDiskCache(EnvelopeCache.create(options));
     }
 
     return true;
@@ -303,7 +304,7 @@ public final class Sentry {
    *
    * @param userFeedback The user feedback to send to Sentry.
    */
-  public static void captureUserFeedback(UserFeedback userFeedback) {
+  public static void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     getCurrentHub().captureUserFeedback(userFeedback);
   }
 
@@ -639,7 +640,7 @@ public final class Sentry {
    */
   public static @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContexts,
-      final @NotNull CustomSamplingContext customSamplingContext,
+      final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
     return getCurrentHub()
         .startTransaction(transactionContexts, customSamplingContext, bindToScope);

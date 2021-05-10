@@ -49,7 +49,7 @@ public final class SentryPackage implements IUnknownPropertiesConsumer {
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(final @Nullable Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 }

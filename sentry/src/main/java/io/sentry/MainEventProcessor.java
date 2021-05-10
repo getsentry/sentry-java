@@ -191,11 +191,10 @@ public final class MainEventProcessor implements EventProcessor {
       // crashed properly
       List<Long> mechanismThreadIds = null;
 
-      final boolean hasExceptions =
-          event.getExceptions() != null && !event.getExceptions().isEmpty();
+      final List<SentryException> eventExceptions = event.getExceptions();
 
-      if (hasExceptions) {
-        for (final SentryException item : event.getExceptions()) {
+      if (eventExceptions != null && !eventExceptions.isEmpty()) {
+        for (final SentryException item : eventExceptions) {
           if (item.getMechanism() != null && item.getThreadId() != null) {
             if (mechanismThreadIds == null) {
               mechanismThreadIds = new ArrayList<>();
@@ -207,7 +206,8 @@ public final class MainEventProcessor implements EventProcessor {
 
       if (options.isAttachThreads()) {
         event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
-      } else if (options.isAttachStacktrace() && !hasExceptions) {
+      } else if (options.isAttachStacktrace()
+          && (eventExceptions == null || eventExceptions.isEmpty())) {
         // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
         // if there are no exceptions, exceptions have its own stack traces.
         event.setThreads(sentryThreadFactory.getCurrentThread());
