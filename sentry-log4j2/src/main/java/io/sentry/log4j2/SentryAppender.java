@@ -149,7 +149,8 @@ public final class SentryAppender extends AbstractAppender {
     }
 
     final Map<String, String> contextData =
-        CollectionUtils.shallowCopy(loggingEvent.getContextData().toMap());
+        CollectionUtils.filterMapEntries(
+            loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
       event.getContexts().put("Context Data", contextData);
     }

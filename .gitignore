@@ -13,3 +13,4 @@ target/
 .project
 .settings/
 bin/
+distributions/
