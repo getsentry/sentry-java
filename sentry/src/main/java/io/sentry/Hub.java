@@ -6,6 +6,7 @@ import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.io.Closeable;
@@ -175,7 +176,8 @@ public final class Hub implements IHub {
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
     if (event.getThrowable() != null) {
-      final Pair<ISpan, String> pair = throwableToSpan.get(event.getThrowable());
+      final Pair<ISpan, String> pair =
+          throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
       if (pair != null) {
         if (event.getContexts().getTrace() == null) {
           event.getContexts().setTrace(pair.getFirst().getSpanContext());
@@ -643,16 +645,19 @@ public final class Hub implements IHub {
     Objects.requireNonNull(throwable, "throwable is required");
     Objects.requireNonNull(span, "span is required");
     Objects.requireNonNull(transactionName, "transactionName is required");
+    // to match any cause, span context is always attached to the root cause of the exception
+    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
     // the most inner span should be assigned to a throwable
-    if (!throwableToSpan.containsKey(throwable)) {
-      throwableToSpan.put(throwable, new Pair<>(span, transactionName));
+    if (!throwableToSpan.containsKey(rootCause)) {
+      throwableToSpan.put(rootCause, new Pair<>(span, transactionName));
     }
   }
 
   @Nullable
   SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
-    final Pair<ISpan, String> span = this.throwableToSpan.get(throwable);
+    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
+    final Pair<ISpan, String> span = this.throwableToSpan.get(rootCause);
     if (span != null) {
       return span.getFirst().getSpanContext();
     }
