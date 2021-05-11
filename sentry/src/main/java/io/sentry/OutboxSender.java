@@ -156,36 +156,45 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       } else if (SentryItemType.Transaction.equals(item.getHeader().getType())) {
 
         // TODO(denrase): DRY
-        
-        try (final Reader eventReader =
-               new BufferedReader(
-                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-          SentryTransaction transaction = serializer.deserialize(eventReader, SentryTransaction.class);
+
+        try (final Reader transactionReader =
+            new BufferedReader(
+                new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
+
+          SentryTransaction transaction =
+              serializer.deserialize(transactionReader, SentryTransaction.class);
           if (transaction == null) {
             logger.log(
-              SentryLevel.ERROR,
-              "Item %d of type %s returned null by the parser.",
-              items,
-              item.getHeader().getType());
+                SentryLevel.ERROR,
+                "Item %d of type %s returned null by the parser.",
+                items,
+                item.getHeader().getType());
           } else {
             if (envelope.getHeader().getEventId() != null
-              && !envelope.getHeader().getEventId().equals(transaction.getEventId())) {
+                && !envelope.getHeader().getEventId().equals(transaction.getEventId())) {
               logger.log(
-                SentryLevel.ERROR,
-                "Item %d of has a different event id (%s) to the envelope header (%s)",
-                items,
-                envelope.getHeader().getEventId(),
-                transaction.getEventId());
+                  SentryLevel.ERROR,
+                  "Item %d of has a different event id (%s) to the envelope header (%s)",
+                  items,
+                  envelope.getHeader().getEventId(),
+                  transaction.getEventId());
               continue;
+            }
+
+            if (transaction.getContexts().getTrace() != null) {
+              // TODO(denrase): Testing. RN transactions are not set as sampled and also sampled is
+              // a
+              //  transient property and therefore ignored by serialization/deserialization.
+              transaction.getContexts().getTrace().setSampled(true);
             }
             hub.captureTransaction(transaction, hint);
             logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
 
             if (!waitFlush(hint)) {
               logger.log(
-                SentryLevel.WARNING,
-                "Timed out waiting for event submission: %s",
-                transaction.getEventId());
+                  SentryLevel.WARNING,
+                  "Timed out waiting for event submission: %s",
+                  transaction.getEventId());
               break;
             }
           }

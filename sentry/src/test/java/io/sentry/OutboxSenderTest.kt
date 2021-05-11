@@ -1,11 +1,17 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argWhere
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.spy
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
-import io.sentry.test.getProperty
 import java.io.File
 import java.io.FileNotFoundException
 import java.nio.file.Files
@@ -86,7 +92,7 @@ class OutboxSenderTest {
         span.finish(SpanStatus.OK)
         sentryTracer.finish()
 
-        val sentryTracerSpy =  spy(sentryTracer)
+        val sentryTracerSpy = spy(sentryTracer)
         whenever(sentryTracerSpy.eventId).thenReturn(SentryId("3367f5196c494acaae85bbbd535379ac"))
 
         val expected = SentryTransaction(sentryTracerSpy)
