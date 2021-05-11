@@ -81,7 +81,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
   private void addObserver(final @NotNull IHub hub) {
     // this should never happen, check added to avoid warnings from NullAway
     if (this.options == null) {
-      throw new RuntimeException("options is not set on AppLifecycleIntegration");
+      return;
     }
     watcher =
         new LifecycleWatcher(

@@ -73,9 +73,7 @@ public final class SessionAdapter extends TypeAdapter<Session> {
     boolean hasInitAttrs = false;
     hasInitAttrs = initAttrs(writer, hasInitAttrs);
 
-    if (value.getRelease() != null) {
-      writer.name("release").value(value.getRelease());
-    }
+    writer.name("release").value(value.getRelease());
 
     if (value.getEnvironment() != null) {
       hasInitAttrs = initAttrs(writer, hasInitAttrs);
