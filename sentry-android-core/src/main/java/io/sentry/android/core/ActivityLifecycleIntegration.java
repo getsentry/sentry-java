@@ -5,6 +5,7 @@ import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.util.SparseIntArray;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,7 +20,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTracer;
 import io.sentry.SpanStatus;
-import io.sentry.TransactionContext;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
@@ -46,8 +46,9 @@ public final class ActivityLifecycleIntegration
   // does it need to be atomic? its only in the main thread
   private boolean firstActivityCreated = false;
   private boolean hasSavedState = false;
+  //  private boolean sentAppStart = false;
 
-  private @NotNull final Date appStartTime;
+  //  private @NotNull final Date appStartTime;
 
   // or FrameMetrics but only >= API 24 android 7
   // androidx already uses FrameMetrics and onFrameMetricsAvailable internally if API 24
@@ -63,17 +64,15 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ITransaction>
       activitiesWithFramesRatesOngoingTransactions = new WeakHashMap<>();
 
-  private @Nullable Date appStartTimeEnd;
+  //  private @Nullable Date appStartTimeEnd;
 
   // TODO: on Android we should use SystemClock.uptimeMillis() for intervals
 
   public ActivityLifecycleIntegration(
-      final @NotNull Application application,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
-      @NotNull final Date appStartTime) {
+      final @NotNull Application application, final @NotNull IBuildInfoProvider buildInfoProvider) {
     this.application = Objects.requireNonNull(application, "Application is required");
     Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
-    this.appStartTime = appStartTime;
+    //    this.appStartTime = appStartTime;
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
@@ -104,16 +103,17 @@ public final class ActivityLifecycleIntegration
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
 
       // Handler deprecated
-      new Handler().post(() -> {
-        if (firstActivityCreated) {
-          if (hasSavedState) {
-            // warm
-            transactionAppStartUp(false);
-          } else {
-            transactionAppStartUp(true);
-          }
-        }
-      });
+      new Handler()
+          .post(
+              () -> {
+                if (firstActivityCreated) {
+                  if (hasSavedState) {
+                    AppStartUpState.getInstance().setColdStartUp(false);
+                  } else {
+                    AppStartUpState.getInstance().setColdStartUp(true);
+                  }
+                }
+              });
     }
   }
 
@@ -236,11 +236,13 @@ public final class ActivityLifecycleIntegration
       startTracing(activity);
     }
 
+    //    if (!sentAppStart) {
     if (firstActivityCreated) {
       return;
     }
     firstActivityCreated = true;
     hasSavedState = savedInstanceState != null;
+    //    }
   }
 
   @Override
@@ -256,20 +258,26 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-//  private boolean isHardwareAccelerated(Activity activity) {
-//    // we can't observe frame rates for a non hardware accelerated view
-//    return activity.getWindow() != null
-//        && ((activity.getWindow().getAttributes().flags
-//                & WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
-//            != 0);
-//  }
+  //  private boolean isHardwareAccelerated(Activity activity) {
+  //    // we can't observe frame rates for a non hardware accelerated view
+  //    return activity.getWindow() != null
+  //        && ((activity.getWindow().getAttributes().flags
+  //                & WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
+  //            != 0);
+  //  }
 
   @Override
   public synchronized void onActivityResumed(final @NonNull Activity activity) {
-    if (!firstActivityCreated) {
-//      isAppStartUp = true;
-//      transactionAppStartUp(DateUtils.getCurrentDateTime());
-      appStartTimeEnd = DateUtils.getCurrentDateTime();
+    //    if (!sentAppStart) {
+    //      if (!firstActivityCreated) {
+    //      isAppStartUp = true;
+    //      transactionAppStartUp(DateUtils.getCurrentDateTime());
+    //        appStartTimeEnd = DateUtils.getCurrentDateTime();
+    //      }
+    //    }
+    if (!AppStartUpState.getInstance().isSentStartUp()) {
+      long millis = SystemClock.uptimeMillis();
+      AppStartUpState.getInstance().setAppStartUpEnd(millis);
     }
 
     addBreadcrumb(activity, "resumed");
@@ -381,29 +389,30 @@ public final class ActivityLifecycleIntegration
     return activitiesWithOngoingTransactions;
   }
 
-  @SuppressWarnings("JavaUtilDate")
-  private void transactionAppStartUp(final boolean isColdStart) {
-    if (appStartTimeEnd == null) {
-      return;
-    }
+  //  @SuppressWarnings("JavaUtilDate")
+  //  private void transactionAppStartUp(final boolean isColdStart) {
+  //    if (appStartTimeEnd == null) {
+  //      return;
+  //    }
 
-    // there should be an easier and public/internal way to start/end a transaction
-    // with given time stamps
+  // there should be an easier and public/internal way to start/end a transaction
+  // with given time stamps
 
-    final String op = isColdStart ? "cold" : "warm";
-    TransactionContext transactionContext = new TransactionContext("app_start_time", op);
-    transactionContext.setSampled(true);
+  //    final String op = isColdStart ? "cold" : "warm";
+  //    TransactionContext transactionContext = new TransactionContext("app_start_time", op);
+  //    transactionContext.setSampled(true);
+  //
+  //    SentryTracer tracer = new SentryTracer(transactionContext, hub);
+  //    SentryTransaction transaction = new SentryTransaction(tracer, appStartTime,
+  // appStartTimeEnd);
 
-    SentryTracer tracer = new SentryTracer(transactionContext, hub);
-    SentryTransaction transaction = new SentryTransaction(tracer, appStartTime, appStartTimeEnd);
-
-    // backend could also calculate that
-    final long totalMillis = appStartTimeEnd.getTime() - appStartTime.getTime();
-    MeasurementValue value = new MeasurementValue((float) totalMillis);
-    transaction.getMeasurements().put("app_start_time", value);
-
-    tracer.setStatus(SpanStatus.OK);
-
-    hub.captureTransaction(transaction);
-  }
+  // backend could also calculate that
+  //    final long totalMillis = appStartTimeEnd.getTime() - appStartTime.getTime();
+  //    MeasurementValue value = new MeasurementValue((float) totalMillis);
+  //    transaction.getMeasurements().put("app_start_time", value);
+  //
+  //    tracer.setStatus(SpanStatus.OK);
+  //
+  //    hub.captureTransaction(transaction);
+  //  }
 }

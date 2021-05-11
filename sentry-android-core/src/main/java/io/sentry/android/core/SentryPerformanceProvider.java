@@ -6,20 +6,20 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.sentry.DateUtils;
-import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class SentryPerformanceProvider extends ContentProvider {
 
-  private static @NotNull final Date appStartTime = DateUtils.getCurrentDateTime();
-
   @Override
   public boolean onCreate() {
+    long millis = SystemClock.uptimeMillis();
+    AppStartUpState.getInstance().setAppStartTime(DateUtils.getCurrentDateTime());
+    AppStartUpState.getInstance().setAppStartUp(millis);
     return true;
   }
 
@@ -71,14 +71,14 @@ public final class SentryPerformanceProvider extends ContentProvider {
     return 0;
   }
 
-  /**
-   * Returns the App Start Up Time and if not yet initialized, the current Date and Time.
-   *
-   * @return a clone of the App Start up time.
-   */
-  @SuppressWarnings("JavaUtilDate")
-  @NotNull
-  static Date getAppStartTime() {
-    return (Date) appStartTime.clone();
-  }
+  //  /**
+  //   * Returns the App Start Up Time and if not yet initialized, the current Date and Time.
+  //   *
+  //   * @return a clone of the App Start up time.
+  //   */
+  //  @SuppressWarnings("JavaUtilDate")
+  //  @NotNull
+  //  static Date getAppStartTime() {
+  //    return (Date) appStartTime.clone();
+  //  }
 }

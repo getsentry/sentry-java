@@ -105,8 +105,7 @@ final class AndroidOptionsInitializer {
     readDefaultOptionValues(options, context);
 
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, logger, buildInfoProvider));
-    //    options.addEventProcessor(new
-    // AndroidPerformanceEventProcessor(SentryPerformanceProvider.getAppStartTime()));
+    options.addEventProcessor(new PerformanceAndroidEventProcessor());
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
   }
@@ -143,10 +142,7 @@ final class AndroidOptionsInitializer {
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {
       options.addIntegration(
-          new ActivityLifecycleIntegration(
-              (Application) context,
-              buildInfoProvider,
-              SentryPerformanceProvider.getAppStartTime()));
+          new ActivityLifecycleIntegration((Application) context, buildInfoProvider));
     } else {
       options
           .getLogger()

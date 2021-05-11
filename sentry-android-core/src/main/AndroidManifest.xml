@@ -11,7 +11,7 @@
 
     <provider
         android:name=".SentryPerformanceProvider"
-        android:authorities="${applicationId}.SentryInitProvider"
+        android:authorities="${applicationId}.SentryPerformanceProvider"
         android:initOrder="200"
         android:exported="false"/>
   </application>
