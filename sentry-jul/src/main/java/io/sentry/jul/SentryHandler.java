@@ -8,6 +8,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.util.CollectionUtils;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -19,7 +20,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -188,9 +188,7 @@ public class SentryHandler extends Handler {
     Map<String, String> mdcProperties = MDC.getMDCAdapter().getCopyOfContextMap();
     if (mdcProperties != null) {
       mdcProperties =
-          mdcProperties.entrySet().stream()
-              .filter(it -> it.getValue() != null)
-              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+          CollectionUtils.filterMapEntries(mdcProperties, entry -> entry.getValue() != null);
       if (!mdcProperties.isEmpty()) {
         event.getContexts().put("MDC", mdcProperties);
       }

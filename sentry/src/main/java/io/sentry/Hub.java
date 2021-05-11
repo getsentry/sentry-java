@@ -6,6 +6,7 @@ import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.io.Closeable;
@@ -179,13 +180,16 @@ public final class Hub implements IHub {
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
     if (event.getThrowable() != null) {
-      final Pair<ISpan, String> pair = throwableToSpan.get(event.getThrowable());
+      final Pair<ISpan, String> pair =
+          throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
       if (pair != null) {
-        if (event.getContexts().getTrace() == null && pair.getFirst() != null) {
-          event.getContexts().setTrace(pair.getFirst().getSpanContext());
+        final ISpan span = pair.getFirst();
+        if (event.getContexts().getTrace() == null && span != null) {
+          event.getContexts().setTrace(span.getSpanContext());
         }
-        if (event.getTransaction() == null && pair.getSecond() != null) {
-          event.setTransaction(pair.getSecond());
+        final String transactionName = pair.getSecond();
+        if (event.getTransaction() == null && transactionName != null) {
+          event.setTransaction(transactionName);
         }
       }
     }
@@ -224,15 +228,18 @@ public final class Hub implements IHub {
     } else {
       final StackItem item = this.stack.peek();
       final Scope.SessionPair pair = item.getScope().startSession();
+      if (pair != null) {
+        // TODO: add helper overload `captureSessions` to pass a list of sessions and submit a
+        // single envelope
+        // Or create the envelope here with both items and call `captureEnvelope`
+        if (pair.getPrevious() != null) {
+          item.getClient().captureSession(pair.getPrevious(), new SessionEndHint());
+        }
 
-      // TODO: add helper overload `captureSessions` to pass a list of sessions and submit a
-      // single envelope
-      // Or create the envelope here with both items and call `captureEnvelope`
-      if (pair.getPrevious() != null) {
-        item.getClient().captureSession(pair.getPrevious(), new SessionEndHint());
+        item.getClient().captureSession(pair.getCurrent(), new SessionStartHint());
+      } else {
+        options.getLogger().log(SentryLevel.WARNING, "Session could not be started.");
       }
-
-      item.getClient().captureSession(pair.getCurrent(), new SessionStartHint());
     }
   }
 
@@ -264,10 +271,7 @@ public final class Hub implements IHub {
             ((Closeable) integration).close();
           }
         }
-        final ISentryExecutorService executorService = options.getExecutorService();
-        if (executorService != null) {
-          executorService.close(options.getShutdownTimeout());
-        }
+        options.getExecutorService().close(options.getShutdownTimeout());
 
         // Close the top-most client
         final StackItem item = stack.peek();
@@ -314,8 +318,10 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'setTransaction' call is a no-op.");
-    } else {
+    } else if (transaction != null) {
       stack.peek().getScope().setTransaction(transaction);
+    } else {
+      options.getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
     }
   }
 
@@ -650,18 +656,24 @@ public final class Hub implements IHub {
     Objects.requireNonNull(throwable, "throwable is required");
     Objects.requireNonNull(span, "span is required");
     Objects.requireNonNull(transactionName, "transactionName is required");
+    // to match any cause, span context is always attached to the root cause of the exception
+    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
     // the most inner span should be assigned to a throwable
-    if (!throwableToSpan.containsKey(throwable)) {
-      throwableToSpan.put(throwable, new Pair<>(span, transactionName));
+    if (!throwableToSpan.containsKey(rootCause)) {
+      throwableToSpan.put(rootCause, new Pair<>(span, transactionName));
     }
   }
 
   @Nullable
   SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
-    final Pair<ISpan, String> span = this.throwableToSpan.get(throwable);
-    if (span != null && span.getFirst() != null) {
-      return span.getFirst().getSpanContext();
+    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
+    final Pair<ISpan, String> pair = this.throwableToSpan.get(rootCause);
+    if (pair != null) {
+      final ISpan span = pair.getFirst();
+      if (span != null) {
+        return span.getSpanContext();
+      }
     }
     return null;
   }

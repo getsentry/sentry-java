@@ -16,13 +16,22 @@ final class Installation {
   @TestOnly static @Nullable String deviceId = null;
 
   @TestOnly static final String INSTALLATION = "INSTALLATION";
+
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private Installation() {}
 
+  /**
+   * Generates a random UUID and writes to a file to be used as an unique installationId. Reads the
+   * installationId if already exists.
+   *
+   * @param context the Context
+   * @return the generated installationId
+   * @throws RuntimeException if not possible to read nor to write to the file.
+   */
   public static synchronized String id(final @NotNull Context context) throws RuntimeException {
     if (deviceId == null) {
-      File installation = new File(context.getFilesDir(), INSTALLATION);
+      final File installation = new File(context.getFilesDir(), INSTALLATION);
       try {
         if (!installation.exists()) {
           deviceId = writeInstallationFile(installation);
@@ -38,8 +47,8 @@ final class Installation {
 
   @TestOnly
   static @NotNull String readInstallationFile(final @NotNull File installation) throws IOException {
-    try (RandomAccessFile f = new RandomAccessFile(installation, "r")) {
-      byte[] bytes = new byte[(int) f.length()];
+    try (final RandomAccessFile f = new RandomAccessFile(installation, "r")) {
+      final byte[] bytes = new byte[(int) f.length()];
       f.readFully(bytes);
       return new String(bytes, UTF_8);
     }
@@ -48,8 +57,8 @@ final class Installation {
   @TestOnly
   static @NotNull String writeInstallationFile(final @NotNull File installation)
       throws IOException {
-    try (OutputStream out = new FileOutputStream(installation)) {
-      String id = UUID.randomUUID().toString();
+    try (final OutputStream out = new FileOutputStream(installation)) {
+      final String id = UUID.randomUUID().toString();
       out.write(id.getBytes(UTF_8));
       out.flush();
       return id;

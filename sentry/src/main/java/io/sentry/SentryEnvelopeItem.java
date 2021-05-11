@@ -48,6 +48,8 @@ public final class SentryEnvelopeItem {
   }
 
   // TODO: Should be a Stream
+  // dataFactory is a Callable which returns theoretically a nullable result. Our implementations
+  // always provide non-null values.
   @SuppressWarnings("NullAway")
   public @NotNull byte[] getData() throws Exception {
     if (data == null && dataFactory != null) {

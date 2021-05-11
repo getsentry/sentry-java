@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.exception.InvalidDsnException;
 import java.net.URI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,7 +47,7 @@ final class Dsn {
     return sentryUri;
   }
 
-  Dsn(@Nullable String dsn) throws InvalidDsnException {
+  Dsn(@Nullable String dsn) throws IllegalArgumentException {
     try {
       URI uri = new URI(dsn).normalize();
       String userInfo = uri.getUserInfo();
@@ -85,7 +84,7 @@ final class Dsn {
               null,
               null);
     } catch (Exception e) {
-      throw new InvalidDsnException(dsn, e);
+      throw new IllegalArgumentException(e);
     }
   }
 }

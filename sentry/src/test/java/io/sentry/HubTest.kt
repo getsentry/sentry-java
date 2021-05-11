@@ -14,7 +14,6 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.exception.InvalidDsnException
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
@@ -327,6 +326,39 @@ class HubTest {
     }
 
     @Test
+    fun `when captureEvent is called and event has exception which root cause has been previously attached with span context, sets span context to the event`() {
+        val (sut, mockClient) = getEnabledHub()
+        val rootCause = RuntimeException()
+        val span = mock<Span>()
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
+        sut.setSpanContext(rootCause, span, "tx-name")
+
+        val event = SentryEvent(RuntimeException(rootCause))
+
+        val hint = { }
+        sut.captureEvent(event, hint)
+        assertEquals(span.spanContext, event.contexts.trace)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+    }
+
+    @Test
+    fun `when captureEvent is called and event has exception which non-root cause has been previously attached with span context, sets span context to the event`() {
+        val (sut, mockClient) = getEnabledHub()
+        val rootCause = RuntimeException()
+        val exceptionAssignedToSpan = RuntimeException(rootCause)
+        val span = mock<Span>()
+        whenever(span.spanContext).thenReturn(SpanContext("op"))
+        sut.setSpanContext(exceptionAssignedToSpan, span, "tx-name")
+
+        val event = SentryEvent(RuntimeException(exceptionAssignedToSpan))
+
+        val hint = { }
+        sut.captureEvent(event, hint)
+        assertEquals(span.spanContext, event.contexts.trace)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+    }
+
+    @Test
     fun `when captureEvent is called and event has exception which has been previously attached with span context and trace context already set, does not set new span context to the event`() {
         val (sut, mockClient) = getEnabledHub()
         val exception = RuntimeException()
@@ -487,7 +519,7 @@ class HubTest {
     fun `when captureUserFeedback is called and client throws, don't crash`() {
         val (sut, mockClient) = getEnabledHub()
 
-        whenever(mockClient.captureUserFeedback(any())).doThrow(InvalidDsnException(""))
+        whenever(mockClient.captureUserFeedback(any())).doThrow(IllegalArgumentException(""))
 
         sut.captureUserFeedback(userFeedback)
     }
@@ -890,6 +922,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -905,6 +938,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -919,6 +953,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -937,6 +972,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -952,6 +988,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -966,6 +1003,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
@@ -982,6 +1020,7 @@ class HubTest {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
+        options.release = "0.0.1"
         options.setSerializer(mock())
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()

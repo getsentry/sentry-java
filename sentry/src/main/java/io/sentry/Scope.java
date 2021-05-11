@@ -112,16 +112,16 @@ public final class Scope implements Cloneable {
    *
    * @param transaction the transaction
    */
-  public void setTransaction(final @Nullable String transaction) {
-    final ITransaction tx = this.transaction;
-    if (tx != null) {
-      if (transaction != null) {
+  public void setTransaction(final @NotNull String transaction) {
+    if (transaction != null) {
+      final ITransaction tx = this.transaction;
+      if (tx != null) {
         tx.setName(transaction);
-      } else {
-        this.setTransaction((ITransaction) null);
       }
+      this.transactionName = transaction;
+    } else {
+      options.getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
     }
-    this.transactionName = transaction;
   }
 
   /**
@@ -626,10 +626,10 @@ public final class Scope implements Cloneable {
    *
    * @return the SessionPair with the previous closed session if exists and the current session
    */
-  @NotNull
+  @Nullable
   SessionPair startSession() {
     Session previousSession;
-    SessionPair pair;
+    SessionPair pair = null;
     synchronized (sessionLock) {
       if (session != null) {
         // Assumes session will NOT flush itself (Not passing any hub to it)
@@ -637,12 +637,20 @@ public final class Scope implements Cloneable {
       }
       previousSession = session;
 
-      session =
-          new Session(
-              options.getDistinctId(), user, options.getEnvironment(), options.getRelease());
+      if (options.getRelease() != null) {
+        session =
+            new Session(
+                options.getDistinctId(), user, options.getEnvironment(), options.getRelease());
 
-      final Session previousClone = previousSession != null ? previousSession.clone() : null;
-      pair = new SessionPair(session.clone(), previousClone);
+        final Session previousClone = previousSession != null ? previousSession.clone() : null;
+        pair = new SessionPair(session.clone(), previousClone);
+      } else {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Release is not set on SentryOptions. Session could not be started");
+      }
     }
     return pair;
   }

@@ -18,7 +18,7 @@ class SentryTimberIntegrationTest {
     private class Fixture {
         val hub = mock<IHub>()
         val options = SentryOptions().apply {
-            sdkVersion = SdkVersion()
+            sdkVersion = SdkVersion("test", "1.2.3")
         }
 
         fun getSut(
@@ -95,5 +95,16 @@ class SentryTimberIntegrationTest {
             it.name == "maven:io.sentry:sentry-android-timber"
             it.version == BuildConfig.VERSION_NAME
         })
+    }
+
+    @Test
+    fun `Integration sets SDK name and version to options`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        val sdkVersion = fixture.options.sdkVersion!!
+
+        assertEquals(sdkVersion.name, "sentry.java.android.timber")
+        assertEquals(sdkVersion.version, BuildConfig.VERSION_NAME)
     }
 }

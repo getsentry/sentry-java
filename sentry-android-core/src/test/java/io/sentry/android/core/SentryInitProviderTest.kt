@@ -7,7 +7,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.ILogger
 import io.sentry.Sentry
-import io.sentry.exception.InvalidDsnException
 import io.sentry.test.callMethod
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -95,7 +94,7 @@ class SentryInitProviderTest {
 
         metaData.putString(ManifestMetadataReader.DSN, "invalid dsn")
 
-        assertFailsWith<InvalidDsnException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
+        assertFailsWith<IllegalArgumentException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
     }
 
     @Test

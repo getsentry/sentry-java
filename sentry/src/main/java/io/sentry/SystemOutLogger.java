@@ -18,8 +18,8 @@ public final class SystemOutLogger implements ILogger {
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
   public void log(
-      final @Nullable SentryLevel level,
-      final @Nullable String message,
+      final @NotNull SentryLevel level,
+      final @NotNull String message,
       final @Nullable Object... args) {
     System.out.println(String.format("%s: %s", level, String.format(message, args)));
   }
@@ -34,8 +34,8 @@ public final class SystemOutLogger implements ILogger {
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
   public void log(
-      final @Nullable SentryLevel level,
-      final @Nullable String message,
+      final @NotNull SentryLevel level,
+      final @NotNull String message,
       final @Nullable Throwable throwable) {
     if (throwable == null) {
       this.log(level, message);
@@ -58,9 +58,9 @@ public final class SystemOutLogger implements ILogger {
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
   public void log(
-      final @Nullable SentryLevel level,
+      final @NotNull SentryLevel level,
       final @Nullable Throwable throwable,
-      final @Nullable String message,
+      final @NotNull String message,
       final @Nullable Object... args) {
     if (throwable == null) {
       this.log(level, message, args);

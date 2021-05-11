@@ -87,17 +87,9 @@ public final class EnvelopeReader implements IEnvelopeReader {
             deserializeEnvelopeItemHeader(
                 envelopeBytes, itemHeaderStartOffset, lineBreakIndex - itemHeaderStartOffset);
 
-        if (itemHeader == null) {
+        if (itemHeader == null || itemHeader.getLength() <= 0) {
           throw new IllegalArgumentException(
-              "Item header at index '" + items.size() + "' is null.");
-        }
-        if (itemHeader.getLength() <= 0) {
-          throw new IllegalArgumentException(
-              "Item header at index '"
-                  + items.size()
-                  + "' has an invalid value: '"
-                  + itemHeader.getLength()
-                  + "'.");
+              "Item header at index '" + items.size() + "' is null or empty.");
         }
 
         payloadEndOffsetExclusive = lineBreakIndex + itemHeader.getLength() + 1;
