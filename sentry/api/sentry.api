@@ -1854,8 +1854,8 @@ public final class io/sentry/util/ApplyScopeUtils {
 public final class io/sentry/util/CollectionUtils {
 	public static fun filterMapEntries (Ljava/util/Map;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/Map;
 	public static fun newArrayList (Ljava/util/List;)Ljava/util/List;
+	public static fun newConcurrentHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun newHashMap (Ljava/util/Map;)Ljava/util/Map;
-	public static fun shallowCopy (Ljava/util/Map;)Ljava/util/Map;
 	public static fun size (Ljava/lang/Iterable;)I
 }
 

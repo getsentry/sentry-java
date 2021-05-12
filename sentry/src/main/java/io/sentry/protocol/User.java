@@ -125,7 +125,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    * @param other the other user related data..
    */
   public void setOthers(final @Nullable Map<String, @NotNull String> other) {
-    this.other = CollectionUtils.shallowCopy(other);
+    this.other = CollectionUtils.newConcurrentHashMap(other);
   }
 
   /**
@@ -160,8 +160,8 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
   public @NotNull User clone() throws CloneNotSupportedException {
     final User clone = (User) super.clone();
 
-    clone.other = CollectionUtils.shallowCopy(other);
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.other = CollectionUtils.newConcurrentHashMap(other);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     return clone;
   }

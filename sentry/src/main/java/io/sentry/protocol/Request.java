@@ -144,7 +144,7 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   }
 
   public void setHeaders(final @Nullable Map<String, String> headers) {
-    this.headers = CollectionUtils.shallowCopy(headers);
+    this.headers = CollectionUtils.newConcurrentHashMap(headers);
   }
 
   public @Nullable Map<String, String> getEnvs() {
@@ -152,7 +152,7 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   }
 
   public void setEnvs(final @Nullable Map<String, String> env) {
-    this.env = CollectionUtils.shallowCopy(env);
+    this.env = CollectionUtils.newConcurrentHashMap(env);
   }
 
   public @Nullable Map<String, String> getOthers() {
@@ -160,7 +160,7 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   }
 
   public void setOthers(final @Nullable Map<String, String> other) {
-    this.other = CollectionUtils.shallowCopy(other);
+    this.other = CollectionUtils.newConcurrentHashMap(other);
   }
 
   /**
@@ -190,10 +190,10 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   public @NotNull Request clone() throws CloneNotSupportedException {
     final Request clone = (Request) super.clone();
 
-    clone.headers = CollectionUtils.shallowCopy(headers);
-    clone.env = CollectionUtils.shallowCopy(env);
-    clone.other = CollectionUtils.shallowCopy(other);
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.headers = CollectionUtils.newConcurrentHashMap(headers);
+    clone.env = CollectionUtils.newConcurrentHashMap(env);
+    clone.other = CollectionUtils.newConcurrentHashMap(other);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     return clone;
   }

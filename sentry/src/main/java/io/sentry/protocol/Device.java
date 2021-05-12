@@ -372,7 +372,7 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
     final TimeZone timezoneRef = this.timezone;
     clone.timezone = timezoneRef != null ? (TimeZone) timezoneRef.clone() : null;
 
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     return clone;
   }

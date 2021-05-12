@@ -34,14 +34,15 @@ public final class CollectionUtils {
   }
 
   /**
-   * Creates a shallow copy of map given by parameter.
+   * Creates a new {@link ConcurrentHashMap} as a shallow copy of map given by parameter.
    *
    * @param map the map to copy
    * @param <K> the type of map keys
    * @param <V> the type of map values
    * @return the shallow copy of map
    */
-  public static <K, V> @Nullable Map<K, @NotNull V> shallowCopy(@Nullable Map<K, @NotNull V> map) {
+  public static <K, V> @Nullable Map<K, @NotNull V> newConcurrentHashMap(
+      @Nullable Map<K, @NotNull V> map) {
     if (map != null) {
       return new ConcurrentHashMap<>(map);
     } else {

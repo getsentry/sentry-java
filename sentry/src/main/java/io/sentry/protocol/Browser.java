@@ -57,7 +57,7 @@ public final class Browser implements IUnknownPropertiesConsumer, Cloneable {
   public @NotNull Browser clone() throws CloneNotSupportedException {
     final Browser clone = (Browser) super.clone();
 
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     return clone;
   }

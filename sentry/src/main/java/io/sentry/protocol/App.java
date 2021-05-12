@@ -115,7 +115,7 @@ public final class App implements IUnknownPropertiesConsumer, Cloneable {
   public @NotNull App clone() throws CloneNotSupportedException {
     final App clone = (App) super.clone();
 
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     return clone;
   }
