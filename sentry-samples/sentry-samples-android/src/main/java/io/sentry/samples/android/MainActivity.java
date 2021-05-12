@@ -71,8 +71,6 @@ public class MainActivity extends AppCompatActivity {
                 String json = "{ \"number\": 10 }";
                 Attachment attachment = new Attachment(json.getBytes(), "log.json");
                 scope.addAttachment(attachment);
-
-                scope.addAttachment(new Attachment(imageFile.getPath()));
               });
 
           Sentry.captureMessage("Some message with attachments.");
