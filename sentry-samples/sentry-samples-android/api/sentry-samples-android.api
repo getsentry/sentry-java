@@ -42,13 +42,13 @@ public final class io/sentry/samples/android/databinding/ActivityMainBinding : a
 	public final field breadcrumb Landroid/widget/Button;
 	public final field captureException Landroid/widget/Button;
 	public final field crashFromJava Landroid/widget/Button;
+	public final field localScope Landroid/widget/Button;
 	public final field nativeCapture Landroid/widget/Button;
 	public final field nativeCrash Landroid/widget/Button;
 	public final field openSecondActivity Landroid/widget/Button;
 	public final field sendMessage Landroid/widget/Button;
 	public final field sendUserFeedback Landroid/widget/Button;
 	public final field setUser Landroid/widget/Button;
-	public final field unsetUser Landroid/widget/Button;
 	public static fun bind (Landroid/view/View;)Lio/sentry/samples/android/databinding/ActivityMainBinding;
 	public synthetic fun getRoot ()Landroid/view/View;
 	public fun getRoot ()Landroid/widget/LinearLayout;
