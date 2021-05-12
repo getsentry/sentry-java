@@ -1,6 +1,7 @@
 package io.sentry.protocol;
 
 import io.sentry.IUnknownPropertiesConsumer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -32,7 +33,7 @@ public final class DebugMeta implements IUnknownPropertiesConsumer {
   }
 
   public void setImages(final @Nullable List<DebugImage> images) {
-    this.images = images;
+    this.images = images != null ? new ArrayList<>(images) : null;
   }
 
   public @Nullable SdkInfo getSdkInfo() {

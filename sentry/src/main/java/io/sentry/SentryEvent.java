@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.*;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -167,7 +168,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   }
 
   public void setFingerprints(final @Nullable List<String> fingerprint) {
-    this.fingerprint = fingerprint;
+    this.fingerprint = fingerprint != null ? new ArrayList<>(fingerprint) : null;
   }
 
   @ApiStatus.Internal
@@ -187,7 +188,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   }
 
   public void setModules(final @Nullable Map<String, String> modules) {
-    this.modules = modules;
+    this.modules = modules != null ? new HashMap<>(modules) : null;
   }
 
   public void setModule(final @NotNull String key, final @NotNull String value) {

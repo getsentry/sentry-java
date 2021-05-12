@@ -186,7 +186,7 @@ public abstract class SentryBaseEvent {
   }
 
   public void setTags(@Nullable Map<String, String> tags) {
-    this.tags = tags;
+    this.tags = tags != null ? new HashMap<>(tags) : null;
   }
 
   public void removeTag(@NotNull String key) {
@@ -262,7 +262,7 @@ public abstract class SentryBaseEvent {
   }
 
   public void setBreadcrumbs(final @Nullable List<Breadcrumb> breadcrumbs) {
-    this.breadcrumbs = breadcrumbs;
+    this.breadcrumbs = breadcrumbs != null ? new ArrayList<>(breadcrumbs) : null;
   }
 
   public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
@@ -278,7 +278,7 @@ public abstract class SentryBaseEvent {
   }
 
   public void setExtras(final @Nullable Map<String, Object> extra) {
-    this.extra = extra;
+    this.extra = extra != null ? new HashMap<>(extra) : null;
   }
 
   public void setExtra(final @NotNull String key, final @NotNull Object value) {

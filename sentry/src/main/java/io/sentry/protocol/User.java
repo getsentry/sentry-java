@@ -125,11 +125,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    * @param other the other user related data..
    */
   public void setOthers(final @Nullable Map<String, @NotNull String> other) {
-    if (other != null) {
-      this.other = new ConcurrentHashMap<>(other);
-    } else {
-      this.other = null;
-    }
+    this.other = other != null ? new ConcurrentHashMap<>(other) : null;
   }
 
   /**
