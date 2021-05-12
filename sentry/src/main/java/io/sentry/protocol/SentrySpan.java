@@ -32,7 +32,7 @@ public final class SentrySpan {
     this.parentSpanId = span.getParentSpanId();
     this.traceId = span.getTraceId();
     this.status = span.getStatus();
-    final Map<String, String> tagsCopy = CollectionUtils.shallowCopy(span.getTags());
+    final Map<String, String> tagsCopy = CollectionUtils.newConcurrentHashMap(span.getTags());
     this.tags = tagsCopy != null ? tagsCopy : new ConcurrentHashMap<>();
     this.timestamp = span.getTimestamp();
     this.startTimestamp = span.getStartTimestamp();

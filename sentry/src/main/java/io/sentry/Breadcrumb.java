@@ -247,11 +247,11 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   public @NotNull Breadcrumb clone() throws CloneNotSupportedException {
     final Breadcrumb clone = (Breadcrumb) super.clone();
 
-    final Map<String, Object> dataCopy = CollectionUtils.shallowCopy(this.data);
+    final Map<String, Object> dataCopy = CollectionUtils.newConcurrentHashMap(this.data);
     if (dataCopy != null) {
       clone.data = dataCopy;
     }
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     final SentryLevel levelRef = level;
     clone.level =

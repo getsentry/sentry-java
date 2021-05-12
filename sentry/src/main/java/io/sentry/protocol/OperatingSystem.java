@@ -108,7 +108,7 @@ public final class OperatingSystem implements IUnknownPropertiesConsumer, Clonea
   public @NotNull OperatingSystem clone() throws CloneNotSupportedException {
     final OperatingSystem clone = (OperatingSystem) super.clone();
 
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     return clone;
   }

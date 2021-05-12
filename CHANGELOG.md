@@ -1,5 +1,6 @@
 # Unreleased
 
+* Fix: handling immutable collections on SentryEvent and protocol objects (#1468)
 * Fix: associate event with transaction when thrown exception is not a direct cause (#1463)
 
 # 5.0.0-beta.2

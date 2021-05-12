@@ -132,7 +132,7 @@ public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
   public @NotNull Gpu clone() throws CloneNotSupportedException {
     final Gpu clone = (Gpu) super.clone();
 
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     return clone;
   }

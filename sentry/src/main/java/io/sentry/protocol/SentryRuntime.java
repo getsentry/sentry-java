@@ -74,7 +74,7 @@ public final class SentryRuntime implements IUnknownPropertiesConsumer, Cloneabl
   public @NotNull SentryRuntime clone() throws CloneNotSupportedException {
     final SentryRuntime clone = (SentryRuntime) super.clone();
 
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     return clone;
   }

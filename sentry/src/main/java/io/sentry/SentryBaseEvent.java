@@ -6,6 +6,7 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -186,7 +187,7 @@ public abstract class SentryBaseEvent {
   }
 
   public void setTags(@Nullable Map<String, String> tags) {
-    this.tags = tags;
+    this.tags = CollectionUtils.newHashMap(tags);
   }
 
   public void removeTag(@NotNull String key) {
@@ -262,7 +263,7 @@ public abstract class SentryBaseEvent {
   }
 
   public void setBreadcrumbs(final @Nullable List<Breadcrumb> breadcrumbs) {
-    this.breadcrumbs = breadcrumbs;
+    this.breadcrumbs = CollectionUtils.newArrayList(breadcrumbs);
   }
 
   public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb) {
@@ -278,7 +279,7 @@ public abstract class SentryBaseEvent {
   }
 
   public void setExtras(final @Nullable Map<String, Object> extra) {
-    this.extra = extra;
+    this.extra = CollectionUtils.newHashMap(extra);
   }
 
   public void setExtra(final @NotNull String key, final @NotNull Object value) {
