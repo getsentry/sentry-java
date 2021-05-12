@@ -604,11 +604,6 @@ public abstract class io/sentry/SentryBaseEvent {
 	protected fun <init> (Lio/sentry/protocol/SentryId;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Ljava/lang/String;)V
-	public fun addBreadcrumbs (Ljava/util/List;)V
-	public fun addExtra (Ljava/lang/String;Ljava/lang/Object;)V
-	public fun addExtras (Ljava/util/Map;)V
-	public fun addTag (Ljava/lang/String;Ljava/lang/String;)V
-	public fun addTags (Ljava/util/Map;)V
 	public fun getBreadcrumbs ()Ljava/util/List;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getDist ()Ljava/lang/String;
@@ -627,14 +622,19 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getUser ()Lio/sentry/protocol/User;
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
+	public fun setBreadcrumbs (Ljava/util/List;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setEventId (Lio/sentry/protocol/SentryId;)V
+	public fun setExtra (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setExtras (Ljava/util/Map;)V
 	public fun setPlatform (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setSdk (Lio/sentry/protocol/SdkVersion;)V
 	public fun setServerName (Ljava/lang/String;)V
+	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTags (Ljava/util/Map;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 }
@@ -707,7 +707,6 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun <init> (Ljava/lang/Throwable;)V
 	public fun <init> (Ljava/util/Date;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun addFingerprints (Ljava/util/List;)V
 	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getExceptions ()Ljava/util/List;
 	public fun getFingerprints ()Ljava/util/List;
@@ -724,6 +723,7 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun removeModule (Ljava/lang/String;)V
 	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
 	public fun setExceptions (Ljava/util/List;)V
+	public fun setFingerprints (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setLogger (Ljava/lang/String;)V
 	public fun setMessage (Lio/sentry/protocol/Message;)V

@@ -50,7 +50,7 @@ class SentryTimberTree(
                 }
 
                 tag?.let {
-                    addTag("TimberTag", it)
+                    setTag("TimberTag", it)
                 }
 
                 logger = "Timber"

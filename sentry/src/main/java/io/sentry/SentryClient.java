@@ -488,7 +488,7 @@ public final class SentryClient implements ISentryClient {
         event.setTransaction(scope.getTransactionName());
       }
       if (event.getFingerprints() == null) {
-        event.addFingerprints(scope.getFingerprint());
+        event.setFingerprints(scope.getFingerprint());
       }
       // Level from scope exceptionally take precedence over the event
       if (scope.getLevel() != null) {
@@ -515,7 +515,7 @@ public final class SentryClient implements ISentryClient {
         sentryBaseEvent.setUser(scope.getUser());
       }
       if (sentryBaseEvent.getTags() == null) {
-        sentryBaseEvent.addTags(new HashMap<>(scope.getTags()));
+        sentryBaseEvent.setTags(new HashMap<>(scope.getTags()));
       } else {
         for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
           if (!sentryBaseEvent.getTags().containsKey(item.getKey())) {
@@ -524,12 +524,12 @@ public final class SentryClient implements ISentryClient {
         }
       }
       if (sentryBaseEvent.getBreadcrumbs() == null) {
-        sentryBaseEvent.addBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+        sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
       } else {
         sortBreadcrumbsByDate(sentryBaseEvent, scope.getBreadcrumbs());
       }
       if (sentryBaseEvent.getExtras() == null) {
-        sentryBaseEvent.addExtras(new HashMap<>(scope.getExtras()));
+        sentryBaseEvent.setExtras(new HashMap<>(scope.getExtras()));
       } else {
         for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
           if (!sentryBaseEvent.getExtras().containsKey(item.getKey())) {

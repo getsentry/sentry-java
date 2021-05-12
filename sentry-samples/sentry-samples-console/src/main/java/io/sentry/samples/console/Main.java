@@ -122,7 +122,7 @@ public class Main {
     user.setUsername("some@user");
     evt.setUser(user);
     // Group all events with the following fingerprint:
-    evt.addFingerprints(Collections.singletonList("NewClientDebug"));
+    evt.setFingerprints(Collections.singletonList("NewClientDebug"));
     evt.setLevel(SentryLevel.DEBUG);
     Sentry.captureEvent(evt);
 

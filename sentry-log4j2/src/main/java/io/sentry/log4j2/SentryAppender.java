@@ -145,7 +145,7 @@ public final class SentryAppender extends AbstractAppender {
     }
 
     if (loggingEvent.getThreadName() != null) {
-      event.addExtra("thread_name", loggingEvent.getThreadName());
+      event.setExtra("thread_name", loggingEvent.getThreadName());
     }
 
     final Map<String, String> contextData =
