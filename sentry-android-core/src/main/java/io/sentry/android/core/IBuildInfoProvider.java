@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import org.jetbrains.annotations.Nullable;
+
 /** To make SDK info classes testable */
 public interface IBuildInfoProvider {
 
@@ -15,5 +17,6 @@ public interface IBuildInfoProvider {
    *
    * @return the Build tags
    */
+  @Nullable
   String getBuildTags();
 }
