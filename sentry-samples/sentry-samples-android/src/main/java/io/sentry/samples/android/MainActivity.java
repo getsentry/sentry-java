@@ -11,16 +11,10 @@ import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.databinding.ActivityMainBinding;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,27 +23,6 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
 
     final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
-
-    final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
-    try (final InputStream inputStream =
-            getApplicationContext().getResources().openRawResource(R.raw.sentry);
-        FileOutputStream outputStream = new FileOutputStream(imageFile)) {
-      final byte[] bytes = new byte[1024];
-      while (inputStream.read(bytes) != -1) {
-        // To keep the sample code simple this happens on the main thread. Don't do this in a
-        // real app.
-        outputStream.write(bytes);
-      }
-      outputStream.flush();
-    } catch (IOException e) {
-      Sentry.captureException(e);
-    }
-
-    final Attachment image = new Attachment(imageFile.getAbsolutePath(), "sentry.png", "image/png");
-    Sentry.configureScope(
-        scope -> {
-          scope.addAttachment(image);
-        });
 
     binding.crashFromJava.setOnClickListener(
         view -> {
@@ -71,18 +44,24 @@ public class MainActivity extends AppCompatActivity {
 
     binding.addAttachment.setOnClickListener(
         view -> {
-          String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
-          File file = getApplication().getFileStreamPath(fileName);
-          try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
-              final OutputStreamWriter outputStreamWriter =
-                  new OutputStreamWriter(fileOutputStream);
-              final Writer writer = new BufferedWriter(outputStreamWriter)) {
-            for (int i = 0; i < 1024; i++) {
+          final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
+          try (final InputStream inputStream =
+                  getApplicationContext().getResources().openRawResource(R.raw.sentry);
+              FileOutputStream outputStream = new FileOutputStream(imageFile)) {
+            final byte[] bytes = new byte[1024];
+            while (inputStream.read(bytes) != -1) {
               // To keep the sample code simple this happens on the main thread. Don't do this in a
               // real app.
-              writer.write(String.format(Locale.getDefault(), "%d\n", i));
+              outputStream.write(bytes);
             }
-            writer.flush();
+            outputStream.flush();
+
+            final Attachment image =
+                new Attachment(imageFile.getAbsolutePath(), "sentry.png", "image/png");
+            Sentry.configureScope(
+                scope -> {
+                  scope.addAttachment(image);
+                });
           } catch (IOException e) {
             Sentry.captureException(e);
           }
@@ -92,41 +71,44 @@ public class MainActivity extends AppCompatActivity {
                 String json = "{ \"number\": 10 }";
                 Attachment attachment = new Attachment(json.getBytes(), "log.json");
                 scope.addAttachment(attachment);
-                scope.addAttachment(new Attachment(file.getPath()));
+
+                scope.addAttachment(new Attachment(imageFile.getPath()));
               });
+
+          Sentry.captureMessage("Some message with attachments.");
         });
 
     binding.captureException.setOnClickListener(
-        view ->
-            Sentry.captureException(
-                new Exception(new Exception(new Exception("Some exception.")))));
+        view -> Sentry.captureException(new Exception(new Exception("Some exception."))));
 
     binding.breadcrumb.setOnClickListener(
         view -> {
           Sentry.addBreadcrumb("Breadcrumb");
-          Sentry.setExtra("extra", "extra");
-          Sentry.setFingerprint(Collections.singletonList("fingerprint"));
-          Sentry.setTransaction("transaction");
-          Sentry.captureException(new Exception("Some exception with scope."));
-        });
-
-    binding.unsetUser.setOnClickListener(
-        view -> {
-          Sentry.setTag("user_set", "null");
-          Sentry.setUser(null);
+          Sentry.captureMessage("Some message with breadcrumbs.");
         });
 
     binding.setUser.setOnClickListener(
         view -> {
-          Sentry.setTag("user_set", "instance");
           User user = new User();
           user.setUsername("username_from_java");
-          // works with some null properties?
-          // user.setId("id_from_java");
           user.setEmail("email_from_java");
-          // Use the client's IP address
+          // Use the client's IP address or enable 'sendDefaultPii' that does it automatically.
           user.setIpAddress("{{auto}}");
           Sentry.setUser(user);
+          // pass null to Sentry#setUser to unset the user
+          Sentry.captureMessage("Some message with user.");
+        });
+
+    binding.localScope.setOnClickListener(
+        view -> {
+          Sentry.withScope(
+              scope -> {
+                scope.setTag("local_tag", "value");
+                // also possible to set/add more things to the Scope like
+                // Scope#setExtra, etc...
+                Sentry.captureMessage("Some message with local scope and local_tag.");
+              });
+          Sentry.captureMessage("Some message without local_tag.");
         });
 
     binding.nativeCrash.setOnClickListener(view -> NativeSample.crash());
