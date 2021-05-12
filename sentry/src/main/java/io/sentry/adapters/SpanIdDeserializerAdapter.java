@@ -10,6 +10,7 @@ import io.sentry.SpanId;
 import java.lang.reflect.Type;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SpanIdDeserializerAdapter implements JsonDeserializer<SpanId> {
@@ -21,7 +22,10 @@ public final class SpanIdDeserializerAdapter implements JsonDeserializer<SpanId>
   }
 
   @Override
-  public SpanId deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+  public @Nullable SpanId deserialize(
+      final @Nullable JsonElement json,
+      final @Nullable Type typeOfT,
+      final @NotNull JsonDeserializationContext context)
       throws JsonParseException {
     try {
       return json == null ? null : new SpanId(json.getAsString());

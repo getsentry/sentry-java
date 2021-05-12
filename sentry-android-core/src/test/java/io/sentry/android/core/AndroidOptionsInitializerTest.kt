@@ -141,7 +141,9 @@ class AndroidOptionsInitializerTest {
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
 
-        assertTrue(sentryOptions.distinctId.isNotEmpty())
+        assertNotNull(sentryOptions.distinctId) {
+            assertTrue(it.isNotEmpty())
+        }
 
         val installation = File(context.filesDir, Installation.INSTALLATION)
         installation.deleteOnExit()

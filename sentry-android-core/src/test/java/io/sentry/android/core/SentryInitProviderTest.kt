@@ -1,12 +1,13 @@
 package io.sentry.android.core
 
+import android.content.Context
 import android.content.pm.ProviderInfo
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.ILogger
 import io.sentry.Sentry
-import io.sentry.exception.InvalidDsnException
+import io.sentry.test.callMethod
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -93,7 +94,7 @@ class SentryInitProviderTest {
 
         metaData.putString(ManifestMetadataReader.DSN, "invalid dsn")
 
-        assertFailsWith<InvalidDsnException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
+        assertFailsWith<IllegalArgumentException> { sentryInitProvider.attachInfo(mockContext, providerInfo) }
     }
 
     @Test
@@ -120,7 +121,7 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        sentryInitProvider.attachInfo(null, providerInfo)
+        sentryInitProvider.callMethod("attachInfo", parameterTypes = arrayOf(Context::class.java, ProviderInfo::class.java), null, providerInfo)
 
         assertFalse(Sentry.isEnabled())
     }

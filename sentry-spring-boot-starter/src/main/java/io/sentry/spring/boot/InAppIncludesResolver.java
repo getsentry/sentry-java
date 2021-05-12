@@ -22,7 +22,7 @@ import org.springframework.context.ApplicationContextAware;
 public class InAppIncludesResolver implements ApplicationContextAware {
   private @Nullable ApplicationContext applicationContext;
 
-  @Nullable
+  @NotNull
   public List<String> resolveInAppIncludes() {
     if (applicationContext != null) {
       Map<String, Object> beansWithAnnotation =

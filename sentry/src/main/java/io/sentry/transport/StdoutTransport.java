@@ -5,6 +5,7 @@ import io.sentry.SentryEnvelope;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class StdoutTransport implements ITransport {
 
@@ -15,7 +16,8 @@ public final class StdoutTransport implements ITransport {
   }
 
   @Override
-  public void send(final @NotNull SentryEnvelope envelope, Object hint) throws IOException {
+  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+      throws IOException {
     Objects.requireNonNull(envelope, "SentryEnvelope is required");
 
     try {

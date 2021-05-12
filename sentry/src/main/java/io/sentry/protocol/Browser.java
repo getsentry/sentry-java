@@ -6,42 +6,44 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class Browser implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "browser";
   /** Display name of the browser application. */
-  private String name;
+  private @Nullable String name;
   /** Version string of the browser. */
-  private String version;
+  private @Nullable String version;
 
   @SuppressWarnings("unused")
-  private Map<String, @NotNull Object> unknown;
+  private @Nullable Map<String, @NotNull Object> unknown;
 
-  public String getName() {
+  public @Nullable String getName() {
     return name;
   }
 
-  public void setName(String name) {
+  public void setName(final @Nullable String name) {
     this.name = name;
   }
 
-  public String getVersion() {
+  public @Nullable String getVersion() {
     return version;
   }
 
-  public void setVersion(String version) {
+  public void setVersion(final @Nullable String version) {
     this.version = version;
   }
 
   @TestOnly
+  @Nullable
   Map<String, Object> getUnknown() {
     return unknown;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 

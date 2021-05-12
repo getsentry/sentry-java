@@ -108,7 +108,7 @@ public final class SessionAdapter extends TypeAdapter<Session> {
   }
 
   @Override
-  public Session read(JsonReader reader) throws IOException {
+  public @Nullable Session read(JsonReader reader) throws IOException {
     if (reader.peek() == JsonToken.NULL) {
       reader.nextNull();
       return null;
@@ -153,7 +153,9 @@ public final class SessionAdapter extends TypeAdapter<Session> {
           String statusStr = null;
           try {
             statusStr = StringUtils.capitalize(reader.nextString());
-            status = Session.State.valueOf(statusStr);
+            if (statusStr != null) {
+              status = Session.State.valueOf(statusStr);
+            }
           } catch (IllegalArgumentException e) {
             options.getLogger().log(SentryLevel.ERROR, "%s status is not valid.", statusStr);
           }

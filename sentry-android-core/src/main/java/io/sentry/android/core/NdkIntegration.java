@@ -19,7 +19,7 @@ public final class NdkIntegration implements Integration, Closeable {
 
   private final @Nullable Class<?> sentryNdkClass;
 
-  private @NotNull SentryAndroidOptions options;
+  private @Nullable SentryAndroidOptions options;
 
   public NdkIntegration(final @Nullable Class<?> sentryNdkClass) {
     this.sentryNdkClass = sentryNdkClass;

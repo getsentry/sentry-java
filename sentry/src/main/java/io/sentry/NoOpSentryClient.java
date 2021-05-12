@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class NoOpSentryClient implements ISentryClient {
@@ -20,7 +21,8 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
-  public SentryId captureEvent(SentryEvent event, @Nullable Scope scope, @Nullable Object hint) {
+  public @NotNull SentryId captureEvent(
+      @NotNull SentryEvent event, @Nullable Scope scope, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -31,18 +33,19 @@ final class NoOpSentryClient implements ISentryClient {
   public void flush(long timeoutMillis) {}
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) {}
+  public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 
   @Override
-  public void captureSession(Session session, @Nullable Object hint) {}
+  public void captureSession(@NotNull Session session, @Nullable Object hint) {}
 
   @Override
-  public SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {
+  public SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public SentryId captureTransaction(SentryTransaction transaction, Scope scope, Object hint) {
+  public @NotNull SentryId captureTransaction(
+      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 }

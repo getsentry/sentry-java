@@ -37,7 +37,8 @@ public final class MainThreadChecker {
    * @return true if it is the main thread or false otherwise
    */
   public static boolean isMainThread(final @NotNull SentryThread sentryThread) {
-    return isMainThread(sentryThread.getId());
+    final Long threadId = sentryThread.getId();
+    return threadId != null && isMainThread(threadId);
   }
 
   private static boolean isMainThread(final long threadId) {

@@ -4,6 +4,8 @@ public final class io/sentry/test/AssertionsKt {
 }
 
 public final class io/sentry/test/ReflectionKt {
+	public static final fun containsMethod (Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;)Z
+	public static final fun containsMethod (Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Z
 	public static final fun getCtor (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
 }
 

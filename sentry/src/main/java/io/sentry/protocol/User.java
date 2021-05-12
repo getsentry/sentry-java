@@ -139,7 +139,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    */
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 

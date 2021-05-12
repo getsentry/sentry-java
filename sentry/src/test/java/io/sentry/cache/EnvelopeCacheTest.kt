@@ -44,7 +44,7 @@ class EnvelopeCacheTest {
             options.setSerializer(serializer)
             options.setDebug(true)
 
-            return EnvelopeCache(options)
+            return EnvelopeCache.create(options)
         }
     }
 

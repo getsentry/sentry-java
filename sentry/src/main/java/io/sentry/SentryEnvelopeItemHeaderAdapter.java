@@ -8,6 +8,7 @@ import io.sentry.util.StringUtils;
 import java.io.IOException;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnvelopeItemHeader> {
@@ -41,7 +42,7 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
   }
 
   @Override
-  public SentryEnvelopeItemHeader read(JsonReader reader) throws IOException {
+  public @Nullable SentryEnvelopeItemHeader read(JsonReader reader) throws IOException {
     if (reader.peek() == JsonToken.NULL) {
       reader.nextNull();
       return null;
@@ -63,7 +64,10 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
           break;
         case "type":
           try {
-            type = SentryItemType.valueOf(StringUtils.capitalize(reader.nextString()));
+            final String nextString = StringUtils.capitalize(reader.nextString());
+            if (nextString != null) {
+              type = SentryItemType.valueOf(nextString);
+            }
           } catch (IllegalArgumentException ignored) {
             // invalid type
           }

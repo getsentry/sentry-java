@@ -4,6 +4,8 @@ import io.sentry.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Debugging and processing meta information.
@@ -18,32 +20,32 @@ import org.jetbrains.annotations.ApiStatus;
  */
 public final class DebugMeta implements IUnknownPropertiesConsumer {
   /** Information about the system SDK (e.g. iOS SDK). */
-  private SdkInfo sdkInfo;
+  private @Nullable SdkInfo sdkInfo;
   /** List of debug information files (debug images). */
-  private List<DebugImage> images;
+  private @Nullable List<DebugImage> images;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
-  public List<DebugImage> getImages() {
+  public @Nullable List<DebugImage> getImages() {
     return images;
   }
 
-  public void setImages(List<DebugImage> images) {
+  public void setImages(final @Nullable List<DebugImage> images) {
     this.images = images;
   }
 
-  public SdkInfo getSdkInfo() {
+  public @Nullable SdkInfo getSdkInfo() {
     return sdkInfo;
   }
 
-  public void setSdkInfo(SdkInfo sdkInfo) {
+  public void setSdkInfo(final @Nullable SdkInfo sdkInfo) {
     this.sdkInfo = sdkInfo;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 }

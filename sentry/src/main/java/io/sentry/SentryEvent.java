@@ -27,16 +27,16 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    *
    * <p>```json { "timestamp": "2011-05-02T17:41:36Z" } { "timestamp": 1304358096.0 } ```
    */
-  private final Date timestamp;
+  private final @NotNull Date timestamp;
 
-  private Message message;
+  private @Nullable Message message;
 
   /** Logger that created the event. */
-  private String logger;
+  private @Nullable String logger;
   /** Threads that were active when the event occurred. */
-  private SentryValues<SentryThread> threads;
+  private @Nullable SentryValues<SentryThread> threads;
   /** One or multiple chained (nested) exceptions. */
-  private SentryValues<SentryException> exception;
+  private @Nullable SentryValues<SentryException> exception;
   /**
    * Severity level of the event. Defaults to `error`.
    *
@@ -44,14 +44,14 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    *
    * <p>```json {"level": "warning"} ```
    */
-  private SentryLevel level;
+  private @Nullable SentryLevel level;
   /**
    * Transaction name of the event.
    *
    * <p>For example, in a web app, this might be the route name (`"/users/<username>/"` or
    * `UserView`), in a task queue it might be the function + module name.
    */
-  private String transaction;
+  private @Nullable String transaction;
 
   /**
    * Manual fingerprint override.
@@ -62,9 +62,9 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    *
    * <p>```json { "fingerprint": ["myrpc", "POST", "/foo.bar"] }
    */
-  private List<String> fingerprint;
+  private @Nullable List<String> fingerprint;
 
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
   /**
    * Name and versions of all installed modules/packages/dependencies in the current
    * environment/application.
@@ -77,11 +77,11 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    * <p>This is primarily used for suggesting to enable certain SDK integrations from within the UI
    * and for making informed decisions on which frameworks to support in future development efforts.
    */
-  private Map<String, String> modules;
+  private @Nullable Map<String, String> modules;
   /** Meta data for event processing and debugging. */
-  private DebugMeta debugMeta;
+  private @Nullable DebugMeta debugMeta;
 
-  SentryEvent(SentryId eventId, final Date timestamp) {
+  SentryEvent(final @NotNull SentryId eventId, final @NotNull Date timestamp) {
     super(eventId);
     this.timestamp = timestamp;
   }
@@ -101,7 +101,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   }
 
   @TestOnly
-  public SentryEvent(final Date timestamp) {
+  public SentryEvent(final @NotNull Date timestamp) {
     this(new SentryId(), timestamp);
   }
 
@@ -110,23 +110,23 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     return (Date) timestamp.clone();
   }
 
-  public Message getMessage() {
+  public @Nullable Message getMessage() {
     return message;
   }
 
-  public void setMessage(Message message) {
+  public void setMessage(final @Nullable Message message) {
     this.message = message;
   }
 
-  public String getLogger() {
+  public @Nullable String getLogger() {
     return logger;
   }
 
-  public void setLogger(String logger) {
+  public void setLogger(final @Nullable String logger) {
     this.logger = logger;
   }
 
-  public List<SentryThread> getThreads() {
+  public @Nullable List<SentryThread> getThreads() {
     if (threads != null) {
       return threads.getValues();
     } else {
@@ -134,69 +134,70 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     }
   }
 
-  public void setThreads(List<SentryThread> threads) {
+  public void setThreads(final @Nullable List<SentryThread> threads) {
     this.threads = new SentryValues<>(threads);
   }
 
-  public List<SentryException> getExceptions() {
+  public @Nullable List<SentryException> getExceptions() {
     return exception == null ? null : exception.getValues();
   }
 
-  public void setExceptions(List<SentryException> exception) {
+  public void setExceptions(final @Nullable List<SentryException> exception) {
     this.exception = new SentryValues<>(exception);
   }
 
-  public SentryLevel getLevel() {
+  public @Nullable SentryLevel getLevel() {
     return level;
   }
 
-  public void setLevel(SentryLevel level) {
+  public void setLevel(final @Nullable SentryLevel level) {
     this.level = level;
   }
 
-  public String getTransaction() {
+  public @Nullable String getTransaction() {
     return transaction;
   }
 
-  public void setTransaction(String transaction) {
+  public void setTransaction(final @Nullable String transaction) {
     this.transaction = transaction;
   }
 
-  public List<String> getFingerprints() {
+  public @Nullable List<String> getFingerprints() {
     return fingerprint;
   }
 
-  public void setFingerprints(List<String> fingerprint) {
+  public void setFingerprints(final @Nullable List<String> fingerprint) {
     this.fingerprint = fingerprint;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
   @TestOnly
-  public Map<String, Object> getUnknown() {
+  public @Nullable Map<String, Object> getUnknown() {
     return unknown;
   }
 
+  @Nullable
   Map<String, String> getModules() {
     return modules;
   }
 
-  public void setModules(Map<String, String> modules) {
+  public void setModules(final @Nullable Map<String, String> modules) {
     this.modules = modules;
   }
 
-  public void setModule(String key, String value) {
+  public void setModule(final @NotNull String key, final @NotNull String value) {
     if (modules == null) {
       modules = new HashMap<>();
     }
     modules.put(key, value);
   }
 
-  public void removeModule(@NotNull String key) {
+  public void removeModule(final @NotNull String key) {
     if (modules != null) {
       modules.remove(key);
     }
@@ -209,11 +210,11 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     return null;
   }
 
-  public DebugMeta getDebugMeta() {
+  public @Nullable DebugMeta getDebugMeta() {
     return debugMeta;
   }
 
-  public void setDebugMeta(DebugMeta debugMeta) {
+  public void setDebugMeta(final @Nullable DebugMeta debugMeta) {
     this.debugMeta = debugMeta;
   }
 

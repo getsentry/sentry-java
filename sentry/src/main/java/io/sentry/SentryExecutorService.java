@@ -21,7 +21,7 @@ final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public Future<?> submit(final @NotNull Runnable runnable) {
+  public @NotNull Future<?> submit(final @NotNull Runnable runnable) {
     return executorService.submit(runnable);
   }
 

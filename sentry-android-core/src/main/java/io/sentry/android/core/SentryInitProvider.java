@@ -9,6 +9,8 @@ import android.net.Uri;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryInitProvider extends ContentProvider {
@@ -33,7 +35,7 @@ public final class SentryInitProvider extends ContentProvider {
   }
 
   @Override
-  public void attachInfo(Context context, ProviderInfo info) {
+  public void attachInfo(@NotNull Context context, @NotNull ProviderInfo info) {
     // applicationId is expected to be prepended. See AndroidManifest.xml
     if (SentryInitProvider.class.getName().equals(info.authority)) {
       throw new IllegalStateException(
@@ -43,27 +45,36 @@ public final class SentryInitProvider extends ContentProvider {
   }
 
   @Override
-  public Cursor query(Uri uri, String[] strings, String s, String[] strings1, String s1) {
+  public @Nullable Cursor query(
+      @NotNull Uri uri,
+      @Nullable String[] strings,
+      @Nullable String s,
+      @Nullable String[] strings1,
+      @Nullable String s1) {
     return null;
   }
 
   @Override
-  public String getType(Uri uri) {
+  public @Nullable String getType(@NotNull Uri uri) {
     return null;
   }
 
   @Override
-  public Uri insert(Uri uri, ContentValues contentValues) {
+  public @Nullable Uri insert(@NotNull Uri uri, @Nullable ContentValues contentValues) {
     return null;
   }
 
   @Override
-  public int delete(Uri uri, String s, String[] strings) {
+  public int delete(@NotNull Uri uri, @Nullable String s, @Nullable String[] strings) {
     return 0;
   }
 
   @Override
-  public int update(Uri uri, ContentValues contentValues, String s, String[] strings) {
+  public int update(
+      @NotNull Uri uri,
+      @Nullable ContentValues contentValues,
+      @Nullable String s,
+      @Nullable String[] strings) {
     return 0;
   }
 }

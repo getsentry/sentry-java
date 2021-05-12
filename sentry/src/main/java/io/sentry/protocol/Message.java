@@ -4,6 +4,8 @@ import io.sentry.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 // https://docs.sentry.io/development/sdk-dev/event-payloads/message/
 
@@ -26,7 +28,7 @@ public final class Message implements IUnknownPropertiesConsumer {
    *
    * <p>It must not exceed 8192 characters. Longer messages will be truncated.
    */
-  private String formatted;
+  private @Nullable String formatted;
   /**
    * The log message with parameter placeholders.
    *
@@ -36,17 +38,17 @@ public final class Message implements IUnknownPropertiesConsumer {
    *
    * <p>It must not exceed 8192 characters. Longer messages will be truncated.
    */
-  private String message;
+  private @Nullable String message;
   /**
    * Parameters to be interpolated into the log message. This can be an array of positional
    * parameters as well as a mapping of named arguments to their values.
    */
-  private List<String> params;
+  private @Nullable List<String> params;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
-  public String getFormatted() {
+  public @Nullable String getFormatted() {
     return formatted;
   }
 
@@ -55,29 +57,29 @@ public final class Message implements IUnknownPropertiesConsumer {
    *
    * @param formatted a formatted String
    */
-  public void setFormatted(String formatted) {
+  public void setFormatted(final @Nullable String formatted) {
     this.formatted = formatted;
   }
 
-  public String getMessage() {
+  public @Nullable String getMessage() {
     return message;
   }
 
-  public void setMessage(String message) {
+  public void setMessage(final @Nullable String message) {
     this.message = message;
   }
 
-  public List<String> getParams() {
+  public @Nullable List<String> getParams() {
     return params;
   }
 
-  public void setParams(List<String> params) {
+  public void setParams(final @Nullable List<String> params) {
     this.params = params;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 }

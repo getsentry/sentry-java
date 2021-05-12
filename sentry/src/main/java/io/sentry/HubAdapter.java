@@ -24,28 +24,29 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public SentryId captureEvent(SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint) {
     return Sentry.captureEvent(event, hint);
   }
 
   @Override
-  public SentryId captureMessage(String message, SentryLevel level) {
+  public @NotNull SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level) {
     return Sentry.captureMessage(message, level);
   }
 
   @ApiStatus.Internal
   @Override
-  public SentryId captureEnvelope(SentryEnvelope envelope, @Nullable Object hint) {
+  public @NotNull SentryId captureEnvelope(
+      @NotNull SentryEnvelope envelope, @Nullable Object hint) {
     return Sentry.getCurrentHub().captureEnvelope(envelope, hint);
   }
 
   @Override
-  public SentryId captureException(Throwable throwable, @Nullable Object hint) {
+  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint) {
     return Sentry.captureException(throwable, hint);
   }
 
   @Override
-  public void captureUserFeedback(UserFeedback userFeedback) {
+  public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
     Sentry.captureUserFeedback(userFeedback);
   }
 
@@ -65,27 +66,27 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(Breadcrumb breadcrumb, @Nullable Object hint) {
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint) {
     Sentry.addBreadcrumb(breadcrumb, hint);
   }
 
   @Override
-  public void setLevel(SentryLevel level) {
+  public void setLevel(@Nullable SentryLevel level) {
     Sentry.setLevel(level);
   }
 
   @Override
-  public void setTransaction(String transaction) {
+  public void setTransaction(@Nullable String transaction) {
     Sentry.setTransaction(transaction);
   }
 
   @Override
-  public void setUser(User user) {
+  public void setUser(@Nullable User user) {
     Sentry.setUser(user);
   }
 
   @Override
-  public void setFingerprint(List<String> fingerprint) {
+  public void setFingerprint(@NotNull List<String> fingerprint) {
     Sentry.setFingerprint(fingerprint);
   }
 
@@ -95,27 +96,27 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void setTag(String key, String value) {
+  public void setTag(@NotNull String key, @NotNull String value) {
     Sentry.setTag(key, value);
   }
 
   @Override
-  public void removeTag(String key) {
+  public void removeTag(@NotNull String key) {
     Sentry.removeTag(key);
   }
 
   @Override
-  public void setExtra(String key, String value) {
+  public void setExtra(@NotNull String key, @NotNull String value) {
     Sentry.setExtra(key, value);
   }
 
   @Override
-  public void removeExtra(String key) {
+  public void removeExtra(@NotNull String key) {
     Sentry.removeExtra(key);
   }
 
   @Override
-  public SentryId getLastEventId() {
+  public @NotNull SentryId getLastEventId() {
     return Sentry.getLastEventId();
   }
 
@@ -130,17 +131,17 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void withScope(ScopeCallback callback) {
+  public void withScope(@NotNull ScopeCallback callback) {
     Sentry.withScope(callback);
   }
 
   @Override
-  public void configureScope(ScopeCallback callback) {
+  public void configureScope(@NotNull ScopeCallback callback) {
     Sentry.configureScope(callback);
   }
 
   @Override
-  public void bindClient(ISentryClient client) {
+  public void bindClient(@NotNull ISentryClient client) {
     Sentry.bindClient(client);
   }
 
@@ -150,24 +151,25 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public IHub clone() {
+  public @NotNull IHub clone() {
     return Sentry.getCurrentHub().clone();
   }
 
   @Override
-  public @NotNull SentryId captureTransaction(SentryTransaction transaction, Object hint) {
+  public @NotNull SentryId captureTransaction(
+      @NotNull SentryTransaction transaction, @Nullable Object hint) {
     return Sentry.getCurrentHub().captureTransaction(transaction, hint);
   }
 
   @Override
-  public @NotNull ITransaction startTransaction(TransactionContext transactionContexts) {
+  public @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts) {
     return Sentry.startTransaction(transactionContexts);
   }
 
   @Override
   public @NotNull ITransaction startTransaction(
-      TransactionContext transactionContexts,
-      CustomSamplingContext customSamplingContext,
+      @NotNull TransactionContext transactionContexts,
+      @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope) {
     return Sentry.startTransaction(transactionContexts, customSamplingContext, bindToScope);
   }

@@ -24,7 +24,7 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull String getName() {
-    return null;
+    return "";
   }
 
   @Override

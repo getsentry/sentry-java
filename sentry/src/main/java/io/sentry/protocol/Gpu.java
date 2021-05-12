@@ -6,38 +6,39 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "gpu";
 
   /** The name of the graphics device. */
-  private String name;
+  private @Nullable String name;
   /** The PCI identifier of the graphics device. */
-  private Integer id;
+  private @Nullable Integer id;
   /** The PCI vendor identifier of the graphics device. */
-  private Integer vendorId;
+  private @Nullable Integer vendorId;
   /** The vendor name as reported by the graphics device. */
-  private String vendorName;
+  private @Nullable String vendorName;
   /** The total GPU memory available in Megabytes. */
-  private Integer memorySize;
+  private @Nullable Integer memorySize;
   /**
    * The device low-level API type.
    *
    * <p>Examples: `"Apple Metal"` or `"Direct3D11"`
    */
-  private String apiType;
+  private @Nullable String apiType;
   /** Whether the GPU has multi-threaded rendering or not. */
-  private Boolean multiThreadedRendering;
+  private @Nullable Boolean multiThreadedRendering;
   /** The Version of the graphics device. */
-  private String version;
+  private @Nullable String version;
   /** The Non-Power-Of-Two support. */
-  private String npotSupport;
+  private @Nullable String npotSupport;
 
   @SuppressWarnings("unused")
-  private Map<String, @NotNull Object> unknown;
+  private @Nullable Map<String, @NotNull Object> unknown;
 
-  public String getName() {
+  public @Nullable String getName() {
     return name;
   }
 
@@ -45,7 +46,7 @@ public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
     this.name = name;
   }
 
-  public Integer getId() {
+  public @Nullable Integer getId() {
     return id;
   }
 
@@ -53,7 +54,7 @@ public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
     this.id = id;
   }
 
-  public Integer getVendorId() {
+  public @Nullable Integer getVendorId() {
     return vendorId;
   }
 
@@ -61,62 +62,63 @@ public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
     this.vendorId = vendorId;
   }
 
-  public String getVendorName() {
+  public @Nullable String getVendorName() {
     return vendorName;
   }
 
-  public void setVendorName(String vendorName) {
+  public void setVendorName(final @Nullable String vendorName) {
     this.vendorName = vendorName;
   }
 
-  public Integer getMemorySize() {
+  public @Nullable Integer getMemorySize() {
     return memorySize;
   }
 
-  public void setMemorySize(Integer memorySize) {
+  public void setMemorySize(final @Nullable Integer memorySize) {
     this.memorySize = memorySize;
   }
 
-  public String getApiType() {
+  public @Nullable String getApiType() {
     return apiType;
   }
 
-  public void setApiType(String apiType) {
+  public void setApiType(final @Nullable String apiType) {
     this.apiType = apiType;
   }
 
-  public Boolean isMultiThreadedRendering() {
+  public @Nullable Boolean isMultiThreadedRendering() {
     return multiThreadedRendering;
   }
 
-  public void setMultiThreadedRendering(Boolean multiThreadedRendering) {
+  public void setMultiThreadedRendering(final @Nullable Boolean multiThreadedRendering) {
     this.multiThreadedRendering = multiThreadedRendering;
   }
 
-  public String getVersion() {
+  public @Nullable String getVersion() {
     return version;
   }
 
-  public void setVersion(String version) {
+  public void setVersion(final @Nullable String version) {
     this.version = version;
   }
 
-  public String getNpotSupport() {
+  public @Nullable String getNpotSupport() {
     return npotSupport;
   }
 
-  public void setNpotSupport(String npotSupport) {
+  public void setNpotSupport(final @Nullable String npotSupport) {
     this.npotSupport = npotSupport;
   }
 
   @TestOnly
+  @Nullable
   Map<String, Object> getUnknown() {
     return unknown;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 

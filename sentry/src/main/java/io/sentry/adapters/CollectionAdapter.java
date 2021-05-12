@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class CollectionAdapter implements JsonSerializer<Collection<?>> {
   @Override
-  public JsonElement serialize(
+  public @Nullable JsonElement serialize(
       final @Nullable Collection<?> src,
       final @NotNull Type typeOfSrc,
       final @NotNull JsonSerializationContext context) {

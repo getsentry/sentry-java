@@ -30,6 +30,7 @@ Breaking Changes:
 * Bump: sentry-native to 0.4.9 (#1431)
 * Fix: Set Span status for OkHttp integration (#1447)
 * Fix: Set user on transaction in Spring & Spring Boot integrations (#1443)
+* Ref: nullability annotations to Sentry module (#1439)
 
 # 4.4.0-alpha.2
 

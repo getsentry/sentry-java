@@ -11,6 +11,7 @@ import java.lang.reflect.Type;
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class DateDeserializerAdapter implements JsonDeserializer<Date> {
@@ -22,7 +23,10 @@ public final class DateDeserializerAdapter implements JsonDeserializer<Date> {
   }
 
   @Override
-  public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+  public @Nullable Date deserialize(
+      final @Nullable JsonElement json,
+      final @NotNull Type typeOfT,
+      final @NotNull JsonDeserializationContext context)
       throws JsonParseException {
     try {
       return json == null ? null : DateUtils.getDateTime(json.getAsString());

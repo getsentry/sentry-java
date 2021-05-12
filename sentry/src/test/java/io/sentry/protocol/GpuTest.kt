@@ -46,6 +46,8 @@ class GpuTest {
         assertEquals(true, clone.isMultiThreadedRendering)
         assertEquals("version", clone.version)
         assertEquals("npot support", clone.npotSupport)
-        assertEquals("unknown", clone.unknown["unknown"])
+        assertNotNull(clone.unknown) {
+            assertEquals("unknown", it["unknown"])
+        }
     }
 }

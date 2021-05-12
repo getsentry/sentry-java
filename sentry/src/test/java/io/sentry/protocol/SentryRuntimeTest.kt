@@ -34,6 +34,8 @@ class SentryRuntimeTest {
         assertEquals("name", clone.name)
         assertEquals("version", clone.version)
         assertEquals("raw description", clone.rawDescription)
-        assertEquals("unknown", clone.unknown["unknown"])
+        assertNotNull(clone.unknown) {
+            assertEquals("unknown", it["unknown"])
+        }
     }
 }

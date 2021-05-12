@@ -13,6 +13,7 @@ public interface ITransportFactory {
    *     the transport
    * @return the transport
    */
+  @NotNull
   ITransport create(
       final @NotNull SentryOptions options, final @NotNull RequestDetails requestDetails);
 }

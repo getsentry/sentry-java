@@ -3,6 +3,8 @@ package io.sentry.protocol;
 import io.sentry.IUnknownPropertiesConsumer;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A single exception.
@@ -25,31 +27,31 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * <p>At least one of `type` or `value` is required, otherwise the exception is discarded.
    */
-  private String type;
+  private @Nullable String type;
   /**
    * Human readable display value.
    *
    * <p>At least one of `type` or `value` is required, otherwise the exception is discarded.
    */
-  private String value;
+  private @Nullable String value;
   /** The optional module, or package which the exception type lives in. */
-  private String module;
+  private @Nullable String module;
   /** An optional value that refers to a [thread](#typedef-Thread). */
-  private Long threadId;
+  private @Nullable Long threadId;
   /** Stack trace containing frames of this exception. */
-  private SentryStackTrace stacktrace;
+  private @Nullable SentryStackTrace stacktrace;
   /** Mechanism by which this exception was generated and handled. */
-  private Mechanism mechanism;
+  private @Nullable Mechanism mechanism;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
   /**
    * The Exception Type.
    *
    * @return the type of the exception.
    */
-  public String getType() {
+  public @Nullable String getType() {
     return type;
   }
 
@@ -58,7 +60,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @param type type of the exception.
    */
-  public void setType(String type) {
+  public void setType(final @Nullable String type) {
     this.type = type;
   }
 
@@ -67,7 +69,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @return the value.
    */
-  public String getValue() {
+  public @Nullable String getValue() {
     return value;
   }
 
@@ -76,7 +78,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @param value The exception message
    */
-  public void setValue(String value) {
+  public void setValue(final @Nullable String value) {
     this.value = value;
   }
 
@@ -85,7 +87,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @return the module.
    */
-  public String getModule() {
+  public @Nullable String getModule() {
     return module;
   }
 
@@ -94,7 +96,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @param module the module.
    */
-  public void setModule(String module) {
+  public void setModule(final @Nullable String module) {
     this.module = module;
   }
 
@@ -103,7 +105,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @return the thread id.
    */
-  public Long getThreadId() {
+  public @Nullable Long getThreadId() {
     return threadId;
   }
 
@@ -112,7 +114,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @param threadId the thread id.
    */
-  public void setThreadId(Long threadId) {
+  public void setThreadId(final @Nullable Long threadId) {
     this.threadId = threadId;
   }
 
@@ -121,7 +123,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @return the stacktrace.
    */
-  public SentryStackTrace getStacktrace() {
+  public @Nullable SentryStackTrace getStacktrace() {
     return stacktrace;
   }
 
@@ -130,7 +132,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @param stacktrace the stacktrace of the exception.
    */
-  public void setStacktrace(SentryStackTrace stacktrace) {
+  public void setStacktrace(final @Nullable SentryStackTrace stacktrace) {
     this.stacktrace = stacktrace;
   }
 
@@ -139,7 +141,7 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @return the mechanism.
    */
-  public Mechanism getMechanism() {
+  public @Nullable Mechanism getMechanism() {
     return mechanism;
   }
 
@@ -148,13 +150,13 @@ public final class SentryException implements IUnknownPropertiesConsumer {
    *
    * @param mechanism the mechanism.
    */
-  public void setMechanism(Mechanism mechanism) {
+  public void setMechanism(final @Nullable Mechanism mechanism) {
     this.mechanism = mechanism;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 }
