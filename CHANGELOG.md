@@ -1,14 +1,15 @@
-# Unreleased
+# 5.0.0-beta.3
 
 * Fix: handling immutable collections on SentryEvent and protocol objects (#1468)
 * Fix: associate event with transaction when thrown exception is not a direct cause (#1463)
+* Ref: nullability annotations to Sentry module (#1439) and (#1462)
+* Fix: NPE when adding Context Data with null values for log4j2 (#1465)
 
 # 5.0.0-beta.2
 
 * Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)
 * Fix: When AppLifecycleIntegration is closed, it should remove observer using UI thread (#1459)
 * Bump: AGP to 4.2.0 (#1460)
-* Fix: NPE when adding Context Data with null values for log4j2 (#1465)
 
 Breaking Changes:
 
@@ -31,7 +32,6 @@ Breaking Changes:
 * Bump: sentry-native to 0.4.9 (#1431)
 * Fix: Set Span status for OkHttp integration (#1447)
 * Fix: Set user on transaction in Spring & Spring Boot integrations (#1443)
-* Ref: nullability annotations to Sentry module (#1439)
 
 # 4.4.0-alpha.2
 
