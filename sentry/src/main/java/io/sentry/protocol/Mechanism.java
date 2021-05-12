@@ -1,6 +1,7 @@
 package io.sentry.protocol;
 
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.util.CollectionUtils;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -108,7 +109,7 @@ public final class Mechanism implements IUnknownPropertiesConsumer {
   }
 
   public void setMeta(final @Nullable Map<String, Object> meta) {
-    this.meta = meta;
+    this.meta = CollectionUtils.newHashMap(meta);
   }
 
   public @Nullable Map<String, Object> getData() {
@@ -116,7 +117,7 @@ public final class Mechanism implements IUnknownPropertiesConsumer {
   }
 
   public void setData(final @Nullable Map<String, Object> data) {
-    this.data = data;
+    this.data = CollectionUtils.newHashMap(data);
   }
 
   @Nullable

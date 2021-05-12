@@ -825,6 +825,17 @@ class ScopeTest {
         }
     }
 
+    @Test
+    fun `when setFingerprints receives immutable list as an argument, its still possible to add more fingerprints`() {
+        val scope = Scope(SentryOptions()).apply {
+            fingerprint = listOf("a", "b")
+            fingerprint.add("c")
+        }
+        assertNotNull(scope.fingerprint) {
+            assertEquals(listOf("a", "b", "c"), it)
+        }
+    }
+
     private fun eventProcessor(): EventProcessor {
         return object : EventProcessor {
             override fun process(event: SentryEvent, hint: Any?): SentryEvent? {

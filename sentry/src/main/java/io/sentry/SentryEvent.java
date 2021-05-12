@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.*;
+import io.sentry.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -188,7 +189,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
   }
 
   public void setModules(final @Nullable Map<String, String> modules) {
-    this.modules = modules != null ? new HashMap<>(modules) : null;
+    this.modules = CollectionUtils.newHashMap(modules);
   }
 
   public void setModule(final @NotNull String key, final @NotNull String value) {

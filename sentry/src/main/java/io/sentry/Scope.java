@@ -214,7 +214,7 @@ public final class Scope implements Cloneable {
     if (fingerprint == null) {
       return;
     }
-    this.fingerprint = fingerprint;
+    this.fingerprint = new ArrayList<>(fingerprint);
   }
 
   /**

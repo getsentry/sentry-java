@@ -125,7 +125,7 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
    * @param other the other user related data..
    */
   public void setOthers(final @Nullable Map<String, @NotNull String> other) {
-    this.other = other != null ? new ConcurrentHashMap<>(other) : null;
+    this.other = CollectionUtils.shallowCopy(other);
   }
 
   /**

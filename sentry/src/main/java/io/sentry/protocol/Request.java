@@ -3,7 +3,6 @@ package io.sentry.protocol;
 import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.util.CollectionUtils;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -145,7 +144,7 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   }
 
   public void setHeaders(final @Nullable Map<String, String> headers) {
-    this.headers = headers != null ? new ConcurrentHashMap<>(headers) : null;
+    this.headers = CollectionUtils.shallowCopy(headers);
   }
 
   public @Nullable Map<String, String> getEnvs() {
@@ -153,7 +152,7 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   }
 
   public void setEnvs(final @Nullable Map<String, String> env) {
-    this.env = env != null ? new ConcurrentHashMap<>(env) : null;
+    this.env = CollectionUtils.shallowCopy(env);
   }
 
   public @Nullable Map<String, String> getOthers() {
@@ -161,7 +160,7 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   }
 
   public void setOthers(final @Nullable Map<String, String> other) {
-    this.other = other != null ? new ConcurrentHashMap<>(other) : null;
+    this.other = CollectionUtils.shallowCopy(other);
   }
 
   /**

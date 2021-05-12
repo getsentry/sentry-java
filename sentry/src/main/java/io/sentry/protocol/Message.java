@@ -1,6 +1,7 @@
 package io.sentry.protocol;
 
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.util.CollectionUtils;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -74,7 +75,7 @@ public final class Message implements IUnknownPropertiesConsumer {
   }
 
   public void setParams(final @Nullable List<String> params) {
-    this.params = params;
+    this.params = CollectionUtils.newArrayList(params);
   }
 
   @ApiStatus.Internal
