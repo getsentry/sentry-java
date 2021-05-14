@@ -1,5 +1,7 @@
 package io.sentry;
 
+import com.sun.java.accessibility.util.EventID;
+
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
 
@@ -7,6 +9,7 @@ import io.sentry.hints.Flushable;
 import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.LogUtils;
@@ -108,45 +111,33 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         SentryLevel.DEBUG,
         "Processing Envelope with %d item(s)",
         CollectionUtils.size(envelope.getItems()));
-    int items = 0;
+    int currentItem = 0;
 
     for (final SentryEnvelopeItem item : envelope.getItems()) {
-      items++;
+      currentItem++;
 
       if (item.getHeader() == null) {
-        logger.log(SentryLevel.ERROR, "Item %d has no header", items);
+        logger.log(SentryLevel.ERROR, "Item %d has no header", currentItem);
         continue;
       }
       if (SentryItemType.Event.equals(item.getHeader().getType())) {
-        try (final Reader reader =
+        try (final Reader eventReader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-          SentryEvent event = serializer.deserialize(reader, SentryEvent.class);
+          SentryEvent event = serializer.deserialize(eventReader, SentryEvent.class);
           if (event == null) {
-            logger.log(
-                SentryLevel.ERROR,
-                "Item %d of type %s returned null by the parser.",
-                items,
-                item.getHeader().getType());
+            logEnvelopeItemNull(item, currentItem);
           } else {
             if (envelope.getHeader().getEventId() != null
                 && !envelope.getHeader().getEventId().equals(event.getEventId())) {
-              logger.log(
-                  SentryLevel.ERROR,
-                  "Item %d of has a different event id (%s) to the envelope header (%s)",
-                  items,
-                  envelope.getHeader().getEventId(),
-                  event.getEventId());
+              logUnexpectedEventId(envelope, event.getEventId(), currentItem);
               continue;
             }
             hub.captureEvent(event, hint);
-            logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
+            logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {
-              logger.log(
-                  SentryLevel.WARNING,
-                  "Timed out waiting for event submission: %s",
-                  event.getEventId());
+              logTimeout(event.getEventId());
               break;
             }
           }
@@ -154,44 +145,30 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else if (SentryItemType.Transaction.equals(item.getHeader().getType())) {
-        try (final Reader transactionReader =
+        try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
 
-          SentryTransaction transaction =
-              serializer.deserialize(transactionReader, SentryTransaction.class);
+          SentryTransaction transaction = serializer.deserialize(reader, SentryTransaction.class);
           if (transaction == null) {
-            logger.log(
-                SentryLevel.ERROR,
-                "Item %d of type %s returned null by the parser.",
-                items,
-                item.getHeader().getType());
+            logEnvelopeItemNull(item, currentItem);
           } else {
             if (envelope.getHeader().getEventId() != null
                 && !envelope.getHeader().getEventId().equals(transaction.getEventId())) {
-              logger.log(
-                  SentryLevel.ERROR,
-                  "Item %d of has a different event id (%s) to the envelope header (%s)",
-                  items,
-                  envelope.getHeader().getEventId(),
-                  transaction.getEventId());
+              logUnexpectedEventId(envelope, transaction.getEventId(), currentItem);
               continue;
             }
 
             if (transaction.getContexts().getTrace() != null) {
-              //  transient property and therefore ignored by serialization/deserialization.
-              // Workaround: We need to set sampled manually in order for the
-              // transaction not to be dropped, as this is a transient property.
+              // Hint: Set sampled in order for the transaction not to be dropped, as this is a
+              // transient property.
               transaction.getContexts().getTrace().setSampled(true);
             }
             hub.captureTransaction(transaction, hint);
-            logger.log(SentryLevel.DEBUG, "Item %d is being captured.", items);
+            logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {
-              logger.log(
-                  SentryLevel.WARNING,
-                  "Timed out waiting for event submission: %s",
-                  transaction.getEventId());
+              logTimeout(transaction.getEventId());
               break;
             }
           }
@@ -208,7 +185,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             SentryLevel.DEBUG,
             "%s item %d is being captured.",
             item.getHeader().getType().getItemType(),
-            items);
+            currentItem);
 
         if (!waitFlush(hint)) {
           logger.log(
@@ -226,7 +203,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
           logger.log(
               SentryLevel.WARNING,
               "Envelope had a failed capture at item %d. No more items will be sent.",
-              items);
+              currentItem);
           break;
         }
       }
@@ -236,6 +213,37 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         ((Resettable) hint).reset();
       }
     }
+  }
+
+  private void logEnvelopeItemNull(SentryEnvelopeItem item, int itemIndex) {
+    logger.log(
+      SentryLevel.ERROR,
+      "Item %d of type %s returned null by the parser.",
+      itemIndex,
+      item.getHeader().getType()
+    );
+  }
+
+  private void logUnexpectedEventId(SentryEnvelope envelope, SentryId eventId, int itemIndex) {
+    logger.log(
+      SentryLevel.ERROR,
+      "Item %d of has a different event id (%s) to the envelope header (%s)",
+      itemIndex,
+      envelope.getHeader().getEventId(),
+      eventId
+    );
+  }
+
+  private void logItemCaptured(int itemIndex) {
+    logger.log(SentryLevel.DEBUG, "Item %d is being captured.", itemIndex);
+  }
+
+  private void logTimeout(SentryId eventId) {
+    logger.log(
+      SentryLevel.WARNING,
+      "Timed out waiting for event id submission: %s",
+      eventId
+    );
   }
 
   private boolean waitFlush(final @Nullable Object hint) {
