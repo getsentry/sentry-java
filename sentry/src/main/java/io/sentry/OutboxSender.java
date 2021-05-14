@@ -118,10 +118,10 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         continue;
       }
       if (SentryItemType.Event.equals(item.getHeader().getType())) {
-        try (final Reader eventReader =
+        try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-          SentryEvent event = serializer.deserialize(eventReader, SentryEvent.class);
+          SentryEvent event = serializer.deserialize(reader, SentryEvent.class);
           if (event == null) {
             logger.log(
                 SentryLevel.ERROR,
@@ -154,9 +154,6 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else if (SentryItemType.Transaction.equals(item.getHeader().getType())) {
-
-        // TODO(denrase): DRY
-
         try (final Reader transactionReader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
@@ -182,9 +179,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             }
 
             if (transaction.getContexts().getTrace() != null) {
-              // TODO(denrase): Testing. RN transactions are not set as sampled and also sampled is
-              // a
               //  transient property and therefore ignored by serialization/deserialization.
+              // Workaround: We need to set sampled manually in order for the
+              // transaction not to be dropped, as this is a transient property.
               transaction.getContexts().getTrace().setSampled(true);
             }
             hub.captureTransaction(transaction, hint);

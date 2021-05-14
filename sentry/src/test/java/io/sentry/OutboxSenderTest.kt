@@ -77,7 +77,7 @@ class OutboxSenderTest {
     }
 
     @Test
-    fun `when parser is EnvelopeReader and serializer return SentryTransaction, transaction captured, file is deleted`() {
+    fun `when parser is EnvelopeReader and serializer return SentryTransaction, transaction captured, transactions sampled, file is deleted`() {
         fixture.envelopeReader = EnvelopeReader()
         whenever(fixture.options.maxSpans).thenReturn(1000)
         whenever(fixture.hub.options).thenReturn(fixture.options)
@@ -105,6 +105,8 @@ class OutboxSenderTest {
 
         verify(fixture.hub).captureTransaction(eq(expected), any())
         assertFalse(File(path).exists())
+        assertTrue(transactionContext.sampled ?: false)
+
         // Additionally make sure we have no errors logged
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
