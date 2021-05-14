@@ -1,7 +1,5 @@
 package io.sentry;
 
-import com.sun.java.accessibility.util.EventID;
-
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
 
@@ -217,21 +215,19 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
 
   private void logEnvelopeItemNull(SentryEnvelopeItem item, int itemIndex) {
     logger.log(
-      SentryLevel.ERROR,
-      "Item %d of type %s returned null by the parser.",
-      itemIndex,
-      item.getHeader().getType()
-    );
+        SentryLevel.ERROR,
+        "Item %d of type %s returned null by the parser.",
+        itemIndex,
+        item.getHeader().getType());
   }
 
   private void logUnexpectedEventId(SentryEnvelope envelope, SentryId eventId, int itemIndex) {
     logger.log(
-      SentryLevel.ERROR,
-      "Item %d of has a different event id (%s) to the envelope header (%s)",
-      itemIndex,
-      envelope.getHeader().getEventId(),
-      eventId
-    );
+        SentryLevel.ERROR,
+        "Item %d of has a different event id (%s) to the envelope header (%s)",
+        itemIndex,
+        envelope.getHeader().getEventId(),
+        eventId);
   }
 
   private void logItemCaptured(int itemIndex) {
@@ -239,11 +235,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   }
 
   private void logTimeout(SentryId eventId) {
-    logger.log(
-      SentryLevel.WARNING,
-      "Timed out waiting for event id submission: %s",
-      eventId
-    );
+    logger.log(SentryLevel.WARNING, "Timed out waiting for event id submission: %s", eventId);
   }
 
   private boolean waitFlush(final @Nullable Object hint) {
