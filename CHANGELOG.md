@@ -1,5 +1,7 @@
 # Unreleased
 
+* Bump: Apache HttpClient to 5.0.4
+
 # 5.0.0-beta.3
 
 * Fix: handling immutable collections on SentryEvent and protocol objects (#1468)
