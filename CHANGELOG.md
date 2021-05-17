@@ -1,5 +1,7 @@
 # Unreleased
 
+* Fix: Enrich Transactions with Context Data (#1469)
+
 # 5.0.0-beta.3
 
 * Fix: handling immutable collections on SentryEvent and protocol objects (#1468)
