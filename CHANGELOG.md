@@ -1,7 +1,7 @@
 # Unreleased
 
 * Fix: Enrich Transactions with Context Data (#1469)
-* Feat: OkHttp callback for Customising the Span
+* Feat: OkHttp callback for Customising the Span (#1478)
 
 # 5.0.0-beta.3
 
