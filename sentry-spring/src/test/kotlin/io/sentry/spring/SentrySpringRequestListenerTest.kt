@@ -169,12 +169,14 @@ class SentrySpringRequestListenerTest {
 
         listener.requestInitialized(fixture.event)
 
-        assertNotNull(fixture.scope.request) {
-            assertFalse(it.headers.containsKey("X-FORWARDED-FOR"))
-            assertFalse(it.headers.containsKey("Authorization"))
-            assertFalse(it.headers.containsKey("authorization"))
-            assertFalse(it.headers.containsKey("Cookie"))
-            assertTrue(it.headers.containsKey("some-header"))
+        assertNotNull(fixture.scope.request) { request ->
+            assertNotNull(request.headers) {
+                assertFalse(it.containsKey("X-FORWARDED-FOR"))
+                assertFalse(it.containsKey("Authorization"))
+                assertFalse(it.containsKey("authorization"))
+                assertFalse(it.containsKey("Cookie"))
+                assertTrue(it.containsKey("some-header"))
+            }
         }
     }
 }

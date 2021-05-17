@@ -1,5 +1,6 @@
 package io.sentry.transport;
 
+import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.SentryLevel.INFO;
 
 import io.sentry.ILogger;
@@ -203,7 +204,12 @@ public final class RateLimiter {
               for (final String catItem : categories) {
                 DataCategory dataCategory = DataCategory.Unknown;
                 try {
-                  dataCategory = DataCategory.valueOf(StringUtils.capitalize(catItem));
+                  final String catItemCapitalized = StringUtils.capitalize(catItem);
+                  if (catItemCapitalized != null) {
+                    dataCategory = DataCategory.valueOf(catItemCapitalized);
+                  } else {
+                    logger.log(ERROR, "Couldn't capitalize: %s", catItem);
+                  }
                 } catch (IllegalArgumentException e) {
                   logger.log(INFO, e, "Unknown category: %s", catItem);
                 }

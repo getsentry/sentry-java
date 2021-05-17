@@ -14,7 +14,7 @@ import org.jetbrains.annotations.TestOnly;
 public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
 
   /** A timestamp representing when the breadcrumb occurred. */
-  private final @Nullable Date timestamp;
+  private final @NotNull Date timestamp;
 
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
@@ -39,7 +39,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    *
    * @param timestamp the timestamp
    */
-  public Breadcrumb(final @Nullable Date timestamp) {
+  public Breadcrumb(final @NotNull Date timestamp) {
     this.timestamp = timestamp;
   }
 
@@ -222,7 +222,7 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    */
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(@Nullable Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(@NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
@@ -247,8 +247,11 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   public @NotNull Breadcrumb clone() throws CloneNotSupportedException {
     final Breadcrumb clone = (Breadcrumb) super.clone();
 
-    clone.data = CollectionUtils.shallowCopy(data);
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    final Map<String, Object> dataCopy = CollectionUtils.newConcurrentHashMap(this.data);
+    if (dataCopy != null) {
+      clone.data = dataCopy;
+    }
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     final SentryLevel levelRef = level;
     clone.level =

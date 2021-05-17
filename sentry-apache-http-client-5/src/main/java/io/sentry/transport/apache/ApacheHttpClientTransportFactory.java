@@ -32,7 +32,7 @@ public final class ApacheHttpClientTransportFactory implements ITransportFactory
   }
 
   @Override
-  public ITransport create(
+  public @NotNull ITransport create(
       final @NotNull SentryOptions options, final @NotNull RequestDetails requestDetails) {
     Objects.requireNonNull(options, "options is required");
     Objects.requireNonNull(requestDetails, "requestDetails is required");

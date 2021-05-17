@@ -8,349 +8,351 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   public static final String TYPE = "device";
 
   /** Name of the device. */
-  private String name;
+  private @Nullable String name;
   /** Manufacturer of the device. */
-  private String manufacturer;
+  private @Nullable String manufacturer;
   /** Brand of the device. */
-  private String brand;
+  private @Nullable String brand;
   /**
    * Family of the device model.
    *
    * <p>This is usually the common part of model names across generations. For instance, `iPhone`
    * would be a reasonable family, so would be `Samsung Galaxy`.
    */
-  private String family;
+  private @Nullable String family;
   /**
    * Device model.
    *
    * <p>This, for example, can be `Samsung Galaxy S3`.
    */
-  private String model;
+  private @Nullable String model;
   /**
    * Device model (internal identifier).
    *
    * <p>An internal hardware revision to identify the device exactly.
    */
-  private String modelId;
+  private @Nullable String modelId;
 
   /** Supported CPU architectures of the device. */
-  private String[] archs;
+  private @Nullable String[] archs;
   /**
    * Current battery level in %.
    *
    * <p>If the device has a battery, this can be a floating point value defining the battery level
    * (in the range 0-100).
    */
-  private Float batteryLevel;
+  private @Nullable Float batteryLevel;
   /** Whether the device was charging or not. */
-  private Boolean charging;
+  private @Nullable Boolean charging;
   /** Whether the device was online or not. */
-  private Boolean online;
+  private @Nullable Boolean online;
   /**
    * Current screen orientation.
    *
    * <p>This can be a string `portrait` or `landscape` to define the orientation of a device.
    */
-  private DeviceOrientation orientation;
+  private @Nullable DeviceOrientation orientation;
   /** Simulator/prod indicator. */
-  private Boolean simulator;
+  private @Nullable Boolean simulator;
   /** Total memory available in bytes. */
-  private Long memorySize;
+  private @Nullable Long memorySize;
   /** How much memory is still available in bytes. */
-  private Long freeMemory;
+  private @Nullable Long freeMemory;
   /** How much memory is usable for the app in bytes. */
-  private Long usableMemory;
+  private @Nullable Long usableMemory;
   /** Whether the device was low on memory. */
-  private Boolean lowMemory;
+  private @Nullable Boolean lowMemory;
   /** Total storage size of the device in bytes. */
-  private Long storageSize;
+  private @Nullable Long storageSize;
   /** How much storage is free in bytes. */
-  private Long freeStorage;
+  private @Nullable Long freeStorage;
   /** Total size of the attached external storage in bytes (eg: android SDK card). */
-  private Long externalStorageSize;
+  private @Nullable Long externalStorageSize;
   /** Free size of the attached external storage in bytes (eg: android SDK card). */
-  private Long externalFreeStorage;
+  private @Nullable Long externalFreeStorage;
 
   /** Device width screen resolution. */
-  private Integer screenWidthPixels;
+  private @Nullable Integer screenWidthPixels;
 
   /** Device Height screen resolution. */
-  private Integer screenHeightPixels;
+  private @Nullable Integer screenHeightPixels;
   /** Device screen density. */
-  private Float screenDensity;
+  private @Nullable Float screenDensity;
   /** Screen density as dots-per-inch. */
-  private Integer screenDpi;
+  private @Nullable Integer screenDpi;
   /** Indicator when the device was booted. */
-  private Date bootTime;
+  private @Nullable Date bootTime;
   /** Timezone of the device. */
-  private TimeZone timezone;
+  private @Nullable TimeZone timezone;
 
-  private String id;
-  private String language;
-  private String connectionType;
+  private @Nullable String id;
+  private @Nullable String language;
+  private @Nullable String connectionType;
 
   /** battery's temperature in celsius */
-  private Float batteryTemperature;
+  private @Nullable Float batteryTemperature;
 
   @SuppressWarnings("unused")
-  private Map<String, @NotNull Object> unknown;
+  private @Nullable Map<String, @NotNull Object> unknown;
 
-  public String getName() {
+  public @Nullable String getName() {
     return name;
   }
 
-  public void setName(String name) {
+  public void setName(final @Nullable String name) {
     this.name = name;
   }
 
-  public String getManufacturer() {
+  public @Nullable String getManufacturer() {
     return manufacturer;
   }
 
-  public void setManufacturer(String manufacturer) {
+  public void setManufacturer(final @Nullable String manufacturer) {
     this.manufacturer = manufacturer;
   }
 
-  public String getBrand() {
+  public @Nullable String getBrand() {
     return brand;
   }
 
-  public void setBrand(String brand) {
+  public void setBrand(final @Nullable String brand) {
     this.brand = brand;
   }
 
-  public String getFamily() {
+  public @Nullable String getFamily() {
     return family;
   }
 
-  public void setFamily(String family) {
+  public void setFamily(final @Nullable String family) {
     this.family = family;
   }
 
-  public String getModel() {
+  public @Nullable String getModel() {
     return model;
   }
 
-  public void setModel(String model) {
+  public void setModel(final @Nullable String model) {
     this.model = model;
   }
 
-  public String getModelId() {
+  public @Nullable String getModelId() {
     return modelId;
   }
 
-  public void setModelId(String modelId) {
+  public void setModelId(final @Nullable String modelId) {
     this.modelId = modelId;
   }
 
-  public Float getBatteryLevel() {
+  public @Nullable Float getBatteryLevel() {
     return batteryLevel;
   }
 
-  public void setBatteryLevel(Float batteryLevel) {
+  public void setBatteryLevel(final @Nullable Float batteryLevel) {
     this.batteryLevel = batteryLevel;
   }
 
-  public Boolean isCharging() {
+  public @Nullable Boolean isCharging() {
     return charging;
   }
 
-  public void setCharging(Boolean charging) {
+  public void setCharging(final @Nullable Boolean charging) {
     this.charging = charging;
   }
 
-  public Boolean isOnline() {
+  public @Nullable Boolean isOnline() {
     return online;
   }
 
-  public void setOnline(Boolean online) {
+  public void setOnline(final @Nullable Boolean online) {
     this.online = online;
   }
 
-  public DeviceOrientation getOrientation() {
+  public @Nullable DeviceOrientation getOrientation() {
     return orientation;
   }
 
-  public void setOrientation(DeviceOrientation orientation) {
+  public void setOrientation(final @Nullable DeviceOrientation orientation) {
     this.orientation = orientation;
   }
 
-  public Boolean isSimulator() {
+  public @Nullable Boolean isSimulator() {
     return simulator;
   }
 
-  public void setSimulator(Boolean simulator) {
+  public void setSimulator(final @Nullable Boolean simulator) {
     this.simulator = simulator;
   }
 
-  public Long getMemorySize() {
+  public @Nullable Long getMemorySize() {
     return memorySize;
   }
 
-  public void setMemorySize(Long memorySize) {
+  public void setMemorySize(final @Nullable Long memorySize) {
     this.memorySize = memorySize;
   }
 
-  public Long getFreeMemory() {
+  public @Nullable Long getFreeMemory() {
     return freeMemory;
   }
 
-  public void setFreeMemory(Long freeMemory) {
+  public void setFreeMemory(final @Nullable Long freeMemory) {
     this.freeMemory = freeMemory;
   }
 
-  public Long getUsableMemory() {
+  public @Nullable Long getUsableMemory() {
     return usableMemory;
   }
 
-  public void setUsableMemory(Long usableMemory) {
+  public void setUsableMemory(final @Nullable Long usableMemory) {
     this.usableMemory = usableMemory;
   }
 
-  public Boolean isLowMemory() {
+  public @Nullable Boolean isLowMemory() {
     return lowMemory;
   }
 
-  public void setLowMemory(Boolean lowMemory) {
+  public void setLowMemory(final @Nullable Boolean lowMemory) {
     this.lowMemory = lowMemory;
   }
 
-  public Long getStorageSize() {
+  public @Nullable Long getStorageSize() {
     return storageSize;
   }
 
-  public void setStorageSize(Long storageSize) {
+  public void setStorageSize(final @Nullable Long storageSize) {
     this.storageSize = storageSize;
   }
 
-  public Long getFreeStorage() {
+  public @Nullable Long getFreeStorage() {
     return freeStorage;
   }
 
-  public void setFreeStorage(Long freeStorage) {
+  public void setFreeStorage(final @Nullable Long freeStorage) {
     this.freeStorage = freeStorage;
   }
 
-  public Long getExternalStorageSize() {
+  public @Nullable Long getExternalStorageSize() {
     return externalStorageSize;
   }
 
-  public void setExternalStorageSize(Long externalStorageSize) {
+  public void setExternalStorageSize(final @Nullable Long externalStorageSize) {
     this.externalStorageSize = externalStorageSize;
   }
 
-  public Long getExternalFreeStorage() {
+  public @Nullable Long getExternalFreeStorage() {
     return externalFreeStorage;
   }
 
-  public void setExternalFreeStorage(Long externalFreeStorage) {
+  public void setExternalFreeStorage(final @Nullable Long externalFreeStorage) {
     this.externalFreeStorage = externalFreeStorage;
   }
 
-  public Float getScreenDensity() {
+  public @Nullable Float getScreenDensity() {
     return screenDensity;
   }
 
-  public void setScreenDensity(Float screenDensity) {
+  public void setScreenDensity(final @Nullable Float screenDensity) {
     this.screenDensity = screenDensity;
   }
 
-  public Integer getScreenDpi() {
+  public @Nullable Integer getScreenDpi() {
     return screenDpi;
   }
 
-  public void setScreenDpi(Integer screenDpi) {
+  public void setScreenDpi(final @Nullable Integer screenDpi) {
     this.screenDpi = screenDpi;
   }
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-  public Date getBootTime() {
+  public @Nullable Date getBootTime() {
     final Date bootTimeRef = bootTime;
     return bootTimeRef != null ? (Date) bootTimeRef.clone() : null;
   }
 
-  public void setBootTime(Date bootTime) {
+  public void setBootTime(final @Nullable Date bootTime) {
     this.bootTime = bootTime;
   }
 
-  public TimeZone getTimezone() {
+  public @Nullable TimeZone getTimezone() {
     return timezone;
   }
 
-  public void setTimezone(TimeZone timezone) {
+  public void setTimezone(final @Nullable TimeZone timezone) {
     this.timezone = timezone;
   }
 
-  public String[] getArchs() {
+  public @Nullable String[] getArchs() {
     return archs;
   }
 
-  public void setArchs(String[] archs) {
+  public void setArchs(final @Nullable String[] archs) {
     this.archs = archs;
   }
 
-  public Integer getScreenWidthPixels() {
+  public @Nullable Integer getScreenWidthPixels() {
     return screenWidthPixels;
   }
 
-  public void setScreenWidthPixels(Integer screenWidthPixels) {
+  public void setScreenWidthPixels(final @Nullable Integer screenWidthPixels) {
     this.screenWidthPixels = screenWidthPixels;
   }
 
-  public Integer getScreenHeightPixels() {
+  public @Nullable Integer getScreenHeightPixels() {
     return screenHeightPixels;
   }
 
-  public void setScreenHeightPixels(Integer screenHeightPixels) {
+  public void setScreenHeightPixels(final @Nullable Integer screenHeightPixels) {
     this.screenHeightPixels = screenHeightPixels;
   }
 
-  public String getId() {
+  public @Nullable String getId() {
     return id;
   }
 
-  public void setId(String id) {
+  public void setId(final @Nullable String id) {
     this.id = id;
   }
 
-  public String getLanguage() {
+  public @Nullable String getLanguage() {
     return language;
   }
 
-  public void setLanguage(String language) {
+  public void setLanguage(final @Nullable String language) {
     this.language = language;
   }
 
-  public String getConnectionType() {
+  public @Nullable String getConnectionType() {
     return connectionType;
   }
 
-  public void setConnectionType(String connectionType) {
+  public void setConnectionType(final @Nullable String connectionType) {
     this.connectionType = connectionType;
   }
 
-  public Float getBatteryTemperature() {
+  public @Nullable Float getBatteryTemperature() {
     return batteryTemperature;
   }
 
-  public void setBatteryTemperature(Float batteryTemperature) {
+  public void setBatteryTemperature(final @Nullable Float batteryTemperature) {
     this.batteryTemperature = batteryTemperature;
   }
 
   @TestOnly
+  @Nullable
   Map<String, Object> getUnknown() {
     return unknown;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, @NotNull Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
@@ -365,12 +367,12 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
     final Device clone = (Device) super.clone();
 
     final String[] archsRef = this.archs;
-    clone.archs = archsRef != null ? this.archs.clone() : null;
+    clone.archs = archsRef != null ? archsRef.clone() : null;
 
     final TimeZone timezoneRef = this.timezone;
-    clone.timezone = timezoneRef != null ? (TimeZone) this.timezone.clone() : null;
+    clone.timezone = timezoneRef != null ? (TimeZone) timezoneRef.clone() : null;
 
-    clone.unknown = CollectionUtils.shallowCopy(unknown);
+    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
 
     return clone;
   }

@@ -12,7 +12,7 @@ final class SentryValues<T> {
     if (values == null) {
       values = new ArrayList<>(0);
     }
-    this.values = values;
+    this.values = new ArrayList<>(values);
   }
 
   public @NotNull List<T> getValues() {

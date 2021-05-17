@@ -80,7 +80,9 @@ final class ManifestMetadataReader {
                   logger,
                   DEBUG_LEVEL,
                   options.getDiagnosticLevel().name().toLowerCase(Locale.ROOT));
-          options.setDiagnosticLevel(SentryLevel.valueOf(level.toUpperCase(Locale.ROOT)));
+          if (level != null) {
+            options.setDiagnosticLevel(SentryLevel.valueOf(level.toUpperCase(Locale.ROOT)));
+          }
         }
 
         options.setAnrEnabled(readBool(metadata, logger, ANR_ENABLE, options.isAnrEnabled()));

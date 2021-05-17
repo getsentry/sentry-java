@@ -120,13 +120,13 @@ abstract class CacheStrategy {
       final @NotNull File currentFile, final @NotNull File[] notDeletedFiles) {
     final SentryEnvelope currentEnvelope = readEnvelope(currentFile);
 
-    if (!isValidEnvelope(currentEnvelope)) {
+    if (currentEnvelope == null || !isValidEnvelope(currentEnvelope)) {
       return;
     }
 
     final Session currentSession = getFirstSession(currentEnvelope);
 
-    if (!isValidSession(currentSession)) {
+    if (currentSession == null || !isValidSession(currentSession)) {
       return;
     }
 
@@ -140,7 +140,7 @@ abstract class CacheStrategy {
     for (final File notDeletedFile : notDeletedFiles) {
       final SentryEnvelope envelope = readEnvelope(notDeletedFile);
 
-      if (!isValidEnvelope(envelope)) {
+      if (envelope == null || !isValidEnvelope(envelope)) {
         continue;
       }
 
@@ -156,7 +156,7 @@ abstract class CacheStrategy {
 
         final Session session = readSession(envelopeItem);
 
-        if (!isValidSession(session)) {
+        if (session == null || !isValidSession(session)) {
           continue;
         }
 
@@ -168,7 +168,8 @@ abstract class CacheStrategy {
           return;
         }
 
-        if (currentSession.getSessionId().equals(session.getSessionId())) {
+        if (currentSession.getSessionId() != null
+            && currentSession.getSessionId().equals(session.getSessionId())) {
           session.setInitAsTrue();
           try {
             newSessionItem = SentryEnvelopeItem.fromSession(serializer, session);
@@ -230,21 +231,14 @@ abstract class CacheStrategy {
     return null;
   }
 
-  private boolean isValidSession(final @Nullable Session session) {
-    if (session == null) {
-      return false;
-    }
-
+  private boolean isValidSession(final @NotNull Session session) {
     if (!session.getStatus().equals(Session.State.Ok)) {
       return false;
     }
 
     final UUID sessionId = session.getSessionId();
 
-    if (sessionId == null) {
-      return false;
-    }
-    return true;
+    return sessionId != null;
   }
 
   private boolean isSessionType(final @Nullable SentryEnvelopeItem item) {
@@ -289,11 +283,7 @@ abstract class CacheStrategy {
     return new SentryEnvelope(envelope.getHeader(), newEnvelopeItems);
   }
 
-  private boolean isValidEnvelope(final @Nullable SentryEnvelope envelope) {
-    if (envelope == null) {
-      return false;
-    }
-
+  private boolean isValidEnvelope(final @NotNull SentryEnvelope envelope) {
     if (!envelope.getItems().iterator().hasNext()) {
       return false;
     }

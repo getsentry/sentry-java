@@ -6,10 +6,12 @@ import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.Collections
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryEventTest {
@@ -71,7 +73,9 @@ class SentryEventTest {
     fun `adds breadcrumb with string as a parameter`() {
         val event = SentryEvent()
         event.addBreadcrumb("breadcrumb")
-        assertEquals(1, event.breadcrumbs.filter { it.message == "breadcrumb" }.size)
+        assertNotNull(event.breadcrumbs) {
+            assertEquals(1, it.filter { it.message == "breadcrumb" }.size)
+        }
     }
 
     @Test
@@ -88,5 +92,60 @@ class SentryEventTest {
         val ex = RuntimeException()
         event.throwable = ex
         assertEquals(ex, event.originThrowable)
+    }
+
+    @Test
+    fun `when setBreadcrumbs receives immutable list as an argument, its still possible to add more breadcrumbs to the event`() {
+        val event = SentryEvent().apply {
+            breadcrumbs = listOf(Breadcrumb("a"), Breadcrumb("b"))
+            addBreadcrumb("c")
+        }
+        assertNotNull(event.breadcrumbs) {
+            assertEquals(listOf("a", "b", "c"), it.map { breadcrumb -> breadcrumb.message })
+        }
+    }
+
+    @Test
+    fun `when setFingerprints receives immutable list as an argument, its still possible to add more fingerprints to the event`() {
+        val event = SentryEvent().apply {
+            fingerprints = listOf("a", "b")
+            fingerprints!!.add("c")
+        }
+        assertNotNull(event.fingerprints) {
+            assertEquals(listOf("a", "b", "c"), it)
+        }
+    }
+
+    @Test
+    fun `when setExtras receives immutable map as an argument, its still possible to add more extra to the event`() {
+        val event = SentryEvent().apply {
+            extras = Collections.unmodifiableMap(mapOf<String, Any>("key1" to "value1", "key2" to "value2"))
+            setExtra("key3", "value3")
+        }
+        assertNotNull(event.extras) {
+            assertEquals(mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3"), it)
+        }
+    }
+
+    @Test
+    fun `when setTags receives immutable map as an argument, its still possible to add more tags to the event`() {
+        val event = SentryEvent().apply {
+            tags = Collections.unmodifiableMap(mapOf("key1" to "value1", "key2" to "value2"))
+            setTag("key3", "value3")
+        }
+        assertNotNull(event.tags) {
+            assertEquals(mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3"), it)
+        }
+    }
+
+    @Test
+    fun `when setModules receives immutable map as an argument, its still possible to add more modules to the event`() {
+        val event = SentryEvent().apply {
+            modules = Collections.unmodifiableMap(mapOf("key1" to "value1", "key2" to "value2"))
+            setModule("key3", "value3")
+        }
+        assertNotNull(event.modules) {
+            assertEquals(mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3"), it)
+        }
     }
 }

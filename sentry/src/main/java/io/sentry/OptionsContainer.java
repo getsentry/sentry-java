@@ -2,6 +2,7 @@ package io.sentry;
 
 import java.lang.reflect.InvocationTargetException;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class OptionsContainer<T> {
@@ -12,12 +13,12 @@ public final class OptionsContainer<T> {
 
   private final Class<T> clazz;
 
-  private OptionsContainer(final Class<T> clazz) {
+  private OptionsContainer(final @NotNull Class<T> clazz) {
     super();
     this.clazz = clazz;
   }
 
-  public T createInstance()
+  public @NotNull T createInstance()
       throws InstantiationException, IllegalAccessException, NoSuchMethodException,
           InvocationTargetException {
     return clazz.getDeclaredConstructor().newInstance();

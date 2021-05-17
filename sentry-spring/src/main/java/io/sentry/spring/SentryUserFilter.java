@@ -63,12 +63,14 @@ public class SentryUserFilter implements Filter {
       Optional.ofNullable(userFromProvider.getIpAddress()).ifPresent(existingUser::setIpAddress);
       Optional.ofNullable(userFromProvider.getUsername()).ifPresent(existingUser::setUsername);
       if (userFromProvider.getOthers() != null && !userFromProvider.getOthers().isEmpty()) {
-        if (existingUser.getOthers() == null) {
-          existingUser.setOthers(new ConcurrentHashMap<>());
+        Map<String, String> existingUserOthers = existingUser.getOthers();
+        if (existingUserOthers == null) {
+          existingUserOthers = new ConcurrentHashMap<>();
         }
         for (final Map.Entry<String, String> entry : userFromProvider.getOthers().entrySet()) {
-          existingUser.getOthers().put(entry.getKey(), entry.getValue());
+          existingUserOthers.put(entry.getKey(), entry.getValue());
         }
+        existingUser.setOthers(existingUserOthers);
       }
     }
   }

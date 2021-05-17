@@ -116,10 +116,11 @@ class SentrySpringIntegrationTest {
 
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
-                assertThat(event.exceptions).isNotEmpty
-                val ex = event.exceptions.first()
+                assertThat(event.exceptions).isNotNull().isNotEmpty
+                val ex = event.exceptions!!.first()
                 assertThat(ex.value).isEqualTo("something went wrong")
-                assertThat(ex.mechanism.isHandled).isFalse()
+                assertThat(ex.mechanism).isNotNull()
+                assertThat(ex.mechanism!!.isHandled).isFalse()
             }, anyOrNull())
         }
     }
@@ -132,7 +133,8 @@ class SentrySpringIntegrationTest {
 
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
-                assertThat(event.message.message).isEqualTo("event from logger")
+                assertThat(event.message).isNotNull()
+                assertThat(event.message!!.message).isEqualTo("event from logger")
             }, anyOrNull())
         }
     }

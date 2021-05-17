@@ -10,6 +10,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * CircularFifoQueue is a first-in first-out queue with a fixed size that replaces its oldest
@@ -34,7 +36,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
   private static final long serialVersionUID = -8423413834657610406L;
 
   /** Underlying storage array. */
-  private transient E[] elements;
+  private transient @NotNull E[] elements;
 
   /** Array index of first (oldest) queue element. */
   private transient int start = 0;
@@ -80,7 +82,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    * @param coll the collection to copy into the queue, may not be null
    * @throws NullPointerException if the collection is null
    */
-  public CircularFifoQueue(final Collection<? extends E> coll) {
+  public CircularFifoQueue(final @NotNull Collection<? extends E> coll) {
     this(coll.size());
     addAll(coll);
   }
@@ -92,7 +94,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    * @param out the output stream
    * @throws IOException if an I/O error occurs while writing to the output stream
    */
-  private void writeObject(final ObjectOutputStream out) throws IOException {
+  private void writeObject(final @NotNull ObjectOutputStream out) throws IOException {
     out.defaultWriteObject();
     out.writeInt(size());
     for (final E e : this) {
@@ -108,7 +110,8 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    * @throws ClassNotFoundException if the class of a serialized object can not be found
    */
   @SuppressWarnings("unchecked")
-  private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+  private void readObject(final @NotNull ObjectInputStream in)
+      throws IOException, ClassNotFoundException {
     in.defaultReadObject();
     elements = (E[]) new Object[maxElements];
     final int size = in.readInt();
@@ -202,7 +205,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    * @throws NullPointerException if the given element is null
    */
   @Override
-  public boolean add(final E element) {
+  public boolean add(final @NotNull E element) {
     if (null == element) {
       throw new NullPointerException("Attempted to add null object to queue");
     }
@@ -231,7 +234,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    * @return the element at position {@code index}
    * @throws NoSuchElementException if the requested position is outside the range [0, size)
    */
-  public E get(final int index) {
+  public @NotNull E get(final int index) {
     final int sz = size();
     if (index < 0 || index >= sz) {
       throw new NoSuchElementException(
@@ -255,12 +258,12 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    * @throws NullPointerException if the given element is null
    */
   @Override
-  public boolean offer(E element) {
+  public boolean offer(@NotNull E element) {
     return add(element);
   }
 
   @Override
-  public E poll() {
+  public @Nullable E poll() {
     if (isEmpty()) {
       return null;
     }
@@ -268,7 +271,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
   }
 
   @Override
-  public E element() {
+  public @Nullable E element() {
     if (isEmpty()) {
       throw new NoSuchElementException("queue is empty");
     }
@@ -276,7 +279,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
   }
 
   @Override
-  public E peek() {
+  public @Nullable E peek() {
     if (isEmpty()) {
       return null;
     }
@@ -284,7 +287,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
   }
 
   @Override
-  public E remove() {
+  public @NotNull E remove() {
     if (isEmpty()) {
       throw new NoSuchElementException("queue is empty");
     }
@@ -336,7 +339,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    * @return an iterator over this queue's elements
    */
   @Override
-  public Iterator<E> iterator() {
+  public @NotNull Iterator<E> iterator() {
     return new Iterator<E>() {
 
       private int index = start;

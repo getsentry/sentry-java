@@ -71,9 +71,11 @@ class DeviceTest {
         assertEquals("family", clone.family)
         assertEquals("model", clone.model)
         assertEquals("modelId", clone.modelId)
-        assertEquals(2, clone.archs.size)
-        assertEquals("archs1", clone.archs[0])
-        assertEquals("archs2", clone.archs[1])
+        assertNotNull(clone.archs) {
+            assertEquals(2, it.size)
+            assertEquals("archs1", it[0])
+            assertEquals("archs2", it[1])
+        }
         assertEquals(3.14f, clone.batteryLevel)
         assertEquals(true, clone.isCharging)
         assertEquals(true, clone.isOnline)
@@ -95,6 +97,8 @@ class DeviceTest {
         assertEquals("language", clone.language)
         assertEquals("connection type", clone.connectionType)
         assertEquals(30f, clone.batteryTemperature)
-        assertEquals("unknown", clone.unknown["unknown"])
+        assertNotNull(clone.unknown) {
+            assertEquals("unknown", it["unknown"])
+        }
     }
 }

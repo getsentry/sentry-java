@@ -12,6 +12,7 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class ContextsSerializerAdapter implements JsonSerializer<Contexts> {
@@ -23,7 +24,10 @@ public final class ContextsSerializerAdapter implements JsonSerializer<Contexts>
   }
 
   @Override
-  public JsonElement serialize(Contexts src, Type typeOfSrc, JsonSerializationContext context) {
+  public @Nullable JsonElement serialize(
+      final @Nullable Contexts src,
+      final @NotNull Type typeOfSrc,
+      final @NotNull JsonSerializationContext context) {
     if (src == null) {
       return null;
     }
