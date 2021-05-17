@@ -147,7 +147,8 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
 
-          final SentryTransaction transaction = serializer.deserialize(reader, SentryTransaction.class);
+          final SentryTransaction transaction =
+              serializer.deserialize(reader, SentryTransaction.class);
           if (transaction == null) {
             logEnvelopeItemNull(item, currentItem);
           } else {
@@ -221,7 +222,8 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         item.getHeader().getType());
   }
 
-  private void logUnexpectedEventId(final @NotNull SentryEnvelope envelope, final @Nullable SentryId eventId, int itemIndex) {
+  private void logUnexpectedEventId(
+      final @NotNull SentryEnvelope envelope, final @Nullable SentryId eventId, int itemIndex) {
     logger.log(
         SentryLevel.ERROR,
         "Item %d of has a different event id (%s) to the envelope header (%s)",
