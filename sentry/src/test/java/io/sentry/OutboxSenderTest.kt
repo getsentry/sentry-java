@@ -5,11 +5,13 @@ import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryTransaction
 import java.io.File
 import java.io.FileNotFoundException
 import java.nio.file.Files
@@ -24,6 +26,7 @@ import kotlin.test.assertTrue
 class OutboxSenderTest {
     private class Fixture {
 
+        val options = mock<SentryOptions>()
         val hub = mock<IHub>()
         var envelopeReader = mock<IEnvelopeReader>()
         val serializer = mock<ISerializer>()
@@ -68,6 +71,42 @@ class OutboxSenderTest {
 
         verify(fixture.hub).captureEvent(eq(expected), any())
         assertFalse(File(path).exists())
+        // Additionally make sure we have no errors logged
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+    }
+
+    @Test
+    fun `when parser is EnvelopeReader and serializer return SentryTransaction, transaction captured, transactions sampled, file is deleted`() {
+        fixture.envelopeReader = EnvelopeReader()
+        whenever(fixture.options.maxSpans).thenReturn(1000)
+        whenever(fixture.hub.options).thenReturn(fixture.options)
+
+        val transactionContext = TransactionContext("fixture-name", "http")
+        transactionContext.description = "fixture-request"
+        transactionContext.status = SpanStatus.OK
+        transactionContext.setTag("fixture-tag", "fixture-value")
+
+        val sentryTracer = SentryTracer(transactionContext, fixture.hub)
+        val span = sentryTracer.startChild("child")
+        span.finish(SpanStatus.OK)
+        sentryTracer.finish()
+
+        val sentryTracerSpy = spy(sentryTracer)
+        whenever(sentryTracerSpy.eventId).thenReturn(SentryId("3367f5196c494acaae85bbbd535379ac"))
+
+        val expected = SentryTransaction(sentryTracerSpy)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryTransaction::class.java))).thenReturn(expected)
+
+        val sut = fixture.getSut()
+        val path = getTempEnvelope(fileName = "envelope-transaction.txt")
+        assertTrue(File(path).exists())
+        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        verify(fixture.hub).captureTransaction(eq(expected), any())
+        assertFalse(File(path).exists())
+        assertTrue(transactionContext.sampled ?: false)
+
         // Additionally make sure we have no errors logged
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
