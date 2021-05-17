@@ -213,7 +213,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
     }
   }
 
-  private void logEnvelopeItemNull(final @NonNull SentryEnvelopeItem item, int itemIndex) {
+  private void logEnvelopeItemNull(final @NotNull SentryEnvelopeItem item, int itemIndex) {
     logger.log(
         SentryLevel.ERROR,
         "Item %d of type %s returned null by the parser.",
@@ -221,7 +221,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         item.getHeader().getType());
   }
 
-  private void logUnexpectedEventId(final @NonNull SentryEnvelope envelope, SentryId eventId, int itemIndex) {
+  private void logUnexpectedEventId(final @NotNull SentryEnvelope envelope, SentryId eventId, int itemIndex) {
     logger.log(
         SentryLevel.ERROR,
         "Item %d of has a different event id (%s) to the envelope header (%s)",
@@ -234,7 +234,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
     logger.log(SentryLevel.DEBUG, "Item %d is being captured.", itemIndex);
   }
 
-  private void logTimeout(final @NonNull SentryId eventId) {
+  private void logTimeout(final @NotNull SentryId eventId) {
     logger.log(SentryLevel.WARNING, "Timed out waiting for event id submission: %s", eventId);
   }
 
