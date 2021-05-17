@@ -3,13 +3,15 @@ package io.sentry.android.okhttp
 import io.sentry.Breadcrumb
 import io.sentry.HubAdapter
 import io.sentry.IHub
+import io.sentry.ISpan
 import io.sentry.SpanStatus
 import java.io.IOException
 import okhttp3.Interceptor
 import okhttp3.Response
 
 class SentryOkHttpInterceptor(
-    private val hub: IHub = HubAdapter.getInstance()
+    private val hub: IHub = HubAdapter.getInstance(),
+    private val spanCustomizer: (span: ISpan) -> Unit = { }
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -39,6 +41,7 @@ class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
+            span?.apply(spanCustomizer)
             span?.finish()
             val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
             request.body?.contentLength().ifHasValidLength {

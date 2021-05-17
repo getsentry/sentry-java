@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
+import io.sentry.ISpan
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -32,7 +33,7 @@ class SentryOkHttpInterceptorTest {
 
     class Fixture {
         val hub = mock<IHub>()
-        val interceptor = SentryOkHttpInterceptor(hub)
+        var interceptor = SentryOkHttpInterceptor(hub)
         val server = MockWebServer()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
@@ -44,7 +45,8 @@ class SentryOkHttpInterceptorTest {
             isSpanActive: Boolean = true,
             httpStatusCode: Int = 201,
             responseBody: String = "success",
-            socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN
+            socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+            spanCustomizer: ((span: ISpan) -> Unit)? = null
         ): OkHttpClient {
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
@@ -54,6 +56,9 @@ class SentryOkHttpInterceptorTest {
                     .setSocketPolicy(socketPolicy)
                     .setResponseCode(httpStatusCode))
             server.start()
+            if (spanCustomizer != null) {
+                interceptor = SentryOkHttpInterceptor(hub, spanCustomizer)
+            }
             return OkHttpClient.Builder().addInterceptor(interceptor).build()
         }
     }
@@ -158,5 +163,17 @@ class SentryOkHttpInterceptorTest {
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertEquals(SpanStatus.INTERNAL_ERROR, httpClientSpan.status)
         assertTrue(httpClientSpan.throwable is IOException)
+    }
+
+    @Test
+    fun `customizer modifies span`() {
+        val sut = fixture.getSut(spanCustomizer = {
+            it.description = "overwritten description"
+        })
+        val request = getRequest()
+        sut.newCall(request).execute()
+        assertEquals(1, fixture.sentryTracer.children.size)
+        val httpClientSpan = fixture.sentryTracer.children.first()
+        assertEquals("overwritten description", httpClientSpan.description)
     }
 }
