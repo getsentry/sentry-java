@@ -8,6 +8,7 @@ import io.sentry.protocol.Mechanism
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -34,7 +35,9 @@ class SentryExceptionFactoryTest {
         assertEquals("Exception", sentryExceptions[0].type)
         assertEquals("Exception", sentryExceptions[0].value)
         assertEquals("java.lang", sentryExceptions[0].module)
-        assertTrue(sentryExceptions[0].stacktrace.frames!!.isNotEmpty())
+        assertNotNull(sentryExceptions[0].stacktrace) {
+            assertTrue(it.frames!!.isNotEmpty())
+        }
     }
 
     @Test
@@ -74,8 +77,10 @@ class SentryExceptionFactoryTest {
         val throwable = ExceptionMechanismException(mechanism, error, Thread.currentThread())
 
         val sentryExceptions = fixture.getSut().getSentryExceptions(throwable)
-        assertEquals("anr", sentryExceptions[0].mechanism.type)
-        assertFalse(sentryExceptions[0].mechanism.isHandled)
+        assertNotNull(sentryExceptions[0].mechanism) {
+            assertEquals("anr", it.type)
+            assertFalse(it.isHandled!!)
+        }
         assertNull(sentryExceptions[0].stacktrace?.snapshot)
     }
 

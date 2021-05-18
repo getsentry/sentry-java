@@ -3,6 +3,8 @@ package io.sentry.protocol;
 import io.sentry.IUnknownPropertiesConsumer;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Legacy apple debug images (MachO).
@@ -46,9 +48,9 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
    *
    * <p>UUID computed from the file contents, assigned by the Java SDK.
    */
-  private String uuid;
+  private @Nullable String uuid;
 
-  private String type;
+  private @Nullable String type;
   /**
    * Unique debug identifier of the image.
    *
@@ -75,7 +77,7 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
    * <p>- `macho`: Identifier of the dynamic library or executable. It is the value of the `LC_UUID`
    * load command in the Mach header, formatted as UUID.
    */
-  private String debugId;
+  private @Nullable String debugId;
 
   /**
    * Path and name of the debug companion file.
@@ -89,7 +91,7 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
    * <p>- `macho`: Name or absolute path to the dSYM file containing debug information for this
    * image. This value might be required to retrieve debug files from certain symbol servers.
    */
-  private String debugFile;
+  private @Nullable String debugFile;
   /**
    * Optional identifier of the code file.
    *
@@ -115,7 +117,7 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
    * load command in the Mach header, formatted as UUID. Can be empty for Mach images, as it is
    * equivalent to the debug identifier.
    */
-  private String codeId;
+  private @Nullable String codeId;
   /**
    * Path and name of the image file (required).
    *
@@ -125,84 +127,84 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
    * <p>- `pe`: The code file should be provided to allow server-side stack walking of binary crash
    * reports, such as Minidumps.
    */
-  private String codeFile;
+  private @Nullable String codeFile;
   /**
    * Starting memory address of the image (required).
    *
    * <p>Memory address, at which the image is mounted in the virtual address space of the process.
    * Should be a string in hex representation prefixed with `"0x"`.
    */
-  private String imageAddr;
+  private @Nullable String imageAddr;
   /**
    * Size of the image in bytes (required).
    *
    * <p>The size of the image in virtual memory. If missing, Sentry will assume that the image spans
    * up to the next image, which might lead to invalid stack traces.
    */
-  private Long imageSize;
+  private @Nullable Long imageSize;
   /**
    * CPU architecture target.
    *
    * <p>Architecture of the module. If missing, this will be backfilled by Sentry.
    */
-  private String arch;
+  private @Nullable String arch;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
-  public String getUuid() {
+  public @Nullable String getUuid() {
     return uuid;
   }
 
-  public void setUuid(String uuid) {
+  public void setUuid(final @Nullable String uuid) {
     this.uuid = uuid;
   }
 
-  public String getType() {
+  public @Nullable String getType() {
     return type;
   }
 
-  public void setType(String type) {
+  public void setType(final @Nullable String type) {
     this.type = type;
   }
 
-  public String getDebugId() {
+  public @Nullable String getDebugId() {
     return debugId;
   }
 
-  public void setDebugId(String debugId) {
+  public void setDebugId(final @Nullable String debugId) {
     this.debugId = debugId;
   }
 
-  public String getDebugFile() {
+  public @Nullable String getDebugFile() {
     return debugFile;
   }
 
-  public void setDebugFile(String debugFile) {
+  public void setDebugFile(final @Nullable String debugFile) {
     this.debugFile = debugFile;
   }
 
-  public String getCodeFile() {
+  public @Nullable String getCodeFile() {
     return codeFile;
   }
 
-  public void setCodeFile(String codeFile) {
+  public void setCodeFile(final @Nullable String codeFile) {
     this.codeFile = codeFile;
   }
 
-  public String getImageAddr() {
+  public @Nullable String getImageAddr() {
     return imageAddr;
   }
 
-  public void setImageAddr(String imageAddr) {
+  public void setImageAddr(final @Nullable String imageAddr) {
     this.imageAddr = imageAddr;
   }
 
-  public Long getImageSize() {
+  public @Nullable Long getImageSize() {
     return imageSize;
   }
 
-  public void setImageSize(Long imageSize) {
+  public void setImageSize(final @Nullable Long imageSize) {
     this.imageSize = imageSize;
   }
 
@@ -215,25 +217,25 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
     this.imageSize = imageSize;
   }
 
-  public String getArch() {
+  public @Nullable String getArch() {
     return arch;
   }
 
-  public void setArch(String arch) {
+  public void setArch(final @Nullable String arch) {
     this.arch = arch;
   }
 
-  public String getCodeId() {
+  public @Nullable String getCodeId() {
     return codeId;
   }
 
-  public void setCodeId(String codeId) {
+  public void setCodeId(final @Nullable String codeId) {
     this.codeId = codeId;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 }

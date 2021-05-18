@@ -18,12 +18,12 @@ public final class CustomSamplingContext {
     this.data.put(key, value);
   }
 
-  public Object get(final @NotNull String key) {
+  public @Nullable Object get(final @NotNull String key) {
     Objects.requireNonNull(key, "key is required");
     return this.data.get(key);
   }
 
-  public Map<String, Object> getData() {
+  public @NotNull Map<String, Object> getData() {
     return data;
   }
 }

@@ -1,6 +1,7 @@
 package io.sentry;
 
 import java.util.concurrent.Future;
+import org.jetbrains.annotations.NotNull;
 
 /** Sentry Executor Service that sends cached events and envelopes on App. start. */
 interface ISentryExecutorService {
@@ -11,7 +12,8 @@ interface ISentryExecutorService {
    * @param runnable the Runnable
    * @return a Future of the Runnable
    */
-  Future<?> submit(Runnable runnable);
+  @NotNull
+  Future<?> submit(final @NotNull Runnable runnable);
 
   /**
    * Closes the ThreadExecutor and awaits for the timeout

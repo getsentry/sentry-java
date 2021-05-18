@@ -1,6 +1,5 @@
 package io.sentry
 
-import io.sentry.exception.InvalidDsnException
 import java.net.URL
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,7 +10,7 @@ class RequestDetailsResolverTest {
 
     @Test
     fun `When options doesn't have a valid DSN, it throws InvalidDsnException`() {
-        assertFailsWith<InvalidDsnException> { RequestDetailsResolver(SentryOptions()).resolve() }
+        assertFailsWith<IllegalArgumentException> { RequestDetailsResolver(SentryOptions()).resolve() }
     }
 
     @Test

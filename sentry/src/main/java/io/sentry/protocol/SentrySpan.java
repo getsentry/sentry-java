@@ -7,6 +7,7 @@ import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +32,8 @@ public final class SentrySpan {
     this.parentSpanId = span.getParentSpanId();
     this.traceId = span.getTraceId();
     this.status = span.getStatus();
-    this.tags = CollectionUtils.shallowCopy(span.getTags());
+    final Map<String, String> tagsCopy = CollectionUtils.newConcurrentHashMap(span.getTags());
+    this.tags = tagsCopy != null ? tagsCopy : new ConcurrentHashMap<>();
     this.timestamp = span.getTimestamp();
     this.startTimestamp = span.getStartTimestamp();
   }
@@ -56,7 +58,7 @@ public final class SentrySpan {
     return spanId;
   }
 
-  public @NotNull SpanId getParentSpanId() {
+  public @Nullable SpanId getParentSpanId() {
     return parentSpanId;
   }
 

@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.util.Log;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class AndroidLogger implements ILogger {
@@ -11,18 +12,28 @@ final class AndroidLogger implements ILogger {
 
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
-  public void log(SentryLevel level, String message, Object... args) {
+  public void log(
+      final @NotNull SentryLevel level,
+      final @NotNull String message,
+      final @Nullable Object... args) {
     Log.println(toLogcatLevel(level), tag, String.format(message, args));
   }
 
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
-  public void log(SentryLevel level, Throwable throwable, String message, Object... args) {
+  public void log(
+      final @NotNull SentryLevel level,
+      final @Nullable Throwable throwable,
+      final @NotNull String message,
+      final @Nullable Object... args) {
     log(level, String.format(message, args), throwable);
   }
 
   @Override
-  public void log(SentryLevel level, String message, Throwable throwable) {
+  public void log(
+      final @NotNull SentryLevel level,
+      final @NotNull String message,
+      final @Nullable Throwable throwable) {
 
     switch (level) {
       case INFO:
@@ -49,7 +60,7 @@ final class AndroidLogger implements ILogger {
     return true;
   }
 
-  private int toLogcatLevel(SentryLevel sentryLevel) {
+  private int toLogcatLevel(final @NotNull SentryLevel sentryLevel) {
     switch (sentryLevel) {
       case INFO:
         return Log.INFO;

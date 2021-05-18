@@ -17,7 +17,7 @@ public final class NoOpTransportFactory implements ITransportFactory {
   private NoOpTransportFactory() {}
 
   @Override
-  public ITransport create(
+  public @NotNull ITransport create(
       final @NotNull SentryOptions options, final @NotNull RequestDetails requestDetails) {
     return NoOpTransport.getInstance();
   }

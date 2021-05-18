@@ -11,9 +11,9 @@ import org.jetbrains.annotations.Nullable;
 
 /** Deduplicates events containing throwable that has been already processed. */
 public final class DuplicateEventDetectionEventProcessor implements EventProcessor {
-  private final Map<Throwable, Object> capturedObjects =
+  private final @NotNull Map<Throwable, Object> capturedObjects =
       Collections.synchronizedMap(new WeakHashMap<>());
-  private final SentryOptions options;
+  private final @NotNull SentryOptions options;
 
   public DuplicateEventDetectionEventProcessor(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "options are required");

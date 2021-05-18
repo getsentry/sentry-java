@@ -130,7 +130,10 @@ public class SpanContext implements Cloneable {
   @Override
   public SpanContext clone() throws CloneNotSupportedException {
     final SpanContext clone = (SpanContext) super.clone();
-    clone.tags = CollectionUtils.shallowCopy(tags);
+    final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(this.tags);
+    if (copiedTags != null) {
+      clone.tags = copiedTags;
+    }
     return clone;
   }
 }

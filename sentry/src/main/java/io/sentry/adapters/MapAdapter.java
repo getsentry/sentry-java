@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class MapAdapter implements JsonSerializer<Map<String, ?>> {
   @Override
-  public JsonElement serialize(
+  public @Nullable JsonElement serialize(
       final @Nullable Map<String, ?> src,
       final @NotNull Type typeOfSrc,
       final @NotNull JsonSerializationContext context) {

@@ -21,7 +21,7 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
 
   @Override
   @SuppressWarnings({"unchecked", "deprecation"})
-  public Object postProcessAfterInitialization(
+  public @NotNull Object postProcessAfterInitialization(
       final @NotNull Object bean, @NotNull final String beanName) throws BeansException {
     if (bean instanceof SentryOptions) {
       final SentryOptions options = (SentryOptions) bean;

@@ -93,9 +93,11 @@ class SentryAppenderTest {
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
-                assertEquals("testing message conversion 1, 2", event.message.formatted)
-                assertEquals("testing message conversion {}, {}", event.message.message)
-                assertEquals(listOf("1", "2"), event.message.params)
+                assertNotNull(event.message) { message ->
+                    assertEquals("testing message conversion 1, 2", message.formatted)
+                    assertEquals("testing message conversion {}, {}", message.message)
+                    assertEquals(listOf("1", "2"), message.params)
+                }
                 assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
             }, anyOrNull())
         }
@@ -209,6 +211,24 @@ class SentryAppenderTest {
     fun `ignore set tags with null values from MDC`() {
         fixture = Fixture(minimumEventLevel = Level.WARN)
         MDC.put("key1", null)
+        MDC.put("key2", "value")
+        fixture.logger.warn("testing MDC tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertNotNull(event.contexts["MDC"]) {
+                    val contextData = it as Map<*, *>
+                    assertNull(contextData["key1"])
+                    assertEquals("value", contextData["key2"])
+                }
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `does not set MDC if all context entries are null`() {
+        fixture = Fixture(minimumEventLevel = Level.WARN)
+        MDC.put("key1", null)
         MDC.put("key2", null)
         fixture.logger.warn("testing MDC tags")
 
@@ -262,16 +282,18 @@ class SentryAppenderTest {
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
-                assertEquals(2, event.breadcrumbs.size)
-                val breadcrumb = event.breadcrumbs[0]
-                val breadcrumbTime = Instant.ofEpochMilli(event.timestamp.time)
-                    .atZone(fixture.utcTimeZone)
-                    .toLocalDateTime()
-                assertTrue { breadcrumbTime.plusSeconds(1).isAfter(utcTime) }
-                assertTrue { breadcrumbTime.minusSeconds(1).isBefore(utcTime) }
-                assertEquals("this should be a breadcrumb #1", breadcrumb.message)
-                assertEquals("io.sentry.logback.SentryAppenderTest", breadcrumb.category)
-                assertEquals(SentryLevel.DEBUG, breadcrumb.level)
+                assertNotNull(event.breadcrumbs) { breadcrumbs ->
+                    assertEquals(2, breadcrumbs.size)
+                    val breadcrumb = breadcrumbs[0]
+                    val breadcrumbTime = Instant.ofEpochMilli(event.timestamp.time)
+                        .atZone(fixture.utcTimeZone)
+                        .toLocalDateTime()
+                    assertTrue { breadcrumbTime.plusSeconds(1).isAfter(utcTime) }
+                    assertTrue { breadcrumbTime.minusSeconds(1).isBefore(utcTime) }
+                    assertEquals("this should be a breadcrumb #1", breadcrumb.message)
+                    assertEquals("io.sentry.logback.SentryAppenderTest", breadcrumb.category)
+                    assertEquals(SentryLevel.DEBUG, breadcrumb.level)
+                }
             }, anyOrNull())
         }
     }
@@ -286,8 +308,10 @@ class SentryAppenderTest {
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
-                assertEquals(1, event.breadcrumbs.size)
-                assertEquals("this should be a breadcrumb", event.breadcrumbs[0].message)
+                assertNotNull(event.breadcrumbs) { breadcrumbs ->
+                    assertEquals(1, breadcrumbs.size)
+                    assertEquals("this should be a breadcrumb", breadcrumbs[0].message)
+                }
             }, anyOrNull())
         }
     }
@@ -303,9 +327,11 @@ class SentryAppenderTest {
 
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
-                assertEquals(2, event.breadcrumbs.size)
-                assertEquals("this should be a breadcrumb", event.breadcrumbs[0].message)
-                assertEquals("this should not be sent as the event but be a breadcrumb", event.breadcrumbs[1].message)
+                assertNotNull(event.breadcrumbs) { breadcrumbs ->
+                    assertEquals(2, breadcrumbs.size)
+                    assertEquals("this should be a breadcrumb", breadcrumbs[0].message)
+                    assertEquals("this should not be sent as the event but be a breadcrumb", breadcrumbs[1].message)
+                }
             }, anyOrNull())
         }
     }

@@ -5,6 +5,8 @@ import io.sentry.IUnknownPropertiesConsumer;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Holds information about a single stacktrace frame.
@@ -14,37 +16,37 @@ import org.jetbrains.annotations.ApiStatus;
  */
 public final class SentryStackFrame implements IUnknownPropertiesConsumer {
   /** Source code leading up to `lineno`. */
-  private List<String> preContext;
+  private @Nullable List<String> preContext;
   /** Source code of the lines after `lineno`. */
-  private List<String> postContext;
+  private @Nullable List<String> postContext;
   /** Mapping of local variables and expression names that were available in this frame. */
-  private Map<String, String> vars;
+  private @Nullable Map<String, String> vars;
 
-  private List<Integer> framesOmitted;
+  private @Nullable List<Integer> framesOmitted;
   /** The source file name (basename only). */
-  private String filename;
+  private @Nullable String filename;
   /**
    * Name of the frame's function. This might include the name of a class.
    *
    * <p>This function name may be shortened or demangled. If not, Sentry will demangle and shorten
    * it for some platforms. The original function name will be stored in `raw_function`.
    */
-  private String function;
+  private @Nullable String function;
   /**
    * Name of the module the frame is contained in.
    *
    * <p>Note that this might also include a class name if that is something the language natively
    * considers to be part of the stack (for instance in Java).
    */
-  private String module;
+  private @Nullable String module;
   /** Line number within the source file, starting at 1. */
-  private Integer lineno;
+  private @Nullable Integer lineno;
   /** Column number within the source file, starting at 1. */
-  private Integer colno;
+  private @Nullable Integer colno;
   /** Absolute path to the source file. */
-  private String absPath;
+  private @Nullable String absPath;
   /** Source code of the current line (`lineno`). */
-  private String contextLine;
+  private @Nullable String contextLine;
   /**
    * Override whether this frame should be considered part of application code, or part of
    * libraries/frameworks/dependencies.
@@ -52,13 +54,13 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
    * <p>Setting this attribute to `false` causes the frame to be hidden/collapsed by default and
    * mostly ignored during issue grouping.
    */
-  private Boolean inApp;
+  private @Nullable Boolean inApp;
 
   @SerializedName(value = "package")
-  private String _package;
+  private @Nullable String _package;
 
   @SerializedName(value = "native")
-  private Boolean _native;
+  private @Nullable Boolean _native;
 
   /**
    * Which platform this frame is from.
@@ -66,17 +68,17 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
    * <p>This can override the platform for a single frame. Otherwise, the platform of the event is
    * assumed. This can be used for multi-platform stack traces, such as in React Native.
    */
-  private String platform;
+  private @Nullable String platform;
 
   /** (C/C++/Native) Start address of the containing code module (image). */
-  private String imageAddr;
+  private @Nullable String imageAddr;
   /**
    * (C/C++/Native) Start address of the frame's function.
    *
    * <p>We use the instruction address for symbolication, but this can be used to calculate an
    * instruction offset automatically.
    */
-  private String symbolAddr;
+  private @Nullable String symbolAddr;
   /**
    * (C/C++/Native) An optional instruction address for symbolication.
    *
@@ -85,10 +87,10 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
    * _documentation/development/sdk-dev/event-payloads/debugmeta.md -%}), then symbolication can
    * take place.
    */
-  private String instructionAddr;
+  private @Nullable String instructionAddr;
 
   @SuppressWarnings("unused")
-  private Map<String, Object> unknown;
+  private @Nullable Map<String, Object> unknown;
 
   /**
    * A raw (but potentially truncated) function value.
@@ -107,163 +109,163 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
    * field will be capped at 256 characters at the moment which often means that not the entire
    * original value can be stored.
    */
-  private String rawFunction;
+  private @Nullable String rawFunction;
 
-  public List<String> getPreContext() {
+  public @Nullable List<String> getPreContext() {
     return preContext;
   }
 
-  public void setPreContext(List<String> preContext) {
+  public void setPreContext(final @Nullable List<String> preContext) {
     this.preContext = preContext;
   }
 
-  public List<String> getPostContext() {
+  public @Nullable List<String> getPostContext() {
     return postContext;
   }
 
-  public void setPostContext(List<String> postContext) {
+  public void setPostContext(final @Nullable List<String> postContext) {
     this.postContext = postContext;
   }
 
-  public Map<String, String> getVars() {
+  public @Nullable Map<String, String> getVars() {
     return vars;
   }
 
-  public void setVars(Map<String, String> vars) {
+  public void setVars(final @Nullable Map<String, String> vars) {
     this.vars = vars;
   }
 
-  public List<Integer> getFramesOmitted() {
+  public @Nullable List<Integer> getFramesOmitted() {
     return framesOmitted;
   }
 
-  public void setFramesOmitted(List<Integer> framesOmitted) {
+  public void setFramesOmitted(final @Nullable List<Integer> framesOmitted) {
     this.framesOmitted = framesOmitted;
   }
 
-  public String getFilename() {
+  public @Nullable String getFilename() {
     return filename;
   }
 
-  public void setFilename(String filename) {
+  public void setFilename(final @Nullable String filename) {
     this.filename = filename;
   }
 
-  public String getFunction() {
+  public @Nullable String getFunction() {
     return function;
   }
 
-  public void setFunction(String function) {
+  public void setFunction(final @Nullable String function) {
     this.function = function;
   }
 
-  public String getModule() {
+  public @Nullable String getModule() {
     return module;
   }
 
-  public void setModule(String module) {
+  public void setModule(final @Nullable String module) {
     this.module = module;
   }
 
-  public Integer getLineno() {
+  public @Nullable Integer getLineno() {
     return lineno;
   }
 
-  public void setLineno(Integer lineno) {
+  public void setLineno(final @Nullable Integer lineno) {
     this.lineno = lineno;
   }
 
-  public Integer getColno() {
+  public @Nullable Integer getColno() {
     return colno;
   }
 
-  public void setColno(Integer colno) {
+  public void setColno(final @Nullable Integer colno) {
     this.colno = colno;
   }
 
-  public String getAbsPath() {
+  public @Nullable String getAbsPath() {
     return absPath;
   }
 
-  public void setAbsPath(String absPath) {
+  public void setAbsPath(final @Nullable String absPath) {
     this.absPath = absPath;
   }
 
-  public String getContextLine() {
+  public @Nullable String getContextLine() {
     return contextLine;
   }
 
-  public void setContextLine(String contextLine) {
+  public void setContextLine(final @Nullable String contextLine) {
     this.contextLine = contextLine;
   }
 
-  public Boolean isInApp() {
+  public @Nullable Boolean isInApp() {
     return inApp;
   }
 
-  public void setInApp(Boolean inApp) {
+  public void setInApp(final @Nullable Boolean inApp) {
     this.inApp = inApp;
   }
 
-  public String getPackage() {
+  public @Nullable String getPackage() {
     return _package;
   }
 
-  public void setPackage(String _package) {
+  public void setPackage(final @Nullable String _package) {
     this._package = _package;
   }
 
-  public String getPlatform() {
+  public @Nullable String getPlatform() {
     return platform;
   }
 
-  public void setPlatform(String platform) {
+  public void setPlatform(final @Nullable String platform) {
     this.platform = platform;
   }
 
-  public String getImageAddr() {
+  public @Nullable String getImageAddr() {
     return imageAddr;
   }
 
-  public void setImageAddr(String imageAddr) {
+  public void setImageAddr(final @Nullable String imageAddr) {
     this.imageAddr = imageAddr;
   }
 
-  public String getSymbolAddr() {
+  public @Nullable String getSymbolAddr() {
     return symbolAddr;
   }
 
-  public void setSymbolAddr(String symbolAddr) {
+  public void setSymbolAddr(final @Nullable String symbolAddr) {
     this.symbolAddr = symbolAddr;
   }
 
-  public String getInstructionAddr() {
+  public @Nullable String getInstructionAddr() {
     return instructionAddr;
   }
 
-  public void setInstructionAddr(String instructionAddr) {
+  public void setInstructionAddr(final @Nullable String instructionAddr) {
     this.instructionAddr = instructionAddr;
   }
 
-  public Boolean isNative() {
+  public @Nullable Boolean isNative() {
     return _native;
   }
 
-  public void setNative(Boolean _native) {
+  public void setNative(final @Nullable Boolean _native) {
     this._native = _native;
   }
 
   @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(Map<String, Object> unknown) {
+  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
-  public String getRawFunction() {
+  public @Nullable String getRawFunction() {
     return rawFunction;
   }
 
-  public void setRawFunction(String rawFunction) {
+  public void setRawFunction(final @Nullable String rawFunction) {
     this.rawFunction = rawFunction;
   }
 }

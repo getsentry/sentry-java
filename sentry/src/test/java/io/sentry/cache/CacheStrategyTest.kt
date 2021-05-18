@@ -163,10 +163,10 @@ class CacheStrategyTest {
 
     private fun getSessionFromFile(file: File, sut: CacheStrategy): Session {
         val envelope = sut.serializer.deserializeEnvelope(file.inputStream())
-        val item = envelope.items.first()
+        val item = envelope!!.items.first()
 
         val reader = InputStreamReader(ByteArrayInputStream(item.data), Charsets.UTF_8)
-        return sut.serializer.deserialize(reader, Session::class.java)
+        return sut.serializer.deserialize(reader, Session::class.java)!!
     }
 
     private fun saveSessionToFile(file: File, sut: CacheStrategy, state: Session.State = Session.State.Ok, init: Boolean? = true) {

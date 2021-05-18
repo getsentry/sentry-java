@@ -59,6 +59,8 @@ Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/gets
 
 [A Sanity Listicle for Mobile Developers](https://blog.sentry.io/2021/03/30/a-sanity-listicle-for-mobile-developers/).
 
+[Supporting Native Android Libraries Loaded From APKs](https://blog.sentry.io/2021/05/13/supporting-native-android-libraries-loaded-from-apks).
+
 # Samples
 
 [Sample App. with Sentry Android SDK and Sentry Gradle Plugin](https://github.com/getsentry/examples/tree/master/android).

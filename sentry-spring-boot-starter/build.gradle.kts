@@ -1,4 +1,5 @@
 import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
+import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
@@ -48,6 +49,7 @@ dependencies {
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
     errorproneJavac(Config.CompileOnly.errorProneJavac8)
+    errorprone(Config.CompileOnly.errorProneNullAway)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
@@ -103,4 +105,8 @@ buildConfig {
 val generateBuildConfig by tasks
 tasks.withType<JavaCompile>().configureEach {
     dependsOn(generateBuildConfig)
+    options.errorprone {
+        check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+        option("NullAway:AnnotatedPackages", "io.sentry")
+    }
 }

@@ -1,5 +1,17 @@
 # Unreleased
 
+# 5.0.0-beta.4
+
+* Fix: Enrich Transactions with Context Data (#1469)
+* Bump: Apache HttpClient to 5.0.4 (#1476)
+
+# 5.0.0-beta.3
+
+* Fix: handling immutable collections on SentryEvent and protocol objects (#1468)
+* Fix: associate event with transaction when thrown exception is not a direct cause (#1463)
+* Ref: nullability annotations to Sentry module (#1439) and (#1462)
+* Fix: NPE when adding Context Data with null values for log4j2 (#1465)
+
 # 5.0.0-beta.2
 
 * Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)

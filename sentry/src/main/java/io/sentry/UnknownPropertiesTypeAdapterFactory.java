@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
 
@@ -29,7 +30,7 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
   }
 
   @Override
-  public <T> TypeAdapter<T> create(final Gson gson, final TypeToken<T> typeToken) {
+  public <T> @Nullable TypeAdapter<T> create(final Gson gson, final TypeToken<T> typeToken) {
     // Check if we can deal with the given type
     if (!IUnknownPropertiesConsumer.class.isAssignableFrom(typeToken.getRawType())) {
       return null;
@@ -103,7 +104,7 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
     }
 
     @Override
-    public T read(final JsonReader in) {
+    public @Nullable T read(final JsonReader in) {
       // In its simplest solution, we can just collect a JSON tree because its much easier to
       // process
       JsonParser parser = new JsonParser();

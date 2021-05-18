@@ -40,6 +40,8 @@ class OperatingSystemTest {
         assertEquals("build", clone.build)
         assertEquals("kernel version", clone.kernelVersion)
         assertEquals(true, clone.isRooted)
-        assertEquals("unknown", clone.unknown["unknown"])
+        assertNotNull(clone.unknown) {
+            assertEquals("unknown", it["unknown"])
+        }
     }
 }

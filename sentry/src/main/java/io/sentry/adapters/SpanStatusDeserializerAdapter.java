@@ -11,6 +11,7 @@ import java.lang.reflect.Type;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SpanStatusDeserializerAdapter implements JsonDeserializer<SpanStatus> {
@@ -22,7 +23,10 @@ public final class SpanStatusDeserializerAdapter implements JsonDeserializer<Spa
   }
 
   @Override
-  public SpanStatus deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+  public @Nullable SpanStatus deserialize(
+      final @Nullable JsonElement json,
+      final @NotNull Type typeOfT,
+      final @NotNull JsonDeserializationContext context)
       throws JsonParseException {
     try {
       return json == null ? null : SpanStatus.valueOf(json.getAsString().toUpperCase(Locale.ROOT));

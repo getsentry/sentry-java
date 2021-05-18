@@ -1,5 +1,6 @@
 package io.sentry.protocol
 
+import java.util.Collections
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -63,6 +64,17 @@ class UserTest {
         user.others = null
 
         assertNull(user.others)
+    }
+
+    @Test
+    fun `when setOther receives immutable map as an argument, its still possible to add more others to the user`() {
+        val user = User().apply {
+            others = Collections.unmodifiableMap(mapOf("key1" to "value1"))
+            others!!["key2"] = "value2"
+        }
+        assertNotNull(user.others) {
+            assertEquals(mapOf("key1" to "value1", "key2" to "value2"), it)
+        }
     }
 
     private fun createUser(): User {

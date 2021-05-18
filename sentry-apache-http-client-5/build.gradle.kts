@@ -1,3 +1,4 @@
+import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -21,13 +22,12 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     api(project(":sentry"))
     api(Config.Libs.apacheHttpClient)
-    api(Config.Libs.apacheHttpCore)
-    api(Config.Libs.apacheHttpCoreH2)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
     errorproneJavac(Config.CompileOnly.errorProneJavac8)
+    errorprone(Config.CompileOnly.errorProneNullAway)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
@@ -64,5 +64,12 @@ tasks {
     check {
         dependsOn(jacocoTestCoverageVerification)
         dependsOn(jacocoTestReport)
+    }
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.errorprone {
+        check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+        option("NullAway:AnnotatedPackages", "io.sentry")
     }
 }

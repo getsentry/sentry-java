@@ -75,9 +75,7 @@ object Config {
         val aspectj = "org.aspectj:aspectjweaver"
         val servletApi = "javax.servlet:javax.servlet-api"
 
-        val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.3"
-        val apacheHttpCore = "org.apache.httpcomponents.core5:httpcore5:5.0.3"
-        val apacheHttpCoreH2 = "org.apache.httpcomponents.core5:httpcore5-h2:5.0.3"
+        val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.4"
 
         private val retrofit2Version = "2.9.0"
         private val retrofit2Group = "com.squareup.retrofit2"
@@ -103,6 +101,7 @@ object Config {
         val mockitoInline = "org.mockito:mockito-inline:3.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
+        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.11.1"
     }
 
     object QualityPlugins {
@@ -147,6 +146,7 @@ object Config {
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.5.1"
         val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
+        val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.1"
     }
 
     object NativePlugins {

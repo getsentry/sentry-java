@@ -33,6 +33,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import net.javacrumbs.jsonunit.JsonMatchers.jsonEquals
+import net.javacrumbs.jsonunit.core.Option
+import org.junit.Assert.assertThat
 
 class GsonSerializerTest {
 
@@ -85,13 +88,13 @@ class GsonSerializerTest {
 
     @Test
     fun `when serializing SentryEvent-SentryId object, it should become a event_id json without dashes`() {
-        val sentryEvent = generateEmptySentryEvent(null)
+        val sentryEvent = generateEmptySentryEvent()
 
         val actual = serializeToString(sentryEvent)
 
         val expected = "{\"event_id\":\"${sentryEvent.eventId}\",\"contexts\":{}}"
 
-        assertEquals(expected, actual)
+        assertJsonContains(actual, expected)
     }
 
     @Test
@@ -162,9 +165,9 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        assertEquals("test", (actual!!.unknown["string"] as JsonPrimitive).asString)
-        assertEquals(1, (actual.unknown["int"] as JsonPrimitive).asInt)
-        assertEquals(true, (actual.unknown["boolean"] as JsonPrimitive).asBoolean)
+        assertEquals("test", (actual!!.unknown!!["string"] as JsonPrimitive).asString)
+        assertEquals(1, (actual.unknown!!["int"] as JsonPrimitive).asInt)
+        assertEquals(true, (actual.unknown!!["boolean"] as JsonPrimitive).asBoolean)
     }
 
     @Test
@@ -184,7 +187,7 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        val hashMapActual = actual!!.unknown["object"] as JsonObject // gson creates it as JsonObject
+        val hashMapActual = actual!!.unknown!!["object"] as JsonObject // gson creates it as JsonObject
 
         assertEquals(true, hashMapActual.get("boolean").asBoolean)
         assertEquals(1, (hashMapActual.get("int")).asInt)
@@ -192,7 +195,7 @@ class GsonSerializerTest {
 
     @Test
     fun `when serializing unknown field, it should become unknown as json format`() {
-        val sentryEvent = generateEmptySentryEvent(null)
+        val sentryEvent = generateEmptySentryEvent()
         sentryEvent.eventId = null
 
         val objects = hashMapOf<String, Any>()
@@ -208,12 +211,12 @@ class GsonSerializerTest {
 
         val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}},\"contexts\":{}}"
 
-        assertEquals(expected, actual)
+        assertJsonContains(actual, expected)
     }
 
     @Test
     fun `when serializing a TimeZone, it should become a timezone ID string`() {
-        val sentryEvent = generateEmptySentryEvent(null)
+        val sentryEvent = generateEmptySentryEvent()
         sentryEvent.eventId = null
         val device = Device()
         device.timezone = TimeZone.getTimeZone("Europe/Vienna")
@@ -223,7 +226,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        assertEquals(expected, actual)
+        assertJsonContains(actual, expected)
     }
 
     @Test
@@ -235,22 +238,24 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        assertEquals("Europe/Vienna", actual!!.contexts.device!!.timezone.id)
+        assertEquals("Europe/Vienna", actual!!.contexts.device!!.timezone!!.id)
     }
 
     @Test
     fun `when serializing a DeviceOrientation, it should become an orientation string`() {
-        val sentryEvent = generateEmptySentryEvent(null)
+        val sentryEvent = generateEmptySentryEvent()
         sentryEvent.eventId = null
         val device = Device()
         device.orientation = Device.DeviceOrientation.LANDSCAPE
         sentryEvent.contexts.setDevice(device)
 
         val expected = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
-
         val actual = serializeToString(sentryEvent)
+        assertJsonContains(actual, expected)
+    }
 
-        assertEquals(expected, actual)
+    private fun assertJsonContains(actual: String, expected: String) {
+        assertThat(actual, jsonEquals<String>(expected).`when`(Option.IGNORING_EXTRA_FIELDS))
     }
 
     @Test
@@ -267,7 +272,7 @@ class GsonSerializerTest {
 
     @Test
     fun `when serializing a SentryLevel, it should become a sentry level string`() {
-        val sentryEvent = generateEmptySentryEvent(null)
+        val sentryEvent = generateEmptySentryEvent()
         sentryEvent.eventId = null
         sentryEvent.level = SentryLevel.DEBUG
 
@@ -275,7 +280,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        assertEquals(expected, actual)
+        assertJsonContains(actual, expected)
     }
 
     @Test
@@ -296,7 +301,11 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        assertEquals(2, actual!!.breadcrumbs.size)
+        assertNotNull(actual) { event ->
+            assertNotNull(event.breadcrumbs) {
+                assertEquals(2, it.size)
+            }
+        }
     }
 
     @Test
@@ -593,8 +602,8 @@ class GsonSerializerTest {
 
         verify(fixture.logger)
                 .log(eq(SentryLevel.ERROR),
-                        eq("Failed to create envelope item. Dropping it."),
-                        any<SentryEnvelopeException>())
+                    eq("Failed to create envelope item. Dropping it."),
+                    any<SentryEnvelopeException>())
     }
 
     @Test
@@ -657,7 +666,7 @@ class GsonSerializerTest {
         }
     }
 
-    private fun generateEmptySentryEvent(date: Date? = null): SentryEvent =
+    private fun generateEmptySentryEvent(date: Date = Date()): SentryEvent =
         SentryEvent(date)
 
     private fun createSessionMockData(): Session =

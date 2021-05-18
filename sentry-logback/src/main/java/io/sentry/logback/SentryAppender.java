@@ -13,6 +13,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -92,9 +93,8 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
 
     // remove keys with null values, there is no sense to send these keys to Sentry
     final Map<String, String> mdcProperties =
-        loggingEvent.getMDCPropertyMap().entrySet().stream()
-            .filter(it -> it.getValue() != null)
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        CollectionUtils.filterMapEntries(
+            loggingEvent.getMDCPropertyMap(), entry -> entry.getValue() != null);
     if (!mdcProperties.isEmpty()) {
       event.getContexts().put("MDC", mdcProperties);
     }
@@ -158,7 +158,9 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
   }
 
   public void setOptions(final @Nullable SentryOptions options) {
-    this.options = options;
+    if (options != null) {
+      this.options = options;
+    }
   }
 
   public void setMinimumBreadcrumbLevel(final @Nullable Level minimumBreadcrumbLevel) {

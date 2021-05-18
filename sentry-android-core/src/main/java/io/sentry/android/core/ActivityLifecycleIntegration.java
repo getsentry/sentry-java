@@ -36,8 +36,8 @@ public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   private final @NotNull Application application;
-  private @NotNull IHub hub;
-  private @NotNull SentryAndroidOptions options;
+  private @Nullable IHub hub;
+  private @Nullable SentryAndroidOptions options;
 
   private boolean performanceEnabled = false;
 
@@ -125,11 +125,13 @@ public final class ActivityLifecycleIntegration
   public void close() throws IOException {
     application.unregisterActivityLifecycleCallbacks(this);
 
-    options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
+    if (options != null) {
+      options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
+    }
   }
 
   private void addBreadcrumb(final @NonNull Activity activity, final @NotNull String state) {
-    if (options.isEnableActivityLifecycleBreadcrumbs()) {
+    if (options != null && hub != null && options.isEnableActivityLifecycleBreadcrumbs()) {
       final Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setType("navigation");
       breadcrumb.setData("state", state);
@@ -153,7 +155,7 @@ public final class ActivityLifecycleIntegration
   }
 
   private void startTracing(final @NonNull Activity activity) {
-    if (performanceEnabled && !isRunningTransaction(activity)) {
+    if (performanceEnabled && !isRunningTransaction(activity) && hub != null) {
       // as we allow a single transaction running on the bound Scope, we finish the previous ones
       stopPreviousTransactions();
 
@@ -179,7 +181,7 @@ public final class ActivityLifecycleIntegration
           // manually.
           if (scopeTransaction == null) {
             scope.setTransaction(transaction);
-          } else {
+          } else if (options != null) {
             options
                 .getLogger()
                 .log(
@@ -283,7 +285,7 @@ public final class ActivityLifecycleIntegration
     addBreadcrumb(activity, "resumed");
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPostResumed
-    if (!isAllActivityCallbacksAvailable) {
+    if (!isAllActivityCallbacksAvailable && options != null) {
       stopTracing(activity, options.isEnableActivityLifecycleTracingAutoFinish());
     }
   }
@@ -291,7 +293,7 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityPostResumed(final @NonNull Activity activity) {
     // only executed if API >= 29 otherwise it happens on onActivityResumed
-    if (isAllActivityCallbacksAvailable) {
+    if (isAllActivityCallbacksAvailable && options != null) {
       // this should be called only when onResume has been executed already, which means
       // the UI is responsive at this moment.
       stopTracing(activity, options.isEnableActivityLifecycleTracingAutoFinish());

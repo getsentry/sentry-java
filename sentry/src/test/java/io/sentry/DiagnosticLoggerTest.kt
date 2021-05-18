@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.test.callMethod
 import kotlin.test.Test
 
 class DiagnosticLoggerTest {
@@ -45,12 +46,12 @@ class DiagnosticLoggerTest {
 
     @Test
     fun `when debug is true, a call to log with null level does not throw`() {
-        fixture.getSut().log(null, expectedMessage)
+        fixture.getSut().callMethod("log", parameterTypes = arrayOf(SentryLevel::class.java, String::class.java, arrayOf<Object>()::class.java), null, expectedMessage, null)
     }
 
     @Test
     fun `when debug is true, a call to log with null level and throwable does not throw`() {
-        fixture.getSut().log(null, expectedMessage, expectedThrowable)
+        fixture.getSut().callMethod("log", parameterTypes = arrayOf(SentryLevel::class.java, String::class.java, Throwable::class.java), null, expectedMessage, expectedThrowable)
     }
 
     @Test

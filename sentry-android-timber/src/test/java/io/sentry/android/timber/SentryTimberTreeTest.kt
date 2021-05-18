@@ -12,6 +12,7 @@ import io.sentry.getExc
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import timber.log.Timber
@@ -165,7 +166,9 @@ class SentryTimberTreeTest {
         val sut = fixture.getSut()
         sut.e("message")
         verify(fixture.hub).captureEvent(check {
-            assertEquals("message", it.message.formatted)
+            assertNotNull(it.message) { message ->
+                assertEquals("message", message.formatted)
+            }
         })
     }
 
