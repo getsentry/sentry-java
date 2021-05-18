@@ -18,8 +18,8 @@ public final class SentryPerformanceProvider extends ContentProvider {
   @Override
   public boolean onCreate() {
     long millis = SystemClock.uptimeMillis();
-    AppStartUpState.getInstance().setAppStartTime(DateUtils.getCurrentDateTime());
-    AppStartUpState.getInstance().setAppStartUp(millis);
+    AppStartState.getInstance().setAppStartTime(DateUtils.getCurrentDateTime());
+    AppStartState.getInstance().setAppStart(millis);
     return true;
   }
 
@@ -70,15 +70,4 @@ public final class SentryPerformanceProvider extends ContentProvider {
       @Nullable String[] selectionArgs) {
     return 0;
   }
-
-  //  /**
-  //   * Returns the App Start Up Time and if not yet initialized, the current Date and Time.
-  //   *
-  //   * @return a clone of the App Start up time.
-  //   */
-  //  @SuppressWarnings("JavaUtilDate")
-  //  @NotNull
-  //  static Date getAppStartTime() {
-  //    return (Date) appStartTime.clone();
-  //  }
 }
