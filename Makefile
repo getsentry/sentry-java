@@ -11,12 +11,10 @@ compile:
 	./gradlew build
 
 # do a dry release (like a local deploy)
-# remember to add the -SNAPSHOT suffix to the version
 dryRelease:
 	./gradlew publishToMavenLocal --no-daemon
 
 # deploy the current build to maven central
-# remember to remove the -SNAPSHOT suffix from the version
 # promotes the release to maven central
 doRelease:
 	cd scripts
