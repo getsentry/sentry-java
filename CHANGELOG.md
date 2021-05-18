@@ -1,6 +1,7 @@
 # Unreleased
 
 * Fix: Enrich Transactions with Context Data (#1469)
+* Bump: Apache HttpClient to 5.0.4 (#1476)
 
 # 5.0.0-beta.3
 
