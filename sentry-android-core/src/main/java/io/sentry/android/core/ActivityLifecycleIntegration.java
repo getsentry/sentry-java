@@ -210,11 +210,10 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    if (firstActivityCreated) {
-      return;
+    if (!firstActivityCreated) {
+      hasSavedState = savedInstanceState != null;
+      firstActivityCreated = true;
     }
-    firstActivityCreated = true;
-    hasSavedState = savedInstanceState != null;
 
     addBreadcrumb(activity, "created");
 

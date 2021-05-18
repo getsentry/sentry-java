@@ -50,7 +50,7 @@ final class AppStartState {
     return Boolean.TRUE.equals(coldStart);
   }
 
-  void setColdStart(boolean coldStart) {
+  void setColdStart(final boolean coldStart) {
     this.coldStart = coldStart;
   }
 
@@ -67,7 +67,7 @@ final class AppStartState {
     return appStartTime;
   }
 
-  void setAppStartTime(@Nullable Date appStartTime) {
+  void setAppStartTime(final @Nullable Date appStartTime) {
     this.appStartTime = appStartTime;
   }
 }

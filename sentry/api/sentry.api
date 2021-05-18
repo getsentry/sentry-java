@@ -1496,6 +1496,10 @@ public final class io/sentry/protocol/Gpu : io/sentry/IUnknownPropertiesConsumer
 	public fun setVersion (Ljava/lang/String;)V
 }
 
+public final class io/sentry/protocol/MeasurementValue {
+	public fun <init> (F)V
+}
+
 public final class io/sentry/protocol/Mechanism : io/sentry/IUnknownPropertiesConsumer {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Thread;)V
@@ -1741,6 +1745,7 @@ public final class io/sentry/protocol/SentryThread : io/sentry/IUnknownPropertie
 
 public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEvent {
 	public fun <init> (Lio/sentry/SentryTracer;)V
+	public fun getMeasurements ()Ljava/util/Map;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStartTimestamp ()Ljava/util/Date;
 	public fun getStatus ()Lio/sentry/SpanStatus;
