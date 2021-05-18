@@ -40,14 +40,11 @@ public final class SentryTransaction extends SentryBaseEvent {
 
   @ApiStatus.Internal
   @SuppressWarnings("deprecation")
-  public SentryTransaction(
-      final @NotNull SentryTracer sentryTracer,
-      final @NotNull Date startTimestamp,
-      final @Nullable Date timestamp) {
+  public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
     super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
-    this.startTimestamp = startTimestamp;
-    this.timestamp = timestamp;
+    this.startTimestamp = sentryTracer.getStartTimestamp();
+    this.timestamp = DateUtils.getCurrentDateTime();
     this.transaction = sentryTracer.getName();
     for (final Span span : sentryTracer.getChildren()) {
       this.spans.add(new SentrySpan(span));
@@ -58,10 +55,6 @@ public final class SentryTransaction extends SentryBaseEvent {
     }
     contexts.setTrace(sentryTracer.getSpanContext());
     this.setRequest(sentryTracer.getRequest());
-  }
-
-  public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
-    this(sentryTracer, sentryTracer.getStartTimestamp(), DateUtils.getCurrentDateTime());
   }
 
   public @NotNull List<SentrySpan> getSpans() {

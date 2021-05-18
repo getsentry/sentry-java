@@ -13,7 +13,8 @@ final class ActivityFramesState {
 
   private static final @NotNull ActivityFramesState instance = new ActivityFramesState();
 
-  private final FrameMetricsAggregator frameMetricsAggregator = new FrameMetricsAggregator();
+  private final @NotNull FrameMetricsAggregator frameMetricsAggregator =
+      new FrameMetricsAggregator();
 
   private ActivityFramesState() {}
 

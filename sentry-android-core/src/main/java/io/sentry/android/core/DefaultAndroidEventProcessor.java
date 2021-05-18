@@ -296,7 +296,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private void setAppExtras(final @NotNull App app) {
     app.setAppName(getApplicationName());
-    // get getAppStartTime as ctor param
+    // TODO: get getAppStartTime as ctor param so its testable
     app.setAppStartTime(AppStartState.getInstance().getAppStartTime());
   }
 

@@ -6,7 +6,6 @@ import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -122,7 +121,6 @@ public class SpanContext implements Cloneable {
     return sampled;
   }
 
-  @ApiStatus.Internal
   public void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
   }

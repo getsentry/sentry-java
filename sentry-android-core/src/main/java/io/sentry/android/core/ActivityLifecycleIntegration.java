@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,12 +30,12 @@ public final class ActivityLifecycleIntegration
   private final @NotNull Application application;
   private @Nullable IHub hub;
   private @Nullable SentryAndroidOptions options;
+  private final @NotNull IHandler handler;
 
   private boolean performanceEnabled = false;
 
   private boolean isAllActivityCallbacksAvailable;
 
-  // does it need to be atomic? its only in the main thread
   private boolean firstActivityCreated = false;
   private boolean firstActivityResumed = false;
   private boolean hasSavedState = false;
@@ -46,16 +45,22 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ITransaction> activitiesWithOngoingTransactions =
       new WeakHashMap<>();
 
-  // TODO: on Android we should use SystemClock.uptimeMillis() for intervals
-
   public ActivityLifecycleIntegration(
-      final @NotNull Application application, final @NotNull IBuildInfoProvider buildInfoProvider) {
+      final @NotNull Application application,
+      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull IHandler handler) {
     this.application = Objects.requireNonNull(application, "Application is required");
     Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+    this.handler = Objects.requireNonNull(handler, "Handler is required");
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
     }
+  }
+
+  public ActivityLifecycleIntegration(
+      final @NotNull Application application, final @NotNull IBuildInfoProvider buildInfoProvider) {
+    this(application, buildInfoProvider, new MainLooperHandler());
   }
 
   @SuppressWarnings("deprecation")
@@ -81,18 +86,12 @@ public final class ActivityLifecycleIntegration
       application.registerActivityLifecycleCallbacks(this);
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
 
-      // Handler deprecated
-      new Handler()
-          .post(
-              () -> {
-                if (firstActivityCreated) {
-                  if (hasSavedState) {
-                    AppStartState.getInstance().setColdStart(false);
-                  } else {
-                    AppStartState.getInstance().setColdStart(true);
-                  }
-                }
-              });
+      handler.post(
+          () -> {
+            if (firstActivityCreated) {
+              AppStartState.getInstance().setColdStart(!hasSavedState);
+            }
+          });
     }
   }
 
@@ -211,29 +210,27 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    if (firstActivityCreated) {
+      return;
+    }
+    firstActivityCreated = true;
+    hasSavedState = savedInstanceState != null;
+
     addBreadcrumb(activity, "created");
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
     if (!isAllActivityCallbacksAvailable) {
       startTracing(activity);
     }
-
-    //    if (!sentAppStart) {
-    if (firstActivityCreated) {
-      return;
-    }
-    firstActivityCreated = true;
-    hasSavedState = savedInstanceState != null;
-    //    }
   }
 
   @Override
   public synchronized void onActivityStarted(final @NonNull Activity activity) {
-    addBreadcrumb(activity, "started");
-
     if (performanceEnabled) {
       ActivityFramesState.getInstance().addActivity(activity);
     }
+
+    addBreadcrumb(activity, "started");
   }
 
   //  private boolean isHardwareAccelerated(Activity activity) {

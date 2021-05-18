@@ -13,7 +13,6 @@ final class AppStartState {
   private @Nullable Boolean coldStart;
   private boolean sentStartMetric = false;
   private @Nullable Date appStartTime;
-  //  private boolean readyToBeSent = false;
 
   private AppStartState() {}
 
@@ -36,10 +35,6 @@ final class AppStartState {
   }
 
   void setAppStartEnd(final @Nullable Long appStartEnd) {
-    // already set
-    //    if (this.appStartEnd != null) {
-    //      return;
-    //    }
     this.appStartEnd = appStartEnd;
   }
 

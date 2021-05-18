@@ -79,7 +79,6 @@ dependencies {
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
     implementation(Config.Libs.lifecycleCommonJava8)
-    // core is a transitive dependency of appcompat btw
     implementation(Config.Libs.androidxCore)
 
     compileOnly(Config.CompileOnly.nopen)
