@@ -60,7 +60,7 @@ final class Stack {
   }
 
   public Stack(final @NotNull Stack stack) {
-    this(stack.logger, stack.items.getFirst());
+    this(stack.logger, new StackItem(stack.items.getFirst()));
     for (final StackItem item : stack.items) {
       push(new StackItem(item));
     }

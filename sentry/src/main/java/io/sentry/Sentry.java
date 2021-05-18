@@ -45,6 +45,11 @@ public final class Sentry {
     return hub;
   }
 
+  @ApiStatus.Internal
+  public static void setCurrentHub(final @NotNull IHub hub) {
+      currentHub.set(hub);
+  }
+
   /**
    * Check if the current Hub is enabled/active.
    *
