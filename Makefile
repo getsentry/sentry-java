@@ -1,4 +1,4 @@
-.PHONY: all, clean compile dryRelease doRelease release update stop checkFormat format
+.PHONY: all clean compile dryRelease doRelease release update stop checkFormat format api
 
 all: clean checkFormat compile dryRelease
 
