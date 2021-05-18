@@ -1,5 +1,7 @@
 # Unreleased
 
+Feat: App start up and slow/frozen frames metrics (#1466)
+
 # 5.0.0-beta.4
 
 * Fix: Enrich Transactions with Context Data (#1469)

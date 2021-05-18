@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 public final class PerformanceAndroidEventProcessor implements EventProcessor {
 
   @Override
-  public @Nullable SentryTransaction process(
+  public @NotNull SentryTransaction process(
       @NotNull SentryTransaction transaction, @Nullable Object hint) {
     if (!AppStartState.getInstance().isSentStartMetric()) {
       Long appStartUpInterval = AppStartState.getInstance().getAppStartInterval();
@@ -24,6 +24,9 @@ public final class PerformanceAndroidEventProcessor implements EventProcessor {
         AppStartState.getInstance().setSentStartUp();
       }
     }
+
+    // this attaches these metrics to all following transactions and its the sum of all frames
+    // during apps lifecycle, not specific per screen
     final Map<String, @NotNull MeasurementValue> framesMetrics =
         ActivityFramesState.getInstance().getMetrics();
     if (framesMetrics != null) {
