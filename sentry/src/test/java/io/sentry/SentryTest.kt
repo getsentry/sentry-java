@@ -174,4 +174,15 @@ class SentryTest {
         assertFalse(tempFile.exists())
         return tempFile.absolutePath
     }
+
+    @Test
+    fun `getOptions exposes the options used on initialization`() {
+        Sentry.init {
+            it.dsn = dsn
+            it.setTag("x", "x")
+        }
+
+        val options = Sentry.getOptions()
+        assertEquals(setOf("x"), options.tags.keys)
+    }
 }

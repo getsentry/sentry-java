@@ -665,6 +665,15 @@ public final class Sentry {
   }
 
   /**
+   * Gets the SentryOptions attached to current scope.
+   *
+   * @return the options attached to current scope.
+   */
+  public static @NotNull SentryOptions getOptions() {
+    return getCurrentHub().getOptions();
+  }
+
+  /**
    * Configuration options callback
    *
    * @param <T> a class that extends SentryOptions or SentryOptions itself.
