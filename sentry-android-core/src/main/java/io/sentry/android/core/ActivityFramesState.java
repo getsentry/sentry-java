@@ -35,8 +35,13 @@ final class ActivityFramesState {
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
-    // TODO: or frameMetricsAggregator.reset(); ?
+
+    // I noticed that when the 1st screen kicks in and finishes rendering, the `getMetrics` still
+    // returns nothing, but the next transaction contains the accumulated value of both of them.
+
+    // TODO: chose between keep counting or reseting every time
     final SparseIntArray[] framesRates = frameMetricsAggregator.getMetrics();
+    //    final SparseIntArray[] framesRates = frameMetricsAggregator.reset();
     if (framesRates != null) {
       final SparseIntArray totalIndexArray = framesRates[FrameMetricsAggregator.TOTAL_INDEX];
       if (totalIndexArray != null) {
