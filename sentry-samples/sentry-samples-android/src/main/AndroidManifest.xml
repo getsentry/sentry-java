@@ -21,8 +21,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/AppTheme"
-        tools:ignore="GoogleAppIndexingWarning, UnusedAttribute"
-        android:hardwareAccelerated="true">
+        tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
+
+<!--        android:hardwareAccelerated="true"-->
 
         <activity android:name=".MainActivity">
             <intent-filter>

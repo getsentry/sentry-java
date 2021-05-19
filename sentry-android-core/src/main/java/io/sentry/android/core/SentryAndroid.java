@@ -51,10 +51,14 @@ public final class SentryAndroid {
    * @param logger your custom logger that implements ILogger
    * @param configuration Sentry.OptionsConfiguration configuration handler
    */
-  public static void init(
+  public static synchronized void init(
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
+    // if SentryPerformanceProvider was disabled or removed, we set the App Start when
+    // the SDK is called.
+    AppStartState.getInstance().setAppStartTime();
+
     try {
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),

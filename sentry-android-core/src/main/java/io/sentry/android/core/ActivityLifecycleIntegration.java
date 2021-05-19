@@ -86,6 +86,8 @@ public final class ActivityLifecycleIntegration
       application.registerActivityLifecycleCallbacks(this);
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
 
+      // this is called after the Activity is created, so we know if the App is a warm or cold
+      // start.
       handler.post(
           () -> {
             if (firstActivityCreated) {

@@ -6,10 +6,8 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.sentry.DateUtils;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
@@ -17,9 +15,7 @@ public final class SentryPerformanceProvider extends ContentProvider {
 
   @Override
   public boolean onCreate() {
-    long millis = SystemClock.uptimeMillis();
-    AppStartState.getInstance().setAppStartTime(DateUtils.getCurrentDateTime());
-    AppStartState.getInstance().setAppStart(millis);
+    AppStartState.getInstance().setAppStartTime();
     return true;
   }
 

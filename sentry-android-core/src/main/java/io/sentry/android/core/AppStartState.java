@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import android.os.SystemClock;
+import io.sentry.DateUtils;
 import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,25 +15,12 @@ final class AppStartState {
   private @Nullable Boolean coldStart;
   private boolean sentStartMetric = false;
   private @Nullable Date appStartTime;
+  private volatile boolean appStartSet = false;
 
   private AppStartState() {}
 
   static @NotNull AppStartState getInstance() {
     return instance;
-  }
-
-  @Nullable
-  Long getAppStart() {
-    return appStart;
-  }
-
-  void setAppStart(final @Nullable Long appStart) {
-    this.appStart = appStart;
-  }
-
-  @Nullable
-  Long getAppStartEnd() {
-    return appStartEnd;
   }
 
   void setAppStartEnd(final @Nullable Long appStartEnd) {
@@ -67,7 +56,13 @@ final class AppStartState {
     return appStartTime;
   }
 
-  void setAppStartTime(final @Nullable Date appStartTime) {
-    this.appStartTime = appStartTime;
+  synchronized void setAppStartTime() {
+    if (appStartSet) {
+      return;
+    }
+    final long millis = SystemClock.uptimeMillis();
+    appStartTime = DateUtils.getCurrentDateTime();
+    appStart = millis;
+    appStartSet = true;
   }
 }
