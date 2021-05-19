@@ -1,5 +1,7 @@
 # Unreleased
 
+* Feat: Add breadcrumb in Spring RestTemplate integration (#1481)
+
 # 5.0.0-beta.4
 
 * Fix: Enrich Transactions with Context Data (#1469)
