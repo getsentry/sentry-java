@@ -46,7 +46,7 @@ class SentryOkHttpInterceptorTest {
             httpStatusCode: Int = 201,
             responseBody: String = "success",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            spanCustomizer: ((span: ISpan) -> Unit)? = null
+            beforeSpan: ((span: ISpan) -> Unit)? = null
         ): OkHttpClient {
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
@@ -56,8 +56,8 @@ class SentryOkHttpInterceptorTest {
                     .setSocketPolicy(socketPolicy)
                     .setResponseCode(httpStatusCode))
             server.start()
-            if (spanCustomizer != null) {
-                interceptor = SentryOkHttpInterceptor(hub, spanCustomizer)
+            if (beforeSpan != null) {
+                interceptor = SentryOkHttpInterceptor(hub, beforeSpan)
             }
             return OkHttpClient.Builder().addInterceptor(interceptor).build()
         }
@@ -167,7 +167,7 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `customizer modifies span`() {
-        val sut = fixture.getSut(spanCustomizer = {
+        val sut = fixture.getSut(beforeSpan = {
             it.description = "overwritten description"
         })
         val request = getRequest()

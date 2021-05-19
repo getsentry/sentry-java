@@ -8,8 +8,8 @@ public final class io/sentry/android/okhttp/BuildConfig {
 
 public final class io/sentry/android/okhttp/SentryOkHttpInterceptor : okhttp3/Interceptor {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;)V
-	public synthetic fun <init> (Lio/sentry/IHub;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IHub;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lio/sentry/IHub;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun intercept (Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;
 }
 

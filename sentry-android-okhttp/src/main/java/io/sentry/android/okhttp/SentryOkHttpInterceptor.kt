@@ -11,7 +11,7 @@ import okhttp3.Response
 
 class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
-    private val spanCustomizer: (span: ISpan) -> Unit = { }
+    private val beforeSpan: (span: ISpan) -> Unit = { }
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -41,7 +41,7 @@ class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
-            span?.apply(spanCustomizer)
+            span?.apply(beforeSpan)
             span?.finish()
             val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
             request.body?.contentLength().ifHasValidLength {
