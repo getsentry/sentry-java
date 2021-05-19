@@ -1,6 +1,6 @@
-.PHONY: all, clean compile dryRelease doRelease release update stop checkFormat format
+.PHONY: all clean compile dryRelease doRelease release update stop checkFormat format api
 
-all: clean checkFormat compile dryRelease
+all: stop clean checkFormat compile dryRelease
 
 # deep clean
 clean:
@@ -11,17 +11,13 @@ compile:
 	./gradlew build
 
 # do a dry release (like a local deploy)
-# remember to add the -SNAPSHOT suffix to the version
 dryRelease:
 	./gradlew publishToMavenLocal --no-daemon
 
 # deploy the current build to maven central
-# remember to remove the -SNAPSHOT suffix from the version
 # promotes the release to maven central
 doRelease:
-	cd scripts
-	kotlinc -script release.kts -- -d ../distributions | sh
-	cd ..
+	kotlinc -script scripts/release.kts -- -d ../distributions | sh
 	./gradlew closeAndReleaseRepository
 
 # clean, build, deploy and promote to maven central

@@ -5,16 +5,16 @@
  * For example, all packages are in the "distributions" directory:
  *
  * distributions
- *  ├── sentry-3.1.2-SNAPSHOT
- *  ├── sentry-android-3.1.2-SNAPSHOT
- *  ├── sentry-android-core-3.1.2-SNAPSHOT
- *  ├── sentry-android-ndk-3.1.2-SNAPSHOT
- *  ├── sentry-android-timber-3.1.2-SNAPSHOT
- *  ├── sentry-log4j2-3.1.2-SNAPSHOT
- *  ├── sentry-logback-3.1.2-SNAPSHOT
- *  ├── sentry-servlet-3.1.2-SNAPSHOT
- *  ├── sentry-spring-3.1.2-SNAPSHOT
- *  └── sentry-spring-boot-starter-3.1.2-SNAPSHOT
+ *  ├── sentry-3.1.2
+ *  ├── sentry-android-3.1.2
+ *  ├── sentry-android-core-3.1.2
+ *  ├── sentry-android-ndk-3.1.2
+ *  ├── sentry-android-timber-3.1.2
+ *  ├── sentry-log4j2-3.1.2
+ *  ├── sentry-logback-3.1.2
+ *  ├── sentry-servlet-3.1.2
+ *  ├── sentry-spring-3.1.2
+ *  └── sentry-spring-boot-starter-3.1.2
  *
  * To execute the script two environment variables that are used by Maven have to be present: OSSRH_USERNAME, OSSRH_PASSWORD
  *
