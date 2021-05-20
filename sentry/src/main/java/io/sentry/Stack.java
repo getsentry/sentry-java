@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,9 +61,14 @@ final class Stack {
   }
 
   public Stack(final @NotNull Stack stack) {
-    this(stack.logger, stack.items.getFirst());
-    for (final StackItem item : stack.items) {
-      push(new StackItem(item));
+    this(stack.logger, new StackItem(stack.items.getFirst()));
+    final Iterator<StackItem> iterator = stack.items.iterator();
+    // skip first item (root item)
+    if (iterator.hasNext()) {
+      iterator.next();
+    }
+    while (iterator.hasNext()) {
+      push(new StackItem(iterator.next()));
     }
   }
 
