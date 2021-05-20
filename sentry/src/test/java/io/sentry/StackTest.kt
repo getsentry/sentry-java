@@ -63,6 +63,8 @@ class StackTest {
         val stack = fixture.getSut()
         val clone = Stack(stack)
 
+        assertEquals(stack.size(), clone.size())
+
         val stackRootItem = stack.peek()
         val cloneRootItem = clone.peek()
         assertNotEquals(stackRootItem, cloneRootItem)

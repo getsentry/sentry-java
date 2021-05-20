@@ -61,9 +61,11 @@ final class Stack {
 
   public Stack(final @NotNull Stack stack) {
     this(stack.logger, new StackItem(stack.items.getFirst()));
-    for (final StackItem item : stack.items) {
-      push(new StackItem(item));
-    }
+//    if (stack.items.size() > 1) {
+      for (final StackItem item : stack.items) {
+        push(new StackItem(item));
+      }
+//    }
   }
 
   @NotNull

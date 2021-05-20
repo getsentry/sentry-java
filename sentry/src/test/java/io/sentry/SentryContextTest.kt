@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.test.AfterTest
@@ -55,11 +56,17 @@ class SentryContextTest {
 
     @Test
     fun testContextInheritanceMDC() = runBlocking {
+        val logger = LoggerFactory.getLogger("foo")
+
         MDC.put("myKey", "myValue")
+        logger.error("Hello")
         withContext(MDCContext()) {
             MDC.put("myKey", "myValue2")
+            MDC.put("myKey2", "myValue3")
+            logger.error("withcontext")
             // Scoped launch with inherited MDContext element
             launch(Dispatchers.Default) {
+                logger.error("launch")
                 assertEquals("myValue", MDC.get("myKey"))
             }.join()
         }
@@ -68,11 +75,35 @@ class SentryContextTest {
 
     @Test
     fun testContextInheritance() = runBlocking {
+        val logger = LoggerFactory.getLogger("foo")
+        println("Beginning ${Sentry.getCurrentHub()} - ${tags()}")
         Sentry.setTag("myKey", "myValue")
         withContext(SentryContext()) {
+            logger.error("With context before ${Sentry.getCurrentHub()} - ${tags()}")
             Sentry.setTag("myKey", "myValue2")
+            logger.error("With context after ${Sentry.getCurrentHub()} - ${tags()}")
             // Scoped launch with inherited MDContext element
             launch(Dispatchers.Default) {
+                logger.error("${Sentry.getCurrentHub()} - ${tags()}")
+                assertEquals("myValue", getTag("myKey"))
+            }.join()
+
+        }
+        assertEquals("myValue", getTag("myKey"))
+    }
+
+    @Test
+    fun testContextInheritance3() = runBlocking {
+        val logger = LoggerFactory.getLogger("foo")
+        println("Beginning ${Sentry.getCurrentHub()} - ${tags()}")
+        Sentry.setTag("myKey", "myValue")
+        withContext(SentryContext()) {
+            logger.error("With context before ${Sentry.getCurrentHub()} - ${tags()}")
+            Sentry.setTag("myKey", "myValue2")
+            logger.error("With context after ${Sentry.getCurrentHub()} - ${tags()}")
+            // Scoped launch with inherited MDContext element
+            launch(Dispatchers.Default) {
+                logger.error("${Sentry.getCurrentHub()} - ${tags()}")
                 assertEquals("myValue", getTag("myKey"))
             }.join()
 
