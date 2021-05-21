@@ -1,7 +1,10 @@
 package io.sentry.spring.boot
 
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.SentryOptions
@@ -10,8 +13,8 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import java.io.IOException
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import org.assertj.core.api.Assertions.assertThat
-import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.MockRestServiceServer
@@ -41,7 +44,6 @@ class SentrySpanRestTemplateCustomizerTest {
                 whenever(hub.span).thenReturn(transaction)
 
                 val scenario = mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
-                    .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
                     .andExpect {
                         // must have trace id from the parent transaction and must not contain spanId from the parent transaction
                         assertThat(it.headers["sentry-trace"]!!.first()).startsWith(transaction.spanContext.traceId.toString())
@@ -57,7 +59,6 @@ class SentrySpanRestTemplateCustomizerTest {
                 }
             } else {
                 mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
-                    .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
                     .andRespond(MockRestResponseCreators.withStatus(status).body("OK").contentType(MediaType.APPLICATION_JSON))
             }
 
@@ -125,5 +126,55 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(restTemplate.interceptors).hasSize(1)
         fixture.customizer.customize(restTemplate)
         assertThat(restTemplate.interceptors).hasSize(1)
+    }
+
+    @Test
+    fun `when transaction is active adds breadcrumb when http calls succeeds`() {
+        fixture.getSut(isTransactionActive = true).postForObject("/test/{id}", "content", String::class.java, 123)
+        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
+            assertEquals("http", it.type)
+            assertEquals("/test/123", it.data["url"])
+            assertEquals("POST", it.data["method"])
+            assertEquals(7, it.data["requestBodySize"])
+        })
+    }
+
+    @SuppressWarnings("SwallowedException")
+    @Test
+    fun `when transaction is active adds breadcrumb when http calls results in exception`() {
+        try {
+            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject("/test/{id}", String::class.java, 123)
+        } catch (e: Throwable) {
+        }
+        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
+            assertEquals("http", it.type)
+            assertEquals("/test/123", it.data["url"])
+            assertEquals("GET", it.data["method"])
+        })
+    }
+
+    @Test
+    fun `when transaction is not active adds breadcrumb when http calls succeeds`() {
+        fixture.getSut(isTransactionActive = false).postForObject("/test/{id}", "content", String::class.java, 123)
+        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
+            assertEquals("http", it.type)
+            assertEquals("/test/123", it.data["url"])
+            assertEquals("POST", it.data["method"])
+            assertEquals(7, it.data["requestBodySize"])
+        })
+    }
+
+    @SuppressWarnings("SwallowedException")
+    @Test
+    fun `when transaction is not active adds breadcrumb when http calls results in exception`() {
+        try {
+            fixture.getSut(isTransactionActive = false, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject("/test/{id}", String::class.java, 123)
+        } catch (e: Throwable) {
+        }
+        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
+            assertEquals("http", it.type)
+            assertEquals("/test/123", it.data["url"])
+            assertEquals("GET", it.data["method"])
+        })
     }
 }

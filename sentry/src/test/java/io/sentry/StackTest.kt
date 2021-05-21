@@ -61,14 +61,21 @@ class StackTest {
     @Test
     fun `cloning stack clones stack items`() {
         val stack = fixture.getSut()
+        stack.push(StackItem(fixture.options, fixture.client, fixture.scope))
         val clone = Stack(stack)
 
         assertEquals(stack.size(), clone.size())
+        // assert first stack item
+        assertStackItems(stack.peek(), clone.peek())
+        stack.pop()
+        clone.pop()
+        // assert root item
+        assertStackItems(stack.peek(), clone.peek())
+    }
 
-        val stackRootItem = stack.peek()
-        val cloneRootItem = clone.peek()
-        assertNotEquals(stackRootItem, cloneRootItem)
-        assertNotEquals(stackRootItem.scope, cloneRootItem.scope)
-        assertEquals(stackRootItem.client, cloneRootItem.client)
+    private fun assertStackItems(item1: StackItem, item2: StackItem) {
+        assertNotEquals(item1, item2)
+        assertNotEquals(item1.scope, item2.scope)
+        assertEquals(item1.client, item2.client)
     }
 }

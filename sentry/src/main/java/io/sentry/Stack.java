@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,9 +14,9 @@ final class Stack {
     private volatile @NotNull Scope scope;
 
     StackItem(
-        final @NotNull SentryOptions options,
-        final @NotNull ISentryClient client,
-        final @NotNull Scope scope) {
+      final @NotNull SentryOptions options,
+      final @NotNull ISentryClient client,
+      final @NotNull Scope scope) {
       this.client = Objects.requireNonNull(client, "ISentryClient is required.");
       this.scope = Objects.requireNonNull(scope, "Scope is required.");
       this.options = Objects.requireNonNull(options, "Options is required");
@@ -61,11 +62,14 @@ final class Stack {
 
   public Stack(final @NotNull Stack stack) {
     this(stack.logger, new StackItem(stack.items.getFirst()));
-//    if (stack.items.size() > 1) {
-      for (final StackItem item : stack.items) {
-        push(new StackItem(item));
-      }
-//    }
+    final Iterator<StackItem> iterator = stack.items.iterator();
+    // skip first item (root item)
+    if (iterator.hasNext()) {
+      iterator.next();
+    }
+    while (iterator.hasNext()) {
+      push(new StackItem(iterator.next()));
+    }
   }
 
   @NotNull
