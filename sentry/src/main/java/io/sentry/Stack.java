@@ -14,9 +14,9 @@ final class Stack {
     private volatile @NotNull Scope scope;
 
     StackItem(
-      final @NotNull SentryOptions options,
-      final @NotNull ISentryClient client,
-      final @NotNull Scope scope) {
+        final @NotNull SentryOptions options,
+        final @NotNull ISentryClient client,
+        final @NotNull Scope scope) {
       this.client = Objects.requireNonNull(client, "ISentryClient is required.");
       this.scope = Objects.requireNonNull(scope, "Scope is required.");
       this.options = Objects.requireNonNull(options, "Options is required");

@@ -47,7 +47,7 @@ public final class Sentry {
 
   @ApiStatus.Internal
   public static void setCurrentHub(final @NotNull IHub hub) {
-      currentHub.set(hub);
+    currentHub.set(hub);
   }
 
   /**

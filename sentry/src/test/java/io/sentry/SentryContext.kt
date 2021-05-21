@@ -1,8 +1,8 @@
 package io.sentry
 
-import kotlinx.coroutines.ThreadContextElement
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.ThreadContextElement
 
 class SentryContext : ThreadContextElement<IHub>, AbstractCoroutineContextElement(Key) {
 
