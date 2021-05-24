@@ -6,6 +6,9 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.ThreadContextElement
 
+/**
+ * Sentry context element for [CoroutineContext].
+ */
 class SentryContext : ThreadContextElement<IHub>, AbstractCoroutineContextElement(Key) {
 
     companion object Key : CoroutineContext.Key<SentryContext>
