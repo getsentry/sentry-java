@@ -16,6 +16,7 @@ import io.sentry.TransactionContext
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -25,6 +26,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -46,7 +48,7 @@ class SentryOkHttpInterceptorTest {
             httpStatusCode: Int = 201,
             responseBody: String = "success",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            beforeSpan: ((span: ISpan) -> Unit)? = null
+            beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null
         ): OkHttpClient {
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
@@ -103,6 +105,7 @@ class SentryOkHttpInterceptorTest {
         assertEquals("http.client", httpClientSpan.operation)
         assertEquals("GET ${request.url}", httpClientSpan.description)
         assertEquals(SpanStatus.OK, httpClientSpan.status)
+        assertTrue(httpClientSpan.isFinished)
     }
 
     @Test
@@ -167,13 +170,43 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `customizer modifies span`() {
-        val sut = fixture.getSut(beforeSpan = {
-            it.description = "overwritten description"
+        val sut = fixture.getSut(beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
+            override fun execute(span: ISpan, request: Request, response: Response?): ISpan {
+                span.description = "overwritten description"
+                return span
+            }
         })
         val request = getRequest()
         sut.newCall(request).execute()
         assertEquals(1, fixture.sentryTracer.children.size)
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertEquals("overwritten description", httpClientSpan.description)
+    }
+
+    @Test
+    fun `customizer receives request and response`() {
+        var request: Request? = null
+        val sut = fixture.getSut(beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
+            override fun execute(span: ISpan, req: Request, res: Response?): ISpan {
+            assertEquals(request!!.url, req.url)
+            assertEquals(request!!.method, req.method)
+            assertNotNull(res) {
+                assertEquals(201, it.code)
+            }
+            return span
+        } })
+        request = getRequest()
+        sut.newCall(request).execute()
+    }
+
+    @Test
+    fun `customizer can drop the span`() {
+        val sut = fixture.getSut(beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
+            override fun execute(span: ISpan, request: Request, response: Response?): ISpan? {
+            return null
+        } })
+        sut.newCall(getRequest()).execute()
+        val httpClientSpan = fixture.sentryTracer.children.first()
+        assertFalse(httpClientSpan.isFinished)
     }
 }
