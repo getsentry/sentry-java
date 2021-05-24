@@ -1,5 +1,11 @@
 package io.sentry
 
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -8,13 +14,6 @@ import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.expect
 
 class SentryContextTest {
 
@@ -37,7 +36,7 @@ class SentryContextTest {
         }.join()
     }
 
-    private fun getTag(tag:String): String? {
+    private fun getTag(tag: String): String? {
         var value: String? = null
         Sentry.configureScope {
             value = it.tags[tag]
@@ -87,7 +86,6 @@ class SentryContextTest {
                 logger.error("${Sentry.getCurrentHub()} - ${tags()}")
                 assertEquals("myValue", getTag("myKey"))
             }.join()
-
         }
         assertEquals("myValue", getTag("myKey"))
     }
@@ -106,15 +104,14 @@ class SentryContextTest {
                 logger.error("${Sentry.getCurrentHub()} - ${tags()}")
                 assertEquals("myValue", getTag("myKey"))
             }.join()
-
         }
         assertEquals("myValue", getTag("myKey"))
     }
 
     fun tags(): Map<String, String>? {
-        var result:Map<String, String>? = null
+        var result: Map<String, String>? = null
         Sentry.configureScope {
-            result= it.tags
+            result = it.tags
         }
         return result
     }
