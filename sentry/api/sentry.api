@@ -482,6 +482,7 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun getTags ()Ljava/util/Map;
 	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun getTransactionName ()Ljava/lang/String;
 	public fun getUser ()Lio/sentry/protocol/User;
@@ -558,6 +559,7 @@ public final class io/sentry/Sentry {
 	public static fun configureScope (Lio/sentry/ScopeCallback;)V
 	public static fun endSession ()V
 	public static fun flush (J)V
+	public static fun getCurrentHub ()Lio/sentry/IHub;
 	public static fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public static fun getSpan ()Lio/sentry/ISpan;
 	public static fun init ()V
@@ -572,6 +574,7 @@ public final class io/sentry/Sentry {
 	public static fun pushScope ()V
 	public static fun removeExtra (Ljava/lang/String;)V
 	public static fun removeTag (Ljava/lang/String;)V
+	public static fun setCurrentHub (Lio/sentry/IHub;)V
 	public static fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun setFingerprint (Ljava/util/List;)V
 	public static fun setLevel (Lio/sentry/SentryLevel;)V

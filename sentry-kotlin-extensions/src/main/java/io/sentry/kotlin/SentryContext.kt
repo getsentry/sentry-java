@@ -1,5 +1,7 @@
-package io.sentry
+package io.sentry.kotlin
 
+import io.sentry.IHub
+import io.sentry.Sentry
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.ThreadContextElement
@@ -8,7 +10,7 @@ class SentryContext : ThreadContextElement<IHub>, AbstractCoroutineContextElemen
 
     companion object Key : CoroutineContext.Key<SentryContext>
 
-    val hub: IHub = Sentry.getCurrentHub().clone()
+    private val hub: IHub = Sentry.getCurrentHub().clone()
 
     override fun updateThreadContext(context: CoroutineContext): IHub {
         val oldState = Sentry.getCurrentHub()
