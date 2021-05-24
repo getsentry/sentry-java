@@ -21,7 +21,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(project(":sentry"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
+    implementation(Config.Libs.coroutinesCore)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
