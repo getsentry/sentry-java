@@ -81,7 +81,7 @@ object Config {
         val retrofit2 = "$retrofit2Group:retrofit:$retrofit2Version"
         val retrofit2Gson = "$retrofit2Group:converter-gson:$retrofit2Version"
 
-        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0"
+        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
     }
 
     object AnnotationProcessors {
