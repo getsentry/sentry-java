@@ -25,12 +25,12 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     // the app start metric is sent only once when the 1st transaction happens
     // after the app start is collected.
     if (!sentStartMeasurement && options.isTracingEnabled()) {
-      Long appStartUpInterval = AppStartState.getInstance().getAppStartInterval();
+      final Long appStartUpInterval = AppStartState.getInstance().getAppStartInterval();
       // if appStartUpInterval is null, metrics are not ready to be sent
       if (appStartUpInterval != null) {
-        MeasurementValue value = new MeasurementValue((float) appStartUpInterval);
+        final MeasurementValue value = new MeasurementValue((float) appStartUpInterval);
 
-        String appStartKey =
+        final String appStartKey =
             AppStartState.getInstance().getColdStart() ? "app_start_cold" : "app_start_warm";
 
         transaction.getMeasurements().put(appStartKey, value);
