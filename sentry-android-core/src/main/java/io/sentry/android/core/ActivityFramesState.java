@@ -4,8 +4,13 @@ import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.protocol.MeasurementValue;
+import io.sentry.protocol.SentryId;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,16 +27,21 @@ final class ActivityFramesState {
     return instance;
   }
 
+  private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>> activityMeasurements =
+          Collections.synchronizedMap(new WeakHashMap<>());
+
   void addActivity(final @NotNull Activity activity) {
     frameMetricsAggregator.add(activity);
   }
 
-  void removeActivity(final @NotNull Activity activity) {
-    frameMetricsAggregator.remove(activity);
-  }
+//  @Nullable
+//  Map<String, @NotNull MeasurementValue> removeActivity(final @NotNull Activity activity) {
+//    final SparseIntArray[] framesRates = frameMetricsAggregator.remove(activity);
+//    return getMetrics(framesRates);
+//  }
 
-  @Nullable
-  Map<String, @NotNull MeasurementValue> getMetrics() {
+//  @Nullable
+  void setMetrics(final @NotNull Activity activity, final @NotNull SentryId sentryId) {
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
@@ -39,8 +49,7 @@ final class ActivityFramesState {
     // I noticed that when the 1st screen kicks in and finishes rendering, the `getMetrics` still
     // returns nothing, but the next transaction contains the accumulated value of both of them.
 
-    // TODO: chose between keep counting or reseting every time
-    final SparseIntArray[] framesRates = frameMetricsAggregator.getMetrics();
+    final SparseIntArray[] framesRates = frameMetricsAggregator.remove(activity);
     //    final SparseIntArray[] framesRates = frameMetricsAggregator.reset();
     if (framesRates != null) {
       final SparseIntArray totalIndexArray = framesRates[FrameMetricsAggregator.TOTAL_INDEX];
@@ -63,7 +72,7 @@ final class ActivityFramesState {
     }
 
     if (totalFrames == 0 && slowFrames == 0 && frozenFrames == 0) {
-      return null;
+      return;
     }
 
     final MeasurementValue tfValues = new MeasurementValue(totalFrames);
@@ -73,7 +82,13 @@ final class ActivityFramesState {
     measurements.put("frames_total", tfValues);
     measurements.put("frames_slow", sfValues);
     measurements.put("frames_frozen", ffValues);
-    return measurements;
+
+    activityMeasurements.put(sentryId, measurements);
+  }
+
+  @Nullable
+  Map<String, @NotNull MeasurementValue> getMetrics(final @NotNull SentryId sentryId) {
+    return activityMeasurements.get(sentryId);
   }
 
   void close() {

@@ -9,9 +9,9 @@ import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,8 +35,7 @@ public final class SentryTransaction extends SentryBaseEvent {
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
 
-  private @NotNull final Map<String, @NotNull MeasurementValue> measurements =
-      new ConcurrentHashMap<>();
+  private @NotNull final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
 
   @ApiStatus.Internal
   @SuppressWarnings("deprecation")

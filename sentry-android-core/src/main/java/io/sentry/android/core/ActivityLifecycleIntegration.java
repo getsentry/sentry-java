@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
@@ -15,6 +14,7 @@ import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.protocol.MeasurementValue;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -30,7 +30,6 @@ public final class ActivityLifecycleIntegration
   private final @NotNull Application application;
   private @Nullable IHub hub;
   private @Nullable SentryAndroidOptions options;
-  private final @NotNull IHandler handler;
 
   private boolean performanceEnabled = false;
 
@@ -38,7 +37,6 @@ public final class ActivityLifecycleIntegration
 
   private boolean firstActivityCreated = false;
   private boolean firstActivityResumed = false;
-  private boolean hasSavedState = false;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
@@ -47,20 +45,13 @@ public final class ActivityLifecycleIntegration
 
   public ActivityLifecycleIntegration(
       final @NotNull Application application,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
-      final @NotNull IHandler handler) {
+      final @NotNull IBuildInfoProvider buildInfoProvider) {
     this.application = Objects.requireNonNull(application, "Application is required");
     Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
-    this.handler = Objects.requireNonNull(handler, "Handler is required");
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
     }
-  }
-
-  public ActivityLifecycleIntegration(
-      final @NotNull Application application, final @NotNull IBuildInfoProvider buildInfoProvider) {
-    this(application, buildInfoProvider, new MainLooperHandler());
   }
 
   @SuppressWarnings("deprecation")
@@ -85,15 +76,6 @@ public final class ActivityLifecycleIntegration
     if (this.options.isEnableActivityLifecycleBreadcrumbs() || performanceEnabled) {
       application.registerActivityLifecycleCallbacks(this);
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
-
-      // this is called after the Activity is created, so we know if the App is a warm or cold
-      // start.
-      handler.post(
-          () -> {
-            if (firstActivityCreated) {
-              AppStartState.getInstance().setColdStart(!hasSavedState);
-            }
-          });
     }
   }
 
@@ -131,7 +113,7 @@ public final class ActivityLifecycleIntegration
     for (final Map.Entry<Activity, ITransaction> entry :
         activitiesWithOngoingTransactions.entrySet()) {
       final ITransaction transaction = entry.getValue();
-      finishTransaction(transaction);
+      finishTransaction(transaction, entry.getKey());
     }
   }
 
@@ -143,6 +125,9 @@ public final class ActivityLifecycleIntegration
       // we can only bind to the scope if there's no running transaction
       final ITransaction transaction =
           hub.startTransaction(getActivityName(activity), "navigation");
+
+      // start collecting frame metrics for transaction
+      ActivityFramesState.getInstance().addActivity(activity);
 
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
@@ -180,11 +165,11 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NonNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      finishTransaction(transaction);
+      finishTransaction(transaction, activity);
     }
   }
 
-  private void finishTransaction(final @Nullable ITransaction transaction) {
+  private void finishTransaction(final @Nullable ITransaction transaction, final @NonNull Activity activity) {
     if (transaction != null) {
       SpanStatus status = transaction.getStatus();
       // status might be set by other integrations, let's not overwrite it
@@ -192,7 +177,9 @@ public final class ActivityLifecycleIntegration
         status = SpanStatus.OK;
       }
 
+      ActivityFramesState.getInstance().setMetrics(activity, transaction.getEventId());
       transaction.finish(status);
+      activitiesWithOngoingTransactions.remove(activity);
     }
   }
 
@@ -213,7 +200,7 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
     if (!firstActivityCreated) {
-      hasSavedState = savedInstanceState != null;
+      AppStartState.getInstance().setColdStart(savedInstanceState == null);
       firstActivityCreated = true;
     }
 
@@ -227,9 +214,9 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityStarted(final @NonNull Activity activity) {
-    if (performanceEnabled) {
-      ActivityFramesState.getInstance().addActivity(activity);
-    }
+//    if (performanceEnabled) {
+//      ActivityFramesState.getInstance().addActivity(activity);
+//    }
 
     addBreadcrumb(activity, "started");
   }
@@ -245,8 +232,7 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityResumed(final @NonNull Activity activity) {
     if (!firstActivityResumed) {
-      long millis = SystemClock.uptimeMillis();
-      AppStartState.getInstance().setAppStartEnd(millis);
+      AppStartState.getInstance().setAppStartEnd();
       firstActivityResumed = true;
     }
 
@@ -277,9 +263,9 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityStopped(final @NonNull Activity activity) {
     addBreadcrumb(activity, "stopped");
 
-    if (performanceEnabled) {
-      ActivityFramesState.getInstance().removeActivity(activity);
-    }
+//    if (performanceEnabled) {
+//      ActivityFramesState.getInstance().removeActivity(activity);
+//    }
   }
 
   @Override

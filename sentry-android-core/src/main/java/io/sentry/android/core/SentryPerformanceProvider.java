@@ -6,16 +6,33 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.sentry.DateUtils;
+import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
+/**
+ * SentryPerformanceProvider is responsible for collecting data (eg appStart) as early as possible
+ * as ContentProvider is the only reliable hook for libraries that works across all the supported
+ * SDK versions. When minSDK is >= 24, we could use Process.getStartUptimeMillis()
+ */
 @ApiStatus.Internal
 public final class SentryPerformanceProvider extends ContentProvider {
 
+  // static to rely on Class load
+  private static final @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
+  // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
+  private static final long appStart = SystemClock.uptimeMillis();
+
+  public SentryPerformanceProvider() {
+    AppStartState.getInstance().setAppStartTime(appStart, appStartTime);
+  }
+
   @Override
   public boolean onCreate() {
-    AppStartState.getInstance().setAppStartTime();
     return true;
   }
 
