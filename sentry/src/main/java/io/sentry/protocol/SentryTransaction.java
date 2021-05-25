@@ -9,6 +9,7 @@ import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -33,6 +34,8 @@ public final class SentryTransaction extends SentryBaseEvent {
   /** The {@code type} property is required in JSON payload sent to Sentry. */
   @SuppressWarnings("UnusedVariable")
   private @NotNull final String type = "transaction";
+
+  private @NotNull final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
 
   @SuppressWarnings("deprecation")
   public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
@@ -84,5 +87,9 @@ public final class SentryTransaction extends SentryBaseEvent {
   public boolean isSampled() {
     final SpanContext trace = this.getContexts().getTrace();
     return trace != null && Boolean.TRUE.equals(trace.getSampled());
+  }
+
+  public @NotNull Map<String, @NotNull MeasurementValue> getMeasurements() {
+    return measurements;
   }
 }

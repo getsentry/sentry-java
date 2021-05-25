@@ -1,15 +1,22 @@
 package io.sentry.android.core;
 
 import android.content.Context;
+import android.os.SystemClock;
+import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 
 /** Sentry initialization class */
 public final class SentryAndroid {
+
+  // static to rely on Class load
+  private static final @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
+  private static final long appStart = SystemClock.uptimeMillis();
 
   private SentryAndroid() {}
 
@@ -51,10 +58,14 @@ public final class SentryAndroid {
    * @param logger your custom logger that implements ILogger
    * @param configuration Sentry.OptionsConfiguration configuration handler
    */
-  public static void init(
+  public static synchronized void init(
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
+    // if SentryPerformanceProvider was disabled or removed, we set the App Start when
+    // the SDK is called.
+    AppStartState.getInstance().setAppStartTime(appStart, appStartTime);
+
     try {
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),

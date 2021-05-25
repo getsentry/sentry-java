@@ -34,6 +34,9 @@ public final class ActivityLifecycleIntegration
 
   private boolean isAllActivityCallbacksAvailable;
 
+  private boolean firstActivityCreated = false;
+  private boolean firstActivityResumed = false;
+
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
   private final @NotNull WeakHashMap<Activity, ITransaction> activitiesWithOngoingTransactions =
@@ -186,6 +189,11 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    if (!firstActivityCreated) {
+      AppStartState.getInstance().setColdStart(savedInstanceState == null);
+      firstActivityCreated = true;
+    }
+
     addBreadcrumb(activity, "created");
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
@@ -201,6 +209,11 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityResumed(final @NonNull Activity activity) {
+    if (!firstActivityResumed) {
+      AppStartState.getInstance().setAppStartEnd();
+      firstActivityResumed = true;
+    }
+
     addBreadcrumb(activity, "resumed");
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPostResumed
