@@ -3,7 +3,7 @@
 * Feat: OkHttp callback for Customising the Span (#1478)
 * Feat: Add breadcrumb in Spring RestTemplate integration (#1481)
 * Fix: Cloning Stack (#1483)
-* Feat: App start up metrics (#)
+* Feat: App start up metrics (#1487)
 
 # 5.0.0-beta.4
 
