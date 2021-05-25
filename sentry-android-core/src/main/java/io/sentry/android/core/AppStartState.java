@@ -4,11 +4,12 @@ import android.os.SystemClock;
 import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /** AppStartState holds the state of the App Start metric and appStartTime */
 final class AppStartState {
 
-  private static final @NotNull AppStartState instance = new AppStartState();
+  private static @NotNull AppStartState instance = new AppStartState();
 
   /** appStart in milliseconds */
   private @Nullable Long appStart;
@@ -16,11 +17,8 @@ final class AppStartState {
   /** appStartEnd in milliseconds */
   private @Nullable Long appStartEnd;
 
-  /**
-   * The type of App start coldStart=true -> Cold start coldStart=false -> Warm start coldStart=null
-   * -> unknown yet
-   */
-  private @Nullable Boolean coldStart;
+  /** The type of App start coldStart=true -> Cold start, coldStart=false -> Warm start */
+  private boolean coldStart;
 
   /** appStart as a Date used in the App's Context */
   private @Nullable Date appStartTime;
@@ -31,20 +29,25 @@ final class AppStartState {
     return instance;
   }
 
+  @TestOnly
+  void resetInstance() {
+    instance = new AppStartState();
+  }
+
   void setAppStartEnd() {
     appStartEnd = SystemClock.uptimeMillis();
   }
 
   @Nullable
   Long getAppStartInterval() {
-    if (appStart == null || appStartEnd == null || coldStart == null) {
+    if (appStart == null || appStartEnd == null) {
       return null;
     }
     return appStartEnd - appStart;
   }
 
   boolean getColdStart() {
-    return Boolean.TRUE.equals(coldStart);
+    return coldStart;
   }
 
   void setColdStart(final boolean coldStart) {

@@ -17,6 +17,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -419,5 +420,61 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityResumed(activity)
 
         verify(fixture.hub).captureTransaction(any())
+    }
+
+    @Test
+    fun `App start is Cold when savedInstanceState is null`() {
+        val sut = fixture.getSut(14)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, null)
+
+        assertTrue(AppStartState.getInstance().coldStart)
+    }
+
+    @Test
+    fun `App start is Warm when savedInstanceState is not null`() {
+        val sut = fixture.getSut(14)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        val bundle = Bundle()
+        sut.onActivityCreated(activity, bundle)
+
+        assertFalse(AppStartState.getInstance().coldStart)
+    }
+
+    @Test
+    fun `Do not overwrite App start type after set`() {
+        val sut = fixture.getSut(14)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        val bundle = Bundle()
+        sut.onActivityCreated(activity, bundle)
+        sut.onActivityCreated(activity, null)
+
+        assertFalse(AppStartState.getInstance().coldStart)
+    }
+
+    @Test
+    fun `App start end time is set`() {
+        val sut = fixture.getSut(14)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        // set by SentryPerformanceProvider so forcing it here
+        AppStartState.getInstance().setAppStartTime(0, Date())
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, null)
+        sut.onActivityResumed(activity)
+
+        // SystemClock.uptimeMillis() always returns 0, can't assert real values
+        assertNotNull(AppStartState.getInstance().appStartInterval)
     }
 }
