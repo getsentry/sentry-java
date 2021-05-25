@@ -3,13 +3,16 @@ package io.sentry.android.okhttp
 import io.sentry.Breadcrumb
 import io.sentry.HubAdapter
 import io.sentry.IHub
+import io.sentry.ISpan
 import io.sentry.SpanStatus
 import java.io.IOException
 import okhttp3.Interceptor
+import okhttp3.Request
 import okhttp3.Response
 
 class SentryOkHttpInterceptor(
-    private val hub: IHub = HubAdapter.getInstance()
+    private val hub: IHub = HubAdapter.getInstance(),
+    private val beforeSpan: BeforeSpanCallback? = null
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -19,7 +22,7 @@ class SentryOkHttpInterceptor(
         val method = request.method
 
         // read transaction from the bound scope
-        val span = hub.span?.startChild("http.client", "$method $url")
+        var span = hub.span?.startChild("http.client", "$method $url")
 
         var response: Response? = null
 
@@ -39,7 +42,12 @@ class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
-            span?.finish()
+            if (span != null) {
+                if (beforeSpan != null) {
+                    span = beforeSpan.execute(span, request, response)
+                }
+                span?.finish()
+            }
             val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
             request.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("requestBodySize", it)
@@ -55,5 +63,19 @@ class SentryOkHttpInterceptor(
         if (this != null && this != -1L) {
             fn.invoke(this)
         }
+    }
+
+    /**
+     * The BeforeSpan callback
+     */
+    interface BeforeSpanCallback {
+        /**
+         * Mutates or drops span before being added
+         *
+         * @param span the span to mutate or drop
+         * @param request the HTTP request executed by okHttp
+         * @param response the HTTP response received by okHttp
+         */
+        fun execute(span: ISpan, request: Request, response: Response?): ISpan?
     }
 }
