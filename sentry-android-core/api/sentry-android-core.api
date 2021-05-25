@@ -73,11 +73,6 @@ public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration
 	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/PerformanceAndroidEventProcessor : io/sentry/EventProcessor {
-	public fun <init> ()V
-	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
-}
-
 public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V

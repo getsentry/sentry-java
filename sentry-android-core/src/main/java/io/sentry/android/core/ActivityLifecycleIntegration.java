@@ -34,7 +34,9 @@ public final class ActivityLifecycleIntegration
 
   private boolean isAllActivityCallbacksAvailable;
 
+  /** if the very first Activity has been already created */
   private boolean firstActivityCreated = false;
+  /** if the very first Activity has been already resumed */
   private boolean firstActivityResumed = false;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
@@ -189,7 +191,8 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    if (!firstActivityCreated) {
+    if (!firstActivityCreated && performanceEnabled) {
+      // if Activity has savedInstanceState then its a warm start
       AppStartState.getInstance().setColdStart(savedInstanceState == null);
       firstActivityCreated = true;
     }
@@ -209,7 +212,8 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityResumed(final @NonNull Activity activity) {
-    if (!firstActivityResumed) {
+    if (!firstActivityResumed && performanceEnabled) {
+      // sets App start as finished when the very first activity calls onResume
       AppStartState.getInstance().setAppStartEnd();
       firstActivityResumed = true;
     }

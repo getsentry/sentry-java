@@ -14,8 +14,9 @@ import org.jetbrains.annotations.NotNull;
 /** Sentry initialization class */
 public final class SentryAndroid {
 
-  // static to rely on Class load
+  // static to rely on Class load init.
   private static final @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
+  // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static final long appStart = SystemClock.uptimeMillis();
 
   private SentryAndroid() {}

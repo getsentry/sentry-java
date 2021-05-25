@@ -5,13 +5,24 @@ import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/** AppStartState holds the state of the App Start metric and appStartTime */
 final class AppStartState {
 
   private static final @NotNull AppStartState instance = new AppStartState();
 
+  /** appStart in milliseconds */
   private @Nullable Long appStart;
+
+  /** appStartEnd in milliseconds */
   private @Nullable Long appStartEnd;
+
+  /**
+   * The type of App start coldStart=true -> Cold start coldStart=false -> Warm start coldStart=null
+   * -> unknown yet
+   */
   private @Nullable Boolean coldStart;
+
+  /** appStart as a Date used in the App's Context */
   private @Nullable Date appStartTime;
 
   private AppStartState() {}

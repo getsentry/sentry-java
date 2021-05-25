@@ -105,7 +105,7 @@ final class AndroidOptionsInitializer {
     readDefaultOptionValues(options, context);
 
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, logger, buildInfoProvider));
-    options.addEventProcessor(new PerformanceAndroidEventProcessor());
+    options.addEventProcessor(new PerformanceAndroidEventProcessor(options));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
   }
