@@ -15,6 +15,8 @@ class SentryOkHttpInterceptor(
     private val beforeSpan: BeforeSpanCallback? = null
 ) : Interceptor {
 
+    constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
+
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()
 
