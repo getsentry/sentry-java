@@ -1,5 +1,7 @@
 # Unreleased
 
+* Feat: Add option to enable debug mode in Log4j2 integration (#1492)
+
 # 5.0.0-beta.5
 
 * Feat: OkHttp callback for Customising the Span (#1478)
