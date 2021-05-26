@@ -17,7 +17,9 @@ dryRelease:
 # deploy the current build to maven central
 # promotes the release to maven central
 doRelease:
-	kotlinc -script scripts/release.kts -- -d ../distributions | sh
+	cd scripts
+	kotlinc -script release.kts -- -d ../distributions | sh
+	cd ..
 	./gradlew closeAndReleaseRepository
 
 # clean, build, deploy and promote to maven central

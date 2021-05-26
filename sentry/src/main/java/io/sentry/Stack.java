@@ -61,8 +61,8 @@ final class Stack {
   }
 
   public Stack(final @NotNull Stack stack) {
-    this(stack.logger, new StackItem(stack.items.getFirst()));
-    final Iterator<StackItem> iterator = stack.items.iterator();
+    this(stack.logger, new StackItem(stack.items.getLast()));
+    final Iterator<StackItem> iterator = stack.items.descendingIterator();
     // skip first item (root item)
     if (iterator.hasNext()) {
       iterator.next();

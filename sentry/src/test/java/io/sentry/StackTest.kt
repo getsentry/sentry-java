@@ -13,9 +13,15 @@ class StackTest {
         val client = mock<ISentryClient>()
         val scope = Scope(options)
 
-        val rootItem = StackItem(options, client, scope)
+        lateinit var rootItem: StackItem
 
-        fun getSut() = Stack(options.logger, rootItem)
+        fun getSut(rootItem: StackItem = StackItem(options, client, scope)): Stack {
+            this.rootItem = rootItem
+            return Stack(options.logger, rootItem)
+        }
+
+        fun createStackItem(scope: Scope = Scope(options)) =
+            StackItem(this.options, this.client, scope)
     }
 
     private val fixture = Fixture()
@@ -60,8 +66,12 @@ class StackTest {
 
     @Test
     fun `cloning stack clones stack items`() {
-        val stack = fixture.getSut()
-        stack.push(StackItem(fixture.options, fixture.client, fixture.scope))
+        val stack = fixture.getSut(fixture.createStackItem(Scope(fixture.options).apply {
+            this.setTag("rootTag", "value")
+        }))
+        stack.push(fixture.createStackItem(Scope(fixture.options).apply {
+            this.setTag("childTag", "value")
+        }))
         val clone = Stack(stack)
 
         assertEquals(stack.size(), clone.size())
@@ -76,6 +86,8 @@ class StackTest {
     private fun assertStackItems(item1: StackItem, item2: StackItem) {
         assertNotEquals(item1, item2)
         assertNotEquals(item1.scope, item2.scope)
+        // assert that scope content is the same
+        assertEquals(item1.scope.tags, item2.scope.tags)
         assertEquals(item1.client, item2.client)
     }
 }
