@@ -9,9 +9,9 @@ import kotlinx.coroutines.ThreadContextElement
 /**
  * Sentry context element for [CoroutineContext].
  */
-class SentryContext : ThreadContextElement<IHub>, AbstractCoroutineContextElement(Key) {
+public class SentryContext : ThreadContextElement<IHub>, AbstractCoroutineContextElement(Key) {
 
-    companion object Key : CoroutineContext.Key<SentryContext>
+    private companion object Key : CoroutineContext.Key<SentryContext>
 
     private val hub: IHub = Sentry.getCurrentHub().clone()
 

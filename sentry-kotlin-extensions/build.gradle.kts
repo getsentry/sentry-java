@@ -1,3 +1,5 @@
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -63,4 +65,18 @@ tasks {
         dependsOn(jacocoTestCoverageVerification)
         dependsOn(jacocoTestReport)
     }
+}
+
+tasks.withType<Detekt> {
+    // Target version of the generated JVM bytecode. It is used for type resolution.
+    jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
+
+configure<DetektExtension> {
+    buildUponDefaultConfig = true
+    allRules = true
+}
+
+kotlin {
+    explicitApi()
 }
