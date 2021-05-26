@@ -1,5 +1,7 @@
 # Unreleased
 
+* Feat: Add secondary constructor to SentryOkHttpInterceptor (#1491)
+
 # 5.0.0-beta.5
 
 * Feat: OkHttp callback for Customising the Span (#1478)
