@@ -43,13 +43,13 @@ class SentryAppenderTest {
             whenever(transportFactory.create(any(), any())).thenReturn(transport)
         }
 
-        fun getSut(transportFactory: ITransportFactory? = null, minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null): ExtendedLogger {
+        fun getSut(transportFactory: ITransportFactory? = null, minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, debug: Boolean? = null): ExtendedLogger {
             if (transportFactory != null) {
                 this.transportFactory = transportFactory
             }
             loggerContext.start()
             val config: Configuration = loggerContext.configuration
-            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, this.transportFactory, HubAdapter.getInstance())
+            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, debug, this.transportFactory, HubAdapter.getInstance())
             config.addAppender(appender)
 
             val ref = AppenderRef.createAppenderRef("sentry", null, null)
@@ -369,5 +369,11 @@ class SentryAppenderTest {
                 assertEquals("release from sentry.properties", event.release)
             }, anyOrNull())
         }
+    }
+
+    @Test
+    fun `sets the debug mode`() {
+        fixture.getSut(debug = true)
+        assertTrue(HubAdapter.getInstance().options.isDebug)
     }
 }
