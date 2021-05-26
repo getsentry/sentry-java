@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.User;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -337,9 +338,10 @@ public final class Scope implements Cloneable {
    *
    * @return the tags map
    */
-  @NotNull
-  Map<String, String> getTags() {
-    return tags;
+  @ApiStatus.Internal
+  @SuppressWarnings("NullAway") // tags are never null
+  public @NotNull Map<String, String> getTags() {
+    return CollectionUtils.newConcurrentHashMap(tags);
   }
 
   /**
