@@ -27,6 +27,7 @@ public final class SentryPackage implements IUnknownPropertiesConsumer {
    *     <p>Use {@link SentryPackage#SentryPackage(String, String)} instead.
    */
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public SentryPackage() {
     this("", "");
   }

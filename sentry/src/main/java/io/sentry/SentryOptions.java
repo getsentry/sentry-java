@@ -910,6 +910,7 @@ public class SentryOptions {
   /** @deprecated use {@link SentryOptions#setEnableAutoSessionTracking(boolean)} */
   @Deprecated
   @ApiStatus.ScheduledForRemoval
+  @SuppressWarnings("InlineMeSuggester")
   public void setEnableSessionTracking(final boolean enableSessionTracking) {
     setEnableAutoSessionTracking(enableSessionTracking);
   }

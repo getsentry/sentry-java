@@ -10,7 +10,7 @@ object Config {
     val springKotlinCompatibleLanguageVersion = "1.3"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:4.2.0"
+        val androidGradle = "com.android.tools.build:gradle:4.2.1"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.0"
@@ -99,10 +99,10 @@ object Config {
         val androidxCoreKtx = "androidx.core:core-ktx:1.3.2"
         val robolectric = "org.robolectric:robolectric:4.5.1"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val mockitoInline = "org.mockito:mockito-inline:3.8.0"
-        val awaitility = "org.awaitility:awaitility-kotlin:4.0.3"
+        val mockitoInline = "org.mockito:mockito-inline:3.10.0"
+        val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
-        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.11.1"
+        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.26.0"
     }
 
     object QualityPlugins {
@@ -111,14 +111,14 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "5.11.0"
+        val spotlessVersion = "5.12.5"
         val errorProne = "net.ltgt.errorprone"
-        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:1.3.0"
-        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.36.0"
+        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:2.0.1"
+        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.39.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
         // use RC2 to drop jcenter because of kotlinx-html
-        val detektVersion = "1.17.0-RC2"
+        val detektVersion = "1.17.1"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.5.0"
         val binaryCompatibilityValidator = "binary-compatibility-validator"
@@ -142,16 +142,16 @@ object Config {
     object CompileOnly {
         private val nopenVersion = "1.0.1"
 
-        val jetbrainsAnnotations = "org.jetbrains:annotations:20.1.0"
+        val jetbrainsAnnotations = "org.jetbrains:annotations:21.0.1"
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
-        val errorprone = "com.google.errorprone:error_prone_core:2.5.1"
+        val errorprone = "com.google.errorprone:error_prone_core:2.7.1"
         val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
         val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.1"
     }
 
     object NativePlugins {
-        val nativeBundlePlugin = "com.ydq.android.gradle.build.tool:nativeBundle:1.0.7"
+        val nativeBundlePlugin = "io.github.howardpang:androidNativeBundle:1.0.9"
         val nativeBundleExport = "com.ydq.android.gradle.native-aar.export"
     }
 }
