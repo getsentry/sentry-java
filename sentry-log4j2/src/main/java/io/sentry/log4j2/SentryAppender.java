@@ -38,6 +38,7 @@ public final class SentryAppender extends AbstractAppender {
   private final @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
+  private final @Nullable Boolean debug;
   private final @NotNull IHub hub;
 
   public SentryAppender(
@@ -46,6 +47,7 @@ public final class SentryAppender extends AbstractAppender {
       final @Nullable String dsn,
       final @Nullable Level minimumBreadcrumbLevel,
       final @Nullable Level minimumEventLevel,
+      final @Nullable Boolean debug,
       final @Nullable ITransportFactory transportFactory,
       final @NotNull IHub hub) {
     super(name, filter, null, true, null);
@@ -56,6 +58,7 @@ public final class SentryAppender extends AbstractAppender {
     if (minimumEventLevel != null) {
       this.minimumEventLevel = minimumEventLevel;
     }
+    this.debug = debug;
     this.transportFactory = transportFactory;
     this.hub = hub;
   }
@@ -67,6 +70,7 @@ public final class SentryAppender extends AbstractAppender {
    * @param minimumBreadcrumbLevel The min. level of the breadcrumb.
    * @param minimumEventLevel The min. level of the event.
    * @param dsn the Sentry DSN.
+   * @param debug if Sentry debug mode should be on
    * @param filter The filter, if any, to use.
    * @return The SentryAppender.
    */
@@ -76,6 +80,7 @@ public final class SentryAppender extends AbstractAppender {
       @Nullable @PluginAttribute("minimumBreadcrumbLevel") final Level minimumBreadcrumbLevel,
       @Nullable @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
       @Nullable @PluginAttribute("dsn") final String dsn,
+      @Nullable @PluginAttribute("debug") final Boolean debug,
       @Nullable @PluginElement("filter") final Filter filter) {
 
     if (name == null) {
@@ -88,6 +93,7 @@ public final class SentryAppender extends AbstractAppender {
         dsn,
         minimumBreadcrumbLevel,
         minimumEventLevel,
+        debug,
         null,
         HubAdapter.getInstance());
   }
@@ -100,6 +106,7 @@ public final class SentryAppender extends AbstractAppender {
             options -> {
               options.setEnableExternalConfiguration(true);
               options.setDsn(dsn);
+              options.setDebug(debug);
               options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
               options.setSdkVersion(createSdkVersion(options));
               Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
