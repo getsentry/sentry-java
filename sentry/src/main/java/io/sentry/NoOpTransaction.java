@@ -48,6 +48,7 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   @Deprecated
   @ApiStatus.ScheduledForRemoval
+  @SuppressWarnings("InlineMeSuggester")
   public @Nullable Request getRequest() {
     return null;
   }
@@ -56,6 +57,7 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   @Deprecated
   @ApiStatus.ScheduledForRemoval
+  @SuppressWarnings("InlineMeSuggester")
   public @NotNull Contexts getContexts() {
     return new Contexts();
   }
