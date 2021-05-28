@@ -6,9 +6,11 @@ plugins {
 dependencies {
     constraints {
         project.rootProject.subprojects
-            .filter { !it.name.startsWith("sentry-samples") &&
-                    it.name != project.name &&
-                    it.name != "sentry-test-support" }
+            .filter {
+                !it.name.startsWith("sentry-samples") &&
+                        it.name != project.name &&
+                        it.name != "sentry-test-support"
+            }
             .forEach {
                 api(it)
             }
