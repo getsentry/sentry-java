@@ -1,6 +1,8 @@
 # Unreleased
 
 * Feat: Generate Sentry BOM (#1486)
+* Feat: Add secondary constructor to SentryOkHttpInterceptor (#1491)
+* Feat: Add option to enable debug mode in Log4j2 integration (#1492)
 
 # 5.0.0-beta.5
 
