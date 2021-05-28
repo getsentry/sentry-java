@@ -85,9 +85,7 @@ public final class Scope {
     this.transactionName = scope.transactionName;
     this.session = scope.session;
     this.options = scope.options;
-    final SentryLevel levelRef = scope.level;
-    this.level =
-        levelRef != null ? SentryLevel.valueOf(levelRef.name().toUpperCase(Locale.ROOT)) : null;
+    this.level = scope.level;
 
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;

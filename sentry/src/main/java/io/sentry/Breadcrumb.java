@@ -53,9 +53,7 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer {
       this.data = dataClone;
     }
     this.unknown = CollectionUtils.newConcurrentHashMap(breadcrumb.unknown);
-    final SentryLevel levelRef = breadcrumb.level;
-    this.level =
-        levelRef != null ? SentryLevel.valueOf(levelRef.name().toUpperCase(Locale.ROOT)) : null;
+    this.level = breadcrumb.level;
   }
 
   /**
