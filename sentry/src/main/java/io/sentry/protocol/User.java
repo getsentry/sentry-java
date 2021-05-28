@@ -38,6 +38,17 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
   /** unknown fields, only internal usage. */
   private @Nullable Map<String, @NotNull Object> unknown;
 
+  public User() {}
+
+  public User(final @NotNull User user) {
+    this.email = user.email;
+    this.username = user.username;
+    this.id = user.id;
+    this.ipAddress = user.ipAddress;
+    this.other = CollectionUtils.newConcurrentHashMap(user.other);
+    this.unknown = CollectionUtils.newConcurrentHashMap(user.unknown);
+  }
+
   /**
    * Gets the e-mail address of the user.
    *

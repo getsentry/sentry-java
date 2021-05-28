@@ -80,6 +80,63 @@ public final class Scope implements Cloneable {
     this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
   }
 
+  Scope(final @NotNull Scope scope) {
+    this.transaction = scope.transaction;
+    this.transactionName = scope.transactionName;
+    this.session = scope.session;
+    this.options = scope.options;
+    final SentryLevel levelRef = scope.level;
+    this.level =
+        levelRef != null ? SentryLevel.valueOf(levelRef.name().toUpperCase(Locale.ROOT)) : null;
+
+    final User userRef = scope.user;
+    this.user = userRef != null ? new User(userRef) : null;
+
+    final Request requestRef = scope.request;
+    this.request = requestRef != null ? new Request(requestRef) : null;
+
+    this.fingerprint = new ArrayList<>(scope.fingerprint);
+    this.eventProcessors = new CopyOnWriteArrayList<>(scope.eventProcessors);
+
+    final Queue<Breadcrumb> breadcrumbsRef = scope.breadcrumbs;
+
+    Queue<Breadcrumb> breadcrumbsClone = createBreadcrumbsList(scope.options.getMaxBreadcrumbs());
+
+    for (Breadcrumb item : breadcrumbsRef) {
+      final Breadcrumb breadcrumbClone = new Breadcrumb(item);
+      breadcrumbsClone.add(breadcrumbClone);
+    }
+    this.breadcrumbs = breadcrumbsClone;
+
+    final Map<String, String> tagsRef = scope.tags;
+
+    final Map<String, @NotNull String> tagsClone = new ConcurrentHashMap<>();
+
+    for (Map.Entry<String, String> item : tagsRef.entrySet()) {
+      if (item != null) {
+        tagsClone.put(item.getKey(), item.getValue()); // shallow copy
+      }
+    }
+
+    this.tags = tagsClone;
+
+    final Map<String, Object> extraRef = scope.extra;
+
+    Map<String, @NotNull Object> extraClone = new ConcurrentHashMap<>();
+
+    for (Map.Entry<String, Object> item : extraRef.entrySet()) {
+      if (item != null) {
+        extraClone.put(item.getKey(), item.getValue()); // shallow copy
+      }
+    }
+
+    this.extra = extraClone;
+
+    this.contexts = new Contexts(contexts);
+
+    this.attachments = new CopyOnWriteArrayList<>(scope.attachments);
+  }
+
   /**
    * Returns the Scope's SentryLevel
    *

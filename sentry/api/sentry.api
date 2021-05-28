@@ -1023,6 +1023,7 @@ public class io/sentry/SpanContext : java/lang/Cloneable {
 	protected field op Ljava/lang/String;
 	protected field status Lio/sentry/SpanStatus;
 	protected field tags Ljava/util/Map;
+	public fun <init> (Lio/sentry/SpanContext;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/String;Lio/sentry/SpanId;Ljava/lang/Boolean;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Boolean;)V
@@ -1347,6 +1348,7 @@ public final class io/sentry/protocol/Browser : io/sentry/IUnknownPropertiesCons
 
 public final class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMap, java/lang/Cloneable {
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/Contexts;)V
 	public fun clone ()Lio/sentry/protocol/Contexts;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getApp ()Lio/sentry/protocol/App;
@@ -1552,6 +1554,7 @@ public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownProper
 
 public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/Request;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun clone ()Lio/sentry/protocol/Request;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -1756,6 +1759,7 @@ public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEv
 
 public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/User;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun clone ()Lio/sentry/protocol/User;
 	public synthetic fun clone ()Ljava/lang/Object;

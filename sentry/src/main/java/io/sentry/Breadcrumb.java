@@ -43,6 +43,21 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
     this.timestamp = timestamp;
   }
 
+  Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
+    this.timestamp = breadcrumb.timestamp;
+    this.message = breadcrumb.message;
+    this.type = breadcrumb.type;
+    this.category = breadcrumb.category;
+    final Map<String, Object> dataClone = CollectionUtils.newConcurrentHashMap(breadcrumb.data);
+    if (dataClone != null) {
+      this.data = dataClone;
+    }
+    this.unknown = CollectionUtils.newConcurrentHashMap(breadcrumb.unknown);
+    final SentryLevel levelRef = breadcrumb.level;
+    this.level =
+        levelRef != null ? SentryLevel.valueOf(levelRef.name().toUpperCase(Locale.ROOT)) : null;
+  }
+
   /**
    * Creates HTTP breadcrumb.
    *

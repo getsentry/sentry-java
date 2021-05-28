@@ -30,7 +30,29 @@ class AppTest {
     }
 
     @Test
-    fun `cloning app will have the same values`() {
+    fun `copying app wont have the same references`() {
+        val app = App()
+        app.appBuild = "app build"
+        app.appIdentifier = "app identifier"
+        app.appName = "app name"
+        app.appStartTime = Date()
+        app.appVersion = "app version"
+        app.buildType = "build type"
+        app.deviceAppHash = "device app hash"
+        val unknown = mapOf(Pair("unknown", "unknown"))
+        app.acceptUnknownProperties(unknown)
+
+        val clone = App(app)
+
+        assertNotNull(clone)
+        assertNotSame(app, clone)
+        assertNotSame(app.appStartTime, clone.appStartTime)
+
+        assertNotSame(app.unknown, clone.unknown)
+    }
+
+    @Test
+    fun `copying app will have the same values`() {
         val app = App()
         app.appBuild = "app build"
         app.appIdentifier = "app identifier"
@@ -43,7 +65,7 @@ class AppTest {
         val unknown = mapOf(Pair("unknown", "unknown"))
         app.acceptUnknownProperties(unknown)
 
-        val clone = app.clone()
+        val clone = App(app)
 
         assertEquals("app build", clone.appBuild)
         assertEquals("app identifier", clone.appIdentifier)

@@ -38,6 +38,21 @@ public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 
+  public Gpu() {}
+
+  Gpu(final @NotNull Gpu gpu) {
+    this.name = gpu.name;
+    this.id = gpu.id;
+    this.vendorId = gpu.vendorId;
+    this.vendorName = gpu.vendorName;
+    this.memorySize = gpu.memorySize;
+    this.apiType = gpu.apiType;
+    this.multiThreadedRendering = gpu.multiThreadedRendering;
+    this.version = gpu.version;
+    this.npotSupport = gpu.npotSupport;
+    this.unknown = CollectionUtils.newConcurrentHashMap(gpu.unknown);
+  }
+
   public @Nullable String getName() {
     return name;
   }

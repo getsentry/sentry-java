@@ -102,6 +102,46 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 
+  public Device() {}
+
+  Device(final @NotNull Device device) {
+    this.name = device.name;
+    this.manufacturer = device.manufacturer;
+    this.brand = device.brand;
+    this.family = device.family;
+    this.model = device.model;
+    this.modelId = device.modelId;
+    this.charging = device.charging;
+    this.online = device.online;
+    this.orientation = device.orientation;
+    this.simulator = device.simulator;
+    this.memorySize = device.memorySize;
+    this.freeMemory = device.freeMemory;
+    this.usableMemory = device.usableMemory;
+    this.lowMemory = device.lowMemory;
+    this.storageSize = device.storageSize;
+    this.freeStorage = device.freeStorage;
+    this.externalStorageSize = device.externalStorageSize;
+    this.externalFreeStorage = device.externalFreeStorage;
+    this.screenWidthPixels = device.screenWidthPixels;
+    this.screenHeightPixels = device.screenHeightPixels;
+    this.screenDensity = device.screenDensity;
+    this.screenDpi = device.screenDpi;
+    this.bootTime = device.bootTime;
+    this.id = device.id;
+    this.language = device.language;
+    this.connectionType = device.connectionType;
+    this.batteryTemperature = device.batteryTemperature;
+    this.batteryLevel = device.batteryLevel;
+    final String[] archsRef = device.archs;
+    this.archs = archsRef != null ? archsRef.clone() : null;
+
+    final TimeZone timezoneRef = device.timezone;
+    this.timezone = timezoneRef != null ? (TimeZone) timezoneRef.clone() : null;
+
+    this.unknown = CollectionUtils.newConcurrentHashMap(device.unknown);
+  }
+
   public @Nullable String getName() {
     return name;
   }

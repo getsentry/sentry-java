@@ -80,6 +80,67 @@ class ScopeTest {
     }
 
     @Test
+    fun `copying scope wont have the same references`() {
+        val scope = Scope(SentryOptions())
+        val level = SentryLevel.DEBUG
+        scope.level = level
+
+        val user = User()
+        user.email = "a@a.com"
+        user.id = "123"
+        user.ipAddress = "123.x"
+        user.username = "userName"
+        val others = mutableMapOf(Pair("others", "others"))
+        user.others = others
+
+        scope.user = user
+
+        val request = Request()
+        request.method = "post"
+        request.cookies = "cookies"
+        request.data = "cookies"
+        request.envs = mapOf("env" to "value")
+        request.headers = mapOf("header" to "value")
+        request.others = mapOf("other" to "value")
+        request.queryString = "?foo=bar"
+        request.url = "http://localhost:8080/url"
+
+        scope.request = request
+
+        val fingerprints = mutableListOf("abc", "def")
+        scope.fingerprint = fingerprints
+
+        val breadcrumb = Breadcrumb()
+        breadcrumb.message = "message"
+        breadcrumb.setData("data", "data")
+
+        breadcrumb.type = "type"
+        breadcrumb.level = SentryLevel.DEBUG
+        breadcrumb.category = "category"
+
+        scope.addBreadcrumb(breadcrumb)
+        scope.setTag("tag", "tag")
+        scope.setExtra("extra", "extra")
+
+        val processor = CustomEventProcessor()
+        scope.addEventProcessor(processor)
+
+        val clone = Scope(scope)
+
+        assertNotNull(clone)
+        assertNotSame(scope, clone)
+        assertNotSame(scope.user, clone.user)
+        assertNotSame(scope.request, clone.request)
+        assertNotSame(scope.contexts, clone.contexts)
+        assertNotSame(scope.fingerprint, clone.fingerprint)
+        assertNotSame(scope.breadcrumbs, clone.breadcrumbs)
+        assertNotSame(scope.tags, clone.tags)
+        assertNotSame(scope.extras, clone.extras)
+        assertNotSame(scope.eventProcessors, clone.eventProcessors)
+        assertNotSame(scope.attachments, clone.attachments)
+    }
+
+    @Test
     fun `cloning scope will have the same values`() {
         val scope = Scope(SentryOptions())
         val level = SentryLevel.DEBUG
@@ -135,6 +196,61 @@ class ScopeTest {
     }
 
     @Test
+    fun `copying scope will have the same values`() {
+        val scope = Scope(SentryOptions())
+        val level = SentryLevel.DEBUG
+        scope.level = level
+
+        val user = User()
+        user.id = "123"
+        scope.user = user
+
+        val request = Request()
+        request.method = "get"
+        scope.request = request
+
+        val fingerprints = mutableListOf("abc")
+        scope.fingerprint = fingerprints
+
+        val breadcrumb = Breadcrumb()
+        breadcrumb.message = "message"
+
+        scope.addBreadcrumb(breadcrumb)
+        scope.setTag("tag", "tag")
+        scope.setExtra("extra", "extra")
+
+        val transaction = SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+        scope.setTransaction(transaction)
+
+        val attachment = Attachment("path/log.txt")
+        scope.addAttachment(attachment)
+
+        val clone = Scope(scope)
+
+        assertEquals(SentryLevel.DEBUG, clone.level)
+
+        assertEquals("123", clone.user?.id)
+
+        assertEquals("get", clone.request?.method)
+
+        assertEquals("abc", clone.fingerprint.first())
+
+        assertEquals("message", clone.breadcrumbs.first().message)
+        assertEquals("transaction-name", (clone.span as SentryTracer).name)
+
+        assertEquals("tag", clone.tags["tag"])
+        assertEquals("extra", clone.extras["extra"])
+        assertEquals(transaction, clone.span)
+
+        assertEquals(1, clone.attachments.size)
+        val actual = clone.attachments.first()
+        assertEquals(attachment.pathname, actual.pathname)
+        assertArrayEquals(attachment.bytes ?: byteArrayOf(), actual.bytes ?: byteArrayOf())
+        assertEquals(attachment.filename, actual.filename)
+        assertEquals(attachment.contentType, actual.contentType)
+    }
+
+    @Test
     fun `cloning scope and changing the original values wont change the clone values`() {
         val scope = Scope(SentryOptions())
         val level = SentryLevel.DEBUG
@@ -165,6 +281,82 @@ class ScopeTest {
         scope.addAttachment(attachment)
 
         val clone = scope.clone()
+
+        scope.level = SentryLevel.FATAL
+        user.id = "456"
+        request.method = "post"
+
+        scope.setTransaction(SentryTracer(TransactionContext("newTransaction", "op"), NoOpHub.getInstance()))
+
+        // because you can only set a new list to scope
+        val newFingerprints = mutableListOf("def", "ghf")
+        scope.fingerprint = newFingerprints
+
+        breadcrumb.message = "newMessage"
+        scope.addBreadcrumb(Breadcrumb())
+        scope.setTag("tag", "newTag")
+        scope.setTag("otherTag", "otherTag")
+        scope.setExtra("extra", "newExtra")
+        scope.setExtra("otherExtra", "otherExtra")
+
+        scope.addEventProcessor(processor)
+
+        assertEquals(SentryLevel.DEBUG, clone.level)
+
+        assertEquals("123", clone.user?.id)
+
+        assertEquals("get", clone.request?.method)
+
+        assertEquals("abc", clone.fingerprint.first())
+        assertEquals(1, clone.fingerprint.size)
+
+        assertEquals(1, clone.breadcrumbs.size)
+        assertEquals("message", clone.breadcrumbs.first().message)
+
+        assertEquals("tag", clone.tags["tag"])
+        assertEquals(1, clone.tags.size)
+        assertEquals("extra", clone.extras["extra"])
+        assertEquals(1, clone.extras.size)
+        assertEquals(1, clone.eventProcessors.size)
+        assertNull(clone.span)
+
+        scope.addAttachment(Attachment("path/image.png"))
+
+        assertEquals(1, clone.attachments.size)
+        assertTrue(clone.attachments is CopyOnWriteArrayList)
+    }
+
+    @Test
+    fun `copying scope and changing the original values wont change the clone values`() {
+        val scope = Scope(SentryOptions())
+        val level = SentryLevel.DEBUG
+        scope.level = level
+
+        val user = User()
+        user.id = "123"
+        scope.user = user
+
+        val request = Request()
+        request.method = "get"
+        scope.request = request
+
+        val fingerprints = mutableListOf("abc")
+        scope.fingerprint = fingerprints
+
+        val breadcrumb = Breadcrumb()
+        breadcrumb.message = "message"
+
+        scope.addBreadcrumb(breadcrumb)
+        scope.setTag("tag", "tag")
+        scope.setExtra("extra", "extra")
+
+        val processor = CustomEventProcessor()
+        scope.addEventProcessor(processor)
+
+        val attachment = Attachment("path/log.txt")
+        scope.addAttachment(attachment)
+
+        val clone = Scope(scope)
 
         scope.level = SentryLevel.FATAL
         user.id = "456"

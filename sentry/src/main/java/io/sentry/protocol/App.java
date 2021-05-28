@@ -32,6 +32,19 @@ public final class App implements IUnknownPropertiesConsumer, Cloneable {
   /** Internal build ID as it appears on the platform. */
   private @Nullable String appBuild;
 
+  public App() {}
+
+  App(final @NotNull App app) {
+    this.appBuild = app.appBuild;
+    this.appIdentifier = app.appIdentifier;
+    this.appName = app.appName;
+    this.appStartTime = app.appStartTime;
+    this.appVersion = app.appVersion;
+    this.buildType = app.buildType;
+    this.deviceAppHash = app.deviceAppHash;
+    this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
+  }
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 

@@ -25,6 +25,15 @@ public final class SentryRuntime implements IUnknownPropertiesConsumer, Cloneabl
    */
   private @Nullable String rawDescription;
 
+  public SentryRuntime() {}
+
+  SentryRuntime(final @NotNull SentryRuntime sentryRuntime) {
+    this.name = sentryRuntime.name;
+    this.version = sentryRuntime.version;
+    this.rawDescription = sentryRuntime.rawDescription;
+    this.unknown = CollectionUtils.newConcurrentHashMap(sentryRuntime.unknown);
+  }
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 

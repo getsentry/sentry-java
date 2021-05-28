@@ -38,6 +38,18 @@ public final class OperatingSystem implements IUnknownPropertiesConsumer, Clonea
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 
+  public OperatingSystem() {}
+
+  OperatingSystem(final @NotNull OperatingSystem operatingSystem) {
+    this.name = operatingSystem.name;
+    this.version = operatingSystem.version;
+    this.rawDescription = operatingSystem.rawDescription;
+    this.build = operatingSystem.build;
+    this.kernelVersion = operatingSystem.kernelVersion;
+    this.rooted = operatingSystem.rooted;
+    this.unknown = CollectionUtils.newConcurrentHashMap(operatingSystem.unknown);
+  }
+
   public @Nullable String getName() {
     return name;
   }

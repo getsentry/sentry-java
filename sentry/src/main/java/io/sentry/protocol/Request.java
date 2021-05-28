@@ -99,6 +99,20 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
+  public Request() {}
+
+  public Request(final @NotNull Request request) {
+    this.url = request.url;
+    this.cookies = request.cookies;
+    this.method = request.method;
+    this.queryString = request.queryString;
+    this.headers = CollectionUtils.newConcurrentHashMap(request.headers);
+    this.env = CollectionUtils.newConcurrentHashMap(request.env);
+    this.other = CollectionUtils.newConcurrentHashMap(request.other);
+    this.unknown = CollectionUtils.newConcurrentHashMap(request.unknown);
+    this.data = request.data;
+  }
+
   public @Nullable String getUrl() {
     return url;
   }

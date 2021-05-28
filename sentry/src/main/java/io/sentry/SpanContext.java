@@ -67,6 +67,25 @@ public class SpanContext implements Cloneable {
     this.sampled = sampled;
   }
 
+  /**
+   * Copy constructor.
+   *
+   * @param spanContext the spanContext to copy
+   */
+  public SpanContext(final @NotNull SpanContext spanContext) {
+    this.traceId = spanContext.traceId;
+    this.spanId = spanContext.spanId;
+    this.parentSpanId = spanContext.parentSpanId;
+    this.sampled = spanContext.sampled;
+    this.op = spanContext.op;
+    this.description = spanContext.description;
+    this.status = spanContext.status;
+    final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(spanContext.tags);
+    if (copiedTags != null) {
+      this.tags = copiedTags;
+    }
+  }
+
   public void setOperation(final @NotNull String operation) {
     this.op = Objects.requireNonNull(operation, "operation is required");
   }

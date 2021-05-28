@@ -19,6 +19,14 @@ public final class Browser implements IUnknownPropertiesConsumer, Cloneable {
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 
+  public Browser() {}
+
+  Browser(final @NotNull Browser browser) {
+    this.name = browser.name;
+    this.version = browser.version;
+    this.unknown = CollectionUtils.newConcurrentHashMap(browser.unknown);
+  }
+
   public @Nullable String getName() {
     return name;
   }
