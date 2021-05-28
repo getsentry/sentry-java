@@ -44,7 +44,7 @@ import org.jetbrains.annotations.TestOnly;
  * csrftoken=u32t4o3tb3gg43; _gat=1;", "headers": { "content-type": "text/html" }, "env": {
  * "REMOTE_ADDR": "192.168.0.1" } } } ```
  */
-public final class Request implements Cloneable, IUnknownPropertiesConsumer {
+public final class Request implements IUnknownPropertiesConsumer {
   /**
    * The URL of the request if available.
    *
@@ -192,23 +192,5 @@ public final class Request implements Cloneable, IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
-  }
-
-  /**
-   * Clones an User aka deep copy
-   *
-   * @return the cloned User
-   * @throws CloneNotSupportedException if the User is not cloneable
-   */
-  @Override
-  public @NotNull Request clone() throws CloneNotSupportedException {
-    final Request clone = (Request) super.clone();
-
-    clone.headers = CollectionUtils.newConcurrentHashMap(headers);
-    clone.env = CollectionUtils.newConcurrentHashMap(env);
-    clone.other = CollectionUtils.newConcurrentHashMap(other);
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    return clone;
   }
 }

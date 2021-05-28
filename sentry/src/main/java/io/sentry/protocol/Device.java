@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class Device implements IUnknownPropertiesConsumer, Cloneable {
+public final class Device implements IUnknownPropertiesConsumer {
   public static final String TYPE = "device";
 
   /** Name of the device. */
@@ -394,27 +394,6 @@ public final class Device implements IUnknownPropertiesConsumer, Cloneable {
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
-  }
-
-  /**
-   * Clones a Device aka deep copy
-   *
-   * @return the cloned Device
-   * @throws CloneNotSupportedException if object is not cloneable
-   */
-  @Override
-  public @NotNull Device clone() throws CloneNotSupportedException {
-    final Device clone = (Device) super.clone();
-
-    final String[] archsRef = this.archs;
-    clone.archs = archsRef != null ? archsRef.clone() : null;
-
-    final TimeZone timezoneRef = this.timezone;
-    clone.timezone = timezoneRef != null ? (TimeZone) timezoneRef.clone() : null;
-
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    return clone;
   }
 
   public enum DeviceOrientation {

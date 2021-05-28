@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Scope data to be sent with the event */
-public final class Scope implements Cloneable {
+public final class Scope {
 
   /** Scope's SentryLevel */
   private @Nullable SentryLevel level;
@@ -565,70 +565,6 @@ public final class Scope implements Cloneable {
    */
   private @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
     return SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb));
-  }
-
-  /**
-   * Clones a Scope aka deep copy
-   *
-   * @return the cloned Scope
-   * @throws CloneNotSupportedException if object is not cloneable
-   */
-  @Override
-  public @NotNull Scope clone() throws CloneNotSupportedException {
-    final Scope clone = (Scope) super.clone();
-
-    final SentryLevel levelRef = level;
-    clone.level =
-        levelRef != null ? SentryLevel.valueOf(levelRef.name().toUpperCase(Locale.ROOT)) : null;
-
-    final User userRef = user;
-    clone.user = userRef != null ? userRef.clone() : null;
-
-    final Request requestRef = request;
-    clone.request = requestRef != null ? requestRef.clone() : null;
-
-    clone.fingerprint = new ArrayList<>(fingerprint);
-    clone.eventProcessors = new CopyOnWriteArrayList<>(eventProcessors);
-
-    final Queue<Breadcrumb> breadcrumbsRef = breadcrumbs;
-
-    Queue<Breadcrumb> breadcrumbsClone = createBreadcrumbsList(options.getMaxBreadcrumbs());
-
-    for (Breadcrumb item : breadcrumbsRef) {
-      final Breadcrumb breadcrumbClone = item.clone();
-      breadcrumbsClone.add(breadcrumbClone);
-    }
-    clone.breadcrumbs = breadcrumbsClone;
-
-    final Map<String, String> tagsRef = tags;
-
-    final Map<String, @NotNull String> tagsClone = new ConcurrentHashMap<>();
-
-    for (Map.Entry<String, String> item : tagsRef.entrySet()) {
-      if (item != null) {
-        tagsClone.put(item.getKey(), item.getValue()); // shallow copy
-      }
-    }
-
-    clone.tags = tagsClone;
-
-    final Map<String, Object> extraRef = extra;
-
-    Map<String, @NotNull Object> extraClone = new ConcurrentHashMap<>();
-
-    for (Map.Entry<String, Object> item : extraRef.entrySet()) {
-      if (item != null) {
-        extraClone.put(item.getKey(), item.getValue()); // shallow copy
-      }
-    }
-
-    clone.extra = extraClone;
-
-    clone.contexts = contexts.clone();
-
-    clone.attachments = new CopyOnWriteArrayList<>(attachments);
-
-    return clone;
   }
 
   /**

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class App implements IUnknownPropertiesConsumer, Cloneable {
+public final class App implements IUnknownPropertiesConsumer {
   public static final String TYPE = "app";
 
   /** Version-independent application identifier, often a dotted bundle ID. */
@@ -116,20 +116,5 @@ public final class App implements IUnknownPropertiesConsumer, Cloneable {
   @Override
   public void acceptUnknownProperties(@NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
-  }
-
-  /**
-   * Clones an App aka deep copy
-   *
-   * @return the cloned App
-   * @throws CloneNotSupportedException if object is not cloneable
-   */
-  @Override
-  public @NotNull App clone() throws CloneNotSupportedException {
-    final App clone = (App) super.clone();
-
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    return clone;
   }
 }

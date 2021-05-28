@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryRuntime implements IUnknownPropertiesConsumer, Cloneable {
+public final class SentryRuntime implements IUnknownPropertiesConsumer {
   public static final String TYPE = "runtime";
 
   /** Runtime name. */
@@ -71,20 +71,5 @@ public final class SentryRuntime implements IUnknownPropertiesConsumer, Cloneabl
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
-  }
-
-  /**
-   * Clones a SentryRuntime aka deep copy
-   *
-   * @return the cloned SentryRuntime
-   * @throws CloneNotSupportedException if object is not cloneable
-   */
-  @Override
-  public @NotNull SentryRuntime clone() throws CloneNotSupportedException {
-    final SentryRuntime clone = (SentryRuntime) super.clone();
-
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    return clone;
   }
 }

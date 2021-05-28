@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 @Open
-public class SpanContext implements Cloneable {
+public class SpanContext {
   public static final String TYPE = "trace";
 
   /** Determines which trace the Span belongs to. */
@@ -142,15 +142,5 @@ public class SpanContext implements Cloneable {
 
   void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
-  }
-
-  @Override
-  public SpanContext clone() throws CloneNotSupportedException {
-    final SpanContext clone = (SpanContext) super.clone();
-    final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(this.tags);
-    if (copiedTags != null) {
-      clone.tags = copiedTags;
-    }
-    return clone;
   }
 }

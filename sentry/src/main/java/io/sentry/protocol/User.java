@@ -15,7 +15,7 @@ import org.jetbrains.annotations.TestOnly;
  * <p>```json { "user": { "id": "unique_id", "username": "my_user", "email": "foo@example.com",
  * "ip_address": "127.0.0.1", "subscription": "basic" } } ```
  */
-public final class User implements Cloneable, IUnknownPropertiesConsumer {
+public final class User implements IUnknownPropertiesConsumer {
 
   /** Email address of the user. */
   private @Nullable String email;
@@ -159,21 +159,5 @@ public final class User implements Cloneable, IUnknownPropertiesConsumer {
   @Nullable
   Map<String, @NotNull Object> getUnknown() {
     return unknown;
-  }
-
-  /**
-   * Clones an User aka deep copy
-   *
-   * @return the cloned User
-   * @throws CloneNotSupportedException if the User is not cloneable
-   */
-  @Override
-  public @NotNull User clone() throws CloneNotSupportedException {
-    final User clone = (User) super.clone();
-
-    clone.other = CollectionUtils.newConcurrentHashMap(other);
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    return clone;
   }
 }
