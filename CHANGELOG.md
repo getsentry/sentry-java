@@ -2,6 +2,7 @@
 
 * Feat: Add secondary constructor to SentryOkHttpInterceptor (#1491)
 * Feat: Add option to enable debug mode in Log4j2 integration (#1492)
+* Ref: Replace clone() with copy constructor (#1496)
 
 # 5.0.0-beta.5
 
