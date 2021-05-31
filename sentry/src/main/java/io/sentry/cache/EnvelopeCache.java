@@ -57,20 +57,20 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
 
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
-    final int cacheDirSize = options.getCacheDirSize();
+    final int maxCacheItems = options.getMaxCacheItems();
     if (cacheDirPath == null) {
-      options.getLogger().log(WARNING, "cacheDirPath is null, returning NoOpEnvelopeCache");
+      options.getLogger().log(WARNING, "maxCacheItems is null, returning NoOpEnvelopeCache");
       return NoOpEnvelopeCache.getInstance();
     } else {
-      return new EnvelopeCache(options, cacheDirPath, cacheDirSize);
+      return new EnvelopeCache(options, cacheDirPath, maxCacheItems);
     }
   }
 
   private EnvelopeCache(
       final @NotNull SentryOptions options,
       final @NotNull String cacheDirPath,
-      final int cacheDirSize) {
-    super(options, cacheDirPath, cacheDirSize);
+      final int maxCacheItems) {
+    super(options, cacheDirPath, maxCacheItems);
   }
 
   @Override

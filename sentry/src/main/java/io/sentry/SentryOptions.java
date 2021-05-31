@@ -111,11 +111,10 @@ public class SentryOptions {
   /** The cache dir. path for caching offline events */
   private @Nullable String cacheDirPath;
 
-  /** The cache dir. size for capping the number of events Default is 30 */
-  private int cacheDirSize = 30;
+  private int maxCacheItems = 30;
 
   /** Max. queue size before flushing events/envelopes to the disk */
-  private int maxQueueSize = cacheDirSize;
+  private int maxQueueSize = maxCacheItems;
 
   /**
    * This variable controls the total amount of breadcrumbs that should be captured Default is 100
@@ -602,19 +601,23 @@ public class SentryOptions {
   /**
    * Returns the cache dir. size Default is 30
    *
+   * @deprecated use {{@link SentryOptions#getMaxCacheItems()} }
    * @return the cache dir. size
    */
+  @Deprecated
   public int getCacheDirSize() {
-    return cacheDirSize;
+    return maxCacheItems;
   }
 
   /**
    * Sets the cache dir. size Default is 30
    *
+   * @deprecated use {{@link SentryOptions#setCacheDirSize(int)} }
    * @param cacheDirSize the cache dir. size
    */
+  @Deprecated
   public void setCacheDirSize(int cacheDirSize) {
-    this.cacheDirSize = cacheDirSize;
+    maxCacheItems = cacheDirSize;
   }
 
   /**
@@ -1374,6 +1377,24 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setMaxSpans(int maxSpans) {
     this.maxSpans = maxSpans;
+  }
+
+  /**
+   * The max cache items for capping the number of events Default is 30
+   *
+   * @return the maxCacheItems
+   */
+  public int getMaxCacheItems() {
+    return maxCacheItems;
+  }
+
+  /**
+   * Sets the max cache items for capping the number of events
+   *
+   * @param maxCacheItems the maxCacheItems
+   */
+  public void setMaxCacheItems(int maxCacheItems) {
+    this.maxCacheItems = maxCacheItems;
   }
 
   /** The BeforeSend callback */
