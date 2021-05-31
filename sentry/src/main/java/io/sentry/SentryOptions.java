@@ -271,6 +271,9 @@ public class SentryOptions {
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
 
+  /** Registers hook that flushes {@link Hub} when main thread shuts down. */
+  private boolean enableShutdownHook = true;
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -1374,6 +1377,24 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setMaxSpans(int maxSpans) {
     this.maxSpans = maxSpans;
+  }
+
+  /**
+   * True if ShutdownHookIntegration is enabled, false otherwise.
+   *
+   * @return true if enabled or false otherwise.
+   */
+  public boolean isEnableShutdownHook() {
+    return enableShutdownHook;
+  }
+
+  /**
+   * Enables or disable ShutdownHookIntegration.
+   *
+   * @param enableShutdownHook true if enabled or false otherwise.
+   */
+  public void setEnableShutdownHook(boolean enableShutdownHook) {
+    this.enableShutdownHook = enableShutdownHook;
   }
 
   /** The BeforeSend callback */
