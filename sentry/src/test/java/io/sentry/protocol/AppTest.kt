@@ -7,8 +7,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class AppTest {
+
     @Test
-    fun `cloning app wont have the same references`() {
+    fun `copying app wont have the same references`() {
         val app = App()
         app.appBuild = "app build"
         app.appIdentifier = "app identifier"
@@ -20,7 +21,7 @@ class AppTest {
         val unknown = mapOf(Pair("unknown", "unknown"))
         app.acceptUnknownProperties(unknown)
 
-        val clone = app.clone()
+        val clone = App(app)
 
         assertNotNull(clone)
         assertNotSame(app, clone)
@@ -30,7 +31,7 @@ class AppTest {
     }
 
     @Test
-    fun `cloning app will have the same values`() {
+    fun `copying app will have the same values`() {
         val app = App()
         app.appBuild = "app build"
         app.appIdentifier = "app identifier"
@@ -43,7 +44,7 @@ class AppTest {
         val unknown = mapOf(Pair("unknown", "unknown"))
         app.acceptUnknownProperties(unknown)
 
-        val clone = app.clone()
+        val clone = App(app)
 
         assertEquals("app build", clone.appBuild)
         assertEquals("app identifier", clone.appIdentifier)

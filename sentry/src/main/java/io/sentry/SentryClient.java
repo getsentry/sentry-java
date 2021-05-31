@@ -543,16 +543,10 @@ public final class SentryClient implements ISentryClient {
         }
       }
       final Contexts contexts = sentryBaseEvent.getContexts();
-      try {
-        for (Map.Entry<String, Object> entry : scope.getContexts().clone().entrySet()) {
-          if (!contexts.containsKey(entry.getKey())) {
-            contexts.put(entry.getKey(), entry.getValue());
-          }
+      for (Map.Entry<String, Object> entry : new Contexts(scope.getContexts()).entrySet()) {
+        if (!contexts.containsKey(entry.getKey())) {
+          contexts.put(entry.getKey(), entry.getValue());
         }
-      } catch (CloneNotSupportedException e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "An error has occurred when cloning Contexts", e);
       }
     }
     return sentryBaseEvent;

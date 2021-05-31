@@ -8,10 +8,11 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 
 class UserTest {
+
     @Test
-    fun `cloning user wont have the same references`() {
+    fun `copying user wont have the same references`() {
         val user = createUser()
-        val clone = user.clone()
+        val clone = User(user)
 
         assertNotNull(clone)
         assertNotSame(user, clone)
@@ -22,9 +23,9 @@ class UserTest {
     }
 
     @Test
-    fun `cloning user will have the same values`() {
+    fun `copying user will have the same values`() {
         val user = createUser()
-        val clone = user.clone()
+        val clone = User(user)
 
         assertEquals("a@a.com", clone.email)
         assertEquals("123", clone.id)
@@ -35,9 +36,9 @@ class UserTest {
     }
 
     @Test
-    fun `cloning user and changing the original values wont change the clone values`() {
+    fun `copying user and changing the original values wont change the clone values`() {
         val user = createUser()
-        val clone = user.clone()
+        val clone = User(user)
 
         user.email = "b@b.com"
         user.id = "456"

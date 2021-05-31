@@ -18,8 +18,9 @@ import kotlin.test.assertTrue
 import org.junit.Assert.assertArrayEquals
 
 class ScopeTest {
+
     @Test
-    fun `cloning scope wont have the same references`() {
+    fun `copying scope wont have the same references`() {
         val scope = Scope(SentryOptions())
         val level = SentryLevel.DEBUG
         scope.level = level
@@ -64,7 +65,7 @@ class ScopeTest {
         val processor = CustomEventProcessor()
         scope.addEventProcessor(processor)
 
-        val clone = scope.clone()
+        val clone = Scope(scope)
 
         assertNotNull(clone)
         assertNotSame(scope, clone)
@@ -80,7 +81,7 @@ class ScopeTest {
     }
 
     @Test
-    fun `cloning scope will have the same values`() {
+    fun `copying scope will have the same values`() {
         val scope = Scope(SentryOptions())
         val level = SentryLevel.DEBUG
         scope.level = level
@@ -109,7 +110,7 @@ class ScopeTest {
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
 
-        val clone = scope.clone()
+        val clone = Scope(scope)
 
         assertEquals(SentryLevel.DEBUG, clone.level)
 
@@ -135,7 +136,7 @@ class ScopeTest {
     }
 
     @Test
-    fun `cloning scope and changing the original values wont change the clone values`() {
+    fun `copying scope and changing the original values wont change the clone values`() {
         val scope = Scope(SentryOptions())
         val level = SentryLevel.DEBUG
         scope.level = level
@@ -164,7 +165,7 @@ class ScopeTest {
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
 
-        val clone = scope.clone()
+        val clone = Scope(scope)
 
         scope.level = SentryLevel.FATAL
         user.id = "456"
@@ -750,7 +751,7 @@ class ScopeTest {
         scope.clear()
         assertTrue(scope.attachments is CopyOnWriteArrayList)
 
-        val cloned = scope.clone()
+        val cloned = Scope(scope)
         assertTrue(cloned.attachments is CopyOnWriteArrayList)
     }
 

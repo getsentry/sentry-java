@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** Series of application events */
-public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
+public final class Breadcrumb implements IUnknownPropertiesConsumer {
 
   /** A timestamp representing when the breadcrumb occurred. */
   private final @NotNull Date timestamp;
@@ -41,6 +41,19 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
    */
   public Breadcrumb(final @NotNull Date timestamp) {
     this.timestamp = timestamp;
+  }
+
+  Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
+    this.timestamp = breadcrumb.timestamp;
+    this.message = breadcrumb.message;
+    this.type = breadcrumb.type;
+    this.category = breadcrumb.category;
+    final Map<String, Object> dataClone = CollectionUtils.newConcurrentHashMap(breadcrumb.data);
+    if (dataClone != null) {
+      this.data = dataClone;
+    }
+    this.unknown = CollectionUtils.newConcurrentHashMap(breadcrumb.unknown);
+    this.level = breadcrumb.level;
   }
 
   /**
@@ -235,28 +248,5 @@ public final class Breadcrumb implements Cloneable, IUnknownPropertiesConsumer {
   @Nullable
   Map<String, Object> getUnknown() {
     return unknown;
-  }
-
-  /**
-   * Clones the breadcrumb aka deep copy
-   *
-   * @return the cloned breadcrumb
-   * @throws CloneNotSupportedException if a breadcrumb is not cloneable
-   */
-  @Override
-  public @NotNull Breadcrumb clone() throws CloneNotSupportedException {
-    final Breadcrumb clone = (Breadcrumb) super.clone();
-
-    final Map<String, Object> dataCopy = CollectionUtils.newConcurrentHashMap(this.data);
-    if (dataCopy != null) {
-      clone.data = dataCopy;
-    }
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    final SentryLevel levelRef = level;
-    clone.level =
-        levelRef != null ? SentryLevel.valueOf(levelRef.name().toUpperCase(Locale.ROOT)) : null;
-
-    return clone;
   }
 }

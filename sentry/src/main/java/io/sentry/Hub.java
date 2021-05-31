@@ -429,16 +429,9 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
-      Scope clone = null;
-      try {
-        clone = item.getScope().clone();
-      } catch (CloneNotSupportedException e) {
-        options.getLogger().log(SentryLevel.ERROR, "An error has occurred when cloning a Scope", e);
-      }
-      if (clone != null) {
-        final StackItem newItem = new StackItem(options, item.getClient(), clone);
-        stack.push(newItem);
-      }
+      final StackItem newItem =
+          new StackItem(options, item.getClient(), new Scope(item.getScope()));
+      stack.push(newItem);
     }
   }
 

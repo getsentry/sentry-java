@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class OperatingSystem implements IUnknownPropertiesConsumer, Cloneable {
+public final class OperatingSystem implements IUnknownPropertiesConsumer {
   public static final String TYPE = "os";
 
   /** Name of the operating system. */
@@ -37,6 +37,18 @@ public final class OperatingSystem implements IUnknownPropertiesConsumer, Clonea
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
+
+  public OperatingSystem() {}
+
+  OperatingSystem(final @NotNull OperatingSystem operatingSystem) {
+    this.name = operatingSystem.name;
+    this.version = operatingSystem.version;
+    this.rawDescription = operatingSystem.rawDescription;
+    this.build = operatingSystem.build;
+    this.kernelVersion = operatingSystem.kernelVersion;
+    this.rooted = operatingSystem.rooted;
+    this.unknown = CollectionUtils.newConcurrentHashMap(operatingSystem.unknown);
+  }
 
   public @Nullable String getName() {
     return name;
@@ -96,20 +108,5 @@ public final class OperatingSystem implements IUnknownPropertiesConsumer, Clonea
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
-  }
-
-  /**
-   * Clones an OperatingSystem aka deep copy
-   *
-   * @return the cloned OperatingSystem
-   * @throws CloneNotSupportedException if object is not cloneable
-   */
-  @Override
-  public @NotNull OperatingSystem clone() throws CloneNotSupportedException {
-    final OperatingSystem clone = (OperatingSystem) super.clone();
-
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    return clone;
   }
 }

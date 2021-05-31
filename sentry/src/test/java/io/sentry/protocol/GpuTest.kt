@@ -6,13 +6,14 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class GpuTest {
+
     @Test
-    fun `cloning gpu wont have the same references`() {
+    fun `copying gpu wont have the same references`() {
         val gpu = Gpu()
         val unknown = mapOf(Pair("unknown", "unknown"))
         gpu.acceptUnknownProperties(unknown)
 
-        val clone = gpu.clone()
+        val clone = Gpu(gpu)
 
         assertNotNull(clone)
         assertNotSame(gpu, clone)
@@ -21,7 +22,7 @@ class GpuTest {
     }
 
     @Test
-    fun `cloning gpu will have the same values`() {
+    fun `copying gpu will have the same values`() {
         val gpu = Gpu()
         gpu.name = "name"
         gpu.id = 10
@@ -35,7 +36,7 @@ class GpuTest {
         val unknown = mapOf(Pair("unknown", "unknown"))
         gpu.acceptUnknownProperties(unknown)
 
-        val clone = gpu.clone()
+        val clone = Gpu(gpu)
 
         assertEquals("name", clone.name)
         assertEquals(10, clone.id)

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
+public final class Gpu implements IUnknownPropertiesConsumer {
   public static final String TYPE = "gpu";
 
   /** The name of the graphics device. */
@@ -37,6 +37,21 @@ public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
+
+  public Gpu() {}
+
+  Gpu(final @NotNull Gpu gpu) {
+    this.name = gpu.name;
+    this.id = gpu.id;
+    this.vendorId = gpu.vendorId;
+    this.vendorName = gpu.vendorName;
+    this.memorySize = gpu.memorySize;
+    this.apiType = gpu.apiType;
+    this.multiThreadedRendering = gpu.multiThreadedRendering;
+    this.version = gpu.version;
+    this.npotSupport = gpu.npotSupport;
+    this.unknown = CollectionUtils.newConcurrentHashMap(gpu.unknown);
+  }
 
   public @Nullable String getName() {
     return name;
@@ -120,20 +135,5 @@ public final class Gpu implements IUnknownPropertiesConsumer, Cloneable {
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
-  }
-
-  /**
-   * Clones a Gpu aka deep copy
-   *
-   * @return the cloned Gpu
-   * @throws CloneNotSupportedException if object is not cloneable
-   */
-  @Override
-  public @NotNull Gpu clone() throws CloneNotSupportedException {
-    final Gpu clone = (Gpu) super.clone();
-
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    return clone;
   }
 }

@@ -7,8 +7,36 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Contexts extends ConcurrentHashMap<String, Object> implements Cloneable {
+public final class Contexts extends ConcurrentHashMap<String, Object> {
   private static final long serialVersionUID = 252445813254943011L;
+
+  public Contexts() {}
+
+  public Contexts(final @NotNull Contexts contexts) {
+    for (Map.Entry<String, Object> entry : contexts.entrySet()) {
+      if (entry != null) {
+        Object value = entry.getValue();
+        if (App.TYPE.equals(entry.getKey()) && value instanceof App) {
+          this.setApp(new App((App) value));
+        } else if (Browser.TYPE.equals(entry.getKey()) && value instanceof Browser) {
+          this.setBrowser(new Browser((Browser) value));
+        } else if (Device.TYPE.equals(entry.getKey()) && value instanceof Device) {
+          this.setDevice(new Device((Device) value));
+        } else if (OperatingSystem.TYPE.equals(entry.getKey())
+            && value instanceof OperatingSystem) {
+          this.setOperatingSystem(new OperatingSystem((OperatingSystem) value));
+        } else if (SentryRuntime.TYPE.equals(entry.getKey()) && value instanceof SentryRuntime) {
+          this.setRuntime(new SentryRuntime((SentryRuntime) value));
+        } else if (Gpu.TYPE.equals(entry.getKey()) && value instanceof Gpu) {
+          this.setGpu(new Gpu((Gpu) value));
+        } else if (SpanContext.TYPE.equals(entry.getKey()) && value instanceof SpanContext) {
+          this.setTrace(new SpanContext((SpanContext) value));
+        } else {
+          this.put(entry.getKey(), value);
+        }
+      }
+    }
+  }
 
   private @Nullable <T> T toContextType(final @NotNull String key, final @NotNull Class<T> clazz) {
     final Object item = get(key);
@@ -70,34 +98,5 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
 
   public void setGpu(final @NotNull Gpu gpu) {
     this.put(Gpu.TYPE, gpu);
-  }
-
-  @Override
-  public @NotNull Contexts clone() throws CloneNotSupportedException {
-    final Contexts clone = new Contexts();
-    for (Map.Entry<String, Object> entry : entrySet()) {
-      if (entry != null) {
-        Object value = entry.getValue();
-        if (App.TYPE.equals(entry.getKey()) && value instanceof App) {
-          clone.setApp(((App) value).clone());
-        } else if (Browser.TYPE.equals(entry.getKey()) && value instanceof Browser) {
-          clone.setBrowser(((Browser) value).clone());
-        } else if (Device.TYPE.equals(entry.getKey()) && value instanceof Device) {
-          clone.setDevice(((Device) value).clone());
-        } else if (OperatingSystem.TYPE.equals(entry.getKey())
-            && value instanceof OperatingSystem) {
-          clone.setOperatingSystem(((OperatingSystem) value).clone());
-        } else if (SentryRuntime.TYPE.equals(entry.getKey()) && value instanceof SentryRuntime) {
-          clone.setRuntime(((SentryRuntime) value).clone());
-        } else if (Gpu.TYPE.equals(entry.getKey()) && value instanceof Gpu) {
-          clone.setGpu(((Gpu) value).clone());
-        } else if (SpanContext.TYPE.equals(entry.getKey()) && value instanceof SpanContext) {
-          clone.setTrace(((SpanContext) value).clone());
-        } else {
-          clone.put(entry.getKey(), value);
-        }
-      }
-    }
-    return clone;
   }
 }

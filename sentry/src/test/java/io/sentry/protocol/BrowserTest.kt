@@ -6,15 +6,16 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class BrowserTest {
+
     @Test
-    fun `cloning browser wont have the same references`() {
+    fun `copying browser wont have the same references`() {
         val browser = Browser()
         browser.name = "browser name"
         browser.version = "browser version"
         val unknown = mapOf(Pair("unknown", "unknown"))
         browser.acceptUnknownProperties(unknown)
 
-        val clone = browser.clone()
+        val clone = Browser(browser)
 
         assertNotNull(clone)
         assertNotSame(browser, clone)
@@ -22,14 +23,14 @@ class BrowserTest {
     }
 
     @Test
-    fun `cloning browser will have the same values`() {
+    fun `copying browser will have the same values`() {
         val browser = Browser()
         browser.name = "browser name"
         browser.version = "browser version"
         val unknown = mapOf(Pair("unknown", "unknown"))
         browser.acceptUnknownProperties(unknown)
 
-        val clone = browser.clone()
+        val clone = Browser(browser)
 
         assertEquals("browser name", clone.name)
         assertEquals("browser version", clone.version)
