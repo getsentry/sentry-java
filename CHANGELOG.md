@@ -1,6 +1,6 @@
 # Unreleased
 
-* Fix: Do not append threads that come from the EnvelopeFileObserver
+* Fix: Do not append threads that come from the EnvelopeFileObserver (#1501)
 
 # 5.0.0-beta.6
 
