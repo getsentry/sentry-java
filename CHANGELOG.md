@@ -1,3 +1,5 @@
+# Unreleased
+
 # 5.0.0-beta.6
 
 * Feat: Add secondary constructor to SentryOkHttpInterceptor (#1491)
