@@ -1,7 +1,9 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -10,7 +12,7 @@ class ShutdownHookIntegrationTest {
 
     private class Fixture {
         val runtime = mock<Runtime>()
-        val options = mock<SentryOptions>()
+        val options = SentryOptions()
         val hub = mock<IHub>()
 
         fun getSut(): ShutdownHookIntegration {
@@ -30,6 +32,16 @@ class ShutdownHookIntegrationTest {
     }
 
     @Test
+    fun `registration does not attach shutdown hook to runtime if disabled`() {
+        val integration = fixture.getSut()
+        fixture.options.isEnableShutdownHook = false
+
+        integration.register(fixture.hub, fixture.options)
+
+        verify(fixture.runtime, never()).addShutdownHook(any())
+    }
+
+    @Test
     fun `registration removes shutdown hook from runtime`() {
         val integration = fixture.getSut()
 
@@ -40,7 +52,7 @@ class ShutdownHookIntegrationTest {
     }
 
     @Test
-    fun `hook calls close`() {
+    fun `hook calls flush`() {
         val integration = fixture.getSut()
 
         integration.register(fixture.hub, fixture.options)
@@ -49,6 +61,20 @@ class ShutdownHookIntegrationTest {
             it.join()
         }
 
-        verify(fixture.hub).close()
+        verify(fixture.hub).flush(any())
+    }
+
+    @Test
+    fun `hook calls flush with given timeout`() {
+        val integration = fixture.getSut()
+        fixture.options.flushTimeoutMillis = 10000
+
+        integration.register(fixture.hub, fixture.options)
+        assertNotNull(integration.hook) {
+            it.start()
+            it.join()
+        }
+
+        verify(fixture.hub).flush(eq(10000))
     }
 }
