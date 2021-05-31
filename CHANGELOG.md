@@ -1,6 +1,7 @@
 # Unreleased
 
 * Fix: Graceful Shutdown flushes event instead of Closing SDK (#1500)
+* Ref: Deprecate cacheDirSize and add maxCacheItems (#1499)
 
 # 5.0.0-beta.6
 

@@ -787,6 +787,7 @@ public class io/sentry/SentryOptions {
 	public fun getLogger ()Lio/sentry/ILogger;
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
+	public fun getMaxCacheItems ()I
 	public fun getMaxQueueSize ()I
 	public fun getMaxSpans ()I
 	public fun getOutboxPath ()Ljava/lang/String;
@@ -849,6 +850,7 @@ public class io/sentry/SentryOptions {
 	public fun setLogger (Lio/sentry/ILogger;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
+	public fun setMaxCacheItems (I)V
 	public fun setMaxQueueSize (I)V
 	public fun setMaxSpans (I)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
