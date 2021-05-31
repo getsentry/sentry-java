@@ -1,6 +1,7 @@
 # Unreleased
 
 * Ref: Deprecate SentryBaseEvent#getOriginThrowable and add SentryBaseEvent#getThrowableMechanism (#1502)
+* Ref: Deprecate cacheDirSize and add maxCacheItems (#1499)
 
 # 5.0.0-beta.6
 
