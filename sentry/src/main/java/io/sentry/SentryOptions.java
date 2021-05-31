@@ -1379,11 +1379,20 @@ public class SentryOptions {
     this.maxSpans = maxSpans;
   }
 
-  /** The max cache items for capping the number of events Default is 30 */
+  /**
+   * The max cache items for capping the number of events Default is 30
+   *
+   * @return the maxCacheItems
+   */
   public int getMaxCacheItems() {
     return maxCacheItems;
   }
 
+  /**
+   * Sets the max cache items for capping the number of events
+   *
+   * @param maxCacheItems the maxCacheItems
+   */
   public void setMaxCacheItems(int maxCacheItems) {
     this.maxCacheItems = maxCacheItems;
   }
