@@ -1,6 +1,6 @@
 # Unreleased
 
-* Fix: Graceful Shutdown flushes event instead of Closing SDK
+* Fix: Graceful Shutdown flushes event instead of Closing SDK (#1500)
 
 # 5.0.0-beta.6
 
