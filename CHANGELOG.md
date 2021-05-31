@@ -1,6 +1,6 @@
 # Unreleased
 
-* Ref: Deprecate SentryBaseEvent#getOriginThrowable and add SentryBaseEvent#getThrowableMechanism
+* Ref: Deprecate SentryBaseEvent#getOriginThrowable and add SentryBaseEvent#getThrowableMechanism (#1502)
 
 # 5.0.0-beta.6
 
