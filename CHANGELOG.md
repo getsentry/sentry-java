@@ -1,5 +1,7 @@
 # Unreleased
 
+* Fix: Do not append threads that come from the EnvelopeFileObserver
+
 # 5.0.0-beta.6
 
 * Feat: Add secondary constructor to SentryOkHttpInterceptor (#1491)
