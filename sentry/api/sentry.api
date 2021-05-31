@@ -817,6 +817,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableNdk ()Z
 	public fun isEnableScopeSync ()Z
 	public fun isEnableSessionTracking ()Z
+	public fun isEnableShutdownHook ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
 	public fun isSendDefaultPii ()Z
 	public fun isTracingEnabled ()Z
@@ -839,6 +840,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableNdk (Z)V
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableSessionTracking (Z)V
+	public fun setEnableShutdownHook (Z)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnvelopeDiskCache (Lio/sentry/cache/IEnvelopeCache;)V
 	public fun setEnvelopeReader (Lio/sentry/IEnvelopeReader;)V
