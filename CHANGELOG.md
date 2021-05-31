@@ -1,4 +1,4 @@
-# Unreleased
+# 5.0.0-beta.6
 
 * Feat: Add secondary constructor to SentryOkHttpInterceptor (#1491)
 * Feat: Add option to enable debug mode in Log4j2 integration (#1492)
