@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.hints.Cached;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -65,7 +66,7 @@ public final class MainEventProcessor implements EventProcessor {
 
     if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
-      setThreads(event);
+      setThreads(event, hint);
     }
 
     return event;
@@ -185,8 +186,8 @@ public final class MainEventProcessor implements EventProcessor {
     }
   }
 
-  private void setThreads(final @NotNull SentryEvent event) {
-    if (event.getThreads() == null) {
+  private void setThreads(final @NotNull SentryEvent event, final @Nullable Object hint) {
+    if (event.getThreads() == null && !isCachedHint(hint)) {
       // collecting threadIds that came from the exception mechanism, so we can mark threads as
       // crashed properly
       List<Long> mechanismThreadIds = null;
@@ -213,5 +214,16 @@ public final class MainEventProcessor implements EventProcessor {
         event.setThreads(sentryThreadFactory.getCurrentThread());
       }
     }
+  }
+
+  /**
+   * If the event has a Cached Hint, it means that it came from the EnvelopeFileObserver. We don't
+   * want to append this thread to the event.
+   *
+   * @param hint the Hint
+   * @return true if Cached or false otherwise
+   */
+  private boolean isCachedHint(final @Nullable Object hint) {
+    return (hint instanceof Cached);
   }
 }
