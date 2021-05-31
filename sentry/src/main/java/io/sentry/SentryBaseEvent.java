@@ -168,7 +168,6 @@ public abstract class SentryBaseEvent {
    * ExceptionMechanismException}, returns unwrapped throwable.
    *
    * @deprecated use {{@link SentryBaseEvent#getThrowable()} }
-   *
    * @return the Throwable or null
    */
   @Deprecated
@@ -178,11 +177,13 @@ public abstract class SentryBaseEvent {
   }
 
   /**
-   * Returns the captured Throwable or null.
-   * It may be wrapped in a {@link ExceptionMechanismException}.
+   * Returns the captured Throwable or null. It may be wrapped in a {@link
+   * ExceptionMechanismException}.
+   *
    * @return the Throwable or null
    */
-  @Nullable Throwable getThrowableMechanism() {
+  @Nullable
+  Throwable getThrowableMechanism() {
     return throwable;
   }
 
