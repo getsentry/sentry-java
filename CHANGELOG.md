@@ -1,5 +1,7 @@
 # Unreleased
 
+* Fix: Add attachmentType to envelope ser/deser.
+
 # 5.0.0-beta.7
 
 * Ref: Deprecate SentryBaseEvent#getOriginThrowable and add SentryBaseEvent#getThrowableMechanism (#1502)

@@ -11,6 +11,7 @@ public final class io/sentry/Attachment {
 	public fun <init> ([BLjava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Z)V
+	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getBytes ()[B
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFilename ()Ljava/lang/String;
@@ -687,6 +688,7 @@ public final class io/sentry/SentryEnvelopeItem {
 }
 
 public final class io/sentry/SentryEnvelopeItemHeader {
+	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFileName ()Ljava/lang/String;
 	public fun getLength ()I
