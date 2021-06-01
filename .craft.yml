@@ -57,3 +57,11 @@ targets:
     type: sdk
     config:
       canonical: "maven:io.sentry:sentry-android-timber"
+  - name: registry
+    type: sdk
+    config:
+      canonical: "maven:io.sentry:sentry-android-okhttp"
+  - name: registry
+    type: sdk
+    config:
+      canonical: "maven:io.sentry:sentry-kotlin-extensions"
