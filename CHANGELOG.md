@@ -1,4 +1,4 @@
-# Unreleased
+# 5.0.0-beta.7
 
 * Ref: Deprecate SentryBaseEvent#getOriginThrowable and add SentryBaseEvent#getThrowableMechanism (#1502)
 * Fix: Graceful Shutdown flushes event instead of Closing SDK (#1500)
