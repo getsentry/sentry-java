@@ -162,8 +162,9 @@ class MainEventProcessorTest {
         assertEquals("environment", event.environment)
         assertEquals("dist", event.dist)
         assertEquals("server", event.serverName)
-        // threads are special case if its a Cached hint
-        assertNull(event.threads)
+        assertNotNull(event.threads) {
+            assertTrue(it.first { t -> t.id == crashedThread.id }.isCrashed == true)
+        }
     }
 
     @Test
@@ -394,8 +395,8 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `when event has Cached hint, threads should not be set`() {
-        val sut = fixture.getSut()
+    fun `when event has Cached hint, current thread should not be set`() {
+        val sut = fixture.getSut(attachThreads = false)
 
         var event = SentryEvent()
         event = sut.process(event, CustomCachedApplyScopeDataHint())
