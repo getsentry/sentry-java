@@ -187,7 +187,7 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   private void setThreads(final @NotNull SentryEvent event, final @Nullable Object hint) {
-    if (event.getThreads() == null && !isCachedHint(hint)) {
+    if (event.getThreads() == null) {
       // collecting threadIds that came from the exception mechanism, so we can mark threads as
       // crashed properly
       List<Long> mechanismThreadIds = null;
@@ -208,7 +208,8 @@ public final class MainEventProcessor implements EventProcessor {
       if (options.isAttachThreads()) {
         event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
       } else if (options.isAttachStacktrace()
-          && (eventExceptions == null || eventExceptions.isEmpty())) {
+          && (eventExceptions == null || eventExceptions.isEmpty())
+          && !isCachedHint(hint)) {
         // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
         // if there are no exceptions, exceptions have its own stack traces.
         event.setThreads(sentryThreadFactory.getCurrentThread());
@@ -218,7 +219,7 @@ public final class MainEventProcessor implements EventProcessor {
 
   /**
    * If the event has a Cached Hint, it means that it came from the EnvelopeFileObserver. We don't
-   * want to append this thread to the event.
+   * want to append the current thread to the event.
    *
    * @param hint the Hint
    * @return true if Cached or false otherwise

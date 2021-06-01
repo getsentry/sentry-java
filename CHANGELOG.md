@@ -4,6 +4,7 @@
 * Fix: Graceful Shutdown flushes event instead of Closing SDK (#1500)
 * Fix: Do not append threads that come from the EnvelopeFileObserver (#1501)
 * Ref: Deprecate cacheDirSize and add maxCacheItems (#1499)
+* Fix: Append all threads if Hint is Cached but attachThreads is enabled (#1503)
 
 # 5.0.0-beta.6
 
