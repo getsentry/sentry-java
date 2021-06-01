@@ -33,6 +33,7 @@ class SentryEnvelopeTest {
         assertEquals(61, secondItem.header.length)
         assertEquals(61, secondItem.data.size)
         assertEquals("attachment.txt", secondItem.header.fileName)
+        assertEquals("event.minidump", secondItem.header.attachmentType)
         val thirdItem = envelope.items.elementAt(2)
         assertEquals(SentryItemType.Attachment, thirdItem.header.type)
         assertEquals("text/plain", thirdItem.header.contentType)
