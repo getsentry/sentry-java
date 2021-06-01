@@ -105,14 +105,14 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (event != null) {
-      if (event.getOriginThrowable() != null
-          && options.containsIgnoredExceptionForType(event.getOriginThrowable())) {
+      if (event.getThrowable() != null
+          && options.containsIgnoredExceptionForType(event.getThrowable())) {
         options
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
                 "Event was dropped as the exception %s is ignored",
-                event.getOriginThrowable().getClass());
+                event.getThrowable().getClass());
         return SentryId.EMPTY_ID;
       }
       event = executeBeforeSend(event, hint);

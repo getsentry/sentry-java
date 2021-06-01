@@ -180,7 +180,7 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   private void setExceptions(final @NotNull SentryEvent event) {
-    final Throwable throwable = event.getThrowable();
+    final Throwable throwable = event.getThrowableMechanism();
     if (throwable != null) {
       event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
     }

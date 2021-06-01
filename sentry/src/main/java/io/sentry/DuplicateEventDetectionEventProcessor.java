@@ -23,7 +23,7 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
   public @Nullable SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
     if (options.isEnableDeduplication()) {
-      final Throwable throwable = event.getOriginThrowable();
+      final Throwable throwable = event.getThrowable();
       if (throwable != null) {
         if (capturedObjects.containsKey(throwable)
             || containsAnyKey(capturedObjects, allCauses(throwable))) {
