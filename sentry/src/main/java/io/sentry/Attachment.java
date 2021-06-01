@@ -14,7 +14,7 @@ public final class Attachment {
   private final boolean addToTransactions;
 
   /** The special type of this attachment */
-  private @NotNull String attachmentType = DEFAULT_ATTACHMENT_TYPE;
+  private @Nullable String attachmentType = DEFAULT_ATTACHMENT_TYPE;
 
   /**
    * We could use Files.probeContentType(path) to determine the content type of the filename. This
@@ -224,7 +224,7 @@ public final class Attachment {
    *
    * @return the attachmentType
    */
-  public @NotNull String getAttachmentType() {
+  public @Nullable String getAttachmentType() {
     return attachmentType;
   }
 }
