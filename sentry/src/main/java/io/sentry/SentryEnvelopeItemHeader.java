@@ -67,6 +67,14 @@ public final class SentryEnvelopeItemHeader {
     this.attachmentType = attachmentType;
   }
 
+  SentryEnvelopeItemHeader(
+      final @NotNull SentryItemType type,
+      final @Nullable Callable<Integer> getLength,
+      final @Nullable String contentType,
+      final @Nullable String fileName) {
+    this(type, getLength, contentType, fileName, null);
+  }
+
   /**
    * Returns the attachmentType type
    *

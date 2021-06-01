@@ -147,7 +147,8 @@ public final class Attachment {
   }
 
   /**
-   * Initializes an Attachment with a path, a filename, a content type, and addToTransactions.
+   * Initializes an Attachment with a path, a filename, a content type, addToTransactions, and
+   * attachmentType.
    *
    * <p>The file located at the pathname is read lazily when the SDK captures an event or
    * transaction not when the attachment is initialized. The pathname string is converted into an
