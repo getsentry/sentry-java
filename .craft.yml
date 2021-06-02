@@ -7,30 +7,16 @@ targets:
   - name: registry
     sdks:
       maven:io.sentry:sentry:
-        name: registry
       maven:io.sentry:sentry-spring:
-        name: registry
       maven:io.sentry:sentry-spring-boot-starter:
-        name: registry
       maven:io.sentry:sentry-servlet:
-        name: registry
       maven:io.sentry:sentry-logback:
-        name: registry
       maven:io.sentry:sentry-log4j2:
-        name: registry
       maven:io.sentry:sentry-jul:
-        name: registry
       maven:io.sentry:sentry-apache-http-client-5:
-        name: registry
       maven:io.sentry:sentry-android:
-        name: registry
       maven:io.sentry:sentry-android-core:
-        name: registry
       maven:io.sentry:sentry-android-ndk:
-        name: registry
       maven:io.sentry:sentry-android-timber:
-        name: registry
       maven:io.sentry:sentry-android-okhttp:
-        name: registry
       maven:io.sentry:sentry-kotlin-extensions:
-        name: registry
