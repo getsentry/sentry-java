@@ -1,4 +1,4 @@
-# Unreleased
+# 5.0.0
 
 * Fix: Add attachmentType to envelope ser/deser. (#1504)
 
