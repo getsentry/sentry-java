@@ -2,7 +2,29 @@
 
 # 5.0.0
 
+This release brings many improvements but also new features:
+
+* OkHttp Interceptor for Android (#1330)
+* GraalVM Native Image Compatibility (#1329)
+* Add option to ignore exceptions by type (#1352)
+* Enrich transactions with device contexts (#1430) (#1469)
+* Better interoperability with Kotlin null-safety (#1439) and (#1462)
+* Add coroutines support (#1479)
+* OkHttp callback for Customising the Span (#1478)
+* Add breadcrumb in Spring RestTemplate integration (#1481)
+
+Breaking changes:
+
+* Migration Guide for [Java](https://docs.sentry.io/platforms/java/migration/)
+* Migration Guide for [Android](https://docs.sentry.io/platforms/android/migration/)
+
+Other fixes:
+
 * Fix: Add attachmentType to envelope ser/deser. (#1504)
+
+Thank you:
+
+* @maciejwalkowiak for coding most of it.
 
 # 5.0.0-beta.7
 
