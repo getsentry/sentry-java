@@ -1,7 +1,5 @@
 # Changelog
 
-## Unreleased
-
 ## 5.0.0
 
 This release brings many improvements but also new features:
