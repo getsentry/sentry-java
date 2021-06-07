@@ -1,6 +1,6 @@
 # Unreleased
 
-* Fix: Sources and Javadoc artifacts were mixed up
+* Fix: Sources and Javadoc artifacts were mixed up (#1515)
 
 # 5.0.0
 
