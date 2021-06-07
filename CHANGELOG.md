@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Add version bumping script for Craft.
+
 ## 5.0.1
 
 * Fix: Sources and Javadoc artifacts were mixed up (#1515)
