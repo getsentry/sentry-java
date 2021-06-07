@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* Fix: Sources and Javadoc artifacts were mixed up (#1515)
+
 ## 5.0.0
 
 This release brings many improvements but also new features:

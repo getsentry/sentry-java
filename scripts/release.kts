@@ -74,7 +74,7 @@ File(path)
             val command = "./mvnw gpg:sign-and-deploy-file " +
                     "-Dfile=$file " +
                     "-Dfiles=$javadocFile,$sourcesFile " +
-                    "-Dclassifiers=sources,javadoc " +
+                    "-Dclassifiers=javadoc,sources " +
                     "-Dtypes=jar,jar " +
                     "-DpomFile=$pomFile " +
                     "-DrepositoryId=$repositoryId " +
