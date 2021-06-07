@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Add version bumping script for Craft.
+* Add version bumping script for Craft (#1518)
 
 ## 5.0.1
 
