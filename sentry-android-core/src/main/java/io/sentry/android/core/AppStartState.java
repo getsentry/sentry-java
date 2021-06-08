@@ -11,11 +11,9 @@ final class AppStartState {
 
   private static @NotNull AppStartState instance = new AppStartState();
 
-  /** appStart in milliseconds */
-  private @Nullable Long appStart;
+  private @Nullable Long appStartMillis;
 
-  /** appStartEnd in milliseconds */
-  private @Nullable Long appStartEnd;
+  private @Nullable Long appStartEndMillis;
 
   /** The type of App start coldStart=true -> Cold start, coldStart=false -> Warm start */
   private boolean coldStart;
@@ -35,18 +33,23 @@ final class AppStartState {
   }
 
   void setAppStartEnd() {
-    appStartEnd = SystemClock.uptimeMillis();
+    setAppStartEnd(SystemClock.uptimeMillis());
+  }
+
+  @TestOnly
+  void setAppStartEnd(final long appStartEndMillis) {
+    this.appStartEndMillis = appStartEndMillis;
   }
 
   @Nullable
   Long getAppStartInterval() {
-    if (appStart == null || appStartEnd == null) {
+    if (appStartMillis == null || appStartEndMillis == null) {
       return null;
     }
-    return appStartEnd - appStart;
+    return appStartEndMillis - appStartMillis;
   }
 
-  boolean getColdStart() {
+  boolean isColdStart() {
     return coldStart;
   }
 
@@ -59,12 +62,12 @@ final class AppStartState {
     return appStartTime;
   }
 
-  synchronized void setAppStartTime(final long appStart, final @NotNull Date appStartTime) {
+  synchronized void setAppStartTime(final long appStartMillis, final @NotNull Date appStartTime) {
     // method is synchronized because the SDK may by init. on a background thread.
-    if (this.appStartTime != null && this.appStart != null) {
+    if (this.appStartTime != null && this.appStartMillis != null) {
       return;
     }
     this.appStartTime = appStartTime;
-    this.appStart = appStart;
+    this.appStartMillis = appStartMillis;
   }
 }

@@ -11,13 +11,12 @@ import kotlin.test.assertTrue
 class PerformanceAndroidEventProcessorTest {
 
     private class Fixture {
-        val options = SentryAndroidOptions().apply {
-            tracesSampleRate = 1.0
-        }
+        val options = SentryAndroidOptions()
 
         val tracer = SentryTracer(mock(), mock())
 
-        fun getSut(): PerformanceAndroidEventProcessor {
+        fun getSut(tracesSampleRate: Double? = 1.0): PerformanceAndroidEventProcessor {
+            options.tracesSampleRate = tracesSampleRate
             return PerformanceAndroidEventProcessor(options)
         }
     }
@@ -82,8 +81,7 @@ class PerformanceAndroidEventProcessorTest {
 
     @Test
     fun `do not add app start metric if performance is disabled`() {
-        val sut = fixture.getSut()
-        sut.options.tracesSampleRate = null
+        val sut = fixture.getSut(tracesSampleRate = null)
 
         var tr = SentryTransaction(fixture.tracer)
 
@@ -93,7 +91,7 @@ class PerformanceAndroidEventProcessorTest {
     }
 
     private fun setAppStart(coldStart: Boolean = true) {
-        AppStartState.getInstance().coldStart = coldStart
+        AppStartState.getInstance().isColdStart = coldStart
         AppStartState.getInstance().setAppStartTime(0, Date())
         AppStartState.getInstance().setAppStartEnd()
     }

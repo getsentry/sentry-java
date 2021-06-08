@@ -25,10 +25,10 @@ public final class SentryPerformanceProvider extends ContentProvider {
   // static to rely on Class load
   private static final @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static final long appStart = SystemClock.uptimeMillis();
+  private static final long appStartMillis = SystemClock.uptimeMillis();
 
   public SentryPerformanceProvider() {
-    AppStartState.getInstance().setAppStartTime(appStart, appStartTime);
+    AppStartState.getInstance().setAppStartTime(appStartMillis, appStartTime);
   }
 
   @Override

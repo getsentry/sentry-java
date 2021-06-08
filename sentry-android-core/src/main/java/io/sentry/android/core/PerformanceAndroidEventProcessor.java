@@ -6,35 +6,38 @@ import io.sentry.protocol.SentryTransaction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Event Processor responsable for adding Android metrics to transactions */
+/** Event Processor responsible for adding Android metrics to transactions */
 final class PerformanceAndroidEventProcessor implements EventProcessor {
 
-  final @NotNull SentryAndroidOptions options;
+  private final boolean tracingEnabled;
+
+  private boolean sentStartMeasurement = false;
+
+  // transactions may be started in parallel, locking it so sentStartMeasurement
+  private final @NotNull Object measurementLock = new Object();
 
   PerformanceAndroidEventProcessor(final @NotNull SentryAndroidOptions options) {
-    this.options = options;
+    tracingEnabled = options.isTracingEnabled();
   }
-
-  // transactions may be started in parallel, making this field volatile instead of a lock
-  // to avoid contention.
-  private volatile boolean sentStartMeasurement = false;
 
   @Override
   public @NotNull SentryTransaction process(
       @NotNull SentryTransaction transaction, @Nullable Object hint) {
     // the app start metric is sent only once when the 1st transaction happens
     // after the app start is collected.
-    if (!sentStartMeasurement && options.isTracingEnabled()) {
-      final Long appStartUpInterval = AppStartState.getInstance().getAppStartInterval();
-      // if appStartUpInterval is null, metrics are not ready to be sent
-      if (appStartUpInterval != null) {
-        final MeasurementValue value = new MeasurementValue((float) appStartUpInterval);
+    synchronized (measurementLock) {
+      if (!sentStartMeasurement && tracingEnabled) {
+        final Long appStartUpInterval = AppStartState.getInstance().getAppStartInterval();
+        // if appStartUpInterval is null, metrics are not ready to be sent
+        if (appStartUpInterval != null) {
+          final MeasurementValue value = new MeasurementValue((float) appStartUpInterval);
 
-        final String appStartKey =
-            AppStartState.getInstance().getColdStart() ? "app_start_cold" : "app_start_warm";
+          final String appStartKey =
+              AppStartState.getInstance().isColdStart() ? "app_start_cold" : "app_start_warm";
 
-        transaction.getMeasurements().put(appStartKey, value);
-        sentStartMeasurement = true;
+          transaction.getMeasurements().put(appStartKey, value);
+          sentStartMeasurement = true;
+        }
       }
     }
 
