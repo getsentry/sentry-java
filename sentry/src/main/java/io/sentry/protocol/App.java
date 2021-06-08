@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class App implements IUnknownPropertiesConsumer, Cloneable {
+public final class App implements IUnknownPropertiesConsumer {
   public static final String TYPE = "app";
 
   /** Version-independent application identifier, often a dotted bundle ID. */
@@ -31,6 +31,19 @@ public final class App implements IUnknownPropertiesConsumer, Cloneable {
   private @Nullable String appVersion;
   /** Internal build ID as it appears on the platform. */
   private @Nullable String appBuild;
+
+  public App() {}
+
+  App(final @NotNull App app) {
+    this.appBuild = app.appBuild;
+    this.appIdentifier = app.appIdentifier;
+    this.appName = app.appName;
+    this.appStartTime = app.appStartTime;
+    this.appVersion = app.appVersion;
+    this.buildType = app.buildType;
+    this.deviceAppHash = app.deviceAppHash;
+    this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
+  }
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
@@ -103,20 +116,5 @@ public final class App implements IUnknownPropertiesConsumer, Cloneable {
   @Override
   public void acceptUnknownProperties(@NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
-  }
-
-  /**
-   * Clones an App aka deep copy
-   *
-   * @return the cloned App
-   * @throws CloneNotSupportedException if object is not cloneable
-   */
-  @Override
-  public @NotNull App clone() throws CloneNotSupportedException {
-    final App clone = (App) super.clone();
-
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    return clone;
   }
 }

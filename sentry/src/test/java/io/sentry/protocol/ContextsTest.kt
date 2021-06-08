@@ -7,8 +7,9 @@ import kotlin.test.assertNotSame
 import org.junit.Test
 
 class ContextsTest {
+
     @Test
-    fun `cloning contexts wont have the same references`() {
+    fun `copying contexts wont have the same references`() {
         val contexts = Contexts()
         contexts.setApp(App())
         contexts.setBrowser(Browser())
@@ -18,7 +19,7 @@ class ContextsTest {
         contexts.setGpu(Gpu())
         contexts.trace = SpanContext("op")
 
-        val clone = contexts.clone()
+        val clone = Contexts(contexts)
 
         assertNotNull(clone)
         assertNotSame(contexts, clone)
@@ -32,13 +33,13 @@ class ContextsTest {
     }
 
     @Test
-    fun `cloning contexts will have the same values`() {
+    fun `copying contexts will have the same values`() {
         val contexts = Contexts()
         contexts["some-property"] = "some-value"
         contexts.trace = SpanContext("op")
         contexts.trace!!.description = "desc"
 
-        val clone = contexts.clone()
+        val clone = Contexts(contexts)
 
         assertNotNull(clone)
         assertNotSame(contexts, clone)

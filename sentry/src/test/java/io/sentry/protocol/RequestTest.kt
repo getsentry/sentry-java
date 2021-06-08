@@ -8,10 +8,11 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 
 class RequestTest {
+
     @Test
-    fun `cloning request wont have the same references`() {
+    fun `copying request wont have the same references`() {
         val request = createRequest()
-        val clone = request.clone()
+        val clone = Request(request)
 
         assertNotNull(clone)
         assertNotSame(request, clone)
@@ -22,9 +23,9 @@ class RequestTest {
     }
 
     @Test
-    fun `cloning request will have the same values`() {
+    fun `copying request will have the same values`() {
         val request = createRequest()
-        val clone = request.clone()
+        val clone = Request(request)
 
         assertEquals("get", clone.method)
         assertEquals("http://localhost:8080", clone.url)
@@ -35,9 +36,9 @@ class RequestTest {
     }
 
     @Test
-    fun `cloning request and changing the original values wont change the clone values`() {
+    fun `copying request and changing the original values wont change the clone values`() {
         val request = createRequest()
-        val clone = request.clone()
+        val clone = Request(request)
 
         request.method = "post"
         request.url = "http://another-host:8081/"

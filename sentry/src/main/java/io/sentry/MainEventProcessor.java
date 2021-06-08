@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.hints.Cached;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -65,7 +66,7 @@ public final class MainEventProcessor implements EventProcessor {
 
     if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
-      setThreads(event);
+      setThreads(event, hint);
     }
 
     return event;
@@ -179,13 +180,13 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   private void setExceptions(final @NotNull SentryEvent event) {
-    final Throwable throwable = event.getThrowable();
+    final Throwable throwable = event.getThrowableMechanism();
     if (throwable != null) {
       event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
     }
   }
 
-  private void setThreads(final @NotNull SentryEvent event) {
+  private void setThreads(final @NotNull SentryEvent event, final @Nullable Object hint) {
     if (event.getThreads() == null) {
       // collecting threadIds that came from the exception mechanism, so we can mark threads as
       // crashed properly
@@ -207,11 +208,23 @@ public final class MainEventProcessor implements EventProcessor {
       if (options.isAttachThreads()) {
         event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
       } else if (options.isAttachStacktrace()
-          && (eventExceptions == null || eventExceptions.isEmpty())) {
+          && (eventExceptions == null || eventExceptions.isEmpty())
+          && !isCachedHint(hint)) {
         // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
         // if there are no exceptions, exceptions have its own stack traces.
         event.setThreads(sentryThreadFactory.getCurrentThread());
       }
     }
+  }
+
+  /**
+   * If the event has a Cached Hint, it means that it came from the EnvelopeFileObserver. We don't
+   * want to append the current thread to the event.
+   *
+   * @param hint the Hint
+   * @return true if Cached or false otherwise
+   */
+  private boolean isCachedHint(final @Nullable Object hint) {
+    return (hint instanceof Cached);
   }
 }

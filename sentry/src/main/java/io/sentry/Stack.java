@@ -25,14 +25,7 @@ final class Stack {
     StackItem(final @NotNull StackItem item) {
       options = item.options;
       client = item.client;
-
-      try {
-        scope = item.scope.clone();
-      } catch (CloneNotSupportedException e) {
-        // TODO: Why do we need to deal with this? We must guarantee clone is possible here!
-        options.getLogger().log(SentryLevel.ERROR, "Clone not supported");
-        scope = new Scope(item.options);
-      }
+      scope = new Scope(item.scope);
     }
 
     public @NotNull ISentryClient getClient() {

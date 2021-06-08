@@ -236,7 +236,8 @@ public final class SentryEnvelopeItem {
             SentryItemType.Attachment,
             () -> cachedItem.getBytes().length,
             attachment.getContentType(),
-            attachment.getFilename());
+            attachment.getFilename(),
+            attachment.getAttachmentType());
 
     // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());

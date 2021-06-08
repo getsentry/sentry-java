@@ -8,8 +8,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class DeviceTest {
+
     @Test
-    fun `cloning device wont have the same references`() {
+    fun `copying device wont have the same references`() {
         val device = Device()
         device.archs = arrayOf("archs1", "archs2")
         device.bootTime = Date()
@@ -17,7 +18,7 @@ class DeviceTest {
         val unknown = mapOf(Pair("unknown", "unknown"))
         device.acceptUnknownProperties(unknown)
 
-        val clone = device.clone()
+        val clone = Device(device)
 
         assertNotNull(clone)
         assertNotSame(device, clone)
@@ -28,7 +29,7 @@ class DeviceTest {
     }
 
     @Test
-    fun `cloning device will have the same values`() {
+    fun `copying device will have the same values`() {
         val device = Device()
         device.name = "name"
         device.manufacturer = "manufacturer"
@@ -63,7 +64,7 @@ class DeviceTest {
         val unknown = mapOf(Pair("unknown", "unknown"))
         device.acceptUnknownProperties(unknown)
 
-        val clone = device.clone()
+        val clone = Device(device)
 
         assertEquals("name", clone.name)
         assertEquals("manufacturer", clone.manufacturer)

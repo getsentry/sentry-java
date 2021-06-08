@@ -33,7 +33,8 @@ public final class Sentry {
    *
    * @return the hub
    */
-  static @NotNull IHub getCurrentHub() {
+  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
+  public static @NotNull IHub getCurrentHub() {
     if (globalHubMode) {
       return mainHub;
     }
@@ -43,6 +44,11 @@ public final class Sentry {
       currentHub.set(hub);
     }
     return hub;
+  }
+
+  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
+  public static void setCurrentHub(final @NotNull IHub hub) {
+    currentHub.set(hub);
   }
 
   /**

@@ -54,6 +54,15 @@ class SentryEnvelopeItemTest {
     }
 
     @Test
+    fun `fromAttachment with attachmentType`() {
+        val attachment = Attachment(fixture.pathname, fixture.filename, "", true, "event.minidump")
+
+        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+
+        assertEquals("event.minidump", item.header.attachmentType)
+    }
+
+    @Test
     fun `fromAttachment with file`() {
         val file = File(fixture.pathname)
         file.writeBytes(fixture.bytesAllowed)

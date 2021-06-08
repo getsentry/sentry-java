@@ -8,22 +8,22 @@ public final class io/sentry/Attachment {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Z)V
+	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getBytes ()[B
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFilename ()Ljava/lang/String;
 	public fun getPathname ()Ljava/lang/String;
 }
 
-public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
+public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/util/Date;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun clone ()Lio/sentry/Breadcrumb;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getCategory ()Ljava/lang/String;
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
@@ -467,7 +467,7 @@ public final class io/sentry/SamplingContext {
 	public fun getTransactionContext ()Lio/sentry/TransactionContext;
 }
 
-public final class io/sentry/Scope : java/lang/Cloneable {
+public final class io/sentry/Scope {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
@@ -476,12 +476,11 @@ public final class io/sentry/Scope : java/lang/Cloneable {
 	public fun clear ()V
 	public fun clearBreadcrumbs ()V
 	public fun clearTransaction ()V
-	public fun clone ()Lio/sentry/Scope;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun getTags ()Ljava/util/Map;
 	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun getTransactionName ()Ljava/lang/String;
 	public fun getUser ()Lio/sentry/protocol/User;
@@ -558,6 +557,7 @@ public final class io/sentry/Sentry {
 	public static fun configureScope (Lio/sentry/ScopeCallback;)V
 	public static fun endSession ()V
 	public static fun flush (J)V
+	public static fun getCurrentHub ()Lio/sentry/IHub;
 	public static fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public static fun getSpan ()Lio/sentry/ISpan;
 	public static fun init ()V
@@ -572,6 +572,7 @@ public final class io/sentry/Sentry {
 	public static fun pushScope ()V
 	public static fun removeExtra (Ljava/lang/String;)V
 	public static fun removeTag (Ljava/lang/String;)V
+	public static fun setCurrentHub (Lio/sentry/IHub;)V
 	public static fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun setFingerprint (Ljava/util/List;)V
 	public static fun setLevel (Lio/sentry/SentryLevel;)V
@@ -688,6 +689,7 @@ public final class io/sentry/SentryEnvelopeItem {
 }
 
 public final class io/sentry/SentryEnvelopeItemHeader {
+	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFileName ()Ljava/lang/String;
 	public fun getLength ()I
@@ -788,6 +790,7 @@ public class io/sentry/SentryOptions {
 	public fun getLogger ()Lio/sentry/ILogger;
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
+	public fun getMaxCacheItems ()I
 	public fun getMaxQueueSize ()I
 	public fun getMaxSpans ()I
 	public fun getOutboxPath ()Ljava/lang/String;
@@ -817,6 +820,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableNdk ()Z
 	public fun isEnableScopeSync ()Z
 	public fun isEnableSessionTracking ()Z
+	public fun isEnableShutdownHook ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
 	public fun isSendDefaultPii ()Z
 	public fun isTracingEnabled ()Z
@@ -839,6 +843,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableNdk (Z)V
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableSessionTracking (Z)V
+	public fun setEnableShutdownHook (Z)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnvelopeDiskCache (Lio/sentry/cache/IEnvelopeCache;)V
 	public fun setEnvelopeReader (Lio/sentry/IEnvelopeReader;)V
@@ -848,6 +853,7 @@ public class io/sentry/SentryOptions {
 	public fun setLogger (Lio/sentry/ILogger;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
+	public fun setMaxCacheItems (I)V
 	public fun setMaxQueueSize (I)V
 	public fun setMaxSpans (I)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
@@ -1014,17 +1020,16 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
-public class io/sentry/SpanContext : java/lang/Cloneable {
+public class io/sentry/SpanContext {
 	public static final field TYPE Ljava/lang/String;
 	protected field description Ljava/lang/String;
 	protected field op Ljava/lang/String;
 	protected field status Lio/sentry/SpanStatus;
 	protected field tags Ljava/util/Map;
+	public fun <init> (Lio/sentry/SpanContext;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/String;Lio/sentry/SpanId;Ljava/lang/Boolean;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Boolean;)V
-	public fun clone ()Lio/sentry/SpanContext;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
@@ -1308,12 +1313,10 @@ public abstract interface class io/sentry/hints/SubmissionResult {
 	public abstract fun setResult (Z)V
 }
 
-public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
+public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun clone ()Lio/sentry/protocol/App;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getAppBuild ()Ljava/lang/String;
 	public fun getAppIdentifier ()Ljava/lang/String;
 	public fun getAppName ()Ljava/lang/String;
@@ -1330,22 +1333,19 @@ public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer
 	public fun setDeviceAppHash (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/Browser : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
+public final class io/sentry/protocol/Browser : io/sentry/IUnknownPropertiesConsumer {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun clone ()Lio/sentry/protocol/Browser;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getName ()Ljava/lang/String;
 	public fun getVersion ()Ljava/lang/String;
 	public fun setName (Ljava/lang/String;)V
 	public fun setVersion (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMap, java/lang/Cloneable {
+public final class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMap {
 	public fun <init> ()V
-	public fun clone ()Lio/sentry/protocol/Contexts;
-	public synthetic fun clone ()Ljava/lang/Object;
+	public fun <init> (Lio/sentry/protocol/Contexts;)V
 	public fun getApp ()Lio/sentry/protocol/App;
 	public fun getBrowser ()Lio/sentry/protocol/Browser;
 	public fun getDevice ()Lio/sentry/protocol/Device;
@@ -1395,12 +1395,10 @@ public final class io/sentry/protocol/DebugMeta : io/sentry/IUnknownPropertiesCo
 	public fun setSdkInfo (Lio/sentry/protocol/SdkInfo;)V
 }
 
-public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
+public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsumer {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun clone ()Lio/sentry/protocol/Device;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getArchs ()[Ljava/lang/String;
 	public fun getBatteryLevel ()Ljava/lang/Float;
 	public fun getBatteryTemperature ()Ljava/lang/Float;
@@ -1470,12 +1468,10 @@ public final class io/sentry/protocol/Device$DeviceOrientation : java/lang/Enum 
 	public static fun values ()[Lio/sentry/protocol/Device$DeviceOrientation;
 }
 
-public final class io/sentry/protocol/Gpu : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
+public final class io/sentry/protocol/Gpu : io/sentry/IUnknownPropertiesConsumer {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun clone ()Lio/sentry/protocol/Gpu;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getApiType ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/Integer;
 	public fun getMemorySize ()Ljava/lang/Integer;
@@ -1531,12 +1527,10 @@ public final class io/sentry/protocol/Message : io/sentry/IUnknownPropertiesCons
 	public fun setParams (Ljava/util/List;)V
 }
 
-public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
+public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownPropertiesConsumer {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun clone ()Lio/sentry/protocol/OperatingSystem;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getBuild ()Ljava/lang/String;
 	public fun getKernelVersion ()Ljava/lang/String;
 	public fun getName ()Ljava/lang/String;
@@ -1551,11 +1545,10 @@ public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownProper
 	public fun setVersion (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
+public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesConsumer {
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/Request;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun clone ()Lio/sentry/protocol/Request;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getCookies ()Ljava/lang/String;
 	public fun getData ()Ljava/lang/Object;
 	public fun getEnvs ()Ljava/util/Map;
@@ -1639,12 +1632,10 @@ public final class io/sentry/protocol/SentryPackage : io/sentry/IUnknownProperti
 	public fun setVersion (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/SentryRuntime : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
+public final class io/sentry/protocol/SentryRuntime : io/sentry/IUnknownPropertiesConsumer {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun clone ()Lio/sentry/protocol/SentryRuntime;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getName ()Ljava/lang/String;
 	public fun getRawDescription ()Ljava/lang/String;
 	public fun getVersion ()Ljava/lang/String;
@@ -1756,11 +1747,10 @@ public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEv
 	public fun isSampled ()Z
 }
 
-public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsumer, java/lang/Cloneable {
+public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsumer {
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/User;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
-	public fun clone ()Lio/sentry/protocol/User;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getEmail ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/String;
 	public fun getIpAddress ()Ljava/lang/String;

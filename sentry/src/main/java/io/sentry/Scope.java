@@ -3,11 +3,11 @@ package io.sentry;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.User;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Scope data to be sent with the event */
-public final class Scope implements Cloneable {
+public final class Scope {
 
   /** Scope's SentryLevel */
   private @Nullable SentryLevel level;
@@ -77,6 +77,61 @@ public final class Scope implements Cloneable {
   public Scope(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
+  }
+
+  Scope(final @NotNull Scope scope) {
+    this.transaction = scope.transaction;
+    this.transactionName = scope.transactionName;
+    this.session = scope.session;
+    this.options = scope.options;
+    this.level = scope.level;
+
+    final User userRef = scope.user;
+    this.user = userRef != null ? new User(userRef) : null;
+
+    final Request requestRef = scope.request;
+    this.request = requestRef != null ? new Request(requestRef) : null;
+
+    this.fingerprint = new ArrayList<>(scope.fingerprint);
+    this.eventProcessors = new CopyOnWriteArrayList<>(scope.eventProcessors);
+
+    final Queue<Breadcrumb> breadcrumbsRef = scope.breadcrumbs;
+
+    Queue<Breadcrumb> breadcrumbsClone = createBreadcrumbsList(scope.options.getMaxBreadcrumbs());
+
+    for (Breadcrumb item : breadcrumbsRef) {
+      final Breadcrumb breadcrumbClone = new Breadcrumb(item);
+      breadcrumbsClone.add(breadcrumbClone);
+    }
+    this.breadcrumbs = breadcrumbsClone;
+
+    final Map<String, String> tagsRef = scope.tags;
+
+    final Map<String, @NotNull String> tagsClone = new ConcurrentHashMap<>();
+
+    for (Map.Entry<String, String> item : tagsRef.entrySet()) {
+      if (item != null) {
+        tagsClone.put(item.getKey(), item.getValue()); // shallow copy
+      }
+    }
+
+    this.tags = tagsClone;
+
+    final Map<String, Object> extraRef = scope.extra;
+
+    Map<String, @NotNull Object> extraClone = new ConcurrentHashMap<>();
+
+    for (Map.Entry<String, Object> item : extraRef.entrySet()) {
+      if (item != null) {
+        extraClone.put(item.getKey(), item.getValue()); // shallow copy
+      }
+    }
+
+    this.extra = extraClone;
+
+    this.contexts = new Contexts(contexts);
+
+    this.attachments = new CopyOnWriteArrayList<>(scope.attachments);
   }
 
   /**
@@ -337,9 +392,10 @@ public final class Scope implements Cloneable {
    *
    * @return the tags map
    */
-  @NotNull
-  Map<String, String> getTags() {
-    return tags;
+  @ApiStatus.Internal
+  @SuppressWarnings("NullAway") // tags are never null
+  public @NotNull Map<String, String> getTags() {
+    return CollectionUtils.newConcurrentHashMap(tags);
   }
 
   /**
@@ -506,70 +562,6 @@ public final class Scope implements Cloneable {
    */
   private @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
     return SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb));
-  }
-
-  /**
-   * Clones a Scope aka deep copy
-   *
-   * @return the cloned Scope
-   * @throws CloneNotSupportedException if object is not cloneable
-   */
-  @Override
-  public @NotNull Scope clone() throws CloneNotSupportedException {
-    final Scope clone = (Scope) super.clone();
-
-    final SentryLevel levelRef = level;
-    clone.level =
-        levelRef != null ? SentryLevel.valueOf(levelRef.name().toUpperCase(Locale.ROOT)) : null;
-
-    final User userRef = user;
-    clone.user = userRef != null ? userRef.clone() : null;
-
-    final Request requestRef = request;
-    clone.request = requestRef != null ? requestRef.clone() : null;
-
-    clone.fingerprint = new ArrayList<>(fingerprint);
-    clone.eventProcessors = new CopyOnWriteArrayList<>(eventProcessors);
-
-    final Queue<Breadcrumb> breadcrumbsRef = breadcrumbs;
-
-    Queue<Breadcrumb> breadcrumbsClone = createBreadcrumbsList(options.getMaxBreadcrumbs());
-
-    for (Breadcrumb item : breadcrumbsRef) {
-      final Breadcrumb breadcrumbClone = item.clone();
-      breadcrumbsClone.add(breadcrumbClone);
-    }
-    clone.breadcrumbs = breadcrumbsClone;
-
-    final Map<String, String> tagsRef = tags;
-
-    final Map<String, @NotNull String> tagsClone = new ConcurrentHashMap<>();
-
-    for (Map.Entry<String, String> item : tagsRef.entrySet()) {
-      if (item != null) {
-        tagsClone.put(item.getKey(), item.getValue()); // shallow copy
-      }
-    }
-
-    clone.tags = tagsClone;
-
-    final Map<String, Object> extraRef = extra;
-
-    Map<String, @NotNull Object> extraClone = new ConcurrentHashMap<>();
-
-    for (Map.Entry<String, Object> item : extraRef.entrySet()) {
-      if (item != null) {
-        extraClone.put(item.getKey(), item.getValue()); // shallow copy
-      }
-    }
-
-    clone.extra = extraClone;
-
-    clone.contexts = contexts.clone();
-
-    clone.attachments = new CopyOnWriteArrayList<>(attachments);
-
-    return clone;
   }
 
   /**

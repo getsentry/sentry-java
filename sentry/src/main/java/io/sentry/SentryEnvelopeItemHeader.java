@@ -14,6 +14,7 @@ public final class SentryEnvelopeItemHeader {
   private final @NotNull SentryItemType type;
   private final int length;
   @Nullable private final Callable<Integer> getLength;
+  private final @Nullable String attachmentType;
 
   public @NotNull SentryItemType getType() {
     return type;
@@ -42,12 +43,28 @@ public final class SentryEnvelopeItemHeader {
       final @NotNull SentryItemType type,
       int length,
       final @Nullable String contentType,
-      final @Nullable String fileName) {
+      final @Nullable String fileName,
+      final @Nullable String attachmentType) {
     this.type = Objects.requireNonNull(type, "type is required");
     this.contentType = contentType;
     this.length = length;
     this.fileName = fileName;
     this.getLength = null;
+    this.attachmentType = attachmentType;
+  }
+
+  SentryEnvelopeItemHeader(
+      final @NotNull SentryItemType type,
+      final @Nullable Callable<Integer> getLength,
+      final @Nullable String contentType,
+      final @Nullable String fileName,
+      final @Nullable String attachmentType) {
+    this.type = Objects.requireNonNull(type, "type is required");
+    this.contentType = contentType;
+    this.length = -1;
+    this.fileName = fileName;
+    this.getLength = getLength;
+    this.attachmentType = attachmentType;
   }
 
   SentryEnvelopeItemHeader(
@@ -55,10 +72,15 @@ public final class SentryEnvelopeItemHeader {
       final @Nullable Callable<Integer> getLength,
       final @Nullable String contentType,
       final @Nullable String fileName) {
-    this.type = Objects.requireNonNull(type, "type is required");
-    this.contentType = contentType;
-    this.length = -1;
-    this.fileName = fileName;
-    this.getLength = getLength;
+    this(type, getLength, contentType, fileName, null);
+  }
+
+  /**
+   * Returns the attachmentType type
+   *
+   * @return the attachmentType
+   */
+  public @Nullable String getAttachmentType() {
+    return attachmentType;
   }
 }

@@ -1,59 +1,22 @@
-minVersion: "0.18.0"
-github:
-  owner: getsentry
-  repo: sentry-java
+minVersion: 0.23.1
 changelogPolicy: simple
-statusProvider:
-  name: github
 artifactProvider:
   name: none
 targets:
   - name: github
   - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-spring"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-spring-boot-starter"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-servlet"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-logback"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-log4j2"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-jul"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-apache-http-client-5"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-android"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-android-core"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-android-ndk"
-  - name: registry
-    type: sdk
-    config:
-      canonical: "maven:io.sentry:sentry-android-timber"
+    sdks:
+      maven:io.sentry:sentry:
+      maven:io.sentry:sentry-spring:
+      maven:io.sentry:sentry-spring-boot-starter:
+      maven:io.sentry:sentry-servlet:
+      maven:io.sentry:sentry-logback:
+      maven:io.sentry:sentry-log4j2:
+      maven:io.sentry:sentry-jul:
+      maven:io.sentry:sentry-apache-http-client-5:
+      maven:io.sentry:sentry-android:
+      maven:io.sentry:sentry-android-core:
+      maven:io.sentry:sentry-android-ndk:
+      maven:io.sentry:sentry-android-timber:
+      maven:io.sentry:sentry-android-okhttp:
+      maven:io.sentry:sentry-kotlin-extensions:

@@ -595,7 +595,9 @@ class GsonSerializerTest {
         val expectedJson = "{\"event_id\":\"${eventID}\"}\n" +
                 "{\"content_type\":\"${attachment.contentType}\"," +
                 "\"filename\":\"${attachment.filename}\"," +
-                "\"type\":\"attachment\",\"length\":${attachment.bytes?.size}}\n" +
+                "\"type\":\"attachment\"," +
+                "\"attachment_type\":\"event.attachment\"," +
+                "\"length\":${attachment.bytes?.size}}\n" +
                 "$message\n"
 
         assertEquals(expectedJson, actualJson)
