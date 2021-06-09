@@ -80,7 +80,7 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public @NotNull ISpan startChild(@NotNull String operation, @NotNull Date timestamp) {
+  public @NotNull ISpan startChild(final @NotNull String operation, final @NotNull Date timestamp) {
     return transaction.startChild(context.getSpanId(), operation, timestamp);
   }
 

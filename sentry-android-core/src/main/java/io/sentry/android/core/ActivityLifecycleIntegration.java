@@ -137,7 +137,8 @@ public final class ActivityLifecycleIntegration
         // start transaction with app start timestamp
         transaction = hub.startTransaction(activityName, NAV_OP, appStartTime);
         // start specific span for app start
-        // TODO: add description cold/warm
+        // TODO: add description cold/warm or different operation? how do we break down
+        // per app start cold/warm?
         appStartSpan = transaction.startChild("app.start", appStartTime);
       }
 
