@@ -38,21 +38,32 @@ public final class Span implements ISpan {
       final @NotNull SentryTracer transaction,
       final @NotNull String operation,
       final @NotNull IHub hub) {
+    this(traceId, parentSpanId, transaction, operation, hub, null);
+  }
+
+  Span(
+          final @NotNull SentryId traceId,
+          final @Nullable SpanId parentSpanId,
+          final @NotNull SentryTracer transaction,
+          final @NotNull String operation,
+          final @NotNull IHub hub,
+          final @Nullable Date startTimestamp) {
     this.context =
-        new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
+            new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
-    this.startTimestamp = DateUtils.getCurrentDateTime();
+    this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   Span(
       final @NotNull TransactionContext context,
       final @NotNull SentryTracer sentryTracer,
-      final @NotNull IHub hub) {
+      final @NotNull IHub hub,
+      final @Nullable Date startTimestamp) {
     this.context = Objects.requireNonNull(context, "context is required");
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.startTimestamp = DateUtils.getCurrentDateTime();
+    this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
   }
 
   public @NotNull Date getStartTimestamp() {
@@ -65,7 +76,12 @@ public final class Span implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
-    return this.startChild(operation, null);
+    return this.startChild(operation, (String)null);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(@NotNull String operation, @NotNull Date timestamp) {
+    return transaction.startChild(context.getSpanId(), operation, timestamp);
   }
 
   @Override

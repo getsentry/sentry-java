@@ -11,6 +11,7 @@ import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.io.Closeable;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -580,6 +581,25 @@ public final class Hub implements IHub {
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
+    return createTransaction(transactionContext, customSamplingContext, bindToScope, null);
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull ITransaction startTransaction(
+      @NotNull TransactionContext transactionContext,
+      @Nullable CustomSamplingContext customSamplingContext,
+      boolean bindToScope,
+      @NotNull Date startTimestamp) {
+    return createTransaction(
+        transactionContext, customSamplingContext, bindToScope, startTimestamp);
+  }
+
+  private @NotNull ITransaction createTransaction(
+      final @NotNull TransactionContext transactionContext,
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final boolean bindToScope,
+      final @Nullable Date startTimestamp) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -602,7 +622,7 @@ public final class Hub implements IHub {
       boolean samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSampled(samplingDecision);
 
-      transaction = new SentryTracer(transactionContext, this);
+      transaction = new SentryTracer(transactionContext, this, startTimestamp);
     }
     if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));

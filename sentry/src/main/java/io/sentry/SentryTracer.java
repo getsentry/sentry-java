@@ -24,9 +24,16 @@ public final class SentryTracer implements ITransaction {
   private @NotNull String name;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
+    this(context, hub, null);
+  }
+
+  SentryTracer(
+      final @NotNull TransactionContext context,
+      final @NotNull IHub hub,
+      final @Nullable Date startTimestamp) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
-    this.root = new Span(context, this, hub);
+    this.root = new Span(context, this, hub, startTimestamp);
     this.name = context.getName();
     this.hub = hub;
   }
@@ -56,9 +63,17 @@ public final class SentryTracer implements ITransaction {
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
       final @Nullable String description) {
-    final ISpan span = startChild(parentSpanId, operation);
+    final ISpan span = createChild(parentSpanId, operation);
     span.setDescription(description);
     return span;
+  }
+
+  @NotNull
+  ISpan startChild(
+          final @NotNull SpanId parentSpanId,
+          final @NotNull String operation,
+          final @NotNull Date timestamp) {
+    return createChild(parentSpanId, operation, timestamp);
   }
 
   /**
@@ -68,17 +83,37 @@ public final class SentryTracer implements ITransaction {
    * @return a new transaction span
    */
   @NotNull
-  private ISpan startChild(final @NotNull SpanId parentSpanId, final @NotNull String operation) {
+  private ISpan createChild(final @NotNull SpanId parentSpanId, final @NotNull String operation) {
+    return createChild(parentSpanId, operation, null);
+  }
+
+  @NotNull
+  private ISpan createChild(final @NotNull SpanId parentSpanId, final @NotNull String operation, @Nullable Date timestamp) {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     Objects.requireNonNull(operation, "operation is required");
-    final Span span = new Span(root.getTraceId(), parentSpanId, this, operation, this.hub);
+    final Span span = new Span(root.getTraceId(), parentSpanId, this, operation, this.hub, timestamp);
     this.children.add(span);
     return span;
   }
 
   @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
-    return this.startChild(operation, null);
+    return this.startChild(operation, (String) null);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(final @NotNull String operation, @NotNull Date timestamp) {
+    if (children.size() < hub.getOptions().getMaxSpans()) {
+      return root.startChild(operation, timestamp);
+    } else {
+      hub.getOptions()
+              .getLogger()
+              .log(
+                      SentryLevel.WARNING,
+                      "Span operation: %s, dropped due to limit reached. Returning NoOpSpan.",
+                      operation);
+      return NoOpSpan.getInstance();
+    }
   }
 
   @Override

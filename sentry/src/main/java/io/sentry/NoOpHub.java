@@ -3,6 +3,8 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+
+import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -131,6 +133,11 @@ public final class NoOpHub implements IHub {
       @NotNull TransactionContext transactionContexts,
       @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope) {
+    return NoOpTransaction.getInstance();
+  }
+
+  @Override
+  public @NotNull ITransaction startTransaction(@NotNull TransactionContext transactionContexts, @Nullable CustomSamplingContext customSamplingContext, boolean bindToScope, @NotNull Date startTimestamp) {
     return NoOpTransaction.getInstance();
   }
 

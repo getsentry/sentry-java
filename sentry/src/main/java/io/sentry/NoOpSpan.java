@@ -4,6 +4,8 @@ import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Date;
+
 public final class NoOpSpan implements ISpan {
 
   private static final NoOpSpan instance = new NoOpSpan();
@@ -16,6 +18,11 @@ public final class NoOpSpan implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
+  public @NotNull ISpan startChild(@NotNull String operation, @NotNull Date timestamp) {
     return NoOpSpan.getInstance();
   }
 

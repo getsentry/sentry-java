@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
+import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Integration;
 import io.sentry.Scope;
@@ -17,6 +18,7 @@ import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +38,8 @@ public final class ActivityLifecycleIntegration
 
   private boolean firstActivityCreated = false;
   private boolean firstActivityResumed = false;
+
+  private @Nullable ISpan appStartSpan;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
@@ -119,8 +123,16 @@ public final class ActivityLifecycleIntegration
       stopPreviousTransactions();
 
       // we can only bind to the scope if there's no running transaction
-      final ITransaction transaction =
-          hub.startTransaction(getActivityName(activity), "navigation");
+      ITransaction transaction;
+      final String activityName = getActivityName(activity);
+      final String op = "navigation";
+      final Date appStartTime = AppStartState.getInstance().getAppStartTime();
+      if (firstActivityCreated || appStartTime == null) {
+        transaction = hub.startTransaction(activityName, op);
+      } else {
+        transaction = hub.startTransaction(activityName, op, appStartTime);
+        appStartSpan = transaction.startChild("app.start", appStartTime);
+      }
 
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
@@ -193,7 +205,6 @@ public final class ActivityLifecycleIntegration
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
       AppStartState.getInstance().setColdStart(savedInstanceState == null);
-      firstActivityCreated = true;
     }
 
     addBreadcrumb(activity, "created");
@@ -202,6 +213,7 @@ public final class ActivityLifecycleIntegration
     if (!isAllActivityCallbacksAvailable) {
       startTracing(activity);
     }
+    firstActivityCreated = true;
   }
 
   @Override
@@ -214,6 +226,9 @@ public final class ActivityLifecycleIntegration
     if (!firstActivityResumed && performanceEnabled) {
       // sets App start as finished when the very first activity calls onResume
       AppStartState.getInstance().setAppStartEnd();
+      if (appStartSpan != null) {
+          appStartSpan.finish();
+      }
       firstActivityResumed = true;
     }
 
