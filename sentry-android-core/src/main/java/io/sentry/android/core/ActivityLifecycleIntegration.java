@@ -28,6 +28,8 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
+  private static final String NAV_OP = "navigation";
+
   private final @NotNull Application application;
   private @Nullable IHub hub;
   private @Nullable SentryAndroidOptions options;
@@ -125,12 +127,17 @@ public final class ActivityLifecycleIntegration
       // we can only bind to the scope if there's no running transaction
       ITransaction transaction;
       final String activityName = getActivityName(activity);
-      final String op = "navigation";
+
       final Date appStartTime = AppStartState.getInstance().getAppStartTime();
+
+      // in case appStartTime isn't available, we don't create a span for it.
       if (firstActivityCreated || appStartTime == null) {
-        transaction = hub.startTransaction(activityName, op);
+        transaction = hub.startTransaction(activityName, NAV_OP);
       } else {
-        transaction = hub.startTransaction(activityName, op, appStartTime);
+        // start transaction with app start timestamp
+        transaction = hub.startTransaction(activityName, NAV_OP, appStartTime);
+        // start specific span for app start
+        // TODO: add description cold/warm
         appStartSpan = transaction.startChild("app.start", appStartTime);
       }
 
@@ -226,8 +233,10 @@ public final class ActivityLifecycleIntegration
     if (!firstActivityResumed && performanceEnabled) {
       // sets App start as finished when the very first activity calls onResume
       AppStartState.getInstance().setAppStartEnd();
+
+      // finishes app start span
       if (appStartSpan != null) {
-          appStartSpan.finish();
+        appStartSpan.finish();
       }
       firstActivityResumed = true;
     }

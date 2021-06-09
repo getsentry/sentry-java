@@ -655,12 +655,12 @@ public final class Sentry {
 
   @ApiStatus.Internal
   public static @NotNull ITransaction startTransaction(
-          final @NotNull TransactionContext transactionContexts,
-          final @Nullable CustomSamplingContext customSamplingContext,
-          final boolean bindToScope,
-          final @NotNull Date startTimestamp) {
+      final @NotNull TransactionContext transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final boolean bindToScope,
+      final @NotNull Date startTimestamp) {
     return getCurrentHub()
-            .startTransaction(transactionContexts, customSamplingContext, bindToScope, startTimestamp);
+        .startTransaction(transactionContexts, customSamplingContext, bindToScope, startTimestamp);
   }
 
   /**

@@ -70,9 +70,9 @@ public final class SentryTracer implements ITransaction {
 
   @NotNull
   ISpan startChild(
-          final @NotNull SpanId parentSpanId,
-          final @NotNull String operation,
-          final @NotNull Date timestamp) {
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @NotNull Date timestamp) {
     return createChild(parentSpanId, operation, timestamp);
   }
 
@@ -88,10 +88,14 @@ public final class SentryTracer implements ITransaction {
   }
 
   @NotNull
-  private ISpan createChild(final @NotNull SpanId parentSpanId, final @NotNull String operation, @Nullable Date timestamp) {
+  private ISpan createChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      @Nullable Date timestamp) {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     Objects.requireNonNull(operation, "operation is required");
-    final Span span = new Span(root.getTraceId(), parentSpanId, this, operation, this.hub, timestamp);
+    final Span span =
+        new Span(root.getTraceId(), parentSpanId, this, operation, this.hub, timestamp);
     this.children.add(span);
     return span;
   }
@@ -103,24 +107,26 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(final @NotNull String operation, @NotNull Date timestamp) {
-    if (children.size() < hub.getOptions().getMaxSpans()) {
-      return root.startChild(operation, timestamp);
-    } else {
-      hub.getOptions()
-              .getLogger()
-              .log(
-                      SentryLevel.WARNING,
-                      "Span operation: %s, dropped due to limit reached. Returning NoOpSpan.",
-                      operation);
-      return NoOpSpan.getInstance();
-    }
+    return createChild(operation, null, timestamp);
   }
 
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
+    return createChild(operation, description, null);
+  }
+
+  private @NotNull ISpan createChild(
+      final @NotNull String operation,
+      final @Nullable String description,
+      @Nullable Date timestamp) {
     if (children.size() < hub.getOptions().getMaxSpans()) {
-      return root.startChild(operation, description);
+      // TODO: overloads would be better
+      if (timestamp != null) {
+        return root.startChild(operation, timestamp);
+      } else {
+        return root.startChild(operation, description);
+      }
     } else {
       hub.getOptions()
           .getLogger()

@@ -42,14 +42,14 @@ public final class Span implements ISpan {
   }
 
   Span(
-          final @NotNull SentryId traceId,
-          final @Nullable SpanId parentSpanId,
-          final @NotNull SentryTracer transaction,
-          final @NotNull String operation,
-          final @NotNull IHub hub,
-          final @Nullable Date startTimestamp) {
+      final @NotNull SentryId traceId,
+      final @Nullable SpanId parentSpanId,
+      final @NotNull SentryTracer transaction,
+      final @NotNull String operation,
+      final @NotNull IHub hub,
+      final @Nullable Date startTimestamp) {
     this.context =
-            new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
+        new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
@@ -76,7 +76,7 @@ public final class Span implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
-    return this.startChild(operation, (String)null);
+    return this.startChild(operation, (String) null);
   }
 
   @Override

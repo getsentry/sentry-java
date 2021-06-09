@@ -1,10 +1,9 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Date;
 
 public final class NoOpSpan implements ISpan {
 

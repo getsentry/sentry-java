@@ -1,7 +1,6 @@
 package io.sentry;
 
 import java.util.Date;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
