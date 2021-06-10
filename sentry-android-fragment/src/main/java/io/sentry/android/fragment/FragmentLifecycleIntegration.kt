@@ -63,6 +63,12 @@ class FragmentLifecycleIntegration(private val application: Application) :
     }
 
     override fun onActivityDestroyed(activity: Activity) {
+        /**
+         * It is not needed to unregister [SentryFragmentLifecycleCallbacks] as
+         * [androidx.fragment.app.FragmentManager] will do this on its own when it's destroyed.
+         *
+         * @see [androidx.fragment.app.FragmentManager.registerFragmentLifecycleCallbacks]
+         */
         // no-op
     }
 }
