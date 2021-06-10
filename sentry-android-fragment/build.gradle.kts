@@ -34,6 +34,14 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
+    testOptions {
+        animationsDisabled = true
+        unitTests.apply {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+        }
+    }
+
     lintOptions {
         isWarningsAsErrors = true
         isCheckDependencies = true
