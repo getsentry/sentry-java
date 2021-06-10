@@ -109,6 +109,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When ActivityBreadcrumbsIntegration is closed, it should unregister the callback`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
+
         sut.close()
 
         verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
@@ -121,6 +122,7 @@ class ActivityLifecycleIntegrationTest {
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
+
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("ui.lifecycle", it.category)
             assertEquals("navigation", it.type)
@@ -133,6 +135,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is created, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
+
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
@@ -143,6 +146,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is started, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
+
         val activity = mock<Activity>()
         sut.onActivityStarted(activity)
 
@@ -153,8 +157,10 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is resumed, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
+
         val activity = mock<Activity>()
         sut.onActivityResumed(activity)
+
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -162,8 +168,10 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is paused, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
+
         val activity = mock<Activity>()
         sut.onActivityPaused(activity)
+
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -171,8 +179,10 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is stopped, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
+
         val activity = mock<Activity>()
         sut.onActivityStopped(activity)
+
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -180,8 +190,10 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is save instance, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
+
         val activity = mock<Activity>()
         sut.onActivitySaveInstanceState(activity, fixture.bundle)
+
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -189,8 +201,10 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is destroyed, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
+
         val activity = mock<Activity>()
         sut.onActivityDestroyed(activity)
+
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -198,6 +212,7 @@ class ActivityLifecycleIntegrationTest {
     fun `When tracing is disabled, do not start tracing`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
+
         val activity = mock<Activity>()
         sut.onActivityPreCreated(activity, fixture.bundle)
 
@@ -275,7 +290,7 @@ class ActivityLifecycleIntegrationTest {
         whenever(fixture.hub.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
             val previousTransaction = SentryTracer(TransactionContext("name", "op"), fixture.hub)
-            scope.setTransaction(previousTransaction)
+            scope.transaction = previousTransaction
 
             sut.applyScope(scope, fixture.transaction)
 

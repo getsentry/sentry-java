@@ -96,14 +96,25 @@ class PerformanceAndroidEventProcessorTest {
         assertTrue(tr.measurements.isEmpty())
     }
 
+    @Test
+    fun `do not add app start metric if no app_start span`() {
+        val sut = fixture.getSut(tracesSampleRate = null)
+
+        var tr = getTransaction("task")
+
+        tr = sut.process(tr, null)
+
+        assertTrue(tr.measurements.isEmpty())
+    }
+
     private fun setAppStart(coldStart: Boolean = true) {
         AppStartState.getInstance().isColdStart = coldStart
         AppStartState.getInstance().setAppStartTime(0, Date())
         AppStartState.getInstance().setAppStartEnd()
     }
 
-    private fun getTransaction(): SentryTransaction {
-        fixture.tracer.startChild("app.start")
+    private fun getTransaction(op: String = "app.start"): SentryTransaction {
+        fixture.tracer.startChild(op)
         return SentryTransaction(fixture.tracer)
     }
 }
