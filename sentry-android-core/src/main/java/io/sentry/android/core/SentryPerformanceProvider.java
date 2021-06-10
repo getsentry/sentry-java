@@ -13,6 +13,7 @@ import io.sentry.DateUtils;
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * SentryPerformanceProvider is responsible for collecting data (eg appStart) as early as possible
@@ -23,9 +24,9 @@ import org.jetbrains.annotations.NotNull;
 public final class SentryPerformanceProvider extends ContentProvider {
 
   // static to rely on Class load
-  private static final @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
+  private static @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
-  private static final long appStartMillis = SystemClock.uptimeMillis();
+  private static long appStartMillis = SystemClock.uptimeMillis();
 
   public SentryPerformanceProvider() {
     AppStartState.getInstance().setAppStartTime(appStartMillis, appStartTime);
@@ -82,5 +83,11 @@ public final class SentryPerformanceProvider extends ContentProvider {
       @Nullable String selection,
       @Nullable String[] selectionArgs) {
     return 0;
+  }
+
+  @TestOnly
+  static void setAppStartTime(final long appStartMillisLong, final @NotNull Date appStartTimeDate) {
+    appStartMillis = appStartMillisLong;
+    appStartTime = appStartTimeDate;
   }
 }

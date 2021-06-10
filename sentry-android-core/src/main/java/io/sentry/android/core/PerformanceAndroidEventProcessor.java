@@ -24,8 +24,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   @Override
   public synchronized @NotNull SentryTransaction process(
       @NotNull SentryTransaction transaction, @Nullable Object hint) {
-    // the app start metric is sent only once when the 1st transaction happens
-    // after the app start is collected.
+    // the app start measurement is only sent once and only if the transaction has
+    // the app.start span, which is automatically created by the SDK.
     if (!sentStartMeasurement && tracingEnabled && hasAppStartSpan(transaction.getSpans())) {
       final Long appStartUpInterval = AppStartState.getInstance().getAppStartInterval();
       // if appStartUpInterval is null, metrics are not ready to be sent
