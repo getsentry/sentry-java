@@ -8,7 +8,6 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.SentryOptions
 import org.junit.Test
@@ -55,7 +54,7 @@ class FragmentLifecycleIntegrationTest {
         sut.register(mock(), SentryOptions())
         sut.onActivityCreated(fragmentActivity, savedInstanceState = null)
 
-        verify(fragmentManager, times(1)).registerFragmentLifecycleCallbacks(check { fragmentCallbacks ->
+        verify(fragmentManager).registerFragmentLifecycleCallbacks(check { fragmentCallbacks ->
             fragmentCallbacks is SentryFragmentLifecycleCallbacks
         }, eq(true))
     }
