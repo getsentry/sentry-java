@@ -7,11 +7,14 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks
 import io.sentry.Breadcrumb
+import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.SentryLevel.INFO
 
 @Suppress("TooManyFunctions")
-internal class SentryFragmentLifecycleCallbacks(private val hub: IHub) : FragmentLifecycleCallbacks() {
+class SentryFragmentLifecycleCallbacks(
+    private val hub: IHub = HubAdapter.getInstance()
+) : FragmentLifecycleCallbacks() {
 
     override fun onFragmentAttached(
         fragmentManager: FragmentManager,
