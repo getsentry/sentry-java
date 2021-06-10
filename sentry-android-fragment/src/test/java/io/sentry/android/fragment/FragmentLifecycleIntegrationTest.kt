@@ -19,7 +19,7 @@ class FragmentLifecycleIntegrationTest {
         val application = mock<Application>()
 
         fun getSut(): FragmentLifecycleIntegration {
-            return FragmentLifecycleIntegration(application, mock())
+            return FragmentLifecycleIntegration(application)
         }
     }
 
@@ -38,6 +38,7 @@ class FragmentLifecycleIntegrationTest {
     fun `When close, it should unregister lifecycle callbacks`() {
         val sut = fixture.getSut()
 
+        sut.register(mock(), SentryOptions())
         sut.close()
 
         verify(fixture.application).unregisterActivityLifecycleCallbacks(sut)

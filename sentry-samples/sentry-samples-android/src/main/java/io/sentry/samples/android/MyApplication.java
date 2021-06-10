@@ -28,7 +28,7 @@ public class MyApplication extends Application {
     //
     // options.setDsn("https://d3964e5d568641c484c536600fb433a1@o552180.ingest.sentry.io/5677396");
     //      options.addIntegration(
-    //          new FragmentLifecycleIntegration(MyApplication.this, options.getLogger()));
+    //          new FragmentLifecycleIntegration(MyApplication.this));
     //    });
   }
 

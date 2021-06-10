@@ -12,15 +12,17 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
 import java.io.Closeable
 
-class FragmentLifecycleIntegration(
-    private val application: Application,
-    private val logger: ILogger
-) : ActivityLifecycleCallbacks, Integration, Closeable {
+class FragmentLifecycleIntegration(private val application: Application) :
+    ActivityLifecycleCallbacks,
+    Integration,
+    Closeable {
 
     private lateinit var hub: IHub
+    private lateinit var logger: ILogger
 
     override fun register(hub: IHub, options: SentryOptions) {
         this.hub = hub
+        this.logger = options.logger
 
         application.registerActivityLifecycleCallbacks(this)
         logger.log(DEBUG, "FragmentLifecycleIntegration installed.")
