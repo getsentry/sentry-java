@@ -2,6 +2,7 @@ package io.sentry.samples.android;
 
 import android.app.Application;
 import android.os.StrictMode;
+
 // import io.sentry.android.fragment.FragmentLifecycleIntegration;
 // import io.sentry.android.core.SentryAndroid;
 
