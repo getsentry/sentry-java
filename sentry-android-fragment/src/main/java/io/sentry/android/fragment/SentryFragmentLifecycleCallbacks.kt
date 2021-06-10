@@ -82,7 +82,7 @@ class SentryFragmentLifecycleCallbacks(
             type = "navigation"
             setData("state", state)
             setData("screen", getFragmentName(fragment))
-            category = "ui.lifecycle"
+            category = "ui.fragment.lifecycle"
             level = INFO
         }
         hub.addBreadcrumb(breadcrumb)

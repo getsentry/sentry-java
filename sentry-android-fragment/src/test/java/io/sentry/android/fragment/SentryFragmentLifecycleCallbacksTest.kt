@@ -135,7 +135,7 @@ class SentryFragmentLifecycleCallbacksTest {
     private fun verifyBreadcrumbAdded(expectedState: String) {
         verify(fixture.hub).addBreadcrumb(
             check { breadcrumb: Breadcrumb ->
-                assertEquals("ui.lifecycle", breadcrumb.category)
+                assertEquals("ui.fragment.lifecycle", breadcrumb.category)
                 assertEquals("navigation", breadcrumb.type)
                 assertEquals(INFO, breadcrumb.level)
                 assertEquals(expectedState, breadcrumb.getData("state"))
