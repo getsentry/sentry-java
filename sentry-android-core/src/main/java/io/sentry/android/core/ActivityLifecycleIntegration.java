@@ -28,7 +28,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
-  private static final String NAV_OP = "navigation";
+  private static final String UI_LOAD_OP = "ui.load";
   static final String APP_START_OP = "app.start";
 
   private final @NotNull Application application;
@@ -133,10 +133,10 @@ public final class ActivityLifecycleIntegration
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (firstActivityCreated || appStartTime == null) {
-        transaction = hub.startTransaction(activityName, NAV_OP);
+        transaction = hub.startTransaction(activityName, UI_LOAD_OP);
       } else {
         // start transaction with app start timestamp
-        transaction = hub.startTransaction(activityName, NAV_OP, appStartTime);
+        transaction = hub.startTransaction(activityName, UI_LOAD_OP, appStartTime);
         // start specific span for app start
         // TODO: add description cold/warm or different operation? how do we break down
         // per app start cold/warm?

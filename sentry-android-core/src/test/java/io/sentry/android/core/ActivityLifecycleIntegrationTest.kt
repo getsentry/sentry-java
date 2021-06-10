@@ -8,7 +8,6 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
@@ -239,7 +238,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `Transaction op is navigation`() {
+    fun `Transaction op is ui_load`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -250,7 +249,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(activity, fixture.bundle)
 
         verify(fixture.hub).startTransaction(any(), check {
-            assertEquals("navigation", it)
+            assertEquals("ui.load", it)
         }, any<Date>())
     }
 
