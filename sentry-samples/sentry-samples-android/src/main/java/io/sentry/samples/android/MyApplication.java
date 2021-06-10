@@ -25,8 +25,6 @@ public class MyApplication extends Application {
     //            return event;
     //          });
     //      options.setAnrTimeoutIntervalMillis(2000);
-    //
-    // options.setDsn("https://d3964e5d568641c484c536600fb433a1@o552180.ingest.sentry.io/5677396");
     //      options.addIntegration(
     //          new FragmentLifecycleIntegration(MyApplication.this));
     //    });
