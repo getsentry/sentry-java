@@ -5,8 +5,10 @@ import android.app.Application
 import android.os.Bundle
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
@@ -23,6 +25,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class ActivityLifecycleIntegrationTest {
@@ -217,6 +220,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(activity, fixture.bundle)
 
         verify(fixture.hub, never()).startTransaction(any<String>(), any())
+        verify(fixture.hub, never()).startTransaction(any(), any(), any<Date>())
     }
 
     @Test
@@ -231,6 +235,7 @@ class ActivityLifecycleIntegrationTest {
 
         // call only once
         verify(fixture.hub).startTransaction(any<String>(), any())
+        verify(fixture.hub, never()).startTransaction(any(), any(), any<Date>())
     }
 
     @Test
@@ -239,12 +244,14 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
+        setAppStartTime()
+
         val activity = mock<Activity>()
         sut.onActivityPreCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any<String>(), check {
+        verify(fixture.hub).startTransaction(any(), check {
             assertEquals("navigation", it)
-        })
+        }, any<Date>())
     }
 
     @Test
@@ -253,12 +260,14 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
+        setAppStartTime()
+
         val activity = mock<Activity>()
         sut.onActivityPreCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(check<String> {
+        verify(fixture.hub).startTransaction(check {
             assertEquals("Activity", it)
-        }, any())
+        }, any(), any<Date>())
     }
 
     @Test
@@ -419,6 +428,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
 
         verify(fixture.hub, never()).startTransaction(any<String>(), any())
+        verify(fixture.hub, never()).startTransaction(any(), any(), any<Date>())
     }
 
     @Test
@@ -440,10 +450,12 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
+        setAppStartTime()
+
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
 
-        verify(fixture.hub).startTransaction(any<String>(), any())
+        verify(fixture.hub).startTransaction(any(), any(), any<Date>())
     }
 
     @Test
@@ -504,8 +516,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        // set by SentryPerformanceProvider so forcing it here
-        AppStartState.getInstance().setAppStartTime(0, Date())
+        setAppStartTime()
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, null)
@@ -513,5 +524,64 @@ class ActivityLifecycleIntegrationTest {
 
         // SystemClock.uptimeMillis() always returns 0, can't assert real values
         assertNotNull(AppStartState.getInstance().appStartInterval)
+    }
+
+    @Test
+    fun `When firstActivityCreated is true, start transaction with given appStartTime`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val date = Date(0)
+        setAppStartTime(date)
+
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
+
+        // call only once
+        verify(fixture.hub).startTransaction(any(), any(), eq(date))
+    }
+
+    @Test
+    fun `When firstActivityCreated is true, start app start span with given appStartTime`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val date = Date(0)
+        setAppStartTime(date)
+
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
+
+        val span = fixture.transaction.children.first()
+        assertEquals(span.operation, "app.start")
+        assertSame(span.startTimestamp, date)
+    }
+
+    @Test
+    fun `When firstActivityCreated is false, start transaction but not with given appStartTime`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(any(), any(), any<Date>())
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityPostResumed(activity)
+
+        val newActivity = mock<Activity>()
+        sut.onActivityPreCreated(newActivity, fixture.bundle)
+
+        verify(fixture.hub).startTransaction(any<String>(), any())
+    }
+
+    private fun setAppStartTime(date: Date = Date(0)) {
+        // set by SentryPerformanceProvider so forcing it here
+        AppStartState.getInstance().setAppStartTime(0, date)
     }
 }
