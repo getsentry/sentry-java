@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Feat: App start up metrics (#1487)
+* Feat: Measure app start time (#1487)
 
 ## 5.0.1
 

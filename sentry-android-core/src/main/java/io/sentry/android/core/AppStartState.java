@@ -32,7 +32,7 @@ final class AppStartState {
     instance = new AppStartState();
   }
 
-  void setAppStartEnd() {
+  synchronized void setAppStartEnd() {
     setAppStartEnd(SystemClock.uptimeMillis());
   }
 
@@ -53,7 +53,7 @@ final class AppStartState {
     return coldStart;
   }
 
-  void setColdStart(final boolean coldStart) {
+  synchronized void setColdStart(final boolean coldStart) {
     this.coldStart = coldStart;
   }
 
