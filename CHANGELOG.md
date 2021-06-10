@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Feat: Automatic breadcrumbs logging for fragment lifecycle (#1374) 
+* Feat: Automatic breadcrumbs logging for fragment lifecycle (#1522) 
 
 ## 5.0.1
 
