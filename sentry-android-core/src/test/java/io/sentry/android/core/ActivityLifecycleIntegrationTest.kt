@@ -18,6 +18,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import java.util.Date
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,19 +31,26 @@ class ActivityLifecycleIntegrationTest {
         val application = mock<Application>()
         val hub = mock<Hub>()
         val options = SentryAndroidOptions()
-        val activity = mock<Activity>()
         val bundle = mock<Bundle>()
-        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
+        val context = TransactionContext("name", "op")
+        val transaction = SentryTracer(context, hub)
         val buildInfo = mock<IBuildInfoProvider>()
 
         fun getSut(apiVersion: Int = 29): ActivityLifecycleIntegration {
             whenever(hub.startTransaction(any<String>(), any())).thenReturn(transaction)
+            whenever(hub.options).thenReturn(options)
+            whenever(hub.startTransaction(any(), any(), any<Date>())).thenReturn(transaction)
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
             return ActivityLifecycleIntegration(application, buildInfo)
         }
     }
 
     private val fixture = Fixture()
+
+    @BeforeTest
+    fun `reset instance`() {
+        AppStartState.getInstance().resetInstance()
+    }
 
     @Test
     fun `When activity lifecycle breadcrumb is enabled, it registers callback`() {
@@ -111,7 +119,8 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("ui.lifecycle", it.category)
             assertEquals("navigation", it.type)
@@ -124,7 +133,8 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is created, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
-        sut.onActivityCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
 
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
@@ -133,7 +143,8 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is started, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
-        sut.onActivityStarted(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityStarted(activity)
 
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
@@ -142,8 +153,8 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is resumed, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
-
-        sut.onActivityResumed(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityResumed(activity)
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -151,8 +162,8 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is paused, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
-
-        sut.onActivityPaused(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityPaused(activity)
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -160,8 +171,8 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is stopped, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
-
-        sut.onActivityStopped(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityStopped(activity)
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -169,8 +180,8 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is save instance, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
-
-        sut.onActivitySaveInstanceState(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivitySaveInstanceState(activity, fixture.bundle)
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -178,8 +189,8 @@ class ActivityLifecycleIntegrationTest {
     fun `When activity is destroyed, it should add a breadcrumb`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
-
-        sut.onActivityDestroyed(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityDestroyed(activity)
         verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
     }
 
@@ -187,8 +198,8 @@ class ActivityLifecycleIntegrationTest {
     fun `When tracing is disabled, do not start tracing`() {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
-
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
 
         verify(fixture.hub, never()).startTransaction(any<String>(), any())
     }
@@ -199,8 +210,9 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityPreCreated(activity, fixture.bundle)
 
         // call only once
         verify(fixture.hub).startTransaction(any<String>(), any())
@@ -212,7 +224,8 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
 
         verify(fixture.hub).startTransaction(any<String>(), check {
             assertEquals("navigation", it)
@@ -225,7 +238,8 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
 
         verify(fixture.hub).startTransaction(check<String> {
             assertEquals("Activity", it)
@@ -247,7 +261,8 @@ class ActivityLifecycleIntegrationTest {
             assertNotNull(scope.transaction)
         }
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
     }
 
     @Test
@@ -267,7 +282,8 @@ class ActivityLifecycleIntegrationTest {
             assertEquals(previousTransaction, scope.transaction)
         }
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
     }
 
     @Test
@@ -276,8 +292,9 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
-        sut.onActivityPostResumed(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityPostResumed(activity)
 
         verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.OK, it.status)
@@ -290,11 +307,12 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
 
         fixture.transaction.status = SpanStatus.UNKNOWN_ERROR
 
-        sut.onActivityPostResumed(fixture.activity)
+        sut.onActivityPostResumed(activity)
 
         verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
@@ -308,8 +326,9 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.isEnableActivityLifecycleTracingAutoFinish = false
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
-        sut.onActivityPostResumed(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityPostResumed(activity)
 
         verify(fixture.hub, never()).captureTransaction(any())
     }
@@ -319,7 +338,8 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPostResumed(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityPostResumed(activity)
 
         verify(fixture.hub, never()).captureTransaction(any())
     }
@@ -330,8 +350,9 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
-        sut.onActivityDestroyed(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityDestroyed(activity)
 
         verify(fixture.hub).captureTransaction(any())
     }
@@ -342,7 +363,8 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
 
         assertFalse(sut.activitiesWithOngoingTransactions.isEmpty())
     }
@@ -353,8 +375,9 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
-        sut.onActivityDestroyed(fixture.activity)
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityDestroyed(activity)
 
         assertTrue(sut.activitiesWithOngoingTransactions.isEmpty())
     }
@@ -365,10 +388,9 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, mock())
+        sut.onActivityPreCreated(mock(), mock())
 
-        sut.onActivityPreCreated(fixture.activity, fixture.bundle)
+        sut.onActivityPreCreated(mock(), fixture.bundle)
         verify(fixture.hub).captureTransaction(any())
     }
 

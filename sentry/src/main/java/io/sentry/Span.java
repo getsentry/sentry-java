@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
 public final class Span implements ISpan {
@@ -55,7 +56,8 @@ public final class Span implements ISpan {
     this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
-  Span(
+  @VisibleForTesting
+  public Span(
       final @NotNull TransactionContext context,
       final @NotNull SentryTracer sentryTracer,
       final @NotNull IHub hub,
