@@ -18,7 +18,8 @@ public interface ISpan {
 
   @ApiStatus.Internal
   @NotNull
-  ISpan startChild(@NotNull String operation, @NotNull Date timestamp);
+  ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable Date timestamp);
 
   /**
    * Starts a child Span.

@@ -72,8 +72,9 @@ public final class SentryTracer implements ITransaction {
   ISpan startChild(
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
-      final @NotNull Date timestamp) {
-    return createChild(parentSpanId, operation, timestamp);
+      final @Nullable String description,
+      final @Nullable Date timestamp) {
+    return createChild(parentSpanId, operation, description, timestamp);
   }
 
   /**
@@ -84,18 +85,20 @@ public final class SentryTracer implements ITransaction {
    */
   @NotNull
   private ISpan createChild(final @NotNull SpanId parentSpanId, final @NotNull String operation) {
-    return createChild(parentSpanId, operation, null);
+    return createChild(parentSpanId, operation, null, null);
   }
 
   @NotNull
   private ISpan createChild(
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
+      final @Nullable String description,
       @Nullable Date timestamp) {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     Objects.requireNonNull(operation, "operation is required");
     final Span span =
         new Span(root.getTraceId(), parentSpanId, this, operation, this.hub, timestamp);
+    span.setDescription(description);
     this.children.add(span);
     return span;
   }
@@ -106,8 +109,9 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @NotNull ISpan startChild(final @NotNull String operation, @NotNull Date timestamp) {
-    return createChild(operation, null, timestamp);
+  public @NotNull ISpan startChild(
+      final @NotNull String operation, @Nullable String description, @Nullable Date timestamp) {
+    return createChild(operation, description, timestamp);
   }
 
   @Override
@@ -121,12 +125,7 @@ public final class SentryTracer implements ITransaction {
       final @Nullable String description,
       @Nullable Date timestamp) {
     if (children.size() < hub.getOptions().getMaxSpans()) {
-      // TODO: overloads would be better
-      if (timestamp != null) {
-        return root.startChild(operation, timestamp);
-      } else {
-        return root.startChild(operation, description);
-      }
+      return root.startChild(operation, description, timestamp);
     } else {
       hub.getOptions()
           .getLogger()

@@ -21,7 +21,8 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public @NotNull ISpan startChild(@NotNull String operation, @NotNull Date timestamp) {
+  public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable Date timestamp) {
     return NoOpSpan.getInstance();
   }
 

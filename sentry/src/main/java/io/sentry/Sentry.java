@@ -658,7 +658,7 @@ public final class Sentry {
       final @NotNull TransactionContext transactionContexts,
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope,
-      final @NotNull Date startTimestamp) {
+      final @Nullable Date startTimestamp) {
     return getCurrentHub()
         .startTransaction(transactionContexts, customSamplingContext, bindToScope, startTimestamp);
   }

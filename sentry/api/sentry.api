@@ -304,7 +304,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun setThrowable (Ljava/lang/Throwable;)V
 	public abstract fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public abstract fun startChild (Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
@@ -412,7 +412,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
@@ -443,7 +443,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
@@ -951,7 +951,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
@@ -1028,7 +1028,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 

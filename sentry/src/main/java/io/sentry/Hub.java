@@ -590,7 +590,7 @@ public final class Hub implements IHub {
       @NotNull TransactionContext transactionContext,
       @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope,
-      @NotNull Date startTimestamp) {
+      @Nullable Date startTimestamp) {
     return createTransaction(
         transactionContext, customSamplingContext, bindToScope, startTimestamp);
   }

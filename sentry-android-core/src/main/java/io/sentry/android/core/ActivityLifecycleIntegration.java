@@ -138,9 +138,8 @@ public final class ActivityLifecycleIntegration
         // start transaction with app start timestamp
         transaction = hub.startTransaction(activityName, UI_LOAD_OP, appStartTime);
         // start specific span for app start
-        // TODO: add description cold/warm or different operation? how do we break down
-        // per app start cold/warm?
-        appStartSpan = transaction.startChild(APP_START_OP, appStartTime);
+
+        appStartSpan = transaction.startChild(APP_START_OP, getColdStartDesc(), appStartTime);
       }
 
       // lets bind to the scope so other integrations can pick it up
@@ -200,6 +199,8 @@ public final class ActivityLifecycleIntegration
 
     // only executed if API >= 29 otherwise it happens on onActivityCreated
     if (isAllActivityCallbacksAvailable) {
+      setColdStart(savedInstanceState);
+
       // if activity has global fields being init. and
       // they are slow, this won't count the whole fields/ctor initialization time, but only
       // when onCreate is actually called.
@@ -210,10 +211,8 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    if (!firstActivityCreated && performanceEnabled) {
-      // if Activity has savedInstanceState then its a warm start
-      // https://developer.android.com/topic/performance/vitals/launch-time#warm
-      AppStartState.getInstance().setColdStart(savedInstanceState == null);
+    if (!isAllActivityCallbacksAvailable) {
+      setColdStart(savedInstanceState);
     }
 
     addBreadcrumb(activity, "created");
@@ -297,5 +296,21 @@ public final class ActivityLifecycleIntegration
   @NotNull
   WeakHashMap<Activity, ITransaction> getActivitiesWithOngoingTransactions() {
     return activitiesWithOngoingTransactions;
+  }
+
+  private void setColdStart(final @Nullable Bundle savedInstanceState) {
+    if (!firstActivityCreated && performanceEnabled) {
+      // if Activity has savedInstanceState then its a warm start
+      // https://developer.android.com/topic/performance/vitals/launch-time#warm
+      AppStartState.getInstance().setColdStart(savedInstanceState == null);
+    }
+  }
+
+  private @NotNull String getColdStartDesc() {
+    if (AppStartState.getInstance().isColdStart()) {
+      return "Cold Start";
+    } else {
+      return "Warm Start";
+    }
   }
 }

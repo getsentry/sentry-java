@@ -380,7 +380,7 @@ public interface IHub {
       @NotNull TransactionContext transactionContexts,
       @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope,
-      @NotNull Date startTimestamp);
+      @Nullable Date startTimestamp);
 
   /**
    * Creates a Transaction and returns the instance. Based on the {@link
@@ -398,7 +398,7 @@ public interface IHub {
 
   @ApiStatus.Internal
   default @NotNull ITransaction startTransaction(
-      final @NotNull String name, final @NotNull String operation, @NotNull Date startTimestamp) {
+      final @NotNull String name, final @NotNull String operation, @Nullable Date startTimestamp) {
     return startTransaction(new TransactionContext(name, operation), null, false, startTimestamp);
   }
 

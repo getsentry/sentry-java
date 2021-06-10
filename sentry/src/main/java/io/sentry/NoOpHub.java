@@ -140,7 +140,7 @@ public final class NoOpHub implements IHub {
       @NotNull TransactionContext transactionContexts,
       @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope,
-      @NotNull Date startTimestamp) {
+      @Nullable Date startTimestamp) {
     return NoOpTransaction.getInstance();
   }
 

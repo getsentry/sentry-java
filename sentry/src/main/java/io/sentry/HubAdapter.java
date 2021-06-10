@@ -181,7 +181,7 @@ public final class HubAdapter implements IHub {
       @NotNull TransactionContext transactionContexts,
       @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope,
-      @NotNull Date startTimestamp) {
+      @Nullable Date startTimestamp) {
     return Sentry.startTransaction(
         transactionContexts, customSamplingContext, bindToScope, startTimestamp);
   }
