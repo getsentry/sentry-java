@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Feat: Measure app start time (#1487)
+* Feat: Automatic breadcrumbs logging for fragment lifecycle (#1522) 
+
 ## 5.0.1
 
 * Fix: Sources and Javadoc artifacts were mixed up (#1515)

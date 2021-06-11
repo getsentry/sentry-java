@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
+import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Integration;
 import io.sentry.Scope;
@@ -17,6 +18,7 @@ import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +28,10 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
+  private static final String UI_LOAD_OP = "ui.load";
+  static final String APP_START_WARM = "app.start.warm";
+  static final String APP_START_COLD = "app.start.cold";
+
   private final @NotNull Application application;
   private @Nullable IHub hub;
   private @Nullable SentryAndroidOptions options;
@@ -33,6 +39,11 @@ public final class ActivityLifecycleIntegration
   private boolean performanceEnabled = false;
 
   private boolean isAllActivityCallbacksAvailable;
+
+  private boolean firstActivityCreated = false;
+  private boolean firstActivityResumed = false;
+
+  private @Nullable ISpan appStartSpan;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
@@ -116,8 +127,21 @@ public final class ActivityLifecycleIntegration
       stopPreviousTransactions();
 
       // we can only bind to the scope if there's no running transaction
-      final ITransaction transaction =
-          hub.startTransaction(getActivityName(activity), "navigation");
+      ITransaction transaction;
+      final String activityName = getActivityName(activity);
+
+      final Date appStartTime = AppStartState.getInstance().getAppStartTime();
+
+      // in case appStartTime isn't available, we don't create a span for it.
+      if (firstActivityCreated || appStartTime == null) {
+        transaction = hub.startTransaction(activityName, UI_LOAD_OP);
+      } else {
+        // start transaction with app start timestamp
+        transaction = hub.startTransaction(activityName, UI_LOAD_OP, appStartTime);
+        // start specific span for app start
+
+        appStartSpan = transaction.startChild(getAppStartOp(), getAppStartDesc(), appStartTime);
+      }
 
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
@@ -176,6 +200,8 @@ public final class ActivityLifecycleIntegration
 
     // only executed if API >= 29 otherwise it happens on onActivityCreated
     if (isAllActivityCallbacksAvailable) {
+      setColdStart(savedInstanceState);
+
       // if activity has global fields being init. and
       // they are slow, this won't count the whole fields/ctor initialization time, but only
       // when onCreate is actually called.
@@ -186,12 +212,17 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    if (!isAllActivityCallbacksAvailable) {
+      setColdStart(savedInstanceState);
+    }
+
     addBreadcrumb(activity, "created");
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
     if (!isAllActivityCallbacksAvailable) {
       startTracing(activity);
     }
+    firstActivityCreated = true;
   }
 
   @Override
@@ -201,6 +232,17 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityResumed(final @NonNull Activity activity) {
+    if (!firstActivityResumed && performanceEnabled) {
+      // sets App start as finished when the very first activity calls onResume
+      AppStartState.getInstance().setAppStartEnd();
+
+      // finishes app start span
+      if (appStartSpan != null) {
+        appStartSpan.finish();
+      }
+      firstActivityResumed = true;
+    }
+
     addBreadcrumb(activity, "resumed");
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPostResumed
@@ -255,5 +297,29 @@ public final class ActivityLifecycleIntegration
   @NotNull
   WeakHashMap<Activity, ITransaction> getActivitiesWithOngoingTransactions() {
     return activitiesWithOngoingTransactions;
+  }
+
+  private void setColdStart(final @Nullable Bundle savedInstanceState) {
+    if (!firstActivityCreated && performanceEnabled) {
+      // if Activity has savedInstanceState then its a warm start
+      // https://developer.android.com/topic/performance/vitals/launch-time#warm
+      AppStartState.getInstance().setColdStart(savedInstanceState == null);
+    }
+  }
+
+  private @NotNull String getAppStartDesc() {
+    if (AppStartState.getInstance().isColdStart()) {
+      return "Cold Start";
+    } else {
+      return "Warm Start";
+    }
+  }
+
+  private @NotNull String getAppStartOp() {
+    if (AppStartState.getInstance().isColdStart()) {
+      return APP_START_COLD;
+    } else {
+      return APP_START_WARM;
+    }
   }
 }

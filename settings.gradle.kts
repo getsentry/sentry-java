@@ -9,6 +9,7 @@ include(
     "sentry-android",
     "sentry-android-timber",
     "sentry-android-okhttp",
+    "sentry-android-fragment",
     "sentry-test-support",
     "sentry-log4j2",
     "sentry-logback",

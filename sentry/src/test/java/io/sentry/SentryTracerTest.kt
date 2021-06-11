@@ -6,12 +6,14 @@ import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.App
 import io.sentry.protocol.Request
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryTracerTest {
@@ -26,9 +28,12 @@ class SentryTracerTest {
             hub.bindClient(mock())
         }
 
-        fun getSut(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {}): SentryTracer {
+        fun getSut(
+            optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {},
+            startTimestamp: Date? = null
+        ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op"), hub)
+            return SentryTracer(TransactionContext("name", "op"), hub, startTimestamp)
         }
     }
 
@@ -306,5 +311,20 @@ class SentryTracerTest {
         transaction.finish()
 
         assertTrue(transaction.isFinished)
+    }
+
+    @Test
+    fun `when startTimestamp is given, use it as startTimestamp`() {
+        val date = Date(0)
+        val transaction = fixture.getSut(startTimestamp = date)
+
+        assertSame(date, transaction.startTimestamp)
+    }
+
+    @Test
+    fun `when startTimestamp is nullable, set it automatically`() {
+        val transaction = fixture.getSut(startTimestamp = null)
+
+        assertNotNull(transaction.startTimestamp)
     }
 }

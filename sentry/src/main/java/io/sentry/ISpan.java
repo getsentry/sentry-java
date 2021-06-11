@@ -1,5 +1,7 @@
 package io.sentry;
 
+import java.util.Date;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,6 +15,11 @@ public interface ISpan {
    */
   @NotNull
   ISpan startChild(@NotNull String operation);
+
+  @ApiStatus.Internal
+  @NotNull
+  ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable Date timestamp);
 
   /**
    * Starts a child Span.
