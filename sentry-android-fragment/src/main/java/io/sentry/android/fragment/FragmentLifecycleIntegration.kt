@@ -30,7 +30,9 @@ class FragmentLifecycleIntegration(private val application: Application) :
 
     override fun close() {
         application.unregisterActivityLifecycleCallbacks(this)
-        logger.log(DEBUG, "FragmentLifecycleIntegration removed.")
+        if (::logger.isInitialized) {
+            logger.log(DEBUG, "FragmentLifecycleIntegration removed.")
+        }
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {

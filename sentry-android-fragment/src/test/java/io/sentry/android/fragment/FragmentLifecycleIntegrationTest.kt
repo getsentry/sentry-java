@@ -67,4 +67,11 @@ class FragmentLifecycleIntegrationTest {
         sut.register(mock(), SentryOptions())
         sut.onActivityCreated(activity, savedInstanceState = null)
     }
+
+    @Test
+    fun `When close is called without register, it should not crash`() {
+        val sut = fixture.getSut()
+
+        sut.close()
+    }
 }
