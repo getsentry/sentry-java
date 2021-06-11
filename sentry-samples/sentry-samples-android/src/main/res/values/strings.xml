@@ -17,4 +17,5 @@
   <string name="open_sample_fragment">Open Sample Fragment</string>
   <string name="open_third_fragment">Open Third Fragment</string>
   <string name="back_main">Back to Main Activity</string>
+    <string name="tap_me">text</string>
 </resources>

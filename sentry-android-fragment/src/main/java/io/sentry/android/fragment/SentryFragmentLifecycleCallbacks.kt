@@ -117,12 +117,18 @@ class SentryFragmentLifecycleCallbacks(
         }
 
         val currentSpan = Sentry.getSpan()
+
+        val span: ISpan
+        val fragmentName = getFragmentName(fragment)
+
         // or ui.load too?
+        val op = "fragment.load"
+
         // should be a span of the activity transaction or its own transaction?
-        val span = currentSpan?.startChild("fragment.load", getFragmentName(fragment))
-        span?.let {
-            fragmentsWithOngoingTransactions.put(fragment, it)
-        }
+        span = currentSpan?.startChild(op, fragmentName)
+            ?: Sentry.startTransaction(fragmentName, op)
+
+        fragmentsWithOngoingTransactions[fragment] = span
     }
 
     private fun stopTracing(fragment: Fragment) {

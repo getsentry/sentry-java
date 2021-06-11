@@ -14,7 +14,8 @@ import java.io.Closeable
 // also add an options to record breadcrumbs or not
 class FragmentLifecycleIntegration(
     private val application: Application,
-    private val enableAutoFragmentLifecycleTracing: Boolean) :
+    private val enableAutoFragmentLifecycleTracing: Boolean
+) :
     ActivityLifecycleCallbacks,
     Integration,
     Closeable {
