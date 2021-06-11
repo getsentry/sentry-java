@@ -1,0 +1,50 @@
+known_features:
+  automatic-release:
+    name: "Automatic Release Discovery"
+    description: "SDK automatically discovers releases from the environment"
+  configure-scope:
+    name: "Configure Scope"
+    description: "The SDK supports the configure_scope() API"
+  breadcrumbs:
+    name: "Breadcrumbs"
+    description: "The SDK supports emitting breadcrumbs"
+  offline-caching:
+    name: "Offline Caching Support"
+    description: "The SDK caches events for offline sending"
+
+
+known_options:
+  dsn:
+    name: "DSN"
+    description: |
+      The DSN tells the SDK where to send the events. If this value is not set the SDK
+      will not send any events.
+  release:
+    name: "Release Version"
+    description:
+      Sets the release version.
+  environment:
+    name: "Environment Name"
+    description:
+      Sets the environment name.
+  debug:
+    name: "Debug Mode"
+    default: false
+    description: |
+      Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful
+      debugging information if something goes wrong with sending the event. The default
+      is always `false`. It's generally not recommended to turn it on in production,
+      though turning debug mode on will not cause any safety concerns.
+  diagnostic-level:
+    name: "Diagnostic Level"
+    description: |
+      Enabling debug mode makes the SDK generate as much diagnostic data as possible.
+      However, if you'd prefer to lower the verbosity of the Sentry SDK diagnostics logs,
+      configure this option to set the appropriate level.
+  sample-rate:
+    name: "Sample Rate"
+    description: |
+      Configures the sample rate for error events, in the range of 0.0 to 1.0. The default
+      is 1.0 which means that 100% of error events are sent. If set to 0.1 only 10% of
+      error events will be sent. Events are picked randomly.
+"

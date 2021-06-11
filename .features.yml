@@ -1,0 +1,47 @@
+features:
+  supported:
+    automatic-release:
+    thread-local-hub:
+    configure-scope:
+    breadcrumbs:
+    offline-caching:
+      default: true
+    sessions:
+    attachments:
+    user-feedback:
+    performance-monitoring:
+    anr:
+    device-data:
+
+options:
+  case_convention: camelCase
+  supported:
+    dsn:
+      sources: [env:SENTRY_DSN, android-manifest:io.sentry.dsn]
+    release:
+      sources: [env:SENTRY_RELEASE]
+    environment:
+      sources: [env:SENTRY_ENVIRONMENT]
+    debug:
+      sources: [android-manifest:io.sentry.debug]
+    diagnostic-level:
+    sample-rate:
+    max-breadcrumbs:
+    attach-stacktrace:
+    send-default-pii:
+    server-name:
+    auto-session-tracking:
+    in-app-include:
+    in-app-exclude:
+    before-send:
+      with_default_sources: false
+    before-breadcrumb:
+      with_default_sources: false
+    transport:
+      with_default_sources: false
+    http-proxy:
+    cache-directory-path:
+    anr-debug:
+      sources: [android-manifest:io.sentry.anr.report-debug]
+    anr-enable:
+      sources: [android-manifest:io.sentry.anr.enable]
