@@ -32,6 +32,28 @@ public final class io/sentry/samples/android/Repo {
 	public fun <init> ()V
 }
 
+public final class io/sentry/samples/android/SampleFragment : androidx/fragment/app/DialogFragment {
+	public static final field Companion Lio/sentry/samples/android/SampleFragment$Companion;
+	public fun <init> ()V
+	public static final fun newInstance ()Lio/sentry/samples/android/SampleFragment;
+	public fun onCreateView (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Landroid/os/Bundle;)Landroid/view/View;
+}
+
+public final class io/sentry/samples/android/SampleFragment$Companion {
+	public final fun newInstance ()Lio/sentry/samples/android/SampleFragment;
+}
+
+public final class io/sentry/samples/android/SampleInnerFragment : androidx/fragment/app/Fragment {
+	public static final field Companion Lio/sentry/samples/android/SampleInnerFragment$Companion;
+	public fun <init> ()V
+	public static final fun newInstance ()Lio/sentry/samples/android/SampleInnerFragment;
+	public fun onCreateView (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Landroid/os/Bundle;)Landroid/view/View;
+}
+
+public final class io/sentry/samples/android/SampleInnerFragment$Companion {
+	public final fun newInstance ()Lio/sentry/samples/android/SampleInnerFragment;
+}
+
 public final class io/sentry/samples/android/SecondActivity : androidx/appcompat/app/AppCompatActivity {
 	public fun <init> ()V
 }
@@ -44,6 +66,7 @@ public final class io/sentry/samples/android/databinding/ActivityMainBinding : a
 	public final field crashFromJava Landroid/widget/Button;
 	public final field nativeCapture Landroid/widget/Button;
 	public final field nativeCrash Landroid/widget/Button;
+	public final field openSampleFragment Landroid/widget/Button;
 	public final field openSecondActivity Landroid/widget/Button;
 	public final field sendMessage Landroid/widget/Button;
 	public final field sendUserFeedback Landroid/widget/Button;
@@ -67,5 +90,23 @@ public final class io/sentry/samples/android/databinding/ActivitySecondBinding :
 	public fun getRoot ()Landroid/widget/LinearLayout;
 	public static fun inflate (Landroid/view/LayoutInflater;)Lio/sentry/samples/android/databinding/ActivitySecondBinding;
 	public static fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Lio/sentry/samples/android/databinding/ActivitySecondBinding;
+}
+
+public final class io/sentry/samples/android/databinding/FragmentSampleBinding : androidx/viewbinding/ViewBinding {
+	public final field container Landroid/widget/FrameLayout;
+	public static fun bind (Landroid/view/View;)Lio/sentry/samples/android/databinding/FragmentSampleBinding;
+	public synthetic fun getRoot ()Landroid/view/View;
+	public fun getRoot ()Landroid/widget/FrameLayout;
+	public static fun inflate (Landroid/view/LayoutInflater;)Lio/sentry/samples/android/databinding/FragmentSampleBinding;
+	public static fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Lio/sentry/samples/android/databinding/FragmentSampleBinding;
+}
+
+public final class io/sentry/samples/android/databinding/FragmentSampleInnerBinding : androidx/viewbinding/ViewBinding {
+	public final field sendMessage Landroid/widget/Button;
+	public static fun bind (Landroid/view/View;)Lio/sentry/samples/android/databinding/FragmentSampleInnerBinding;
+	public synthetic fun getRoot ()Landroid/view/View;
+	public fun getRoot ()Landroid/widget/FrameLayout;
+	public static fun inflate (Landroid/view/LayoutInflater;)Lio/sentry/samples/android/databinding/FragmentSampleInnerBinding;
+	public static fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Lio/sentry/samples/android/databinding/FragmentSampleInnerBinding;
 }
 

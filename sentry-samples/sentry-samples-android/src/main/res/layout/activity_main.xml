@@ -67,4 +67,9 @@
       android:layout_height="wrap_content"
       android:id="@+id/open_second_activity"
       android:text="@string/open_second_activity"/>
+
+  <Button android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/open_sample_fragment"
+    android:text="@string/open_sample_fragment"/>
 </LinearLayout>

@@ -156,6 +156,9 @@ public class MainActivity extends AppCompatActivity {
           startActivity(new Intent(this, SecondActivity.class));
         });
 
+    binding.openSampleFragment.setOnClickListener(
+        view -> SampleFragment.newInstance().show(getSupportFragmentManager(), null));
+
     setContentView(binding.getRoot());
   }
 
