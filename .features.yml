@@ -1,6 +1,10 @@
+includes:
+  - ../common-features.yml
+
 features:
   supported:
     automatic-release:
+      HACK-added-in-version: 1.0.0
     thread-local-hub:
     configure-scope:
     breadcrumbs:
