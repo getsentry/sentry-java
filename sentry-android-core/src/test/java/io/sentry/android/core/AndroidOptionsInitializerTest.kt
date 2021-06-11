@@ -63,6 +63,16 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `PerformanceAndroidEventProcessor added to processors list`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = createMockContext()
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+        val actual = sentryOptions.eventProcessors.any { it is PerformanceAndroidEventProcessor }
+        assertNotNull(actual)
+    }
+
+    @Test
     fun `MainEventProcessor added to processors list and its the 1st`() {
         val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
