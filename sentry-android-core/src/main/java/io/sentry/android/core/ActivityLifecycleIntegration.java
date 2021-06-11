@@ -29,7 +29,8 @@ public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   private static final String UI_LOAD_OP = "ui.load";
-  static final String APP_START_OP = "app.start";
+  static final String APP_START_WARM = "app.start.warm";
+  static final String APP_START_COLD = "app.start.cold";
 
   private final @NotNull Application application;
   private @Nullable IHub hub;
@@ -139,7 +140,7 @@ public final class ActivityLifecycleIntegration
         transaction = hub.startTransaction(activityName, UI_LOAD_OP, appStartTime);
         // start specific span for app start
 
-        appStartSpan = transaction.startChild(APP_START_OP, getColdStartDesc(), appStartTime);
+        appStartSpan = transaction.startChild(getAppStartOp(), getAppStartDesc(), appStartTime);
       }
 
       // lets bind to the scope so other integrations can pick it up
@@ -306,11 +307,19 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private @NotNull String getColdStartDesc() {
+  private @NotNull String getAppStartDesc() {
     if (AppStartState.getInstance().isColdStart()) {
       return "Cold Start";
     } else {
       return "Warm Start";
+    }
+  }
+
+  private @NotNull String getAppStartOp() {
+    if (AppStartState.getInstance().isColdStart()) {
+      return APP_START_COLD;
+    } else {
+      return APP_START_WARM;
     }
   }
 }

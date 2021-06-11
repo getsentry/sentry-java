@@ -50,7 +50,7 @@ class PerformanceAndroidEventProcessorTest {
     fun `add warm start measurement`() {
         val sut = fixture.getSut()
 
-        var tr = getTransaction()
+        var tr = getTransaction("app.start.warm")
         setAppStart(false)
 
         tr = sut.process(tr, null)
@@ -113,7 +113,7 @@ class PerformanceAndroidEventProcessorTest {
         AppStartState.getInstance().setAppStartEnd()
     }
 
-    private fun getTransaction(op: String = "app.start"): SentryTransaction {
+    private fun getTransaction(op: String = "app.start.cold"): SentryTransaction {
         fixture.tracer.startChild(op)
         return SentryTransaction(fixture.tracer)
     }

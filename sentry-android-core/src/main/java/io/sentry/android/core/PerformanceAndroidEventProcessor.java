@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
-import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_OP;
+import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD;
+import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 
 import io.sentry.EventProcessor;
 import io.sentry.protocol.MeasurementValue;
@@ -45,7 +46,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
   private boolean hasAppStartSpan(final @NotNull List<SentrySpan> spans) {
     for (final SentrySpan span : spans) {
-      if (span.getOp().contentEquals(APP_START_OP)) {
+      if (span.getOp().contentEquals(APP_START_COLD)
+          || span.getOp().contentEquals(APP_START_WARM)) {
         return true;
       }
     }

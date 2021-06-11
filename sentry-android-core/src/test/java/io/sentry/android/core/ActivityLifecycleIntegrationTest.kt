@@ -542,7 +542,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When firstActivityCreated is true, start app start span with given appStartTime`() {
+    fun `When firstActivityCreated is true, start app start warm span with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -554,7 +554,24 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(activity, fixture.bundle)
 
         val span = fixture.transaction.children.first()
-        assertEquals(span.operation, "app.start")
+        assertEquals(span.operation, "app.start.warm")
+        assertSame(span.startTimestamp, date)
+    }
+
+    @Test
+    fun `When firstActivityCreated is true, start app start cold span with given appStartTime`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val date = Date(0)
+        setAppStartTime(date)
+
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, null)
+
+        val span = fixture.transaction.children.first()
+        assertEquals(span.operation, "app.start.cold")
         assertSame(span.startTimestamp, date)
     }
 
