@@ -14,6 +14,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 
@@ -23,6 +24,7 @@ class SentryAndroidTest {
     @BeforeTest
     fun `set up`() {
         Sentry.close()
+        AppStartState.getInstance().resetInstance()
     }
 
     @Test
@@ -87,5 +89,19 @@ class SentryAndroidTest {
         val logger = mock<ILogger>()
         SentryAndroid.init(mockContext, logger)
         verify(logger, never()).log(eq(SentryLevel.FATAL), any<String>(), any())
+    }
+
+    @Test
+    fun `set app start if provider is disabled`() {
+        val metaData = Bundle()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
+        metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+
+        SentryAndroid.init(mockContext, mock<ILogger>())
+
+        // done by ActivityLifecycleIntegration so forcing it here
+        AppStartState.getInstance().setAppStartEnd()
+
+        assertNotNull(AppStartState.getInstance().appStartInterval)
     }
 }
