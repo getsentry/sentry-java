@@ -1,4 +1,4 @@
-package io.sentry.reactor;
+package io.sentry.spring.webflux;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
@@ -25,8 +25,6 @@ public class SentryRequestResolver {
     this.hub = Objects.requireNonNull(hub, "options is required");
   }
 
-  // httpRequest.getRequestURL() returns StringBuffer which is considered an obsolete class.
-  @SuppressWarnings("JdkObsolete")
   public @NotNull Request resolveSentryRequest(final @NotNull ServerHttpRequest httpRequest) {
     final Request sentryRequest = new Request();
     sentryRequest.setMethod(httpRequest.getMethodValue());

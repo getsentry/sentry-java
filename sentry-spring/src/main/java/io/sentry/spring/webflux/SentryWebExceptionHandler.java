@@ -1,4 +1,4 @@
-package io.sentry.reactor;
+package io.sentry.spring.webflux;
 
 import io.sentry.IHub;
 import io.sentry.SentryEvent;

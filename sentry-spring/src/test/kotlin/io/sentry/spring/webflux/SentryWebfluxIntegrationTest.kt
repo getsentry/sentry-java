@@ -1,4 +1,4 @@
-package io.sentry.reactor
+package io.sentry.spring.webflux
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
@@ -23,6 +24,8 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
@@ -40,7 +43,7 @@ import reactor.core.scheduler.Schedulers
 @SpringBootTest(
     classes = [App::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj"]
+    properties = ["spring.main.web-application-type=reactive"]
 )
 class SentryWebfluxIntegrationTest {
 
@@ -114,7 +117,7 @@ class SentryWebfluxIntegrationTest {
     }
 }
 
-@SpringBootApplication
+@SpringBootApplication(exclude = [ReactiveSecurityAutoConfiguration::class, SecurityAutoConfiguration::class])
 open class App {
 
     private val transport = mock<ITransport>()
@@ -130,6 +133,9 @@ open class App {
     open fun mockTransport() = transport
 
     @Bean
+    open fun hub() = HubAdapter.getInstance()
+
+    @Bean
     open fun sentryFilter(hub: IHub) = SentryWebFilter(hub)
 
     @Bean
@@ -138,6 +144,15 @@ open class App {
     @Bean
     open fun sentryScheduleHookRegistrar() = ApplicationRunner {
         Schedulers.onScheduleHook("sentry", SentryScheduleHook())
+    }
+
+    @Bean
+    open fun sentryInitializer(transportFactory: ITransportFactory) = ApplicationRunner {
+        Sentry.init {
+            it.dsn = "http://key@localhost/proj"
+            it.setDebug(true)
+            it.setTransportFactory(transportFactory)
+        }
     }
 }
 

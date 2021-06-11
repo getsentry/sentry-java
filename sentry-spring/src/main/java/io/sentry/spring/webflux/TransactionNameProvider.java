@@ -1,4 +1,4 @@
-package io.sentry.reactor;
+package io.sentry.spring.webflux;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;

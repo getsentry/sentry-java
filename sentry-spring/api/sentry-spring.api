@@ -142,3 +142,29 @@ public final class io/sentry/spring/tracing/TransactionNameProvider {
 	public fun provideTransactionName (Ljavax/servlet/http/HttpServletRequest;)Ljava/lang/String;
 }
 
+public class io/sentry/spring/webflux/SentryRequestResolver {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun resolveSentryRequest (Lorg/springframework/http/server/reactive/ServerHttpRequest;)Lio/sentry/protocol/Request;
+}
+
+public final class io/sentry/spring/webflux/SentryScheduleHook : java/util/function/Function {
+	public fun <init> ()V
+	public synthetic fun apply (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun apply (Ljava/lang/Runnable;)Ljava/lang/Runnable;
+}
+
+public final class io/sentry/spring/webflux/SentryWebExceptionHandler : org/springframework/web/server/WebExceptionHandler {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun handle (Lorg/springframework/web/server/ServerWebExchange;Ljava/lang/Throwable;)Lreactor/core/publisher/Mono;
+}
+
+public final class io/sentry/spring/webflux/SentryWebFilter : org/springframework/web/server/WebFilter {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
+}
+
+public final class io/sentry/spring/webflux/TransactionNameProvider {
+	public fun <init> ()V
+	public fun provideTransactionName (Lorg/springframework/web/server/ServerWebExchange;)Ljava/lang/String;
+}
+
