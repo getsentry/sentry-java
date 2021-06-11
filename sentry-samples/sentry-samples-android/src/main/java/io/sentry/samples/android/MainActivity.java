@@ -159,6 +159,11 @@ public class MainActivity extends AppCompatActivity {
     binding.openSampleFragment.setOnClickListener(
         view -> SampleFragment.newInstance().show(getSupportFragmentManager(), null));
 
+      binding.openThirdFragment.setOnClickListener(
+              view -> {
+                  startActivity(new Intent(this, ThirdActivityFragment.class));
+              });
+
     setContentView(binding.getRoot());
   }
 

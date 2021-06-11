@@ -24,7 +24,7 @@ public class MyApplication extends Application {
           //                return event;
           //              });
           //          options.setAnrTimeoutIntervalMillis(2000);
-          options.addIntegration(new FragmentLifecycleIntegration(MyApplication.this));
+          options.addIntegration(new FragmentLifecycleIntegration(MyApplication.this, true));
         });
   }
 

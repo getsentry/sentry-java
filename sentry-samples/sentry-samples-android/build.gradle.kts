@@ -93,6 +93,7 @@ dependencies {
     implementation(project(":sentry-android"))
     implementation(project(":sentry-android-okhttp"))
     implementation(project(":sentry-android-fragment"))
+    implementation(Config.Libs.fragment)
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(project(":sentry-android")) {

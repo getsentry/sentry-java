@@ -9,12 +9,21 @@ import androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks
 import io.sentry.Breadcrumb
 import io.sentry.HubAdapter
 import io.sentry.IHub
+import io.sentry.ISpan
+import io.sentry.Sentry
 import io.sentry.SentryLevel.INFO
+import io.sentry.SpanStatus
 
 @Suppress("TooManyFunctions")
 class SentryFragmentLifecycleCallbacks(
-    private val hub: IHub = HubAdapter.getInstance()
+    private val hub: IHub = HubAdapter.getInstance(),
+    performanceEnabled: Boolean = false,
+    enableAutoFragmentLifecycleTracing: Boolean = false
 ) : FragmentLifecycleCallbacks() {
+
+    private val isPerformanceEnabled = performanceEnabled && enableAutoFragmentLifecycleTracing
+
+    private val fragmentsWithOngoingTransactions = mutableMapOf<Fragment, ISpan>()
 
     override fun onFragmentAttached(
         fragmentManager: FragmentManager,
@@ -38,6 +47,8 @@ class SentryFragmentLifecycleCallbacks(
         savedInstanceState: Bundle?
     ) {
         addBreadcrumb(fragment, "created")
+
+        startTracing(fragment)
     }
 
     override fun onFragmentViewCreated(
@@ -55,6 +66,9 @@ class SentryFragmentLifecycleCallbacks(
 
     override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
         addBreadcrumb(fragment, "resumed")
+
+        // ideally it should be post resumed
+        stopTracing(fragment)
     }
 
     override fun onFragmentPaused(fragmentManager: FragmentManager, fragment: Fragment) {
@@ -71,6 +85,8 @@ class SentryFragmentLifecycleCallbacks(
 
     override fun onFragmentDestroyed(fragmentManager: FragmentManager, fragment: Fragment) {
         addBreadcrumb(fragment, "destroyed")
+
+        stopTracing(fragment)
     }
 
     override fun onFragmentDetached(fragmentManager: FragmentManager, fragment: Fragment) {
@@ -90,5 +106,38 @@ class SentryFragmentLifecycleCallbacks(
 
     private fun getFragmentName(fragment: Fragment): String {
         return fragment.javaClass.simpleName
+    }
+
+    private fun isRunningSpan(fragment: Fragment): Boolean =
+        fragmentsWithOngoingTransactions.containsKey(fragment)
+
+    private fun startTracing(fragment: Fragment) {
+        if (!isPerformanceEnabled || isRunningSpan(fragment)) {
+            return
+        }
+
+        val currentSpan = Sentry.getSpan()
+        // or ui.load too?
+        // should be a span of the activity transaction or its own transaction?
+        val span = currentSpan?.startChild("fragment.load", getFragmentName(fragment))
+        span?.let {
+            fragmentsWithOngoingTransactions.put(fragment, it)
+        }
+    }
+
+    private fun stopTracing(fragment: Fragment) {
+        if (!isPerformanceEnabled || !isRunningSpan(fragment)) {
+            return
+        }
+
+        val span = fragmentsWithOngoingTransactions[fragment]
+        span?.let {
+            var status = it.status
+            if (status == null) {
+                status = SpanStatus.OK
+            }
+            it.finish(status)
+            fragmentsWithOngoingTransactions.remove(fragment)
+        }
     }
 }

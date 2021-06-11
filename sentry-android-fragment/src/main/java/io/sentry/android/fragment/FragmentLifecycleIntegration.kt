@@ -6,32 +6,37 @@ import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import io.sentry.IHub
-import io.sentry.ILogger
 import io.sentry.Integration
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
 import java.io.Closeable
 
-class FragmentLifecycleIntegration(private val application: Application) :
+// also add an options to record breadcrumbs or not
+class FragmentLifecycleIntegration(
+    private val application: Application,
+    private val enableAutoFragmentLifecycleTracing: Boolean) :
     ActivityLifecycleCallbacks,
     Integration,
     Closeable {
 
+    // should it be enabled by default?
+    constructor(application: Application) : this(application, false)
+
     private lateinit var hub: IHub
-    private lateinit var logger: ILogger
+    private lateinit var options: SentryOptions
 
     override fun register(hub: IHub, options: SentryOptions) {
         this.hub = hub
-        this.logger = options.logger
+        this.options = options
 
         application.registerActivityLifecycleCallbacks(this)
-        logger.log(DEBUG, "FragmentLifecycleIntegration installed.")
+        options.logger.log(DEBUG, "FragmentLifecycleIntegration installed.")
     }
 
     override fun close() {
         application.unregisterActivityLifecycleCallbacks(this)
-        if (::logger.isInitialized) {
-            logger.log(DEBUG, "FragmentLifecycleIntegration removed.")
+        if (::options.isInitialized) {
+            options.logger.log(DEBUG, "FragmentLifecycleIntegration removed.")
         }
     }
 
@@ -39,7 +44,10 @@ class FragmentLifecycleIntegration(private val application: Application) :
         (activity as? FragmentActivity)
             ?.supportFragmentManager
             ?.registerFragmentLifecycleCallbacks(
-                SentryFragmentLifecycleCallbacks(hub),
+                SentryFragmentLifecycleCallbacks(
+                    hub = hub,
+                    performanceEnabled = options.isTracingEnabled,
+                    enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing),
                 true
             )
     }
