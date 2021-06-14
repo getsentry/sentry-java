@@ -33,6 +33,7 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
       final @NotNull ServerWebExchange serverWebExchange, final @NotNull Throwable ex) {
     if (!(ex instanceof ResponseStatusException)) {
       final Mechanism mechanism = new Mechanism();
+      mechanism.setType("SentryWebExceptionHandler");
       mechanism.setHandled(false);
       final Throwable throwable =
           new ExceptionMechanismException(mechanism, ex, Thread.currentThread());

@@ -8,6 +8,8 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+
+import io.sentry.util.Objects;
 import reactor.core.publisher.Mono;
 
 /** Manages {@link io.sentry.Scope} in Webflux request processing. */
@@ -17,7 +19,7 @@ public final class SentryWebFilter implements WebFilter {
   private final @NotNull SentryRequestResolver sentryRequestResolver;
 
   public SentryWebFilter(final @NotNull IHub hub) {
-    this.hub = hub;
+    this.hub = Objects.requireNonNull(hub, "hub is required");
     this.sentryRequestResolver = new SentryRequestResolver(hub);
   }
 
