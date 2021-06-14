@@ -2,6 +2,7 @@ package io.sentry.spring.webflux;
 
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
@@ -9,6 +10,8 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
+/** Manages {@link io.sentry.Scope} in Webflux request processing. */
+@ApiStatus.Experimental
 public final class SentryWebFilter implements WebFilter {
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver sentryRequestResolver;

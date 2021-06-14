@@ -5,6 +5,7 @@ import io.sentry.IHub;
 import io.sentry.spring.webflux.SentryScheduleHook;
 import io.sentry.spring.webflux.SentryWebExceptionHandler;
 import io.sentry.spring.webflux.SentryWebFilter;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -20,6 +21,7 @@ import reactor.core.scheduler.Schedulers;
 @ConditionalOnBean(IHub.class)
 @ConditionalOnClass(Schedulers.class)
 @Open
+@ApiStatus.Experimental
 public class SentryWebfluxAutoConfiguration {
 
   /** Configures hook that sets correct hub on the executing thread. */

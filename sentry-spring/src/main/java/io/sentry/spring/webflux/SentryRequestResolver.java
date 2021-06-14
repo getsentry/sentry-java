@@ -9,12 +9,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
 @Open
+@ApiStatus.Experimental
 public class SentryRequestResolver {
   private static final List<String> SENSITIVE_HEADERS =
       Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
