@@ -10,13 +10,13 @@ import io.sentry.Breadcrumb
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
-import io.sentry.Sentry
 import io.sentry.SentryLevel.INFO
 import io.sentry.SpanStatus
 
 @Suppress("TooManyFunctions")
 class SentryFragmentLifecycleCallbacks(
     private val hub: IHub = HubAdapter.getInstance(),
+    private val enableFragmentLifecycleBreadcrumbs: Boolean = true,
     performanceEnabled: Boolean = false,
     enableAutoFragmentLifecycleTracing: Boolean = false
 ) : FragmentLifecycleCallbacks() {
@@ -94,6 +94,9 @@ class SentryFragmentLifecycleCallbacks(
     }
 
     private fun addBreadcrumb(fragment: Fragment, state: String) {
+        if (!enableFragmentLifecycleBreadcrumbs) {
+            return
+        }
         val breadcrumb = Breadcrumb().apply {
             type = "navigation"
             setData("state", state)
@@ -116,17 +119,14 @@ class SentryFragmentLifecycleCallbacks(
             return
         }
 
-        val currentSpan = Sentry.getSpan()
+        val currentSpan = hub.span
 
         val span: ISpan
         val fragmentName = getFragmentName(fragment)
 
-        // or ui.load too?
-        val op = "fragment.load"
-
         // should be a span of the activity transaction or its own transaction?
-        span = currentSpan?.startChild(op, fragmentName)
-            ?: Sentry.startTransaction(fragmentName, op)
+        span = currentSpan?.startChild(FRAGMENT_LOAD_OP, fragmentName)
+            ?: hub.startTransaction(fragmentName, FRAGMENT_LOAD_OP)
 
         fragmentsWithOngoingTransactions[fragment] = span
     }
@@ -145,5 +145,9 @@ class SentryFragmentLifecycleCallbacks(
             it.finish(status)
             fragmentsWithOngoingTransactions.remove(fragment)
         }
+    }
+
+    companion object {
+        private const val FRAGMENT_LOAD_OP = "fragment.load"
     }
 }

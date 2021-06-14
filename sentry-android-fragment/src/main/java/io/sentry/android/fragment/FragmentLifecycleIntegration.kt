@@ -11,17 +11,16 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
 import java.io.Closeable
 
-// also add an options to record breadcrumbs or not
 class FragmentLifecycleIntegration(
     private val application: Application,
+    private val enableFragmentLifecycleBreadcrumbs: Boolean,
     private val enableAutoFragmentLifecycleTracing: Boolean
 ) :
     ActivityLifecycleCallbacks,
     Integration,
     Closeable {
 
-    // should it be enabled by default?
-    constructor(application: Application) : this(application, false)
+    constructor(application: Application) : this(application, true, false)
 
     private lateinit var hub: IHub
     private lateinit var options: SentryOptions
@@ -47,6 +46,7 @@ class FragmentLifecycleIntegration(
             ?.registerFragmentLifecycleCallbacks(
                 SentryFragmentLifecycleCallbacks(
                     hub = hub,
+                    enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
                     performanceEnabled = options.isTracingEnabled,
                     enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing),
                 true

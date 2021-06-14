@@ -8,6 +8,7 @@ public final class io/sentry/android/fragment/BuildConfig {
 
 public final class io/sentry/android/fragment/FragmentLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;)V
+	public fun <init> (Landroid/app/Application;ZZ)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
@@ -20,9 +21,10 @@ public final class io/sentry/android/fragment/FragmentLifecycleIntegration : and
 }
 
 public final class io/sentry/android/fragment/SentryFragmentLifecycleCallbacks : androidx/fragment/app/FragmentManager$FragmentLifecycleCallbacks {
+	public static final field Companion Lio/sentry/android/fragment/SentryFragmentLifecycleCallbacks$Companion;
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;)V
-	public synthetic fun <init> (Lio/sentry/IHub;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IHub;ZZZ)V
+	public synthetic fun <init> (Lio/sentry/IHub;ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun onFragmentAttached (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/content/Context;)V
 	public fun onFragmentCreated (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/os/Bundle;)V
 	public fun onFragmentDestroyed (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
@@ -34,5 +36,8 @@ public final class io/sentry/android/fragment/SentryFragmentLifecycleCallbacks :
 	public fun onFragmentStopped (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
 	public fun onFragmentViewCreated (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/view/View;Landroid/os/Bundle;)V
 	public fun onFragmentViewDestroyed (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
+}
+
+public final class io/sentry/android/fragment/SentryFragmentLifecycleCallbacks$Companion {
 }
 
