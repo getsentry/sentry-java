@@ -1,6 +1,6 @@
-# Sentry Sample Spring Boot
+# Sentry Sample Spring Boot Webflux
 
-Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot).
+Sample application showing how to use Sentry with [Spring Webflux](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html) and [Spring boot](http://spring.io/projects/spring-boot).
 
 ## How to run? 
 
