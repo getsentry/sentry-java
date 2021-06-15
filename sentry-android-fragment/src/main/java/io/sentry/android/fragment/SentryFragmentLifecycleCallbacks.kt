@@ -21,6 +21,17 @@ class SentryFragmentLifecycleCallbacks(
     enableAutoFragmentLifecycleTracing: Boolean = false
 ) : FragmentLifecycleCallbacks() {
 
+    constructor(
+        enableFragmentLifecycleBreadcrumbs: Boolean,
+        performanceEnabled: Boolean,
+        enableAutoFragmentLifecycleTracing: Boolean
+    ) : this(
+        hub = HubAdapter.getInstance(),
+        enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
+        performanceEnabled = performanceEnabled,
+        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+    )
+
     private val isPerformanceEnabled = performanceEnabled && enableAutoFragmentLifecycleTracing
 
     private val fragmentsWithOngoingTransactions = mutableMapOf<Fragment, ISpan>()
