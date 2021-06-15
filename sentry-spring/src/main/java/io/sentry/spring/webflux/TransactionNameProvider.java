@@ -1,6 +1,5 @@
 package io.sentry.spring.webflux;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.reactive.HandlerMapping;
@@ -14,9 +13,8 @@ import org.springframework.web.util.pattern.PathPattern;
  * org.springframework.web.reactive.result.method.RequestMappingInfoHandlerMapping} where {@link
  * HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE} is set.
  */
-@ApiStatus.Internal
-public final class TransactionNameProvider {
-  public @Nullable String provideTransactionName(
+final class TransactionNameProvider {
+  static @Nullable String provideTransactionName(
       final @NotNull ServerWebExchange serverWebExchange) {
     final PathPattern pattern =
         serverWebExchange.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);

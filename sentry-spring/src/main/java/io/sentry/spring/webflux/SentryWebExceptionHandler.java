@@ -21,11 +21,9 @@ import reactor.core.publisher.Mono;
 @ApiStatus.Experimental
 public final class SentryWebExceptionHandler implements WebExceptionHandler {
   private final @NotNull IHub hub;
-  private final @NotNull TransactionNameProvider transactionNameProvider;
 
   public SentryWebExceptionHandler(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.transactionNameProvider = new TransactionNameProvider();
   }
 
   @Override
@@ -39,7 +37,7 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
           new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
       final SentryEvent event = new SentryEvent(throwable);
       event.setLevel(SentryLevel.FATAL);
-      event.setTransaction(transactionNameProvider.provideTransactionName(serverWebExchange));
+      event.setTransaction(TransactionNameProvider.provideTransactionName(serverWebExchange));
       hub.captureEvent(event);
     }
     return Mono.error(ex);

@@ -2,14 +2,13 @@ package io.sentry.spring.webflux;
 
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-
-import io.sentry.util.Objects;
 import reactor.core.publisher.Mono;
 
 /** Manages {@link io.sentry.Scope} in Webflux request processing. */
