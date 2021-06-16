@@ -350,6 +350,14 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when waiting for children, hub is not called until transaction is finished`() {
+        val transaction = fixture.getSut(waitForChildren = true)
+        val child = transaction.startChild("op")
+        child.finish()
+        verify(fixture.hub, never()).captureTransaction(any())
+    }
+
+    @Test
     fun `when waiting for children, finishing last child calls hub if transaction is already finished`() {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")

@@ -34,7 +34,7 @@ public final class SentryTracer implements ITransaction {
    * itself when `waitForChildren` is set to `true`, `#finish()` method was called but there are
    * unfinished children spans.
    */
-  private @Nullable SpanStatus finishStatus;
+  private @NotNull FinishStatus finishStatus = FinishStatus.notFinished();
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -132,8 +132,9 @@ public final class SentryTracer implements ITransaction {
             this.hub,
             timestamp,
             __ -> {
-              if (waitForChildren && hasAllChildrenFinished()) {
-                finish(finishStatus);
+              final FinishStatus finishStatus = this.finishStatus;
+              if (waitForChildren && finishStatus.isFinishing && hasAllChildrenFinished()) {
+                finish(finishStatus.spanStatus);
               }
             });
     span.setDescription(description);
@@ -188,9 +189,9 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    this.finishStatus = status;
+    this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
-      root.finish(finishStatus);
+      root.finish(finishStatus.spanStatus);
       hub.configureScope(
           scope -> {
             scope.withTransaction(
@@ -339,5 +340,23 @@ public final class SentryTracer implements ITransaction {
   @NotNull
   Span getRoot() {
     return root;
+  }
+
+  private static class FinishStatus {
+    private final boolean isFinishing;
+    private final @Nullable SpanStatus spanStatus;
+
+    static @NotNull FinishStatus notFinished() {
+      return new FinishStatus(false, null);
+    }
+
+    static @NotNull FinishStatus finishing(final @Nullable SpanStatus finishStatus) {
+      return new FinishStatus(true, finishStatus);
+    }
+
+    private FinishStatus(final boolean isFinishing, final @Nullable SpanStatus spanStatus) {
+      this.isFinishing = isFinishing;
+      this.spanStatus = spanStatus;
+    }
   }
 }
