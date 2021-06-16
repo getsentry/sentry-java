@@ -133,7 +133,7 @@ public final class SentryTracer implements ITransaction {
             timestamp,
             __ -> {
               final FinishStatus finishStatus = this.finishStatus;
-              if (waitForChildren && finishStatus.isFinishing && hasAllChildrenFinished()) {
+              if (finishStatus.isFinishing) {
                 finish(finishStatus.spanStatus);
               }
             });
