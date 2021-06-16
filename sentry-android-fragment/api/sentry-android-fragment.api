@@ -25,6 +25,7 @@ public final class io/sentry/android/fragment/SentryFragmentLifecycleCallbacks :
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;ZZZ)V
 	public synthetic fun <init> (Lio/sentry/IHub;ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ZZZ)V
 	public fun onFragmentAttached (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/content/Context;)V
 	public fun onFragmentCreated (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/os/Bundle;)V
 	public fun onFragmentDestroyed (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
