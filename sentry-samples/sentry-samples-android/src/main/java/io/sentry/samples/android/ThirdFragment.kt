@@ -14,7 +14,7 @@ class ThirdFragment : Fragment(R.layout.third_fragment) {
         val span = Sentry.getSpan()
         val child = span?.startChild("calc")
 
-        for(i in 0..someInt) {
+        for (i in 0..someInt) {
             println(i)
         }
         child?.finish(SpanStatus.OK)
