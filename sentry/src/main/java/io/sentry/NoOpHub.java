@@ -145,6 +145,16 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @NotNull ITransaction startTransaction(
+      @NotNull TransactionContext transactionContexts,
+      @Nullable CustomSamplingContext customSamplingContext,
+      boolean bindToScope,
+      @Nullable Date startTimestamp,
+      boolean waitForChildren) {
+    return NoOpTransaction.getInstance();
+  }
+
+  @Override
   public @NotNull SentryTraceHeader traceHeaders() {
     return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, true);
   }
