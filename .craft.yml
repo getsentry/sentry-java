@@ -20,3 +20,4 @@ targets:
       maven:io.sentry:sentry-android-timber:
       maven:io.sentry:sentry-android-okhttp:
       maven:io.sentry:sentry-kotlin-extensions:
+      maven:io:sentry:sentry-android-fragment:
