@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.1.0-beta.1
 
 * Feat: Measure app start time (#1487)
 * Feat: Automatic breadcrumbs logging for fragment lifecycle (#1522) 
