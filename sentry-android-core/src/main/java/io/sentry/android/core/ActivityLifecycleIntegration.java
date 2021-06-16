@@ -15,6 +15,7 @@ import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.TransactionContext;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -134,10 +135,14 @@ public final class ActivityLifecycleIntegration
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (firstActivityCreated || appStartTime == null) {
-        transaction = hub.startTransaction(activityName, UI_LOAD_OP);
+        transaction =
+            hub.startTransaction(
+                new TransactionContext(activityName, UI_LOAD_OP), null, false, null, true);
       } else {
         // start transaction with app start timestamp
-        transaction = hub.startTransaction(activityName, UI_LOAD_OP, appStartTime);
+        transaction =
+            hub.startTransaction(
+                new TransactionContext(activityName, UI_LOAD_OP), null, false, appStartTime, true);
         // start specific span for app start
 
         appStartSpan = transaction.startChild(getAppStartOp(), getAppStartDesc(), appStartTime);
