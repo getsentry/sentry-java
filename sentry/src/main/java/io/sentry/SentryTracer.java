@@ -22,20 +22,47 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Contexts contexts = new Contexts();
   private @Nullable Request request;
   private @NotNull String name;
+  /**
+   * When `waitForChildren` is set to `true`, tracer will finish only when both conditions are met
+   * (the order of meeting condition does not matter): - tracer itself is finished - all child spans
+   * are finished
+   */
+  private final boolean waitForChildren;
+
+  /**
+   * Holds the status for finished tracer. Tracer can have finishedStatus set, but not be finished
+   * itself when `waitForChildren` is set to `true`, `#finish()` method was called but there are
+   * unfinished children spans.
+   */
+  private @Nullable SpanStatus finishStatus;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
+  }
+
+  public SentryTracer(
+      final @NotNull TransactionContext context, final @NotNull IHub hub, boolean waitForChildren) {
+    this(context, hub, null, waitForChildren);
   }
 
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp) {
+    this(context, hub, startTimestamp, false);
+  }
+
+  SentryTracer(
+      final @NotNull TransactionContext context,
+      final @NotNull IHub hub,
+      final @Nullable Date startTimestamp,
+      final boolean waitForChildren) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.root = new Span(context, this, hub, startTimestamp);
     this.name = context.getName();
     this.hub = hub;
+    this.waitForChildren = waitForChildren;
   }
 
   public @NotNull List<Span> getChildren() {
@@ -97,7 +124,18 @@ public final class SentryTracer implements ITransaction {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     Objects.requireNonNull(operation, "operation is required");
     final Span span =
-        new Span(root.getTraceId(), parentSpanId, this, operation, this.hub, timestamp);
+        new Span(
+            root.getTraceId(),
+            parentSpanId,
+            this,
+            operation,
+            this.hub,
+            timestamp,
+            __ -> {
+              if (waitForChildren && hasAllChildrenFinished()) {
+                finish(finishStatus);
+              }
+            });
     span.setDescription(description);
     this.children.add(span);
     return span;
@@ -150,8 +188,9 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    if (!root.isFinished()) {
-      root.finish(status);
+    this.finishStatus = status;
+    if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
+      root.finish(finishStatus);
       hub.configureScope(
           scope -> {
             scope.withTransaction(
@@ -164,6 +203,18 @@ public final class SentryTracer implements ITransaction {
       SentryTransaction transaction = new SentryTransaction(this);
       hub.captureTransaction(transaction);
     }
+  }
+
+  private boolean hasAllChildrenFinished() {
+    final List<Span> spans = new ArrayList<>(this.children);
+    if (!spans.isEmpty()) {
+      for (final Span span : spans) {
+        if (!span.isFinished()) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   @Override

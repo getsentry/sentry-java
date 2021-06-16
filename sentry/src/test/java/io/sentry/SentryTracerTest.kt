@@ -1,8 +1,11 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.App
 import io.sentry.protocol.Request
@@ -30,10 +33,11 @@ class SentryTracerTest {
 
         fun getSut(
             optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {},
-            startTimestamp: Date? = null
+            startTimestamp: Date? = null,
+            waitForChildren: Boolean = false
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op"), hub, startTimestamp)
+            return SentryTracer(TransactionContext("name", "op"), hub, startTimestamp, waitForChildren)
         }
     }
 
@@ -326,5 +330,34 @@ class SentryTracerTest {
         val transaction = fixture.getSut(startTimestamp = null)
 
         assertNotNull(transaction.startTimestamp)
+    }
+
+    @Test
+    fun `when waiting for children, finishing transaction does not call hub if all children are not finished`() {
+        val transaction = fixture.getSut(waitForChildren = true)
+        transaction.startChild("op")
+        transaction.finish()
+        verify(fixture.hub, never()).captureTransaction(any())
+    }
+
+    @Test
+    fun `when waiting for children, finishing transaction calls hub if all children are finished`() {
+        val transaction = fixture.getSut(waitForChildren = true)
+        val child = transaction.startChild("op")
+        child.finish()
+        transaction.finish()
+        verify(fixture.hub).captureTransaction(any())
+    }
+
+    @Test
+    fun `when waiting for children, finishing last child calls hub if transaction is already finished`() {
+        val transaction = fixture.getSut(waitForChildren = true)
+        val child = transaction.startChild("op")
+        transaction.finish(SpanStatus.INVALID_ARGUMENT)
+        verify(fixture.hub, never()).captureTransaction(any())
+        child.finish()
+        verify(fixture.hub, times(1)).captureTransaction(check {
+            assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
+        })
     }
 }
