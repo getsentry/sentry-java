@@ -342,7 +342,7 @@ public final class SentryTracer implements ITransaction {
     return root;
   }
 
-  private static class FinishStatus {
+  private static final class FinishStatus {
     private final boolean isFinishing;
     private final @Nullable SpanStatus spanStatus;
 
