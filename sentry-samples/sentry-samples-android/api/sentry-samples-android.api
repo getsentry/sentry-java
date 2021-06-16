@@ -11,6 +11,11 @@ public abstract interface class io/sentry/samples/android/GitHubService {
 	public abstract fun listRepos (Ljava/lang/String;)Lretrofit2/Call;
 }
 
+public final class io/sentry/samples/android/GithubAPI {
+	public static final field INSTANCE Lio/sentry/samples/android/GithubAPI;
+	public final fun getService ()Lio/sentry/samples/android/GitHubService;
+}
+
 public class io/sentry/samples/android/MainActivity : androidx/appcompat/app/AppCompatActivity {
 	public fun <init> ()V
 	protected fun onCreate (Landroid/os/Bundle;)V

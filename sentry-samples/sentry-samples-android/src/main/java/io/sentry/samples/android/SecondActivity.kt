@@ -6,30 +6,16 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import io.sentry.Sentry
 import io.sentry.SpanStatus
-import io.sentry.android.okhttp.SentryOkHttpInterceptor
 import io.sentry.samples.android.databinding.ActivitySecondBinding
-import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class SecondActivity : AppCompatActivity() {
 
     private lateinit var repos: List<Repo>
 
-    private val client = OkHttpClient.Builder().addInterceptor(SentryOkHttpInterceptor()).build()
-
     private lateinit var binding: ActivitySecondBinding
-
-    private val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.github.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(client)
-            .build()
-
-    private val service = retrofit.create(GitHubService::class.java)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,7 +69,7 @@ class SecondActivity : AppCompatActivity() {
         val span = currentSpan?.startChild("updateRepos", javaClass.simpleName)
             ?: Sentry.startTransaction("updateRepos", "task")
 
-        service.listRepos(binding.editRepo.text.toString()).enqueue(object : Callback<List<Repo>> {
+        GithubAPI.service.listRepos(binding.editRepo.text.toString()).enqueue(object : Callback<List<Repo>> {
             override fun onFailure(call: Call<List<Repo>>?, t: Throwable) {
                 span.finish(SpanStatus.INTERNAL_ERROR)
                 Sentry.captureException(t)
