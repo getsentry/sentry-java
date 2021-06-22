@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Feat: Capture logged marker in log4j2 and logback appenders  (#1551)
+* Feat: Capture logged marker in log4j2 and logback appenders (#1551)
 
 ## 5.1.0-beta.1
 
