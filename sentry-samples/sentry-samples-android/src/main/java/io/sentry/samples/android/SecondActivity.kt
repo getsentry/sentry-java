@@ -75,6 +75,11 @@ class SecondActivity : AppCompatActivity() {
                 Sentry.captureException(t)
 
                 showText(true, "error: ${t.message}")
+
+                // I opt out enableActivityLifecycleTracingAutoFinish so I know best when to end my transaction
+                // be sure to finish all your spans before this
+                val transaction = Sentry.getSpan()
+                transaction?.finish(SpanStatus.INTERNAL_ERROR)
             }
 
             override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
@@ -83,6 +88,11 @@ class SecondActivity : AppCompatActivity() {
                 span.finish(SpanStatus.OK)
 
                 showText(text = "items: ${repos.size}")
+
+                // I opt out enableActivityLifecycleTracingAutoFinish so I know best when to end my transaction
+                // be sure to finish all your spans before this
+                val transaction = Sentry.getSpan()
+                transaction?.finish(SpanStatus.OK)
             }
         })
     }

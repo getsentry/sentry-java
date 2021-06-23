@@ -19,6 +19,7 @@ public final class io/sentry/samples/android/GithubAPI {
 public class io/sentry/samples/android/MainActivity : androidx/appcompat/app/AppCompatActivity {
 	public fun <init> ()V
 	protected fun onCreate (Landroid/os/Bundle;)V
+	protected fun onResume ()V
 }
 
 public class io/sentry/samples/android/MyApplication : android/app/Application {
