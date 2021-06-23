@@ -1,10 +1,16 @@
 package io.sentry;
 
+import io.sentry.json.JsonSerializable;
+import io.sentry.json.stream.JsonWriter;
 import io.sentry.protocol.SentryId;
+
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+
 /** Adds additional information about what happened to an event. */
-public final class UserFeedback {
+public final class UserFeedback implements JsonSerializable {
 
   private final SentryId eventId;
   private @Nullable String name;
@@ -114,5 +120,27 @@ public final class UserFeedback {
         + comments
         + '\''
         + '}';
+  }
+
+  // JsonSerializable
+
+  @Override
+  public void toJson(@NotNull JsonWriter jsonWriter) throws IOException {
+    jsonWriter.beginObject();
+    jsonWriter.name("event_id");
+    jsonWriter.value(eventId.toString());
+    if (name != null) {
+      jsonWriter.name("name");
+      jsonWriter.value(name);
+    }
+    if (email != null) {
+      jsonWriter.name("email");
+      jsonWriter.value(email);
+    }
+    if (comments != null) {
+      jsonWriter.name("comments");
+      jsonWriter.value(comments);
+    }
+    jsonWriter.endObject();
   }
 }
