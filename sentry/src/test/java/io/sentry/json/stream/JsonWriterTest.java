@@ -23,7 +23,7 @@ import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-@SuppressWarnings("resource")
+@SuppressWarnings({"resource", "NullAway"}) // Ignore warnings to preserve original code.
 public final class JsonWriterTest extends TestCase {
 
   public void testTopLevelValueTypes() throws IOException {

@@ -128,7 +128,7 @@ import static io.sentry.json.stream.JsonScope.NONEMPTY_OBJECT;
  * @author Jesse Wilson
  * @since 1.6
  */
-@SuppressWarnings({"cast", "Nopen", "MissingOverride", "OperatorPrecedence"}) // Ignore warnings to preserve original code.
+@SuppressWarnings({"cast", "NullAway", "Nopen", "MissingOverride", "OperatorPrecedence"}) // Ignore warnings to preserve original code.
 public class JsonWriter implements Closeable, Flushable {
 
   /*
