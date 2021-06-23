@@ -61,6 +61,7 @@ Thank you:
 * Feat: OkHttp callback for Customising the Span (#1478)
 * Feat: Add breadcrumb in Spring RestTemplate integration (#1481)
 * Fix: Cloning Stack (#1483)
+* Feat: Add coroutines support (#1479)
 
 ## 5.0.0-beta.4
 
