@@ -186,6 +186,18 @@ public final class HubAdapter implements IHub {
         transactionContexts, customSamplingContext, bindToScope, startTimestamp);
   }
 
+  @ApiStatus.Internal
+  @Override
+  public @NotNull ITransaction startTransaction(
+      @NotNull TransactionContext transactionContexts,
+      @Nullable CustomSamplingContext customSamplingContext,
+      boolean bindToScope,
+      @Nullable Date startTimestamp,
+      boolean waitForChildren) {
+    return Sentry.startTransaction(
+        transactionContexts, customSamplingContext, bindToScope, startTimestamp, waitForChildren);
+  }
+
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {
     return Sentry.traceHeaders();
