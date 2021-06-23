@@ -342,7 +342,7 @@ public final class SentryTracer implements ITransaction {
     return root;
   }
 
-  private static class FinishStatus {
+  private static final class FinishStatus {
     static final FinishStatus NOT_FINISHED = FinishStatus.notFinished();
 
     private final boolean isFinishing;
