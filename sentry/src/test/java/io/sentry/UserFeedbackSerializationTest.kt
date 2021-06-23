@@ -4,8 +4,10 @@ import io.sentry.json.JsonSerializable
 import io.sentry.json.stream.JsonWriter
 import io.sentry.protocol.SentryId
 import org.junit.Test
+import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class UserFeedbackSerializationTest {
 
@@ -26,6 +28,18 @@ class UserFeedbackSerializationTest {
             "\"email\":\"${userFeedback.email}\",\"comments\":\"${userFeedback.comments}\"}"
 
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `deserializing user feedback`() {
+        val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
+            "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
+        val actual = UserFeedback.deserializer.fromJson(jsonUserFeedback)
+        assertNotNull(actual)
+        assertEquals(userFeedback.eventId, actual.eventId)
+        assertEquals(userFeedback.name, actual.name)
+        assertEquals(userFeedback.email, actual.email)
+        assertEquals(userFeedback.comments, actual.comments)
     }
 
     // Helper

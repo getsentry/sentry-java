@@ -2,6 +2,8 @@ package io.sentry;
 
 import io.sentry.json.JsonDeserializable;
 import io.sentry.json.JsonSerializable;
+import io.sentry.json.stream.JsonReader;
+import io.sentry.json.stream.JsonToken;
 import io.sentry.json.stream.JsonWriter;
 import io.sentry.protocol.SentryId;
 
@@ -10,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.StringReader;
 
 /** Adds additional information about what happened to an event. */
 public final class UserFeedback implements JsonSerializable {
@@ -149,14 +152,57 @@ public final class UserFeedback implements JsonSerializable {
   // JsonDeserializable
 
   public static JsonDeserializable<UserFeedback> deserializer = json -> {
+    JsonReader reader = new JsonReader(new StringReader(json));
+    reader.beginObject();
 
-    String test = "test";
+    SentryId sentryId = null;
+    String name = null;
+    String email = null;
+    String comments = null;
+
+    do {
+      String nextName = reader.nextName();
+      switch (nextName) {
+        case "event_id":
+          sentryId = new SentryId(reader.nextString());
+          break;
+        case "name":
+          if (reader.peek() == JsonToken.STRING) {
+            name = reader.nextString();
+          } else {
+            name = null;
+          }
+          break;
+        case "email":
+          if (reader.peek() == JsonToken.STRING) {
+            email = reader.nextString();
+          } else {
+            email = null;
+          }
+          break;
+        case "comments":
+          if (reader.peek() == JsonToken.STRING) {
+            comments = reader.nextString();
+          } else {
+            comments = null;
+          }
+          break;
+        default:
+          break;
+      }
+    } while (reader.hasNext());
+
+    reader.endObject();
+
+    if (sentryId == null) {
+      throw new IllegalStateException("Missing required field \"sentryId\"");
+    }
 
     return new UserFeedback(
-      SentryId.EMPTY_ID,
-      null,
-      null,
-      null
+      sentryId,
+      name,
+      email,
+      comments
     );
   };
 }
