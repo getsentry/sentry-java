@@ -32,6 +32,7 @@ import java.lang.RuntimeException
 import javax.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
@@ -50,6 +51,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.client.RestTemplate
 
 class SentryAutoConfigurationTest {
@@ -338,6 +340,19 @@ class SentryAutoConfigurationTest {
                 assertTrue(userProviders[0] is CustomSentryUserProvider)
                 assertTrue(userProviders[1] is HttpServletRequestSentryUserProvider)
                 assertTrue(userProviders[2] is SpringSecuritySentryUserProvider)
+            }
+    }
+
+    @Test
+    fun `when Spring Security is not on the classpath, SpringSecuritySentryUserProvider is not configured`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+            .withClassLoader(FilteredClassLoader(SecurityContextHolder::class.java))
+            .run { ctx ->
+                val userProviders = ctx.getSentryUserProviders()
+                assertTrue(userProviders.isNotEmpty())
+                userProviders.forEach {
+                    assertFalse(it is SpringSecuritySentryUserProvider)
+                }
             }
     }
 
