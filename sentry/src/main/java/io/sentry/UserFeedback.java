@@ -1,9 +1,11 @@
 package io.sentry;
 
+import io.sentry.json.JsonDeserializable;
 import io.sentry.json.JsonSerializable;
 import io.sentry.json.stream.JsonWriter;
 import io.sentry.protocol.SentryId;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -143,4 +145,18 @@ public final class UserFeedback implements JsonSerializable {
     }
     jsonWriter.endObject();
   }
+
+  // JsonDeserializable
+
+  public static JsonDeserializable<UserFeedback> deserializer = json -> {
+
+    String test = "test";
+
+    return new UserFeedback(
+      SentryId.EMPTY_ID,
+      null,
+      null,
+      null
+    );
+  };
 }
