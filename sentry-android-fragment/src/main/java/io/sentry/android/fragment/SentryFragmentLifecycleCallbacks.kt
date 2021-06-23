@@ -130,13 +130,15 @@ class SentryFragmentLifecycleCallbacks(
             return
         }
 
-        val currentSpan = hub.span
+        var transaction: ISpan? = null
+        hub.configureScope {
+            transaction = it.transaction
+        }
 
-        val span: ISpan
         val fragmentName = getFragmentName(fragment)
 
         // should be a span of the activity transaction or its own transaction?
-        span = currentSpan?.startChild(FRAGMENT_LOAD_OP, fragmentName)
+        val span = transaction?.startChild(FRAGMENT_LOAD_OP, fragmentName)
             ?: hub.startTransaction(fragmentName, FRAGMENT_LOAD_OP)
 
         fragmentsWithOngoingTransactions[fragment] = span
