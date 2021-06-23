@@ -49,6 +49,7 @@ File(path)
         .forEach { folder ->
             val path = folder.path
             val module = folder.name
+            val pomFile = "$path/pom-default.xml"
 
             val file: String
 
@@ -56,22 +57,34 @@ File(path)
                     .listFiles { it -> it.name.contains("release") && it.extension == "aar" }
                     .firstOrNull()
 
-            if (androidFile != null) {
-                file = androidFile.path
+            val bomFile = folder
+                .listFiles { it -> it.extension == "jar" }
+                .isEmpty()
+
+            if (bomFile) {
+                val command = "./mvnw gpg:sign-and-deploy-file " +
+                    "-Dfile=$pomFile " +
+                    "-DpomFile=$pomFile " +
+                    "-DrepositoryId=$repositoryId " +
+                    "-Durl=$repositoryUrl " +
+                    "--settings $settingsPath"
+                println(command)
             } else {
-                file = "$path/$module.jar"
-            }
+                if (androidFile != null) {
+                    file = androidFile.path
+                } else {
+                    file = "$path/$module.jar"
+                }
 
-            val javadocFile = "$path/$module-javadoc.jar"
-            val sourcesFile = "$path/$module-sources.jar"
-            val pomFile = "$path/pom-default.xml"
+                val javadocFile = "$path/$module-javadoc.jar"
+                val sourcesFile = "$path/$module-sources.jar"
 
-            // requires GnuPG installed to sign files
-            // using 'gpg:sign-and-deploy-file' because 'deploy:deploy-file' does not upload
-            // .asc files.
-            // TODO: find out where to set keyId, password and secretKeyRingFile if you have
-            // more than one.
-            val command = "./mvnw gpg:sign-and-deploy-file " +
+                // requires GnuPG installed to sign files
+                // using 'gpg:sign-and-deploy-file' because 'deploy:deploy-file' does not upload
+                // .asc files.
+                // TODO: find out where to set keyId, password and secretKeyRingFile if you have
+                // more than one.
+                val command = "./mvnw gpg:sign-and-deploy-file " +
                     "-Dfile=$file " +
                     "-Dfiles=$javadocFile,$sourcesFile " +
                     "-Dclassifiers=sources,javadoc " +
@@ -80,7 +93,8 @@ File(path)
                     "-DrepositoryId=$repositoryId " +
                     "-Durl=$repositoryUrl " +
                     "--settings $settingsPath"
-            println(command)
+                println(command)
+            }
         }
 
 /**
