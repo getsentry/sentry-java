@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class Browser implements IUnknownPropertiesConsumer, Cloneable {
+public final class Browser implements IUnknownPropertiesConsumer {
   public static final String TYPE = "browser";
   /** Display name of the browser application. */
   private @Nullable String name;
@@ -18,6 +18,14 @@ public final class Browser implements IUnknownPropertiesConsumer, Cloneable {
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
+
+  public Browser() {}
+
+  Browser(final @NotNull Browser browser) {
+    this.name = browser.name;
+    this.version = browser.version;
+    this.unknown = CollectionUtils.newConcurrentHashMap(browser.unknown);
+  }
 
   public @Nullable String getName() {
     return name;
@@ -45,20 +53,5 @@ public final class Browser implements IUnknownPropertiesConsumer, Cloneable {
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
-  }
-
-  /**
-   * Clones a Browser aka deep copy
-   *
-   * @return the cloned Browser
-   * @throws CloneNotSupportedException if object is not cloneable
-   */
-  @Override
-  public @NotNull Browser clone() throws CloneNotSupportedException {
-    final Browser clone = (Browser) super.clone();
-
-    clone.unknown = CollectionUtils.newConcurrentHashMap(unknown);
-
-    return clone;
   }
 }

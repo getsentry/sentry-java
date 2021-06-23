@@ -7,8 +7,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class BreadcrumbTest {
+
     @Test
-    fun `cloning breadcrumb wont have the same references`() {
+    fun `copying breadcrumb wont have the same references`() {
         val breadcrumb = Breadcrumb()
         breadcrumb.message = "message"
         breadcrumb.setData("data", "data")
@@ -20,7 +21,7 @@ class BreadcrumbTest {
         breadcrumb.level = level
         breadcrumb.category = "category"
 
-        val clone = breadcrumb.clone()
+        val clone = Breadcrumb(breadcrumb)
 
         assertNotNull(clone)
         assertNotSame(breadcrumb, clone)
@@ -31,7 +32,7 @@ class BreadcrumbTest {
     }
 
     @Test
-    fun `cloning breadcrumb will have the same values`() {
+    fun `copying breadcrumb will have the same values`() {
         val breadcrumb = Breadcrumb()
         breadcrumb.message = "message"
         breadcrumb.setData("data", "data")
@@ -43,7 +44,7 @@ class BreadcrumbTest {
         breadcrumb.level = level
         breadcrumb.category = "category"
 
-        val clone = breadcrumb.clone()
+        val clone = Breadcrumb(breadcrumb)
 
         assertEquals("message", clone.message)
         assertEquals("data", clone.data["data"])
@@ -54,7 +55,7 @@ class BreadcrumbTest {
     }
 
     @Test
-    fun `cloning breadcrumb and changing the original values wont change the clone values`() {
+    fun `copying breadcrumb and changing the original values wont change the clone values`() {
         val breadcrumb = Breadcrumb()
         breadcrumb.message = "message"
         breadcrumb.setData("data", "data")
@@ -66,7 +67,7 @@ class BreadcrumbTest {
         breadcrumb.level = level
         breadcrumb.category = "category"
 
-        val clone = breadcrumb.clone()
+        val clone = Breadcrumb(breadcrumb)
 
         breadcrumb.message = "newMessage"
         breadcrumb.data["data"] = "newData"

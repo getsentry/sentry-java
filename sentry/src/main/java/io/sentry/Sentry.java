@@ -6,6 +6,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -650,6 +651,32 @@ public final class Sentry {
       final boolean bindToScope) {
     return getCurrentHub()
         .startTransaction(transactionContexts, customSamplingContext, bindToScope);
+  }
+
+  @ApiStatus.Internal
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final boolean bindToScope,
+      final @Nullable Date startTimestamp) {
+    return getCurrentHub()
+        .startTransaction(transactionContexts, customSamplingContext, bindToScope, startTimestamp);
+  }
+
+  @ApiStatus.Internal
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final boolean bindToScope,
+      final @Nullable Date startTimestamp,
+      final boolean waitForChildren) {
+    return getCurrentHub()
+        .startTransaction(
+            transactionContexts,
+            customSamplingContext,
+            bindToScope,
+            startTimestamp,
+            waitForChildren);
   }
 
   /**

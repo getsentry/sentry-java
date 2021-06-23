@@ -1,0 +1,38 @@
+public final class io/sentry/android/fragment/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/android/fragment/FragmentLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/app/Application;)V
+	public fun close ()V
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
+	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/fragment/SentryFragmentLifecycleCallbacks : androidx/fragment/app/FragmentManager$FragmentLifecycleCallbacks {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IHub;)V
+	public synthetic fun <init> (Lio/sentry/IHub;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun onFragmentAttached (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/content/Context;)V
+	public fun onFragmentCreated (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/os/Bundle;)V
+	public fun onFragmentDestroyed (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
+	public fun onFragmentDetached (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
+	public fun onFragmentPaused (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
+	public fun onFragmentResumed (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
+	public fun onFragmentSaveInstanceState (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/os/Bundle;)V
+	public fun onFragmentStarted (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
+	public fun onFragmentStopped (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
+	public fun onFragmentViewCreated (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/view/View;Landroid/os/Bundle;)V
+	public fun onFragmentViewDestroyed (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
+}
+

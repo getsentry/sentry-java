@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 @Open
-public class SpanContext implements Cloneable {
+public class SpanContext {
   public static final String TYPE = "trace";
 
   /** Determines which trace the Span belongs to. */
@@ -65,6 +65,25 @@ public class SpanContext implements Cloneable {
     this.op = Objects.requireNonNull(operation, "operation is required");
     this.parentSpanId = parentSpanId;
     this.sampled = sampled;
+  }
+
+  /**
+   * Copy constructor.
+   *
+   * @param spanContext the spanContext to copy
+   */
+  public SpanContext(final @NotNull SpanContext spanContext) {
+    this.traceId = spanContext.traceId;
+    this.spanId = spanContext.spanId;
+    this.parentSpanId = spanContext.parentSpanId;
+    this.sampled = spanContext.sampled;
+    this.op = spanContext.op;
+    this.description = spanContext.description;
+    this.status = spanContext.status;
+    final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(spanContext.tags);
+    if (copiedTags != null) {
+      this.tags = copiedTags;
+    }
   }
 
   public void setOperation(final @NotNull String operation) {
@@ -123,15 +142,5 @@ public class SpanContext implements Cloneable {
 
   void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
-  }
-
-  @Override
-  public SpanContext clone() throws CloneNotSupportedException {
-    final SpanContext clone = (SpanContext) super.clone();
-    final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(this.tags);
-    if (copiedTags != null) {
-      clone.tags = copiedTags;
-    }
-    return clone;
   }
 }

@@ -91,4 +91,18 @@ class AttachmentTest {
         val byteAttachment = Attachment(fixture.bytes, fixture.filename, fixture.contentType, true)
         assertTrue(byteAttachment.isAddToTransactions)
     }
+
+    @Test
+    fun `set attachmentType`() {
+        val fileAttachment = Attachment(fixture.pathname, fixture.filename, fixture.contentType, true, "type")
+
+        assertEquals("type", fileAttachment.attachmentType)
+    }
+
+    @Test
+    fun `init with default attachmentType`() {
+        val fileAttachment = Attachment(fixture.pathname)
+
+        assertEquals("event.attachment", fileAttachment.attachmentType)
+    }
 }

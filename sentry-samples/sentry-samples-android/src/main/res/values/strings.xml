@@ -2,6 +2,7 @@
   <string name="app_name">Sentry sample</string>
   <string name="crash_from_java">Crash from Java (UncaughtException)</string>
   <string name="send_message">Send Message</string>
+  <string name="send_message_from_inner_fragment">Send Message from inner fragment</string>
   <string name="add_attachment">Add Attachment</string>
   <string name="send_user_feedback">Send User Feedback</string>
   <string name="capture_exception">Capture Exception</string>
@@ -13,5 +14,6 @@
   <string name="anr">ANR</string>
   <string name="do_request">Do Request</string>
   <string name="open_second_activity">Open Second Activity</string>
+  <string name="open_sample_fragment">Open Sample Fragment</string>
   <string name="back_main">Back to Main Activity</string>
 </resources>

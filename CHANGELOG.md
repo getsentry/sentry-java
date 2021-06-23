@@ -1,28 +1,80 @@
-# Unreleased
+# Changelog
+
+## Unreleased
+
+* Fix: Handling missing Spring Security on classpath on Java 8 (#1552)
+* Feat: Support transaction waiting for children to finish. (#1535) 
+* Feat: Capture logged marker in log4j2 and logback appenders (#1551)
+
+## 5.1.0-beta.1
+
+* Feat: Measure app start time (#1487)
+* Feat: Automatic breadcrumbs logging for fragment lifecycle (#1522)
+
+## 5.0.1
+
+* Fix: Sources and Javadoc artifacts were mixed up (#1515)
+
+## 5.0.0
+
+This release brings many improvements but also new features:
+
+* OkHttp Interceptor for Android (#1330)
+* GraalVM Native Image Compatibility (#1329)
+* Add option to ignore exceptions by type (#1352)
+* Enrich transactions with device contexts (#1430) (#1469)
+* Better interoperability with Kotlin null-safety (#1439) and (#1462)
+* Add coroutines support (#1479)
+* OkHttp callback for Customising the Span (#1478)
+* Add breadcrumb in Spring RestTemplate integration (#1481)
+
+Breaking changes:
+
+* Migration Guide for [Java](https://docs.sentry.io/platforms/java/migration/)
+* Migration Guide for [Android](https://docs.sentry.io/platforms/android/migration/)
+
+Other fixes:
+
+* Fix: Add attachmentType to envelope ser/deser. (#1504)
+
+Thank you:
+
+* @maciejwalkowiak for coding most of it.
+
+## 5.0.0-beta.7
+
+* Ref: Deprecate SentryBaseEvent#getOriginThrowable and add SentryBaseEvent#getThrowableMechanism (#1502)
+* Fix: Graceful Shutdown flushes event instead of Closing SDK (#1500)
+* Fix: Do not append threads that come from the EnvelopeFileObserver (#1501)
+* Ref: Deprecate cacheDirSize and add maxCacheItems (#1499)
+* Fix: Append all threads if Hint is Cached but attachThreads is enabled (#1503)
+
+## 5.0.0-beta.6
 
 * Feat: Generate Sentry BOM (#1486)
 * Feat: Add secondary constructor to SentryOkHttpInterceptor (#1491)
 * Feat: Add option to enable debug mode in Log4j2 integration (#1492)
+* Ref: Replace clone() with copy constructor (#1496)
 
-# 5.0.0-beta.5
+## 5.0.0-beta.5
 
 * Feat: OkHttp callback for Customising the Span (#1478)
 * Feat: Add breadcrumb in Spring RestTemplate integration (#1481)
 * Fix: Cloning Stack (#1483)
 
-# 5.0.0-beta.4
+## 5.0.0-beta.4
 
 * Fix: Enrich Transactions with Context Data (#1469)
 * Bump: Apache HttpClient to 5.0.4 (#1476)
 
-# 5.0.0-beta.3
+## 5.0.0-beta.3
 
 * Fix: handling immutable collections on SentryEvent and protocol objects (#1468)
 * Fix: associate event with transaction when thrown exception is not a direct cause (#1463)
 * Ref: nullability annotations to Sentry module (#1439) and (#1462)
 * Fix: NPE when adding Context Data with null values for log4j2 (#1465)
 
-# 5.0.0-beta.2
+## 5.0.0-beta.2
 
 * Fix: sentry-android-timber package sets sentry.java.android.timber as SDK name (#1456)
 * Fix: When AppLifecycleIntegration is closed, it should remove observer using UI thread (#1459)
@@ -33,7 +85,7 @@ Breaking Changes:
 * Remove: Settings.Secure.ANDROID_ID in favor of generated installationId (#1455)
 * Rename: enableSessionTracking to enableAutoSessionTracking (#1457)
 
-# 5.0.0-beta.1
+## 5.0.0-beta.1
 
 * Fix: Activity tracing auto instrumentation for Android API < 29 (#1402)
 * Fix: use connection and read timeouts in ApacheHttpClient based transport (#1397)
@@ -50,7 +102,7 @@ Breaking Changes:
 * Fix: Set Span status for OkHttp integration (#1447)
 * Fix: Set user on transaction in Spring & Spring Boot integrations (#1443)
 
-# 4.4.0-alpha.2
+## 4.4.0-alpha.2
 
 * Feat: Add option to ignore exceptions by type (#1352)
 * Fix: NPE when MDC contains null values (sentry-logback) (#1364)
@@ -65,7 +117,7 @@ Breaking Changes:
 * Fix: SentryTransactionAdvice should operate on the new scope (#1389)
 * Feat: configure max spans per transaction (#1394)
 
-# 4.4.0-alpha.1
+## 4.4.0-alpha.1
 
 * Bump: sentry-native to 0.4.8
 * Feat: Add an overload for `startTransaction` that sets the created transaction to the Scope #1313
@@ -79,14 +131,14 @@ Breaking Changes:
 * Feat: Add OkHttp client application interceptor (#1330)
 * Fix: Allow disabling tracing through SentryOptions (#1337)
 
-# 4.3.0
+## 4.3.0
 
 * Fix: setting in-app-includes from external properties (#1291)
 * Fix: Initialize Sentry in Logback appender when DSN is not set in XML config (#1296)
 * Fix: JUL integration SDK name (#1293)
 * Feat: Activity tracing auto instrumentation
 
-# 4.2.0
+## 4.2.0
 
 * Fix: Remove experimental annotation for Attachment #1257
 * Fix: Mark stacktrace as snapshot if captured at arbitrary moment #1231
@@ -115,14 +167,14 @@ Breaking Changes:
 * Ref: Simplify RestTemplate instrumentation (#1246)
 * Enchancement: Add overloads for startTransaction taking op and description (#1244)
 
-# 4.1.0
+## 4.1.0
 
 * Improve Kotlin compatibility for SdkVersion (#1213)
 * Feat: Support logging via JUL (#1211)
 * Fix: returning Sentry trace header from Span (#1217)
 * Fix: Remove misleading error logs (#1222)
 
-# 4.0.0
+## 4.0.0
 
 This release brings the Sentry Performance feature to Java SDK, Spring, Spring Boot, and Android integrations. Read more in the reference documentation:
 
@@ -152,7 +204,7 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 - Bump: sentry-native to 0.4.6
 - Bump: Gradle to 6.8.1 and AGP to 4.1.2
 
-# 4.0.0-beta.1
+## 4.0.0-beta.1
 
 * Feat: Add addToTransactions to Attachment (#1191)
 * Enhancement: Support SENTRY_TRACES_SAMPLE_RATE conf. via env variables (#1171)
@@ -173,7 +225,7 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 * Enhancement: Copy options tags to transactions (#1198)
 * Enhancement: Add convenient method for accessing event's throwable (1202)
 
-# 4.0.0-alpha.3
+## 4.0.0-alpha.3
 
 * Feat: Add maxAttachmentSize to SentryOptions (#1138)
 * Feat: Drop invalid attachments (#1134)
@@ -203,7 +255,7 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 * Feat: OutboxSender supports all envelope item types #1158
 * Enhancement: Improve ITransaction and ISpan null-safety compatibility (#1161)
 
-# 4.0.0-alpha.2
+## 4.0.0-alpha.2
 
 * Feat: Add basic support for attachments (#1082)
 * Fix: Remove method reference in SentryEnvelopeItem (#1091)
@@ -223,21 +275,21 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 * Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event
 * Feat: Database query tracing with datasource-proxy (#1095)
 
-# 4.0.0-alpha.1
+## 4.0.0-alpha.1
 
 * Enhancement: Load `sentry.properties` from the application's current working directory (#1046)
 * Ref: Refactor JSON deserialization (#1047)
 * Feat: Performance monitoring (#971)
 * Feat: Performance monitoring for Spring Boot applications (#971)
 
-# 3.2.1
+## 3.2.1
 
 * Fix: Set current thread only if theres no exceptions (#1064)
 * Fix: Append DebugImage list if event already has it (#1092)
 * Fix: Sort breadcrumbs by Date if there are breadcrumbs already in the event (#1094)
 * Fix: Free Local Refs manually due to Android local ref. count limits  (#1179)
 
-# 3.2.0
+## 3.2.0
 
 * Bump: AGP 4.1.1 (#1040)
 * Fix: use neutral Locale for String operations #1033
@@ -250,27 +302,27 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 * Fix: Clean up JNI code and properly free strings #1050
 * Fix: set userId for hard-crashes if no user is set #1049
 
-# 3.1.3
+## 3.1.3
 
 * Fix broken NDK integration on 3.1.2 (release failed on packaging a .so file)
 * Increase max cached events to 30 (#1029)
 * Normalize DSN URI (#1030)
 
-# 3.1.2
+## 3.1.2
 
 * feat: Manually capturing User Feedback
 * Enhancement: Set environment to "production" by default.
 * Enhancement: Make public the Breadcrumb constructor that accepts a Date #1012
 * ref: Validate event id on user feedback submission
  
-# 3.1.1
+## 3.1.1
 
 * fix: Prevent Logback and Log4j2 integrations from re-initializing Sentry when Sentry is already initialized
 * Enhancement: Bind logging related SentryProperties to Slf4j Level instead of Logback to improve Log4j2 compatibility
 * fix: Make sure HttpServletRequestSentryUserProvider runs by default before custom SentryUserProvider beans
 * fix: fix setting up Sentry in Spring Webflux annotation by changing the scope of Spring WebMvc related dependencies
 
-# 3.1.0
+## 3.1.0
 
 * fix: Don't require `sentry.dsn` to be set when using `io.sentry:sentry-spring-boot-starter` and `io.sentry:sentry-logback` together #965
 * Auto-Configure `inAppIncludes` in Spring Boot integration #966
@@ -280,9 +332,9 @@ This release brings the Sentry Performance feature to Java SDK, Spring, Spring B
 * fix: remove chunked streaming mode #974
 * fix: Android 11 + targetSdkVersion 30 crashes Sentry on start #977
 
-# 3.0.0
+## 3.0.0
 
-# Java + Android
+## Java + Android
 
 This release marks the re-unification of Java and Android SDK code bases.
 It's based on the Android 2.0 SDK, which implements [Sentry's unified API](https://develop.sentry.dev/sdk/unified-api/).
@@ -327,14 +379,14 @@ Considerable changes were done, which include a lot of improvements. More are co
 
 New Java [docs](https://docs.sentry.io/platforms/java/) are live and being improved.
 
-# Acquisition
+## Acquisition
 
 Packages were released on [`bintray sentry-java`](https://dl.bintray.com/getsentry/sentry-java/io/sentry/), [`bintray sentry-android`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/) and [`mavenCentral`](https://repo.maven.apache.org/maven2/io/sentry/)
 
 ## Where is the Java 1.7 code base?
 
 The previous Java releases, are all available in this repository through the tagged releases.
-# 3.0.0-beta.1
+## 3.0.0-beta.1
 
 ## What’s Changed
 
@@ -350,7 +402,7 @@ Packages were released on [`bintray sentry-java`](https://dl.bintray.com/getsent
 
 We'd love to get feedback.
 
-# 3.0.0-alpha.3
+## 3.0.0-alpha.3
 
 ## What’s Changed
 
@@ -363,7 +415,7 @@ Packages were released on [`bintray sentry-android`](https://dl.bintray.com/gets
 
 We'd love to get feedback.
 
-# 3.0.0-alpha.2
+## 3.0.0-alpha.2
 
 TBD
 
@@ -372,9 +424,9 @@ Packages were released on [bintray](https://dl.bintray.com/getsentry/maven/io/se
 > Note: This release marks the unification of the Java and Android Sentry codebases based on the core of the Android SDK (version 2.x).
 Previous releases for the Android SDK (version 2.x) can be found on the now archived: https://github.com/getsentry/sentry-android/
 
-# 3.0.0-alpha.1
+## 3.0.0-alpha.1
 
-# New releases will happen on a different repository:
+## New releases will happen on a different repository:
 
 https://github.com/getsentry/sentry-java
 
@@ -386,7 +438,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.3.1
+## 2.3.1
 
 ## What’s Changed
 
@@ -404,7 +456,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.3.0
+## 2.3.0
 
 ## What’s Changed
 
@@ -421,7 +473,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.2.2
+## 2.2.2
 
 ## What’s Changed
 
@@ -434,7 +486,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.2.1
+## 2.2.1
 
 ## What’s Changed
 
@@ -447,7 +499,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.2.0
+## 2.2.0
 
 ## What’s Changed
 
@@ -493,7 +545,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.7
+## 2.1.7
 
 ## What’s Changed
 
@@ -506,7 +558,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.6
+## 2.1.6
 
 ## What’s Changed
 
@@ -517,13 +569,13 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.5
+## 2.1.5
 
 This version has a severe bug and can cause a crash on SDK init
 
 Please upgrade to https://github.com/getsentry/sentry-android/releases/tag/2.1.6
 
-# 2.1.4
+## 2.1.4
 
 ## What’s Changed
 
@@ -539,7 +591,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.3
+## 2.1.3
 
 ## What’s Changed
 
@@ -558,7 +610,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.2
+## 2.1.2
 
 ## What’s Changed
 
@@ -573,7 +625,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.1
+## 2.1.1
 
 ## What’s Changed
 
@@ -592,7 +644,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.0
+## 2.1.0
 
 ## What’s Changed
 
@@ -606,7 +658,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.0.3
+## 2.0.3
 
 ## What’s Changed
 
@@ -615,7 +667,7 @@ We'd love to get feedback.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/sentry-android/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/) and [`mavenCentral`](https://repo.maven.apache.org/maven2/io/sentry/sentry-android/)
 
 We'd love to get feedback.
-# 2.1.0-RC.1
+## 2.1.0-RC.1
 
 ## What’s Changed
 
@@ -636,7 +688,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.0-beta.2
+## 2.1.0-beta.2
 
 ## What’s Changed
 
@@ -647,7 +699,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.0-beta.1
+## 2.1.0-beta.1
 
 ## What’s Changed
 
@@ -661,7 +713,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.0-alpha.2
+## 2.1.0-alpha.2
 
 ## What’s Changed
 
@@ -678,7 +730,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.1.0-alpha.1
+## 2.1.0-alpha.1
 
 Release of Sentry's new SDK for Android.
 
@@ -699,7 +751,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.0.2
+## 2.0.2
 
 Release of Sentry's new SDK for Android.
 
@@ -712,7 +764,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.0.1
+## 2.0.1
 
 Release of Sentry's new SDK for Android.
 
@@ -727,7 +779,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.0.0
+## 2.0.0
 
 Release of Sentry's new SDK for Android.
 
@@ -754,7 +806,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback.
 
-# 2.0.0-rc04
+## 2.0.0-rc04
 
 Release of Sentry's new SDK for Android.
 
@@ -770,7 +822,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.30](https://github.com/getsentry/sentry-java/releases/tag/v1.7.30)
-# 2.0.0-rc03
+## 2.0.0-rc03
 
 Release of Sentry's new SDK for Android.
 
@@ -783,7 +835,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.30](https://github.com/getsentry/sentry-java/releases/tag/v1.7.30)
-# 2.0.0-rc02
+## 2.0.0-rc02
 
 Release of Sentry's new SDK for Android.
 
@@ -810,7 +862,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.30](https://github.com/getsentry/sentry-java/releases/tag/v1.7.30)
 
-# 2.0.0-rc01
+## 2.0.0-rc01
 
 Release of Sentry's new SDK for Android.
 
@@ -843,7 +895,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.29](https://github.com/getsentry/sentry-java/releases/tag/v1.7.29)
 
-# 2.0.0-beta02
+## 2.0.0-beta02
 
 Release of Sentry's new SDK for Android.
 
@@ -854,7 +906,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
-# 2.0.0-beta01
+## 2.0.0-beta01
 
 Release of Sentry's new SDK for Android.
 
@@ -871,7 +923,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
-# 2.0.0-alpha09
+## 2.0.0-alpha09
 
 Release of Sentry's new SDK for Android.
 
@@ -887,7 +939,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
-# 2.0.0-alpha08
+## 2.0.0-alpha08
 
 Release of Sentry's new SDK for Android.
 
@@ -902,7 +954,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
-# 2.0.0-alpha07
+## 2.0.0-alpha07
 
 Third release of Sentry's new SDK for Android.
 
@@ -913,7 +965,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
-# 2.0.0-alpha06
+## 2.0.0-alpha06
 
 Second release of Sentry's new SDK for Android.
 
@@ -924,7 +976,7 @@ Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-an
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
 Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
-# 2.0.0-alpha05
+## 2.0.0-alpha05
 
 First release of Sentry's new SDK for Android.
 

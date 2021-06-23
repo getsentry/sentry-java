@@ -79,19 +79,37 @@ class SentryEventTest {
     }
 
     @Test
-    fun `when throwable is a ExceptionMechanismException, getOriginThrowable unwraps original throwable`() {
+    fun `when throwable is a ExceptionMechanismException, getThrowable unwraps original throwable`() {
         val event = SentryEvent()
         val ex = RuntimeException()
         event.throwable = ExceptionMechanismException(Mechanism(), ex, Thread.currentThread())
-        assertEquals(ex, event.originThrowable)
+        assertEquals(ex, event.getThrowable())
     }
 
     @Test
-    fun `when throwable is not a ExceptionMechanismException, getOriginThrowable returns throwable`() {
+    fun `when throwable is not a ExceptionMechanismException, getThrowable returns throwable`() {
         val event = SentryEvent()
         val ex = RuntimeException()
         event.throwable = ex
-        assertEquals(ex, event.originThrowable)
+        assertEquals(ex, event.getThrowable())
+    }
+
+    @Test
+    fun `when throwable is a ExceptionMechanismException, getThrowableMechanism returns the wrapped throwable`() {
+        val event = SentryEvent()
+        val ex = RuntimeException()
+        val exceptionMechanism = ExceptionMechanismException(Mechanism(), ex, Thread.currentThread())
+        event.throwable = exceptionMechanism
+        assertEquals(exceptionMechanism, event.throwableMechanism)
+    }
+
+    @Test
+    fun `when getOriginThrowable is called, fallback to getThrowable`() {
+        val event = SentryEvent()
+        val ex = RuntimeException()
+        val exceptionMechanism = ExceptionMechanismException(Mechanism(), ex, Thread.currentThread())
+        event.throwable = exceptionMechanism
+        assertEquals(event.getThrowable(), event.originThrowable)
     }
 
     @Test

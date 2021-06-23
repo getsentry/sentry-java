@@ -91,6 +91,10 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
       event.setExtra("thread_name", loggingEvent.getThreadName());
     }
 
+    if (loggingEvent.getMarker() != null) {
+      event.setExtra("marker", loggingEvent.getMarker().toString());
+    }
+
     // remove keys with null values, there is no sense to send these keys to Sentry
     final Map<String, String> mdcProperties =
         CollectionUtils.filterMapEntries(

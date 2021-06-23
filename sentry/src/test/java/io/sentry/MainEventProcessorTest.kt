@@ -156,7 +156,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut()
         val crashedThread = Thread.currentThread()
         var event = generateCrashedEvent(crashedThread)
-        event = sut.process(event, mock<CustomCachedApplyScopeDataHint>())
+        event = sut.process(event, CustomCachedApplyScopeDataHint())
 
         assertEquals("release", event.release)
         assertEquals("environment", event.environment)
@@ -392,6 +392,16 @@ class MainEventProcessorTest {
         transaction = processor.process(transaction, null)
 
         assertNotNull(transaction.user)
+    }
+
+    @Test
+    fun `when event has Cached hint, current thread should not be set`() {
+        val sut = fixture.getSut(attachThreads = false)
+
+        var event = SentryEvent()
+        event = sut.process(event, CustomCachedApplyScopeDataHint())
+
+        assertNull(event.threads)
     }
 
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {

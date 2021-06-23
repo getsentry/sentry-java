@@ -6,13 +6,14 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class SentryRuntimeTest {
+
     @Test
-    fun `cloning Sentry runtime wont have the same references`() {
+    fun `copying Sentry runtime wont have the same references`() {
         val runtime = SentryRuntime()
         val unknown = mapOf(Pair("unknown", "unknown"))
         runtime.acceptUnknownProperties(unknown)
 
-        val clone = runtime.clone()
+        val clone = SentryRuntime(runtime)
 
         assertNotNull(clone)
         assertNotSame(runtime, clone)
@@ -21,7 +22,7 @@ class SentryRuntimeTest {
     }
 
     @Test
-    fun `cloning Sentry runtime system will have the same values`() {
+    fun `copying Sentry runtime system will have the same values`() {
         val runtime = SentryRuntime()
         runtime.name = "name"
         runtime.version = "version"
@@ -29,7 +30,7 @@ class SentryRuntimeTest {
         val unknown = mapOf(Pair("unknown", "unknown"))
         runtime.acceptUnknownProperties(unknown)
 
-        val clone = runtime.clone()
+        val clone = SentryRuntime(runtime)
 
         assertEquals("name", clone.name)
         assertEquals("version", clone.version)

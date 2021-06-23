@@ -24,6 +24,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.MarkerManager
 import org.apache.logging.log4j.ThreadContext
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.AppenderRef
@@ -270,6 +271,23 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertFalse(event.contexts.containsKey("MDC"))
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `attaches marker information`() {
+        val logger = fixture.getSut(minimumEventLevel = Level.WARN)
+        val sqlMarker = MarkerManager.getMarker("SQL").setParents(
+                MarkerManager.getMarker("SQL_QUERY"),
+                MarkerManager.getMarker("SQL_UPDATE")
+        )
+
+        logger.warn(sqlMarker, "testing marker tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertEquals("SQL[ SQL_QUERY, SQL_UPDATE ]", event.getExtra("marker"))
             }, anyOrNull())
         }
     }

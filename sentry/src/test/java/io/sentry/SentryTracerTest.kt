@@ -1,17 +1,22 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.App
 import io.sentry.protocol.Request
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryTracerTest {
@@ -26,9 +31,13 @@ class SentryTracerTest {
             hub.bindClient(mock())
         }
 
-        fun getSut(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {}): SentryTracer {
+        fun getSut(
+            optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {},
+            startTimestamp: Date? = null,
+            waitForChildren: Boolean = false
+        ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op"), hub)
+            return SentryTracer(TransactionContext("name", "op"), hub, startTimestamp, waitForChildren)
         }
     }
 
@@ -306,5 +315,57 @@ class SentryTracerTest {
         transaction.finish()
 
         assertTrue(transaction.isFinished)
+    }
+
+    @Test
+    fun `when startTimestamp is given, use it as startTimestamp`() {
+        val date = Date(0)
+        val transaction = fixture.getSut(startTimestamp = date)
+
+        assertSame(date, transaction.startTimestamp)
+    }
+
+    @Test
+    fun `when startTimestamp is nullable, set it automatically`() {
+        val transaction = fixture.getSut(startTimestamp = null)
+
+        assertNotNull(transaction.startTimestamp)
+    }
+
+    @Test
+    fun `when waiting for children, finishing transaction does not call hub if all children are not finished`() {
+        val transaction = fixture.getSut(waitForChildren = true)
+        transaction.startChild("op")
+        transaction.finish()
+        verify(fixture.hub, never()).captureTransaction(any())
+    }
+
+    @Test
+    fun `when waiting for children, finishing transaction calls hub if all children are finished`() {
+        val transaction = fixture.getSut(waitForChildren = true)
+        val child = transaction.startChild("op")
+        child.finish()
+        transaction.finish()
+        verify(fixture.hub).captureTransaction(any())
+    }
+
+    @Test
+    fun `when waiting for children, hub is not called until transaction is finished`() {
+        val transaction = fixture.getSut(waitForChildren = true)
+        val child = transaction.startChild("op")
+        child.finish()
+        verify(fixture.hub, never()).captureTransaction(any())
+    }
+
+    @Test
+    fun `when waiting for children, finishing last child calls hub if transaction is already finished`() {
+        val transaction = fixture.getSut(waitForChildren = true)
+        val child = transaction.startChild("op")
+        transaction.finish(SpanStatus.INVALID_ARGUMENT)
+        verify(fixture.hub, never()).captureTransaction(any())
+        child.finish()
+        verify(fixture.hub, times(1)).captureTransaction(check {
+            assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
+        })
     }
 }

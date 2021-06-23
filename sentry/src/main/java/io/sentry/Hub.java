@@ -11,6 +11,7 @@ import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.io.Closeable;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -429,16 +430,9 @@ public final class Hub implements IHub {
           .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
     } else {
       final StackItem item = stack.peek();
-      Scope clone = null;
-      try {
-        clone = item.getScope().clone();
-      } catch (CloneNotSupportedException e) {
-        options.getLogger().log(SentryLevel.ERROR, "An error has occurred when cloning a Scope", e);
-      }
-      if (clone != null) {
-        final StackItem newItem = new StackItem(options, item.getClient(), clone);
-        stack.push(newItem);
-      }
+      final StackItem newItem =
+          new StackItem(options, item.getClient(), new Scope(item.getScope()));
+      stack.push(newItem);
     }
   }
 
@@ -587,6 +581,38 @@ public final class Hub implements IHub {
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
+    return createTransaction(transactionContext, customSamplingContext, bindToScope, null, false);
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull ITransaction startTransaction(
+      @NotNull TransactionContext transactionContext,
+      @Nullable CustomSamplingContext customSamplingContext,
+      boolean bindToScope,
+      @Nullable Date startTimestamp) {
+    return createTransaction(
+        transactionContext, customSamplingContext, bindToScope, startTimestamp, false);
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final boolean bindToScope,
+      final @Nullable Date startTimestamp,
+      final boolean waitForChildren) {
+    return createTransaction(
+        transactionContexts, customSamplingContext, bindToScope, startTimestamp, waitForChildren);
+  }
+
+  private @NotNull ITransaction createTransaction(
+      final @NotNull TransactionContext transactionContext,
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final boolean bindToScope,
+      final @Nullable Date startTimestamp,
+      final boolean waitForChildren) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -609,7 +635,7 @@ public final class Hub implements IHub {
       boolean samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSampled(samplingDecision);
 
-      transaction = new SentryTracer(transactionContext, this);
+      transaction = new SentryTracer(transactionContext, this, startTimestamp, waitForChildren);
     }
     if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));

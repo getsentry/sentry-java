@@ -33,6 +33,7 @@ object Config {
 
         val minSdkVersion = 14
         val minSdkVersionOkHttp = 21
+        val minSdkVersionFragment = 21
         val minSdkVersionNdk = 16
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
@@ -82,6 +83,8 @@ object Config {
         val retrofit2Gson = "$retrofit2Group:converter-gson:$retrofit2Version"
 
         val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
+
+        val fragment = "androidx.fragment:fragment-ktx:1.3.4"
     }
 
     object AnnotationProcessors {

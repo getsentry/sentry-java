@@ -29,6 +29,7 @@ import org.awaitility.kotlin.await
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import org.slf4j.MarkerFactory
 
 class SentryAppenderTest {
     private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {
@@ -247,6 +248,22 @@ class SentryAppenderTest {
         await.untilAsserted {
             verify(fixture.transport).send(checkEvent { event ->
                 assertFalse(event.contexts.containsKey("MDC"))
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `attaches marker information`() {
+        fixture = Fixture(minimumEventLevel = Level.WARN)
+        val sqlMarker = MarkerFactory.getDetachedMarker("SQL")
+        sqlMarker.add(MarkerFactory.getDetachedMarker("SQL_UPDATE"))
+        sqlMarker.add(MarkerFactory.getDetachedMarker("SQL_QUERY"))
+
+        fixture.logger.warn(sqlMarker, "testing marker tags")
+
+        await.untilAsserted {
+            verify(fixture.transport).send(checkEvent { event ->
+                assertEquals("SQL [ SQL_UPDATE, SQL_QUERY ]", event.getExtra("marker"))
             }, anyOrNull())
         }
     }

@@ -22,13 +22,47 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Contexts contexts = new Contexts();
   private @Nullable Request request;
   private @NotNull String name;
+  /**
+   * When `waitForChildren` is set to `true`, tracer will finish only when both conditions are met
+   * (the order of meeting condition does not matter): - tracer itself is finished - all child spans
+   * are finished
+   */
+  private final boolean waitForChildren;
+
+  /**
+   * Holds the status for finished tracer. Tracer can have finishedStatus set, but not be finished
+   * itself when `waitForChildren` is set to `true`, `#finish()` method was called but there are
+   * unfinished children spans.
+   */
+  private @NotNull FinishStatus finishStatus = FinishStatus.NOT_FINISHED;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
+    this(context, hub, null);
+  }
+
+  public SentryTracer(
+      final @NotNull TransactionContext context, final @NotNull IHub hub, boolean waitForChildren) {
+    this(context, hub, null, waitForChildren);
+  }
+
+  SentryTracer(
+      final @NotNull TransactionContext context,
+      final @NotNull IHub hub,
+      final @Nullable Date startTimestamp) {
+    this(context, hub, startTimestamp, false);
+  }
+
+  SentryTracer(
+      final @NotNull TransactionContext context,
+      final @NotNull IHub hub,
+      final @Nullable Date startTimestamp,
+      final boolean waitForChildren) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
-    this.root = new Span(context, this, hub);
+    this.root = new Span(context, this, hub, startTimestamp);
     this.name = context.getName();
     this.hub = hub;
+    this.waitForChildren = waitForChildren;
   }
 
   public @NotNull List<Span> getChildren() {
@@ -56,9 +90,18 @@ public final class SentryTracer implements ITransaction {
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
       final @Nullable String description) {
-    final ISpan span = startChild(parentSpanId, operation);
+    final ISpan span = createChild(parentSpanId, operation);
     span.setDescription(description);
     return span;
+  }
+
+  @NotNull
+  ISpan startChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final @Nullable Date timestamp) {
+    return createChild(parentSpanId, operation, description, timestamp);
   }
 
   /**
@@ -68,24 +111,60 @@ public final class SentryTracer implements ITransaction {
    * @return a new transaction span
    */
   @NotNull
-  private ISpan startChild(final @NotNull SpanId parentSpanId, final @NotNull String operation) {
+  private ISpan createChild(final @NotNull SpanId parentSpanId, final @NotNull String operation) {
+    return createChild(parentSpanId, operation, null, null);
+  }
+
+  @NotNull
+  private ISpan createChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      @Nullable Date timestamp) {
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     Objects.requireNonNull(operation, "operation is required");
-    final Span span = new Span(root.getTraceId(), parentSpanId, this, operation, this.hub);
+    final Span span =
+        new Span(
+            root.getTraceId(),
+            parentSpanId,
+            this,
+            operation,
+            this.hub,
+            timestamp,
+            __ -> {
+              final FinishStatus finishStatus = this.finishStatus;
+              if (finishStatus.isFinishing) {
+                finish(finishStatus.spanStatus);
+              }
+            });
+    span.setDescription(description);
     this.children.add(span);
     return span;
   }
 
   @Override
   public @NotNull ISpan startChild(final @NotNull String operation) {
-    return this.startChild(operation, null);
+    return this.startChild(operation, (String) null);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      final @NotNull String operation, @Nullable String description, @Nullable Date timestamp) {
+    return createChild(operation, description, timestamp);
   }
 
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
+    return createChild(operation, description, null);
+  }
+
+  private @NotNull ISpan createChild(
+      final @NotNull String operation,
+      final @Nullable String description,
+      @Nullable Date timestamp) {
     if (children.size() < hub.getOptions().getMaxSpans()) {
-      return root.startChild(operation, description);
+      return root.startChild(operation, description, timestamp);
     } else {
       hub.getOptions()
           .getLogger()
@@ -110,8 +189,9 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    if (!root.isFinished()) {
-      root.finish(status);
+    this.finishStatus = FinishStatus.finishing(status);
+    if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
+      root.finish(finishStatus.spanStatus);
       hub.configureScope(
           scope -> {
             scope.withTransaction(
@@ -124,6 +204,18 @@ public final class SentryTracer implements ITransaction {
       SentryTransaction transaction = new SentryTransaction(this);
       hub.captureTransaction(transaction);
     }
+  }
+
+  private boolean hasAllChildrenFinished() {
+    final List<Span> spans = new ArrayList<>(this.children);
+    if (!spans.isEmpty()) {
+      for (final Span span : spans) {
+        if (!span.isFinished()) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   @Override
@@ -248,5 +340,25 @@ public final class SentryTracer implements ITransaction {
   @NotNull
   Span getRoot() {
     return root;
+  }
+
+  private static final class FinishStatus {
+    static final FinishStatus NOT_FINISHED = FinishStatus.notFinished();
+
+    private final boolean isFinishing;
+    private final @Nullable SpanStatus spanStatus;
+
+    static @NotNull FinishStatus finishing(final @Nullable SpanStatus finishStatus) {
+      return new FinishStatus(true, finishStatus);
+    }
+
+    private static @NotNull FinishStatus notFinished() {
+      return new FinishStatus(false, null);
+    }
+
+    private FinishStatus(final boolean isFinishing, final @Nullable SpanStatus spanStatus) {
+      this.isFinishing = isFinishing;
+      this.spanStatus = spanStatus;
+    }
   }
 }

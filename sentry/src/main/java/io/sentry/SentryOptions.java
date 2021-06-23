@@ -111,11 +111,10 @@ public class SentryOptions {
   /** The cache dir. path for caching offline events */
   private @Nullable String cacheDirPath;
 
-  /** The cache dir. size for capping the number of events Default is 30 */
-  private int cacheDirSize = 30;
+  private int maxCacheItems = 30;
 
   /** Max. queue size before flushing events/envelopes to the disk */
-  private int maxQueueSize = cacheDirSize;
+  private int maxQueueSize = maxCacheItems;
 
   /**
    * This variable controls the total amount of breadcrumbs that should be captured Default is 100
@@ -270,6 +269,9 @@ public class SentryOptions {
 
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
+
+  /** Registers hook that flushes {@link Hub} when main thread shuts down. */
+  private boolean enableShutdownHook = true;
 
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
@@ -602,19 +604,23 @@ public class SentryOptions {
   /**
    * Returns the cache dir. size Default is 30
    *
+   * @deprecated use {{@link SentryOptions#getMaxCacheItems()} }
    * @return the cache dir. size
    */
+  @Deprecated
   public int getCacheDirSize() {
-    return cacheDirSize;
+    return maxCacheItems;
   }
 
   /**
    * Sets the cache dir. size Default is 30
    *
+   * @deprecated use {{@link SentryOptions#setCacheDirSize(int)} }
    * @param cacheDirSize the cache dir. size
    */
+  @Deprecated
   public void setCacheDirSize(int cacheDirSize) {
-    this.cacheDirSize = cacheDirSize;
+    maxCacheItems = cacheDirSize;
   }
 
   /**
@@ -1374,6 +1380,42 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setMaxSpans(int maxSpans) {
     this.maxSpans = maxSpans;
+  }
+
+  /**
+   * True if ShutdownHookIntegration is enabled, false otherwise.
+   *
+   * @return true if enabled or false otherwise.
+   */
+  public boolean isEnableShutdownHook() {
+    return enableShutdownHook;
+  }
+
+  /**
+   * Enables or disable ShutdownHookIntegration.
+   *
+   * @param enableShutdownHook true if enabled or false otherwise.
+   */
+  public void setEnableShutdownHook(boolean enableShutdownHook) {
+    this.enableShutdownHook = enableShutdownHook;
+  }
+
+  /**
+   * The max cache items for capping the number of events Default is 30
+   *
+   * @return the maxCacheItems
+   */
+  public int getMaxCacheItems() {
+    return maxCacheItems;
+  }
+
+  /**
+   * Sets the max cache items for capping the number of events
+   *
+   * @param maxCacheItems the maxCacheItems
+   */
+  public void setMaxCacheItems(int maxCacheItems) {
+    this.maxCacheItems = maxCacheItems;
   }
 
   /** The BeforeSend callback */

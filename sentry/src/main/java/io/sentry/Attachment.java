@@ -13,6 +13,9 @@ public final class Attachment {
   private final @NotNull String contentType;
   private final boolean addToTransactions;
 
+  /** The special type of this attachment */
+  private @Nullable String attachmentType = DEFAULT_ATTACHMENT_TYPE;
+
   /**
    * We could use Files.probeContentType(path) to determine the content type of the filename. This
    * needs a path, but file.toPath or Paths.get only work on above Android API level 26, see
@@ -21,6 +24,9 @@ public final class Attachment {
    * content type of Sentry.
    */
   private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+
+  /** A standard attachment without special meaning */
+  private static final String DEFAULT_ATTACHMENT_TYPE = "event.attachment";
 
   /**
    * Initializes an Attachment with bytes and a filename. Sets addToTransaction to <code>false
@@ -141,6 +147,34 @@ public final class Attachment {
   }
 
   /**
+   * Initializes an Attachment with a path, a filename, a content type, addToTransactions, and
+   * attachmentType.
+   *
+   * <p>The file located at the pathname is read lazily when the SDK captures an event or
+   * transaction not when the attachment is initialized. The pathname string is converted into an
+   * abstract pathname before reading the file.
+   *
+   * @param pathname The pathname string of the file to upload as an attachment.
+   * @param filename The name of the attachment to display in Sentry.
+   * @param contentType The content type of the attachment.
+   * @param addToTransactions <code>true</code> if the SDK should add this attachment to every
+   *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
+   * @param attachmentType The content type of the attachment.
+   */
+  public Attachment(
+      final @NotNull String pathname,
+      final @NotNull String filename,
+      final @NotNull String contentType,
+      final boolean addToTransactions,
+      final @Nullable String attachmentType) {
+    this.pathname = pathname;
+    this.filename = filename;
+    this.contentType = contentType;
+    this.addToTransactions = addToTransactions;
+    this.attachmentType = attachmentType;
+  }
+
+  /**
    * Gets the bytes of the attachment.
    *
    * @return the bytes.
@@ -184,5 +218,14 @@ public final class Attachment {
    */
   boolean isAddToTransactions() {
     return addToTransactions;
+  }
+
+  /**
+   * Returns the attachmentType type
+   *
+   * @return the attachmentType
+   */
+  public @Nullable String getAttachmentType() {
+    return attachmentType;
   }
 }

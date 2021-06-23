@@ -123,6 +123,17 @@ public final class io/sentry/android/core/SentryInitProvider : android/content/C
 	public fun update (Landroid/net/Uri;Landroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/String;)I
 }
 
+public final class io/sentry/android/core/SentryPerformanceProvider : android/content/ContentProvider {
+	public fun <init> ()V
+	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
+	public fun delete (Landroid/net/Uri;Ljava/lang/String;[Ljava/lang/String;)I
+	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
+	public fun insert (Landroid/net/Uri;Landroid/content/ContentValues;)Landroid/net/Uri;
+	public fun onCreate ()Z
+	public fun query (Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor;
+	public fun update (Landroid/net/Uri;Landroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/String;)I
+}
+
 public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Ljava/util/List;)V

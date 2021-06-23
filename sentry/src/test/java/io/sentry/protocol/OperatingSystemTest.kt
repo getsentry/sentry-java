@@ -6,13 +6,14 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class OperatingSystemTest {
+
     @Test
-    fun `cloning operating system wont have the same references`() {
+    fun `copying operating system wont have the same references`() {
         val operatingSystem = OperatingSystem()
         val unknown = mapOf(Pair("unknown", "unknown"))
         operatingSystem.acceptUnknownProperties(unknown)
 
-        val clone = operatingSystem.clone()
+        val clone = OperatingSystem(operatingSystem)
 
         assertNotNull(clone)
         assertNotSame(operatingSystem, clone)
@@ -21,7 +22,7 @@ class OperatingSystemTest {
     }
 
     @Test
-    fun `cloning operating system will have the same values`() {
+    fun `copying operating system will have the same values`() {
         val operatingSystem = OperatingSystem()
         operatingSystem.name = "name"
         operatingSystem.version = "version"
@@ -32,7 +33,7 @@ class OperatingSystemTest {
         val unknown = mapOf(Pair("unknown", "unknown"))
         operatingSystem.acceptUnknownProperties(unknown)
 
-        val clone = operatingSystem.clone()
+        val clone = OperatingSystem(operatingSystem)
 
         assertEquals("name", clone.name)
         assertEquals("version", clone.version)
