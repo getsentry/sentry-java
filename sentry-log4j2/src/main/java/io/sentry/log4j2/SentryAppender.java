@@ -155,6 +155,10 @@ public final class SentryAppender extends AbstractAppender {
       event.setExtra("thread_name", loggingEvent.getThreadName());
     }
 
+    if (loggingEvent.getMarker() != null) {
+      event.setExtra("marker", loggingEvent.getMarker().toString());
+    }
+
     final Map<String, String> contextData =
         CollectionUtils.filterMapEntries(
             loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
