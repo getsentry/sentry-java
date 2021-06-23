@@ -33,13 +33,15 @@ public final class Span implements ISpan {
 
   private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
+  private final @Nullable SpanListener spanListener;
+
   Span(
       final @NotNull SentryId traceId,
       final @Nullable SpanId parentSpanId,
       final @NotNull SentryTracer transaction,
       final @NotNull String operation,
       final @NotNull IHub hub) {
-    this(traceId, parentSpanId, transaction, operation, hub, null);
+    this(traceId, parentSpanId, transaction, operation, hub, null, null);
   }
 
   Span(
@@ -48,12 +50,14 @@ public final class Span implements ISpan {
       final @NotNull SentryTracer transaction,
       final @NotNull String operation,
       final @NotNull IHub hub,
-      final @Nullable Date startTimestamp) {
+      final @Nullable Date startTimestamp,
+      final @Nullable SpanListener spanListener) {
     this.context =
         new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.spanListener = spanListener;
   }
 
   @VisibleForTesting
@@ -66,6 +70,7 @@ public final class Span implements ISpan {
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
+    this.spanListener = null;
   }
 
   public @NotNull Date getStartTimestamp() {
@@ -116,6 +121,9 @@ public final class Span implements ISpan {
     timestamp = DateUtils.getCurrentDateTime();
     if (throwable != null) {
       hub.setSpanContext(throwable, this, this.transaction.getName());
+    }
+    if (spanListener != null) {
+      spanListener.onSpanFinished(this);
     }
   }
 

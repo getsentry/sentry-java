@@ -663,6 +663,22 @@ public final class Sentry {
         .startTransaction(transactionContexts, customSamplingContext, bindToScope, startTimestamp);
   }
 
+  @ApiStatus.Internal
+  public static @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContexts,
+      final @Nullable CustomSamplingContext customSamplingContext,
+      final boolean bindToScope,
+      final @Nullable Date startTimestamp,
+      final boolean waitForChildren) {
+    return getCurrentHub()
+        .startTransaction(
+            transactionContexts,
+            customSamplingContext,
+            bindToScope,
+            startTimestamp,
+            waitForChildren);
+  }
+
   /**
    * Returns trace header of active transaction or {@code null} if no transaction is active.
    *
