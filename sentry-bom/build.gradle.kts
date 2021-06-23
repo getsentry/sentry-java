@@ -4,10 +4,16 @@ plugins {
 }
 
 dependencies {
-    project.parent!!.subprojects
-        .filter { !it.name.startsWith("sentry-samples") && it.name != project.name && it.name != "sentry-test-support" }
-        .forEach {
-        constraints.add("api", "${it.group}:${it.name}:${it.version}")
+    constraints {
+        project.rootProject.subprojects
+            .filter {
+                !it.name.startsWith("sentry-samples") &&
+                        it.name != project.name &&
+                        it.name != "sentry-test-support"
+            }
+            .forEach {
+                api(it)
+            }
     }
 }
 

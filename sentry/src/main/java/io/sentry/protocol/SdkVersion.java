@@ -66,6 +66,7 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
    *     <p>Use {@link SdkVersion#SdkVersion(String, String)} instead.
    */
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public SdkVersion() {
     this("", "");
   }
