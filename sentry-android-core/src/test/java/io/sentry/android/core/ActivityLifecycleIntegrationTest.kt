@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
@@ -41,7 +42,7 @@ class ActivityLifecycleIntegrationTest {
         fun getSut(apiVersion: Int = 29): ActivityLifecycleIntegration {
             whenever(hub.startTransaction(any<String>(), any())).thenReturn(transaction)
             whenever(hub.options).thenReturn(options)
-            whenever(hub.startTransaction(any(), any(), any<Date>(), any())).thenReturn(transaction)
+            whenever(hub.startTransaction(any(), any(), anyOrNull<Date>(), any())).thenReturn(transaction)
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
             return ActivityLifecycleIntegration(application, buildInfo)
         }
@@ -627,7 +628,7 @@ class ActivityLifecycleIntegrationTest {
         val newActivity = mock<Activity>()
         sut.onActivityPreCreated(newActivity, fixture.bundle)
 
-//        verify(fixture.hub).startTransaction(any<String>(), any())
+        verify(fixture.hub).startTransaction(any(), any(), any<Date>(), any())
     }
 
     private fun setAppStartTime(date: Date = Date(0)) {

@@ -78,7 +78,6 @@ class SentryFragmentLifecycleCallbacks(
     override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
         addBreadcrumb(fragment, "resumed")
 
-        // ideally it should be post resumed
         stopTracing(fragment)
     }
 
