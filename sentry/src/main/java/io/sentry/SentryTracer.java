@@ -34,7 +34,7 @@ public final class SentryTracer implements ITransaction {
    * itself when `waitForChildren` is set to `true`, `#finish()` method was called but there are
    * unfinished children spans.
    */
-  private @NotNull FinishStatus finishStatus = FinishStatus.notFinished();
+  private @NotNull FinishStatus finishStatus = FinishStatus.NOT_FINISHED;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -343,15 +343,17 @@ public final class SentryTracer implements ITransaction {
   }
 
   private static class FinishStatus {
+    static final FinishStatus NOT_FINISHED = FinishStatus.notFinished();
+
     private final boolean isFinishing;
     private final @Nullable SpanStatus spanStatus;
 
-    static @NotNull FinishStatus notFinished() {
-      return new FinishStatus(false, null);
-    }
-
     static @NotNull FinishStatus finishing(final @Nullable SpanStatus finishStatus) {
       return new FinishStatus(true, finishStatus);
+    }
+
+    private static @NotNull FinishStatus notFinished() {
+      return new FinishStatus(false, null);
     }
 
     private FinishStatus(final boolean isFinishing, final @Nullable SpanStatus spanStatus) {
