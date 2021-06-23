@@ -218,17 +218,20 @@ Java_io_sentry_android_ndk_NativeScope_nativeAddBreadcrumb(
 static void send_envelope(sentry_envelope_t *envelope, void *data) {
     const char *outbox_path = (const char *) data;
     char envelope_id_str[40];
-    char envelope_path[4096];
 
     sentry_uuid_t envelope_id = sentry_uuid_new_v4();
     sentry_uuid_as_string(&envelope_id, envelope_id_str);
 
-    strcpy(envelope_path, outbox_path);
-    strcat(envelope_path, "/");
-    strcat(envelope_path, envelope_id_str);
+    size_t outbox_len = strlen(outbox_path);
+    size_t final_len = outbox_len + 42; // "/" + envelope_id_str + "\0" = 42
+    char* envelope_path = sentry_malloc(final_len);
+    ENSURE(envelope_path);
+    int written = snprintf(envelope_path, final_len, "%s/%s", outbox_path, envelope_id_str);
+    if (written > outbox_len && written < final_len) {
+        sentry_envelope_write_to_file(envelope, envelope_path);
+    }
 
-    sentry_envelope_write_to_file(envelope, envelope_path);
-
+    sentry_free(envelope_path);
     sentry_envelope_free(envelope);
 }
 
@@ -282,14 +285,18 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
     sentry_options_set_transport(options, transport);
 
     // give sentry-native its own database path it can work with, next to the outbox
-    char database_path[4096];
-    strncpy(database_path, outbox_path, 4096);
+    size_t outbox_len = strlen(outbox_path);
+    size_t final_len = outbox_len + 15; // len(".sentry-native\0") = 15
+    char* database_path = sentry_malloc(final_len);
+    ENSURE_OR_FAIL(database_path);
+    strncpy(database_path, outbox_path, final_len);
     char *dir = strrchr(database_path, '/');
     if (dir)
     {
-        strncpy(dir + 1, ".sentry-native", 4096 - (dir + 1 - database_path));
+        strncpy(dir + 1, ".sentry-native", final_len - (dir + 1 - database_path));
     }
     sentry_options_set_database_path(options, database_path);
+    sentry_free(database_path);
 
     dsn_str = call_get_string(env, sentry_sdk_options, dsn_mid);
     ENSURE_OR_FAIL(dsn_str);
