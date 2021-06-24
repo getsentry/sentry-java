@@ -523,6 +523,9 @@ class GsonSerializerTest {
                               "status": "aborted",
                               "tags": {
                                 "name": "value"
+                              },
+                              "data": {
+                                "key": "value"
                               }
                             }
                           ]
@@ -547,6 +550,9 @@ class GsonSerializerTest {
         val span = transaction.spans[0]
         assertNotNull(span.startTimestamp)
         assertNotNull(span.timestamp)
+        assertNotNull(span.data) {
+            assertEquals("value", it["key"])
+        }
         assertEquals("2b099185293344a5bfdd7ad89ebf9416", span.traceId.toString())
         assertEquals("5b95c29a5ded4281", span.spanId.toString())
         assertEquals("a3b2d1d58b344b07", span.parentSpanId.toString())
@@ -695,5 +701,18 @@ class GsonSerializerTest {
             email = "john@me.com"
             comments = "comment"
         }
+    }
+
+    private fun createSpan(): ISpan {
+        val trace = TransactionContext("transaction-name", "http").apply {
+            description = "some request"
+            status = SpanStatus.OK
+            setTag("myTag", "myValue")
+        }
+        val tracer = SentryTracer(trace, fixture.hub)
+        val span = tracer.startChild("child")
+        span.finish(SpanStatus.OK)
+        tracer.finish()
+        return span
     }
 }
