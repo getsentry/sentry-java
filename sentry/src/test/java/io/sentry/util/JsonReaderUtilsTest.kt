@@ -1,11 +1,11 @@
 package io.sentry.util
 
 import io.sentry.vendor.gson.stream.JsonReader
-import org.junit.Test
 import java.io.StringReader
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.Test
 
 class JsonReaderUtilsTest {
 
@@ -72,7 +72,7 @@ class JsonReaderUtilsTest {
         reader.beginObject()
         reader.nextName()
 
-        assertEquals(9223372036854775807 , JsonReaderUtils.nextLongOrNull(reader))
+        assertEquals(9223372036854775807, JsonReaderUtils.nextLongOrNull(reader))
     }
 
     // nextIntegerOrNull
@@ -94,7 +94,7 @@ class JsonReaderUtilsTest {
         reader.beginObject()
         reader.nextName()
 
-        assertEquals(2147483647 , JsonReaderUtils.nextIntegerOrNull(reader))
+        assertEquals(2147483647, JsonReaderUtils.nextIntegerOrNull(reader))
     }
 
     // nextBooleanOrNull
@@ -124,5 +124,4 @@ class JsonReaderUtilsTest {
     private fun reader(jsonString: String): JsonReader {
         return JsonReader(StringReader(jsonString))
     }
-
 }
