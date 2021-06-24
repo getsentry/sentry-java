@@ -9,7 +9,6 @@
 * Fix: Add data field to SentrySpan (#1555)
 * Fix: Clock drift issue when calling DateUtils#getDateTimeWithMillisPrecision (#1557)
 * Feat: Set mechanism type in SentryExceptionResolver (#1556)
-* Feat: Spring Webflux integration (#1529) 
 
 ## 5.1.0-beta.1
 
