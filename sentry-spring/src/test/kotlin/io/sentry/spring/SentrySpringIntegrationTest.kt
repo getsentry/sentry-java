@@ -129,6 +129,7 @@ class SentrySpringIntegrationTest {
                 assertThat(ex.value).isEqualTo("something went wrong")
                 assertThat(ex.mechanism).isNotNull()
                 assertThat(ex.mechanism!!.isHandled).isFalse()
+                assertThat(ex.mechanism!!.type).isEqualTo(SentryExceptionResolver.MECHANISM_TYPE)
             }, anyOrNull())
         }
     }
