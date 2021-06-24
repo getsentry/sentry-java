@@ -185,7 +185,7 @@ public final class UserFeedback implements JsonSerializable {
       reader.endObject();
 
       if (sentryId == null) {
-        throw new IllegalStateException("Missing required field \"event_id\"");
+        throw new IllegalStateException("Missing required field \"" + JsonKeys.EVENT_ID + "\"");
       }
 
       return new UserFeedback(sentryId, name, email, comments);
