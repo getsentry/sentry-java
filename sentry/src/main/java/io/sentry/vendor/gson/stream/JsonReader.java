@@ -17,12 +17,13 @@
 // Source: https://github.com/google/gson
 // Tag: gson-parent-2.8.7
 // Commit Hash: 4520489c29e770c64b11ca35e0a0fdf17a1874ab
-// Changes: SuppressWarnings, Disable `JsonReaderInternalAccess.INSTANCE` & Imports
+// Changes: @ApiStatus.Internal, SuppressWarnings, Disable `JsonReaderInternalAccess.INSTANCE` & Imports
 
 package io.sentry.vendor.gson.stream;
 
 //import com.google.gson.internal.JsonReaderInternalAccess;
 //import com.google.gson.internal.bind.JsonTreeReader;
+import org.jetbrains.annotations.ApiStatus;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
@@ -193,6 +194,7 @@ import java.util.Arrays;
  * @author Jesse Wilson
  * @since 1.6
  */
+@ApiStatus.Internal
 @SuppressWarnings({"fallthrough", "Nopen", "NullAway", "MissingOverride", "NarrowingCompoundAssignment"}) // Ignore warnings to preserve original code.
 public class JsonReader implements Closeable {
   private static final long MIN_INCOMPLETE_INTEGER = Long.MIN_VALUE / 10;

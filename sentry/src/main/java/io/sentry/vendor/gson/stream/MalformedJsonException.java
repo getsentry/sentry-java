@@ -17,16 +17,18 @@
 // Source: https://github.com/google/gson
 // Tag: gson-parent-2.8.7
 // Commit Hash: 4520489c29e770c64b11ca35e0a0fdf17a1874ab
-// Changes: --
+// Changes: @ApiStatus.Internal
 
 package io.sentry.vendor.gson.stream;
 
+import org.jetbrains.annotations.ApiStatus;
 import java.io.IOException;
 
 /**
  * Thrown when a reader encounters malformed JSON. Some syntax errors can be
  * ignored by calling {@link JsonReader#setLenient(boolean)}.
  */
+@ApiStatus.Internal
 public final class MalformedJsonException extends IOException {
   private static final long serialVersionUID = 1L;
 

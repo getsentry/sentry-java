@@ -17,10 +17,11 @@
 // Source: https://github.com/google/gson
 // Tag: gson-parent-2.8.7
 // Commit Hash: 4520489c29e770c64b11ca35e0a0fdf17a1874ab
-// Changes: SuppressWarnings
+// Changes: @ApiStatus.Internal, SuppressWarnings
 
 package io.sentry.vendor.gson.stream;
 
+import org.jetbrains.annotations.ApiStatus;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
@@ -133,6 +134,7 @@ import static io.sentry.vendor.gson.stream.JsonScope.NONEMPTY_OBJECT;
  * @author Jesse Wilson
  * @since 1.6
  */
+@ApiStatus.Internal
 @SuppressWarnings({"cast", "NullAway", "Nopen", "MissingOverride", "OperatorPrecedence"}) // Ignore warnings to preserve original code.
 public class JsonWriter implements Closeable, Flushable {
 

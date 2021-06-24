@@ -17,9 +17,11 @@
 // Source: https://github.com/google/gson
 // Tag: gson-parent-2.8.7
 // Commit Hash: 4520489c29e770c64b11ca35e0a0fdf17a1874ab
-// Changes: --
+// Changes: @ApiStatus.Internal
 
 package io.sentry.vendor.gson.stream;
+
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * A structure, name or value type in a JSON-encoded string.
@@ -27,6 +29,7 @@ package io.sentry.vendor.gson.stream;
  * @author Jesse Wilson
  * @since 1.6
  */
+@ApiStatus.Internal
 public enum JsonToken {
 
   /**
