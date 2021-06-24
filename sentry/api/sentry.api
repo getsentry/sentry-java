@@ -339,6 +339,14 @@ public final class io/sentry/IpAddressUtils {
 	public static fun isDefault (Ljava/lang/String;)Z
 }
 
+public abstract interface class io/sentry/JsonDeserializer {
+	public abstract fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Object;
+}
+
+public abstract interface class io/sentry/JsonSerializable {
+	public abstract fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;)V
+}
+
 public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor {
 	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
@@ -1120,17 +1128,32 @@ public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Int
 	public fun uncaughtException (Ljava/lang/Thread;Ljava/lang/Throwable;)V
 }
 
-public final class io/sentry/UserFeedback {
+public final class io/sentry/UserFeedback : io/sentry/JsonSerializable {
 	public fun <init> (Lio/sentry/protocol/SentryId;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getComments ()Ljava/lang/String;
 	public fun getEmail ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getName ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;)V
 	public fun setComments (Ljava/lang/String;)V
 	public fun setEmail (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/UserFeedback$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;)Lio/sentry/UserFeedback;
+	public synthetic fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Object;
+}
+
+public final class io/sentry/UserFeedback$JsonKeys {
+	public static final field COMMENTS Ljava/lang/String;
+	public static final field EMAIL Ljava/lang/String;
+	public static final field EVENT_ID Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/adapters/CollectionAdapter : com/google/gson/JsonSerializer {
@@ -1881,6 +1904,15 @@ public final class io/sentry/util/ExceptionUtils {
 	public static fun findRootCause (Ljava/lang/Throwable;)Ljava/lang/Throwable;
 }
 
+public final class io/sentry/util/JsonReaderUtils {
+	public fun <init> ()V
+	public static fun nextBooleanOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Boolean;
+	public static fun nextDoubleOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Double;
+	public static fun nextIntegerOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Integer;
+	public static fun nextLongOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Long;
+	public static fun nextStringOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/String;
+}
+
 public final class io/sentry/util/LogUtils {
 	public fun <init> ()V
 	public static fun logIfNotFlushable (Lio/sentry/ILogger;Ljava/lang/Object;)V
@@ -1901,5 +1933,75 @@ public final class io/sentry/util/StringUtils {
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public class io/sentry/vendor/gson/stream/JsonReader : java/io/Closeable {
+	public fun <init> (Ljava/io/Reader;)V
+	public fun beginArray ()V
+	public fun beginObject ()V
+	public fun close ()V
+	public fun endArray ()V
+	public fun endObject ()V
+	public fun getPath ()Ljava/lang/String;
+	public fun hasNext ()Z
+	public final fun isLenient ()Z
+	public fun nextBoolean ()Z
+	public fun nextDouble ()D
+	public fun nextInt ()I
+	public fun nextLong ()J
+	public fun nextName ()Ljava/lang/String;
+	public fun nextNull ()V
+	public fun nextString ()Ljava/lang/String;
+	public fun peek ()Lio/sentry/vendor/gson/stream/JsonToken;
+	public final fun setLenient (Z)V
+	public fun skipValue ()V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/vendor/gson/stream/JsonToken : java/lang/Enum {
+	public static final field BEGIN_ARRAY Lio/sentry/vendor/gson/stream/JsonToken;
+	public static final field BEGIN_OBJECT Lio/sentry/vendor/gson/stream/JsonToken;
+	public static final field BOOLEAN Lio/sentry/vendor/gson/stream/JsonToken;
+	public static final field END_ARRAY Lio/sentry/vendor/gson/stream/JsonToken;
+	public static final field END_DOCUMENT Lio/sentry/vendor/gson/stream/JsonToken;
+	public static final field END_OBJECT Lio/sentry/vendor/gson/stream/JsonToken;
+	public static final field NAME Lio/sentry/vendor/gson/stream/JsonToken;
+	public static final field NULL Lio/sentry/vendor/gson/stream/JsonToken;
+	public static final field NUMBER Lio/sentry/vendor/gson/stream/JsonToken;
+	public static final field STRING Lio/sentry/vendor/gson/stream/JsonToken;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/vendor/gson/stream/JsonToken;
+	public static fun values ()[Lio/sentry/vendor/gson/stream/JsonToken;
+}
+
+public class io/sentry/vendor/gson/stream/JsonWriter : java/io/Closeable, java/io/Flushable {
+	public fun <init> (Ljava/io/Writer;)V
+	public fun beginArray ()Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun beginObject ()Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun close ()V
+	public fun endArray ()Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun endObject ()Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun flush ()V
+	public final fun getSerializeNulls ()Z
+	public final fun isHtmlSafe ()Z
+	public fun isLenient ()Z
+	public fun jsonValue (Ljava/lang/String;)Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun name (Ljava/lang/String;)Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun nullValue ()Lio/sentry/vendor/gson/stream/JsonWriter;
+	public final fun setHtmlSafe (Z)V
+	public final fun setIndent (Ljava/lang/String;)V
+	public final fun setLenient (Z)V
+	public final fun setSerializeNulls (Z)V
+	public fun value (D)Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun value (J)Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun value (Ljava/lang/Boolean;)Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun value (Ljava/lang/Number;)Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun value (Ljava/lang/String;)Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun value (Z)Lio/sentry/vendor/gson/stream/JsonWriter;
+}
+
+public final class io/sentry/vendor/gson/stream/MalformedJsonException : java/io/IOException {
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun <init> (Ljava/lang/Throwable;)V
 }
 
