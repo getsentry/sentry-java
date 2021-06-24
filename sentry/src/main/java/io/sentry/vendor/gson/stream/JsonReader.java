@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package io.sentry.vendor.gson.stream;
-
 // Source: https://github.com/google/gson
 // Tag: gson-parent-2.8.7
 // Commit Hash: 4520489c29e770c64b11ca35e0a0fdf17a1874ab
 // Changes: SuppressWarnings, Disable `JsonReaderInternalAccess.INSTANCE` & Imports
+
+package io.sentry.vendor.gson.stream;
 
 //import com.google.gson.internal.JsonReaderInternalAccess;
 //import com.google.gson.internal.bind.JsonTreeReader;
