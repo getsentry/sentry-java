@@ -33,9 +33,11 @@ class SentryFragmentLifecycleCallbacksTest {
         val transaction = mock<ITransaction>()
         val span = mock<ISpan>()
 
-        fun getSut(enableFragmentLifecycleBreadcrumbs: Boolean = true,
-                   enableAutoFragmentLifecycleTracing: Boolean = false,
-                   tracesSampleRate: Double? = 1.0): SentryFragmentLifecycleCallbacks {
+        fun getSut(
+            enableFragmentLifecycleBreadcrumbs: Boolean = true,
+            enableAutoFragmentLifecycleTracing: Boolean = false,
+            tracesSampleRate: Double? = 1.0
+        ): SentryFragmentLifecycleCallbacks {
             whenever(hub.options).thenReturn(SentryOptions().apply {
                 setTracesSampleRate(tracesSampleRate)
             })
@@ -208,6 +210,19 @@ class SentryFragmentLifecycleCallbacksTest {
 
         verify(fixture.span).finish(check {
             assertEquals(SpanStatus.OK, it)
+        })
+    }
+
+    @Test
+    fun `When fragment is resumed, it should stop tracing if enabled but keep status`() {
+        val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
+
+        whenever(fixture.span.status).thenReturn(SpanStatus.ABORTED)
+        sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
+        sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
+
+        verify(fixture.span).finish(check {
+            assertEquals(SpanStatus.ABORTED, it)
         })
     }
 
