@@ -9,7 +9,7 @@ import io.sentry.json.stream.JsonToken;
 @ApiStatus.Internal
 public final class JsonReaderUtils {
 
-  public static @Nullable  String nextStringOrNull(JsonReader reader) throws IOException {
+  public static @Nullable String nextStringOrNull(JsonReader reader) throws IOException {
     return reader.peek() == JsonToken.NULL ? null : reader.nextString();
   }
 
