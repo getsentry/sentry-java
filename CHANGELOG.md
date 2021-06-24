@@ -6,6 +6,7 @@
 * Feat: Support transaction waiting for children to finish. (#1535) 
 * Feat: Capture logged marker in log4j2 and logback appenders (#1551)
 * Feat: Set mechanism type in SentryExceptionResolver (#1556)
+* Feat: Perf. for fragments (#1528)
 
 ## 5.1.0-beta.1
 
