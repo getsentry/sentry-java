@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.json.JsonSerializable
+import io.sentry.json.stream.JsonReader
 import io.sentry.json.stream.JsonWriter
 import io.sentry.protocol.SentryId
 import org.junit.Test
@@ -34,7 +35,8 @@ class UserFeedbackSerializationTest {
     fun `deserializing user feedback`() {
         val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
-        val actual = UserFeedback.Deserializer().fromJson(jsonUserFeedback)
+        val reader = JsonReader(StringReader(jsonUserFeedback))
+        val actual = UserFeedback.Deserializer().deserialize(reader)
         assertNotNull(actual)
         assertEquals(userFeedback.eventId, actual.eventId)
         assertEquals(userFeedback.name, actual.name)
@@ -45,7 +47,7 @@ class UserFeedbackSerializationTest {
     // Helper
 
     private fun serializeToString(jsonSerializable: JsonSerializable): String {
-        return this.serializeToString { wrt -> jsonSerializable.toJson(wrt) }
+        return this.serializeToString { wrt -> jsonSerializable.serialize(wrt) }
     }
 
     private fun serializeToString(serialize: (JsonWriter) -> Unit): String {

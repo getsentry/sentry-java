@@ -129,7 +129,7 @@ public final class UserFeedback implements JsonSerializable {
   // JsonSerializable
 
   @Override
-  public void toJson(@NotNull JsonWriter jsonWriter) throws IOException {
+  public void serialize(@NotNull JsonWriter jsonWriter) throws IOException {
     jsonWriter.beginObject();
     jsonWriter.name("event_id");
     jsonWriter.value(eventId.toString());
@@ -152,8 +152,7 @@ public final class UserFeedback implements JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<UserFeedback> {
     @Override
-    public @NotNull UserFeedback fromJson(String json) throws Exception {
-      JsonReader reader = new JsonReader(new StringReader(json));
+    public @NotNull UserFeedback deserialize(JsonReader reader) throws Exception {
       reader.beginObject();
 
       SentryId sentryId = null;
