@@ -5,6 +5,7 @@
 * Fix: Handling missing Spring Security on classpath on Java 8 (#1552)
 * Feat: Support transaction waiting for children to finish. (#1535) 
 * Feat: Capture logged marker in log4j2 and logback appenders (#1551)
+* Feat: Set mechanism type in SentryExceptionResolver (#1556)
 
 ## 5.1.0-beta.1
 
