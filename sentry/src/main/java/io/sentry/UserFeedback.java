@@ -2,10 +2,9 @@ package io.sentry;
 
 import io.sentry.json.JsonDeserializer;
 import io.sentry.json.JsonSerializable;
-import io.sentry.json.extensions.JsonReaderExtensionsKt;
 import io.sentry.json.stream.JsonReader;
-import io.sentry.json.stream.JsonToken;
 import io.sentry.json.stream.JsonWriter;
+import io.sentry.json.utils.JsonReaderUtils;
 import io.sentry.protocol.SentryId;
 
 import org.jetbrains.annotations.NotNull;
@@ -167,13 +166,13 @@ public final class UserFeedback implements JsonSerializable {
             sentryId = new SentryId(reader.nextString());
             break;
           case "name":
-            name = JsonReaderExtensionsKt.nextStringOrNull(reader);
+            name = JsonReaderUtils.nextStringOrNull(reader);
             break;
           case "email":
-            email = JsonReaderExtensionsKt.nextStringOrNull(reader);
+            email = JsonReaderUtils.nextStringOrNull(reader);
             break;
           case "comments":
-            comments = JsonReaderExtensionsKt.nextStringOrNull(reader);
+            comments = JsonReaderUtils.nextStringOrNull(reader);
             break;
           default:
             break;
