@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.sentry.json.stream;
+package io.sentry.vendor.gson.stream;
 
 import java.io.IOException;
 

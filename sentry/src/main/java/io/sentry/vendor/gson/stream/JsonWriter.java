@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.sentry.json.stream;
+package io.sentry.vendor.gson.stream;
 
 import java.io.Closeable;
 import java.io.Flushable;
@@ -22,13 +22,13 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 
-import static io.sentry.json.stream.JsonScope.DANGLING_NAME;
-import static io.sentry.json.stream.JsonScope.EMPTY_ARRAY;
-import static io.sentry.json.stream.JsonScope.EMPTY_DOCUMENT;
-import static io.sentry.json.stream.JsonScope.EMPTY_OBJECT;
-import static io.sentry.json.stream.JsonScope.NONEMPTY_ARRAY;
-import static io.sentry.json.stream.JsonScope.NONEMPTY_DOCUMENT;
-import static io.sentry.json.stream.JsonScope.NONEMPTY_OBJECT;
+import static io.sentry.vendor.gson.stream.JsonScope.DANGLING_NAME;
+import static io.sentry.vendor.gson.stream.JsonScope.EMPTY_ARRAY;
+import static io.sentry.vendor.gson.stream.JsonScope.EMPTY_DOCUMENT;
+import static io.sentry.vendor.gson.stream.JsonScope.EMPTY_OBJECT;
+import static io.sentry.vendor.gson.stream.JsonScope.NONEMPTY_ARRAY;
+import static io.sentry.vendor.gson.stream.JsonScope.NONEMPTY_DOCUMENT;
+import static io.sentry.vendor.gson.stream.JsonScope.NONEMPTY_OBJECT;
 
 /**
  * Writes a JSON (<a href="http://www.ietf.org/rfc/rfc7159.txt">RFC 7159</a>)

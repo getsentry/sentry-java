@@ -1,8 +1,8 @@
-package io.sentry.json;
+package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import io.sentry.json.stream.JsonWriter;
+import io.sentry.vendor.gson.stream.JsonWriter;
 import java.io.IOException;
 
 @ApiStatus.Internal

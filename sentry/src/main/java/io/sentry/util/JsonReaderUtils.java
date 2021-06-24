@@ -1,10 +1,10 @@
-package io.sentry.json.util;
+package io.sentry.util;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
-import io.sentry.json.stream.JsonReader;
-import io.sentry.json.stream.JsonToken;
+import io.sentry.vendor.gson.stream.JsonReader;
+import io.sentry.vendor.gson.stream.JsonToken;
 
 @ApiStatus.Internal
 public final class JsonReaderUtils {

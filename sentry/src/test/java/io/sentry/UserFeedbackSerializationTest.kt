@@ -1,8 +1,7 @@
 package io.sentry
 
-import io.sentry.json.JsonSerializable
-import io.sentry.json.stream.JsonReader
-import io.sentry.json.stream.JsonWriter
+import io.sentry.vendor.gson.stream.JsonReader
+import io.sentry.vendor.gson.stream.JsonWriter
 import io.sentry.protocol.SentryId
 import org.junit.Test
 import java.io.StringReader

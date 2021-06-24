@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.sentry.json.stream;
+package io.sentry.vendor.gson.stream;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -23,15 +23,15 @@ import java.io.StringReader;
 import java.util.Arrays;
 import junit.framework.TestCase;
 
-import static com.google.gson.stream.JsonToken.BEGIN_ARRAY;
-import static com.google.gson.stream.JsonToken.BEGIN_OBJECT;
-import static com.google.gson.stream.JsonToken.BOOLEAN;
-import static com.google.gson.stream.JsonToken.END_ARRAY;
-import static com.google.gson.stream.JsonToken.END_OBJECT;
-import static com.google.gson.stream.JsonToken.NAME;
-import static com.google.gson.stream.JsonToken.NULL;
-import static com.google.gson.stream.JsonToken.NUMBER;
-import static com.google.gson.stream.JsonToken.STRING;
+import static io.sentry.vendor.gson.stream.JsonToken.BEGIN_ARRAY;
+import static io.sentry.vendor.gson.stream.JsonToken.BEGIN_OBJECT;
+import static io.sentry.vendor.gson.stream.JsonToken.BOOLEAN;
+import static io.sentry.vendor.gson.stream.JsonToken.END_ARRAY;
+import static io.sentry.vendor.gson.stream.JsonToken.END_OBJECT;
+import static io.sentry.vendor.gson.stream.JsonToken.NAME;
+import static io.sentry.vendor.gson.stream.JsonToken.NULL;
+import static io.sentry.vendor.gson.stream.JsonToken.NUMBER;
+import static io.sentry.vendor.gson.stream.JsonToken.STRING;
 
 @SuppressWarnings({"resource", "NullAway", "JUnit3FloatingPointComparisonWithoutDelta", "EmptyBlockTag", "FloatingPointLiteralPrecision"})
 public final class JsonReaderTest extends TestCase {

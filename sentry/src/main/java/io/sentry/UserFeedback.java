@@ -1,10 +1,8 @@
 package io.sentry;
 
-import io.sentry.json.JsonDeserializer;
-import io.sentry.json.JsonSerializable;
-import io.sentry.json.stream.JsonReader;
-import io.sentry.json.stream.JsonWriter;
-import io.sentry.json.util.JsonReaderUtils;
+import io.sentry.vendor.gson.stream.JsonReader;
+import io.sentry.vendor.gson.stream.JsonWriter;
+import io.sentry.util.JsonReaderUtils;
 import io.sentry.protocol.SentryId;
 
 import org.jetbrains.annotations.NotNull;
