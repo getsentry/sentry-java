@@ -1,5 +1,7 @@
 package io.sentry;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -86,11 +88,8 @@ public final class DateUtils {
   public static @NotNull Date getDateTimeWithMillisPrecision(final @NotNull String timestamp)
       throws IllegalArgumentException {
     try {
-      final String[] times = timestamp.split("\\.", -1);
-      final long seconds = Long.parseLong(times[0]);
-      final long millis = times.length > 1 ? Long.parseLong(times[1]) : 0;
-
-      return getDateTime((seconds * 1000) + millis);
+      return getDateTime(
+          new BigDecimal(timestamp).setScale(3, RoundingMode.DOWN).movePointRight(3).longValue());
     } catch (NumberFormatException e) {
       throw new IllegalArgumentException("timestamp is not millis format " + timestamp);
     }

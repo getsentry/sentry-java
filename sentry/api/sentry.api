@@ -135,6 +135,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;Z)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -175,6 +176,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;Z)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -230,6 +232,7 @@ public abstract interface class io/sentry/IHub {
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
 	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
+	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
@@ -382,6 +385,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;Z)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -592,6 +596,7 @@ public final class io/sentry/Sentry {
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
+	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;Z)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Z)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
@@ -923,6 +928,7 @@ public final class io/sentry/SentryTraceHeader {
 
 public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;Z)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getChildren ()Ljava/util/List;
@@ -1658,6 +1664,8 @@ public final class io/sentry/protocol/SentryRuntime : io/sentry/IUnknownProperti
 
 public final class io/sentry/protocol/SentrySpan {
 	public fun <init> (Lio/sentry/Span;)V
+	public fun <init> (Lio/sentry/Span;Ljava/util/Map;)V
+	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;

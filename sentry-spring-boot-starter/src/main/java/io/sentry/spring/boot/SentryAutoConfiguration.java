@@ -124,20 +124,24 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryWebMvcConfiguration {
 
-      /**
-       * Configures {@link SpringSecuritySentryUserProvider} only if Spring Security is on the
-       * classpath. Its order is set to be higher than {@link
-       * SentryWebConfiguration#httpServletRequestSentryUserProvider(SentryOptions)}
-       *
-       * @param sentryOptions the Sentry options
-       * @return {@link SpringSecuritySentryUserProvider}
-       */
-      @Bean
+      @Configuration(proxyBeanMethods = false)
       @ConditionalOnClass(SecurityContextHolder.class)
-      @Order(1)
-      public @NotNull SpringSecuritySentryUserProvider springSecuritySentryUserProvider(
-          final @NotNull SentryOptions sentryOptions) {
-        return new SpringSecuritySentryUserProvider(sentryOptions);
+      @Open
+      static class SentrySecurityConfiguration {
+        /**
+         * Configures {@link SpringSecuritySentryUserProvider} only if Spring Security is on the
+         * classpath. Its order is set to be higher than {@link
+         * SentryWebConfiguration#httpServletRequestSentryUserProvider(SentryOptions)}
+         *
+         * @param sentryOptions the Sentry options
+         * @return {@link SpringSecuritySentryUserProvider}
+         */
+        @Bean
+        @Order(1)
+        public @NotNull SpringSecuritySentryUserProvider springSecuritySentryUserProvider(
+            final @NotNull SentryOptions sentryOptions) {
+          return new SpringSecuritySentryUserProvider(sentryOptions);
+        }
       }
 
       /**

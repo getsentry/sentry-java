@@ -382,6 +382,15 @@ public interface IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp);
 
+  @ApiStatus.Internal
+  @NotNull
+  ITransaction startTransaction(
+      @NotNull TransactionContext transactionContexts,
+      @Nullable CustomSamplingContext customSamplingContext,
+      boolean bindToScope,
+      @Nullable Date startTimestamp,
+      boolean waitForChildren);
+
   /**
    * Creates a Transaction and returns the instance. Based on the {@link
    * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
