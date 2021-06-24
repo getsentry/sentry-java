@@ -1,14 +1,12 @@
 package io.sentry;
 
+import io.sentry.protocol.SentryId;
+import io.sentry.util.JsonReaderUtils;
 import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonWriter;
-import io.sentry.util.JsonReaderUtils;
-import io.sentry.protocol.SentryId;
-
+import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.io.IOException;
 
 /** Adds additional information about what happened to an event. */
 public final class UserFeedback implements JsonSerializable {
@@ -190,12 +188,7 @@ public final class UserFeedback implements JsonSerializable {
         throw new IllegalStateException("Missing required field \"event_id\"");
       }
 
-      return new UserFeedback(
-        sentryId,
-        name,
-        email,
-        comments
-      );
+      return new UserFeedback(sentryId, name, email, comments);
     }
   }
 }

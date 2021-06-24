@@ -1,13 +1,13 @@
 package io.sentry
 
+import io.sentry.protocol.SentryId
 import io.sentry.vendor.gson.stream.JsonReader
 import io.sentry.vendor.gson.stream.JsonWriter
-import io.sentry.protocol.SentryId
-import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import org.junit.Test
 
 class UserFeedbackSerializationTest {
 
@@ -51,7 +51,7 @@ class UserFeedbackSerializationTest {
 
     private fun serializeToString(serialize: (JsonWriter) -> Unit): String {
         val wrt = StringWriter()
-        val jsonWrt = JsonWriter(wrt);
+        val jsonWrt = JsonWriter(wrt)
         serialize(jsonWrt)
         return wrt.toString()
     }
