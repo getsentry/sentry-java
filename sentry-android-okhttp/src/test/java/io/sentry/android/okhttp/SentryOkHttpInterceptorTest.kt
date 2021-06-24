@@ -130,8 +130,8 @@ class SentryOkHttpInterceptorTest {
         sut.newCall(postRequest()).execute()
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
-            assertEquals(13L, it.data["response.body.size"])
-            assertEquals(12L, it.data["request.body.size"])
+            assertEquals(13L, it.data["response_body_size"])
+            assertEquals(12L, it.data["request_body_size"])
         })
     }
 

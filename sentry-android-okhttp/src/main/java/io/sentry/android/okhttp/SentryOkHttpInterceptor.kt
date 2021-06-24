@@ -52,10 +52,10 @@ class SentryOkHttpInterceptor(
             }
             val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
             request.body?.contentLength().ifHasValidLength {
-                breadcrumb.setData("request.body.size", it)
+                breadcrumb.setData("request_body_size", it)
             }
             response?.body?.contentLength().ifHasValidLength {
-                breadcrumb.setData("response.body.size", it)
+                breadcrumb.setData("response_body_size", it)
             }
             hub.addBreadcrumb(breadcrumb)
         }
