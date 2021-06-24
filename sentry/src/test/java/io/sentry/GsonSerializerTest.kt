@@ -13,6 +13,7 @@ import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.Device
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import java.io.BufferedWriter
 import java.io.ByteArrayInputStream
@@ -560,6 +561,21 @@ class GsonSerializerTest {
         assertEquals(SpanStatus.ABORTED, span.status)
         assertEquals("desc", span.description)
         assertEquals(mapOf("name" to "value"), span.tags)
+    }
+
+    @Test
+    fun `serializes span data`() {
+        val sentrySpan = SentrySpan(createSpan() as Span, mapOf("data1" to "value1"))
+
+        val stringWriter = StringWriter()
+        fixture.serializer.serialize(sentrySpan, stringWriter)
+
+        val element = JsonParser().parse(stringWriter.toString()).asJsonObject
+        assertNotNull(element["data"]) {
+            assertNotNull(it.asJsonObject["data1"]) {
+                assertEquals("value1", it.asString)
+            }
+        }
     }
 
     @Test
