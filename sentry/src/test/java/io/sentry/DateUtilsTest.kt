@@ -47,14 +47,23 @@ class DateUtilsTest {
 
     @Test
     fun `Millis timestamp with millis precision, it should be UTC`() {
-        // Jun 7, 2020 12:38:12 PM UTC
-        val dateIsoFormat = "1591533492.631"
-        val actual = DateUtils.getDateTimeWithMillisPrecision(dateIsoFormat)
+        val input = listOf(
+            Pair("1591533492.631", "2020-06-07T12:38:12.631Z"),
+            Pair("1591533492.63", "2020-06-07T12:38:12.630Z"),
+            Pair("1591533492.6", "2020-06-07T12:38:12.600Z"),
+            Pair("1591533492", "2020-06-07T12:38:12.000Z"),
+            Pair("1591533492.631631", "2020-06-07T12:38:12.631Z"),
+            Pair("1591533492.999999", "2020-06-07T12:38:12.999Z")
+        )
 
-        val utcActual = convertDate(actual)
-        val timestamp = utcActual.format(isoFormat)
+        input.forEach {
+            val actual = DateUtils.getDateTimeWithMillisPrecision(it.first)
 
-        assertEquals("2020-06-07T12:38:12.631Z", timestamp)
+            val utcActual = convertDate(actual)
+            val timestamp = utcActual.format(isoFormat)
+
+            assertEquals(it.second, timestamp)
+        }
     }
 
     @Test
