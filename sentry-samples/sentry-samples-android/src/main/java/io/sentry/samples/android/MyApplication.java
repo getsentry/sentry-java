@@ -18,12 +18,6 @@ public class MyApplication extends Application {
     SentryAndroid.init(
         this,
         options -> {
-          //          options.setBeforeSend(
-          //              (event, hint) -> {
-          //                event.setTag("sample-key", "before-send");
-          //                return event;
-          //              });
-          //          options.setAnrTimeoutIntervalMillis(2000);
           options.addIntegration(new FragmentLifecycleIntegration(MyApplication.this, true, true));
         });
   }

@@ -16,23 +16,20 @@ import io.sentry.SpanStatus
 @Suppress("TooManyFunctions")
 class SentryFragmentLifecycleCallbacks(
     private val hub: IHub = HubAdapter.getInstance(),
-    private val enableFragmentLifecycleBreadcrumbs: Boolean = true,
-    performanceEnabled: Boolean = false,
-    enableAutoFragmentLifecycleTracing: Boolean = false
+    val enableFragmentLifecycleBreadcrumbs: Boolean,
+    val enableAutoFragmentLifecycleTracing: Boolean
 ) : FragmentLifecycleCallbacks() {
 
     constructor(
-        enableFragmentLifecycleBreadcrumbs: Boolean,
-        performanceEnabled: Boolean,
-        enableAutoFragmentLifecycleTracing: Boolean
+        enableFragmentLifecycleBreadcrumbs: Boolean = true,
+        enableAutoFragmentLifecycleTracing: Boolean = false
     ) : this(
         hub = HubAdapter.getInstance(),
         enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
-        performanceEnabled = performanceEnabled,
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
     )
 
-    private val isPerformanceEnabled = performanceEnabled && enableAutoFragmentLifecycleTracing
+    private val isPerformanceEnabled = hub.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
 
     private val fragmentsWithOngoingTransactions = mutableMapOf<Fragment, ISpan>()
 
@@ -159,6 +156,6 @@ class SentryFragmentLifecycleCallbacks(
     }
 
     companion object {
-        private const val FRAGMENT_LOAD_OP = "fragment.load"
+        const val FRAGMENT_LOAD_OP = "fragment.load"
     }
 }
