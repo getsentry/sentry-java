@@ -34,7 +34,7 @@ class UserFeedbackSerializationTest {
     fun `deserializing user feedback`() {
         val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
-        val actual = UserFeedback.deserializer.fromJson(jsonUserFeedback)
+        val actual = UserFeedback.Deserializer().fromJson(jsonUserFeedback)
         assertNotNull(actual)
         assertEquals(userFeedback.eventId, actual.eventId)
         assertEquals(userFeedback.name, actual.name)
