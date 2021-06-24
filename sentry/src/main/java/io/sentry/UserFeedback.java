@@ -152,13 +152,12 @@ public final class UserFeedback implements JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<UserFeedback> {
     @Override
     public @NotNull UserFeedback deserialize(JsonReader reader) throws Exception {
-      reader.beginObject();
-
       SentryId sentryId = null;
       String name = null;
       String email = null;
       String comments = null;
 
+      reader.beginObject();
       do {
         String nextName = reader.nextName();
         switch (nextName) {
@@ -178,7 +177,6 @@ public final class UserFeedback implements JsonSerializable {
             break;
         }
       } while (reader.hasNext());
-
       reader.endObject();
 
       if (sentryId == null) {
