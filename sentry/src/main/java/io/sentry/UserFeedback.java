@@ -4,7 +4,7 @@ import io.sentry.json.JsonDeserializer;
 import io.sentry.json.JsonSerializable;
 import io.sentry.json.stream.JsonReader;
 import io.sentry.json.stream.JsonWriter;
-import io.sentry.json.utils.JsonReaderUtils;
+import io.sentry.json.util.JsonReaderUtils;
 import io.sentry.protocol.SentryId;
 
 import org.jetbrains.annotations.NotNull;
@@ -125,23 +125,32 @@ public final class UserFeedback implements JsonSerializable {
         + '}';
   }
 
+  // JsonKeys
+
+  public static final class JsonKeys {
+    public static final String EVENT_ID = "event_id";
+    public static final String NAME = "name";
+    public static final String EMAIL = "email";
+    public static final String COMMENTS = "comments";
+  }
+
   // JsonSerializable
 
   @Override
   public void serialize(@NotNull JsonWriter jsonWriter) throws IOException {
     jsonWriter.beginObject();
-    jsonWriter.name("event_id");
+    jsonWriter.name(JsonKeys.EVENT_ID);
     jsonWriter.value(eventId.toString());
     if (name != null) {
-      jsonWriter.name("name");
+      jsonWriter.name(JsonKeys.NAME);
       jsonWriter.value(name);
     }
     if (email != null) {
-      jsonWriter.name("email");
+      jsonWriter.name(JsonKeys.EMAIL);
       jsonWriter.value(email);
     }
     if (comments != null) {
-      jsonWriter.name("comments");
+      jsonWriter.name(JsonKeys.COMMENTS);
       jsonWriter.value(comments);
     }
     jsonWriter.endObject();
@@ -161,16 +170,16 @@ public final class UserFeedback implements JsonSerializable {
       do {
         String nextName = reader.nextName();
         switch (nextName) {
-          case "event_id":
+          case JsonKeys.EVENT_ID:
             sentryId = new SentryId(reader.nextString());
             break;
-          case "name":
+          case JsonKeys.NAME:
             name = JsonReaderUtils.nextStringOrNull(reader);
             break;
-          case "email":
+          case JsonKeys.EMAIL:
             email = JsonReaderUtils.nextStringOrNull(reader);
             break;
-          case "comments":
+          case JsonKeys.COMMENTS:
             comments = JsonReaderUtils.nextStringOrNull(reader);
             break;
           default:

@@ -1,10 +1,12 @@
-package io.sentry.json.utils;
+package io.sentry.json.util;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import io.sentry.json.stream.JsonReader;
 import io.sentry.json.stream.JsonToken;
 
+@ApiStatus.Internal
 public final class JsonReaderUtils {
 
   public static @Nullable  String nextStringOrNull(JsonReader reader) throws IOException {
