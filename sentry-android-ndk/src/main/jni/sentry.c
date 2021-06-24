@@ -256,7 +256,9 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
 
     char *outbox_path = NULL;
     sentry_transport_t *transport = NULL;
+    bool transport_owns_path = false;
     sentry_options_t *options = NULL;
+    bool options_owns_transport = false;
     char *dsn_str = NULL;
     char *release_str = NULL;
     char *environment_str = NULL;
@@ -281,8 +283,10 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
     ENSURE_OR_FAIL(transport);
     sentry_transport_set_state(transport, outbox_path);
     sentry_transport_set_free_func(transport, sentry_free);
+    transport_owns_path = true;
 
     sentry_options_set_transport(options, transport);
+    options_owns_transport = true;
 
     // give sentry-native its own database path it can work with, next to the outbox
     size_t outbox_len = strlen(outbox_path);
@@ -327,8 +331,12 @@ Java_io_sentry_android_ndk_SentryNdk_initSentryNative(
     return;
 
 fail:
-    sentry_free(outbox_path);
-    sentry_transport_free(transport);
+    if (!transport_owns_path) {
+        sentry_free(outbox_path);
+    }
+    if (!options_owns_transport) {
+        sentry_transport_free(transport);
+    }
     sentry_options_free(options);
 }
 
