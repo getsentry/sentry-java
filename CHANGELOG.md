@@ -5,6 +5,7 @@
 * Fix: Handling missing Spring Security on classpath on Java 8 (#1552)
 * Feat: Support transaction waiting for children to finish. (#1535) 
 * Feat: Capture logged marker in log4j2 and logback appenders (#1551)
+* Fix: Use a different method to get strings from JNI, and avoid excessive Stack Space usage. (#1214)
 
 ## 5.1.0-beta.1
 
