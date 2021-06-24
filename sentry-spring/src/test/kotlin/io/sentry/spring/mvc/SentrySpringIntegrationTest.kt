@@ -13,6 +13,7 @@ import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.spring.EnableSentry
+import io.sentry.spring.SentryExceptionResolver
 import io.sentry.spring.SentrySpringRequestListener
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider

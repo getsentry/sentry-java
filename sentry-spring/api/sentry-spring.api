@@ -15,6 +15,7 @@ public final class io/sentry/spring/HttpServletRequestSentryUserProvider : io/se
 }
 
 public class io/sentry/spring/SentryExceptionResolver : org/springframework/core/Ordered, org/springframework/web/servlet/HandlerExceptionResolver {
+	public static final field MECHANISM_TYPE Ljava/lang/String;
 	public fun <init> (Lio/sentry/IHub;I)V
 	public fun getOrder ()I
 	public fun resolveException (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljava/lang/Object;Ljava/lang/Exception;)Lorg/springframework/web/servlet/ModelAndView;
