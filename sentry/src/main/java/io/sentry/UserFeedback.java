@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.json.JsonDeserializer;
 import io.sentry.json.JsonSerializable;
+import io.sentry.json.extensions.JsonReaderExtensionsKt;
 import io.sentry.json.stream.JsonReader;
 import io.sentry.json.stream.JsonToken;
 import io.sentry.json.stream.JsonWriter;
@@ -11,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.StringReader;
 
 /** Adds additional information about what happened to an event. */
 public final class UserFeedback implements JsonSerializable {
@@ -167,25 +167,13 @@ public final class UserFeedback implements JsonSerializable {
             sentryId = new SentryId(reader.nextString());
             break;
           case "name":
-            if (reader.peek() == JsonToken.STRING) {
-              name = reader.nextString();
-            } else {
-              name = null;
-            }
+            name = JsonReaderExtensionsKt.nextStringOrNull(reader);
             break;
           case "email":
-            if (reader.peek() == JsonToken.STRING) {
-              email = reader.nextString();
-            } else {
-              email = null;
-            }
+            email = JsonReaderExtensionsKt.nextStringOrNull(reader);
             break;
           case "comments":
-            if (reader.peek() == JsonToken.STRING) {
-              comments = reader.nextString();
-            } else {
-              comments = null;
-            }
+            comments = JsonReaderExtensionsKt.nextStringOrNull(reader);
             break;
           default:
             break;
