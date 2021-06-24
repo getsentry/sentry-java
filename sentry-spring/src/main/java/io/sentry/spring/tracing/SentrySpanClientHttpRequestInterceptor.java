@@ -66,7 +66,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final @Nullable Integer responseStatusCode) {
     final Breadcrumb breadcrumb =
         Breadcrumb.http(request.getURI().toString(), request.getMethodValue(), responseStatusCode);
-    breadcrumb.setData("requestBodySize", body.length);
+    breadcrumb.setData("request.body.size", body.length);
     hub.addBreadcrumb(breadcrumb);
   }
 }

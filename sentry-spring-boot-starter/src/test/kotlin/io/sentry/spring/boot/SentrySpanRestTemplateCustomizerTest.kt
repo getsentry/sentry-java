@@ -135,7 +135,7 @@ class SentrySpanRestTemplateCustomizerTest {
             assertEquals("http", it.type)
             assertEquals("/test/123", it.data["url"])
             assertEquals("POST", it.data["method"])
-            assertEquals(7, it.data["requestBodySize"])
+            assertEquals(7, it.data["request.body.size"])
         })
     }
 
@@ -160,7 +160,7 @@ class SentrySpanRestTemplateCustomizerTest {
             assertEquals("http", it.type)
             assertEquals("/test/123", it.data["url"])
             assertEquals("POST", it.data["method"])
-            assertEquals(7, it.data["requestBodySize"])
+            assertEquals(7, it.data["request.body.size"])
         })
     }
 
