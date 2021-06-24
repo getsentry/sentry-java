@@ -5,6 +5,7 @@
 * Fix: Handling missing Spring Security on classpath on Java 8 (#1552)
 * Feat: Support transaction waiting for children to finish. (#1535) 
 * Feat: Capture logged marker in log4j2 and logback appenders (#1551)
+* Feat: Generate Sentry BOM (#1486)
 
 ## 5.1.0-beta.1
 
@@ -51,7 +52,6 @@ Thank you:
 
 ## 5.0.0-beta.6
 
-* Feat: Generate Sentry BOM (#1486)
 * Feat: Add secondary constructor to SentryOkHttpInterceptor (#1491)
 * Feat: Add option to enable debug mode in Log4j2 integration (#1492)
 * Ref: Replace clone() with copy constructor (#1496)
