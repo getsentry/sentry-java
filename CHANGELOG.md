@@ -5,6 +5,7 @@
 * Fix: Handling missing Spring Security on classpath on Java 8 (#1552)
 * Feat: Support transaction waiting for children to finish. (#1535) 
 * Feat: Capture logged marker in log4j2 and logback appenders (#1551)
+* Fix: Clock drift issue when calling DateUtils#getDateTimeWithMillisPrecision #1557
 
 ## 5.1.0-beta.1
 
