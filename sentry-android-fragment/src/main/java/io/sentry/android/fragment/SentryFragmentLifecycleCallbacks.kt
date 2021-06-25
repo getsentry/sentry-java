@@ -157,6 +157,6 @@ class SentryFragmentLifecycleCallbacks(
     }
 
     companion object {
-        const val FRAGMENT_LOAD_OP = "fragment.load"
+        const val FRAGMENT_LOAD_OP = "ui.fragment.load"
     }
 }
