@@ -288,6 +288,19 @@ class HubTest {
     }
 
     @Test
+    fun `when captureEvent is called on disabled hub, lastEventId does not get overwritten`() {
+        val (sut, mockClient) = getEnabledHub()
+        whenever(mockClient.captureEvent(any(), any(), anyOrNull())).thenReturn(SentryId(UUID.randomUUID()))
+        val event = SentryEvent()
+        val hint = { }
+        sut.captureEvent(event, hint)
+        val lastEventId = sut.lastEventId
+        sut.close()
+        sut.captureEvent(event, hint)
+        assertEquals(lastEventId, sut.lastEventId)
+    }
+
+    @Test
     fun `when captureEvent is called and session tracking is disabled, it should not capture a session`() {
         val (sut, mockClient) = getEnabledHub()
 
