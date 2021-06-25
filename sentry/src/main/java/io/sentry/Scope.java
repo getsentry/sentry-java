@@ -554,9 +554,7 @@ public final class Scope {
     attachments.add(attachment);
   }
 
-  /**
-   * Clear all attachments.
-   */
+  /** Clear all attachments. */
   public void clearAttachments() {
     attachments.clear();
   }
