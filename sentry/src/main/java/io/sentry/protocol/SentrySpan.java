@@ -23,8 +23,14 @@ public final class SentrySpan {
   private final @Nullable String description;
   private final @Nullable SpanStatus status;
   private final @NotNull Map<String, String> tags;
+  private final @Nullable Map<String, Object> data;
 
   public SentrySpan(final @NotNull Span span) {
+    this(span, null);
+  }
+
+  @ApiStatus.Internal
+  public SentrySpan(final @NotNull Span span, final @Nullable Map<String, Object> data) {
     Objects.requireNonNull(span, "span is required");
     this.description = span.getDescription();
     this.op = span.getOperation();
@@ -36,6 +42,7 @@ public final class SentrySpan {
     this.tags = tagsCopy != null ? tagsCopy : new ConcurrentHashMap<>();
     this.timestamp = span.getTimestamp();
     this.startTimestamp = span.getStartTimestamp();
+    this.data = data;
   }
 
   public boolean isFinished() {
@@ -76,5 +83,9 @@ public final class SentrySpan {
 
   public @NotNull Map<String, String> getTags() {
     return tags;
+  }
+
+  public @Nullable Map<String, Object> getData() {
+    return data;
   }
 }
