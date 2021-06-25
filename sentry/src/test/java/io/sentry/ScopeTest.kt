@@ -765,6 +765,17 @@ class ScopeTest {
     }
 
     @Test
+    fun `clearAttachments clears all attachments`() {
+        val scope = Scope(SentryOptions())
+        scope.addAttachment(Attachment(""))
+        scope.addAttachment(Attachment(""))
+
+        assertEquals(2, scope.attachments.count())
+        scope.clearAttachments()
+        assertEquals(0, scope.attachments.count())
+    }
+
+    @Test
     fun `setting null fingerprint do not overwrite current value`() {
         val scope = Scope(SentryOptions())
         // sanity check
