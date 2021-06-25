@@ -12,6 +12,7 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryLevel.INFO
 import io.sentry.SpanStatus
+import java.util.WeakHashMap
 
 @Suppress("TooManyFunctions")
 class SentryFragmentLifecycleCallbacks(
@@ -29,9 +30,9 @@ class SentryFragmentLifecycleCallbacks(
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
     )
 
-    private val isPerformanceEnabled = hub.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
+    private val isPerformanceEnabled get() = hub.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
 
-    private val fragmentsWithOngoingTransactions = mutableMapOf<Fragment, ISpan>()
+    private val fragmentsWithOngoingTransactions = WeakHashMap<Fragment, ISpan>()
 
     override fun onFragmentAttached(
         fragmentManager: FragmentManager,
