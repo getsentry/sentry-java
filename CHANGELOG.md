@@ -8,6 +8,7 @@
 * Fix: Add data field to SentrySpan (#1555)
 * Fix: Clock drift issue when calling DateUtils#getDateTimeWithMillisPrecision (#1557)
 * Feat: Set mechanism type in SentryExceptionResolver (#1556)
+* Ref: Prefer snake case for HTTP integration data keys (#1559)
 
 ## 5.1.0-beta.1
 
