@@ -1664,6 +1664,8 @@ public final class io/sentry/protocol/SentryRuntime : io/sentry/IUnknownProperti
 
 public final class io/sentry/protocol/SentrySpan {
 	public fun <init> (Lio/sentry/Span;)V
+	public fun <init> (Lio/sentry/Span;Ljava/util/Map;)V
+	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
