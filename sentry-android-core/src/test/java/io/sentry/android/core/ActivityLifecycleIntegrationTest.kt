@@ -40,7 +40,6 @@ class ActivityLifecycleIntegrationTest {
         val buildInfo = mock<IBuildInfoProvider>()
 
         fun getSut(apiVersion: Int = 29): ActivityLifecycleIntegration {
-            whenever(hub.startTransaction(any<String>(), any())).thenReturn(transaction)
             whenever(hub.options).thenReturn(options)
             whenever(hub.startTransaction(any(), any(), anyOrNull<Date>(), any())).thenReturn(transaction)
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
@@ -219,8 +218,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityPreCreated(activity, fixture.bundle)
 
-        verify(fixture.hub, never()).startTransaction(any<String>(), any())
-        verify(fixture.hub, never()).startTransaction(any(), any(), any<Date>(), any())
+        verify(fixture.hub, never()).startTransaction(any(), any(), anyOrNull<Date>(), any())
     }
 
     @Test
@@ -233,9 +231,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(activity, fixture.bundle)
         sut.onActivityPreCreated(activity, fixture.bundle)
 
-        // call only once
-//        verify(fixture.hub).startTransaction(any<String>(), any())
-        verify(fixture.hub, never()).startTransaction(any(), any(), any<Date>(), any())
+        verify(fixture.hub).startTransaction(any(), any(), anyOrNull<Date>(), any())
     }
 
     @Test
@@ -251,7 +247,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(any(), check {
             assertEquals("ui.load", it)
-        }, any<Date>(), any())
+        }, anyOrNull<Date>(), any())
     }
 
     @Test
@@ -267,7 +263,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(check {
             assertEquals("Activity", it)
-        }, any(), any<Date>(), any())
+        }, any(), anyOrNull<Date>(), any())
     }
 
     @Test
@@ -427,8 +423,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
 
-        verify(fixture.hub, never()).startTransaction(any<String>(), any())
-        verify(fixture.hub, never()).startTransaction(any(), any(), any<Date>(), any())
+        verify(fixture.hub, never()).startTransaction(any(), any(), anyOrNull<Date>(), any())
     }
 
     @Test
@@ -455,7 +450,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
 
-        verify(fixture.hub).startTransaction(any(), any(), any<Date>(), any())
+        verify(fixture.hub).startTransaction(any(), any(), anyOrNull<Date>(), any())
     }
 
     @Test
@@ -616,19 +611,21 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
+        val date = Date(0)
         setAppStartTime()
 
         val activity = mock<Activity>()
         sut.onActivityPreCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), any(), any<Date>(), any())
+        verify(fixture.hub).startTransaction(any(), any(), eq(date), any())
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
         val newActivity = mock<Activity>()
         sut.onActivityPreCreated(newActivity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), any(), any<Date>(), any())
+        val nullDate: Date? = null
+        verify(fixture.hub).startTransaction(any(), any(), eq(nullDate), any())
     }
 
     private fun setAppStartTime(date: Date = Date(0)) {
