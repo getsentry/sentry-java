@@ -486,6 +486,7 @@ public final class io/sentry/Scope {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Ljava/lang/Object;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
 	public fun clear ()V
+	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
 	public fun clearTransaction ()V
 	public fun getContexts ()Lio/sentry/protocol/Contexts;

@@ -87,6 +87,7 @@ public final class Hub implements IHub {
         assignTraceContext(event);
         final StackItem item = stack.peek();
         sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
+        this.lastEventId = sentryId;
       } catch (Exception e) {
         options
             .getLogger()
@@ -94,7 +95,6 @@ public final class Hub implements IHub {
                 SentryLevel.ERROR, "Error while capturing event with id: " + event.getEventId(), e);
       }
     }
-    this.lastEventId = sentryId;
     return sentryId;
   }
 
