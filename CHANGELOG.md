@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.1.0-beta.2
 
 * Fix: Handling missing Spring Security on classpath on Java 8 (#1552)
