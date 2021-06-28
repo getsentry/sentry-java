@@ -11,6 +11,7 @@
 * Fix: Clock drift issue when calling DateUtils#getDateTimeWithMillisPrecision (#1557)
 * Feat: Set mechanism type in SentryExceptionResolver (#1556)
 * Ref: Prefer snake case for HTTP integration data keys (#1559)
+* Fix: Assign lastEventId only if event was queued for submission (#1565)
 
 ## 5.1.0-beta.1
 
