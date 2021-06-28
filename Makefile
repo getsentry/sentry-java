@@ -5,6 +5,7 @@ all: stop clean checkFormat compile dryRelease
 # deep clean
 clean:
 	./gradlew clean
+	rm -rf distributions
 
 # build and run tests
 compile:
