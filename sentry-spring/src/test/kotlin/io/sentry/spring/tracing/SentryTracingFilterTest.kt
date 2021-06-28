@@ -49,7 +49,7 @@ class SentryTracingFilterTest {
                 whenever(hub.startTransaction(any(), any<CustomSamplingContext>(), eq(true))).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             }
             response.status = status
-            whenever(hub.startTransaction(any(), any(), any(), eq(true))).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
+            whenever(hub.startTransaction(any(), any(), any<CustomSamplingContext>(), eq(true))).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
             return SentryTracingFilter(hub, transactionNameProvider)
         }
@@ -63,7 +63,7 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).startTransaction(eq("POST /product/12"), eq("http.server"), check {
+        verify(fixture.hub).startTransaction(eq("POST /product/12"), eq("http.server"), check<CustomSamplingContext>() {
             assertNotNull(it["request"])
             assertTrue(it["request"] is HttpServletRequest)
         }, eq(true))

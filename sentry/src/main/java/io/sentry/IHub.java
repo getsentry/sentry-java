@@ -402,13 +402,17 @@ public interface IHub {
    */
   default @NotNull ITransaction startTransaction(
       final @NotNull String name, final @NotNull String operation) {
-    return startTransaction(name, operation, (CustomSamplingContext) null);
+    return startTransaction(name, operation, null);
   }
 
   @ApiStatus.Internal
   default @NotNull ITransaction startTransaction(
-      final @NotNull String name, final @NotNull String operation, @Nullable Date startTimestamp) {
-    return startTransaction(new TransactionContext(name, operation), null, false, startTimestamp);
+      final @NotNull String name,
+      final @NotNull String operation,
+      @Nullable Date startTimestamp,
+      boolean waitForChildren) {
+    return startTransaction(
+        new TransactionContext(name, operation), null, false, startTimestamp, waitForChildren);
   }
 
   /**
@@ -423,7 +427,7 @@ public interface IHub {
    */
   default @NotNull ITransaction startTransaction(
       final @NotNull String name, final @NotNull String operation, final boolean bindToScope) {
-    return startTransaction(name, operation, null, bindToScope);
+    return startTransaction(name, operation, (CustomSamplingContext) null, bindToScope);
   }
 
   /**

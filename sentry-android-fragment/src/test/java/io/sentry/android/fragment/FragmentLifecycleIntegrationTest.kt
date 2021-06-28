@@ -9,16 +9,33 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.IHub
 import io.sentry.SentryOptions
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.junit.Test
 
 class FragmentLifecycleIntegrationTest {
 
     private class Fixture {
         val application = mock<Application>()
+        val fragmentManager = mock<FragmentManager>()
+        val fragmentActivity = mock<FragmentActivity> {
+            on { supportFragmentManager } doReturn fragmentManager
+        }
+        val hub = mock<IHub>()
+        val options = SentryOptions()
 
-        fun getSut(): FragmentLifecycleIntegration {
-            return FragmentLifecycleIntegration(application)
+        fun getSut(
+            enableFragmentLifecycleBreadcrumbs: Boolean = true,
+            enableAutoFragmentLifecycleTracing: Boolean = false
+        ): FragmentLifecycleIntegration {
+            whenever(hub.options).thenReturn(options)
+            return FragmentLifecycleIntegration(
+                application = application,
+                enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
+                enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing)
         }
     }
 
@@ -28,7 +45,7 @@ class FragmentLifecycleIntegrationTest {
     fun `When register, it should register activity lifecycle callbacks`() {
         val sut = fixture.getSut()
 
-        sut.register(mock(), SentryOptions())
+        sut.register(fixture.hub, fixture.options)
 
         verify(fixture.application).registerActivityLifecycleCallbacks(sut)
     }
@@ -37,7 +54,7 @@ class FragmentLifecycleIntegrationTest {
     fun `When close, it should unregister lifecycle callbacks`() {
         val sut = fixture.getSut()
 
-        sut.register(mock(), SentryOptions())
+        sut.register(fixture.hub, fixture.options)
         sut.close()
 
         verify(fixture.application).unregisterActivityLifecycleCallbacks(sut)
@@ -51,7 +68,7 @@ class FragmentLifecycleIntegrationTest {
             on { supportFragmentManager } doReturn fragmentManager
         }
 
-        sut.register(mock(), SentryOptions())
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(fragmentActivity, savedInstanceState = null)
 
         verify(fragmentManager).registerFragmentLifecycleCallbacks(check { fragmentCallbacks ->
@@ -60,11 +77,25 @@ class FragmentLifecycleIntegrationTest {
     }
 
     @Test
+    fun `When FragmentActivity is created, it should register fragment lifecycle callbacks with passed config`() {
+        val sut = fixture.getSut(enableFragmentLifecycleBreadcrumbs = false, enableAutoFragmentLifecycleTracing = true)
+
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityCreated(fixture.fragmentActivity, savedInstanceState = null)
+
+        verify(fixture.fragmentManager).registerFragmentLifecycleCallbacks(check { fragmentCallbacks ->
+            val callback = (fragmentCallbacks as SentryFragmentLifecycleCallbacks)
+            assertTrue(callback.enableAutoFragmentLifecycleTracing)
+            assertFalse(callback.enableFragmentLifecycleBreadcrumbs)
+        }, eq(true))
+    }
+
+    @Test
     fun `When not a FragmentActivity is created, it should not crash`() {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
 
-        sut.register(mock(), SentryOptions())
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(activity, savedInstanceState = null)
     }
 
