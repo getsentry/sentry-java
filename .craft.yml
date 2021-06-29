@@ -18,6 +18,7 @@ targets:
       maven:io.sentry:sentry-android-timber:
       maven:io.sentry:sentry-android-okhttp:
       maven:io.sentry:sentry-kotlin-extensions:
+      maven:io:sentry:sentry-android-fragment:
   - name: maven
     gradleCliPath: ./gradlew
     mavenCliPath: scripts/mvnw.cmd
