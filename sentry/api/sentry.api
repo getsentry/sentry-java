@@ -343,6 +343,12 @@ public abstract interface class io/sentry/JsonDeserializer {
 	public abstract fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
+public final class io/sentry/JsonObjectSerializer {
+	public static final field OBJECT_PLACEHOLDER Ljava/lang/String;
+	public fun <init> ()V
+	public fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;Lio/sentry/ILogger;Ljava/lang/Object;)V
+}
+
 public abstract interface class io/sentry/JsonSerializable {
 	public abstract fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;Lio/sentry/ILogger;)V
 }
