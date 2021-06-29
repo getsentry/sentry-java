@@ -133,7 +133,8 @@ public final class UserFeedback implements JsonSerializable {
   // JsonSerializable
 
   @Override
-  public void serialize(@NotNull JsonWriter jsonWriter) throws IOException {
+  public void serialize(@NotNull JsonWriter jsonWriter, @NotNull ILogger logger)
+      throws IOException {
     jsonWriter.beginObject();
     jsonWriter.name(JsonKeys.EVENT_ID);
     jsonWriter.value(eventId.toString());
@@ -156,7 +157,8 @@ public final class UserFeedback implements JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<UserFeedback> {
     @Override
-    public @NotNull UserFeedback deserialize(JsonReader reader) throws Exception {
+    public @NotNull UserFeedback deserialize(@NotNull JsonReader reader, @NotNull ILogger logger)
+        throws Exception {
       SentryId sentryId = null;
       String name = null;
       String email = null;
@@ -185,7 +187,10 @@ public final class UserFeedback implements JsonSerializable {
       reader.endObject();
 
       if (sentryId == null) {
-        throw new IllegalStateException("Missing required field \"" + JsonKeys.EVENT_ID + "\"");
+        String message = "Missing required field \"" + JsonKeys.EVENT_ID + "\"";
+        Exception exception = new IllegalStateException(message);
+        logger.log(SentryLevel.ERROR, message, exception);
+        throw exception;
       }
 
       return new UserFeedback(sentryId, name, email, comments);

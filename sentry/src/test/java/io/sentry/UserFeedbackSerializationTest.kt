@@ -1,15 +1,26 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.SentryId
 import io.sentry.vendor.gson.stream.JsonReader
 import io.sentry.vendor.gson.stream.JsonWriter
 import java.io.StringReader
 import java.io.StringWriter
+import java.lang.Exception
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.fail
 import org.junit.Test
 
 class UserFeedbackSerializationTest {
+
+    private class Fixture {
+        var logger: ILogger = mock()
+    }
+    private val fixture = Fixture()
 
     private val userFeedback: UserFeedback get() {
         val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
@@ -35,7 +46,7 @@ class UserFeedbackSerializationTest {
         val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
         val reader = JsonReader(StringReader(jsonUserFeedback))
-        val actual = UserFeedback.Deserializer().deserialize(reader)
+        val actual = UserFeedback.Deserializer().deserialize(reader, fixture.logger)
         assertNotNull(actual)
         assertEquals(userFeedback.eventId, actual.eventId)
         assertEquals(userFeedback.name, actual.name)
@@ -43,10 +54,24 @@ class UserFeedbackSerializationTest {
         assertEquals(userFeedback.comments, actual.comments)
     }
 
+    @Test
+    fun `deserializing user feedback with missing required fields`() {
+        val jsonUserFeedbackWithoutEventId = "{\"name\":\"John\",\"email\":\"john@me.com\"," +
+            "\"comments\":\"comment\"}"
+        val reader = JsonReader(StringReader(jsonUserFeedbackWithoutEventId))
+
+        try {
+            UserFeedback.Deserializer().deserialize(reader, fixture.logger)
+            fail()
+        } catch (exception: Exception) {
+            verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Exception>())
+        }
+    }
+
     // Helper
 
     private fun serializeToString(jsonSerializable: JsonSerializable): String {
-        return this.serializeToString { wrt -> jsonSerializable.serialize(wrt) }
+        return this.serializeToString { wrt -> jsonSerializable.serialize(wrt, fixture.logger) }
     }
 
     private fun serializeToString(serialize: (JsonWriter) -> Unit): String {

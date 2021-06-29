@@ -7,5 +7,5 @@ import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public interface JsonSerializable {
-  void serialize(@NotNull JsonWriter jsonWriter) throws IOException;
+  void serialize(@NotNull JsonWriter jsonWriter, @NotNull ILogger logger) throws IOException;
 }
