@@ -3,7 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.JsonReaderUtils;
 import io.sentry.vendor.gson.stream.JsonReader;
-import io.sentry.vendor.gson.stream.JsonWriter;
+
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -133,24 +133,24 @@ public final class UserFeedback implements JsonSerializable {
   // JsonSerializable
 
   @Override
-  public void serialize(@NotNull JsonWriter jsonWriter, @NotNull ILogger logger)
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {
-    jsonWriter.beginObject();
-    jsonWriter.name(JsonKeys.EVENT_ID);
-    jsonWriter.value(eventId.toString());
+    writer.beginObject();
+    writer.name(JsonKeys.EVENT_ID);
+    writer.value(eventId.toString());
     if (name != null) {
-      jsonWriter.name(JsonKeys.NAME);
-      jsonWriter.value(name);
+      writer.name(JsonKeys.NAME);
+      writer.value(name);
     }
     if (email != null) {
-      jsonWriter.name(JsonKeys.EMAIL);
-      jsonWriter.value(email);
+      writer.name(JsonKeys.EMAIL);
+      writer.value(email);
     }
     if (comments != null) {
-      jsonWriter.name(JsonKeys.COMMENTS);
-      jsonWriter.value(comments);
+      writer.name(JsonKeys.COMMENTS);
+      writer.value(comments);
     }
-    jsonWriter.endObject();
+    writer.endObject();
   }
 
   // JsonDeserializer

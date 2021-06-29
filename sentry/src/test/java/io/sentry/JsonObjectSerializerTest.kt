@@ -8,7 +8,7 @@ import org.junit.Test
 internal class JsonObjectSerializerTest {
 
     private inner class Fixture {
-        var writer: JsonWriter = mock()
+        var writer: JsonObjectWriter = mock()
         var logger: ILogger = mock()
 
         fun getSUT(): JsonObjectSerializer {

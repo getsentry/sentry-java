@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.vendor.gson.stream.JsonWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -14,7 +13,7 @@ public final class JsonObjectSerializer {
   public static final String OBJECT_PLACEHOLDER = "[OBJECT]";
 
   public void serialize(
-      @NotNull JsonWriter writer, @NotNull ILogger logger, @Nullable Object object)
+      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable Object object)
       throws Exception {
     if (object == null) {
       writer.nullValue();
@@ -41,7 +40,7 @@ public final class JsonObjectSerializer {
   // Helper
 
   private void serializeCollection(
-      @NotNull JsonWriter writer, @NotNull ILogger logger, @NotNull Collection<?> collection)
+      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull Collection<?> collection)
       throws Exception {
     writer.beginArray();
     for (Object object : collection) {
@@ -51,7 +50,7 @@ public final class JsonObjectSerializer {
   }
 
   private void serializeMap(
-      @NotNull JsonWriter writer, @NotNull ILogger logger, @NotNull Map<?, ?> map)
+      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull Map<?, ?> map)
       throws Exception {
     writer.beginObject();
     for (Object key : map.keySet()) {

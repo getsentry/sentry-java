@@ -74,9 +74,9 @@ class UserFeedbackSerializationTest {
         return this.serializeToString { wrt -> jsonSerializable.serialize(wrt, fixture.logger) }
     }
 
-    private fun serializeToString(serialize: (JsonWriter) -> Unit): String {
+    private fun serializeToString(serialize: (JsonObjectWriter) -> Unit): String {
         val wrt = StringWriter()
-        val jsonWrt = JsonWriter(wrt)
+        val jsonWrt = JsonObjectWriter(wrt)
         serialize(jsonWrt)
         return wrt.toString()
     }
