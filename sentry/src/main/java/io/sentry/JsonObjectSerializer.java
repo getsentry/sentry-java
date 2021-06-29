@@ -1,22 +1,21 @@
 package io.sentry;
 
+import io.sentry.vendor.gson.stream.JsonWriter;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-
-import io.sentry.vendor.gson.stream.JsonWriter;
 
 @ApiStatus.Internal
 public final class JsonObjectSerializer {
 
   public static final String OBJECT_PLACEHOLDER = "[OBJECT]";
 
-  public void serialize(@NotNull JsonWriter writer, @NotNull ILogger logger, @Nullable Object object) throws Exception {
+  public void serialize(
+      @NotNull JsonWriter writer, @NotNull ILogger logger, @Nullable Object object)
+      throws Exception {
     if (object == null) {
       writer.nullValue();
     } else if (object instanceof String) {
@@ -41,7 +40,9 @@ public final class JsonObjectSerializer {
 
   // Helper
 
-  private void serializeCollection(@NotNull JsonWriter writer, @NotNull ILogger logger, @NotNull Collection<?> collection) throws Exception {
+  private void serializeCollection(
+      @NotNull JsonWriter writer, @NotNull ILogger logger, @NotNull Collection<?> collection)
+      throws Exception {
     writer.beginArray();
     for (Object object : collection) {
       serialize(writer, logger, object);
@@ -49,7 +50,9 @@ public final class JsonObjectSerializer {
     writer.endArray();
   }
 
-  private void serializeMap(@NotNull JsonWriter writer, @NotNull ILogger logger, @NotNull Map<?, ?> map) throws Exception {
+  private void serializeMap(
+      @NotNull JsonWriter writer, @NotNull ILogger logger, @NotNull Map<?, ?> map)
+      throws Exception {
     writer.beginObject();
     for (Object key : map.keySet()) {
       if (key instanceof String) {
