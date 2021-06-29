@@ -1,5 +1,5 @@
 package io.sentry.android.ndk;
-
+// trigger CI?
 interface INativeScope {
   void setTag(String key, String value);
 
