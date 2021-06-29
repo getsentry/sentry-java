@@ -134,10 +134,10 @@ public final class ActivityLifecycleIntegration
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (firstActivityCreated || appStartTime == null) {
-        transaction = hub.startTransaction(activityName, UI_LOAD_OP);
+        transaction = hub.startTransaction(activityName, UI_LOAD_OP, (Date) null, true);
       } else {
         // start transaction with app start timestamp
-        transaction = hub.startTransaction(activityName, UI_LOAD_OP, appStartTime);
+        transaction = hub.startTransaction(activityName, UI_LOAD_OP, appStartTime, true);
         // start specific span for app start
 
         appStartSpan = transaction.startChild(getAppStartOp(), getAppStartDesc(), appStartTime);
