@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -14,7 +15,7 @@ public final class JsonObjectSerializer {
 
   public void serialize(
       @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable Object object)
-      throws Exception {
+      throws IOException {
     if (object == null) {
       writer.nullValue();
     } else if (object instanceof String) {
@@ -41,7 +42,7 @@ public final class JsonObjectSerializer {
 
   private void serializeCollection(
       @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull Collection<?> collection)
-      throws Exception {
+      throws IOException {
     writer.beginArray();
     for (Object object : collection) {
       serialize(writer, logger, object);
@@ -51,7 +52,7 @@ public final class JsonObjectSerializer {
 
   private void serializeMap(
       @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull Map<?, ?> map)
-      throws Exception {
+      throws IOException {
     writer.beginObject();
     for (Object key : map.keySet()) {
       if (key instanceof String) {

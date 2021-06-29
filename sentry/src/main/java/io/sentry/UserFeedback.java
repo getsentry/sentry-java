@@ -5,6 +5,8 @@ import io.sentry.util.JsonReaderUtils;
 import io.sentry.vendor.gson.stream.JsonReader;
 
 import java.io.IOException;
+import java.util.Map;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,6 +17,8 @@ public final class UserFeedback implements JsonSerializable {
   private @Nullable String name;
   private @Nullable String email;
   private @Nullable String comments;
+
+  private @Nullable Map<String, Object> unknown;
 
   /**
    * Initializes SentryUserFeedback and sets the required eventId.
@@ -150,7 +154,21 @@ public final class UserFeedback implements JsonSerializable {
       writer.name(JsonKeys.COMMENTS);
       writer.value(comments);
     }
+    if (unknown != null) {
+      writer.name("unknown");
+      writer.value(logger, unknown);
+    }
     writer.endObject();
+  }
+
+  @Override
+  public @Nullable Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 
   // JsonDeserializer
@@ -166,7 +184,7 @@ public final class UserFeedback implements JsonSerializable {
 
       reader.beginObject();
       do {
-        String nextName = reader.nextName();
+        final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.EVENT_ID:
             sentryId = new SentryId(reader.nextString());

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.io.Writer;
 
 import io.sentry.vendor.gson.stream.JsonWriter;
@@ -26,7 +27,7 @@ public final class JsonObjectWriter extends JsonWriter {
    * @param object Object to encode. May be null.
    * @return this writer.
    */
-  JsonObjectWriter value(@NotNull ILogger logger, @Nullable Object object) throws Exception {
+  JsonObjectWriter value(@NotNull ILogger logger, @Nullable Object object) throws IOException {
     jsonObjectSerializer.serialize(this, logger, object);
     return this;
   }

@@ -19,20 +19,22 @@ class UserFeedbackSerializationTest {
 
     private class Fixture {
         var logger: ILogger = mock()
+
+        fun getSut(): UserFeedback {
+            val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
+            return UserFeedback(eventId).apply {
+                name = "John"
+                email = "john@me.com"
+                comments = "comment"
+            }
+        }
     }
     private val fixture = Fixture()
 
-    private val userFeedback: UserFeedback get() {
-        val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-        return UserFeedback(eventId).apply {
-            name = "John"
-            email = "john@me.com"
-            comments = "comment"
-        }
-    }
 
     @Test
     fun `serializing user feedback`() {
+        val userFeedback = fixture.getSut()
         val actual = serializeToString(userFeedback)
 
         val expected = "{\"event_id\":\"${userFeedback.eventId}\",\"name\":\"${userFeedback.name}\"," +
@@ -42,7 +44,22 @@ class UserFeedbackSerializationTest {
     }
 
     @Test
+    fun `serializing unknown`() {
+        val userFeedback = fixture.getSut()
+        userFeedback.unknown = mapOf(
+            "fixture-key" to "fixture-value"
+        )
+        val actual = serializeToString(userFeedback)
+        val expected = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
+            "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"," +
+            "\"unknown\":{\"fixture-key\":\"fixture-value\"}}"
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun `deserializing user feedback`() {
+        val userFeedback = fixture.getSut()
         val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
         val reader = JsonReader(StringReader(jsonUserFeedback))
