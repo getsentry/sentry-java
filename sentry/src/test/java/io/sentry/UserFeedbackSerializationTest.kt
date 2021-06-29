@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.SentryId
 import io.sentry.vendor.gson.stream.JsonReader
-import io.sentry.vendor.gson.stream.JsonWriter
 import java.io.StringReader
 import java.io.StringWriter
 import java.lang.Exception
@@ -30,7 +29,6 @@ class UserFeedbackSerializationTest {
         }
     }
     private val fixture = Fixture()
-
 
     @Test
     fun `serializing user feedback`() {
@@ -101,7 +99,7 @@ class UserFeedbackSerializationTest {
             verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Exception>())
         }
     }
-    
+
     // Helper
 
     private fun serializeToString(jsonSerializable: JsonSerializable): String {

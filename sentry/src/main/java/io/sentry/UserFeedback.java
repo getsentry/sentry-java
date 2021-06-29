@@ -3,10 +3,8 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.JsonReaderUtils;
 import io.sentry.vendor.gson.stream.JsonReader;
-
 import java.io.IOException;
 import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,6 +130,8 @@ public final class UserFeedback implements JsonSerializable {
     public static final String NAME = "name";
     public static final String EMAIL = "email";
     public static final String COMMENTS = "comments";
+
+    public static final String UNKNOWN = "unknown";
   }
 
   // JsonSerializable
@@ -155,7 +155,7 @@ public final class UserFeedback implements JsonSerializable {
       writer.value(comments);
     }
     if (unknown != null) {
-      writer.name("unknown");
+      writer.name(JsonKeys.UNKNOWN);
       writer.value(logger, unknown);
     }
     writer.endObject();

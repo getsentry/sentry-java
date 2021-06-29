@@ -2,7 +2,6 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.vendor.gson.stream.JsonWriter
 import org.junit.Test
 
 internal class JsonObjectSerializerTest {
