@@ -55,6 +55,7 @@ jobs:
         with:
           name: ${{ github.sha }}
           path: ./*/build/distributions/*.zip
+          path: ./sentry-android-ndk/build/intermediates/cmake/release
 
       - name: Upload coverage to Codecov
         # We need coverage data from only one the builds
