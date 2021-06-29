@@ -340,11 +340,11 @@ public final class io/sentry/IpAddressUtils {
 }
 
 public abstract interface class io/sentry/JsonDeserializer {
-	public abstract fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Object;
+	public abstract fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public abstract interface class io/sentry/JsonSerializable {
-	public abstract fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;)V
+	public abstract fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;Lio/sentry/ILogger;)V
 }
 
 public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor {
@@ -1136,7 +1136,7 @@ public final class io/sentry/UserFeedback : io/sentry/JsonSerializable {
 	public fun getEmail ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getName ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;)V
+	public fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;Lio/sentry/ILogger;)V
 	public fun setComments (Ljava/lang/String;)V
 	public fun setEmail (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
@@ -1145,8 +1145,8 @@ public final class io/sentry/UserFeedback : io/sentry/JsonSerializable {
 
 public final class io/sentry/UserFeedback$Deserializer : io/sentry/JsonDeserializer {
 	public fun <init> ()V
-	public fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;)Lio/sentry/UserFeedback;
-	public synthetic fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Object;
+	public fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;Lio/sentry/ILogger;)Lio/sentry/UserFeedback;
+	public synthetic fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/UserFeedback$JsonKeys {
