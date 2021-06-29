@@ -45,16 +45,33 @@ class UserFeedbackSerializationTest {
 
     @Test
     fun `serializing unknown`() {
-        val userFeedback = fixture.getSut()
-        userFeedback.unknown = mapOf(
-            "fixture-key" to "fixture-value"
-        )
+        val userFeedback = fixture.getSut().apply {
+            unknown = mapOf(
+                "fixture-key" to "fixture-value"
+            )
+        }
         val actual = serializeToString(userFeedback)
         val expected = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"," +
             "\"unknown\":{\"fixture-key\":\"fixture-value\"}}"
 
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer`() {
+        val writer: JsonObjectWriter = mock()
+        val logger: ILogger = mock()
+        val sut = fixture.getSut().apply {
+            unknown = mapOf(
+                "fixture-key" to "fixture-value"
+            )
+        }
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("unknown")
+        verify(writer).value(logger, sut.unknown)
     }
 
     @Test
@@ -84,7 +101,7 @@ class UserFeedbackSerializationTest {
             verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Exception>())
         }
     }
-
+    
     // Helper
 
     private fun serializeToString(jsonSerializable: JsonSerializable): String {
