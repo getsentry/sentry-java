@@ -237,7 +237,7 @@ public abstract interface class io/sentry/IHub {
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
-	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ITransaction;
+	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Z)Lio/sentry/ITransaction;
 	public abstract fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public abstract fun withScope (Lio/sentry/ScopeCallback;)V
@@ -486,6 +486,7 @@ public final class io/sentry/Scope {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Ljava/lang/Object;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
 	public fun clear ()V
+	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
 	public fun clearTransaction ()V
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
