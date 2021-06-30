@@ -21,7 +21,7 @@ targets:
       maven:io:sentry:sentry-android-fragment:
   - name: maven
     gradleCliPath: ./gradlew
-    mavenCliPath: scripts/mvnw.cmd
+    mavenCliPath: scripts/mvnw
     mavenSettingsPath: scripts/settings.xml
     mavenRepoId: ossrh
     mavenRepoUrl: https://oss.sonatype.org/service/local/staging/deploy/maven2/
