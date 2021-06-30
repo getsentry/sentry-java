@@ -11,6 +11,11 @@ public abstract interface class io/sentry/samples/android/GitHubService {
 	public abstract fun listRepos (Ljava/lang/String;)Lretrofit2/Call;
 }
 
+public final class io/sentry/samples/android/GithubAPI {
+	public static final field INSTANCE Lio/sentry/samples/android/GithubAPI;
+	public final fun getService ()Lio/sentry/samples/android/GitHubService;
+}
+
 public class io/sentry/samples/android/MainActivity : androidx/appcompat/app/AppCompatActivity {
 	public fun <init> ()V
 	protected fun onCreate (Landroid/os/Bundle;)V
@@ -58,6 +63,15 @@ public final class io/sentry/samples/android/SecondActivity : androidx/appcompat
 	public fun <init> ()V
 }
 
+public final class io/sentry/samples/android/ThirdActivityFragment : androidx/appcompat/app/AppCompatActivity {
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/android/ThirdFragment : androidx/fragment/app/Fragment {
+	public fun <init> ()V
+	public fun onViewCreated (Landroid/view/View;Landroid/os/Bundle;)V
+}
+
 public final class io/sentry/samples/android/databinding/ActivityMainBinding : androidx/viewbinding/ViewBinding {
 	public final field addAttachment Landroid/widget/Button;
 	public final field anr Landroid/widget/Button;
@@ -68,6 +82,7 @@ public final class io/sentry/samples/android/databinding/ActivityMainBinding : a
 	public final field nativeCrash Landroid/widget/Button;
 	public final field openSampleFragment Landroid/widget/Button;
 	public final field openSecondActivity Landroid/widget/Button;
+	public final field openThirdFragment Landroid/widget/Button;
 	public final field sendMessage Landroid/widget/Button;
 	public final field sendUserFeedback Landroid/widget/Button;
 	public final field setUser Landroid/widget/Button;
@@ -92,6 +107,16 @@ public final class io/sentry/samples/android/databinding/ActivitySecondBinding :
 	public static fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Lio/sentry/samples/android/databinding/ActivitySecondBinding;
 }
 
+public final class io/sentry/samples/android/databinding/ActivityThirdFragmentBinding : androidx/viewbinding/ViewBinding {
+	public final field container Landroid/widget/FrameLayout;
+	public final field fragmentContainerView Landroidx/fragment/app/FragmentContainerView;
+	public static fun bind (Landroid/view/View;)Lio/sentry/samples/android/databinding/ActivityThirdFragmentBinding;
+	public synthetic fun getRoot ()Landroid/view/View;
+	public fun getRoot ()Landroid/widget/FrameLayout;
+	public static fun inflate (Landroid/view/LayoutInflater;)Lio/sentry/samples/android/databinding/ActivityThirdFragmentBinding;
+	public static fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Lio/sentry/samples/android/databinding/ActivityThirdFragmentBinding;
+}
+
 public final class io/sentry/samples/android/databinding/FragmentSampleBinding : androidx/viewbinding/ViewBinding {
 	public final field container Landroid/widget/FrameLayout;
 	public static fun bind (Landroid/view/View;)Lio/sentry/samples/android/databinding/FragmentSampleBinding;
@@ -108,5 +133,13 @@ public final class io/sentry/samples/android/databinding/FragmentSampleInnerBind
 	public fun getRoot ()Landroid/widget/FrameLayout;
 	public static fun inflate (Landroid/view/LayoutInflater;)Lio/sentry/samples/android/databinding/FragmentSampleInnerBinding;
 	public static fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Lio/sentry/samples/android/databinding/FragmentSampleInnerBinding;
+}
+
+public final class io/sentry/samples/android/databinding/ThirdFragmentBinding : androidx/viewbinding/ViewBinding {
+	public static fun bind (Landroid/view/View;)Lio/sentry/samples/android/databinding/ThirdFragmentBinding;
+	public synthetic fun getRoot ()Landroid/view/View;
+	public fun getRoot ()Landroid/widget/LinearLayout;
+	public static fun inflate (Landroid/view/LayoutInflater;)Lio/sentry/samples/android/databinding/ThirdFragmentBinding;
+	public static fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Z)Lio/sentry/samples/android/databinding/ThirdFragmentBinding;
 }
 

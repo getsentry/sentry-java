@@ -379,12 +379,12 @@ public final class Scope {
     user = null;
     request = null;
     fingerprint.clear();
-    breadcrumbs.clear();
+    clearBreadcrumbs();
     tags.clear();
     extra.clear();
     eventProcessors.clear();
     clearTransaction();
-    attachments.clear();
+    clearAttachments();
   }
 
   /**
@@ -552,6 +552,11 @@ public final class Scope {
    */
   public void addAttachment(final @NotNull Attachment attachment) {
     attachments.add(attachment);
+  }
+
+  /** Clear all attachments. */
+  public void clearAttachments() {
+    attachments.clear();
   }
 
   /**
