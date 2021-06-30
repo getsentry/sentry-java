@@ -35,8 +35,17 @@ public final class JsonObjectDeserializer {
   private final ArrayList<Object> tokens = new ArrayList<>();
 
   public Map<String, Object> deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger) throws IOException {
-    final HashMap<String, Object> map = new HashMap<>();
+    HashMap<String, Object> map = new HashMap<>();
+    collect(reader, logger);
+    final TokenMap root = ((TokenMap) getCurrentToken());
+    if (root != null) {
+      map = root.map;
+    }
+    return map;
+  }
 
+  private void collect(@NotNull JsonObjectReader reader, @NotNull ILogger logger) throws IOException {
+    boolean done = false;
     JsonToken token = reader.peek();
     switch (token) {
       case BEGIN_ARRAY:
@@ -46,23 +55,39 @@ public final class JsonObjectDeserializer {
       case END_ARRAY:
         reader.endArray();
 
-        TokenArray tokenArray = (TokenArray) getCurrentToken();
+        TokenArray tokenArrayArray = (TokenArray) getCurrentToken();
         removeCurrentToken(); // Array
-        TokenName tokenName = (TokenName) getCurrentToken();
+
+        TokenName tokenNameArray = (TokenName) getCurrentToken();
         removeCurrentToken(); // Name
 
-        if (tokenName != null && tokenArray != null) {
-          map.put(tokenName.name, tokenArray.array);
+        TokenMap tokenMapArray = (TokenMap) getCurrentToken();
+
+        if (tokenNameArray != null && tokenArrayArray != null && tokenMapArray != null) {
+          tokenMapArray.map.put(tokenNameArray.name, tokenArrayArray.array);
         }
         break;
       case BEGIN_OBJECT:
         reader.beginObject();
-        addCurrentToken(JsonToken.BEGIN_OBJECT);
+        addCurrentToken(new TokenMap()); // Will be initial map if this is the first token added.
         break;
       case END_OBJECT:
         reader.endObject();
-        removeCurrentToken(); // Map
-        removeCurrentToken(); // Name or Nothing
+
+        if (isInitialToken()) {
+          done = true;
+        } else {
+          TokenMap tokenMapMap = (TokenMap) getCurrentToken();
+          removeCurrentToken(); // Map
+
+          TokenName tokenNameMap = (TokenName) getCurrentToken();
+          removeCurrentToken(); // Name
+
+          TokenMap tokenMap = (TokenMap) getCurrentToken();
+          if (tokenMapMap != null && tokenNameMap != null && tokenMap != null) {
+            tokenMap.map.put(tokenNameMap.name, tokenMapMap.map);
+          }
+        }
         break;
       case NAME:
         addCurrentToken(new TokenName(reader.nextName()));
@@ -70,8 +95,11 @@ public final class JsonObjectDeserializer {
       case STRING:
         if (getCurrentToken() instanceof TokenName) {
           TokenName tokenNameString = (TokenName) getCurrentToken();
-          map.put(tokenNameString.name, reader.nextString());
-          removeCurrentToken(); // Name
+          removeCurrentToken();
+
+          TokenMap tokenMapString = (TokenMap) getCurrentToken();
+          tokenMapString.map.put(tokenNameString.name, reader.nextString());
+
         } else if (getCurrentToken() instanceof TokenArray) {
           TokenArray tokenArrayString = (TokenArray) getCurrentToken();
           tokenArrayString.array.add(reader.nextString());
@@ -80,8 +108,11 @@ public final class JsonObjectDeserializer {
       case NUMBER:
         if (getCurrentToken() instanceof TokenName) {
           TokenName tokenNameNumber = (TokenName) getCurrentToken();
-          map.put(tokenNameNumber.name, nextNumber(reader));
           removeCurrentToken(); // Name
+
+          TokenMap tokenMapNumber = (TokenMap) getCurrentToken();
+          tokenMapNumber.map.put(tokenNameNumber.name, nextNumber(reader));
+
         } else if (getCurrentToken() instanceof TokenArray) {
           TokenArray tokenArrayNumber = (TokenArray) getCurrentToken();
           tokenArrayNumber.array.add(nextNumber(reader));
@@ -90,8 +121,11 @@ public final class JsonObjectDeserializer {
       case BOOLEAN:
         if (getCurrentToken() instanceof TokenName) {
           TokenName tokenNameBoolean = (TokenName) getCurrentToken();
-          map.put(tokenNameBoolean.name, reader.nextBoolean());
           removeCurrentToken(); // Name
+
+          TokenMap tokenMapBoolean = (TokenMap) getCurrentToken();
+          tokenMapBoolean.map.put(tokenNameBoolean.name, reader.nextBoolean());
+
         } else if (getCurrentToken() instanceof TokenArray) {
           TokenArray tokenArrayBoolean = (TokenArray) getCurrentToken();
           tokenArrayBoolean.array.add(reader.nextBoolean());
@@ -101,8 +135,11 @@ public final class JsonObjectDeserializer {
         reader.nextNull();
         if (getCurrentToken() instanceof TokenName) {
           TokenName tokenNameNull = (TokenName) getCurrentToken();
-          map.put(tokenNameNull.name, null);
           removeCurrentToken(); // Name
+
+          TokenMap tokenMapNull = (TokenMap) getCurrentToken();
+          tokenMapNull.map.put(tokenNameNull.name, null);
+
         } else if (getCurrentToken() instanceof TokenArray) {
           TokenArray tokenArrayNull = (TokenArray) getCurrentToken();
           tokenArrayNull.array.add(null);
@@ -112,11 +149,9 @@ public final class JsonObjectDeserializer {
         break;
     }
 
-    if (getCurrentToken() != null) {
-      map.putAll(deserialize(reader, logger));
+    if (!done) {
+      collect(reader, logger);
     }
-
-    return map;
   }
 
   private Object nextNumber(JsonObjectReader reader) throws IOException {
@@ -149,5 +184,9 @@ public final class JsonObjectDeserializer {
       return;
     }
     tokens.remove(tokens.size() - 1);
+  }
+
+  private boolean isInitialToken() {
+    return tokens.size() == 1;
   }
 }
