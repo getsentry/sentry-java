@@ -54,7 +54,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}
-          path: ./*/build/distributions/*.zip
+          path: |
+            ./*/build/distributions/*.zip
+            ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*
 
       - name: Upload coverage to Codecov
         # We need coverage data from only one the builds
