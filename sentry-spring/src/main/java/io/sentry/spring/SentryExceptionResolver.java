@@ -23,7 +23,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 @Open
 public class SentryExceptionResolver implements HandlerExceptionResolver, Ordered {
-  static final String MECHANISM_TYPE = "HandlerExceptionResolver";
+  public static final String MECHANISM_TYPE = "HandlerExceptionResolver";
 
   private final @NotNull IHub hub;
   private final @NotNull TransactionNameProvider transactionNameProvider =

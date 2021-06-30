@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Spring Webflux integration (#1529)
+
 ## 5.1.0-beta.2
 
 * Fix: Handling missing Spring Security on classpath on Java 8 (#1552)
@@ -19,7 +21,7 @@
 ## 5.1.0-beta.1
 
 * Feat: Measure app start time (#1487)
-* Feat: Automatic breadcrumbs logging for fragment lifecycle (#1522)
+* Feat: Automatic breadcrumbs logging for fragment lifecycle (#1522) 
 
 ## 5.0.1
 
