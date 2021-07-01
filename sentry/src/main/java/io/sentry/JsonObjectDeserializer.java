@@ -11,7 +11,6 @@ import java.util.Map;
 
 import io.sentry.vendor.gson.stream.JsonToken;
 
-
 @ApiStatus.Internal
 public final class JsonObjectDeserializer {
 
@@ -34,21 +33,28 @@ public final class JsonObjectDeserializer {
 
   private final ArrayList<Object> tokens = new ArrayList<>();
 
-  public Map<String, Object> deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger) throws IOException {
-    HashMap<String, Object> map = new HashMap<>();
-    collect(reader, logger);
+  // Public API
+
+  public @Nullable Map<String, Object> deserialize(@NotNull JsonObjectReader reader) throws IOException {
+    parse(reader);
     final TokenMap root = ((TokenMap) getCurrentToken());
     if (root != null) {
-      map = root.map;
+      return root.map;
+    } else {
+      return null;
     }
-    return map;
   }
 
-  private void collect(@NotNull JsonObjectReader reader, @NotNull ILogger logger) throws IOException {
+  // Helper
+
+  private void parse(@NotNull JsonObjectReader reader) throws IOException {
     boolean done = false;
     JsonToken token = reader.peek();
     switch (token) {
       case BEGIN_ARRAY:
+        if (!hasInitialToken()) {
+          throw new IOException("Only null and object inputs allowed.");
+        }
         reader.beginArray();
         addCurrentToken(new TokenArray());
         break;
@@ -74,7 +80,7 @@ public final class JsonObjectDeserializer {
       case END_OBJECT:
         reader.endObject();
 
-        if (isInitialToken()) {
+        if (currentIsInitialToken()) {
           done = true;
         } else {
           TokenMap tokenMapMap = (TokenMap) getCurrentToken();
@@ -103,6 +109,8 @@ public final class JsonObjectDeserializer {
         } else if (getCurrentToken() instanceof TokenArray) {
           TokenArray tokenArrayString = (TokenArray) getCurrentToken();
           tokenArrayString.array.add(reader.nextString());
+        } else if (getCurrentToken() == null) {
+          throw new IOException("Only null and object inputs allowed.");
         }
         break;
       case NUMBER:
@@ -116,6 +124,8 @@ public final class JsonObjectDeserializer {
         } else if (getCurrentToken() instanceof TokenArray) {
           TokenArray tokenArrayNumber = (TokenArray) getCurrentToken();
           tokenArrayNumber.array.add(nextNumber(reader));
+        } else if (getCurrentToken() == null) {
+          throw new IOException("Only null and object inputs allowed.");
         }
         break;
       case BOOLEAN:
@@ -129,6 +139,8 @@ public final class JsonObjectDeserializer {
         } else if (getCurrentToken() instanceof TokenArray) {
           TokenArray tokenArrayBoolean = (TokenArray) getCurrentToken();
           tokenArrayBoolean.array.add(reader.nextBoolean());
+        } else if (getCurrentToken() == null) {
+          throw new IOException("Only null and object inputs allowed.");
         }
         break;
       case NULL:
@@ -143,6 +155,8 @@ public final class JsonObjectDeserializer {
         } else if (getCurrentToken() instanceof TokenArray) {
           TokenArray tokenArrayNull = (TokenArray) getCurrentToken();
           tokenArrayNull.array.add(null);
+        } else if (getCurrentToken() == null) {
+          done = true;
         }
         break;
       case END_DOCUMENT:
@@ -150,7 +164,7 @@ public final class JsonObjectDeserializer {
     }
 
     if (!done) {
-      collect(reader, logger);
+      parse(reader);
     }
   }
 
@@ -186,7 +200,11 @@ public final class JsonObjectDeserializer {
     tokens.remove(tokens.size() - 1);
   }
 
-  private boolean isInitialToken() {
-    return tokens.size() == 1;
+  private boolean currentIsInitialToken() {
+    return tokens.size() == 1 && (getCurrentToken() instanceof TokenMap);
+  }
+
+  private boolean hasInitialToken() {
+    return tokens.size() > 0 && tokens.get(0) instanceof TokenMap;
   }
 }

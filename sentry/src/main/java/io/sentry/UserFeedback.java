@@ -2,7 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.util.JsonReaderUtils;
-import io.sentry.vendor.gson.stream.JsonReader;
+
 import java.io.IOException;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -175,12 +175,13 @@ public final class UserFeedback implements JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<UserFeedback> {
     @Override
-    public @NotNull UserFeedback deserialize(@NotNull JsonReader reader, @NotNull ILogger logger)
+    public @NotNull UserFeedback deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       SentryId sentryId = null;
       String name = null;
       String email = null;
       String comments = null;
+      Map<String, Object> unknown = null;
 
       reader.beginObject();
       do {
@@ -198,6 +199,14 @@ public final class UserFeedback implements JsonSerializable {
           case JsonKeys.COMMENTS:
             comments = JsonReaderUtils.nextStringOrNull(reader);
             break;
+          case JsonKeys.UNKNOWN:
+            try {
+              unknown = reader.nextObjectOrNull(reader);
+            } catch (Exception exception) {
+              logger.log(SentryLevel.ERROR, "Failed parsing unknown field.", exception);
+            }
+
+            break;
           default:
             break;
         }
@@ -211,7 +220,9 @@ public final class UserFeedback implements JsonSerializable {
         throw exception;
       }
 
-      return new UserFeedback(sentryId, name, email, comments);
+      UserFeedback userFeedback = new UserFeedback(sentryId, name, email, comments);
+      userFeedback.setUnknown(unknown);
+      return userFeedback;
     }
   }
 }

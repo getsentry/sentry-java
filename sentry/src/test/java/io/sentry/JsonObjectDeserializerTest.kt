@@ -1,21 +1,84 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
 import org.junit.Test
 import java.io.StringReader
+import java.lang.Exception
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.fail
 
 class JsonObjectDeserializerTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
-
         fun getSut(): JsonObjectDeserializer {
             return JsonObjectDeserializer()
         }
     }
 
     private val fixture = Fixture()
+
+    @Test
+    fun `deserialize null`() {
+        val json = "null"
+        val actual = deserialize(json)
+
+        assertNull(actual)
+    }
+
+    @Test
+    fun `deserialize string fails`() {
+        val json = "\"String\""
+        try {
+            deserialize(json)
+            fail()
+        } catch (e: Exception) {
+            // Success
+        }
+    }
+
+    @Test
+    fun `deserialize int fails`() {
+        val json = "1"
+        try {
+            deserialize(json)
+            fail()
+        } catch (e: Exception) {
+            // Success
+        }
+    }
+
+    @Test
+    fun `deserialize double fails`() {
+        val json = "1.1"
+        try {
+            deserialize(json)
+            fail()
+        } catch (e: Exception) {
+            // Success
+        }
+    }
+
+    @Test
+    fun `deserialize array fails`() {
+        val json = "[\"a\",\"b\"]"
+        try {
+            deserialize(json)
+            fail()
+        } catch (e: Exception) {
+            // Success
+        }
+    }
+
+    @Test
+    fun `deserialize malformed fails`() {
+        val json = "{\"fixture-key\": \"fixture-value\""
+        try {
+            deserialize(json)
+            fail()
+        } catch (e: Exception) {
+            // Success
+        }
+    }
 
     @Test
     fun `deserialize json string`() {
@@ -26,7 +89,7 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
-    fun `deserialize json int`() {
+    fun `deserialize json object int`() {
         val json = "{\"fixture-key\": 123}"
         val actual = deserialize(json)
 
@@ -34,7 +97,7 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
-    fun `deserialize json double`() {
+    fun `deserialize json object double`() {
         val json = "{\"fixture-key\": 123.321}"
         val actual = deserialize(json)
 
@@ -42,7 +105,7 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
-    fun `deserialize json boolean`() {
+    fun `deserialize json object boolean`() {
         val json = "{\"fixture-key\": true}"
         val actual = deserialize(json)
 
@@ -50,7 +113,7 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
-    fun `deserialize json string array`() {
+    fun `deserialize json object string array`() {
         val json = "{\"fixture-key\":[\"fixture-entry-1\",\"fixture-entry-2\"]}"
         val actual = deserialize(json)
 
@@ -58,7 +121,7 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
-    fun `deserialize json int array`() {
+    fun `deserialize json object int array`() {
         val json = "{\"fixture-key\":[1,2]}"
         val actual = deserialize(json)
 
@@ -66,7 +129,7 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
-    fun `deserialize json double array`() {
+    fun `deserialize json object double array`() {
         val json = "{\"fixture-key\":[1.1,2.2]}"
         val actual = deserialize(json)
 
@@ -74,7 +137,7 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
-    fun `deserialize json object`() {
+    fun `deserialize json object object`() {
         val json = """
         {
             "key": {
@@ -94,7 +157,7 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
-    fun `deserialize json object with nesting`() {
+    fun `deserialize json object object with nesting`() {
         val json = """
         {
             "fixture-key":
@@ -136,9 +199,9 @@ class JsonObjectDeserializerTest {
 
     // Helper
 
-    private fun deserialize(string: String): Map<String, Any> {
+    private fun deserialize(string: String): Map<String, Any>? {
         val rdr = StringReader(string)
         val jsonRdr = JsonObjectReader(rdr)
-        return fixture.getSut().deserialize(jsonRdr, fixture.logger)
+        return fixture.getSut().deserialize(jsonRdr)
     }
 }
