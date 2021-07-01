@@ -1,6 +1,8 @@
 package io.sentry;
 
 import io.sentry.vendor.gson.stream.JsonReader;
+import io.sentry.vendor.gson.stream.JsonToken;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
@@ -15,7 +17,7 @@ public final class JsonObjectReader extends JsonReader {
     super(in);
   }
 
-  public @Nullable Map<String, Object> nextObjectOrNull(@NotNull JsonObjectReader reader)
+  public @Nullable Object nextObjectOrNull(@NotNull JsonObjectReader reader)
       throws IOException {
     return new JsonObjectDeserializer().deserialize(reader);
   }

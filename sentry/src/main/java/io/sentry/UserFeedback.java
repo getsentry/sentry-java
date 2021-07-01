@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.JsonReaderUtils;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -198,15 +199,11 @@ public final class UserFeedback implements JsonSerializable {
           case JsonKeys.COMMENTS:
             comments = JsonReaderUtils.nextStringOrNull(reader);
             break;
-          case JsonKeys.UNKNOWN:
-            try {
-              unknown = reader.nextObjectOrNull(reader);
-            } catch (Exception exception) {
-              logger.log(SentryLevel.ERROR, "Failed parsing unknown field.", exception);
-            }
-
-            break;
           default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            unknown.put(nextName, reader.nextObjectOrNull(reader));
             break;
         }
       } while (reader.hasNext());

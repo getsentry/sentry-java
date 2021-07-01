@@ -21,52 +21,35 @@ class JsonObjectDeserializerTest {
     fun `deserialize null`() {
         val json = "null"
         val actual = deserialize(json)
-
         assertNull(actual)
     }
 
     @Test
-    fun `deserialize string fails`() {
+    fun `deserialize string`() {
         val json = "\"String\""
-        try {
-            deserialize(json)
-            fail()
-        } catch (e: Exception) {
-            // Success
-        }
+        val actual = deserialize(json)
+        assertEquals("String", actual)
     }
 
     @Test
-    fun `deserialize int fails`() {
+    fun `deserialize int`() {
         val json = "1"
-        try {
-            deserialize(json)
-            fail()
-        } catch (e: Exception) {
-            // Success
-        }
+        val actual = deserialize(json)
+        assertEquals(1, actual)
     }
 
     @Test
-    fun `deserialize double fails`() {
+    fun `deserialize double`() {
         val json = "1.1"
-        try {
-            deserialize(json)
-            fail()
-        } catch (e: Exception) {
-            // Success
-        }
+        val actual = deserialize(json)
+        assertEquals(1.1, actual)
     }
 
     @Test
-    fun `deserialize array fails`() {
+    fun `deserialize array`() {
         val json = "[\"a\",\"b\"]"
-        try {
-            deserialize(json)
-            fail()
-        } catch (e: Exception) {
-            // Success
-        }
+        val actual = deserialize(json)
+        assertEquals(listOf("a", "b"), actual)
     }
 
     @Test
@@ -199,7 +182,7 @@ class JsonObjectDeserializerTest {
 
     // Helper
 
-    private fun deserialize(string: String): Map<String, Any>? {
+    private fun deserialize(string: String): Any? {
         val rdr = StringReader(string)
         val jsonRdr = JsonObjectReader(rdr)
         return fixture.getSut().deserialize(jsonRdr)
