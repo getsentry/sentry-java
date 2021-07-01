@@ -130,8 +130,6 @@ public final class UserFeedback implements JsonSerializable {
     public static final String NAME = "name";
     public static final String EMAIL = "email";
     public static final String COMMENTS = "comments";
-
-    public static final String UNKNOWN = "unknown";
   }
 
   // JsonSerializable
@@ -155,8 +153,11 @@ public final class UserFeedback implements JsonSerializable {
       writer.value(comments);
     }
     if (unknown != null) {
-      writer.name(JsonKeys.UNKNOWN);
-      writer.value(logger, unknown);
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
     }
     writer.endObject();
   }

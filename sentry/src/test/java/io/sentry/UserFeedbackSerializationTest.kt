@@ -50,7 +50,7 @@ class UserFeedbackSerializationTest {
         val actual = serializeToString(userFeedback)
         val expected = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"," +
-            "\"unknown\":{\"fixture-key\":\"fixture-value\"}}"
+            "\"fixture-key\":\"fixture-value\"}"
 
         assertEquals(expected, actual)
     }
@@ -67,8 +67,8 @@ class UserFeedbackSerializationTest {
 
         sut.serialize(writer, logger)
 
-        verify(writer).name("unknown")
-        verify(writer).value(logger, sut.unknown)
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
     }
 
     @Test
@@ -103,7 +103,7 @@ class UserFeedbackSerializationTest {
     fun `deserializing unknown`() {
         val json = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"," +
-            "\"unknown\":{\"fixture-key\":\"fixture-value\"}}"
+            "\"fixture-key\":\"fixture-value\"}"
         val expected = mapOf(
             "fixture-key" to "fixture-value"
         )

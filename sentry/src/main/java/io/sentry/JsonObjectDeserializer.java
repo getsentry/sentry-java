@@ -133,9 +133,9 @@ public final class JsonObjectDeserializer {
               tokenMap.map.put(tokenNameMap.name, tokenMapMap.map);
             }
           } else if (getCurrentToken() instanceof TokenArray) {
-            TokenArray tokenArrayObject = (TokenArray) getCurrentToken();
-            if (tokenMapMap != null && tokenArrayObject != null) {
-              tokenArrayObject.array.add(tokenMapMap.map);
+            TokenArray tokenArrayMap = (TokenArray) getCurrentToken();
+            if (tokenMapMap != null && tokenArrayMap != null) {
+              tokenArrayMap.array.add(tokenMapMap.map);
             }
           }
         }
