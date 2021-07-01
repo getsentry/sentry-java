@@ -44,6 +44,12 @@ public final class JsonObjectReader extends JsonReader {
     }
   }
 
+  /**
+   * Decodes JSON into Java primitives/objects (null, boolean, int, long, double, String, Map, List)
+   * with full nesting support. To be used at the root level or after calling `nextName()`.
+   *
+   * @return The deserialized object from json.
+   */
   public @Nullable Object nextObjectOrNull() throws IOException {
     return new JsonObjectDeserializer().deserialize(this);
   }
