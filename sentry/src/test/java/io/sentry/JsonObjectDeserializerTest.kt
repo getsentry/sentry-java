@@ -134,6 +134,20 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
+    fun `deserialize json object array array`() {
+        val json = "{\"fixture-key\":[[\"a\"],[\"b\"]]}"
+        val expected = mapOf(
+            "fixture-key" to listOf(
+                listOf("a"),
+                listOf("b")
+            )
+        )
+
+        val actual = deserialize(json)
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun `deserialize json object object`() {
         val json = """
         {

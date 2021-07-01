@@ -94,13 +94,20 @@ public final class JsonObjectDeserializer {
           TokenArray tokenArrayArray = (TokenArray) getCurrentToken();
           removeCurrentToken(); // Array
 
-          TokenName tokenNameArray = (TokenName) getCurrentToken();
-          removeCurrentToken(); // Name
+          if (getCurrentToken() instanceof TokenName) {
+            TokenName tokenNameArray = (TokenName) getCurrentToken();
+            removeCurrentToken(); // Name
 
-          TokenMap tokenMapArray = (TokenMap) getCurrentToken();
+            TokenMap tokenMapArray = (TokenMap) getCurrentToken();
 
-          if (tokenNameArray != null && tokenArrayArray != null && tokenMapArray != null) {
-            tokenMapArray.map.put(tokenNameArray.name, tokenArrayArray.array);
+            if (tokenNameArray != null && tokenArrayArray != null && tokenMapArray != null) {
+              tokenMapArray.map.put(tokenNameArray.name, tokenArrayArray.array);
+            }
+          } else if (getCurrentToken() instanceof TokenArray) {
+            TokenArray tokenArrayArrayArray = (TokenArray) getCurrentToken();
+            if (tokenArrayArray != null && tokenArrayArrayArray != null) {
+              tokenArrayArrayArray.array.add(tokenArrayArray.getValue());
+            }
           }
         }
         break;
