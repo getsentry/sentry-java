@@ -1,11 +1,11 @@
 package io.sentry
 
-import org.junit.Test
 import java.io.StringReader
 import java.lang.Exception
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.fail
+import org.junit.Test
 
 class JsonObjectDeserializerTest {
 

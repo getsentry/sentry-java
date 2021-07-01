@@ -1,14 +1,12 @@
 package io.sentry;
 
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import io.sentry.vendor.gson.stream.JsonReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
-
-import io.sentry.vendor.gson.stream.JsonReader;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class JsonObjectReader extends JsonReader {
@@ -17,7 +15,8 @@ public final class JsonObjectReader extends JsonReader {
     super(in);
   }
 
-  public @Nullable Map<String, Object> nextObjectOrNull(@NotNull JsonObjectReader reader) throws IOException {
+  public @Nullable Map<String, Object> nextObjectOrNull(@NotNull JsonObjectReader reader)
+      throws IOException {
     return new JsonObjectDeserializer().deserialize(reader);
   }
 }

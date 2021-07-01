@@ -1,15 +1,13 @@
 package io.sentry;
 
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.sentry.vendor.gson.stream.JsonToken;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class JsonObjectDeserializer {
@@ -18,13 +16,15 @@ public final class JsonObjectDeserializer {
 
   static final class TokenName {
     final String name;
+
     TokenName(@NotNull String name) {
       this.name = name;
     }
   }
 
   static final class TokenArray {
-    final ArrayList<Object> array = new ArrayList<>();;
+    final ArrayList<Object> array = new ArrayList<>();
+    ;
   }
 
   static final class TokenMap {
@@ -35,7 +35,8 @@ public final class JsonObjectDeserializer {
 
   // Public API
 
-  public @Nullable Map<String, Object> deserialize(@NotNull JsonObjectReader reader) throws IOException {
+  public @Nullable Map<String, Object> deserialize(@NotNull JsonObjectReader reader)
+      throws IOException {
     parse(reader);
     final TokenMap root = ((TokenMap) getCurrentToken());
     if (root != null) {
