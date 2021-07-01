@@ -55,7 +55,7 @@ public final class JsonObjectDeserializer {
     }
   }
 
-  static final class TokenMap implements Token {
+  private static final class TokenMap implements Token {
     final HashMap<String, Object> value = new HashMap<>();
 
     @Override

@@ -64,6 +64,22 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
+    fun `deserialize json empty`() {
+        val json = "{}"
+        val actual = deserialize(json)
+
+        assertEquals(emptyMap<String, Any>(), actual)
+    }
+
+    @Test
+    fun `deserialize json null`() {
+        val json = "{\"fixture-key\": null}"
+        val actual = deserialize(json)
+
+        assertEquals(mapOf("fixture-key" to null), actual)
+    }
+
+    @Test
     fun `deserialize json string`() {
         val json = "{\"fixture-key\": \"fixture-value\"}"
         val actual = deserialize(json)
@@ -93,6 +109,14 @@ class JsonObjectDeserializerTest {
         val actual = deserialize(json)
 
         assertEquals(mapOf("fixture-key" to true), actual)
+    }
+
+    @Test
+    fun `deserialize json object null array`() {
+        val json = "{\"fixture-key\":[null,null]}"
+        val actual = deserialize(json)
+
+        assertEquals(mapOf("fixture-key" to listOf(null, null)), actual)
     }
 
     @Test
