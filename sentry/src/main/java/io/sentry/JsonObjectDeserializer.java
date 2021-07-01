@@ -85,7 +85,7 @@ public final class JsonObjectDeserializer {
     switch (reader.peek()) {
       case BEGIN_ARRAY:
         reader.beginArray();
-        addCurrentToken(new TokenArray());
+        pushCurrentToken(new TokenArray());
         break;
       case END_ARRAY:
         reader.endArray();
@@ -93,14 +93,14 @@ public final class JsonObjectDeserializer {
         break;
       case BEGIN_OBJECT:
         reader.beginObject();
-        addCurrentToken(new TokenMap());
+        pushCurrentToken(new TokenMap());
         break;
       case END_OBJECT:
         reader.endObject();
         done = handleArrayOrMapEnd();
         break;
       case NAME:
-        addCurrentToken(new TokenName(reader.nextName()));
+        pushCurrentToken(new TokenName(reader.nextName()));
         break;
       case STRING:
         done = handlePrimitive(reader::nextString);
@@ -129,11 +129,11 @@ public final class JsonObjectDeserializer {
       return true;
     } else {
       Token arrayOrMapToken = getCurrentToken(); // Array/Map
-      removeCurrentToken();
+      popCurrentToken();
 
       if (getCurrentToken() instanceof TokenName) {
         TokenName tokenName = (TokenName) getCurrentToken();
-        removeCurrentToken();
+        popCurrentToken();
 
         TokenMap tokenMap = (TokenMap) getCurrentToken();
         if (tokenName != null && arrayOrMapToken != null && tokenMap != null) {
@@ -152,11 +152,11 @@ public final class JsonObjectDeserializer {
   private boolean handlePrimitive(NextValue callback) throws IOException {
     Object primitive = callback.nextValue();
     if (getCurrentToken() == null && primitive != null) {
-      addCurrentToken(new TokenPrimitive(primitive));
+      pushCurrentToken(new TokenPrimitive(primitive));
       return true;
     } else if (getCurrentToken() instanceof TokenName) {
       TokenName tokenNameNumber = (TokenName) getCurrentToken();
-      removeCurrentToken();
+      popCurrentToken();
 
       TokenMap tokenMapNumber = (TokenMap) getCurrentToken();
       tokenMapNumber.value.put(tokenNameNumber.value, primitive);
@@ -189,11 +189,11 @@ public final class JsonObjectDeserializer {
     return tokens.get(tokens.size() - 1);
   }
 
-  private void addCurrentToken(Token token) {
+  private void pushCurrentToken(Token token) {
     tokens.add(token);
   }
 
-  private void removeCurrentToken() {
+  private void popCurrentToken() {
     if (tokens.isEmpty()) {
       return;
     }
