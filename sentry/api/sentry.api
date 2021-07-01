@@ -340,17 +340,39 @@ public final class io/sentry/IpAddressUtils {
 }
 
 public abstract interface class io/sentry/JsonDeserializer {
-	public abstract fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+	public abstract fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/JsonSerializable;
+}
+
+public final class io/sentry/JsonObjectDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;)Ljava/lang/Object;
+}
+
+public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/JsonReader {
+	public fun <init> (Ljava/io/Reader;)V
+	public fun nextBooleanOrNull ()Ljava/lang/Boolean;
+	public fun nextDoubleOrNull ()Ljava/lang/Double;
+	public fun nextIntegerOrNull ()Ljava/lang/Integer;
+	public fun nextLongOrNull ()Ljava/lang/Long;
+	public fun nextObjectOrNull ()Ljava/lang/Object;
+	public fun nextStringOrNull ()Ljava/lang/String;
+	public fun nextUnknown (Lio/sentry/ILogger;Ljava/util/Map;Ljava/lang/String;)V
 }
 
 public final class io/sentry/JsonObjectSerializer {
 	public static final field OBJECT_PLACEHOLDER Ljava/lang/String;
 	public fun <init> ()V
-	public fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;Lio/sentry/ILogger;Ljava/lang/Object;)V
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/JsonObjectWriter : io/sentry/vendor/gson/stream/JsonWriter {
+	public fun <init> (Ljava/io/Writer;)V
 }
 
 public abstract interface class io/sentry/JsonSerializable {
-	public abstract fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;Lio/sentry/ILogger;)V
+	public abstract fun getUnknown ()Ljava/util/Map;
+	public abstract fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public abstract fun setUnknown (Ljava/util/Map;)V
 }
 
 public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor {
@@ -1142,17 +1164,19 @@ public final class io/sentry/UserFeedback : io/sentry/JsonSerializable {
 	public fun getEmail ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getName ()Ljava/lang/String;
-	public fun serialize (Lio/sentry/vendor/gson/stream/JsonWriter;Lio/sentry/ILogger;)V
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setComments (Ljava/lang/String;)V
 	public fun setEmail (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/UserFeedback$Deserializer : io/sentry/JsonDeserializer {
 	public fun <init> ()V
-	public fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;Lio/sentry/ILogger;)Lio/sentry/UserFeedback;
-	public synthetic fun deserialize (Lio/sentry/vendor/gson/stream/JsonReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/JsonSerializable;
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/UserFeedback;
 }
 
 public final class io/sentry/UserFeedback$JsonKeys {
@@ -1911,15 +1935,6 @@ public abstract interface class io/sentry/util/CollectionUtils$Predicate {
 public final class io/sentry/util/ExceptionUtils {
 	public fun <init> ()V
 	public static fun findRootCause (Ljava/lang/Throwable;)Ljava/lang/Throwable;
-}
-
-public final class io/sentry/util/JsonReaderUtils {
-	public fun <init> ()V
-	public static fun nextBooleanOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Boolean;
-	public static fun nextDoubleOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Double;
-	public static fun nextIntegerOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Integer;
-	public static fun nextLongOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/Long;
-	public static fun nextStringOrNull (Lio/sentry/vendor/gson/stream/JsonReader;)Ljava/lang/String;
 }
 
 public final class io/sentry/util/LogUtils {

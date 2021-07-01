@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,27 +10,30 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class JsonObjectDeserializer {
 
-  // Tokens
+  private interface NextValue {
+    @Nullable
+    Object nextValue() throws IOException;
+  }
 
-  interface Token {
+  private interface Token {
     @NotNull
     Object getValue();
   }
 
-  static final class TokenName implements Token {
-    final String name;
+  private static final class TokenName implements Token {
+    final String value;
 
-    TokenName(@NotNull String name) {
-      this.name = name;
+    TokenName(@NotNull String value) {
+      this.value = value;
     }
 
     @Override
     public @NotNull Object getValue() {
-      return name;
+      return value;
     }
   }
 
-  static final class TokenPrimitive implements Token {
+  private static final class TokenPrimitive implements Token {
     final Object value;
 
     TokenPrimitive(@NotNull Object value) {
@@ -44,21 +46,21 @@ public final class JsonObjectDeserializer {
     }
   }
 
-  static final class TokenArray implements Token {
-    final ArrayList<Object> array = new ArrayList<>();
+  private static final class TokenArray implements Token {
+    final ArrayList<Object> value = new ArrayList<>();
 
     @Override
     public @NotNull Object getValue() {
-      return array;
+      return value;
     }
   }
 
   static final class TokenMap implements Token {
-    final HashMap<String, Object> map = new HashMap<>();
+    final HashMap<String, Object> value = new HashMap<>();
 
     @Override
     public @NotNull Object getValue() {
-      return map;
+      return value;
     }
   }
 
@@ -80,37 +82,14 @@ public final class JsonObjectDeserializer {
 
   private void parse(@NotNull JsonObjectReader reader) throws IOException {
     boolean done = false;
-    JsonToken token = reader.peek();
-    switch (token) {
+    switch (reader.peek()) {
       case BEGIN_ARRAY:
         reader.beginArray();
         addCurrentToken(new TokenArray());
         break;
       case END_ARRAY:
         reader.endArray();
-
-        if (hasOneToken()) {
-          done = true;
-        } else {
-          TokenArray tokenArrayArray = (TokenArray) getCurrentToken();
-          removeCurrentToken(); // Array
-
-          if (getCurrentToken() instanceof TokenName) {
-            TokenName tokenNameArray = (TokenName) getCurrentToken();
-            removeCurrentToken(); // Name
-
-            TokenMap tokenMapArray = (TokenMap) getCurrentToken();
-
-            if (tokenNameArray != null && tokenArrayArray != null && tokenMapArray != null) {
-              tokenMapArray.map.put(tokenNameArray.name, tokenArrayArray.array);
-            }
-          } else if (getCurrentToken() instanceof TokenArray) {
-            TokenArray tokenArrayArrayArray = (TokenArray) getCurrentToken();
-            if (tokenArrayArray != null && tokenArrayArrayArray != null) {
-              tokenArrayArrayArray.array.add(tokenArrayArray.getValue());
-            }
-          }
-        }
+        done = handleArrayOrMapEnd();
         break;
       case BEGIN_OBJECT:
         reader.beginObject();
@@ -118,105 +97,75 @@ public final class JsonObjectDeserializer {
         break;
       case END_OBJECT:
         reader.endObject();
-
-        if (hasOneToken()) {
-          done = true;
-        } else {
-          TokenMap tokenMapMap = (TokenMap) getCurrentToken();
-          removeCurrentToken(); // Map
-
-          if (getCurrentToken() instanceof TokenName) {
-            TokenName tokenNameMap = (TokenName) getCurrentToken();
-            removeCurrentToken(); // Name
-
-            TokenMap tokenMap = (TokenMap) getCurrentToken();
-            if (tokenMapMap != null && tokenNameMap != null && tokenMap != null) {
-              tokenMap.map.put(tokenNameMap.name, tokenMapMap.map);
-            }
-          } else if (getCurrentToken() instanceof TokenArray) {
-            TokenArray tokenArrayMap = (TokenArray) getCurrentToken();
-            if (tokenMapMap != null && tokenArrayMap != null) {
-              tokenArrayMap.array.add(tokenMapMap.map);
-            }
-          }
-        }
+        done = handleArrayOrMapEnd();
         break;
       case NAME:
         addCurrentToken(new TokenName(reader.nextName()));
         break;
       case STRING:
-        if (getCurrentToken() == null) {
-          addCurrentToken(new TokenPrimitive(reader.nextString()));
-          done = true;
-        } else if (getCurrentToken() instanceof TokenName) {
-          TokenName tokenNameString = (TokenName) getCurrentToken();
-          removeCurrentToken(); // Name
-
-          TokenMap tokenMapString = (TokenMap) getCurrentToken();
-          tokenMapString.map.put(tokenNameString.name, reader.nextString());
-
-        } else if (getCurrentToken() instanceof TokenArray) {
-          TokenArray tokenArrayString = (TokenArray) getCurrentToken();
-          tokenArrayString.array.add(reader.nextString());
-        }
+        done = handlePrimitive(reader::nextString);
         break;
       case NUMBER:
-        if (getCurrentToken() == null) {
-          addCurrentToken(new TokenPrimitive(nextNumber(reader)));
-          done = true;
-        } else if (getCurrentToken() instanceof TokenName) {
-          TokenName tokenNameNumber = (TokenName) getCurrentToken();
-          removeCurrentToken(); // Name
-
-          TokenMap tokenMapNumber = (TokenMap) getCurrentToken();
-          tokenMapNumber.map.put(tokenNameNumber.name, nextNumber(reader));
-
-        } else if (getCurrentToken() instanceof TokenArray) {
-          TokenArray tokenArrayNumber = (TokenArray) getCurrentToken();
-          tokenArrayNumber.array.add(nextNumber(reader));
-        }
+        done = handlePrimitive(() -> nextNumber(reader));
         break;
       case BOOLEAN:
-        if (getCurrentToken() == null) {
-          addCurrentToken(new TokenPrimitive(reader.nextBoolean()));
-          done = true;
-        } else if (getCurrentToken() instanceof TokenName) {
-          TokenName tokenNameBoolean = (TokenName) getCurrentToken();
-          removeCurrentToken(); // Name
-
-          TokenMap tokenMapBoolean = (TokenMap) getCurrentToken();
-          tokenMapBoolean.map.put(tokenNameBoolean.name, reader.nextBoolean());
-
-        } else if (getCurrentToken() instanceof TokenArray) {
-          TokenArray tokenArrayBoolean = (TokenArray) getCurrentToken();
-          tokenArrayBoolean.array.add(reader.nextBoolean());
-        }
+        done = handlePrimitive(reader::nextBoolean);
         break;
       case NULL:
         reader.nextNull();
-        if (getCurrentToken() == null) {
-          done = true;
-        }
-        if (getCurrentToken() instanceof TokenName) {
-          TokenName tokenNameNull = (TokenName) getCurrentToken();
-          removeCurrentToken(); // Name
-
-          TokenMap tokenMapNull = (TokenMap) getCurrentToken();
-          tokenMapNull.map.put(tokenNameNull.name, null);
-
-        } else if (getCurrentToken() instanceof TokenArray) {
-          TokenArray tokenArrayNull = (TokenArray) getCurrentToken();
-          tokenArrayNull.array.add(null);
-        }
+        done = handlePrimitive(() -> null);
         break;
       case END_DOCUMENT:
         done = true;
         break;
     }
-
     if (!done) {
       parse(reader);
     }
+  }
+
+  private boolean handleArrayOrMapEnd() {
+    if (hasOneToken()) {
+      return true;
+    } else {
+      Token arrayOrMapToken = getCurrentToken(); // Array/Map
+      removeCurrentToken();
+
+      if (getCurrentToken() instanceof TokenName) {
+        TokenName tokenName = (TokenName) getCurrentToken();
+        removeCurrentToken();
+
+        TokenMap tokenMap = (TokenMap) getCurrentToken();
+        if (tokenName != null && arrayOrMapToken != null && tokenMap != null) {
+          tokenMap.value.put(tokenName.value, arrayOrMapToken.getValue());
+        }
+      } else if (getCurrentToken() instanceof TokenArray) {
+        TokenArray tokenArray = (TokenArray) getCurrentToken();
+        if (arrayOrMapToken != null && tokenArray != null) {
+          tokenArray.value.add(arrayOrMapToken.getValue());
+        }
+      }
+      return false;
+    }
+  }
+
+  private boolean handlePrimitive(NextValue callback) throws IOException {
+    Object primitive = callback.nextValue();
+    if (getCurrentToken() == null && primitive != null) {
+      addCurrentToken(new TokenPrimitive(primitive));
+      return true;
+    } else if (getCurrentToken() instanceof TokenName) {
+      TokenName tokenNameNumber = (TokenName) getCurrentToken();
+      removeCurrentToken();
+
+      TokenMap tokenMapNumber = (TokenMap) getCurrentToken();
+      tokenMapNumber.value.put(tokenNameNumber.value, primitive);
+
+    } else if (getCurrentToken() instanceof TokenArray) {
+      TokenArray tokenArrayNumber = (TokenArray) getCurrentToken();
+      tokenArrayNumber.value.add(primitive);
+    }
+    return false;
   }
 
   private Object nextNumber(JsonObjectReader reader) throws IOException {
