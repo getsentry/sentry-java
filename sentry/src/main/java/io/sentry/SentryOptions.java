@@ -273,6 +273,8 @@ public class SentryOptions {
   /** Registers hook that flushes {@link Hub} when main thread shuts down. */
   private boolean enableShutdownHook = true;
 
+  private boolean autoSessionTracking;
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -1416,6 +1418,14 @@ public class SentryOptions {
    */
   public void setMaxCacheItems(int maxCacheItems) {
     this.maxCacheItems = maxCacheItems;
+  }
+
+  public boolean isAutoSessionTracking() {
+    return autoSessionTracking;
+  }
+
+  public void setAutoSessionTracking(boolean autoSessionTracking) {
+    this.autoSessionTracking = autoSessionTracking;
   }
 
   /** The BeforeSend callback */

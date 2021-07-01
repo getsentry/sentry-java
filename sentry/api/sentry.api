@@ -59,6 +59,7 @@ public final class io/sentry/DateUtils {
 	public static fun getDateTime (Ljava/lang/String;)Ljava/util/Date;
 	public static fun getDateTimeWithMillisPrecision (Ljava/lang/String;)Ljava/util/Date;
 	public static fun getTimestamp (Ljava/util/Date;)Ljava/lang/String;
+	public static fun getTimestampMinutesPrecision (Ljava/util/Date;)Ljava/lang/String;
 }
 
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
@@ -828,6 +829,7 @@ public class io/sentry/SentryOptions {
 	public fun isAttachServerName ()Z
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
+	public fun isAutoSessionTracking ()Z
 	public fun isDebug ()Z
 	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableDeduplication ()Z
@@ -842,6 +844,7 @@ public class io/sentry/SentryOptions {
 	public fun setAttachServerName (Z)V
 	public fun setAttachStacktrace (Z)V
 	public fun setAttachThreads (Z)V
+	public fun setAutoSessionTracking (Z)V
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
@@ -1001,6 +1004,10 @@ public final class io/sentry/SessionAdapter : com/google/gson/TypeAdapter {
 	public synthetic fun read (Lcom/google/gson/stream/JsonReader;)Ljava/lang/Object;
 	public fun write (Lcom/google/gson/stream/JsonWriter;Lio/sentry/Session;)V
 	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/SessionAggregates {
+	public fun <init> (Lio/sentry/SessionAggregates$Attributes;)V
 }
 
 public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, java/io/Closeable {

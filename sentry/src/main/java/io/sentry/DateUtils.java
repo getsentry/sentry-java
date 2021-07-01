@@ -19,6 +19,7 @@ public final class DateUtils {
   // ISO 8601
   private static final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
   private static final String ISO_FORMAT_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+  private static final String ISO_FORMAT_MINUTES_PRECISION = "yyyy-MM-dd'T'HH:mm:00'Z'";
 
   // if UTC is not found, it fallback to "GMT" which is UTC equivalent
   private static final @NotNull TimeZone UTC_TIMEZONE = TimeZone.getTimeZone(UTC);
@@ -39,6 +40,17 @@ public final class DateUtils {
         @Override
         protected SimpleDateFormat initialValue() {
           final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(ISO_FORMAT, Locale.ROOT);
+          simpleDateFormat.setTimeZone(UTC_TIMEZONE);
+          return simpleDateFormat;
+        }
+      };
+
+  private static final @NotNull ThreadLocal<SimpleDateFormat> SDF_ISO_FORMAT_MINUTES_PRECISION =
+      new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+          final SimpleDateFormat simpleDateFormat =
+              new SimpleDateFormat(ISO_FORMAT_MINUTES_PRECISION, Locale.ROOT);
           simpleDateFormat.setTimeZone(UTC_TIMEZONE);
           return simpleDateFormat;
         }
@@ -116,5 +128,14 @@ public final class DateUtils {
     final Calendar calendar = Calendar.getInstance(UTC_TIMEZONE);
     calendar.setTimeInMillis(millis);
     return calendar.getTime();
+  }
+
+  /**
+   * Gets the timestamp with minutes prcecision from date.
+   * @param date the UTC date
+   * @return the string timestamp
+   */
+  public static @NotNull String getTimestampMinutesPrecision(final @NotNull Date date) {
+    return SDF_ISO_FORMAT_MINUTES_PRECISION.get().format(date);
   }
 }

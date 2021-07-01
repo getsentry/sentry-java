@@ -88,6 +88,14 @@ class DateUtilsTest {
         assertEquals("2020-06-07T12:38:12.631Z", timestamp)
     }
 
+    @Test
+    fun `returns timestamp with minutes precision`() {
+        val millis = 1591533492L * 1000L + 631
+        val actual = DateUtils.getTimestampMinutesPrecision(Date(millis))
+
+        assertEquals("2020-06-07T12:38:00Z", actual)
+    }
+
     private fun convertDate(date: Date): LocalDateTime {
         return Instant.ofEpochMilli(date.time)
                 .atZone(utcTimeZone)

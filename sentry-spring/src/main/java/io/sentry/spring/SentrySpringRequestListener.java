@@ -45,12 +45,14 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
 
   @Override
   public void requestDestroyed(ServletRequestEvent sre) {
+    hub.endSession();
     hub.popScope();
   }
 
   @Override
   public void requestInitialized(ServletRequestEvent sre) {
     hub.pushScope();
+    hub.startSession();
 
     final ServletRequest servletRequest = sre.getServletRequest();
     if (servletRequest instanceof HttpServletRequest) {

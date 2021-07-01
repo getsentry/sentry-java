@@ -33,6 +33,8 @@ public final class SentryClient implements ISentryClient {
 
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
 
+  private final @Nullable SessionFlusher sessionFlusher;
+
   @Override
   public boolean isEnabled() {
     return enabled;
@@ -41,6 +43,13 @@ public final class SentryClient implements ISentryClient {
   SentryClient(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
+    // TODO: how to decide if session aggregates should be used?
+    if (options.isAutoSessionTracking() && options.getRelease() != null) {
+      this.sessionFlusher = new SessionFlusher(options.getRelease(), options.getEnvironment());
+      this.sessionFlusher.start();
+    } else {
+      this.sessionFlusher = null;
+    }
 
     ITransportFactory transportFactory = options.getTransportFactory();
     if (transportFactory instanceof NoOpTransportFactory) {
@@ -365,15 +374,19 @@ public final class SentryClient implements ISentryClient {
       return;
     }
 
-    SentryEnvelope envelope;
-    try {
-      envelope = SentryEnvelope.from(options.getSerializer(), session, options.getSdkVersion());
-    } catch (IOException e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
-      return;
-    }
+    if (sessionFlusher != null) {
+      sessionFlusher.addSession(session);
+    } else {
+      SentryEnvelope envelope;
+      try {
+        envelope = SentryEnvelope.from(options.getSerializer(), session, options.getSdkVersion());
+      } catch (IOException e) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
+        return;
+      }
 
-    captureEnvelope(envelope, hint);
+      captureEnvelope(envelope, hint);
+    }
   }
 
   @ApiStatus.Internal
@@ -600,6 +613,9 @@ public final class SentryClient implements ISentryClient {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Failed to close the connection to the Sentry Server.", e);
+    }
+    if (sessionFlusher != null) {
+      sessionFlusher.stop();
     }
     enabled = false;
   }
