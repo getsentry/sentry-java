@@ -204,7 +204,12 @@ public final class UserFeedback implements JsonSerializable {
             if (unknown == null) {
               unknown = new HashMap<>();
             }
-            unknown.put(nextName, reader.nextObjectOrNull(reader));
+            try {
+              unknown.put(nextName, reader.nextObjectOrNull(reader));
+            } catch (Exception exception) {
+              String message = "Error deserializing unknown key \"" + nextName + "\"";
+              logger.log(SentryLevel.ERROR, message, exception);
+            }
             break;
         }
       } while (reader.hasNext());
