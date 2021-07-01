@@ -14,7 +14,8 @@ public final class JsonObjectDeserializer {
   // Tokens
 
   interface Token {
-    @NotNull Object getValue();
+    @NotNull
+    Object getValue();
   }
 
   static final class TokenName implements Token {
@@ -32,6 +33,7 @@ public final class JsonObjectDeserializer {
 
   static final class TokenPrimitive implements Token {
     final Object value;
+
     TokenPrimitive(@NotNull Object value) {
       this.value = value;
     }
@@ -64,8 +66,7 @@ public final class JsonObjectDeserializer {
 
   // Public API
 
-  public @Nullable Object deserialize(@NotNull JsonObjectReader reader)
-      throws IOException {
+  public @Nullable Object deserialize(@NotNull JsonObjectReader reader) throws IOException {
     parse(reader);
     final Token root = getCurrentToken();
     if (root != null) {
@@ -195,7 +196,8 @@ public final class JsonObjectDeserializer {
         reader.nextNull();
         if (getCurrentToken() == null) {
           done = true;
-        } if (getCurrentToken() instanceof TokenName) {
+        }
+        if (getCurrentToken() instanceof TokenName) {
           TokenName tokenNameNull = (TokenName) getCurrentToken();
           removeCurrentToken(); // Name
 

@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
-import io.sentry.util.JsonReaderUtils;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -192,24 +191,19 @@ public final class UserFeedback implements JsonSerializable {
             sentryId = new SentryId(reader.nextString());
             break;
           case JsonKeys.NAME:
-            name = JsonReaderUtils.nextStringOrNull(reader);
+            name = reader.nextStringOrNull();
             break;
           case JsonKeys.EMAIL:
-            email = JsonReaderUtils.nextStringOrNull(reader);
+            email = reader.nextStringOrNull();
             break;
           case JsonKeys.COMMENTS:
-            comments = JsonReaderUtils.nextStringOrNull(reader);
+            comments = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {
               unknown = new HashMap<>();
             }
-            try {
-              unknown.put(nextName, reader.nextObjectOrNull(reader));
-            } catch (Exception exception) {
-              String message = "Error deserializing unknown key \"" + nextName + "\"";
-              logger.log(SentryLevel.ERROR, message, exception);
-            }
+            reader.nextUnknown(logger, unknown, nextName);
             break;
         }
       } while (reader.hasNext());
