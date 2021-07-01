@@ -65,10 +65,12 @@ object Config {
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
         val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+        val springBootStarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
         val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
+        val springWebflux = "org.springframework:spring-webflux"
         val springSecurityWeb = "org.springframework.security:spring-security-web"
         val springSecurityConfig = "org.springframework.security:spring-security-config"
         val springAop = "org.springframework:spring-aop"
@@ -85,6 +87,8 @@ object Config {
         val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
 
         val fragment = "androidx.fragment:fragment-ktx:1.3.4"
+
+        val reactorCore = "io.projectreactor:reactor-core:3.4.6"
     }
 
     object AnnotationProcessors {
