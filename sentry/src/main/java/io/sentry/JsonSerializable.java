@@ -6,7 +6,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Internal
 public interface JsonSerializable {
   void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger) throws IOException;
 
