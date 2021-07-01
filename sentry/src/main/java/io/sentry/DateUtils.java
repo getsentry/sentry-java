@@ -132,6 +132,7 @@ public final class DateUtils {
 
   /**
    * Gets the timestamp with minutes prcecision from date.
+   *
    * @param date the UTC date
    * @return the string timestamp
    */
