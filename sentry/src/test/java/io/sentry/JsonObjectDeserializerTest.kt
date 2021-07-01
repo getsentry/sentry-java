@@ -120,6 +120,20 @@ class JsonObjectDeserializerTest {
     }
 
     @Test
+    fun `deserialize json object object array`() {
+        val json = "{\"fixture-key\":[{\"id\":1},{\"id\":2}]}"
+        val expected = mapOf(
+            "fixture-key" to listOf(
+                mapOf("id" to 1),
+                mapOf("id" to 2)
+            )
+        )
+
+        val actual = deserialize(json)
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun `deserialize json object object`() {
         val json = """
         {
@@ -128,7 +142,6 @@ class JsonObjectDeserializerTest {
             }
         }
         """.trimIndent()
-
         val expected = mapOf<String, Any>(
             "key" to mapOf(
                 "key" to "value"
