@@ -20,6 +20,7 @@ targets:
       maven:io.sentry:sentry-kotlin-extensions:
       maven:io:sentry:sentry-android-fragment:
   - name: maven
+    includeNames: /^sentry.*$/
     gradleCliPath: ./gradlew
     mavenCliPath: scripts/mvnw
     mavenSettingsPath: scripts/settings.xml
@@ -29,4 +30,3 @@ targets:
       distDirRegex: /^sentry-android-.*$/
       fileReplaceeRegex: /\d\.\d\.\d(-SNAPSHOT)?/
       fileReplacerStr: release.aar
-    includeNames: /^sentry.*$/
