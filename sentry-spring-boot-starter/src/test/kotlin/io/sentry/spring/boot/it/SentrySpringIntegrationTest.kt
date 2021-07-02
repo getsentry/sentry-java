@@ -64,7 +64,7 @@ class SentrySpringIntegrationTest {
     lateinit var hub: IHub
 
     @LocalServerPort
-    lateinit var port: Integer
+    var port: Int? = null
 
     @Before
     fun reset() {

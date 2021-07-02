@@ -28,7 +28,7 @@ class PropertiesProviderTest {
     }
 
     @Test
-    fun `when property is value is "true" returns true`() {
+    fun `when property is value is true returns true`() {
         whenever(propertiesProvider.getProperty(any())).thenReturn("true")
         val result = propertiesProvider.getBooleanProperty("prop")
         assertNotNull(result)
@@ -36,7 +36,7 @@ class PropertiesProviderTest {
     }
 
     @Test
-    fun `when property is value is "false" returns false`() {
+    fun `when property is value is false returns false`() {
         whenever(propertiesProvider.getProperty(any())).thenReturn("false")
         val result = propertiesProvider.getBooleanProperty("prop")
         assertNotNull(result)
