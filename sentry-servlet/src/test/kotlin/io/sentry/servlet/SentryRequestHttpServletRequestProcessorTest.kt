@@ -91,8 +91,8 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         eventProcessor.process(event, null)
 
-        assertNotNull(event.request) { request ->
-            assertNotNull(request.headers) {
+        assertNotNull(event.request) { req ->
+            assertNotNull(req.headers) {
                 assertFalse(it.containsKey("X-FORWARDED-FOR"))
                 assertFalse(it.containsKey("Authorization"))
                 assertFalse(it.containsKey("authorization"))

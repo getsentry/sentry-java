@@ -51,7 +51,7 @@ class SentryWebfluxIntegrationTest {
     lateinit var transport: ITransport
 
     @LocalServerPort
-    lateinit var port: Integer
+    var port: Int? = null
 
     private val testClient = WebTestClient.bindToServer().build()
 
