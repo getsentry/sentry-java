@@ -2,6 +2,7 @@ minVersion: 0.23.1
 changelogPolicy: auto
 targets:
   - name: github
+    excludeNames: /^libsentry.*\.so$/
   - name: registry
     sdks:
       maven:io.sentry:sentry:
@@ -21,7 +22,6 @@ targets:
       maven:io:sentry:sentry-android-fragment:
   - name: maven
     includeNames: /^sentry.*$/
-    excludeNames: /^libsentry.*\.so$/
     gradleCliPath: ./gradlew
     mavenCliPath: scripts/mvnw
     mavenSettingsPath: scripts/settings.xml
