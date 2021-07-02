@@ -11,9 +11,9 @@ NEW_VERSION="${2}"
 sed -i "" 's/# Changelog/# Changelog\n\n## Unreleased/' CHANGELOG.md
 
 # Increment `versionName` and make it a snapshot
-# Incrementing the version name before the release (`bump-version.sh`) sets the 
-# a fixed version until the next release it's made. For testing purposes, it's 
-# interesting to have a different version name that doesn't match with the
+# Incrementing the version name before the release (`bump-version.sh`) sets a
+# fixed version until the next release it's made. For testing purposes, it's
+# interesting to have a different version name that doesn't match the
 # name of the version in production.
 VERSION_NAME_PATTERN="versionName"
 version="$( awk "/$VERSION_NAME_PATTERN/" $GRADLE_FILEPATH | egrep -o '[0-9].*$' )" # from the first digit until the end
