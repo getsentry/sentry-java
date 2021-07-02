@@ -15,6 +15,9 @@ sed -i "" 's/# Changelog/# Changelog\n\n## Unreleased/' CHANGELOG.md
 # fixed version until the next release it's made. For testing purposes, it's
 # interesting to have a different version name that doesn't match the
 # name of the version in production.
+# Note that the version must end with a number: `1.2.3-alpha` is a semantic
+# version but not compatible with this post-release script.
+# and `1.2.3-alpha.0` should be used instead.
 VERSION_NAME_PATTERN="versionName"
 version="$( awk "/$VERSION_NAME_PATTERN/" $GRADLE_FILEPATH | egrep -o '[0-9].*$' )" # from the first digit until the end
 version_digit_to_bump="$( awk "/$VERSION_NAME_PATTERN/" $GRADLE_FILEPATH | egrep -o '[0-9]+$')"
