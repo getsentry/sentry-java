@@ -21,6 +21,7 @@ targets:
       maven:io:sentry:sentry-android-fragment:
   - name: maven
     includeNames: /^sentry.*$/
+    excludeNames: /^libsentry.*\.so$/
     gradleCliPath: ./gradlew
     mavenCliPath: scripts/mvnw
     mavenSettingsPath: scripts/settings.xml
