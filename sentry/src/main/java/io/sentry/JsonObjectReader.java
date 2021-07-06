@@ -1,11 +1,15 @@
 package io.sentry;
 
+import io.sentry.protocol.Device;
 import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +28,10 @@ public final class JsonObjectReader extends JsonReader {
     return peek() == JsonToken.NULL ? null : nextDouble();
   }
 
+  public @Nullable Float nextFloatOrNull() throws IOException {
+    return peek() == JsonToken.NULL ? null : (float) nextDouble();
+  }
+
   public @Nullable Long nextLongOrNull() throws IOException {
     return peek() == JsonToken.NULL ? null : nextLong();
   }
@@ -34,13 +42,6 @@ public final class JsonObjectReader extends JsonReader {
 
   public @Nullable Boolean nextBooleanOrNull() throws IOException {
     return peek() == JsonToken.NULL ? null : nextBoolean();
-  }
-
-  public @Nullable Date nextDateOrNull() throws IOException {
-    if (peek() == JsonToken.NULL) {
-      return  null;
-    }
-    return DateUtils.getDateTime(nextString());
   }
 
   public void nextUnknown(ILogger logger, Map<String, Object> unknown, String name) {
@@ -60,5 +61,28 @@ public final class JsonObjectReader extends JsonReader {
    */
   public @Nullable Object nextObjectOrNull() throws IOException {
     return new JsonObjectDeserializer().deserialize(this);
+  }
+
+  // TODO: Move out custom classes (adapter?)
+
+  public @Nullable Date nextDateOrNull() throws IOException {
+    if (peek() == JsonToken.NULL) {
+      return  null;
+    }
+    return DateUtils.getDateTime(nextString());
+  }
+
+  public @Nullable TimeZone nextTimeZoneOrNull() throws IOException {
+    if (peek() == JsonToken.NULL) {
+      return  null;
+    }
+    return TimeZone.getTimeZone(nextString());
+  }
+
+  public @Nullable Device.DeviceOrientation nextDeviceOrientationOrNull() throws IOException {
+    if (peek() == JsonToken.NULL) {
+      return null;
+    }
+    return Device.DeviceOrientation.valueOf(nextString().toUpperCase(Locale.ROOT));
   }
 }

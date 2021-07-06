@@ -4,10 +4,15 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import io.sentry.protocol.Device;
 
 @ApiStatus.Internal
 public final class JsonObjectSerializer {
@@ -39,6 +44,8 @@ public final class JsonObjectSerializer {
     }
   }
 
+  // TODO: Refactor out custom types (adapters?).
+
   public void serializeDate(@NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable Date date) {
     try {
       if (date != null) {
@@ -46,6 +53,26 @@ public final class JsonObjectSerializer {
       }
     } catch (Exception exception) {
       logger.log(SentryLevel.ERROR, "Could not serialize date.", exception);
+    }
+  }
+
+  public void serializeTimeZone(@NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable TimeZone timeZone) {
+    try {
+      if (timeZone != null) {
+        writer.value(timeZone.getID());
+      }
+    } catch (Exception exception) {
+      logger.log(SentryLevel.ERROR, "Could not serialize timeZone.", exception);
+    }
+  }
+
+  public void serializeDeviceOrientation(@NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable Device.DeviceOrientation deviceOrientation) {
+    try {
+      if (deviceOrientation != null) {
+        writer.value(deviceOrientation.toString().toLowerCase(Locale.ROOT));
+      }
+    } catch (Exception exception) {
+      logger.log(SentryLevel.ERROR, "Could not serialize deviceOrientation.", exception);
     }
   }
 
