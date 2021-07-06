@@ -3,6 +3,7 @@ package io.sentry;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +36,16 @@ public final class JsonObjectSerializer {
     } else {
       // TODO: Use reflection to support object serialization.
       writer.value(OBJECT_PLACEHOLDER);
+    }
+  }
+
+  public void serializeDate(@NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable Date date) {
+    try {
+      if (date != null) {
+        writer.value(DateUtils.getTimestamp(date));
+      }
+    } catch (Exception exception) {
+      logger.log(SentryLevel.ERROR, "Could not serialize date.", exception);
     }
   }
 

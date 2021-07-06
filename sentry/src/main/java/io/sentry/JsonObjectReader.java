@@ -4,6 +4,7 @@ import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Date;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +34,13 @@ public final class JsonObjectReader extends JsonReader {
 
   public @Nullable Boolean nextBooleanOrNull() throws IOException {
     return peek() == JsonToken.NULL ? null : nextBoolean();
+  }
+
+  public @Nullable Date nextDateOrNull() throws IOException {
+    if (peek() == JsonToken.NULL) {
+      return  null;
+    }
+    return DateUtils.getDateTime(nextString());
   }
 
   public void nextUnknown(ILogger logger, Map<String, Object> unknown, String name) {
