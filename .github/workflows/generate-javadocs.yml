@@ -1,7 +1,7 @@
 name: "Generate Javadocs"
 on:
   release:
-    types: [published]
+    types: [released]
 
 jobs:
   build-and-deploy-javadocs:

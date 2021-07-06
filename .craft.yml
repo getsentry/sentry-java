@@ -1,9 +1,8 @@
 minVersion: 0.23.1
 changelogPolicy: auto
-artifactProvider:
-  name: none
 targets:
   - name: github
+    excludeNames: /^libsentry.*\.so$/
   - name: registry
     sdks:
       maven:io.sentry:sentry:
@@ -21,3 +20,14 @@ targets:
       maven:io.sentry:sentry-android-okhttp:
       maven:io.sentry:sentry-kotlin-extensions:
       maven:io:sentry:sentry-android-fragment:
+  - name: maven
+    includeNames: /^sentry.*$/
+    gradleCliPath: ./gradlew
+    mavenCliPath: scripts/mvnw
+    mavenSettingsPath: scripts/settings.xml
+    mavenRepoId: ossrh
+    mavenRepoUrl: https://oss.sonatype.org/service/local/staging/deploy/maven2/
+    android:
+      distDirRegex: /^sentry-android-.*$/
+      fileReplaceeRegex: /\d\.\d\.\d(-\w+(\.\d)?)?(-SNAPSHOT)?/
+      fileReplacerStr: release.aar
