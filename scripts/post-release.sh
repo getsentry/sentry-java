@@ -7,6 +7,8 @@ cd $SCRIPT_DIR/..
 OLD_VERSION="${1}"
 NEW_VERSION="${2}"
 
+git checkout main
+
 # Add a new unreleased entry in the changelog
 sed -i "" 's/# Changelog/# Changelog\n\n## Unreleased/' CHANGELOG.md
 
@@ -31,7 +33,11 @@ sed -i "" -e "s/$VERSION_NAME_PATTERN=.*$/$VERSION_NAME_PATTERN=$new_version-SNA
 # After having incremented the version name (see comments above), the new version
 # still has the version code of the version in production. This must be
 # incremented to align with the new version.
-VERSION_CODE_PATTERN="buildVersionCode"
-VERSION_NUMBER="$( awk "/$VERSION_CODE_PATTERN/" $GRADLE_FILEPATH | grep -o '[0-9]\+' )"
-((VERSION_NUMBER++))
-sed -ie "s/$VERSION_CODE_PATTERN=.*$/$VERSION_CODE_PATTERN=$VERSION_NUMBER/g" $GRADLE_FILEPATH
+# VERSION_CODE_PATTERN="buildVersionCode"
+# VERSION_NUMBER="$( awk "/$VERSION_CODE_PATTERN/" $GRADLE_FILEPATH | grep -o '[0-9]\+' )"
+# ((VERSION_NUMBER++))
+# sed -ie "s/$VERSION_CODE_PATTERN=.*$/$VERSION_CODE_PATTERN=$VERSION_NUMBER/g" $GRADLE_FILEPATH
+
+git add .
+git commit -m "Prepare $new_version"
+git push
