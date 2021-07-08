@@ -2,8 +2,12 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
+import io.sentry.SentryLevel;
 import io.sentry.protocol.Request;
 import io.sentry.util.Objects;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -14,6 +18,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.util.StreamUtils;
 
 @Open
 public class SentryRequestResolver {
@@ -34,6 +39,15 @@ public class SentryRequestResolver {
     sentryRequest.setQueryString(httpRequest.getQueryString());
     sentryRequest.setUrl(httpRequest.getRequestURL().toString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));
+
+    if (httpRequest instanceof SentrySpringRequestListener.CachedBodyHttpServletRequest) {
+      try {
+        byte[] body = StreamUtils.copyToByteArray(httpRequest.getInputStream());
+        sentryRequest.setData(new String(body, StandardCharsets.UTF_8));
+      } catch (IOException e) {
+        hub.getOptions().getLogger().log(SentryLevel.ERROR, "Failed to set request body");
+      }
+    }
 
     if (hub.getOptions().isSendDefaultPii()) {
       sentryRequest.setCookies(toString(httpRequest.getHeaders("Cookie")));

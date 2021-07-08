@@ -1,22 +1,11 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.Breadcrumb;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
-import io.sentry.util.Objects;
-
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletRequestEvent;
-import javax.servlet.ServletRequestListener;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.Ordered;
 import org.springframework.util.StreamUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -25,64 +14,48 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-/** Pushes new {@link io.sentry.Scope} on each incoming HTTP request. */
+import javax.servlet.FilterChain;
+import javax.servlet.ReadListener;
+import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+
+import io.sentry.Breadcrumb;
+import io.sentry.IHub;
+
 @Open
-public class SentrySpringRequestListener implements ServletRequestListener, Ordered {
+public class SentrySpringFilter extends OncePerRequestFilter implements Ordered {
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver requestResolver;
 
-  /**
-   * Creates a new instance of {@link SentrySpringRequestListener}. Used in traditional servlet
-   * containers with {@link SentrySpringServletContainerInitializer}.
-   */
-  public SentrySpringRequestListener() {
-    this(HubAdapter.getInstance());
-  }
-
-  /**
-   * Creates a new instance of {@link SentrySpringRequestListener}. Used together with Spring Boot
-   * or with embedded servlet containers.
-   *
-   * @param hub - the hub
-   * @param requestResolver - the request resolver
-   */
-  public SentrySpringRequestListener(
-      final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver are required");
-  }
-
-  SentrySpringRequestListener(final @NotNull IHub hub) {
-    this(hub, new SentryRequestResolver(hub));
+  public SentrySpringFilter(@NotNull IHub hub, @NotNull SentryRequestResolver requestResolver) {
+    this.hub = hub;
+    this.requestResolver = requestResolver;
   }
 
   @Override
-  public void requestDestroyed(ServletRequestEvent sre) {
-    hub.popScope();
-  }
-
-  @Override
-  public void requestInitialized(ServletRequestEvent sre) {
-    hub.pushScope();
-
-    final ServletRequest servletRequest = sre.getServletRequest();
-    if (servletRequest instanceof HttpServletRequest) {
-      final HttpServletRequest request = resolveHttpServletRequest(sre);
+  protected void doFilterInternal(final @NotNull HttpServletRequest servletRequest, final @NotNull HttpServletResponse response, final @NotNull FilterChain filterChain) throws ServletException, IOException {
+    final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
+    try {
+      hub.pushScope();
       hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()));
-
       hub.configureScope(
-          scope -> {
-            scope.setRequest(requestResolver.resolveSentryRequest(request));
-            scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
-          });
+        scope -> {
+          scope.setRequest(requestResolver.resolveSentryRequest(request));
+          scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
+        });
+    } finally {
+      filterChain.doFilter(request, response);
     }
   }
 
-  private HttpServletRequest resolveHttpServletRequest(ServletRequestEvent sre) {
+  private HttpServletRequest resolveHttpServletRequest(HttpServletRequest request) {
     try {
-      return new CachedBodyHttpServletRequest((HttpServletRequest) sre.getServletRequest());
+      return new SentrySpringRequestListener.CachedBodyHttpServletRequest(request);
     } catch (IOException e) {
-      return (HttpServletRequest) sre.getServletRequest();
+      return request;
     }
   }
 
@@ -103,7 +76,7 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
 
     @Override
     public ServletInputStream getInputStream() {
-      return new CachedBodyServletInputStream(this.cachedBody);
+      return new SentrySpringRequestListener.CachedBodyServletInputStream(this.cachedBody);
     }
 
     @Override

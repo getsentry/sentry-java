@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
-@EnableScheduling
+//@EnableScheduling
 public class SentryDemoApplication {
   public static void main(String[] args) {
     SpringApplication.run(SentryDemoApplication.class, args);

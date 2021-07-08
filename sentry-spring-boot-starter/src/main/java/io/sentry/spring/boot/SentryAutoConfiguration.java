@@ -11,6 +11,7 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
+import io.sentry.spring.SentrySpringFilter;
 import io.sentry.spring.SentrySpringRequestListener;
 import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
@@ -179,9 +180,9 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      public @NotNull SentrySpringRequestListener sentrySpringRequestListener(
+      public @NotNull SentrySpringFilter sentrySpringRequestListener(
           final @NotNull IHub sentryHub, final @NotNull SentryRequestResolver requestResolver) {
-        return new SentrySpringRequestListener(sentryHub, requestResolver);
+        return new SentrySpringFilter(sentryHub, requestResolver);
       }
 
       @Bean
