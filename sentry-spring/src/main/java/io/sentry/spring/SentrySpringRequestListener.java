@@ -5,7 +5,6 @@ import io.sentry.Breadcrumb;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.util.Objects;
-import java.io.IOException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
@@ -56,7 +55,7 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
 
     final ServletRequest servletRequest = sre.getServletRequest();
     if (servletRequest instanceof HttpServletRequest) {
-      final HttpServletRequest request = resolveHttpServletRequest(sre);
+      final HttpServletRequest request = (HttpServletRequest) sre.getServletRequest();
       hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()));
 
       hub.configureScope(
@@ -64,14 +63,6 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
             scope.setRequest(requestResolver.resolveSentryRequest(request));
             scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
           });
-    }
-  }
-
-  private HttpServletRequest resolveHttpServletRequest(ServletRequestEvent sre) {
-    try {
-      return new CachedBodyHttpServletRequest((HttpServletRequest) sre.getServletRequest());
-    } catch (IOException e) {
-      return (HttpServletRequest) sre.getServletRequest();
     }
   }
 
