@@ -37,22 +37,27 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final @NotNull HttpServletResponse response,
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
-    final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
-    try {
-      hub.pushScope();
-      hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()));
-      hub.configureScope(
-          scope -> {
-            scope.setRequest(requestResolver.resolveSentryRequest(request));
-            scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
-          });
-    } finally {
-      filterChain.doFilter(request, response);
-      hub.popScope();
+    if (hub.isEnabled()) {
+      final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
+      try {
+        hub.pushScope();
+        hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()));
+        hub.configureScope(
+            scope -> {
+              scope.setRequest(requestResolver.resolveSentryRequest(request));
+              scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
+            });
+      } finally {
+        filterChain.doFilter(request, response);
+        hub.popScope();
+      }
+    } else {
+      filterChain.doFilter(servletRequest, response);
     }
   }
 
-  private HttpServletRequest resolveHttpServletRequest(HttpServletRequest request) {
+  private @NotNull HttpServletRequest resolveHttpServletRequest(
+      final @NotNull HttpServletRequest request) {
     try {
       return new CachedBodyHttpServletRequest(request);
     } catch (IOException e) {

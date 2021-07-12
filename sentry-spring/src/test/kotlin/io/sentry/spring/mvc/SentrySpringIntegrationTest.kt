@@ -58,6 +58,7 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RunWith(SpringRunner::class)
@@ -100,6 +101,19 @@ class SentrySpringIntegrationTest {
                 assertThat(event.user).isNotNull()
                 assertThat(event.user!!.username).isEqualTo("user")
                 assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `attaches request body to SentryEvents`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+        restTemplate.exchange("http://localhost:$port/body", HttpMethod.POST, HttpEntity("""{"body":"content"}"""), Void::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkEvent { event ->
+                assertThat(event.request).isNotNull()
+                assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
             }, anyOrNull())
         }
     }
@@ -295,6 +309,11 @@ class HelloController {
     @GetMapping("/hello")
     fun hello() {
         Sentry.captureMessage("hello")
+    }
+
+    @PostMapping("/body")
+    fun body() {
+        Sentry.captureMessage("body")
     }
 
     @GetMapping("/throws")

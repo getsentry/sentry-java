@@ -37,6 +37,7 @@ class SentrySpringFilterTest {
         fun getSut(request: HttpServletRequest? = null, options: SentryOptions = SentryOptions()): SentrySpringFilter {
             scope = Scope(options)
             whenever(hub.options).thenReturn(options)
+            whenever(hub.isEnabled).thenReturn(true)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
             this.request = request
                     ?: MockHttpServletRequest().apply {

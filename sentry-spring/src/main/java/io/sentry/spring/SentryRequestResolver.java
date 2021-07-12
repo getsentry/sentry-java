@@ -39,9 +39,11 @@ public class SentryRequestResolver {
     sentryRequest.setUrl(httpRequest.getRequestURL().toString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));
 
+    // request body can be read only once from the stream
+    // original request can be replaced with CachedBodyHttpServletRequest in SentrySpringFilter
     if (httpRequest instanceof CachedBodyHttpServletRequest) {
       try {
-        byte[] body = StreamUtils.copyToByteArray(httpRequest.getInputStream());
+        final byte[] body = StreamUtils.copyToByteArray(httpRequest.getInputStream());
         sentryRequest.setData(new String(body, StandardCharsets.UTF_8));
       } catch (IOException e) {
         hub.getOptions().getLogger().log(SentryLevel.ERROR, "Failed to set request body");

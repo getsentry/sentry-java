@@ -5,14 +5,13 @@ import io.sentry.Breadcrumb;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.util.Objects;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.core.Ordered;
-
+import java.io.IOException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.core.Ordered;
 
 /** Pushes new {@link io.sentry.Scope} on each incoming HTTP request. */
 @Open

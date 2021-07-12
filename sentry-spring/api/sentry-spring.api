@@ -42,12 +42,11 @@ public class io/sentry/spring/SentryRequestResolver {
 	public fun resolveSentryRequest (Ljavax/servlet/http/HttpServletRequest;)Lio/sentry/protocol/Request;
 }
 
-public class io/sentry/spring/SentrySpringFilter : org/springframework/web/filter/OncePerRequestFilter, org/springframework/core/Ordered {
+public class io/sentry/spring/SentrySpringFilter : org/springframework/web/filter/OncePerRequestFilter {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;)V
 	protected fun doFilterInternal (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljavax/servlet/FilterChain;)V
-	public fun getOrder ()I
 }
 
 public class io/sentry/spring/SentrySpringRequestListener : javax/servlet/ServletRequestListener, org/springframework/core/Ordered {
