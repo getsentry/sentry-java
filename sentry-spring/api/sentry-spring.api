@@ -6,6 +6,7 @@ public final class io/sentry/spring/BuildConfig {
 public abstract interface annotation class io/sentry/spring/EnableSentry : java/lang/annotation/Annotation {
 	public abstract fun dsn ()Ljava/lang/String;
 	public abstract fun exceptionResolverOrder ()I
+	public abstract fun maxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public abstract fun sendDefaultPii ()Z
 }
 

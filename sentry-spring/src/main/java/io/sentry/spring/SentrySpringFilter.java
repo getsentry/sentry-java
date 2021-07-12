@@ -1,9 +1,14 @@
 package io.sentry.spring;
 
+import static io.sentry.SentryOptions.RequestSize.*;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.SentryOptions.RequestSize;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import javax.servlet.FilterChain;
@@ -11,6 +16,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.http.MediaType;
+import org.springframework.util.MimeType;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Open
@@ -38,7 +45,8 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
     if (hub.isEnabled()) {
-      final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
+      final HttpServletRequest request =
+          resolveHttpServletRequest(servletRequest, hub.getOptions());
       try {
         hub.pushScope();
         hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()));
@@ -47,6 +55,10 @@ public class SentrySpringFilter extends OncePerRequestFilter {
               scope.setRequest(requestResolver.resolveSentryRequest(request));
               scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
             });
+      } catch (Exception e) {
+        hub.getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to set scope for HTTP request", e);
       } finally {
         filterChain.doFilter(request, response);
         hub.popScope();
@@ -57,11 +69,26 @@ public class SentrySpringFilter extends OncePerRequestFilter {
   }
 
   private @NotNull HttpServletRequest resolveHttpServletRequest(
-      final @NotNull HttpServletRequest request) {
-    try {
-      return new CachedBodyHttpServletRequest(request);
-    } catch (IOException e) {
-      return request;
+      final @NotNull HttpServletRequest request, final @NotNull SentryOptions options) {
+    final RequestSize maxRequestBodySize = options.getMaxRequestBodySize();
+    final int contentLength = request.getContentLength();
+
+    if (maxRequestBodySize != RequestSize.NONE
+        && request.getContentLength() != -1
+        && request.getContentType() != null
+        && MimeType.valueOf(request.getContentType())
+            .isCompatibleWith(MediaType.APPLICATION_JSON)) {
+
+      if ((maxRequestBodySize == SMALL && contentLength < 1000)
+          || (maxRequestBodySize == MEDIUM && contentLength < 10000)
+          || maxRequestBodySize == ALWAYS) {
+        try {
+          return new CachedBodyHttpServletRequest(request);
+        } catch (IOException e) {
+          return request;
+        }
+      }
     }
+    return request;
   }
 }

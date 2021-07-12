@@ -1,5 +1,6 @@
 package io.sentry.spring;
 
+import io.sentry.SentryOptions;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -42,4 +43,6 @@ public @interface EnableSentry {
    * @return the order to use for {@link SentryExceptionResolver}
    */
   int exceptionResolverOrder() default 1;
+
+  SentryOptions.RequestSize maxRequestBodySize() default SentryOptions.RequestSize.NONE;
 }

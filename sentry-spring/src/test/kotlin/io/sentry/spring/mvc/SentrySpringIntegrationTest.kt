@@ -44,6 +44,7 @@ import org.springframework.core.Ordered
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
@@ -108,7 +109,11 @@ class SentrySpringIntegrationTest {
     @Test
     fun `attaches request body to SentryEvents`() {
         val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
-        restTemplate.exchange("http://localhost:$port/body", HttpMethod.POST, HttpEntity("""{"body":"content"}"""), Void::class.java)
+        val headers = HttpHeaders().apply {
+            this.contentType = MediaType.APPLICATION_JSON
+        }
+        val httpEntity = HttpEntity("""{"body":"content"}""", headers)
+        restTemplate.exchange("http://localhost:$port/body", HttpMethod.POST, httpEntity, Void::class.java)
 
         await.untilAsserted {
             verify(transport).send(checkEvent { event ->
@@ -235,7 +240,7 @@ class SentrySpringIntegrationTest {
 }
 
 @SpringBootApplication
-@EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true)
+@EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true, maxRequestBodySize = SentryOptions.RequestSize.MEDIUM)
 @Import(SentryTracingConfiguration::class)
 open class App {
 

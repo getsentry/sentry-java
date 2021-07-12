@@ -1,6 +1,7 @@
 package io.sentry.spring
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -10,6 +11,10 @@ import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
+import io.sentry.SentryOptions.RequestSize.ALWAYS
+import io.sentry.SentryOptions.RequestSize.MEDIUM
+import io.sentry.SentryOptions.RequestSize.NONE
+import io.sentry.SentryOptions.RequestSize.SMALL
 import java.net.URI
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
@@ -63,7 +68,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).addBreadcrumb(com.nhaarman.mockitokotlin2.check { it: Breadcrumb ->
+        verify(fixture.hub).addBreadcrumb(check { it: Breadcrumb ->
             Assertions.assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
             Assertions.assertThat(it.getData("method")).isEqualTo("POST")
             Assertions.assertThat(it.type).isEqualTo("http")
@@ -177,6 +182,45 @@ class SentrySpringFilterTest {
                 assertFalse(it.containsKey("authorization"))
                 assertFalse(it.containsKey("Cookie"))
                 assertTrue(it.containsKey("some-header"))
+            }
+        }
+    }
+
+    @Test
+    fun `caches request depending on the maxRequestBodySize value and request body length`() {
+        data class TestParams(val maxRequestBodySize: SentryOptions.RequestSize, val body: String, val contentType: String = "application/json", val expectedToBeCached: Boolean)
+
+        val params = listOf(
+            TestParams(maxRequestBodySize = NONE, body = "xxx", expectedToBeCached = false),
+            TestParams(maxRequestBodySize = SMALL, body = "xxx", expectedToBeCached = true),
+            TestParams(maxRequestBodySize = SMALL, body = "xxx", contentType = "application/octet-stream", expectedToBeCached = false),
+            TestParams(maxRequestBodySize = SMALL, body = "x".repeat(1001), expectedToBeCached = false),
+            TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(1001), expectedToBeCached = true),
+            TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(10001), expectedToBeCached = false),
+            TestParams(maxRequestBodySize = ALWAYS, body = "x".repeat(10001), expectedToBeCached = true)
+        )
+
+        params.forEach { param ->
+            try {
+                val fixture = Fixture()
+                val sentryOptions = SentryOptions().apply {
+                    maxRequestBodySize = param.maxRequestBodySize
+                }
+
+                val listener = fixture.getSut(request = MockMvcRequestBuilders
+                    .post(URI.create("http://example.com?param1=xyz"))
+                    .content(param.body)
+                    .contentType(param.contentType)
+                    .buildRequest(MockServletContext()), options = sentryOptions)
+
+                listener.doFilter(fixture.request, fixture.response, fixture.chain)
+
+                verify(fixture.chain).doFilter(check {
+                    assertEquals(param.expectedToBeCached, it is CachedBodyHttpServletRequest)
+                }, any())
+            } catch (e: AssertionError) {
+                System.err.println("Failed to run test with params: $param")
+                throw e
             }
         }
     }

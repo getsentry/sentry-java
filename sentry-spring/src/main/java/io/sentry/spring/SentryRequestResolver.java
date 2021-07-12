@@ -2,11 +2,8 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
-import io.sentry.SentryLevel;
 import io.sentry.protocol.Request;
 import io.sentry.util.Objects;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -17,7 +14,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.util.StreamUtils;
 
 @Open
 public class SentryRequestResolver {
@@ -25,9 +21,11 @@ public class SentryRequestResolver {
       Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
 
   private final @NotNull IHub hub;
+  private final @NotNull RequestPayloadExtractor requestPayloadExtractor;
 
   public SentryRequestResolver(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "options is required");
+    this.requestPayloadExtractor = new RequestPayloadExtractor();
   }
 
   // httpRequest.getRequestURL() returns StringBuffer which is considered an obsolete class.
@@ -38,17 +36,7 @@ public class SentryRequestResolver {
     sentryRequest.setQueryString(httpRequest.getQueryString());
     sentryRequest.setUrl(httpRequest.getRequestURL().toString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));
-
-    // request body can be read only once from the stream
-    // original request can be replaced with CachedBodyHttpServletRequest in SentrySpringFilter
-    if (httpRequest instanceof CachedBodyHttpServletRequest) {
-      try {
-        final byte[] body = StreamUtils.copyToByteArray(httpRequest.getInputStream());
-        sentryRequest.setData(new String(body, StandardCharsets.UTF_8));
-      } catch (IOException e) {
-        hub.getOptions().getLogger().log(SentryLevel.ERROR, "Failed to set request body", e);
-      }
-    }
+    sentryRequest.setData(requestPayloadExtractor.extract(httpRequest, hub.getOptions()));
 
     if (hub.getOptions().isSendDefaultPii()) {
       sentryRequest.setCookies(toString(httpRequest.getHeaders("Cookie")));
