@@ -5,7 +5,6 @@ import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.Request;
 import io.sentry.util.Objects;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -40,7 +39,7 @@ public class SentryRequestResolver {
     sentryRequest.setUrl(httpRequest.getRequestURL().toString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));
 
-    if (httpRequest instanceof SentrySpringRequestListener.CachedBodyHttpServletRequest) {
+    if (httpRequest instanceof CachedBodyHttpServletRequest) {
       try {
         byte[] body = StreamUtils.copyToByteArray(httpRequest.getInputStream());
         sentryRequest.setData(new String(body, StandardCharsets.UTF_8));

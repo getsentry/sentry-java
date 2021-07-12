@@ -5,7 +5,12 @@ import io.sentry.Breadcrumb;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.util.Objects;
-
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
@@ -13,20 +18,13 @@ import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
-
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.Ordered;
 import org.springframework.util.StreamUtils;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-
 /** Pushes new {@link io.sentry.Scope} on each incoming HTTP request. */
 @Open
+@Deprecated
 public class SentrySpringRequestListener implements ServletRequestListener, Ordered {
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver requestResolver;
@@ -111,7 +109,8 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
       // Create a reader from cachedContent
       // and return it
       ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(this.cachedBody);
-      return new BufferedReader(new InputStreamReader(byteArrayInputStream, StandardCharsets.UTF_8));
+      return new BufferedReader(
+          new InputStreamReader(byteArrayInputStream, StandardCharsets.UTF_8));
     }
   }
 

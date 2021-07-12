@@ -14,7 +14,7 @@ import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.spring.EnableSentry
 import io.sentry.spring.SentryExceptionResolver
-import io.sentry.spring.SentrySpringRequestListener
+import io.sentry.spring.SentrySpringFilter
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.tracing.SentryTracingConfiguration
@@ -238,7 +238,10 @@ open class App {
     open fun mockTransport() = transport
 
     @Bean
-    open fun sentrySpringRequestListener() = SentrySpringRequestListener()
+    open fun sentrySpringFilter(hub: IHub) = FilterRegistrationBean<SentrySpringFilter>().apply {
+        this.filter = SentrySpringFilter(hub)
+        this.order = Ordered.HIGHEST_PRECEDENCE
+    }
 
     @Bean
     open fun tracesSamplerCallback() = SentryOptions.TracesSamplerCallback {
@@ -254,7 +257,7 @@ open class App {
     @Bean
     open fun sentryTracingFilter(hub: IHub) = FilterRegistrationBean<SentryTracingFilter>().apply {
         this.filter = SentryTracingFilter(hub)
-        this.order = Ordered.HIGHEST_PRECEDENCE
+        this.order = Ordered.HIGHEST_PRECEDENCE + 1
     }
 }
 

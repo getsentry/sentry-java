@@ -12,7 +12,6 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
 import io.sentry.spring.SentrySpringFilter;
-import io.sentry.spring.SentrySpringRequestListener;
 import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
