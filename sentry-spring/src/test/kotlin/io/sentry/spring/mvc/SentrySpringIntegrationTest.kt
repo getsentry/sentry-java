@@ -252,12 +252,6 @@ open class App {
     open fun mockTransport() = transport
 
     @Bean
-    open fun sentrySpringFilter(hub: IHub) = FilterRegistrationBean<SentrySpringFilter>().apply {
-        this.filter = SentrySpringFilter(hub)
-        this.order = Ordered.HIGHEST_PRECEDENCE
-    }
-
-    @Bean
     open fun tracesSamplerCallback() = SentryOptions.TracesSamplerCallback {
         1.0
     }
@@ -269,9 +263,15 @@ open class App {
     }
 
     @Bean
+    open fun sentrySpringFilter(hub: IHub) = FilterRegistrationBean<SentrySpringFilter>().apply {
+        this.filter = SentrySpringFilter(hub)
+        this.order = Ordered.HIGHEST_PRECEDENCE
+    }
+
+    @Bean
     open fun sentryTracingFilter(hub: IHub) = FilterRegistrationBean<SentryTracingFilter>().apply {
         this.filter = SentryTracingFilter(hub)
-        this.order = Ordered.HIGHEST_PRECEDENCE + 1
+        this.order = Ordered.HIGHEST_PRECEDENCE + 1 // must run after SentrySpringFilter
     }
 }
 

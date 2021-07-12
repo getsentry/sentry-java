@@ -46,7 +46,7 @@ public class SentryRequestResolver {
         final byte[] body = StreamUtils.copyToByteArray(httpRequest.getInputStream());
         sentryRequest.setData(new String(body, StandardCharsets.UTF_8));
       } catch (IOException e) {
-        hub.getOptions().getLogger().log(SentryLevel.ERROR, "Failed to set request body");
+        hub.getOptions().getLogger().log(SentryLevel.ERROR, "Failed to set request body", e);
       }
     }
 
