@@ -8,6 +8,7 @@ OLD_VERSION="${1}"
 NEW_VERSION="${2}"
 
 git checkout main
+GRADLE_FILEPATH="gradle.properties"
 
 # Add a new unreleased entry in the changelog
 sed -i "" 's/# Changelog/# Changelog\n\n## Unreleased/' CHANGELOG.md
