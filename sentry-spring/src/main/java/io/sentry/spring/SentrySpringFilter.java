@@ -7,7 +7,6 @@ import io.sentry.Breadcrumb;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.RequestSize;
 import io.sentry.util.Objects;
 import java.io.IOException;
@@ -45,8 +44,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
     if (hub.isEnabled()) {
-      final HttpServletRequest request =
-          resolveHttpServletRequest(servletRequest, hub.getOptions());
+      final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
       try {
         hub.pushScope();
         hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()));
@@ -69,26 +67,34 @@ public class SentrySpringFilter extends OncePerRequestFilter {
   }
 
   private @NotNull HttpServletRequest resolveHttpServletRequest(
-      final @NotNull HttpServletRequest request, final @NotNull SentryOptions options) {
-    final RequestSize maxRequestBodySize = options.getMaxRequestBodySize();
-    final int contentLength = request.getContentLength();
-
-    if (maxRequestBodySize != RequestSize.NONE
-        && request.getContentLength() != -1
-        && request.getContentType() != null
-        && MimeType.valueOf(request.getContentType())
-            .isCompatibleWith(MediaType.APPLICATION_JSON)) {
-
-      if ((maxRequestBodySize == SMALL && contentLength < 1000)
-          || (maxRequestBodySize == MEDIUM && contentLength < 10000)
-          || maxRequestBodySize == ALWAYS) {
-        try {
-          return new CachedBodyHttpServletRequest(request);
-        } catch (IOException e) {
-          return request;
-        }
+      final @NotNull HttpServletRequest request) {
+    if (qualifiesForCaching(request, hub.getOptions().getMaxRequestBodySize())) {
+      try {
+        return new CachedBodyHttpServletRequest(request);
+      } catch (IOException e) {
+        hub.getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Failed to cache HTTP request body. Request body will not be attached to Sentry events.",
+                e);
+        return request;
       }
     }
     return request;
+  }
+
+  private boolean qualifiesForCaching(
+      final @NotNull HttpServletRequest request, final @NotNull RequestSize maxRequestBodySize) {
+    final int contentLength = request.getContentLength();
+    final String contentType = request.getContentType();
+
+    return maxRequestBodySize != RequestSize.NONE
+        && contentLength != -1
+        && contentType != null
+        && MimeType.valueOf(contentType).isCompatibleWith(MediaType.APPLICATION_JSON)
+        && ((maxRequestBodySize == SMALL && contentLength < 1000)
+            || (maxRequestBodySize == MEDIUM && contentLength < 10000)
+            || maxRequestBodySize == ALWAYS);
   }
 }
