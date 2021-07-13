@@ -179,16 +179,13 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      public @NotNull SentrySpringFilter sentrySpringRequestListener(
-          final @NotNull IHub sentryHub, final @NotNull SentryRequestResolver requestResolver) {
-        return new SentrySpringFilter(sentryHub, requestResolver);
-      }
-
-      @Bean
-      @ConditionalOnMissingBean
-      public @NotNull SentryExceptionResolver sentryExceptionResolver(
-          final @NotNull IHub sentryHub, final @NotNull SentryProperties options) {
-        return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
+      @ConditionalOnMissingBean(name = "sentrySpringFilter")
+      public @NotNull FilterRegistrationBean<SentrySpringFilter> sentrySpringFilter(
+          final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
+        FilterRegistrationBean<SentrySpringFilter> filter =
+            new FilterRegistrationBean<>(new SentrySpringFilter(hub, requestResolver));
+        filter.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return filter;
       }
 
       @Bean
@@ -198,8 +195,15 @@ public class SentryAutoConfiguration {
           final @NotNull IHub hub) {
         FilterRegistrationBean<SentryTracingFilter> filter =
             new FilterRegistrationBean<>(new SentryTracingFilter(hub));
-        filter.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        filter.setOrder(Ordered.HIGHEST_PRECEDENCE + 1); // must run after SentrySpringFilter
         return filter;
+      }
+
+      @Bean
+      @ConditionalOnMissingBean
+      public @NotNull SentryExceptionResolver sentryExceptionResolver(
+          final @NotNull IHub sentryHub, final @NotNull SentryProperties options) {
+        return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
       }
     }
 
