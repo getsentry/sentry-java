@@ -4,7 +4,7 @@ targets:
   - name: symbol-collector
     includeNames: /libsentry(-android)?\.so/
     batchType: android
-    bundleIdPrefix: android-ndk-
+    bundleIdPrefix: sentry-android-ndk-
   - name: maven
     includeNames: /^sentry.*$/
     gradleCliPath: ./gradlew
