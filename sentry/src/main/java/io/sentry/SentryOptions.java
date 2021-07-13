@@ -273,6 +273,10 @@ public class SentryOptions {
   /** Registers hook that flushes {@link Hub} when main thread shuts down. */
   private boolean enableShutdownHook = true;
 
+  /**
+   * Controls the size of the request body to extract if any. No truncation is done by the SDK. If
+   * the request body is larger than the accepted size, nothing is sent.
+   */
   private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
 
   /**

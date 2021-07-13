@@ -44,5 +44,9 @@ public @interface EnableSentry {
    */
   int exceptionResolverOrder() default 1;
 
+  /**
+   * Controls the size of the request body to extract if any. No truncation is done by the SDK. If
+   * the request body is larger than the accepted size, nothing is sent.
+   */
   SentryOptions.RequestSize maxRequestBodySize() default SentryOptions.RequestSize.NONE;
 }
