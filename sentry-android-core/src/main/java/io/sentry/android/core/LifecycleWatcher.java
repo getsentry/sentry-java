@@ -136,6 +136,27 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     hub.addBreadcrumb(breadcrumb);
   }
 
+  // Override all abstract methods to pass Lifecycle issue
+  @Override
+  public void onCreate(final @NotNull LifecycleOwner owner) {
+
+  }
+
+  @Override
+  public void onResume(final @NotNull LifecycleOwner owner) {
+
+  }
+
+  @Override
+  public void onPause(final @NotNull LifecycleOwner owner) {
+
+  }
+
+  @Override
+  public void onDestroy(final @NotNull LifecycleOwner owner) {
+
+  }
+
   @TestOnly
   @NotNull
   AtomicBoolean isRunningSession() {
