@@ -124,7 +124,7 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryWebMvcConfiguration {
 
-      private static int SENTRY_SPRING_FILTER_PRECEDENCE = Ordered.HIGHEST_PRECEDENCE;
+      private static final int SENTRY_SPRING_FILTER_PRECEDENCE = Ordered.HIGHEST_PRECEDENCE;
 
       @Configuration(proxyBeanMethods = false)
       @ConditionalOnClass(SecurityContextHolder.class)
