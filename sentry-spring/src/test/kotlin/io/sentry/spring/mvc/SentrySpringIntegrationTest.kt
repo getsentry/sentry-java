@@ -1,4 +1,4 @@
-package io.sentry.spring
+package io.sentry.spring.mvc
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
@@ -12,6 +12,11 @@ import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
+import io.sentry.spring.EnableSentry
+import io.sentry.spring.SentryExceptionResolver
+import io.sentry.spring.SentrySpringRequestListener
+import io.sentry.spring.SentryUserFilter
+import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.tracing.SentryTracingConfiguration
 import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.spring.tracing.SentryTransaction
@@ -72,7 +77,7 @@ class SentrySpringIntegrationTest {
     lateinit var hub: IHub
 
     @LocalServerPort
-    lateinit var port: Integer
+    var port: Int? = null
 
     @Before
     fun `reset mocks`() {
@@ -129,6 +134,7 @@ class SentrySpringIntegrationTest {
                 assertThat(ex.value).isEqualTo("something went wrong")
                 assertThat(ex.mechanism).isNotNull()
                 assertThat(ex.mechanism!!.isHandled).isFalse()
+                assertThat(ex.mechanism!!.type).isEqualTo(SentryExceptionResolver.MECHANISM_TYPE)
             }, anyOrNull())
         }
     }

@@ -130,8 +130,8 @@ class SentryOkHttpInterceptorTest {
         sut.newCall(postRequest()).execute()
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
-            assertEquals(13L, it.data["responseBodySize"])
-            assertEquals(12L, it.data["requestBodySize"])
+            assertEquals(13L, it.data["response_body_size"])
+            assertEquals(12L, it.data["request_body_size"])
         })
     }
 
@@ -185,17 +185,16 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `customizer receives request and response`() {
-        var request: Request? = null
         val sut = fixture.getSut(beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
-            override fun execute(span: ISpan, req: Request, res: Response?): ISpan {
-            assertEquals(request!!.url, req.url)
-            assertEquals(request!!.method, req.method)
-            assertNotNull(res) {
+            override fun execute(span: ISpan, request: Request, response: Response?): ISpan {
+            assertEquals(request.url, request.url)
+            assertEquals(request.method, request.method)
+            assertNotNull(response) {
                 assertEquals(201, it.code)
             }
             return span
         } })
-        request = getRequest()
+        val request = getRequest()
         sut.newCall(request).execute()
     }
 

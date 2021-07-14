@@ -1,9 +1,23 @@
-minVersion: 0.23.1
+minVersion: 0.24.4
 changelogPolicy: auto
-artifactProvider:
-  name: none
 targets:
+  - name: symbol-collector
+    includeNames: /libsentry(-android)?\.so/
+    batchType: android
+    bundleIdPrefix: sentry-android-ndk-
+  - name: maven
+    includeNames: /^sentry.*$/
+    gradleCliPath: ./gradlew
+    mavenCliPath: scripts/mvnw
+    mavenSettingsPath: scripts/settings.xml
+    mavenRepoId: ossrh
+    mavenRepoUrl: https://oss.sonatype.org/service/local/staging/deploy/maven2/
+    android:
+      distDirRegex: /^sentry-android-.*$/
+      fileReplaceeRegex: /\d\.\d\.\d(-\w+(\.\d)?)?(-SNAPSHOT)?/
+      fileReplacerStr: release.aar
   - name: github
+    excludeNames: /^libsentry.*\.so$/
   - name: registry
     sdks:
       maven:io.sentry:sentry:

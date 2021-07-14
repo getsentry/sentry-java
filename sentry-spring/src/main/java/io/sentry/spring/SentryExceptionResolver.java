@@ -23,6 +23,8 @@ import org.springframework.web.servlet.ModelAndView;
  */
 @Open
 public class SentryExceptionResolver implements HandlerExceptionResolver, Ordered {
+  public static final String MECHANISM_TYPE = "HandlerExceptionResolver";
+
   private final @NotNull IHub hub;
   private final @NotNull TransactionNameProvider transactionNameProvider =
       new TransactionNameProvider();
@@ -42,6 +44,7 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
 
     final Mechanism mechanism = new Mechanism();
     mechanism.setHandled(false);
+    mechanism.setType(MECHANISM_TYPE);
     final Throwable throwable =
         new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
     final SentryEvent event = new SentryEvent(throwable);

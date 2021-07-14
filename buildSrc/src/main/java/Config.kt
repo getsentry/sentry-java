@@ -10,7 +10,7 @@ object Config {
     val springKotlinCompatibleLanguageVersion = "1.3"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:4.2.1"
+        val androidGradle = "com.android.tools.build:gradle:4.2.2"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.0"
@@ -18,7 +18,7 @@ object Config {
         val springDependencyManagement = "io.spring.dependency-management"
         val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
-        val grettyVersion = "3.0.4"
+        val grettyVersion = "3.0.5"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.15.1"
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
 
@@ -65,10 +65,12 @@ object Config {
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
         val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+        val springBootStarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
         val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
+        val springWebflux = "org.springframework:spring-webflux"
         val springSecurityWeb = "org.springframework.security:spring-security-web"
         val springSecurityConfig = "org.springframework.security:spring-security-config"
         val springAop = "org.springframework:spring-aop"
@@ -85,6 +87,8 @@ object Config {
         val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
 
         val fragment = "androidx.fragment:fragment-ktx:1.3.4"
+
+        val reactorCore = "io.projectreactor:reactor-core:3.4.6"
     }
 
     object AnnotationProcessors {

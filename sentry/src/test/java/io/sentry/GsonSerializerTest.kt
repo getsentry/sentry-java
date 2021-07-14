@@ -13,6 +13,7 @@ import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.Device
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import java.io.BufferedWriter
 import java.io.ByteArrayInputStream
@@ -61,16 +62,8 @@ class GsonSerializerTest {
         fixture = Fixture()
     }
 
-    private fun serializeToString(ev: SentryEvent): String {
-        return this.serializeToString { wrt -> fixture.serializer.serialize(ev, wrt) }
-    }
-
-    private fun serializeToString(session: Session): String {
-        return this.serializeToString { wrt -> fixture.serializer.serialize(session, wrt) }
-    }
-
-    private fun serializeToString(userFeedback: UserFeedback): String {
-        return this.serializeToString { wrt -> fixture.serializer.serialize(userFeedback, wrt) }
+    private fun <T> serializeToString(ev: T): String {
+        return this.serializeToString { wrt -> fixture.serializer.serialize(ev!!, wrt) }
     }
 
     private fun serializeToString(serialize: (StringWriter) -> Unit): String {
@@ -523,6 +516,9 @@ class GsonSerializerTest {
                               "status": "aborted",
                               "tags": {
                                 "name": "value"
+                              },
+                              "data": {
+                                "key": "value"
                               }
                             }
                           ]
@@ -547,6 +543,9 @@ class GsonSerializerTest {
         val span = transaction.spans[0]
         assertNotNull(span.startTimestamp)
         assertNotNull(span.timestamp)
+        assertNotNull(span.data) {
+            assertEquals("value", it["key"])
+        }
         assertEquals("2b099185293344a5bfdd7ad89ebf9416", span.traceId.toString())
         assertEquals("5b95c29a5ded4281", span.spanId.toString())
         assertEquals("a3b2d1d58b344b07", span.parentSpanId.toString())
@@ -554,6 +553,18 @@ class GsonSerializerTest {
         assertEquals(SpanStatus.ABORTED, span.status)
         assertEquals("desc", span.description)
         assertEquals(mapOf("name" to "value"), span.tags)
+    }
+
+    @Test
+    fun `serializes span data`() {
+        val sentrySpan = SentrySpan(createSpan() as Span, mapOf("data1" to "value1"))
+
+        val element = JsonParser().parse(serializeToString(sentrySpan)).asJsonObject
+        assertNotNull(element["data"]) {
+            assertNotNull(it.asJsonObject["data1"]) {
+                assertEquals("value1", it.asString)
+            }
+        }
     }
 
     @Test
@@ -695,5 +706,18 @@ class GsonSerializerTest {
             email = "john@me.com"
             comments = "comment"
         }
+    }
+
+    private fun createSpan(): ISpan {
+        val trace = TransactionContext("transaction-name", "http").apply {
+            description = "some request"
+            status = SpanStatus.OK
+            setTag("myTag", "myValue")
+        }
+        val tracer = SentryTracer(trace, fixture.hub)
+        val span = tracer.startChild("child")
+        span.finish(SpanStatus.OK)
+        tracer.finish()
+        return span
     }
 }

@@ -42,3 +42,10 @@ public class io/sentry/spring/boot/SentryProperties$Logging {
 	public fun setMinimumEventLevel (Lorg/slf4j/event/Level;)V
 }
 
+public class io/sentry/spring/boot/SentryWebfluxAutoConfiguration {
+	public fun <init> ()V
+	public fun sentryScheduleHookApplicationRunner ()Lorg/springframework/boot/ApplicationRunner;
+	public fun sentryWebExceptionHandler (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebExceptionHandler;
+	public fun sentryWebFilter (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebFilter;
+}
+
