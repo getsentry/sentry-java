@@ -57,9 +57,6 @@ class SentryOkHttpInterceptor(
             response?.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("response_body_size", it)
             }
-            if (code != null) {
-                breadcrumb.setData("status_code", code)
-            }
             hub.addBreadcrumb(breadcrumb)
         }
     }
