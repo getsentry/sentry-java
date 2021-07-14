@@ -132,6 +132,7 @@ class SentryOkHttpInterceptorTest {
             assertEquals("http", it.type)
             assertEquals(13L, it.data["response_body_size"])
             assertEquals(12L, it.data["request_body_size"])
+            assertEquals(201L, it.data["status_code"])
         })
     }
 
