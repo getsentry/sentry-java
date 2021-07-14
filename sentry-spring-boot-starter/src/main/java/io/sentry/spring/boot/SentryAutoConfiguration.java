@@ -124,10 +124,13 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryWebMvcConfiguration {
 
+      private static int SENTRY_SPRING_FILTER_PRECEDENCE = Ordered.HIGHEST_PRECEDENCE;
+
       @Configuration(proxyBeanMethods = false)
       @ConditionalOnClass(SecurityContextHolder.class)
       @Open
       static class SentrySecurityConfiguration {
+
         /**
          * Configures {@link SpringSecuritySentryUserProvider} only if Spring Security is on the
          * classpath. Its order is set to be higher than {@link
@@ -184,7 +187,7 @@ public class SentryAutoConfiguration {
           final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
         FilterRegistrationBean<SentrySpringFilter> filter =
             new FilterRegistrationBean<>(new SentrySpringFilter(hub, requestResolver));
-        filter.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE);
         return filter;
       }
 
@@ -195,7 +198,7 @@ public class SentryAutoConfiguration {
           final @NotNull IHub hub) {
         FilterRegistrationBean<SentryTracingFilter> filter =
             new FilterRegistrationBean<>(new SentryTracingFilter(hub));
-        filter.setOrder(Ordered.HIGHEST_PRECEDENCE + 1); // must run after SentrySpringFilter
+        filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE + 1); // must run after SentrySpringFilter
         return filter;
       }
 
