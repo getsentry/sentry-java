@@ -1,10 +1,10 @@
-minVersion: 0.25.0
+minVersion: 0.24.4
 changelogPolicy: auto
 targets:
   - name: symbol-collector
     includeNames: /libsentry(-android)?\.so/
     batchType: android
-    bundleIdPrefix: android-ndk-
+    bundleIdPrefix: sentry-android-ndk-
   - name: maven
     includeNames: /^sentry.*$/
     gradleCliPath: ./gradlew
