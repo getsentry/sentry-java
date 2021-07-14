@@ -21,11 +21,9 @@ public class SentryRequestResolver {
       Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
 
   private final @NotNull IHub hub;
-  private final @NotNull RequestPayloadExtractor requestPayloadExtractor;
 
   public SentryRequestResolver(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "options is required");
-    this.requestPayloadExtractor = new RequestPayloadExtractor();
   }
 
   // httpRequest.getRequestURL() returns StringBuffer which is considered an obsolete class.
@@ -36,7 +34,6 @@ public class SentryRequestResolver {
     sentryRequest.setQueryString(httpRequest.getQueryString());
     sentryRequest.setUrl(httpRequest.getRequestURL().toString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));
-    sentryRequest.setData(requestPayloadExtractor.extract(httpRequest, hub.getOptions()));
 
     if (hub.getOptions().isSendDefaultPii()) {
       sentryRequest.setCookies(toString(httpRequest.getHeaders("Cookie")));
