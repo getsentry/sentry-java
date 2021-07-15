@@ -90,7 +90,7 @@ subprojects {
         }
 
         afterEvaluate {
-//            apply<MavenPublishPlugin>()
+            apply<MavenPublishPlugin>()
 
             configure<MavenPublishPluginExtension> {
                 // signing is done when uploading files to MC
