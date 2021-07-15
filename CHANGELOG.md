@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Do not throw IAE when tracing header contain invalid trace id (#1605)
+
 ## 5.1.0-beta.4
 
 * Update sentry-native to 0.4.11 (#1591)
