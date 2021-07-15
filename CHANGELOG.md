@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Make SentryAppender non-final for Log4j2 and Logback (#1602) 
+
 ## 5.1.0-beta.4
 
 * Update sentry-native to 0.4.11 (#1591)
