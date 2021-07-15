@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import android.os.SystemClock;
 import java.util.Date;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
