@@ -84,7 +84,8 @@ public class SentrySpringFilter extends OncePerRequestFilter {
 
   private @NotNull HttpServletRequest resolveHttpServletRequest(
       final @NotNull HttpServletRequest request) {
-    if (qualifiesForCaching(request, hub.getOptions().getMaxRequestBodySize())) {
+    if (hub.getOptions().isSendDefaultPii()
+        && qualifiesForCaching(request, hub.getOptions().getMaxRequestBodySize())) {
       try {
         return new CachedBodyHttpServletRequest(request);
       } catch (IOException e) {

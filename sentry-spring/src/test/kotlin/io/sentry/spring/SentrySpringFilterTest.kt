@@ -188,10 +188,11 @@ class SentrySpringFilterTest {
 
     @Test
     fun `caches request depending on the maxRequestBodySize value and request body length`() {
-        data class TestParams(val maxRequestBodySize: SentryOptions.RequestSize, val body: String, val contentType: String = "application/json", val expectedToBeCached: Boolean)
+        data class TestParams(val sendDefaultPii: Boolean = true, val maxRequestBodySize: SentryOptions.RequestSize, val body: String, val contentType: String = "application/json", val expectedToBeCached: Boolean)
 
         val params = listOf(
             TestParams(maxRequestBodySize = NONE, body = "xxx", expectedToBeCached = false),
+            TestParams(maxRequestBodySize = SMALL, body = "xxx", expectedToBeCached = false, sendDefaultPii = false),
             TestParams(maxRequestBodySize = SMALL, body = "xxx", expectedToBeCached = true),
             TestParams(maxRequestBodySize = SMALL, body = "xxx", contentType = "application/octet-stream", expectedToBeCached = false),
             TestParams(maxRequestBodySize = SMALL, body = "x".repeat(1001), expectedToBeCached = false),
@@ -205,6 +206,7 @@ class SentrySpringFilterTest {
                 val fixture = Fixture()
                 val sentryOptions = SentryOptions().apply {
                     maxRequestBodySize = param.maxRequestBodySize
+                    isSendDefaultPii = param.sendDefaultPii
                 }
 
                 val listener = fixture.getSut(request = MockMvcRequestBuilders
