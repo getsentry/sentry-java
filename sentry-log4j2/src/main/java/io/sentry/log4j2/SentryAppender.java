@@ -1,5 +1,6 @@
 package io.sentry.log4j2;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.HubAdapter;
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** Appender for Log4j2 in charge of sending the logged events to a Sentry server. */
 @Plugin(name = "Sentry", category = "Core", elementType = "appender", printObject = true)
+@Open
 public class SentryAppender extends AbstractAppender {
   private final @Nullable String dsn;
   private final @Nullable ITransportFactory transportFactory;

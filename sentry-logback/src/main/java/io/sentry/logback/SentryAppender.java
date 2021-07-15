@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.ITransportFactory;
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Appender for logback in charge of sending the logged events to a Sentry server. */
+@Open
 public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @NotNull SentryOptions options = new SentryOptions();
   private @Nullable ITransportFactory transportFactory;
