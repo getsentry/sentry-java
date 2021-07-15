@@ -31,8 +31,12 @@ public final class SentryTraceHeader {
     } else {
       this.sampled = null;
     }
-    this.traceId = new SentryId(parts[0]);
-    this.spanId = new SpanId(parts[1]);
+    try {
+      this.traceId = new SentryId(parts[0]);
+      this.spanId = new SpanId(parts[1]);
+    } catch (Exception e) {
+      throw new InvalidSentryTraceHeaderException(value, e);
+    }
   }
 
   public @NotNull String getName() {

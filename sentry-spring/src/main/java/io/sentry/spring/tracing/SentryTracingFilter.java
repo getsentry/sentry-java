@@ -109,7 +109,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       } catch (InvalidSentryTraceHeaderException e) {
         hub.getOptions()
             .getLogger()
-            .log(SentryLevel.DEBUG, "Failed to parse Sentry trace header: %s", e.getMessage());
+            .log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
     }
     return hub.startTransaction(name, "http.server", customSamplingContext, true);
