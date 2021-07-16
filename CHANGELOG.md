@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.1.0-beta.5
 
 * Make SentryAppender non-final for Log4j2 and Logback (#1603) 
 * Fix: Do not throw IAE when tracing header contain invalid trace id (#1605)
