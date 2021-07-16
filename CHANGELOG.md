@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Make SentryAppender non-final for Log4j2 and Logback (#1602) 
+* Make SentryAppender non-final for Log4j2 and Logback (#1603) 
 
 ## 5.1.0-beta.4
 
