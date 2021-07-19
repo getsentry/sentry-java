@@ -11,7 +11,6 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.RequestSize;
-import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import javax.servlet.FilterChain;
@@ -133,15 +132,6 @@ public class SentrySpringFilter extends OncePerRequestFilter {
         event.getRequest().setData(requestPayloadExtractor.extract(request, options));
       }
       return event;
-    }
-
-    @Override
-    public @NotNull SentryTransaction process(
-        @NotNull SentryTransaction transaction, @Nullable Object hint) {
-      if (transaction.getRequest() != null) {
-        transaction.getRequest().setData(requestPayloadExtractor.extract(request, options));
-      }
-      return transaction;
     }
   }
 }
