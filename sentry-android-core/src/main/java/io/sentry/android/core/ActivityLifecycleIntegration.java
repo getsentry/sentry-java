@@ -95,6 +95,8 @@ public final class ActivityLifecycleIntegration
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
     }
+
+    ActivityFramesState.getInstance().close();
   }
 
   private void addBreadcrumb(final @NonNull Activity activity, final @NotNull String state) {
@@ -117,7 +119,7 @@ public final class ActivityLifecycleIntegration
     for (final Map.Entry<Activity, ITransaction> entry :
         activitiesWithOngoingTransactions.entrySet()) {
       final ITransaction transaction = entry.getValue();
-      finishTransaction(transaction);
+      finishTransaction(transaction, entry.getKey());
     }
   }
 
@@ -150,6 +152,9 @@ public final class ActivityLifecycleIntegration
           });
 
       activitiesWithOngoingTransactions.put(activity, transaction);
+
+      // start collecting frame metrics for transaction
+      ActivityFramesState.getInstance().addActivity(activity);
     }
   }
 
@@ -179,18 +184,28 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NonNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      finishTransaction(transaction);
+      finishTransaction(transaction, activity);
     }
   }
 
-  private void finishTransaction(final @Nullable ITransaction transaction) {
+  private void finishTransaction(
+      final @Nullable ITransaction transaction, final @NonNull Activity activity) {
     if (transaction != null) {
+      // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
+      // finished when this method is called.
+      if (transaction.isFinished()) {
+        return;
+      }
+
       SpanStatus status = transaction.getStatus();
       // status might be set by other integrations, let's not overwrite it
       if (status == null) {
         status = SpanStatus.OK;
       }
       transaction.finish(status);
+      ActivityFramesState.getInstance().setMetrics(activity, transaction.getEventId());
+
+//      activitiesWithOngoingTransactions.remove(activity);
     }
   }
 

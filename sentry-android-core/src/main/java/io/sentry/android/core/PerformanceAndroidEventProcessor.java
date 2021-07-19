@@ -5,9 +5,11 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
 
 import io.sentry.EventProcessor;
 import io.sentry.protocol.MeasurementValue;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,6 +40,18 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
         transaction.getMeasurements().put(appStartKey, value);
         sentStartMeasurement = true;
+      }
+    }
+
+    // TODO: do we need to guard checks here?
+    // this attaches these metrics to all following transactions and its the sum of all frames
+    // during apps lifecycle, not specific per screen
+    final SentryId eventId = transaction.getEventId();
+    if (eventId != null) {
+      final Map<String, @NotNull MeasurementValue> framesMetrics =
+          ActivityFramesState.getInstance().getMetrics(eventId);
+      if (framesMetrics != null) {
+        transaction.getMeasurements().putAll(framesMetrics);
       }
     }
 
