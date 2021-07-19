@@ -33,7 +33,6 @@ object Config {
 
         val minSdkVersion = 14
         val minSdkVersionOkHttp = 21
-        val minSdkVersionFragment = 21
         val minSdkVersionNdk = 16
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
@@ -86,7 +85,7 @@ object Config {
 
         val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
 
-        val fragment = "androidx.fragment:fragment-ktx:1.3.4"
+        val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
         val reactorCore = "io.projectreactor:reactor-core:3.4.6"
     }

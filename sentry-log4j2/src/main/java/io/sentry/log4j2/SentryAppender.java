@@ -1,5 +1,6 @@
 package io.sentry.log4j2;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.HubAdapter;
@@ -33,7 +34,8 @@ import org.jetbrains.annotations.Nullable;
 
 /** Appender for Log4j2 in charge of sending the logged events to a Sentry server. */
 @Plugin(name = "Sentry", category = "Core", elementType = "appender", printObject = true)
-public final class SentryAppender extends AbstractAppender {
+@Open
+public class SentryAppender extends AbstractAppender {
   private final @Nullable String dsn;
   private final @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
@@ -136,7 +138,7 @@ public final class SentryAppender extends AbstractAppender {
    */
   // for the Android compatibility we must use old Java Date class
   @SuppressWarnings("JdkObsolete")
-  final @NotNull SentryEvent createEvent(final @NotNull LogEvent loggingEvent) {
+  protected @NotNull SentryEvent createEvent(final @NotNull LogEvent loggingEvent) {
     final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeMillis()));
     final Message message = new Message();
     message.setMessage(loggingEvent.getMessage().getFormat());
@@ -186,7 +188,7 @@ public final class SentryAppender extends AbstractAppender {
    * @param loggingEvent the log4j2 event
    * @return the sentry breadcrumb
    */
-  private @NotNull Breadcrumb createBreadcrumb(final @NotNull LogEvent loggingEvent) {
+  protected @NotNull Breadcrumb createBreadcrumb(final @NotNull LogEvent loggingEvent) {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setLevel(formatLevel(loggingEvent.getLevel()));
     breadcrumb.setCategory(loggingEvent.getLoggerName());

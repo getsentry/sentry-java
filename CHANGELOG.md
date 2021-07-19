@@ -2,7 +2,13 @@
 
 ## Unreleased
 
+* Fix: set min sdk version of sentry-android-fragment to API 14 (#1608)
 * Feat: Add request body extraction for Spring MVC integration (#1595)
+
+## 5.1.0-beta.5
+
+* Make SentryAppender non-final for Log4j2 and Logback (#1603) 
+* Fix: Do not throw IAE when tracing header contain invalid trace id (#1605)
 
 ## 5.1.0-beta.4
 
