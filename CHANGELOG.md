@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: set min sdk version of sentry-android-fragment to API 14
+
 ## 5.1.0-beta.5
 
 * Make SentryAppender non-final for Log4j2 and Logback (#1603) 
