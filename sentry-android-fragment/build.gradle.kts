@@ -14,7 +14,7 @@ android {
 
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)
-        minSdkVersion(Config.Android.minSdkVersionFragment)
+        minSdkVersion(Config.Android.minSdkVersion)
 
         versionName = project.version.toString()
         versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
