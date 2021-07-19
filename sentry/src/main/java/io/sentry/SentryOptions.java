@@ -299,6 +299,10 @@ public class SentryOptions {
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
+    final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
+    if (maxRequestBodySize != null) {
+      options.setMaxRequestBodySize(RequestSize.valueOf(maxRequestBodySize.toUpperCase()));
+    }
     final Map<String, String> tags = propertiesProvider.getMap("tags");
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       options.setTag(tag.getKey(), tag.getValue());
@@ -1638,7 +1642,7 @@ public class SentryOptions {
     }
   }
 
-  public static enum RequestSize {
+  public enum RequestSize {
     NONE,
     SMALL,
     MEDIUM,
