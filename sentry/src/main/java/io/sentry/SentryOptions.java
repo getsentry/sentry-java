@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -301,7 +302,7 @@ public class SentryOptions {
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
     final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
     if (maxRequestBodySize != null) {
-      options.setMaxRequestBodySize(RequestSize.valueOf(maxRequestBodySize.toUpperCase()));
+      options.setMaxRequestBodySize(RequestSize.valueOf(maxRequestBodySize.toUpperCase(Locale.ROOT)));
     }
     final Map<String, String> tags = propertiesProvider.getMap("tags");
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
