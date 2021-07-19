@@ -302,7 +302,8 @@ public class SentryOptions {
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
     final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
     if (maxRequestBodySize != null) {
-      options.setMaxRequestBodySize(RequestSize.valueOf(maxRequestBodySize.toUpperCase(Locale.ROOT)));
+      options.setMaxRequestBodySize(
+          RequestSize.valueOf(maxRequestBodySize.toUpperCase(Locale.ROOT)));
     }
     final Map<String, String> tags = propertiesProvider.getMap("tags");
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
