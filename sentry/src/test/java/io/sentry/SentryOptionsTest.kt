@@ -349,6 +349,13 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `creates options with maxRequestBodySize using external properties`() {
+        withPropertiesFile("max-request-body-size=small") {
+            assertEquals(SentryOptions.RequestSize.SMALL, it.maxRequestBodySize)
+        }
+    }
+
+    @Test
     fun `creates options with ignored exception types using external properties`() {
         val logger = mock<ILogger>()
         // Setting few types of classes:

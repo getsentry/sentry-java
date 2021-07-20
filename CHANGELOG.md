@@ -4,6 +4,7 @@
 
 * Fix: set min sdk version of sentry-android-fragment to API 14 (#1608)
 * Feat: Slow/Frozen frames metrics (#1609)
+* Feat: Add request body extraction for Spring MVC integration (#1595)
 
 ## 5.1.0-beta.5
 

@@ -47,6 +47,10 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     if (annotationAttributes.containsKey("sendDefaultPii")) {
       builder.addPropertyValue("sendDefaultPii", annotationAttributes.getBoolean("sendDefaultPii"));
     }
+    if (annotationAttributes.containsKey("maxRequestBodySize")) {
+      builder.addPropertyValue(
+          "maxRequestBodySize", annotationAttributes.get("maxRequestBodySize"));
+    }
 
     registry.registerBeanDefinition("sentryOptions", builder.getBeanDefinition());
   }

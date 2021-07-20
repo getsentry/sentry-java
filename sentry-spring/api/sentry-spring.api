@@ -6,6 +6,7 @@ public final class io/sentry/spring/BuildConfig {
 public abstract interface annotation class io/sentry/spring/EnableSentry : java/lang/annotation/Annotation {
 	public abstract fun dsn ()Ljava/lang/String;
 	public abstract fun exceptionResolverOrder ()I
+	public abstract fun maxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public abstract fun sendDefaultPii ()Z
 }
 
@@ -40,6 +41,13 @@ public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sent
 public class io/sentry/spring/SentryRequestResolver {
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun resolveSentryRequest (Ljavax/servlet/http/HttpServletRequest;)Lio/sentry/protocol/Request;
+}
+
+public class io/sentry/spring/SentrySpringFilter : org/springframework/web/filter/OncePerRequestFilter {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;)V
+	protected fun doFilterInternal (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljavax/servlet/FilterChain;)V
 }
 
 public class io/sentry/spring/SentrySpringRequestListener : javax/servlet/ServletRequestListener, org/springframework/core/Ordered {
