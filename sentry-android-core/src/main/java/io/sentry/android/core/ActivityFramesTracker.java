@@ -8,12 +8,10 @@ import io.sentry.protocol.SentryId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Internal
-public final class ActivityFramesTracker {
+final class ActivityFramesTracker {
 
   private static final @NotNull ActivityFramesTracker instance = new ActivityFramesTracker();
 

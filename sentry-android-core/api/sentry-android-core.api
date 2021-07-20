@@ -1,6 +1,3 @@
-public final class io/sentry/android/core/ActivityFramesTracker {
-}
-
 public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/IBuildInfoProvider;)V
 	public fun close ()V
