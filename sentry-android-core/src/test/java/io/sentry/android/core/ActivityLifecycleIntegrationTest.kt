@@ -218,7 +218,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityPreCreated(activity, fixture.bundle)
 
-        verify(fixture.hub, never()).startTransaction(any(), any(), anyOrNull(), any(), anyOrNull())
+        verify(fixture.hub, never()).startTransaction(any(), any(), anyOrNull(), any(), any())
     }
 
     @Test
@@ -231,7 +231,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityPreCreated(activity, fixture.bundle)
         sut.onActivityPreCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), any(), anyOrNull(), any(), anyOrNull())
+        verify(fixture.hub).startTransaction(any(), any(), anyOrNull(), any(), any())
     }
 
     @Test
@@ -247,7 +247,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(any(), check {
             assertEquals("ui.load", it)
-        }, anyOrNull(), any(), anyOrNull())
+        }, anyOrNull(), any(), any())
     }
 
     @Test
