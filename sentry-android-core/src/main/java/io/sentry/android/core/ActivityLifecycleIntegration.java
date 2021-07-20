@@ -173,7 +173,7 @@ public final class ActivityLifecycleIntegration
 
   private void setMetricsForActivity(
       final @NotNull Activity activity, final @NotNull ITransaction transaction) {
-    // remove the slow/frozen detection since transaction is finished.
+    // set metrics and remove the slow/frozen detection since transaction is finished.
     ActivityFramesState.getInstance().setMetrics(activity, transaction.getEventId());
   }
 

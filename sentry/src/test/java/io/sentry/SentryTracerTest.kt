@@ -34,10 +34,11 @@ class SentryTracerTest {
         fun getSut(
             optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {},
             startTimestamp: Date? = null,
-            waitForChildren: Boolean = false
+            waitForChildren: Boolean = false,
+            transactionListener: TransactionListener? = null
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op"), hub, startTimestamp, waitForChildren)
+            return SentryTracer(TransactionContext("name", "op"), hub, startTimestamp, waitForChildren, transactionListener)
         }
     }
 
@@ -45,7 +46,7 @@ class SentryTracerTest {
 
     @Test
     fun `does not add more spans than configured in options`() {
-        val tracer = fixture.getSut(Sentry.OptionsConfiguration {
+        val tracer = fixture.getSut({
             it.maxSpans = 2
             it.setDebug(true)
             it.setLogger(SystemOutLogger())
@@ -58,7 +59,7 @@ class SentryTracerTest {
 
     @Test
     fun `when span limit is reached, startChild returns NoOpSpan`() {
-        val tracer = fixture.getSut(Sentry.OptionsConfiguration {
+        val tracer = fixture.getSut({
             it.maxSpans = 2
             it.setDebug(true)
             it.setLogger(SystemOutLogger())
@@ -119,7 +120,7 @@ class SentryTracerTest {
     @Test
     fun `when transaction is finished, transaction is cleared from the scope`() {
         val tracer = fixture.getSut()
-        fixture.hub.configureScope { it.setTransaction(tracer) }
+        fixture.hub.configureScope { it.transaction = tracer }
         assertNotNull(fixture.hub.span)
         tracer.finish()
         assertNull(fixture.hub.span)
@@ -347,6 +348,19 @@ class SentryTracerTest {
         child.finish()
         transaction.finish()
         verify(fixture.hub).captureTransaction(any())
+    }
+
+    @Test
+    fun `when waiting for children, finishing transaction calls transactionListener`() {
+        var transactionListenerCalled = false
+        val transaction = fixture.getSut(waitForChildren = true, transactionListener = {
+            transactionListenerCalled = true
+        })
+        val child = transaction.startChild("op")
+        child.finish()
+        transaction.finish()
+
+        assertTrue(transactionListenerCalled)
     }
 
     @Test
