@@ -14,10 +14,8 @@ class SentryEnvelopeTest {
 
     @Test
     fun `deserialize sample envelope with event and two attachments`() {
-        val envelopeReader = EnvelopeReader()
-        val testFile = this::class.java.classLoader.getResource("envelope-event-attachment.txt")
-        val stream = testFile!!.openStream()
-        val envelope = envelopeReader.read(stream)
+        val envelope = readEnvelope("envelope-event-attachment.txt")
+
         assertNotNull(envelope)
         assertEquals("9ec79c33ec9942ab8353589fcb2e04dc", envelope.header.eventId.toString())
         assertEquals(3, envelope.items.count())
@@ -136,5 +134,26 @@ abcdefghij""".toInputStream()
         assertEquals("null.bin", secondItem.header.fileName)
         assertEquals(10, secondItem.header.length)
         assertEquals(10, secondItem.data.size)
+    }
+
+    @Test
+    fun `deserializes an user feedback`() {
+        val envelope = readEnvelope("envelope-feedback.txt")
+
+        assertNotNull(envelope)
+        assertEquals("bdd63725a2b84c1eabd761106e17d390", envelope.header.eventId.toString())
+        assertEquals(1, envelope.items.count())
+        val firstItem = envelope.items.elementAt(0)
+        assertEquals(SentryItemType.UserFeedback, firstItem.header.type)
+        assertEquals("application/json", firstItem.header.contentType)
+        assertEquals(103, firstItem.header.length)
+        assertEquals(103, firstItem.data.size)
+    }
+
+    private fun readEnvelope(fileName: String): SentryEnvelope? {
+        val envelopeReader = EnvelopeReader()
+        val testFile = this::class.java.classLoader.getResource(fileName)
+        val stream = testFile!!.openStream()
+        return envelopeReader.read(stream)
     }
 }
