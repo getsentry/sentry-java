@@ -70,9 +70,21 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
           break;
         case "type":
           try {
-            final String nextString = StringUtils.capitalize(reader.nextString());
+            String nextString = reader.nextString();
+
             if (nextString != null) {
-              type = SentryItemType.valueOf(nextString);
+              // special case the String 'user_report since the enum is called UserFeedback
+              // instead of UserReport, this is gonna be fixed when we move away from reflection.
+              if (nextString.equalsIgnoreCase("user_report")) {
+                type = SentryItemType.valueOf("UserFeedback");
+              } else {
+                final String capitalizedString = StringUtils.capitalize(nextString);
+
+                // NPE check because of uber:nullaway
+                if (capitalizedString != null) {
+                  type = SentryItemType.valueOf(capitalizedString);
+                }
+              }
             }
           } catch (IllegalArgumentException ignored) {
             // invalid type

@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Fix: set min sdk version of sentry-android-fragment to API 14 (#1608)
+* Fix: Ser/Deser of the UserFeedback from cached envelope
 
 ## 5.1.0-beta.5
 
