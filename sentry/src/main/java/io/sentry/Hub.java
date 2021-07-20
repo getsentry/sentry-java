@@ -604,14 +604,14 @@ public final class Hub implements IHub {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
-      final @Nullable TransactionListener transactionListener) {
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return createTransaction(
         transactionContexts,
         customSamplingContext,
         bindToScope,
         startTimestamp,
         waitForChildren,
-        transactionListener);
+        transactionFinishedCallback);
   }
 
   private @NotNull ITransaction createTransaction(
@@ -620,7 +620,7 @@ public final class Hub implements IHub {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
-      final @Nullable TransactionListener transactionListener) {
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -645,7 +645,11 @@ public final class Hub implements IHub {
 
       transaction =
           new SentryTracer(
-              transactionContext, this, startTimestamp, waitForChildren, transactionListener);
+              transactionContext,
+              this,
+              startTimestamp,
+              waitForChildren,
+              transactionFinishedCallback);
     }
     if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));

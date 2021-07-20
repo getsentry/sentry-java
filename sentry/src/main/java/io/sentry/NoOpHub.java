@@ -151,7 +151,7 @@ public final class NoOpHub implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp,
       boolean waitForChildren,
-      @Nullable TransactionListener transactionListener) {
+      @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return NoOpTransaction.getInstance();
   }
 

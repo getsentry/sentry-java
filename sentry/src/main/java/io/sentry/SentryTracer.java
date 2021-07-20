@@ -37,10 +37,10 @@ public final class SentryTracer implements ITransaction {
   private @NotNull FinishStatus finishStatus = FinishStatus.NOT_FINISHED;
 
   /**
-   * When `waitForChildren` is set to `true` and this listener is set, it's called before the
+   * When `waitForChildren` is set to `true` and this callback is set, it's called before the
    * transaction is captured.
    */
-  private final @Nullable TransactionListener transactionListener;
+  private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -50,8 +50,8 @@ public final class SentryTracer implements ITransaction {
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
       final boolean waitForChildren,
-      final @Nullable TransactionListener transactionListener) {
-    this(context, hub, null, waitForChildren, transactionListener);
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
+    this(context, hub, null, waitForChildren, transactionFinishedCallback);
   }
 
   SentryTracer(
@@ -66,14 +66,14 @@ public final class SentryTracer implements ITransaction {
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
-      final @Nullable TransactionListener transactionListener) {
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.root = new Span(context, this, hub, startTimestamp);
     this.name = context.getName();
     this.hub = hub;
     this.waitForChildren = waitForChildren;
-    this.transactionListener = transactionListener;
+    this.transactionFinishedCallback = transactionFinishedCallback;
   }
 
   public @NotNull List<Span> getChildren() {
@@ -213,8 +213,8 @@ public final class SentryTracer implements ITransaction {
                 });
           });
       SentryTransaction transaction = new SentryTransaction(this);
-      if (transactionListener != null) {
-        transactionListener.onTransactionFinished(this);
+      if (transactionFinishedCallback != null) {
+        transactionFinishedCallback.onTransactionFinished(this);
       }
       hub.captureTransaction(transaction);
     }

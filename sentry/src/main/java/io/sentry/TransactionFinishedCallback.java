@@ -2,7 +2,7 @@ package io.sentry;
 
 import org.jetbrains.annotations.NotNull;
 
-public interface TransactionListener {
+public interface TransactionFinishedCallback {
 
   /**
    * Called when observed transaction finishes

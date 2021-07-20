@@ -194,14 +194,14 @@ public final class HubAdapter implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp,
       boolean waitForChildren,
-      @Nullable TransactionListener transactionListener) {
+      @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return Sentry.startTransaction(
         transactionContexts,
         customSamplingContext,
         bindToScope,
         startTimestamp,
         waitForChildren,
-        transactionListener);
+        transactionFinishedCallback);
   }
 
   @Override

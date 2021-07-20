@@ -35,10 +35,10 @@ class SentryTracerTest {
             optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {},
             startTimestamp: Date? = null,
             waitForChildren: Boolean = false,
-            transactionListener: TransactionListener? = null
+            transactionFinishedCallback: TransactionFinishedCallback? = null
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op"), hub, startTimestamp, waitForChildren, transactionListener)
+            return SentryTracer(TransactionContext("name", "op"), hub, startTimestamp, waitForChildren, transactionFinishedCallback)
         }
     }
 
@@ -353,7 +353,7 @@ class SentryTracerTest {
     @Test
     fun `when waiting for children, finishing transaction calls transactionListener`() {
         var transactionListenerCalled = false
-        val transaction = fixture.getSut(waitForChildren = true, transactionListener = {
+        val transaction = fixture.getSut(waitForChildren = true, transactionFinishedCallback = {
             transactionListenerCalled = true
         })
         val child = transaction.startChild("op")

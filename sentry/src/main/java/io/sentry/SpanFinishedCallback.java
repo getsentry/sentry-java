@@ -2,7 +2,7 @@ package io.sentry;
 
 import org.jetbrains.annotations.NotNull;
 
-interface SpanListener {
+interface SpanFinishedCallback {
   /**
    * Called when observed span finishes.
    *

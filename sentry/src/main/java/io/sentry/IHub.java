@@ -390,7 +390,7 @@ public interface IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp,
       boolean waitForChildren,
-      @Nullable TransactionListener transactionListener);
+      @Nullable TransactionFinishedCallback transactionFinishedCallback);
 
   /**
    * Creates a Transaction and returns the instance. Based on the {@link
@@ -412,14 +412,14 @@ public interface IHub {
       final @NotNull String operation,
       @Nullable Date startTimestamp,
       boolean waitForChildren,
-      @Nullable TransactionListener transactionListener) {
+      @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return startTransaction(
         new TransactionContext(name, operation),
         null,
         false,
         startTimestamp,
         waitForChildren,
-        transactionListener);
+        transactionFinishedCallback);
   }
 
   /**
