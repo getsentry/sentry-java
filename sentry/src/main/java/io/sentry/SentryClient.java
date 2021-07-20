@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
@@ -33,23 +32,17 @@ public final class SentryClient implements ISentryClient {
 
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
 
-  private final @Nullable SessionFlusher sessionFlusher;
+  private final SessionUpdater sessionUpdater;
 
   @Override
   public boolean isEnabled() {
     return enabled;
   }
 
-  SentryClient(final @NotNull SentryOptions options) {
+  SentryClient(final @NotNull SentryOptions options, final SessionUpdater sessionUpdater) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
-    // TODO: how to decide if session aggregates should be used?
-    if (options.isAutoSessionTracking() && options.getRelease() != null) {
-      this.sessionFlusher = new SessionFlusher(options.getRelease(), options.getEnvironment());
-      this.sessionFlusher.start();
-    } else {
-      this.sessionFlusher = null;
-    }
+    this.sessionUpdater = sessionUpdater;
 
     ITransportFactory transportFactory = options.getTransportFactory();
     if (transportFactory instanceof NoOpTransportFactory) {
@@ -99,7 +92,7 @@ public final class SentryClient implements ISentryClient {
     Session session = null;
 
     if (event != null) {
-      session = updateSessionData(event, hint, scope);
+      session = sessionUpdater.updateSessionData(event, hint, scope);
 
       if (!sample()) {
         options
@@ -317,49 +310,7 @@ public final class SentryClient implements ISentryClient {
   @Nullable
   Session updateSessionData(
       final @NotNull SentryEvent event, final @Nullable Object hint, final @Nullable Scope scope) {
-    Session clonedSession = null;
-
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
-      if (scope != null) {
-        clonedSession =
-            scope.withSession(
-                session -> {
-                  if (session != null) {
-                    Session.State status = null;
-                    if (event.isCrashed()) {
-                      status = Session.State.Crashed;
-                    }
-
-                    boolean crashedOrErrored = false;
-                    if (Session.State.Crashed == status || event.isErrored()) {
-                      crashedOrErrored = true;
-                    }
-
-                    String userAgent = null;
-                    if (event.getRequest() != null && event.getRequest().getHeaders() != null) {
-                      if (event.getRequest().getHeaders().containsKey("user-agent")) {
-                        userAgent = event.getRequest().getHeaders().get("user-agent");
-                      }
-                    }
-
-                    if (session.update(status, userAgent, crashedOrErrored)) {
-                      // if hint is DiskFlushNotification, it means we have an uncaughtException
-                      // and we can end the session.
-                      if (hint instanceof DiskFlushNotification) {
-                        session.end();
-                      }
-                    }
-                  } else {
-                    options
-                        .getLogger()
-                        .log(SentryLevel.INFO, "Session is null on scope.withSession");
-                  }
-                });
-      } else {
-        options.getLogger().log(SentryLevel.INFO, "Scope is null on client.captureEvent");
-      }
-    }
-    return clonedSession;
+    return sessionUpdater.updateSessionData(event, hint, scope);
   }
 
   @ApiStatus.Internal
@@ -374,19 +325,15 @@ public final class SentryClient implements ISentryClient {
       return;
     }
 
-    if (sessionFlusher != null) {
-      sessionFlusher.addSession(session);
-    } else {
-      SentryEnvelope envelope;
-      try {
-        envelope = SentryEnvelope.from(options.getSerializer(), session, options.getSdkVersion());
-      } catch (IOException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
-        return;
-      }
-
-      captureEnvelope(envelope, hint);
+    SentryEnvelope envelope;
+    try {
+      envelope = SentryEnvelope.from(options.getSerializer(), session, options.getSdkVersion());
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
+      return;
     }
+
+    captureEnvelope(envelope, hint);
   }
 
   @ApiStatus.Internal
@@ -613,9 +560,6 @@ public final class SentryClient implements ISentryClient {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Failed to close the connection to the Sentry Server.", e);
-    }
-    if (sessionFlusher != null) {
-      sessionFlusher.stop();
     }
     enabled = false;
   }

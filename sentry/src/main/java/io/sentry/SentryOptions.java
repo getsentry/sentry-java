@@ -275,6 +275,8 @@ public class SentryOptions {
 
   private boolean autoSessionTracking;
 
+  private @NotNull SessionMode sessionMode = SessionMode.CLIENT;
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -1428,6 +1430,14 @@ public class SentryOptions {
     this.autoSessionTracking = autoSessionTracking;
   }
 
+  public @NotNull SessionMode getSessionMode() {
+    return sessionMode;
+  }
+
+  public void setSessionMode(final @NotNull SessionMode sessionMode) {
+    this.sessionMode = sessionMode;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1632,5 +1642,10 @@ public class SentryOptions {
     public void setPass(final @Nullable String pass) {
       this.pass = pass;
     }
+  }
+
+  static enum SessionMode {
+    CLIENT,
+    SERVER
   }
 }

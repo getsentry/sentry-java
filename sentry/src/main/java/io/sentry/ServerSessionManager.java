@@ -1,23 +1,20 @@
 package io.sentry;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class SessionFlusher {
+final class ServerSessionManager implements SessionTracker, SessionUpdater {
   private static final int ONE_MINUTE = 60 * 1000;
   private final @NotNull Timer timer = new Timer();
   private final @NotNull SessionAggregates sessionAggregates;
 
-  SessionFlusher(final @NotNull String release, final @Nullable String environment) {
+  ServerSessionManager(final @NotNull String release, final @Nullable String environment) {
     sessionAggregates =
         new SessionAggregates(new SessionAggregates.Attributes(release, environment));
-  }
-
-  void addSession(final @NotNull Session session) {
-    sessionAggregates.addSession(session);
   }
 
   void start() {
@@ -38,5 +35,25 @@ final class SessionFlusher {
 
   void stop() {
     timer.cancel();
+  }
+
+  @Override
+  public void startSession() {
+    // do nothing
+  }
+
+  @Override
+  @SuppressWarnings("JavaUtilDate")
+  public void endSession() {
+    sessionAggregates.addSession(new Date(), Session.State.Exited);
+  }
+
+  @Override
+  @SuppressWarnings("JavaUtilDate")
+  public @Nullable Session updateSessionData(
+      @NotNull SentryEvent event, @Nullable Object hint, @Nullable Scope scope) {
+    // todo: check if event.isCrashed() ?
+    sessionAggregates.addSession(new Date(), Session.State.Crashed);
+    return null;
   }
 }

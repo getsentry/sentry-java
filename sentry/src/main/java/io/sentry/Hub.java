@@ -1,8 +1,6 @@
 package io.sentry;
 
 import io.sentry.Stack.StackItem;
-import io.sentry.hints.SessionEndHint;
-import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -27,14 +25,28 @@ public final class Hub implements IHub {
   private final @NotNull TracesSampler tracesSampler;
   private final @NotNull Map<Throwable, Pair<ISpan, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
+  private final @NotNull SessionTracker sessionTracker;
 
   public Hub(final @NotNull SentryOptions options) {
-    this(options, createRootStackItem(options));
+    validateOptions(options);
+    final Scope scope = new Scope(options);
+    ISentryClient client;
+    Stack stack;
+    // release presence in server mode is validated in `validateOptions(..)` method, extra check
+    // here is needed for uber:nullAway linter
+    if (options.getSessionMode() == SentryOptions.SessionMode.SERVER
+        && options.getRelease() != null) {
+      final ServerSessionManager sessionTracker =
+          new ServerSessionManager(options.getRelease(), options.getEnvironment());
+      this.sessionTracker = sessionTracker;
+      client = new SentryClient(options, sessionTracker);
+      stack = new Stack(options.getLogger(), new StackItem(options, client, scope));
+    } else {
+      client = new SentryClient(options, new ClientSessionUpdater(options));
+      stack = new Stack(options.getLogger(), new StackItem(options, client, scope));
+      this.sessionTracker = new ClientSessionTracker(options, stack);
+    }
 
-    // Integrations are no longer registered on Hub ctor, but on Sentry.init
-  }
-
-  private Hub(final @NotNull SentryOptions options, final @NotNull Stack stack) {
     validateOptions(options);
 
     this.options = options;
@@ -47,8 +59,19 @@ public final class Hub implements IHub {
     this.isEnabled = true;
   }
 
-  private Hub(final @NotNull SentryOptions options, final @NotNull StackItem rootStackItem) {
-    this(options, new Stack(options.getLogger(), rootStackItem));
+  // Copy constructor
+  private Hub(final @NotNull Hub hub) {
+    validateOptions(hub.options);
+
+    this.options = hub.options;
+    this.tracesSampler = new TracesSampler(hub.options);
+    this.stack = new Stack(hub.stack);
+    this.lastEventId = SentryId.EMPTY_ID;
+
+    // Integrations will use this Hub instance once registered.
+    // Make sure Hub ready to be used then.
+    this.isEnabled = true;
+    this.sessionTracker = hub.sessionTracker;
   }
 
   private static void validateOptions(final @NotNull SentryOptions options) {
@@ -57,13 +80,10 @@ public final class Hub implements IHub {
       throw new IllegalArgumentException(
           "Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.");
     }
-  }
-
-  private static StackItem createRootStackItem(final @NotNull SentryOptions options) {
-    validateOptions(options);
-    final Scope scope = new Scope(options);
-    final ISentryClient client = new SentryClient(options);
-    return new StackItem(options, client, scope);
+    if (options.getSessionMode() == SentryOptions.SessionMode.SERVER
+        && options.getRelease() == null) {
+      throw new IllegalArgumentException("In session mode SERVER, release must be set.");
+    }
   }
 
   @Override
@@ -227,20 +247,7 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING, "Instance is disabled and this 'startSession' call is a no-op.");
     } else {
-      final StackItem item = this.stack.peek();
-      final Scope.SessionPair pair = item.getScope().startSession();
-      if (pair != null) {
-        // TODO: add helper overload `captureSessions` to pass a list of sessions and submit a
-        // single envelope
-        // Or create the envelope here with both items and call `captureEnvelope`
-        if (pair.getPrevious() != null) {
-          item.getClient().captureSession(pair.getPrevious(), new SessionEndHint());
-        }
-
-        item.getClient().captureSession(pair.getCurrent(), new SessionStartHint());
-      } else {
-        options.getLogger().log(SentryLevel.WARNING, "Session could not be started.");
-      }
+      sessionTracker.startSession();
     }
   }
 
@@ -251,11 +258,7 @@ public final class Hub implements IHub {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'endSession' call is a no-op.");
     } else {
-      final StackItem item = this.stack.peek();
-      final Session previousSession = item.getScope().endSession();
-      if (previousSession != null) {
-        item.getClient().captureSession(previousSession, new SessionEndHint());
-      }
+      sessionTracker.endSession();
     }
   }
 
@@ -525,7 +528,7 @@ public final class Hub implements IHub {
       options.getLogger().log(SentryLevel.WARNING, "Disabled Hub cloned.");
     }
     // Clone will be invoked in parallel
-    return new Hub(this.options, new Stack(this.stack));
+    return new Hub(this);
   }
 
   @ApiStatus.Internal

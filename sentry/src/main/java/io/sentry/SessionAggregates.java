@@ -15,28 +15,25 @@ public final class SessionAggregates {
     this.attributes = attributes;
   }
 
-  void addSession(final @NotNull Session session) {
-    final Date startedAt = session.getStarted();
-    if (startedAt != null) {
-      final String roundedDate = DateUtils.getTimestampMinutesPrecision(startedAt);
-      SessionStats stats;
-      if (this.aggregates.containsKey(roundedDate)) {
-        stats = this.aggregates.get(roundedDate);
-      } else {
-        stats = new SessionStats();
-        this.aggregates.put(roundedDate, stats);
-      }
+  void addSession(final @NotNull Date startedAt, final @NotNull Session.State state) {
+    final String roundedDate = DateUtils.getTimestampMinutesPrecision(startedAt);
+    SessionStats stats;
+    if (this.aggregates.containsKey(roundedDate)) {
+      stats = this.aggregates.get(roundedDate);
+    } else {
+      stats = new SessionStats();
+      this.aggregates.put(roundedDate, stats);
+    }
 
-      switch (session.getStatus()) {
-        case Exited:
-          stats.exited.incrementAndGet();
-          break;
-        case Crashed:
-          stats.errored.incrementAndGet();
-          break;
-        default:
-          break;
-      }
+    switch (state) {
+      case Exited:
+        stats.exited.incrementAndGet();
+        break;
+      case Crashed:
+        stats.errored.incrementAndGet();
+        break;
+      default:
+        break;
     }
   }
 

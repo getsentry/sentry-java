@@ -77,7 +77,7 @@ class SentryClientTest {
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
 
-        fun getSut() = SentryClient(sentryOptions)
+        fun getSut() = SentryClient(sentryOptions, mock())
     }
 
     private val fixture = Fixture()
@@ -529,7 +529,7 @@ class SentryClientTest {
         val transportFactory = mock<ITransportFactory>()
         sentryOptions.setTransportFactory(transportFactory)
 
-        SentryClient(sentryOptions)
+        SentryClient(sentryOptions, mock())
 
         assertEquals(transportFactory, sentryOptions.transportFactory)
     }
@@ -542,7 +542,7 @@ class SentryClientTest {
         val transportGate = CustomTransportGate()
         sentryOptions.setTransportGate(transportGate)
 
-        SentryClient(sentryOptions)
+        SentryClient(sentryOptions, mock())
 
         assertEquals(transportGate, sentryOptions.transportGate)
     }
@@ -553,7 +553,7 @@ class SentryClientTest {
             dsn = dsnString
         }
 
-        SentryClient(sentryOptions)
+        SentryClient(sentryOptions, mock())
 
         assertNotNull(sentryOptions.transportGate)
         assertTrue(sentryOptions.transportGate.isConnected)
