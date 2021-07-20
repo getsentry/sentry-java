@@ -389,7 +389,8 @@ public interface IHub {
       @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope,
       @Nullable Date startTimestamp,
-      boolean waitForChildren);
+      boolean waitForChildren,
+      @Nullable TransactionListener transactionListener);
 
   /**
    * Creates a Transaction and returns the instance. Based on the {@link
@@ -410,9 +411,15 @@ public interface IHub {
       final @NotNull String name,
       final @NotNull String operation,
       @Nullable Date startTimestamp,
-      boolean waitForChildren) {
+      boolean waitForChildren,
+      @Nullable TransactionListener transactionListener) {
     return startTransaction(
-        new TransactionContext(name, operation), null, false, startTimestamp, waitForChildren);
+        new TransactionContext(name, operation),
+        null,
+        false,
+        startTimestamp,
+        waitForChildren,
+        transactionListener);
   }
 
   /**

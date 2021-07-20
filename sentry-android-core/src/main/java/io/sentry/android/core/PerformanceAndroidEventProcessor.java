@@ -27,9 +27,14 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   @Override
   public synchronized @NotNull SentryTransaction process(
       @NotNull SentryTransaction transaction, @Nullable Object hint) {
+
+    if (!tracingEnabled) {
+      return transaction;
+    }
+
     // the app start measurement is only sent once and only if the transaction has
     // the app.start span, which is automatically created by the SDK.
-    if (!sentStartMeasurement && tracingEnabled && hasAppStartSpan(transaction.getSpans())) {
+    if (!sentStartMeasurement && hasAppStartSpan(transaction.getSpans())) {
       final Long appStartUpInterval = AppStartState.getInstance().getAppStartInterval();
       // if appStartUpInterval is null, metrics are not ready to be sent
       if (appStartUpInterval != null) {
@@ -43,15 +48,13 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
     }
 
-    // TODO: do we need to guard checks here?
-    // this attaches these metrics to all following transactions and its the sum of all frames
-    // during apps lifecycle, not specific per screen
     final SentryId eventId = transaction.getEventId();
     if (eventId != null) {
       final Map<String, @NotNull MeasurementValue> framesMetrics =
           ActivityFramesState.getInstance().getMetrics(eventId);
       if (framesMetrics != null) {
         transaction.getMeasurements().putAll(framesMetrics);
+        ActivityFramesState.getInstance().removeMetrics(eventId);
       }
     }
 

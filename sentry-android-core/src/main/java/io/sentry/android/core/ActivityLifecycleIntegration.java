@@ -119,7 +119,7 @@ public final class ActivityLifecycleIntegration
     for (final Map.Entry<Activity, ITransaction> entry :
         activitiesWithOngoingTransactions.entrySet()) {
       final ITransaction transaction = entry.getValue();
-      finishTransaction(transaction, entry.getKey());
+      finishTransaction(transaction);
     }
   }
 
@@ -136,10 +136,26 @@ public final class ActivityLifecycleIntegration
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (firstActivityCreated || appStartTime == null) {
-        transaction = hub.startTransaction(activityName, UI_LOAD_OP, (Date) null, true);
+        transaction =
+            hub.startTransaction(
+                activityName,
+                UI_LOAD_OP,
+                (Date) null,
+                true,
+                (finishingTransaction) -> {
+                  setMetricsForActivity(activity, finishingTransaction);
+                });
       } else {
         // start transaction with app start timestamp
-        transaction = hub.startTransaction(activityName, UI_LOAD_OP, appStartTime, true);
+        transaction =
+            hub.startTransaction(
+                activityName,
+                UI_LOAD_OP,
+                appStartTime,
+                true,
+                (finishingTransaction) -> {
+                  setMetricsForActivity(activity, finishingTransaction);
+                });
         // start specific span for app start
 
         appStartSpan = transaction.startChild(getAppStartOp(), getAppStartDesc(), appStartTime);
@@ -152,10 +168,13 @@ public final class ActivityLifecycleIntegration
           });
 
       activitiesWithOngoingTransactions.put(activity, transaction);
-
-      // start collecting frame metrics for transaction
-      ActivityFramesState.getInstance().addActivity(activity);
     }
+  }
+
+  private void setMetricsForActivity(
+      final @NotNull Activity activity, final @NotNull ITransaction transaction) {
+    // remove the slow/frozen detection since transaction is finished.
+    ActivityFramesState.getInstance().setMetrics(activity, transaction.getEventId());
   }
 
   @VisibleForTesting
@@ -184,12 +203,11 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NonNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      finishTransaction(transaction, activity);
+      finishTransaction(transaction);
     }
   }
 
-  private void finishTransaction(
-      final @Nullable ITransaction transaction, final @NonNull Activity activity) {
+  private void finishTransaction(final @Nullable ITransaction transaction) {
     if (transaction != null) {
       // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
       // finished when this method is called.
@@ -203,9 +221,6 @@ public final class ActivityLifecycleIntegration
         status = SpanStatus.OK;
       }
       transaction.finish(status);
-      ActivityFramesState.getInstance().setMetrics(activity, transaction.getEventId());
-
-//      activitiesWithOngoingTransactions.remove(activity);
     }
   }
 
@@ -216,6 +231,9 @@ public final class ActivityLifecycleIntegration
     // only executed if API >= 29 otherwise it happens on onActivityCreated
     if (isAllActivityCallbacksAvailable) {
       setColdStart(savedInstanceState);
+
+      // start collecting frame metrics for transaction
+      ActivityFramesState.getInstance().addActivity(activity);
 
       // if activity has global fields being init. and
       // they are slow, this won't count the whole fields/ctor initialization time, but only
@@ -235,6 +253,9 @@ public final class ActivityLifecycleIntegration
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
     if (!isAllActivityCallbacksAvailable) {
+      // start collecting frame metrics for transaction
+      ActivityFramesState.getInstance().addActivity(activity);
+
       startTracing(activity);
     }
     firstActivityCreated = true;

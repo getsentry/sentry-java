@@ -81,6 +81,10 @@ public final class ActivityFramesState {
     return activityMeasurements.get(sentryId);
   }
 
+  void removeMetrics(final @NotNull SentryId sentryId) {
+    activityMeasurements.remove(sentryId);
+  }
+
   void close() {
     frameMetricsAggregator.stop();
   }
