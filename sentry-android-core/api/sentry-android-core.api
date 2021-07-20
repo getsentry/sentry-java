@@ -1,4 +1,4 @@
-public final class io/sentry/android/core/ActivityFramesState {
+public final class io/sentry/android/core/ActivityFramesTracker {
 }
 
 public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {

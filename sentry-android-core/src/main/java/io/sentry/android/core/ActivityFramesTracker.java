@@ -5,30 +5,29 @@ import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class ActivityFramesState {
+public final class ActivityFramesTracker {
 
-  private static final @NotNull ActivityFramesState instance = new ActivityFramesState();
+  private static final @NotNull ActivityFramesTracker instance = new ActivityFramesTracker();
 
   private final @NotNull FrameMetricsAggregator frameMetricsAggregator =
       new FrameMetricsAggregator();
 
-  private ActivityFramesState() {}
+  private ActivityFramesTracker() {}
 
-  static @NotNull ActivityFramesState getInstance() {
+  static @NotNull ActivityFramesTracker getInstance() {
     return instance;
   }
 
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
-      activityMeasurements = Collections.synchronizedMap(new WeakHashMap<>());
+      activityMeasurements = new ConcurrentHashMap<>();
 
   void addActivity(final @NotNull Activity activity) {
     frameMetricsAggregator.add(activity);
@@ -53,7 +52,7 @@ public final class ActivityFramesState {
             // frozen frames, threshold is 700ms
             frozenFrames += numFrames;
           }
-          if (frameTime > 16) {
+          if (frameTime > 16 && frameTime <= 700) {
             // slow frames, above 16ms, 60 frames/second
             slowFrames += numFrames;
           }
@@ -87,5 +86,6 @@ public final class ActivityFramesState {
 
   void close() {
     frameMetricsAggregator.stop();
+    activityMeasurements.clear();
   }
 }

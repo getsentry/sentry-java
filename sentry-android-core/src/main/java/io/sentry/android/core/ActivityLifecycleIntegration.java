@@ -96,7 +96,7 @@ public final class ActivityLifecycleIntegration
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
     }
 
-    ActivityFramesState.getInstance().close();
+    ActivityFramesTracker.getInstance().close();
   }
 
   private void addBreadcrumb(final @NonNull Activity activity, final @NotNull String state) {
@@ -174,7 +174,7 @@ public final class ActivityLifecycleIntegration
   private void setMetricsForActivity(
       final @NotNull Activity activity, final @NotNull ITransaction transaction) {
     // set metrics and remove the slow/frozen detection since transaction is finished.
-    ActivityFramesState.getInstance().setMetrics(activity, transaction.getEventId());
+    ActivityFramesTracker.getInstance().setMetrics(activity, transaction.getEventId());
   }
 
   @VisibleForTesting
@@ -210,7 +210,7 @@ public final class ActivityLifecycleIntegration
   private void finishTransaction(final @Nullable ITransaction transaction) {
     if (transaction != null) {
       // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
-      // finished when this method is called.
+      // finished manually when this method is called.
       if (transaction.isFinished()) {
         return;
       }
@@ -233,7 +233,7 @@ public final class ActivityLifecycleIntegration
       setColdStart(savedInstanceState);
 
       // start collecting frame metrics for transaction
-      ActivityFramesState.getInstance().addActivity(activity);
+      ActivityFramesTracker.getInstance().addActivity(activity);
 
       // if activity has global fields being init. and
       // they are slow, this won't count the whole fields/ctor initialization time, but only
@@ -254,7 +254,7 @@ public final class ActivityLifecycleIntegration
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
     if (!isAllActivityCallbacksAvailable) {
       // start collecting frame metrics for transaction
-      ActivityFramesState.getInstance().addActivity(activity);
+      ActivityFramesTracker.getInstance().addActivity(activity);
 
       startTracing(activity);
     }
