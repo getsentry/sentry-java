@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -274,6 +275,12 @@ public class SentryOptions {
   private boolean enableShutdownHook = true;
 
   /**
+   * Controls the size of the request body to extract if any. No truncation is done by the SDK. If
+   * the request body is larger than the accepted size, nothing is sent.
+   */
+  private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
+
+  /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
    * @param propertiesProvider the properties provider
@@ -293,6 +300,11 @@ public class SentryOptions {
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
+    final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
+    if (maxRequestBodySize != null) {
+      options.setMaxRequestBodySize(
+          RequestSize.valueOf(maxRequestBodySize.toUpperCase(Locale.ROOT)));
+    }
     final Map<String, String> tags = propertiesProvider.getMap("tags");
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       options.setTag(tag.getKey(), tag.getValue());
@@ -1418,6 +1430,14 @@ public class SentryOptions {
     this.maxCacheItems = maxCacheItems;
   }
 
+  public @NotNull RequestSize getMaxRequestBodySize() {
+    return maxRequestBodySize;
+  }
+
+  public void setMaxRequestBodySize(final @NotNull RequestSize maxRequestBodySize) {
+    this.maxRequestBodySize = maxRequestBodySize;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1622,5 +1642,12 @@ public class SentryOptions {
     public void setPass(final @Nullable String pass) {
       this.pass = pass;
     }
+  }
+
+  public enum RequestSize {
+    NONE,
+    SMALL,
+    MEDIUM,
+    ALWAYS,
   }
 }

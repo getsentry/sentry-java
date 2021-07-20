@@ -76,7 +76,7 @@ public final class SentryEnvelopeItemHeaderAdapter extends TypeAdapter<SentryEnv
               // special case the String 'user_report since the enum is called UserFeedback
               // instead of UserReport, this is gonna be fixed when we move away from reflection.
               if (nextString.equalsIgnoreCase("user_report")) {
-                type = SentryItemType.valueOf("UserFeedback");
+                type = SentryItemType.UserFeedback;
               } else {
                 final String capitalizedString = StringUtils.capitalize(nextString);
 

@@ -4,6 +4,7 @@
 
 * Fix: set min sdk version of sentry-android-fragment to API 14 (#1608)
 * Fix: Ser/Deser of the UserFeedback from cached envelope (#1611)
+* Feat: Add request body extraction for Spring MVC integration (#1595)
 
 ## 5.1.0-beta.5
 
