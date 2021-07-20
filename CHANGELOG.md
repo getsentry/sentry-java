@@ -3,7 +3,7 @@
 ## Unreleased
 
 * Fix: set min sdk version of sentry-android-fragment to API 14 (#1608)
-* Feat: Slow/Frozen frames metrics (#)
+* Feat: Slow/Frozen frames metrics (#1609)
 
 ## 5.1.0-beta.5
 
