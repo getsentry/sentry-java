@@ -14,7 +14,7 @@ import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.spring.EnableSentry
 import io.sentry.spring.SentryExceptionResolver
-import io.sentry.spring.SentrySpringRequestListener
+import io.sentry.spring.SentrySpringFilter
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.tracing.SentryTracingConfiguration
@@ -44,6 +44,7 @@ import org.springframework.core.Ordered
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
@@ -58,6 +59,7 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RunWith(SpringRunner::class)
@@ -100,6 +102,23 @@ class SentrySpringIntegrationTest {
                 assertThat(event.user).isNotNull()
                 assertThat(event.user!!.username).isEqualTo("user")
                 assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `attaches request body to SentryEvents`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+        val headers = HttpHeaders().apply {
+            this.contentType = MediaType.APPLICATION_JSON
+        }
+        val httpEntity = HttpEntity("""{"body":"content"}""", headers)
+        restTemplate.exchange("http://localhost:$port/body", HttpMethod.POST, httpEntity, Void::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkEvent { event ->
+                assertThat(event.request).isNotNull()
+                assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
             }, anyOrNull())
         }
     }
@@ -221,7 +240,7 @@ class SentrySpringIntegrationTest {
 }
 
 @SpringBootApplication
-@EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true)
+@EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true, maxRequestBodySize = SentryOptions.RequestSize.MEDIUM)
 @Import(SentryTracingConfiguration::class)
 open class App {
 
@@ -238,9 +257,6 @@ open class App {
     open fun mockTransport() = transport
 
     @Bean
-    open fun sentrySpringRequestListener() = SentrySpringRequestListener()
-
-    @Bean
     open fun tracesSamplerCallback() = SentryOptions.TracesSamplerCallback {
         1.0
     }
@@ -252,9 +268,15 @@ open class App {
     }
 
     @Bean
+    open fun sentrySpringFilter(hub: IHub) = FilterRegistrationBean<SentrySpringFilter>().apply {
+        this.filter = SentrySpringFilter(hub)
+        this.order = Ordered.HIGHEST_PRECEDENCE
+    }
+
+    @Bean
     open fun sentryTracingFilter(hub: IHub) = FilterRegistrationBean<SentryTracingFilter>().apply {
         this.filter = SentryTracingFilter(hub)
-        this.order = Ordered.HIGHEST_PRECEDENCE
+        this.order = Ordered.HIGHEST_PRECEDENCE + 1 // must run after SentrySpringFilter
     }
 }
 
@@ -292,6 +314,11 @@ class HelloController {
     @GetMapping("/hello")
     fun hello() {
         Sentry.captureMessage("hello")
+    }
+
+    @PostMapping("/body")
+    fun body() {
+        Sentry.captureMessage("body")
     }
 
     @GetMapping("/throws")
