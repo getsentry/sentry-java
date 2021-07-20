@@ -51,10 +51,9 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     final SentryId eventId = transaction.getEventId();
     if (eventId != null) {
       final Map<String, @NotNull MeasurementValue> framesMetrics =
-          ActivityFramesTracker.getInstance().getMetrics(eventId);
+          ActivityFramesTracker.getInstance().takeMetrics(eventId);
       if (framesMetrics != null) {
         transaction.getMeasurements().putAll(framesMetrics);
-        ActivityFramesTracker.getInstance().removeMetrics(eventId);
       }
     }
 

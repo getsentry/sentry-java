@@ -74,12 +74,11 @@ final class ActivityFramesTracker {
   }
 
   @Nullable
-  Map<String, @NotNull MeasurementValue> getMetrics(final @NotNull SentryId sentryId) {
-    return activityMeasurements.get(sentryId);
-  }
-
-  void removeMetrics(final @NotNull SentryId sentryId) {
+  Map<String, @NotNull MeasurementValue> takeMetrics(final @NotNull SentryId sentryId) {
+    final Map<String, @NotNull MeasurementValue> stringMeasurementValueMap =
+        activityMeasurements.get(sentryId);
     activityMeasurements.remove(sentryId);
+    return stringMeasurementValueMap;
   }
 
   void close() {

@@ -143,7 +143,8 @@ public final class ActivityLifecycleIntegration
                 (Date) null,
                 true,
                 (finishingTransaction) -> {
-                  setMetricsForActivity(activity, finishingTransaction);
+                  ActivityFramesTracker.getInstance()
+                      .setMetrics(activity, finishingTransaction.getEventId());
                 });
       } else {
         // start transaction with app start timestamp
@@ -154,7 +155,8 @@ public final class ActivityLifecycleIntegration
                 appStartTime,
                 true,
                 (finishingTransaction) -> {
-                  setMetricsForActivity(activity, finishingTransaction);
+                  ActivityFramesTracker.getInstance()
+                      .setMetrics(activity, finishingTransaction.getEventId());
                 });
         // start specific span for app start
 
@@ -169,12 +171,6 @@ public final class ActivityLifecycleIntegration
 
       activitiesWithOngoingTransactions.put(activity, transaction);
     }
-  }
-
-  private void setMetricsForActivity(
-      final @NotNull Activity activity, final @NotNull ITransaction transaction) {
-    // set metrics and remove the slow/frozen detection since transaction is finished.
-    ActivityFramesTracker.getInstance().setMetrics(activity, transaction.getEventId());
   }
 
   @VisibleForTesting
