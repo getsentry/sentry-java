@@ -1,5 +1,7 @@
 package io.sentry;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Timer;
@@ -7,7 +9,7 @@ import java.util.TimerTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class ServerSessionManager implements SessionTracker, SessionUpdater {
+final class ServerSessionManager implements SessionTracker, SessionUpdater, Closeable {
   private static final int ONE_MINUTE = 60 * 1000;
   private final @NotNull Timer timer = new Timer();
   private final @NotNull SessionAggregates sessionAggregates;
@@ -15,6 +17,7 @@ final class ServerSessionManager implements SessionTracker, SessionUpdater {
   ServerSessionManager(final @NotNull String release, final @Nullable String environment) {
     sessionAggregates =
         new SessionAggregates(new SessionAggregates.Attributes(release, environment));
+    start();
   }
 
   void start() {
@@ -33,7 +36,8 @@ final class ServerSessionManager implements SessionTracker, SessionUpdater {
         ONE_MINUTE);
   }
 
-  void stop() {
+  @Override
+  public void close() throws IOException {
     timer.cancel();
   }
 

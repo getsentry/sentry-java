@@ -285,6 +285,10 @@ public final class Hub implements IHub {
         final StackItem item = stack.peek();
         // TODO: should we end session before closing client?
         item.getClient().close();
+
+        if (sessionTracker instanceof Closeable) {
+          ((Closeable) sessionTracker).close();
+        }
       } catch (Exception e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while closing the Hub.", e);
       }
