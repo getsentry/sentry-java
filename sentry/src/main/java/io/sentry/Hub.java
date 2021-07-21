@@ -27,31 +27,35 @@ public final class Hub implements IHub {
       Collections.synchronizedMap(new WeakHashMap<>());
   private final @NotNull SessionTracker sessionTracker;
 
-  public Hub(final @NotNull SentryOptions options) {
+  public static Hub create(final @NotNull SentryOptions options) {
     validateOptions(options);
     final Scope scope = new Scope(options);
-    ISentryClient client;
-    Stack stack;
     // release presence in server mode is validated in `validateOptions(..)` method, extra check
     // here is needed for uber:nullAway linter
     if (options.getSessionMode() == SentryOptions.SessionMode.SERVER
         && options.getRelease() != null) {
+      // creates Hub working in server-side session mode
       final ServerSessionManager sessionTracker =
           new ServerSessionManager(options.getRelease(), options.getEnvironment());
-      this.sessionTracker = sessionTracker;
-      client = new SentryClient(options, sessionTracker);
-      stack = new Stack(options.getLogger(), new StackItem(options, client, scope));
+      final ISentryClient client = new SentryClient(options, sessionTracker);
+      final Stack stack = new Stack(options.getLogger(), new StackItem(options, client, scope));
+      return new Hub(options, stack, sessionTracker);
     } else {
-      client = new SentryClient(options, new ClientSessionUpdater(options));
-      stack = new Stack(options.getLogger(), new StackItem(options, client, scope));
-      this.sessionTracker = new ClientSessionTracker(options, stack);
+      // creates Hub working in client-side session mode
+      final ISentryClient client = new SentryClient(options, new ClientSessionUpdater(options));
+      final Stack stack = new Stack(options.getLogger(), new StackItem(options, client, scope));
+      return new Hub(options, stack, new ClientSessionTracker(options, stack));
     }
+  }
 
-    validateOptions(options);
-
+  private Hub(
+      final @NotNull SentryOptions options,
+      final @NotNull Stack stack,
+      final @NotNull SessionTracker sessionTracker) {
     this.options = options;
-    this.tracesSampler = new TracesSampler(options);
     this.stack = stack;
+    this.tracesSampler = new TracesSampler(options);
+    this.sessionTracker = sessionTracker;
     this.lastEventId = SentryId.EMPTY_ID;
 
     // Integrations will use this Hub instance once registered.

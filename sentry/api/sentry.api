@@ -102,7 +102,6 @@ public final class io/sentry/GsonSerializer : io/sentry/ISerializer {
 }
 
 public final class io/sentry/Hub : io/sentry/IHub {
-	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Ljava/lang/Object;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
@@ -116,6 +115,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
+	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/Hub;
 	public fun endSession ()V
 	public fun flush (J)V
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;

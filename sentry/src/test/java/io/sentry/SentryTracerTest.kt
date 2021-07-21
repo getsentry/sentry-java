@@ -27,7 +27,7 @@ class SentryTracerTest {
 
         init {
             options.dsn = "https://key@sentry.io/proj"
-            hub = spy(Hub(options))
+            hub = spy(Hub.create(options))
             hub.bindClient(mock())
         }
 

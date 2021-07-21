@@ -96,7 +96,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         options.cacheDirPath = file.absolutePath
         options.setSerializer(mock())
 //        val expected = HubAdapter.getInstance()
-        val hub = Hub(options)
+        val hub = Hub.create(options)
 //        verify(integrationMock).register(expected, options)
         hub.close()
         verify(integrationMock).close()

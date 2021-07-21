@@ -43,18 +43,18 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Assert.assertArrayEquals
 
 class SentryClientTest {
 
-    class Fixture {
+    private class Fixture {
         var transport = mock<ITransport>()
         var factory = mock<ITransportFactory>()
         val maxAttachmentSize: Long = 5 * 1024 * 1024
         val sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), mock())
+        val sessionUpdater = mock<SessionUpdater>()
 
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
@@ -77,7 +77,7 @@ class SentryClientTest {
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
 
-        fun getSut() = SentryClient(sentryOptions, mock())
+        fun getSut() = SentryClient(sentryOptions, sessionUpdater)
     }
 
     private val fixture = Fixture()
@@ -647,118 +647,6 @@ class SentryClientTest {
     }
 
     @Test
-    fun `When event is non handled, mark session as Crashed`() {
-        val scope = Scope(fixture.sentryOptions)
-        scope.startSession()
-
-        val event = SentryEvent().apply {
-            exceptions = createNonHandledException()
-        }
-        fixture.getSut().updateSessionData(event, null, scope)
-        scope.withSession {
-            assertEquals(Session.State.Crashed, it!!.status)
-        }
-    }
-
-    @Test
-    fun `When event is handled, keep level as it is`() {
-        val scope = Scope(fixture.sentryOptions)
-        val sessionPair = scope.startSession()
-        assertNotNull(sessionPair) {
-            val session = it.current
-            val level = session.status
-            val event = SentryEvent()
-            fixture.getSut().updateSessionData(event, null, scope)
-            assertEquals(level, session.status)
-        }
-    }
-
-    @Test
-    fun `When event is non handled, increase errorCount`() {
-        val scope = Scope(fixture.sentryOptions)
-        scope.startSession()
-        val event = SentryEvent().apply {
-            exceptions = createNonHandledException()
-        }
-        fixture.getSut().updateSessionData(event, null, scope)
-        scope.withSession {
-            assertEquals(1, it!!.errorCount())
-        }
-    }
-
-    @Test
-    fun `When event is Errored, increase errorCount`() {
-        val scope = Scope(fixture.sentryOptions)
-        scope.startSession()
-        val exceptions = mutableListOf<SentryException>()
-        exceptions.add(SentryException())
-        val event = SentryEvent().apply {
-            setExceptions(exceptions)
-        }
-        fixture.getSut().updateSessionData(event, null, scope)
-        scope.withSession {
-            assertEquals(1, it!!.errorCount())
-        }
-    }
-
-    @Test
-    fun `When event is handled and not errored, do not increase errorsCount`() {
-        val scope = Scope(fixture.sentryOptions)
-        val sessionPair = scope.startSession()
-        assertNotNull(sessionPair) {
-            val session = it.current
-            val errorCount = session.errorCount()
-            val event = SentryEvent()
-            fixture.getSut().updateSessionData(event, null, scope)
-            assertEquals(errorCount, session.errorCount())
-        }
-    }
-
-    @Test
-    fun `When event has userAgent, set it into session`() {
-        val scope = Scope(fixture.sentryOptions)
-        val sessionPair = scope.startSession()
-        assertNotNull(sessionPair) {
-            val event = SentryEvent().apply {
-                request = Request().apply {
-                    headers = mutableMapOf("user-agent" to "jamesBond")
-                }
-            }
-            fixture.getSut().updateSessionData(event, null, scope)
-            scope.withSession {
-                assertEquals("jamesBond", it!!.userAgent)
-            }
-        }
-    }
-
-    @Test
-    fun `When event has no userAgent, keep as it is`() {
-        val scope = Scope(fixture.sentryOptions)
-        val sessionPair = scope.startSession()
-        assertNotNull(sessionPair) {
-            val session = it.current
-            val userAgent = session.userAgent
-            val event = SentryEvent().apply {
-                request = Request().apply {
-                    headers = mutableMapOf()
-                }
-            }
-            fixture.getSut().updateSessionData(event, null, scope)
-            assertEquals(userAgent, session.userAgent)
-        }
-    }
-
-    @Test
-    fun `When capture an event and there's no session, do nothing`() {
-        val scope = Scope(fixture.sentryOptions)
-        val event = SentryEvent()
-        fixture.getSut().updateSessionData(event, null, scope)
-        scope.withSession {
-            assertNull(it)
-        }
-    }
-
-    @Test
     fun `when captureEvent with sampling, session is still updated`() {
         fixture.sentryOptions.sampleRate = 1.0
         val sut = fixture.getSut()
@@ -770,10 +658,7 @@ class SentryClientTest {
         val sessionPair = scope.startSession()
         assertNotNull(sessionPair) {
             sut.captureEvent(event, scope, null)
-            scope.withSession {
-                assertEquals(Session.State.Crashed, it!!.status)
-                assertEquals(1, it.errorCount())
-            }
+            verify(fixture.sessionUpdater).updateSessionData(event, null, scope)
         }
     }
 
