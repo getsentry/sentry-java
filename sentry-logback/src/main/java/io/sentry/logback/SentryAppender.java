@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.ITransportFactory;
@@ -26,7 +27,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Appender for logback in charge of sending the logged events to a Sentry server. */
-public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+@Open
+public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @NotNull SentryOptions options = new SentryOptions();
   private @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
@@ -72,7 +74,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
    */
   // for the Android compatibility we must use old Java Date class
   @SuppressWarnings("JdkObsolete")
-  final @NotNull SentryEvent createEvent(@NotNull ILoggingEvent loggingEvent) {
+  protected @NotNull SentryEvent createEvent(@NotNull ILoggingEvent loggingEvent) {
     final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeStamp()));
     final Message message = new Message();
     message.setMessage(loggingEvent.getMessage());
@@ -123,7 +125,7 @@ public final class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEve
    * @param loggingEvent the logback event
    * @return the sentry breadcrumb
    */
-  private @NotNull Breadcrumb createBreadcrumb(final @NotNull ILoggingEvent loggingEvent) {
+  protected @NotNull Breadcrumb createBreadcrumb(final @NotNull ILoggingEvent loggingEvent) {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setLevel(formatLevel(loggingEvent.getLevel()));
     breadcrumb.setCategory(loggingEvent.getLoggerName());
