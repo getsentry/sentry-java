@@ -1,6 +1,5 @@
 package io.sentry;
 
-import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,17 +17,14 @@ final class ServerSessionManager implements SessionTracker, SessionUpdater {
   }
 
   @Override
-  @SuppressWarnings("JavaUtilDate")
   public void endSession() {
-    // add to aggregates
     if (status == null) {
       status = Status.Exited;
     }
-    sessionAggregates.addSession(new Date(), status);
+    sessionAggregates.addSession(status);
   }
 
   @Override
-  @SuppressWarnings("JavaUtilDate")
   public @Nullable Session updateSessionData(
       @NotNull SentryEvent event, @Nullable Object hint, @Nullable Scope scope) {
     if (status != Status.Crashed) {

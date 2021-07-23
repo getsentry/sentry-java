@@ -46,7 +46,11 @@ final class SessionAggregates implements Closeable {
     timer.cancel();
   }
 
-  // todo: infer startedAt
+  @SuppressWarnings("JavaUtilDate")
+  void addSession(final @NotNull ServerSessionManager.Status state) {
+    addSession(new Date(), state);
+  }
+
   void addSession(final @NotNull Date startedAt, final @NotNull ServerSessionManager.Status state) {
     final String roundedDate = DateUtils.getTimestampMinutesPrecision(startedAt);
     SessionStats stats;
