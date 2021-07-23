@@ -26,6 +26,7 @@ public final class Hub implements IHub {
   private final @NotNull Map<Throwable, Pair<ISpan, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
   private final @NotNull SessionTracker sessionTracker;
+  private final @Nullable SessionAggregates sessionAggregates;
 
   public static Hub create(final @NotNull SentryOptions options) {
     validateOptions(options);
@@ -35,28 +36,32 @@ public final class Hub implements IHub {
     if (options.getSessionMode() == SentryOptions.SessionMode.SERVER
         && options.getRelease() != null) {
       // creates Hub working in server-side session mode
-      final ServerSessionManager sessionTracker =
-          new ServerSessionManager(options.getRelease(), options.getEnvironment());
+      final SessionAggregates sessionAggregates =
+          new SessionAggregates(options.getRelease(), options.getEnvironment());
+      sessionAggregates.start();
+      final ServerSessionManager sessionTracker = new ServerSessionManager(sessionAggregates);
       final ISentryClient client = new SentryClient(options, sessionTracker);
       final Stack stack = new Stack(options.getLogger(), new StackItem(options, client, scope));
-      return new Hub(options, stack, sessionTracker);
+      return new Hub(options, stack, sessionTracker, sessionAggregates);
     } else {
       // creates Hub working in client-side session mode
       final ISentryClient client = new SentryClient(options, new ClientSessionUpdater(options));
       final Stack stack = new Stack(options.getLogger(), new StackItem(options, client, scope));
-      return new Hub(options, stack, new ClientSessionTracker(options, stack));
+      return new Hub(options, stack, new ClientSessionTracker(options, stack), null);
     }
   }
 
   private Hub(
       final @NotNull SentryOptions options,
       final @NotNull Stack stack,
-      final @NotNull SessionTracker sessionTracker) {
+      final @NotNull SessionTracker sessionTracker,
+      final @Nullable SessionAggregates sessionAggregates) {
     this.options = options;
     this.stack = stack;
     this.tracesSampler = new TracesSampler(options);
     this.sessionTracker = sessionTracker;
     this.lastEventId = SentryId.EMPTY_ID;
+    this.sessionAggregates = sessionAggregates;
 
     // Integrations will use this Hub instance once registered.
     // Make sure Hub ready to be used then.
@@ -69,13 +74,23 @@ public final class Hub implements IHub {
 
     this.options = hub.options;
     this.tracesSampler = new TracesSampler(hub.options);
-    this.stack = new Stack(hub.stack);
     this.lastEventId = SentryId.EMPTY_ID;
 
     // Integrations will use this Hub instance once registered.
     // Make sure Hub ready to be used then.
     this.isEnabled = true;
-    this.sessionTracker = hub.sessionTracker;
+    if (hub.sessionAggregates != null) {
+      // server mode
+      final ServerSessionManager serverSessionManager =
+          new ServerSessionManager(hub.sessionAggregates);
+      this.sessionTracker = serverSessionManager;
+      this.stack = new Stack(hub.stack, new SentryClient(options, serverSessionManager));
+    } else {
+      // client mode
+      this.stack = new Stack(hub.stack);
+      this.sessionTracker = hub.sessionTracker;
+    }
+    this.sessionAggregates = hub.sessionAggregates;
   }
 
   private static void validateOptions(final @NotNull SentryOptions options) {
@@ -286,8 +301,8 @@ public final class Hub implements IHub {
         // TODO: should we end session before closing client?
         item.getClient().close();
 
-        if (sessionTracker instanceof Closeable) {
-          ((Closeable) sessionTracker).close();
+        if (sessionAggregates != null) {
+          sessionAggregates.close();
         }
       } catch (Exception e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while closing the Hub.", e);

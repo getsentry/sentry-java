@@ -1008,10 +1008,6 @@ public final class io/sentry/SessionAdapter : com/google/gson/TypeAdapter {
 	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
 }
 
-public final class io/sentry/SessionAggregates {
-	public fun <init> (Lio/sentry/SessionAggregates$Attributes;)V
-}
-
 public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Runtime;)V

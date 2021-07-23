@@ -5,6 +5,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 final class Stack {
 
@@ -53,16 +54,30 @@ final class Stack {
     this.items.push(Objects.requireNonNull(rootStackItem, "rootStackItem is required"));
   }
 
-  public Stack(final @NotNull Stack stack) {
-    this(stack.logger, new StackItem(stack.items.getLast()));
+  public Stack(final @NotNull Stack stack, @Nullable final ISentryClient client) {
+    this(
+        stack.logger,
+        new StackItem(
+            stack.items.getLast().options,
+            client == null ? stack.items.getLast().getClient() : client,
+            new Scope(stack.items.getLast().getScope())));
     final Iterator<StackItem> iterator = stack.items.descendingIterator();
     // skip first item (root item)
     if (iterator.hasNext()) {
       iterator.next();
     }
     while (iterator.hasNext()) {
-      push(new StackItem(iterator.next()));
+      final StackItem next = iterator.next();
+      push(
+          new StackItem(
+              next.options,
+              client == null ? next.getClient() : client,
+              new Scope(next.getScope())));
     }
+  }
+
+  public Stack(final @NotNull Stack stack) {
+    this(stack, null);
   }
 
   @NotNull

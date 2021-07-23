@@ -19,7 +19,6 @@ import java.util.Random;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 public final class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
@@ -297,20 +296,6 @@ public final class SentryClient implements ISentryClient {
         new SentryEnvelopeHeader(userFeedback.getEventId(), options.getSdkVersion());
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
-  }
-
-  /**
-   * Updates the session data based on the event, hint and scope data
-   *
-   * @param event the SentryEvent
-   * @param hint the hint or null
-   * @param scope the Scope or null
-   */
-  @TestOnly
-  @Nullable
-  Session updateSessionData(
-      final @NotNull SentryEvent event, final @Nullable Object hint, final @Nullable Scope scope) {
-    return sessionUpdater.updateSessionData(event, hint, scope);
   }
 
   @ApiStatus.Internal

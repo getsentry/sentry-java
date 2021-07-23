@@ -1,63 +1,45 @@
 package io.sentry;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Date;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class ServerSessionManager implements SessionTracker, SessionUpdater, Closeable {
-  private static final int ONE_MINUTE = 60 * 1000;
-  private final @NotNull Timer timer = new Timer();
+final class ServerSessionManager implements SessionTracker, SessionUpdater {
+  private @Nullable Status status;
   private final @NotNull SessionAggregates sessionAggregates;
 
-  ServerSessionManager(final @NotNull String release, final @Nullable String environment) {
-    sessionAggregates =
-        new SessionAggregates(new SessionAggregates.Attributes(release, environment));
-    start();
-  }
-
-  void start() {
-    timer.scheduleAtFixedRate(
-        new TimerTask() {
-          @Override
-          public void run() {
-            // TODO: serialize and send envelopes
-            for (Map.Entry<String, SessionAggregates.SessionStats> entry :
-                sessionAggregates.getAggregates().entrySet()) {
-              System.out.println(entry.getKey() + ":" + entry.getValue());
-            }
-          }
-        },
-        ONE_MINUTE,
-        ONE_MINUTE);
-  }
-
-  @Override
-  public void close() throws IOException {
-    timer.cancel();
+  ServerSessionManager(final @NotNull SessionAggregates sessionAggregates) {
+    this.sessionAggregates = sessionAggregates;
   }
 
   @Override
   public void startSession() {
-    // do nothing
+    status = null;
   }
 
   @Override
   @SuppressWarnings("JavaUtilDate")
   public void endSession() {
-    sessionAggregates.addSession(new Date(), Session.State.Exited);
+    // add to aggregates
+    if (status == null) {
+      status = Status.Exited;
+    }
+    sessionAggregates.addSession(new Date(), status);
   }
 
   @Override
   @SuppressWarnings("JavaUtilDate")
   public @Nullable Session updateSessionData(
       @NotNull SentryEvent event, @Nullable Object hint, @Nullable Scope scope) {
-    // todo: check if event.isCrashed() ?
-    sessionAggregates.addSession(new Date(), Session.State.Crashed);
+    if (status != Status.Crashed) {
+      status = event.isCrashed() ? Status.Crashed : Status.Errored;
+    }
     return null;
+  }
+
+  enum Status {
+    Exited,
+    Errored,
+    Crashed;
   }
 }

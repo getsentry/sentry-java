@@ -6,11 +6,11 @@ import kotlin.test.assertNotNull
 
 class SessionAggregatesTest {
 
-    class Fixture {
-        fun getSut(release: String = "0.0.1", environment: String? = null) = SessionAggregates(SessionAggregates.Attributes(release, environment))
+    private class Fixture {
+        fun getSut(release: String = "0.0.1", environment: String? = null) = SessionAggregates(release, environment)
     }
 
-    val fixture = Fixture()
+    private val fixture = Fixture()
 
     @Test
     fun `sets attributes`() {
@@ -24,9 +24,10 @@ class SessionAggregatesTest {
         val sut = fixture.getSut()
         val session = createSession("2021-12-01T13:11:09Z", Session.State.Crashed)
         session.end()
-        sut.addSession(session.started!!, session.status)
+        sut.addSession(session.started!!, ServerSessionManager.Status.Crashed)
         assertNotNull(sut.aggregates["2021-12-01T13:11:00Z"]) {
-            assertEquals(1, it.errored.get())
+            assertEquals(1, it.crashed.get())
+            assertEquals(0, it.errored.get())
             assertEquals(0, it.exited.get())
         }
     }
@@ -36,7 +37,7 @@ class SessionAggregatesTest {
         val sut = fixture.getSut()
         val session = createSession("2021-12-01T13:11:09Z", Session.State.Exited)
         session.end()
-        sut.addSession(session.started!!, session.status)
+        sut.addSession(session.started!!, ServerSessionManager.Status.Exited)
         assertNotNull(sut.aggregates["2021-12-01T13:11:00Z"]) {
             assertEquals(0, it.errored.get())
             assertEquals(1, it.exited.get())
