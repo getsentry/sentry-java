@@ -19,6 +19,7 @@ repositories {
 dependencies {
     implementation(Config.Libs.springBootStarterSecurity)
     implementation(Config.Libs.springBootStarterWeb)
+    implementation(Config.Libs.springBootStarterWebflux)
     implementation(Config.Libs.springBootStarterAop)
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBootStarter)
