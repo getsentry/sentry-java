@@ -28,7 +28,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
-  private static final String UI_LOAD_OP = "ui.load";
+  static final String UI_LOAD_OP = "ui.load";
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
 
@@ -50,10 +50,16 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ITransaction> activitiesWithOngoingTransactions =
       new WeakHashMap<>();
 
+  private final @NotNull ActivityFramesTracker activityFramesTracker;
+
   public ActivityLifecycleIntegration(
-      final @NotNull Application application, final @NotNull IBuildInfoProvider buildInfoProvider) {
+      final @NotNull Application application,
+      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
     this.application = Objects.requireNonNull(application, "Application is required");
     Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+    this.activityFramesTracker =
+        Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
@@ -96,7 +102,7 @@ public final class ActivityLifecycleIntegration
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
     }
 
-    ActivityFramesTracker.getInstance().close();
+    activityFramesTracker.stop();
   }
 
   private void addBreadcrumb(final @NonNull Activity activity, final @NotNull String state) {
@@ -143,8 +149,7 @@ public final class ActivityLifecycleIntegration
                 (Date) null,
                 true,
                 (finishingTransaction) -> {
-                  ActivityFramesTracker.getInstance()
-                      .setMetrics(activity, finishingTransaction.getEventId());
+                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
                 });
       } else {
         // start transaction with app start timestamp
@@ -155,8 +160,7 @@ public final class ActivityLifecycleIntegration
                 appStartTime,
                 true,
                 (finishingTransaction) -> {
-                  ActivityFramesTracker.getInstance()
-                      .setMetrics(activity, finishingTransaction.getEventId());
+                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
                 });
         // start specific span for app start
 
@@ -229,7 +233,7 @@ public final class ActivityLifecycleIntegration
       setColdStart(savedInstanceState);
 
       // start collecting frame metrics for transaction
-      ActivityFramesTracker.getInstance().addActivity(activity);
+      activityFramesTracker.addActivity(activity);
 
       // if activity has global fields being init. and
       // they are slow, this won't count the whole fields/ctor initialization time, but only
@@ -250,7 +254,7 @@ public final class ActivityLifecycleIntegration
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
     if (!isAllActivityCallbacksAvailable) {
       // start collecting frame metrics for transaction
-      ActivityFramesTracker.getInstance().addActivity(activity);
+      activityFramesTracker.addActivity(activity);
 
       startTracing(activity);
     }

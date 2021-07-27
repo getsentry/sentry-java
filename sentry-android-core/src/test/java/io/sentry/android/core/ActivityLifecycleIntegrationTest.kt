@@ -19,6 +19,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.TransactionFinishedCallback
 import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -36,14 +37,16 @@ class ActivityLifecycleIntegrationTest {
         val options = SentryAndroidOptions()
         val bundle = mock<Bundle>()
         val context = TransactionContext("name", "op")
-        val transaction = SentryTracer(context, hub)
+        val activityFramesTracker = mock<ActivityFramesTracker>()
+        val transactionFinishedCallback = mock<TransactionFinishedCallback>()
+        val transaction = SentryTracer(context, hub, true, transactionFinishedCallback)
         val buildInfo = mock<IBuildInfoProvider>()
 
         fun getSut(apiVersion: Int = 29): ActivityLifecycleIntegration {
             whenever(hub.options).thenReturn(options)
             whenever(hub.startTransaction(any(), any(), anyOrNull(), any(), any())).thenReturn(transaction)
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
-            return ActivityLifecycleIntegration(application, buildInfo)
+            return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker)
         }
     }
 
@@ -115,6 +118,16 @@ class ActivityLifecycleIntegrationTest {
         sut.close()
 
         verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+    }
+
+    @Test
+    fun `When ActivityBreadcrumbsIntegration is closed, it should close the ActivityFramesTracker`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        sut.close()
+
+        verify(fixture.activityFramesTracker).stop()
     }
 
     @Test
@@ -251,6 +264,18 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `Activity gets added to ActivityFramesTracker during transaction creation`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
+
+        verify(fixture.activityFramesTracker).addActivity(eq(activity))
+    }
+
+    @Test
     fun `Transaction name is the Activity's name`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
@@ -263,7 +288,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).startTransaction(check {
             assertEquals("Activity", it)
-        }, any(), anyOrNull(), any(), anyOrNull())
+        }, any(), anyOrNull(), any(), any())
     }
 
     @Test

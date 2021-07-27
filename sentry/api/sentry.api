@@ -1529,6 +1529,7 @@ public final class io/sentry/protocol/Gpu : io/sentry/IUnknownPropertiesConsumer
 
 public final class io/sentry/protocol/MeasurementValue {
 	public fun <init> (F)V
+	public fun getValue ()F
 }
 
 public final class io/sentry/protocol/Mechanism : io/sentry/IUnknownPropertiesConsumer {

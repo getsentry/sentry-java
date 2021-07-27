@@ -10,18 +10,19 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 final class ActivityFramesTracker {
 
-  private static final @NotNull ActivityFramesTracker instance = new ActivityFramesTracker();
+  private final @NotNull FrameMetricsAggregator frameMetricsAggregator;
 
-  private final @NotNull FrameMetricsAggregator frameMetricsAggregator =
-      new FrameMetricsAggregator();
+  ActivityFramesTracker() {
+    this(new FrameMetricsAggregator());
+  }
 
-  private ActivityFramesTracker() {}
-
-  static @NotNull ActivityFramesTracker getInstance() {
-    return instance;
+  @TestOnly
+  ActivityFramesTracker(final @NotNull FrameMetricsAggregator frameMetricsAggregator) {
+    this.frameMetricsAggregator = frameMetricsAggregator;
   }
 
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
@@ -81,7 +82,7 @@ final class ActivityFramesTracker {
     return stringMeasurementValueMap;
   }
 
-  void close() {
+  void stop() {
     frameMetricsAggregator.stop();
     activityMeasurements.clear();
   }

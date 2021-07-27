@@ -2,12 +2,15 @@ package io.sentry.android.core;
 
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
+import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
 import io.sentry.EventProcessor;
+import io.sentry.SpanContext;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.Objects;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -20,8 +23,14 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
   private boolean sentStartMeasurement = false;
 
-  PerformanceAndroidEventProcessor(final @NotNull SentryAndroidOptions options) {
+  private final @NotNull ActivityFramesTracker activityFramesTracker;
+
+  PerformanceAndroidEventProcessor(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
     tracingEnabled = options.isTracingEnabled();
+    this.activityFramesTracker =
+        Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
   }
 
   @Override
@@ -49,9 +58,14 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     }
 
     final SentryId eventId = transaction.getEventId();
-    if (eventId != null) {
+    final SpanContext spanContext = transaction.getContexts().getTrace();
+
+    // only add slow/frozen frames to transactions created by ActivityLifecycleIntegration
+    if (eventId != null
+        && spanContext != null
+        && spanContext.getOperation().contentEquals(UI_LOAD_OP)) {
       final Map<String, @NotNull MeasurementValue> framesMetrics =
-          ActivityFramesTracker.getInstance().takeMetrics(eventId);
+          activityFramesTracker.takeMetrics(eventId);
       if (framesMetrics != null) {
         transaction.getMeasurements().putAll(framesMetrics);
       }
