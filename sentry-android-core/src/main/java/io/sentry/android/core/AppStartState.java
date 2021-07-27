@@ -25,7 +25,7 @@ public final class AppStartState {
 
   private AppStartState() {}
 
-  static @NotNull AppStartState getInstance() {
+  public static @NotNull AppStartState getInstance() {
     return instance;
   }
 
@@ -42,7 +42,17 @@ public final class AppStartState {
   void setAppStartEnd(final long appStartEndMillis) {
     this.appStartEndMillis = appStartEndMillis;
   }
-
+  
+  @Nullable
+  public long getAppStartEnd() {
+    return appStartEndMillis
+  }
+  
+  @Nullable
+  public long getAppStart() {
+    return appStartMillis
+  }
+ 
   @Nullable
   synchronized Long getAppStartInterval() {
     if (appStartMillis == null || appStartEndMillis == null) {
@@ -51,7 +61,7 @@ public final class AppStartState {
     return appStartEndMillis - appStartMillis;
   }
 
-  boolean isColdStart() {
+  public boolean isColdStart() {
     return coldStart;
   }
 
