@@ -8,5 +8,5 @@ interface SpanFinishedCallback {
    *
    * @param span the span that has finished.
    */
-  void onSpanFinished(final @NotNull Span span);
+  void execute(final @NotNull Span span);
 }

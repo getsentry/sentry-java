@@ -35,7 +35,9 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 }
 
 public final class io/sentry/android/core/AppStartState {
+	public fun getAppStartEndMillis ()Ljava/lang/Long;
 	public fun getAppStartInterval ()Ljava/lang/Long;
+	public fun getAppStartMillis ()Ljava/lang/Long;
 	public static fun getInstance ()Lio/sentry/android/core/AppStartState;
 	public fun isColdStart ()Z
 }

@@ -72,4 +72,12 @@ public final class AppStartState {
     this.appStartTime = appStartTime;
     this.appStartMillis = appStartMillis;
   }
+
+  public @Nullable Long getAppStartMillis() {
+    return appStartMillis;
+  }
+
+  public @Nullable Long getAppStartEndMillis() {
+    return appStartEndMillis;
+  }
 }

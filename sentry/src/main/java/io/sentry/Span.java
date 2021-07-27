@@ -123,7 +123,7 @@ public final class Span implements ISpan {
       hub.setSpanContext(throwable, this, this.transaction.getName());
     }
     if (spanFinishedCallback != null) {
-      spanFinishedCallback.onSpanFinished(this);
+      spanFinishedCallback.execute(this);
     }
   }
 

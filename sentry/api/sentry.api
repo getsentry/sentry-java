@@ -1126,7 +1126,7 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 }
 
 public abstract interface class io/sentry/TransactionFinishedCallback {
-	public abstract fun onTransactionFinished (Lio/sentry/ITransaction;)V
+	public abstract fun execute (Lio/sentry/ITransaction;)V
 }
 
 public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Integration, java/io/Closeable, java/lang/Thread$UncaughtExceptionHandler {

@@ -1,7 +1,9 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public interface TransactionFinishedCallback {
 
   /**
@@ -9,5 +11,5 @@ public interface TransactionFinishedCallback {
    *
    * @param transaction the transaction
    */
-  void onTransactionFinished(@NotNull ITransaction transaction);
+  void execute(@NotNull ITransaction transaction);
 }
