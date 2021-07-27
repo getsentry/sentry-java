@@ -1,5 +1,4 @@
 import java.math.BigDecimal
-import java.util.Locale
 
 object Config {
     val kotlinVersion = "1.4.30"
@@ -21,11 +20,6 @@ object Config {
         val grettyVersion = "3.0.5"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.15.1"
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
-
-        fun shouldSignArtifacts(version: String): Boolean {
-            return !(System.getenv("CI")?.toBoolean() ?: false) &&
-                    !version.toUpperCase(Locale.ROOT).endsWith("SNAPSHOT")
-        }
     }
 
     object Android {
