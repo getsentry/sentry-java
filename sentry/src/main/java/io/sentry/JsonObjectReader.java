@@ -48,8 +48,7 @@ public final class JsonObjectReader extends JsonReader {
     try {
       unknown.put(name, nextObjectOrNull());
     } catch (Exception exception) {
-      String message = "Error deserializing unknown key \"" + name + "\"";
-      logger.log(SentryLevel.ERROR, message, exception);
+      logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
     }
   }
 
