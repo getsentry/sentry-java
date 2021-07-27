@@ -6,18 +6,14 @@ import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
-import io.sentry.UserFeedback;
 import io.sentry.util.CollectionUtils;
-
 import java.io.IOException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 public final class App implements IUnknownPropertiesConsumer, JsonSerializable {
   public static final String TYPE = "app";
@@ -134,7 +130,8 @@ public final class App implements IUnknownPropertiesConsumer, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (appIdentifier != null) {
       writer.name(JsonKeys.APP_IDENTIFIER).value(appIdentifier);
@@ -173,7 +170,8 @@ public final class App implements IUnknownPropertiesConsumer, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<App> {
     @Override
-    public @NotNull App deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull App deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       App app = new App();
       Map<String, Object> unknown = null;

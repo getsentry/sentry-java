@@ -11,29 +11,32 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class BrowserSerializationTest {
-
+class OperatingSystemSerializationTest {
     private class Fixture {
         var logger: ILogger = mock()
 
-        fun getSut() = Browser().apply {
-            name = "e1c723db-7408-4043-baa7-f4e96234e5dc"
-            version = "724a48e9-2d35-416b-9f79-132beba2473a"
+        fun getSut() = OperatingSystem().apply {
+            name = "686a11a8-eae7-4393-aa10-a1368d523cb2"
+            version = "3033f32d-6a27-4715-80c8-b232ce84ca61"
+            rawDescription = "eb2d0c5e-f5d4-49c7-b876-d8a654ee87cf"
+            build = "bd197b97-eb68-49c3-9d07-ef789caf3069"
+            kernelVersion = "1df24aec-3a6f-49a9-8b50-69ae5f9dde08"
+            isRooted = true
         }
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/browser.json")
+        val expected = sanitizedFile("gson/operating_system.json")
         val actual = serializeToString(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/browser.json")
-        val actual = deserializeBrowser(expectedJson)
+        val expectedJson = sanitizedFile("gson/operating_system.json")
+        val actual = deserialize(expectedJson)
         val actualJson = serializeToString(actual)
         assertEquals(expectedJson, actualJson)
     }
@@ -57,8 +60,8 @@ class BrowserSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserializeBrowser(json: String): Browser {
+    private fun deserialize(json: String): OperatingSystem {
         val reader = JsonObjectReader(StringReader(json))
-        return Browser.Deserializer().deserialize(reader, fixture.logger)
+        return OperatingSystem.Deserializer().deserialize(reader, fixture.logger)
     }
 }

@@ -7,7 +7,6 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.util.CollectionUtils;
-
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -17,7 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 public final class Device implements IUnknownPropertiesConsumer, JsonSerializable {
   public static final String TYPE = "device";
@@ -439,7 +437,8 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (name != null) {
       writer.name(JsonKeys.NAME).value(name);
@@ -548,7 +547,8 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
   public static final class Deserializer implements JsonDeserializer<Device> {
 
     @Override
-    public @NotNull Device deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull Device deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       Device device = new Device();
       Map<String, Object> unknown = null;
@@ -578,7 +578,7 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
             if (archsList != null) {
               Object[] archsArray = new String[archsList.size()];
               archsList.toArray(archsArray);
-              device.archs = (String[])archsArray;
+              device.archs = (String[]) archsArray;
             }
             break;
           case JsonKeys.BATTERY_LEVEL:

@@ -7,7 +7,6 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.util.CollectionUtils;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,8 +48,6 @@ public final class Browser implements IUnknownPropertiesConsumer, JsonSerializab
     this.version = version;
   }
 
-
-
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
@@ -65,7 +62,8 @@ public final class Browser implements IUnknownPropertiesConsumer, JsonSerializab
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
     writer.beginObject();
     if (name != null) {
       writer.name(JsonKeys.NAME).value(name);
@@ -89,7 +87,8 @@ public final class Browser implements IUnknownPropertiesConsumer, JsonSerializab
 
   public static final class Deserializer implements JsonDeserializer<Browser> {
     @Override
-    public @NotNull Browser deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull Browser deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       Browser browser = new Browser();
       Map<String, Object> unknown = null;

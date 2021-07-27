@@ -7,11 +7,11 @@ import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
-import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
-import java.util.*
+import java.util.TimeZone
 import kotlin.test.assertEquals
+import org.junit.Test
 
 class DeviceSerializationTest {
 

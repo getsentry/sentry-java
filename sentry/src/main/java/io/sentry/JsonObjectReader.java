@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -66,14 +65,14 @@ public final class JsonObjectReader extends JsonReader {
 
   public @Nullable Date nextDateOrNull() throws IOException {
     if (peek() == JsonToken.NULL) {
-      return  null;
+      return null;
     }
     return DateUtils.getDateTime(nextString());
   }
 
   public @Nullable TimeZone nextTimeZoneOrNull() throws IOException {
     if (peek() == JsonToken.NULL) {
-      return  null;
+      return null;
     }
     return TimeZone.getTimeZone(nextString());
   }
