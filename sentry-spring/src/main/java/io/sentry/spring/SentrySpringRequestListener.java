@@ -12,8 +12,13 @@ import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.Ordered;
 
-/** Pushes new {@link io.sentry.Scope} on each incoming HTTP request. */
+/**
+ * Pushes new {@link io.sentry.Scope} on each incoming HTTP request.
+ *
+ * @deprecated use {@link SentrySpringFilter}.
+ */
 @Open
+@Deprecated
 public class SentrySpringRequestListener implements ServletRequestListener, Ordered {
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver requestResolver;

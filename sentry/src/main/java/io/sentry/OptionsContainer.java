@@ -7,11 +7,11 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class OptionsContainer<T> {
 
-  public static <T> OptionsContainer<T> create(final Class<T> clazz) {
+  public @NotNull static <T> OptionsContainer<T> create(final @NotNull Class<T> clazz) {
     return new OptionsContainer<>(clazz);
   }
 
-  private final Class<T> clazz;
+  private final @NotNull Class<T> clazz;
 
   private OptionsContainer(final @NotNull Class<T> clazz) {
     super();

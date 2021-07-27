@@ -7,8 +7,7 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.spring") version Config.kotlinVersion
     id("war")
-    // https://github.com/gretty-gradle-plugin/gretty/issues/206
-    id(Config.BuildPlugins.gretty) version Config.BuildPlugins.grettyVersion apply false
+    id(Config.BuildPlugins.gretty) version Config.BuildPlugins.grettyVersion
 }
 
 group = "io.sentry.sample.spring"

@@ -41,6 +41,7 @@ dependencies {
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.springBootStarterAop)
     compileOnly(Config.Libs.springBootStarterSecurity)
+    compileOnly(Config.Libs.reactorCore)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
@@ -61,6 +62,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.Libs.springBootStarterTest)
     testImplementation(Config.Libs.springBootStarterWeb)
+    testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
     testImplementation(Config.TestLibs.awaitility)

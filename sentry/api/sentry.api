@@ -813,6 +813,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxCacheItems ()I
 	public fun getMaxQueueSize ()I
+	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getMaxSpans ()I
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
@@ -879,6 +880,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxCacheItems (I)V
 	public fun setMaxQueueSize (I)V
+	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
@@ -920,6 +922,15 @@ public final class io/sentry/SentryOptions$Proxy {
 	public fun setPass (Ljava/lang/String;)V
 	public fun setPort (Ljava/lang/String;)V
 	public fun setUser (Ljava/lang/String;)V
+}
+
+public final class io/sentry/SentryOptions$RequestSize : java/lang/Enum {
+	public static final field ALWAYS Lio/sentry/SentryOptions$RequestSize;
+	public static final field MEDIUM Lio/sentry/SentryOptions$RequestSize;
+	public static final field NONE Lio/sentry/SentryOptions$RequestSize;
+	public static final field SMALL Lio/sentry/SentryOptions$RequestSize;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryOptions$RequestSize;
+	public static fun values ()[Lio/sentry/SentryOptions$RequestSize;
 }
 
 public abstract interface class io/sentry/SentryOptions$TracesSamplerCallback {
@@ -1312,6 +1323,7 @@ public final class io/sentry/exception/ExceptionMechanismException : java/lang/R
 
 public final class io/sentry/exception/InvalidSentryTraceHeaderException : java/lang/Exception {
 	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun getSentryTraceHeader ()Ljava/lang/String;
 }
 

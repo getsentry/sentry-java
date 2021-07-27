@@ -79,12 +79,6 @@ subprojects {
             }
         }
 
-        val rootDir = this.project.rootProject.projectDir
-        val distDir = File("${rootDir}${sep}distributions")
-
-        // create dir if it does not exist
-        distDir.mkdirs()
-
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
@@ -92,12 +86,6 @@ subprojects {
                 val file = File(distributionFilePath)
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
-
-                val newFile = File("${distDir}${sep}${file.name}")
-                file.copyTo(newFile, overwrite = true)
-
-                UnzipUtils.unzip(newFile, distDir.path)
-                newFile.delete()
             }
         }
 

@@ -33,6 +33,7 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
@@ -47,13 +48,14 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     classes = [App::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.enable-tracing=true", "sentry.traces-sample-rate=1.0"]
+    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.enable-tracing=true", "sentry.traces-sample-rate=1.0", "sentry.max-request-body-size=medium"]
 )
 class SentrySpringIntegrationTest {
 
@@ -64,7 +66,7 @@ class SentrySpringIntegrationTest {
     lateinit var hub: IHub
 
     @LocalServerPort
-    lateinit var port: Integer
+    var port: Int? = null
 
     @Before
     fun reset() {
@@ -87,6 +89,23 @@ class SentrySpringIntegrationTest {
                 assertThat(event.user).isNotNull()
                 assertThat(event.user!!.username).isEqualTo("user")
                 assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
+            }, anyOrNull())
+        }
+    }
+
+    @Test
+    fun `attaches request body to SentryEvents`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+        val headers = HttpHeaders().apply {
+            this.contentType = MediaType.APPLICATION_JSON
+        }
+        val httpEntity = HttpEntity("""{"body":"content"}""", headers)
+        restTemplate.exchange("http://localhost:$port/body", HttpMethod.POST, httpEntity, Void::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkEvent { event ->
+                assertThat(event.request).isNotNull()
+                assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
             }, anyOrNull())
         }
     }
@@ -226,6 +245,11 @@ class HelloController(private val helloService: HelloService) {
     @GetMapping("/logging")
     fun logging() {
         logger.error("event from logger")
+    }
+
+    @PostMapping("/body")
+    fun body() {
+        Sentry.captureMessage("body")
     }
 }
 
