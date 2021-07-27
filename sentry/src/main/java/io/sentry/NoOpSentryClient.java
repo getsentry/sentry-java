@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.Sessions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,4 +49,7 @@ final class NoOpSentryClient implements ISentryClient {
       @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
+
+  @Override
+  public void captureSessions(final @NotNull Sessions sessions) {}
 }

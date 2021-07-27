@@ -275,6 +275,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/Scope;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;)V
 	public abstract fun captureSession (Lio/sentry/Session;Ljava/lang/Object;)V
+	public abstract fun captureSessions (Lio/sentry/protocol/Sessions;)V
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
@@ -660,6 +661,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Ljava/lang/Object;)V
+	public fun captureSessions (Lio/sentry/protocol/Sessions;)V
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V
@@ -668,6 +670,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 }
 
 public final class io/sentry/SentryEnvelope {
+	public fun <init> (Lio/sentry/SentryEnvelopeHeader;Lio/sentry/SentryEnvelopeItem;)V
 	public fun <init> (Lio/sentry/SentryEnvelopeHeader;Ljava/lang/Iterable;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SdkVersion;Lio/sentry/SentryEnvelopeItem;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SdkVersion;Ljava/lang/Iterable;)V
@@ -697,6 +700,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromAttachment (Lio/sentry/Attachment;J)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromSessionAggregates (Lio/sentry/ISerializer;Lio/sentry/protocol/Sessions;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
 	public fun getData ()[B
 	public fun getEvent (Lio/sentry/ISerializer;)Lio/sentry/SentryEvent;
@@ -755,6 +759,7 @@ public final class io/sentry/SentryItemType : java/lang/Enum {
 	public static final field Attachment Lio/sentry/SentryItemType;
 	public static final field Event Lio/sentry/SentryItemType;
 	public static final field Session Lio/sentry/SentryItemType;
+	public static final field Sessions Lio/sentry/SentryItemType;
 	public static final field Transaction Lio/sentry/SentryItemType;
 	public static final field Unknown Lio/sentry/SentryItemType;
 	public static final field UserFeedback Lio/sentry/SentryItemType;
@@ -1006,6 +1011,25 @@ public final class io/sentry/SessionAdapter : com/google/gson/TypeAdapter {
 	public synthetic fun read (Lcom/google/gson/stream/JsonReader;)Ljava/lang/Object;
 	public fun write (Lcom/google/gson/stream/JsonWriter;Lio/sentry/Session;)V
 	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/SessionAggregates {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun getAggregates ()Ljava/util/Map;
+	public fun getAttributes ()Lio/sentry/SessionAggregates$Attributes;
+}
+
+public final class io/sentry/SessionAggregates$Attributes {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun getEnvironment ()Ljava/lang/String;
+	public fun getRelease ()Ljava/lang/String;
+}
+
+public final class io/sentry/SessionAggregates$SessionStats {
+	public fun <init> ()V
+	public fun getCrashed ()Ljava/util/concurrent/atomic/AtomicLong;
+	public fun getErrored ()Ljava/util/concurrent/atomic/AtomicLong;
+	public fun getExited ()Ljava/util/concurrent/atomic/AtomicLong;
 }
 
 public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, java/io/Closeable {
@@ -1771,6 +1795,26 @@ public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEv
 	public fun getType ()Ljava/lang/String;
 	public fun isFinished ()Z
 	public fun isSampled ()Z
+}
+
+public final class io/sentry/protocol/Sessions {
+	public fun <init> (Lio/sentry/SessionAggregates;)V
+	public fun getAggregates ()Ljava/util/List;
+	public fun getAttrs ()Lio/sentry/protocol/Sessions$Attributes;
+}
+
+public final class io/sentry/protocol/Sessions$Aggregate {
+	public fun <init> (Ljava/lang/String;JJJ)V
+	public fun getCrashed ()J
+	public fun getErrored ()J
+	public fun getExited ()J
+	public fun getStarted ()Ljava/lang/String;
+}
+
+public final class io/sentry/protocol/Sessions$Attributes {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun getEnvironment ()Ljava/lang/String;
+	public fun getRelease ()Ljava/lang/String;
 }
 
 public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsumer {

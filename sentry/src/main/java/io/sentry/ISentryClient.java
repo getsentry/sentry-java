@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.Sessions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -212,4 +213,11 @@ public interface ISentryClient {
   default @NotNull SentryId captureTransaction(@NotNull SentryTransaction transaction) {
     return captureTransaction(transaction, null, null);
   }
+
+  /**
+   * Captures a collection of aggregated sessions.
+   *
+   * @param sessions the {@link Sessions} to send
+   */
+  void captureSessions(@NotNull Sessions sessions);
 }

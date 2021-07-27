@@ -6,6 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public enum SentryItemType {
   Session("session"),
+  Sessions("sessions"),
   Event("event"), // DataCategory.Error
   UserFeedback("user_report"), // Sentry backend still uses user_report
   Attachment("attachment"),

@@ -4,6 +4,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.Sessions;
 import io.sentry.transport.ITransport;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
@@ -395,6 +396,18 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  @Override
+  public void captureSessions(final @NotNull Sessions sessions) {
+    try {
+      transport.send(
+          new SentryEnvelope(
+              new SentryEnvelopeHeader(new SentryId(), options.getSdkVersion()),
+              SentryEnvelopeItem.fromSessionAggregates(options.getSerializer(), sessions)));
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing session aggregates failed.");
+    }
   }
 
   private @Nullable List<Attachment> filterForTransaction(@Nullable List<Attachment> attachments) {

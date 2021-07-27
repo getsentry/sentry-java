@@ -2,18 +2,17 @@ package io.sentry;
 
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.util.ApplyScopeUtils;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 final class ClientSessionUpdater implements SessionUpdater {
-  private final SentryOptions options;
+  private final @NotNull SentryOptions options;
 
-  public ClientSessionUpdater(SentryOptions options) {
-    this.options = options;
+  public ClientSessionUpdater(final @NotNull SentryOptions options) {
+    this.options = Objects.requireNonNull(options, "options is required");
   }
 
-  @TestOnly
   @Nullable
   @Override
   public Session updateSessionData(
