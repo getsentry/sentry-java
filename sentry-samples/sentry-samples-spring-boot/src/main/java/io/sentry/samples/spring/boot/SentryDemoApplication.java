@@ -1,6 +1,5 @@
 package io.sentry.samples.spring.boot;
 
-import io.sentry.spring.EnableSentry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;

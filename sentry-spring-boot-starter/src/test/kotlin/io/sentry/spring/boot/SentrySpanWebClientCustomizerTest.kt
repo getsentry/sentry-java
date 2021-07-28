@@ -4,7 +4,15 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.*
+import io.sentry.Breadcrumb
+import io.sentry.IHub
+import io.sentry.Scope
+import io.sentry.SentryOptions
+import io.sentry.SentryTracer
+import io.sentry.SpanStatus
+import io.sentry.TransactionContext
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -16,9 +24,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
-import kotlin.test.Test
-import kotlin.test.assertEquals
-
 
 class SentrySpanWebClientCustomizerTest {
     class Fixture {
@@ -67,7 +72,6 @@ class SentrySpanWebClientCustomizerTest {
             mockServer.dispatcher = dispatcher
             return webClient
         }
-
     }
 
     private val fixture = Fixture()

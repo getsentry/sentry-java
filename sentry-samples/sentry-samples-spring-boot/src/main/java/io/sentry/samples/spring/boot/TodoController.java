@@ -11,7 +11,6 @@ public class TodoController {
   private final RestTemplate restTemplate;
   private final WebClient webClient;
 
-
   public TodoController(RestTemplate restTemplate, WebClient webClient) {
     this.restTemplate = restTemplate;
     this.webClient = webClient;
@@ -25,9 +24,11 @@ public class TodoController {
 
   @GetMapping("/todo-webclient/{id}")
   Todo todoWebClient(@PathVariable Long id) {
-    return webClient.get().uri("https://jsonplaceholder.typicode.com/todos/{id}", id)
-      .retrieve()
-      .bodyToMono(Todo.class)
-      .block();
+    return webClient
+        .get()
+        .uri("https://jsonplaceholder.typicode.com/todos/{id}", id)
+        .retrieve()
+        .bodyToMono(Todo.class)
+        .block();
   }
 }

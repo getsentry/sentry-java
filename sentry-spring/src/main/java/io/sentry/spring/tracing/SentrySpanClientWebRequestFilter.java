@@ -20,7 +20,8 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
   }
 
   @Override
-  public Mono<ClientResponse> filter(@NotNull ClientRequest request, @NotNull ExchangeFunction next) {
+  public Mono<ClientResponse> filter(
+      @NotNull ClientRequest request, @NotNull ExchangeFunction next) {
     final ISpan activeSpan = hub.getSpan();
     if (activeSpan == null) {
       addBreadcrumb(request, null);
@@ -32,30 +33,33 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
     final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
 
-    final ClientRequest clientRequestWithSentryTraceHeader = ClientRequest.from(request)
-      .header(sentryTraceHeader.getName(), sentryTraceHeader.getValue())
-      .build();
+    final ClientRequest clientRequestWithSentryTraceHeader =
+        ClientRequest.from(request)
+            .header(sentryTraceHeader.getName(), sentryTraceHeader.getValue())
+            .build();
 
-    return next.exchange(clientRequestWithSentryTraceHeader).flatMap(response -> {
-      span.setStatus(SpanStatus.fromHttpStatusCode(response.rawStatusCode()));
-      addBreadcrumb(request, response.rawStatusCode());
-      span.finish();
-      return Mono.just(response);
-    })
-      .onErrorMap(throwable -> {
-        span.setThrowable(throwable);
-        span.setStatus(SpanStatus.INTERNAL_ERROR);
-        addBreadcrumb(request, null);
-        span.finish();
-        return throwable;
-      });
+    return next.exchange(clientRequestWithSentryTraceHeader)
+        .flatMap(
+            response -> {
+              span.setStatus(SpanStatus.fromHttpStatusCode(response.rawStatusCode()));
+              addBreadcrumb(request, response.rawStatusCode());
+              span.finish();
+              return Mono.just(response);
+            })
+        .onErrorMap(
+            throwable -> {
+              span.setThrowable(throwable);
+              span.setStatus(SpanStatus.INTERNAL_ERROR);
+              addBreadcrumb(request, null);
+              span.finish();
+              return throwable;
+            });
   }
 
   private void addBreadcrumb(
-    final @NotNull ClientRequest request,
-    final @Nullable Integer responseStatusCode) {
+      final @NotNull ClientRequest request, final @Nullable Integer responseStatusCode) {
     final Breadcrumb breadcrumb =
-      Breadcrumb.http(request.url().toString(), request.method().name(), responseStatusCode);
+        Breadcrumb.http(request.url().toString(), request.method().name(), responseStatusCode);
     hub.addBreadcrumb(breadcrumb);
   }
 }
