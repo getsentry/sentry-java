@@ -150,7 +150,8 @@ public final class NoOpHub implements IHub {
       @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope,
       @Nullable Date startTimestamp,
-      boolean waitForChildren) {
+      boolean waitForChildren,
+      @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return NoOpTransaction.getInstance();
   }
 

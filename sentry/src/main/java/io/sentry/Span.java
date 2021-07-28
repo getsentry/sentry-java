@@ -33,7 +33,7 @@ public final class Span implements ISpan {
 
   private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
-  private final @Nullable SpanListener spanListener;
+  private final @Nullable SpanFinishedCallback spanFinishedCallback;
 
   Span(
       final @NotNull SentryId traceId,
@@ -51,13 +51,13 @@ public final class Span implements ISpan {
       final @NotNull String operation,
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp,
-      final @Nullable SpanListener spanListener) {
+      final @Nullable SpanFinishedCallback spanFinishedCallback) {
     this.context =
         new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.spanListener = spanListener;
+    this.spanFinishedCallback = spanFinishedCallback;
   }
 
   @VisibleForTesting
@@ -70,7 +70,7 @@ public final class Span implements ISpan {
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
-    this.spanListener = null;
+    this.spanFinishedCallback = null;
   }
 
   public @NotNull Date getStartTimestamp() {
@@ -122,8 +122,8 @@ public final class Span implements ISpan {
     if (throwable != null) {
       hub.setSpanContext(throwable, this, this.transaction.getName());
     }
-    if (spanListener != null) {
-      spanListener.onSpanFinished(this);
+    if (spanFinishedCallback != null) {
+      spanFinishedCallback.execute(this);
     }
   }
 
