@@ -50,7 +50,7 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
 
   @Override
   public void requestDestroyed(ServletRequestEvent sre) {
-    if (hub.getOptions().isAutoSessionTracking()) {
+    if (hub.getOptions().isEnableAutoSessionTracking()) {
       hub.endSession();
     }
     hub.popScope();
@@ -59,7 +59,7 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
   @Override
   public void requestInitialized(ServletRequestEvent sre) {
     hub.pushScope();
-    if (hub.getOptions().isAutoSessionTracking()) {
+    if (hub.getOptions().isEnableAutoSessionTracking()) {
       hub.startSession();
     }
 

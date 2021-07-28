@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
@@ -75,6 +76,38 @@ class SentrySpringRequestListenerTest {
         listener.requestDestroyed(fixture.event)
 
         verify(fixture.hub).popScope()
+    }
+
+    @Test
+    fun `when session tracking is enabled, ends session when request gets destroyed`() {
+        val listener = fixture.getSut(options = SentryOptions().apply { isEnableAutoSessionTracking = true })
+        listener.requestDestroyed(fixture.event)
+
+        verify(fixture.hub).endSession()
+    }
+
+    @Test
+    fun `when session tracking is enabled, starts session when request is initialized`() {
+        val listener = fixture.getSut(options = SentryOptions().apply { isEnableAutoSessionTracking = true })
+        listener.requestInitialized(fixture.event)
+
+        verify(fixture.hub).startSession()
+    }
+
+    @Test
+    fun `when session tracking is disabled, does not end session when request gets destroyed`() {
+        val listener = fixture.getSut(options = SentryOptions().apply { isEnableAutoSessionTracking = false })
+        listener.requestDestroyed(fixture.event)
+
+        verify(fixture.hub, never()).endSession()
+    }
+
+    @Test
+    fun `when session tracking is disabled, does not start session when request is initialized`() {
+        val listener = fixture.getSut(options = SentryOptions().apply { isEnableAutoSessionTracking = false })
+        listener.requestInitialized(fixture.event)
+
+        verify(fixture.hub, never()).startSession()
     }
 
     @Test

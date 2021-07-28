@@ -51,7 +51,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       // request may qualify for caching request body, if so resolve cached request
       final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
       hub.pushScope();
-      if (hub.getOptions().isAutoSessionTracking()) {
+      if (hub.getOptions().isEnableAutoSessionTracking()) {
         hub.startSession();
       }
       try {
@@ -77,7 +77,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
             .log(SentryLevel.ERROR, "Failed to set scope for HTTP request", e);
       } finally {
         filterChain.doFilter(request, response);
-        if (hub.getOptions().isAutoSessionTracking()) {
+        if (hub.getOptions().isEnableAutoSessionTracking()) {
           hub.endSession();
         }
         hub.popScope();

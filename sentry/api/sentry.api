@@ -836,7 +836,6 @@ public class io/sentry/SentryOptions {
 	public fun isAttachServerName ()Z
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
-	public fun isAutoSessionTracking ()Z
 	public fun isDebug ()Z
 	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableDeduplication ()Z
@@ -851,7 +850,6 @@ public class io/sentry/SentryOptions {
 	public fun setAttachServerName (Z)V
 	public fun setAttachStacktrace (Z)V
 	public fun setAttachThreads (Z)V
-	public fun setAutoSessionTracking (Z)V
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V

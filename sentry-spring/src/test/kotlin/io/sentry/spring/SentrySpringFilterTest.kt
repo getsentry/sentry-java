@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
@@ -81,6 +82,24 @@ class SentrySpringFilterTest {
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
         verify(fixture.hub).popScope()
+    }
+
+    @Test
+    fun `starts & stops session if session auto tracking is on`() {
+        val listener = fixture.getSut(options = SentryOptions().apply { isEnableAutoSessionTracking = true })
+        listener.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.hub).startSession()
+        verify(fixture.hub).endSession()
+    }
+
+    @Test
+    fun `does not start nor stop session if session auto tracking is off`() {
+        val listener = fixture.getSut(options = SentryOptions().apply { isEnableAutoSessionTracking = false })
+        listener.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.hub, never()).startSession()
+        verify(fixture.hub, never()).endSession()
     }
 
     @Test

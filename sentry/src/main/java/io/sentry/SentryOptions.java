@@ -280,8 +280,6 @@ public class SentryOptions {
    */
   private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
 
-  private boolean autoSessionTracking;
-
   private @NotNull SessionMode sessionMode = SessionMode.CLIENT;
 
   /**
@@ -1440,14 +1438,6 @@ public class SentryOptions {
 
   public void setMaxRequestBodySize(final @NotNull RequestSize maxRequestBodySize) {
     this.maxRequestBodySize = maxRequestBodySize;
-  }
-
-  public boolean isAutoSessionTracking() {
-    return autoSessionTracking;
-  }
-
-  public void setAutoSessionTracking(boolean autoSessionTracking) {
-    this.autoSessionTracking = autoSessionTracking;
   }
 
   public @NotNull SessionMode getSessionMode() {
