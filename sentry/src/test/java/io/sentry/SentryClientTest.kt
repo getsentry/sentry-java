@@ -910,6 +910,14 @@ class SentryClientTest {
         verifyZeroInteractions(fixture.transport)
     }
 
+    @Test
+    fun `when captureSessions, sdkInfo should be in the envelope header`() {
+        fixture.getSut().captureSessions(mock())
+        verify(fixture.transport).send(check {
+            assertNotNull(it.header.sdkVersion)
+        })
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(Breadcrumb().apply {
