@@ -230,10 +230,10 @@ public final class ActivityLifecycleIntegration
 
     // only executed if API >= 29 otherwise it happens on onActivityCreated
     if (isAllActivityCallbacksAvailable) {
-      setColdStart(savedInstanceState);
-
       // start collecting frame metrics for transaction
       activityFramesTracker.addActivity(activity);
+
+      setColdStart(savedInstanceState);
 
       // if activity has global fields being init. and
       // they are slow, this won't count the whole fields/ctor initialization time, but only
@@ -246,6 +246,9 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
     if (!isAllActivityCallbacksAvailable) {
+      // start collecting frame metrics for transaction
+      activityFramesTracker.addActivity(activity);
+
       setColdStart(savedInstanceState);
     }
 
@@ -253,9 +256,6 @@ public final class ActivityLifecycleIntegration
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
     if (!isAllActivityCallbacksAvailable) {
-      // start collecting frame metrics for transaction
-      activityFramesTracker.addActivity(activity);
-
       startTracing(activity);
     }
     firstActivityCreated = true;

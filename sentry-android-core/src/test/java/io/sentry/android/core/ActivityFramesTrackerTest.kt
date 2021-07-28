@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -94,6 +95,22 @@ class ActivityFramesTrackerTest {
 
         val slowFrames = metrics["frames_slow"]
         assertEquals(slowFrames!!.value, 5f)
+    }
+
+    @Test
+    fun `do not set metrics if values are zeroes`() {
+        val sut = fixture.getSut()
+        val arrayAll = SparseIntArray()
+        arrayAll.put(0, 0)
+        val array = arrayOf(arrayAll)
+
+        whenever(fixture.aggregator.remove(any())).thenReturn(array)
+
+        sut.setMetrics(fixture.activity, fixture.sentryId)
+
+        val metrics = sut.takeMetrics(fixture.sentryId)
+
+        assertNull(metrics)
     }
 
     private fun getArray(frameTime: Int = 1, numFrames: Int = 1): Array<SparseIntArray?> {

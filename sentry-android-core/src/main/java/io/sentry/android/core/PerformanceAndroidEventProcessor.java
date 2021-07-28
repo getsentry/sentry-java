@@ -61,6 +61,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     final SpanContext spanContext = transaction.getContexts().getTrace();
 
     // only add slow/frozen frames to transactions created by ActivityLifecycleIntegration
+    // which have the operation UI_LOAD_OP. If a user-defined (or hybrid SDK) transaction
+    // users it, we'll also add the metrics if available
     if (eventId != null
         && spanContext != null
         && spanContext.getOperation().contentEquals(UI_LOAD_OP)) {

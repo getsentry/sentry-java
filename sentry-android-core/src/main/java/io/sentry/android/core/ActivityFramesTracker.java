@@ -50,8 +50,7 @@ final class ActivityFramesTracker {
           if (frameTime > 700) {
             // frozen frames, threshold is 700ms
             frozenFrames += numFrames;
-          }
-          if (frameTime > 16 && frameTime <= 700) {
+          } else if (frameTime > 16) {
             // slow frames, above 16ms, 60 frames/second
             slowFrames += numFrames;
           }

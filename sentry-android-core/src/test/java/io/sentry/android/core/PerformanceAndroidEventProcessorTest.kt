@@ -122,6 +122,16 @@ class PerformanceAndroidEventProcessorTest {
     }
 
     @Test
+    fun `do not add slow and frozen frames if tracing is disabled`() {
+        val sut = fixture.getSut(null)
+        var tr = getTransaction("task")
+
+        tr = sut.process(tr, null)
+
+        assertTrue(tr.measurements.isEmpty())
+    }
+
+    @Test
     fun `add slow and frozen frames if auto transaction`() {
         val sut = fixture.getSut()
         val context = TransactionContext("Activity", UI_LOAD_OP)
