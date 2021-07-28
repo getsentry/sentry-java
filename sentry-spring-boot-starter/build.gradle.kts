@@ -18,6 +18,7 @@ apply(plugin = Config.BuildPlugins.springDependencyManagement)
 the<DependencyManagementExtension>().apply {
     imports {
         mavenBom(SpringBootPlugin.BOM_COORDINATES)
+        mavenBom(Config.Libs.okhttpBom)
     }
 }
 
