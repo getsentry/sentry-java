@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Spring WebClient integration (#1621)
+
 ## 5.1.0-beta.6
 
 * Fix: set min sdk version of sentry-android-fragment to API 14 (#1608)
