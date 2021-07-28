@@ -1,7 +1,11 @@
 package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.*;
+import io.sentry.Breadcrumb;
+import io.sentry.IHub;
+import io.sentry.ISpan;
+import io.sentry.SentryTraceHeader;
+import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,8 +24,8 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
   }
 
   @Override
-  public Mono<ClientResponse> filter(
-      @NotNull ClientRequest request, @NotNull ExchangeFunction next) {
+  public @NotNull Mono<ClientResponse> filter(
+      final @NotNull ClientRequest request, final @NotNull ExchangeFunction next) {
     final ISpan activeSpan = hub.getSpan();
     if (activeSpan == null) {
       addBreadcrumb(request, null);

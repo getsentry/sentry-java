@@ -42,6 +42,6 @@ public class io/sentry/samples/spring/boot/Todo {
 }
 
 public class io/sentry/samples/spring/boot/TodoController {
-	public fun <init> (Lorg/springframework/web/client/RestTemplate;)V
+	public fun <init> (Lorg/springframework/web/client/RestTemplate;Lorg/springframework/web/reactive/function/client/WebClient;)V
 }
 
