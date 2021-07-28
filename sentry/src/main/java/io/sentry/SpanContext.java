@@ -46,7 +46,7 @@ public class SpanContext {
   }
 
   /**
-   * Creates trace context with defered sampling decision.
+   * Creates trace context with deferred sampling decision.
    *
    * @param operation the operation
    */

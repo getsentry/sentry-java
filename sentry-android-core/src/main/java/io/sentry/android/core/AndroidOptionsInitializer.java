@@ -100,12 +100,14 @@ final class AndroidOptionsInitializer {
     ManifestMetadataReader.applyMetadata(context, options);
     initializeCacheDirs(context, options);
 
-    installDefaultIntegrations(context, options, buildInfoProvider, loadClass);
+    final ActivityFramesTracker activityFramesTracker = new ActivityFramesTracker();
+    installDefaultIntegrations(
+        context, options, buildInfoProvider, loadClass, activityFramesTracker);
 
     readDefaultOptionValues(options, context);
 
     options.addEventProcessor(new DefaultAndroidEventProcessor(context, logger, buildInfoProvider));
-    options.addEventProcessor(new PerformanceAndroidEventProcessor(options));
+    options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
   }
@@ -114,7 +116,8 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull SentryOptions options,
       final @NotNull IBuildInfoProvider buildInfoProvider,
-      final @NotNull ILoadClass loadClass) {
+      final @NotNull ILoadClass loadClass,
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
 
     options.addIntegration(
         new SendCachedEnvelopeFireAndForgetIntegration(
@@ -142,7 +145,8 @@ final class AndroidOptionsInitializer {
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {
       options.addIntegration(
-          new ActivityLifecycleIntegration((Application) context, buildInfoProvider));
+          new ActivityLifecycleIntegration(
+              (Application) context, buildInfoProvider, activityFramesTracker));
     } else {
       options
           .getLogger()

@@ -581,7 +581,8 @@ public final class Hub implements IHub {
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
-    return createTransaction(transactionContext, customSamplingContext, bindToScope, null, false);
+    return createTransaction(
+        transactionContext, customSamplingContext, bindToScope, null, false, null);
   }
 
   @ApiStatus.Internal
@@ -592,7 +593,7 @@ public final class Hub implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, startTimestamp, false);
+        transactionContext, customSamplingContext, bindToScope, startTimestamp, false, null);
   }
 
   @ApiStatus.Internal
@@ -602,9 +603,15 @@ public final class Hub implements IHub {
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
-      final boolean waitForChildren) {
+      final boolean waitForChildren,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return createTransaction(
-        transactionContexts, customSamplingContext, bindToScope, startTimestamp, waitForChildren);
+        transactionContexts,
+        customSamplingContext,
+        bindToScope,
+        startTimestamp,
+        waitForChildren,
+        transactionFinishedCallback);
   }
 
   private @NotNull ITransaction createTransaction(
@@ -612,7 +619,8 @@ public final class Hub implements IHub {
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
-      final boolean waitForChildren) {
+      final boolean waitForChildren,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -635,7 +643,13 @@ public final class Hub implements IHub {
       boolean samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSampled(samplingDecision);
 
-      transaction = new SentryTracer(transactionContext, this, startTimestamp, waitForChildren);
+      transaction =
+          new SentryTracer(
+              transactionContext,
+              this,
+              startTimestamp,
+              waitForChildren,
+              transactionFinishedCallback);
     }
     if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));
