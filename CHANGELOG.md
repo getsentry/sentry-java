@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 5.1.0-beta.8
+
+* Feat: Generate Sentry BOM (#1486)
 
 ## 5.1.0-beta.7
 
