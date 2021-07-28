@@ -669,14 +669,16 @@ public final class Sentry {
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
-      final boolean waitForChildren) {
+      final boolean waitForChildren,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return getCurrentHub()
         .startTransaction(
             transactionContexts,
             customSamplingContext,
             bindToScope,
             startTimestamp,
-            waitForChildren);
+            waitForChildren,
+            transactionFinishedCallback);
   }
 
   /**

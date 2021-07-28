@@ -1,5 +1,4 @@
 import java.math.BigDecimal
-import java.util.Locale
 
 object Config {
     val kotlinVersion = "1.4.30"
@@ -21,11 +20,6 @@ object Config {
         val grettyVersion = "3.0.5"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.15.1"
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
-
-        fun shouldSignArtifacts(version: String): Boolean {
-            return !(System.getenv("CI")?.toBoolean() ?: false) &&
-                    !version.toUpperCase(Locale.ROOT).endsWith("SNAPSHOT")
-        }
     }
 
     object Android {
@@ -52,6 +46,7 @@ object Config {
         private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
         val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
+        val androidxCore = "androidx.core:core:1.3.2"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
         val logbackVersion = "1.2.3"

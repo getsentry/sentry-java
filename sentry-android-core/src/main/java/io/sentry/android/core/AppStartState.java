@@ -25,7 +25,7 @@ public final class AppStartState {
 
   private AppStartState() {}
 
-  static @NotNull AppStartState getInstance() {
+  public static @NotNull AppStartState getInstance() {
     return instance;
   }
 
@@ -51,7 +51,7 @@ public final class AppStartState {
     return appStartEndMillis - appStartMillis;
   }
 
-  boolean isColdStart() {
+  public boolean isColdStart() {
     return coldStart;
   }
 
@@ -71,5 +71,13 @@ public final class AppStartState {
     }
     this.appStartTime = appStartTime;
     this.appStartMillis = appStartMillis;
+  }
+
+  public @Nullable Long getAppStartMillis() {
+    return appStartMillis;
+  }
+
+  public @Nullable Long getAppStartEndMillis() {
+    return appStartEndMillis;
   }
 }
