@@ -406,7 +406,7 @@ public final class SentryClient implements ISentryClient {
               new SentryEnvelopeHeader(new SentryId(), options.getSdkVersion()),
               SentryEnvelopeItem.fromSessionAggregates(options.getSerializer(), sessions)));
     } catch (IOException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing session aggregates failed.");
+      options.getLogger().log(SentryLevel.ERROR, e, "Capturing session aggregates failed.");
     }
   }
 
