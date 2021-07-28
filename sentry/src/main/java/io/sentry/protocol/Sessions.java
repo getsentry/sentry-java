@@ -67,7 +67,7 @@ public final class Sessions {
       this.crashed = crashed;
     }
 
-    public String getStarted() {
+    public @NotNull String getStarted() {
       return started;
     }
 

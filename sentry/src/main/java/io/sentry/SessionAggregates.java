@@ -26,7 +26,8 @@ public final class SessionAggregates {
     addSession(new Date(), state);
   }
 
-  void addSession(final @NotNull Date startedAt, final @NotNull ServerSessionManager.Status state) {
+  public void addSession(
+      final @NotNull Date startedAt, final @NotNull ServerSessionManager.Status state) {
     final String roundedDate = DateUtils.getTimestampMinutesPrecision(startedAt);
     SessionStats stats;
     if (this.aggregates.containsKey(roundedDate)) {

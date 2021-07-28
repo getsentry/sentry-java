@@ -15,12 +15,23 @@ final class SessionsFlusher implements Closeable {
   private final @NotNull SessionAggregates aggregates;
   private final @NotNull ISentryClient sentryClient;
   private final @NotNull Timer timer = new Timer();
+  private final long delay;
+  private final long period;
 
   public SessionsFlusher(
+      final @NotNull SessionAggregates aggregates, final @NotNull ISentryClient sentryClient) {
+    this(aggregates, sentryClient, ONE_MINUTE, ONE_MINUTE);
+  }
+
+  SessionsFlusher(
       final @NotNull SessionAggregates sessionAggregates,
-      final @NotNull ISentryClient sentryClient) {
+      final @NotNull ISentryClient sentryClient,
+      final long delay,
+      final long period) {
     this.aggregates = Objects.requireNonNull(sessionAggregates, "sessionAggregates is required");
     this.sentryClient = Objects.requireNonNull(sentryClient, "sentryClient is required");
+    this.delay = delay;
+    this.period = period;
   }
 
   void start() {
@@ -28,14 +39,18 @@ final class SessionsFlusher implements Closeable {
         new TimerTask() {
           @Override
           public void run() {
-            if (!aggregates.getAggregates().isEmpty()) {
-              sentryClient.captureSessions(new Sessions(aggregates));
-              aggregates.getAggregates().clear();
-            }
+            flush();
           }
         },
-        ONE_MINUTE,
-        ONE_MINUTE);
+        delay,
+        period);
+  }
+
+  void flush() {
+    if (!aggregates.getAggregates().isEmpty()) {
+      sentryClient.captureSessions(new Sessions(aggregates));
+      aggregates.getAggregates().clear();
+    }
   }
 
   @Override

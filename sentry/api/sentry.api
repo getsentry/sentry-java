@@ -983,6 +983,20 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
+public final class io/sentry/ServerSessionManager : io/sentry/SessionTracker, io/sentry/SessionUpdater {
+	public fun endSession ()V
+	public fun startSession ()V
+	public fun updateSessionData (Lio/sentry/SentryEvent;Ljava/lang/Object;Lio/sentry/Scope;)Lio/sentry/Session;
+}
+
+public final class io/sentry/ServerSessionManager$Status : java/lang/Enum {
+	public static final field Crashed Lio/sentry/ServerSessionManager$Status;
+	public static final field Errored Lio/sentry/ServerSessionManager$Status;
+	public static final field Exited Lio/sentry/ServerSessionManager$Status;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/ServerSessionManager$Status;
+	public static fun values ()[Lio/sentry/ServerSessionManager$Status;
+}
+
 public final class io/sentry/Session {
 	public fun <init> (Lio/sentry/Session$State;Ljava/util/Date;Ljava/util/Date;ILjava/lang/String;Ljava/util/UUID;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/User;Ljava/lang/String;Ljava/lang/String;)V
@@ -1026,6 +1040,7 @@ public final class io/sentry/SessionAdapter : com/google/gson/TypeAdapter {
 
 public final class io/sentry/SessionAggregates {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun addSession (Ljava/util/Date;Lio/sentry/ServerSessionManager$Status;)V
 	public fun getAggregates ()Ljava/util/Map;
 	public fun getAttributes ()Lio/sentry/SessionAggregates$Attributes;
 }

@@ -1,9 +1,11 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class ServerSessionManager implements SessionTracker, SessionUpdater {
+@ApiStatus.Internal
+public final class ServerSessionManager implements SessionTracker, SessionUpdater {
   private @Nullable Status status;
   private final @NotNull SessionAggregates sessionAggregates;
 
@@ -33,7 +35,8 @@ final class ServerSessionManager implements SessionTracker, SessionUpdater {
     return null;
   }
 
-  enum Status {
+  @ApiStatus.Internal
+  public enum Status {
     Exited,
     Errored,
     Crashed;
