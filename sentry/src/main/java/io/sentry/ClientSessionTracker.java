@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 final class ClientSessionTracker implements SessionTracker {
@@ -9,8 +10,8 @@ final class ClientSessionTracker implements SessionTracker {
   private final @NotNull SentryOptions options;
 
   ClientSessionTracker(final @NotNull SentryOptions options, final @NotNull Stack stack) {
-    this.stack = stack;
-    this.options = options;
+    this.options = Objects.requireNonNull(options, "SentryOptions is required");
+    this.stack = Objects.requireNonNull(stack, "Stack is required");
   }
 
   @Override

@@ -32,17 +32,17 @@ public final class SentryClient implements ISentryClient {
 
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
 
-  private final SessionUpdater sessionUpdater;
+  private final @NotNull SessionUpdater sessionUpdater;
 
   @Override
   public boolean isEnabled() {
     return enabled;
   }
 
-  SentryClient(final @NotNull SentryOptions options, final SessionUpdater sessionUpdater) {
+  SentryClient(final @NotNull SentryOptions options, final @NotNull SessionUpdater sessionUpdater) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
+    this.sessionUpdater = Objects.requireNonNull(sessionUpdater, "SessionUpdater is required");
     this.enabled = true;
-    this.sessionUpdater = sessionUpdater;
 
     ITransportFactory transportFactory = options.getTransportFactory();
     if (transportFactory instanceof NoOpTransportFactory) {

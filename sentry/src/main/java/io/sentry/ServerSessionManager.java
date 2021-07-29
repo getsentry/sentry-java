@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,7 +11,8 @@ public final class ServerSessionManager implements SessionTracker, SessionUpdate
   private final @NotNull SessionAggregates sessionAggregates;
 
   ServerSessionManager(final @NotNull SessionAggregates sessionAggregates) {
-    this.sessionAggregates = sessionAggregates;
+    this.sessionAggregates =
+        Objects.requireNonNull(sessionAggregates, "sessionAggregates is required");
   }
 
   @Override

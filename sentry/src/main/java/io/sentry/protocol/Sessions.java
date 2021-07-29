@@ -1,6 +1,7 @@
 package io.sentry.protocol;
 
 import io.sentry.SessionAggregates;
+import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ public final class Sessions {
   private final @NotNull Attributes attrs;
 
   public Sessions(final @NotNull SessionAggregates sessionAggregates) {
+    Objects.requireNonNull(sessionAggregates, "sessionAggregates is required");
     this.attrs =
         new Attributes(
             sessionAggregates.getAttributes().getRelease(),

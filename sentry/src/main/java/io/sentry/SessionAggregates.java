@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.Objects;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,7 +68,7 @@ public final class SessionAggregates {
     private final @Nullable String environment;
 
     public Attributes(final @NotNull String release, final @Nullable String environment) {
-      this.release = release;
+      this.release = Objects.requireNonNull(release, "release is required");
       this.environment = environment;
     }
 
