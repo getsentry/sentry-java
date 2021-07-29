@@ -4,6 +4,18 @@
 
 * Feat: Release Health - server side session tracking (#1572)
 
+## 5.1.0-beta.9
+
+- No documented changes.
+
+## 5.1.0-beta.8
+
+* Feat: Generate Sentry BOM (#1486)
+
+## 5.1.0-beta.7
+
+* Feat: Slow/Frozen frames metrics (#1609)
+
 ## 5.1.0-beta.6
 
 * Fix: set min sdk version of sentry-android-fragment to API 14 (#1608)
