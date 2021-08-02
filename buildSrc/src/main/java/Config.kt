@@ -83,6 +83,8 @@ object Config {
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
         val reactorCore = "io.projectreactor:reactor-core:3.4.6"
+
+        val feignCore = "io.github.openfeign:feign-core:11.6"
     }
 
     object AnnotationProcessors {
