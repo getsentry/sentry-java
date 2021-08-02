@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Spring WebClient integration (#1621)
+
 ## 5.1.0-beta.9
 
 - No documented changes.
