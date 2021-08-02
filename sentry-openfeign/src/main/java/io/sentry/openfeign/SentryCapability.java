@@ -24,7 +24,7 @@ public final class SentryCapability implements Capability {
   }
 
   @Override
-  public Client enrich(final @NotNull Client client) {
+  public @NotNull Client enrich(final @NotNull Client client) {
     return new SentryFeignClient(client, hub, beforeSpan);
   }
 }
