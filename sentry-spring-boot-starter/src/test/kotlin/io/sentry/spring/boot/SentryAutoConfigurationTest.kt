@@ -53,6 +53,7 @@ import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
 
 class SentryAutoConfigurationTest {
 
@@ -549,6 +550,23 @@ class SentryAutoConfigurationTest {
             .withClassLoader(FilteredClassLoader(RestTemplate::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentrySpanRestTemplateCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and WebClient is on the classpath, SentrySpanWebClientCustomizer bean is created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .run {
+                assertThat(it).hasSingleBean(SentrySpanWebClientCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and WebClient is not on the classpath, SentrySpanWebClientCustomizer bean is not created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .withClassLoader(FilteredClassLoader(WebClient::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(SentrySpanWebClientCustomizer::class.java)
             }
     }
 

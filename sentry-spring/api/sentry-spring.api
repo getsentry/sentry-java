@@ -114,6 +114,11 @@ public class io/sentry/spring/tracing/SentrySpanClientHttpRequestInterceptor : o
 	public fun intercept (Lorg/springframework/http/HttpRequest;[BLorg/springframework/http/client/ClientHttpRequestExecution;)Lorg/springframework/http/client/ClientHttpResponse;
 }
 
+public class io/sentry/spring/tracing/SentrySpanClientWebRequestFilter : org/springframework/web/reactive/function/client/ExchangeFilterFunction {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun filter (Lorg/springframework/web/reactive/function/client/ClientRequest;Lorg/springframework/web/reactive/function/client/ExchangeFunction;)Lreactor/core/publisher/Mono;
+}
+
 public class io/sentry/spring/tracing/SentrySpanPointcutConfiguration {
 	public fun <init> ()V
 	public fun sentrySpanPointcut ()Lorg/springframework/aop/Pointcut;

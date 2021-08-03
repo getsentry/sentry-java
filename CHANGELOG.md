@@ -3,6 +3,8 @@
 ## Unreleased
 
 * Feat: Release Health - server side session tracking (#1572)
+* Feat: Spring WebClient integration (#1621)
+* Feat: OpenFeign integration (#1632)
 
 ## 5.1.0-beta.9
 

@@ -18,6 +18,7 @@ apply(plugin = Config.BuildPlugins.springDependencyManagement)
 the<DependencyManagementExtension>().apply {
     imports {
         mavenBom(SpringBootPlugin.BOM_COORDINATES)
+        mavenBom(Config.Libs.okhttpBom)
     }
 }
 
@@ -38,6 +39,7 @@ dependencies {
     compileOnly(project(":sentry-apache-http-client-5"))
     implementation(Config.Libs.springBootStarter)
     compileOnly(Config.Libs.springWeb)
+    compileOnly(Config.Libs.springWebflux)
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.springBootStarterAop)
     compileOnly(Config.Libs.springBootStarterSecurity)
@@ -60,6 +62,8 @@ dependencies {
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBootStarterTest)
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterWebflux)

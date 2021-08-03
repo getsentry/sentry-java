@@ -19,6 +19,7 @@ include(
     "sentry-spring",
     "sentry-spring-boot-starter",
     "sentry-bom",
+    "sentry-openfeign",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-jul",
