@@ -6,6 +6,8 @@ import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
+import io.sentry.adapters.DateJsonElementDeserializer;
+import io.sentry.adapters.DateJsonElementSerializer;
 import io.sentry.util.CollectionUtils;
 import java.io.IOException;
 import java.util.Date;
@@ -137,7 +139,8 @@ public final class App implements IUnknownPropertiesConsumer, JsonSerializable {
       writer.name(JsonKeys.APP_IDENTIFIER).value(appIdentifier);
     }
     if (appStartTime != null) {
-      writer.name(JsonKeys.APP_START_TIME).value(logger, appStartTime);
+      writer.name(JsonKeys.APP_START_TIME);
+      new DateJsonElementSerializer().serialize(appStartTime, writer);
     }
     if (deviceAppHash != null) {
       writer.name(JsonKeys.DEVICE_APP_HASH).value(deviceAppHash);
@@ -182,7 +185,7 @@ public final class App implements IUnknownPropertiesConsumer, JsonSerializable {
             app.appIdentifier = reader.nextStringOrNull();
             break;
           case JsonKeys.APP_START_TIME:
-            app.appStartTime = reader.nextDateOrNull();
+            app.appStartTime = new DateJsonElementDeserializer().deserialize(reader);
             break;
           case JsonKeys.DEVICE_APP_HASH:
             app.deviceAppHash = reader.nextStringOrNull();

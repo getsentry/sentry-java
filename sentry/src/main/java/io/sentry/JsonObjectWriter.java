@@ -4,7 +4,6 @@ import io.sentry.protocol.Device;
 import io.sentry.vendor.gson.stream.JsonWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Date;
 import java.util.TimeZone;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,11 +33,6 @@ public final class JsonObjectWriter extends JsonWriter {
   public JsonObjectWriter value(@NotNull ILogger logger, @Nullable Object object)
       throws IOException {
     jsonObjectSerializer.serialize(this, logger, object);
-    return this;
-  }
-
-  public JsonObjectWriter value(@NotNull ILogger logger, @Nullable Date date) {
-    jsonObjectSerializer.serializeDate(this, logger, date);
     return this;
   }
 

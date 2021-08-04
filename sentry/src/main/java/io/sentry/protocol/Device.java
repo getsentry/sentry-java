@@ -6,7 +6,10 @@ import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
+import io.sentry.adapters.DateJsonElementDeserializer;
+import io.sentry.adapters.DateJsonElementSerializer;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -513,7 +516,8 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
       writer.name(JsonKeys.SCREEN_DPI).value(screenDpi);
     }
     if (bootTime != null) {
-      writer.name(JsonKeys.BOOT_TIME).value(logger, bootTime);
+      writer.name(JsonKeys.BOOT_TIME);
+      new DateJsonElementSerializer().serialize(bootTime, writer);
     }
     if (timezone != null) {
       writer.name(JsonKeys.TIMEZONE).value(logger, timezone);
@@ -633,7 +637,9 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
             device.screenDpi = reader.nextIntegerOrNull();
             break;
           case JsonKeys.BOOT_TIME:
-            device.bootTime = reader.nextDateOrNull();
+            if (reader.peek() == JsonToken.STRING) {
+              device.bootTime = new DateJsonElementDeserializer().deserialize(reader);
+            }
             break;
           case JsonKeys.TIMEZONE:
             device.timezone = reader.nextTimeZoneOrNull();

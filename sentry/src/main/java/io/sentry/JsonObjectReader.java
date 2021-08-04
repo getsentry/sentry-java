@@ -5,7 +5,6 @@ import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -60,15 +59,6 @@ public final class JsonObjectReader extends JsonReader {
    */
   public @Nullable Object nextObjectOrNull() throws IOException {
     return new JsonObjectDeserializer().deserialize(this);
-  }
-
-  // TODO: Move out custom classes (adapter?)
-
-  public @Nullable Date nextDateOrNull() throws IOException {
-    if (peek() == JsonToken.NULL) {
-      return null;
-    }
-    return DateUtils.getDateTime(nextString());
   }
 
   public @Nullable TimeZone nextTimeZoneOrNull() throws IOException {
