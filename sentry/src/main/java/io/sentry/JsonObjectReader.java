@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.Device;
+import io.sentry.protocol.SentryId;
 import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
@@ -82,5 +84,38 @@ public final class JsonObjectReader extends JsonReader {
       return null;
     }
     return Device.DeviceOrientation.valueOf(nextString().toUpperCase(Locale.ROOT));
+  }
+
+  public @NotNull SentryId nextSentryId() throws IOException {
+    return new SentryId(nextString());
+  }
+
+  public @Nullable SentryId nextSentryIdOrNull() throws IOException {
+    if (peek() == JsonToken.NULL) {
+      return null;
+    }
+    return nextSentryId();
+  }
+
+  public @NotNull SpanId nextSpanId() throws IOException {
+    return new SpanId(nextString());
+  }
+
+  public @Nullable SpanId nextSpanIdOrNull() throws IOException {
+    if (peek() == JsonToken.NULL) {
+      return null;
+    }
+    return nextSpanId();
+  }
+
+  public @NotNull SpanStatus nextSpanStatus() throws IOException {
+    return SpanStatus.valueOf(nextString().toUpperCase(Locale.ROOT));
+  }
+
+  public @Nullable SpanStatus nextSpanStatusOrNull() throws IOException {
+    if (peek() == JsonToken.NULL) {
+      return null;
+    }
+    return nextSpanStatus();
   }
 }

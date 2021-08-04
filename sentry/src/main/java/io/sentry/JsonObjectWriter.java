@@ -52,4 +52,9 @@ public final class JsonObjectWriter extends JsonWriter {
     jsonObjectSerializer.serializeDeviceOrientation(this, logger, deviceOrientation);
     return this;
   }
+
+  public JsonObjectWriter value(@NotNull ILogger logger, @Nullable SpanStatus spanStatus) {
+    jsonObjectSerializer.serializeSpanStatus(this, logger, spanStatus);
+    return this;
+  }
 }

@@ -79,6 +79,17 @@ public final class JsonObjectSerializer {
     }
   }
 
+  public void serializeSpanStatus(
+      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable SpanStatus spanStatus) {
+    try {
+      if (spanStatus != null) {
+        writer.value(spanStatus.name().toLowerCase(Locale.ROOT));
+      }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error when serializing SpanStatus", e);
+    }
+  }
+
   // Helper
 
   private void serializeCollection(
