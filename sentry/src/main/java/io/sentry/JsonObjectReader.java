@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.Device;
-import io.sentry.protocol.SentryId;
 import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -84,17 +83,6 @@ public final class JsonObjectReader extends JsonReader {
       return null;
     }
     return Device.DeviceOrientation.valueOf(nextString().toUpperCase(Locale.ROOT));
-  }
-
-  public @NotNull SentryId nextSentryId() throws IOException {
-    return new SentryId(nextString());
-  }
-
-  public @Nullable SentryId nextSentryIdOrNull() throws IOException {
-    if (peek() == JsonToken.NULL) {
-      return null;
-    }
-    return nextSentryId();
   }
 
   public @NotNull SpanStatus nextSpanStatus() throws IOException {

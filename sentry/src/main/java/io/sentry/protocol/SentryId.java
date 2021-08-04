@@ -1,5 +1,10 @@
 package io.sentry.protocol;
 
+import io.sentry.JsonElementDeserializer;
+import io.sentry.JsonElementSerializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import java.io.IOException;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,5 +66,23 @@ public final class SentryId {
     }
 
     return UUID.fromString(sentryIdString);
+  }
+
+  // JsonElementSerializer
+
+  public static final class Serializer implements JsonElementSerializer<SentryId> {
+    @Override
+    public void serialize(SentryId src, @NotNull JsonObjectWriter writer) throws IOException {
+      writer.value(src.toString());
+    }
+  }
+
+  // JsonElementDeserializer
+
+  public static final class Deserializer implements JsonElementDeserializer<SentryId> {
+    @Override
+    public @NotNull SentryId deserialize(@NotNull JsonObjectReader reader) throws IOException {
+      return new SentryId(reader.nextString());
+    }
   }
 }

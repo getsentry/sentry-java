@@ -165,7 +165,8 @@ public class SpanContext implements JsonSerializable {
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.TRACE_ID).value(traceId.toString());
+    writer.name(JsonKeys.TRACE_ID);
+    new SentryId.Serializer().serialize(traceId, writer);
     writer.name(JsonKeys.SPAN_ID);
     new SpanId.Serializer().serialize(spanId, writer);
     if (parentSpanId != null) {
@@ -219,7 +220,7 @@ public class SpanContext implements JsonSerializable {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.TRACE_ID:
-            traceId = reader.nextSentryId();
+            traceId = new SentryId.Deserializer().deserialize(reader);
             break;
           case JsonKeys.SPAN_ID:
             spanId = new SpanId.Deserializer().deserialize(reader);
