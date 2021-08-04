@@ -166,9 +166,11 @@ public class SpanContext implements JsonSerializable {
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.TRACE_ID).value(traceId.toString());
-    writer.name(JsonKeys.SPAN_ID).value(spanId.toString());
+    writer.name(JsonKeys.SPAN_ID);
+    new SpanId.Serializer().serialize(spanId, writer);
     if (parentSpanId != null) {
-      writer.name(JsonKeys.PARENT_SPAN_ID).value(parentSpanId.toString());
+      writer.name(JsonKeys.PARENT_SPAN_ID);
+      new SpanId.Serializer().serialize(parentSpanId, writer);
     }
     if (sampled != null) {
       writer.name(JsonKeys.SAMPLED).value(sampled);
@@ -220,10 +222,10 @@ public class SpanContext implements JsonSerializable {
             traceId = reader.nextSentryId();
             break;
           case JsonKeys.SPAN_ID:
-            spanId = reader.nextSpanId();
+            spanId = new SpanId.Deserializer().deserialize(reader);
             break;
           case JsonKeys.PARENT_SPAN_ID:
-            parentSpanId = reader.nextSpanIdOrNull();
+            parentSpanId = new SpanId.Deserializer().deserialize(reader);
             break;
           case JsonKeys.SAMPLED:
             sampled = reader.nextBooleanOrNull();

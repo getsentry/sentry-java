@@ -97,17 +97,6 @@ public final class JsonObjectReader extends JsonReader {
     return nextSentryId();
   }
 
-  public @NotNull SpanId nextSpanId() throws IOException {
-    return new SpanId(nextString());
-  }
-
-  public @Nullable SpanId nextSpanIdOrNull() throws IOException {
-    if (peek() == JsonToken.NULL) {
-      return null;
-    }
-    return nextSpanId();
-  }
-
   public @NotNull SpanStatus nextSpanStatus() throws IOException {
     return SpanStatus.valueOf(nextString().toUpperCase(Locale.ROOT));
   }
