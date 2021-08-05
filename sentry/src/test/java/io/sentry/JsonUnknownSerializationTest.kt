@@ -2,6 +2,7 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.protocol.Browser
 import io.sentry.protocol.SentryId
 import java.io.StringReader
 import java.io.StringWriter
@@ -18,6 +19,10 @@ class JsonUnknownSerializationTest {
         fun getUserFeedback(): UserFeedback {
             val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
             return givenJsonUnknown(UserFeedback(eventId))
+        }
+
+        fun getBrowser(): Browser {
+            return givenJsonUnknown(Browser())
         }
 
         private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T {
@@ -46,6 +51,30 @@ class JsonUnknownSerializationTest {
         val writer: JsonObjectWriter = mock()
         val logger: ILogger = mock()
         val sut = fixture.getUserFeedback()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // browser
+
+    @Test
+    fun `serializing and deserialize browser`() {
+        val sut = fixture.getBrowser()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, Browser.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for browser`() {
+        val writer: JsonObjectWriter = mock()
+        val logger: ILogger = mock()
+        val sut = fixture.getBrowser()
 
         sut.serialize(writer, logger)
 
