@@ -373,6 +373,11 @@ public abstract interface class io/sentry/JsonSerializable {
 	public abstract fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 }
 
+public abstract interface class io/sentry/JsonUnknown {
+	public abstract fun getUnknown ()Ljava/util/Map;
+	public abstract fun setUnknown (Ljava/util/Map;)V
+}
+
 public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor {
 	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
