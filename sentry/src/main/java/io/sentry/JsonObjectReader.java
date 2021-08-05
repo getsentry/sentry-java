@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,13 +58,6 @@ public final class JsonObjectReader extends JsonReader {
    */
   public @Nullable Object nextObjectOrNull() throws IOException {
     return new JsonObjectDeserializer().deserialize(this);
-  }
-
-  public @Nullable TimeZone nextTimeZoneOrNull() throws IOException {
-    if (peek() == JsonToken.NULL) {
-      return null;
-    }
-    return TimeZone.getTimeZone(nextString());
   }
 
   public @Nullable Device.DeviceOrientation nextDeviceOrientationOrNull() throws IOException {

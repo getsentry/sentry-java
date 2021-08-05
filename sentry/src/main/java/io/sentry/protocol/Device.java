@@ -8,6 +8,8 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.adapters.DateJsonElementDeserializer;
 import io.sentry.adapters.DateJsonElementSerializer;
+import io.sentry.adapters.TimeZoneJsonElementDeserializer;
+import io.sentry.adapters.TimeZoneJsonElementSerializer;
 import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -520,7 +522,8 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
       new DateJsonElementSerializer().serialize(bootTime, writer);
     }
     if (timezone != null) {
-      writer.name(JsonKeys.TIMEZONE).value(logger, timezone);
+      writer.name(JsonKeys.TIMEZONE);
+      new TimeZoneJsonElementSerializer().serialize(timezone, writer);
     }
     if (id != null) {
       writer.name(JsonKeys.ID).value(id);
@@ -642,7 +645,7 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
             }
             break;
           case JsonKeys.TIMEZONE:
-            device.timezone = reader.nextTimeZoneOrNull();
+            device.timezone = new TimeZoneJsonElementDeserializer().deserialize(reader);
             break;
           case JsonKeys.ID:
             device.id = reader.nextStringOrNull();

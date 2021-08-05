@@ -4,10 +4,8 @@ import io.sentry.protocol.Device;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,30 +37,6 @@ public final class JsonObjectSerializer {
     } else {
       // TODO: Use reflection to support object serialization.
       writer.value(OBJECT_PLACEHOLDER);
-    }
-  }
-
-  // TODO: Refactor out custom types (adapters?).
-
-  public void serializeDate(
-      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable Date date) {
-    try {
-      if (date != null) {
-        writer.value(DateUtils.getTimestamp(date));
-      }
-    } catch (Exception exception) {
-      logger.log(SentryLevel.ERROR, "Could not serialize date.", exception);
-    }
-  }
-
-  public void serializeTimeZone(
-      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable TimeZone timeZone) {
-    try {
-      if (timeZone != null) {
-        writer.value(timeZone.getID());
-      }
-    } catch (Exception exception) {
-      logger.log(SentryLevel.ERROR, "Could not serialize timeZone.", exception);
     }
   }
 
