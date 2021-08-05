@@ -5,7 +5,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-interface JsonUnknown {
+public interface JsonUnknown {
   @Nullable
   Map<String, Object> getUnknown();
 
