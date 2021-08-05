@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.Device;
 import io.sentry.vendor.gson.stream.JsonWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -32,12 +31,6 @@ public final class JsonObjectWriter extends JsonWriter {
   public JsonObjectWriter value(@NotNull ILogger logger, @Nullable Object object)
       throws IOException {
     jsonObjectSerializer.serialize(this, logger, object);
-    return this;
-  }
-
-  public JsonObjectWriter value(
-      @NotNull ILogger logger, @Nullable Device.DeviceOrientation deviceOrientation) {
-    jsonObjectSerializer.serializeDeviceOrientation(this, logger, deviceOrientation);
     return this;
   }
 

@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.Device;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,19 +36,6 @@ public final class JsonObjectSerializer {
     } else {
       // TODO: Use reflection to support object serialization.
       writer.value(OBJECT_PLACEHOLDER);
-    }
-  }
-
-  public void serializeDeviceOrientation(
-      @NotNull JsonObjectWriter writer,
-      @NotNull ILogger logger,
-      @Nullable Device.DeviceOrientation deviceOrientation) {
-    try {
-      if (deviceOrientation != null) {
-        writer.value(deviceOrientation.toString().toLowerCase(Locale.ROOT));
-      }
-    } catch (Exception exception) {
-      logger.log(SentryLevel.ERROR, "Could not serialize deviceOrientation.", exception);
     }
   }
 

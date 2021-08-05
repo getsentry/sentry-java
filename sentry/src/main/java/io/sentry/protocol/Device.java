@@ -3,6 +3,8 @@ package io.sentry.protocol;
 import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
+import io.sentry.JsonElementDeserializer;
+import io.sentry.JsonElementSerializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
@@ -15,6 +17,7 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
@@ -403,7 +406,27 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
 
   public enum DeviceOrientation {
     PORTRAIT,
-    LANDSCAPE
+    LANDSCAPE;
+
+    // JsonElementSerializer
+
+    public static final class Serializer implements JsonElementSerializer<DeviceOrientation> {
+      @Override
+      public void serialize(DeviceOrientation src, @NotNull JsonObjectWriter writer)
+          throws IOException {
+        writer.value(src.toString().toLowerCase(Locale.ROOT));
+      }
+    }
+
+    // JsonElementDeserializer
+
+    public static final class Deserializer implements JsonElementDeserializer<DeviceOrientation> {
+      @Override
+      public @NotNull DeviceOrientation deserialize(@NotNull JsonObjectReader reader)
+          throws IOException {
+        return DeviceOrientation.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
+      }
+    }
   }
 
   // region JsonSerializable
@@ -476,7 +499,8 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
       writer.name(JsonKeys.ONLINE).value(online);
     }
     if (orientation != null) {
-      writer.name(JsonKeys.ORIENTATION).value(logger, orientation);
+      writer.name(JsonKeys.ORIENTATION);
+      new DeviceOrientation.Serializer().serialize(orientation, writer);
     }
     if (simulator != null) {
       writer.name(JsonKeys.SIMULATOR).value(simulator);
@@ -598,7 +622,9 @@ public final class Device implements IUnknownPropertiesConsumer, JsonSerializabl
             device.online = reader.nextBooleanOrNull();
             break;
           case JsonKeys.ORIENTATION:
-            device.orientation = reader.nextDeviceOrientationOrNull();
+            if (!reader.peekNull()) {
+              device.orientation = new DeviceOrientation.Deserializer().deserialize(reader);
+            }
             break;
           case JsonKeys.SIMULATOR:
             device.simulator = reader.nextBooleanOrNull();
