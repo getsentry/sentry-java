@@ -4,10 +4,8 @@ import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
@@ -66,16 +64,5 @@ public final class JsonObjectReader extends JsonReader {
    */
   public boolean peekNull() throws IOException {
     return peek() == JsonToken.NULL;
-  }
-
-  public @NotNull SpanStatus nextSpanStatus() throws IOException {
-    return SpanStatus.valueOf(nextString().toUpperCase(Locale.ROOT));
-  }
-
-  public @Nullable SpanStatus nextSpanStatusOrNull() throws IOException {
-    if (peek() == JsonToken.NULL) {
-      return null;
-    }
-    return nextSpanStatus();
   }
 }

@@ -181,7 +181,8 @@ public class SpanContext implements JsonSerializable {
       writer.name(JsonKeys.DESCRIPTION).value(description);
     }
     if (status != null) {
-      writer.name(JsonKeys.STATUS).value(logger, status);
+      writer.name(JsonKeys.STATUS);
+      new SpanStatus.Serializer().serialize(status, writer);
     }
     if (!tags.isEmpty()) {
       writer.name(JsonKeys.TAGS).value(logger, tags);
@@ -238,7 +239,9 @@ public class SpanContext implements JsonSerializable {
             description = reader.nextString();
             break;
           case JsonKeys.STATUS:
-            status = reader.nextSpanStatusOrNull();
+            if (!reader.peekNull()) {
+              status = new SpanStatus.Deserializer().deserialize(reader);
+            }
             break;
           case JsonKeys.TAGS:
             tags = (Map<String, String>) reader.nextObjectOrNull();

@@ -1,5 +1,7 @@
 package io.sentry;
 
+import java.io.IOException;
+import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -99,5 +101,23 @@ public enum SpanStatus {
 
   private boolean matches(int httpStatusCode) {
     return httpStatusCode >= minHttpStatusCode && httpStatusCode <= maxHttpStatusCode;
+  }
+
+  // JsonElementSerializer
+
+  public static final class Serializer implements JsonElementSerializer<SpanStatus> {
+    @Override
+    public void serialize(SpanStatus src, @NotNull JsonObjectWriter writer) throws IOException {
+      writer.value(src.name().toLowerCase(Locale.ROOT));
+    }
+  }
+
+  // JsonElementDeserializer
+
+  public static final class Deserializer implements JsonElementDeserializer<SpanStatus> {
+    @Override
+    public @NotNull SpanStatus deserialize(@NotNull JsonObjectReader reader) throws IOException {
+      return SpanStatus.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
+    }
   }
 }

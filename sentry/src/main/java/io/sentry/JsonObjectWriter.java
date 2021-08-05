@@ -33,9 +33,4 @@ public final class JsonObjectWriter extends JsonWriter {
     jsonObjectSerializer.serialize(this, logger, object);
     return this;
   }
-
-  public JsonObjectWriter value(@NotNull ILogger logger, @Nullable SpanStatus spanStatus) {
-    jsonObjectSerializer.serializeSpanStatus(this, logger, spanStatus);
-    return this;
-  }
 }

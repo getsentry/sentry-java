@@ -3,7 +3,6 @@ package io.sentry;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -36,17 +35,6 @@ public final class JsonObjectSerializer {
     } else {
       // TODO: Use reflection to support object serialization.
       writer.value(OBJECT_PLACEHOLDER);
-    }
-  }
-
-  public void serializeSpanStatus(
-      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable SpanStatus spanStatus) {
-    try {
-      if (spanStatus != null) {
-        writer.value(spanStatus.name().toLowerCase(Locale.ROOT));
-      }
-    } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when serializing SpanStatus", e);
     }
   }
 
