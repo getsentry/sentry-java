@@ -340,7 +340,7 @@ public final class io/sentry/IpAddressUtils {
 }
 
 public abstract interface class io/sentry/JsonDeserializer {
-	public abstract fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/JsonSerializable;
+	public abstract fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/JsonObjectDeserializer {
@@ -370,9 +370,7 @@ public final class io/sentry/JsonObjectWriter : io/sentry/vendor/gson/stream/Jso
 }
 
 public abstract interface class io/sentry/JsonSerializable {
-	public abstract fun getUnknown ()Ljava/util/Map;
 	public abstract fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
-	public abstract fun setUnknown (Ljava/util/Map;)V
 }
 
 public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor {
@@ -1157,7 +1155,7 @@ public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Int
 	public fun uncaughtException (Ljava/lang/Thread;Ljava/lang/Throwable;)V
 }
 
-public final class io/sentry/UserFeedback : io/sentry/JsonSerializable {
+public final class io/sentry/UserFeedback : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/protocol/SentryId;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getComments ()Ljava/lang/String;
@@ -1175,8 +1173,8 @@ public final class io/sentry/UserFeedback : io/sentry/JsonSerializable {
 
 public final class io/sentry/UserFeedback$Deserializer : io/sentry/JsonDeserializer {
 	public fun <init> ()V
-	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/JsonSerializable;
 	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/UserFeedback;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/UserFeedback$JsonKeys {

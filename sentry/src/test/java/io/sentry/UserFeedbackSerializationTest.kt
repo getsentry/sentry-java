@@ -30,9 +30,9 @@ class UserFeedbackSerializationTest {
     private val fixture = Fixture()
 
     @Test
-    fun `serializing user feedback`() {
+    fun serialize() {
         val userFeedback = fixture.getSut()
-        val actual = serializeToString(userFeedback)
+        val actual = serialize(userFeedback)
 
         val expected = "{\"event_id\":\"${userFeedback.eventId}\",\"name\":\"${userFeedback.name}\"," +
             "\"email\":\"${userFeedback.email}\",\"comments\":\"${userFeedback.comments}\"}"
@@ -41,38 +41,7 @@ class UserFeedbackSerializationTest {
     }
 
     @Test
-    fun `serializing unknown`() {
-        val userFeedback = fixture.getSut().apply {
-            unknown = mapOf(
-                "fixture-key" to "fixture-value"
-            )
-        }
-        val actual = serializeToString(userFeedback)
-        val expected = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
-            "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"," +
-            "\"fixture-key\":\"fixture-value\"}"
-
-        assertEquals(expected, actual)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer`() {
-        val writer: JsonObjectWriter = mock()
-        val logger: ILogger = mock()
-        val sut = fixture.getSut().apply {
-            unknown = mapOf(
-                "fixture-key" to "fixture-value"
-            )
-        }
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    @Test
-    fun `deserializing user feedback`() {
+    fun deserialize() {
         val userFeedback = fixture.getSut()
         val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
             "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
@@ -99,31 +68,12 @@ class UserFeedbackSerializationTest {
         }
     }
 
-    @Test
-    fun `deserializing unknown`() {
-        val json = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
-            "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"," +
-            "\"fixture-key\":\"fixture-value\"}"
-        val expected = mapOf(
-            "fixture-key" to "fixture-value"
-        )
-
-        val reader = JsonObjectReader(StringReader(json))
-        val actual = UserFeedback.Deserializer().deserialize(reader, fixture.logger)
-
-        assertEquals(expected, actual.unknown)
-    }
-
     // Helper
 
-    private fun serializeToString(jsonSerializable: JsonSerializable): String {
-        return this.serializeToString { wrt -> jsonSerializable.serialize(wrt, fixture.logger) }
-    }
-
-    private fun serializeToString(serialize: (JsonObjectWriter) -> Unit): String {
+    private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()
         val jsonWrt = JsonObjectWriter(wrt)
-        serialize(jsonWrt)
+        jsonSerializable.serialize(jsonWrt, fixture.logger)
         return wrt.toString()
     }
 }
