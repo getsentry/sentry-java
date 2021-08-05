@@ -94,6 +94,10 @@ public class SpanContext implements JsonSerializable {
     this.op = Objects.requireNonNull(operation, "operation is required");
   }
 
+  public void setTags(Map<String, String> tags) {
+    this.tags = tags;
+  }
+
   public void setTag(final @NotNull String name, final @NotNull String value) {
     Objects.requireNonNull(name, "name is required");
     Objects.requireNonNull(value, "value is required");
@@ -144,7 +148,7 @@ public class SpanContext implements JsonSerializable {
     return sampled;
   }
 
-  void setSampled(final @Nullable Boolean sampled) {
+  public void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
   }
 
@@ -154,7 +158,6 @@ public class SpanContext implements JsonSerializable {
     public static final String TRACE_ID = "trace_id";
     public static final String SPAN_ID = "span_id";
     public static final String PARENT_SPAN_ID = "parent_span_id";
-    public static final String SAMPLED = "sampled";
     public static final String OP = "op";
     public static final String DESCRIPTION = "description";
     public static final String STATUS = "status";
@@ -172,9 +175,6 @@ public class SpanContext implements JsonSerializable {
     if (parentSpanId != null) {
       writer.name(JsonKeys.PARENT_SPAN_ID);
       new SpanId.Serializer().serialize(parentSpanId, writer);
-    }
-    if (sampled != null) {
-      writer.name(JsonKeys.SAMPLED).value(sampled);
     }
     writer.name(JsonKeys.OP).value(op);
     if (description != null) {
@@ -210,7 +210,6 @@ public class SpanContext implements JsonSerializable {
       SentryId traceId = null;
       SpanId spanId = null;
       SpanId parentSpanId = null;
-      Boolean sampled = null;
       String op = null;
       String description = null;
       SpanStatus status = null;
@@ -229,9 +228,6 @@ public class SpanContext implements JsonSerializable {
           case JsonKeys.PARENT_SPAN_ID:
             parentSpanId = new SpanId.Deserializer().deserialize(reader);
             break;
-          case JsonKeys.SAMPLED:
-            sampled = reader.nextBooleanOrNull();
-            break;
           case JsonKeys.OP:
             op = reader.nextString();
             break;
@@ -244,7 +240,9 @@ public class SpanContext implements JsonSerializable {
             }
             break;
           case JsonKeys.TAGS:
-            tags = (Map<String, String>) reader.nextObjectOrNull();
+            tags =
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, String>) reader.nextObjectOrNull());
             break;
           default:
             if (unknown == null) {
@@ -276,7 +274,7 @@ public class SpanContext implements JsonSerializable {
         throw exception;
       }
 
-      SpanContext spanContext = new SpanContext(traceId, spanId, op, parentSpanId, sampled);
+      SpanContext spanContext = new SpanContext(traceId, spanId, op, parentSpanId, null);
       spanContext.setDescription(description);
       spanContext.setStatus(status);
       if (tags != null) {
