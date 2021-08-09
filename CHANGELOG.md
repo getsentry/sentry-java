@@ -1,5 +1,7 @@
 # Changelog
 
+* Feat: Add more convenient way to pass BeforeSpanCallback in OpenFeign integration (#1637)
+
 ## Unreleased
 
 * Feat: Spring WebClient integration (#1621)
