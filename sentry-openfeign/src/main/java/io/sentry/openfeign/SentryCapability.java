@@ -19,6 +19,10 @@ public final class SentryCapability implements Capability {
     this.beforeSpan = beforeSpan;
   }
 
+  public SentryCapability(final @Nullable SentryFeignClient.BeforeSpanCallback beforeSpan) {
+    this(HubAdapter.getInstance(), beforeSpan);
+  }
+
   public SentryCapability() {
     this(HubAdapter.getInstance(), null);
   }
