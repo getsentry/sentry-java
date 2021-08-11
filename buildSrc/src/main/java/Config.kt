@@ -115,13 +115,12 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "5.12.5"
+        val spotlessVersion = "5.14.2"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:2.0.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.39.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        // use RC2 to drop jcenter because of kotlinx-html
         val detektVersion = "1.17.1"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.5.0"
