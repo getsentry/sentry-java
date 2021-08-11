@@ -84,7 +84,9 @@ object Config {
 
         val reactorCore = "io.projectreactor:reactor-core:3.4.6"
 
-        val feignCore = "io.github.openfeign:feign-core:11.6"
+        private val feignVersion = "11.6"
+        val feignCore = "io.github.openfeign:feign-core:$feignVersion"
+        val feignGson = "io.github.openfeign:feign-gson:$feignVersion"
     }
 
     object AnnotationProcessors {

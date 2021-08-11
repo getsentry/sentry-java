@@ -25,6 +25,7 @@ include(
     "sentry-samples:sentry-samples-jul",
     "sentry-samples:sentry-samples-log4j2",
     "sentry-samples:sentry-samples-logback",
+    "sentry-samples:sentry-samples-openfeign",
     "sentry-samples:sentry-samples-servlet",
     "sentry-samples:sentry-samples-spring",
     "sentry-samples:sentry-samples-spring-boot",
