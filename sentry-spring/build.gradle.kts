@@ -32,7 +32,7 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
@@ -49,7 +49,7 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
-    testImplementation(project(":sentry-test-support"))
+    testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)

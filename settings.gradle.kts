@@ -1,3 +1,5 @@
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 rootProject.name = "sentry-root"
 rootProject.buildFileName = "build.gradle.kts"
 

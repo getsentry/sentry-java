@@ -14,5 +14,5 @@ configure<JavaPluginConvention> {
 }
 
 dependencies {
-    implementation(project(":sentry"))
+    implementation(projects.sentry)
 }
