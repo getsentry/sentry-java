@@ -74,7 +74,7 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
 
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
@@ -99,5 +99,5 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(project(":sentry-test-support"))
+    testImplementation(projects.sentryTestSupport)
 }

@@ -97,8 +97,8 @@ tasks.withType<Test> {
 }
 
 dependencies {
-    api(project(":sentry"))
-    api(project(":sentry-android-core"))
+    api(projects.sentry)
+    api(projects.sentryAndroidCore)
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 

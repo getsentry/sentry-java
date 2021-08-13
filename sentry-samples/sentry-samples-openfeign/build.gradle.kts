@@ -14,8 +14,8 @@ configure<JavaPluginConvention> {
 }
 
 dependencies {
-    implementation(project(":sentry"))
-    implementation(project(":sentry-openfeign"))
+    implementation(projects.sentry)
+    implementation(projects.sentryOpenfeign)
     implementation(Config.Libs.feignCore)
     implementation(Config.Libs.feignGson)
 }

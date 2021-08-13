@@ -62,7 +62,7 @@ kotlin {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
 
     implementation(Config.Libs.fragment)
 

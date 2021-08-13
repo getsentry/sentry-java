@@ -22,6 +22,6 @@ android {
 }
 
 dependencies {
-    api(project(":sentry-android-core"))
-    api(project(":sentry-android-ndk"))
+    api(projects.sentryAndroidCore)
+    api(projects.sentryAndroidNdk)
 }
