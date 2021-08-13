@@ -11,9 +11,8 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
     id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
+    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
 }
-
-apply(plugin = Config.BuildPlugins.springDependencyManagement)
 
 the<DependencyManagementExtension>().apply {
     imports {

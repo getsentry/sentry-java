@@ -126,8 +126,9 @@ object Config {
         // use RC2 to drop jcenter because of kotlinx-html
         val detektVersion = "1.17.1"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.5.0"
-        val binaryCompatibilityValidator = "binary-compatibility-validator"
+        val binaryCompatibilityValidatorVersion = "0.6.0"
+        val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
+        val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
     }
 
     object Sentry {

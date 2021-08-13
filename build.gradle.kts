@@ -10,6 +10,7 @@ plugins {
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
     `maven-publish`
+    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
 }
 
 buildscript {
@@ -35,8 +36,6 @@ buildscript {
         classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
     }
 }
-
-apply(plugin = Config.QualityPlugins.binaryCompatibilityValidator)
 
 allprojects {
     repositories {
