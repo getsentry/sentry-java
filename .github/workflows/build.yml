@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    name: Build Job ${{ matrix.os }} - ${{ matrix.jvm }}
+    name: Build Job ${{ matrix.os }} - ${{ matrix.java }}
     runs-on: ${{ matrix.os }}
     strategy:
       # we want that the matrix keeps running, default is to cancel them if it fails.
@@ -20,24 +20,16 @@ jobs:
         # TODO: windows-latest
         os: [ubuntu-latest, macos-latest]
         # Zulu Community distribution of OpenJDK
-        jvm: [ 8.0.302-zulu, 11.0.12-zulu ]
+        java: [ '8', '11' ]
 
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      - name: "Download JVM: ${{ matrix.jvm }}"
-        uses: sdkman/sdkman-action@master
-        id: sdkman
-        with:
-          candidate: java
-          version: ${{ matrix.jvm }}
-
-      - name: "Set up JVM: ${{ matrix.jvm }}"
+      - name: "Set up JVM: ${{ matrix.java }}"
         uses: actions/setup-java@v1
         with:
-          java-version: 8
-          jdkFile: ${{ steps.sdkman.outputs.file }}
+          java-version: ${{ matrix.java }}
 
       - name: Cache Gradle packages
         uses: actions/cache@v2
