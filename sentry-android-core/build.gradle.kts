@@ -18,13 +18,13 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        versionName = project.version.toString()
-        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
+//        versionName = project.version.toString()
+//        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
 
         buildConfigField("String", "SENTRY_ANDROID_SDK_NAME", "\"${Config.Sentry.SENTRY_ANDROID_SDK_NAME}\"")
 
         // for AGP 4.1
-        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
+        buildConfigField("String", "VERSION_NAME", "\"$project.version\"")
     }
 
     buildTypes {

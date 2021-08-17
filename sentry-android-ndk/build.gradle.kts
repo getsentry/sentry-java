@@ -26,8 +26,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        versionName = project.version.toString()
-        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
+//        versionName = project.version.toString()
+//        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
 
         externalNativeBuild {
             cmake {
@@ -41,7 +41,7 @@ android {
         }
 
         // for AGP 4.1
-        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
+        buildConfigField("String", "VERSION_NAME", "\"$project.version\"")
     }
 
     // we use the default NDK and CMake versions based on the AGP's version

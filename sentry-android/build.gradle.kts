@@ -11,8 +11,8 @@ android {
         targetSdkVersion(Config.Android.targetSdkVersion)
         minSdkVersion(Config.Android.minSdkVersionNdk)
 
-        versionName = project.version.toString()
-        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
+//        versionName = project.version.toString()
+//        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
     }
 
     buildFeatures {
