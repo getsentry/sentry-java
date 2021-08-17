@@ -36,3 +36,4 @@ targets:
       maven:io.sentry:sentry-kotlin-extensions:
       maven:io.sentry:sentry-android-fragment:
       maven:io.sentry:sentry-bom:
+      maven:io.sentry:sentry-openfeign:
