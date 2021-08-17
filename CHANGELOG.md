@@ -1,12 +1,13 @@
 # Changelog
 
-* Feat: Add more convenient way to pass BeforeSpanCallback in OpenFeign integration (#1637)
-* Bump: sentry-native to 0.4.12 (#1651)
+## Unreleased
 
 ## 5.1.0
 
 * Feat: Spring WebClient integration (#1621)
 * Feat: OpenFeign integration (#1632)
+* Feat: Add more convenient way to pass BeforeSpanCallback in OpenFeign integration (#1637)
+* Bump: sentry-native to 0.4.12 (#1651)
 
 ## 5.1.0-beta.9
 
