@@ -6,6 +6,7 @@
 
 * Feat: Spring WebClient integration (#1621)
 * Feat: OpenFeign integration (#1632)
+* Feat: Add support for async methods in Spring MVC (#1652)
 
 ## 5.1.0-beta.9
 
