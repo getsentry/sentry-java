@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Add secondary constructor taking IHub to SentryOkHttpInterceptor (#1657)
+
 ## 5.1.0
 
 * Feat: Spring WebClient integration (#1621)
