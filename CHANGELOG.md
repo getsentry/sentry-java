@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Merge external map properties (#1656)
+
 ## 5.1.0
 
 * Feat: Spring WebClient integration (#1621)
