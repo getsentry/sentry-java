@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Feat: Merge external map properties ()
+* Feat: Merge external map properties (#1656)
 
 ## 5.1.0
 
