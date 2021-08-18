@@ -36,7 +36,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.kotlin.await
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
@@ -219,17 +218,15 @@ class SentryAutoConfigurationTest {
             .run {
                 Sentry.captureMessage("Some message")
                 val transport = it.getBean(ITransport::class.java)
-                await.untilAsserted {
-                    verify(transport).send(checkEvent { event ->
-                        assertThat(event.sdk).isNotNull()
-                        val sdk = event.sdk!!
-                        assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
-                        assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
-                        assertThat(sdk.packages).anyMatch { pkg ->
-                            pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
-                        }
-                    }, anyOrNull())
-                }
+                verify(transport).send(checkEvent { event ->
+                    assertThat(event.sdk).isNotNull()
+                    val sdk = event.sdk!!
+                    assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
+                    assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
+                    assertThat(sdk.packages).anyMatch { pkg ->
+                        pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
+                    }
+                }, anyOrNull())
             }
     }
 
@@ -285,11 +282,9 @@ class SentryAutoConfigurationTest {
             .run {
                 Sentry.captureMessage("Some message")
                 val transport = it.getBean(ITransport::class.java)
-                await.untilAsserted {
-                    verify(transport).send(checkEvent { event ->
-                        assertThat(event.release).isEqualTo("git-commit-id")
-                    }, anyOrNull())
-                }
+                verify(transport).send(checkEvent { event ->
+                    assertThat(event.release).isEqualTo("git-commit-id")
+                }, anyOrNull())
             }
     }
 
@@ -300,11 +295,10 @@ class SentryAutoConfigurationTest {
             .run {
                 Sentry.captureMessage("Some message")
                 val transport = it.getBean(ITransport::class.java)
-                await.untilAsserted {
-                    verify(transport).send(checkEvent { event ->
-                        assertThat(event.release).isEqualTo("my-release")
-                    }, anyOrNull())
-                }
+
+                verify(transport).send(checkEvent { event ->
+                    assertThat(event.release).isEqualTo("my-release")
+                }, anyOrNull())
             }
     }
 

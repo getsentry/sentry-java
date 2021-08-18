@@ -68,15 +68,13 @@ class SentryWebfluxIntegrationTest {
             .expectStatus()
             .isOk
 
-        await.untilAsserted {
-            verify(transport).send(checkEvent { event ->
-                assertNotNull(event.request) {
-                    assertEquals("http://localhost:$port/hello?param=value", it.url)
-                    assertEquals("GET", it.method)
-                    assertEquals("param=value", it.queryString)
-                }
-            }, anyOrNull())
-        }
+        verify(transport).send(checkEvent { event ->
+            assertNotNull(event.request) {
+                assertEquals("http://localhost:$port/hello?param=value", it.url)
+                assertEquals("GET", it.method)
+                assertEquals("param=value", it.queryString)
+            }
+        }, anyOrNull())
     }
 
     @Test
@@ -87,18 +85,16 @@ class SentryWebfluxIntegrationTest {
             .expectStatus()
             .is5xxServerError
 
-        await.untilAsserted {
-            verify(transport).send(checkEvent { event ->
-                assertEquals("GET /throws", event.transaction)
-                assertNotNull(event.exceptions) {
-                    val ex = it.first()
-                    assertEquals("something went wrong", ex.value)
-                    assertNotNull(ex.mechanism) {
-                        assertThat(it.isHandled).isFalse()
-                    }
+        verify(transport).send(checkEvent { event ->
+            assertEquals("GET /throws", event.transaction)
+            assertNotNull(event.exceptions) {
+                val ex = it.first()
+                assertEquals("something went wrong", ex.value)
+                assertNotNull(ex.mechanism) {
+                    assertThat(it.isHandled).isFalse()
                 }
-            }, anyOrNull())
-        }
+            }
+        }, anyOrNull())
     }
 
     @Test

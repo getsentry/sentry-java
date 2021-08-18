@@ -31,7 +31,6 @@ import org.apache.logging.log4j.core.config.AppenderRef
 import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
 import org.apache.logging.log4j.spi.ExtendedLogger
-import org.awaitility.kotlin.await
 
 class SentryAppenderTest {
     private class Fixture {
@@ -143,7 +142,6 @@ class SentryAppenderTest {
         val logger = fixture.getSut(minimumEventLevel = Level.DEBUG)
         logger.debug("testing debug level")
 
-
         verify(fixture.transport).send(checkEvent { event ->
             assertEquals(SentryLevel.DEBUG, event.level)
         }, anyOrNull())
@@ -183,7 +181,6 @@ class SentryAppenderTest {
     fun `converts fatal log level to Sentry level`() {
         val logger = fixture.getSut(minimumEventLevel = Level.FATAL)
         logger.fatal("testing fatal level")
-
 
         verify(fixture.transport).send(checkEvent { event ->
             assertEquals(SentryLevel.FATAL, event.level)
@@ -268,7 +265,6 @@ class SentryAppenderTest {
     fun `sets SDK version`() {
         val logger = fixture.getSut(minimumEventLevel = Level.INFO)
         logger.info("testing sdk version")
-
 
         verify(fixture.transport).send(checkEvent { event ->
             assertNotNull(event.sdk) {

@@ -21,7 +21,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.awaitility.kotlin.await
 import org.slf4j.MDC
 
 class SentryHandlerTest {

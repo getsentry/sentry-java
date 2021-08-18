@@ -25,7 +25,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.awaitility.kotlin.await
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -90,7 +89,6 @@ class SentryAppenderTest {
         fixture = Fixture(minimumEventLevel = Level.DEBUG)
         fixture.logger.debug("testing message conversion {}, {}", 1, 2)
 
-
         verify(fixture.transport).send(checkEvent { event ->
             assertNotNull(event.message) { message ->
                 assertEquals("testing message conversion 1, 2", message.formatted)
@@ -107,7 +105,6 @@ class SentryAppenderTest {
         val utcTime = LocalDateTime.now(fixture.utcTimeZone)
 
         fixture.logger.debug("testing event date")
-
 
         verify(fixture.transport).send(checkEvent { event ->
             val eventTime = Instant.ofEpochMilli(event.timestamp.time)
@@ -323,7 +320,6 @@ class SentryAppenderTest {
     fun `uses options set in properties file`() {
         fixture = Fixture()
         fixture.logger.error("some event")
-
 
         verify(fixture.transport).send(checkEvent { event ->
             assertEquals("release from sentry.properties", event.release)

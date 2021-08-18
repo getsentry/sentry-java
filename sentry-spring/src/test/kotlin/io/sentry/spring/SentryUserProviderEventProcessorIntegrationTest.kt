@@ -17,7 +17,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.kotlin.await
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
@@ -36,12 +35,11 @@ class SentryUserProviderEventProcessorIntegrationTest {
                 reset(transport)
 
                 Sentry.captureMessage("test message")
-                await.untilAsserted {
-                    verify(transport).send(checkEvent { event: SentryEvent ->
-                        assertThat(event.user).isNotNull
-                        assertThat(event.user!!.username).isEqualTo("john.smith")
-                    }, anyOrNull())
-                }
+
+                verify(transport).send(checkEvent { event: SentryEvent ->
+                    assertThat(event.user).isNotNull
+                    assertThat(event.user!!.username).isEqualTo("john.smith")
+                }, anyOrNull())
             }
     }
 
@@ -54,11 +52,9 @@ class SentryUserProviderEventProcessorIntegrationTest {
                 reset(transport)
 
                 Sentry.captureMessage("test message")
-                await.untilAsserted {
-                    verify(transport).send(checkEvent { event: SentryEvent ->
-                        assertThat(event.user).isNull()
-                    }, anyOrNull())
-                }
+                verify(transport).send(checkEvent { event: SentryEvent ->
+                    assertThat(event.user).isNull()
+                }, anyOrNull())
             }
     }
 
