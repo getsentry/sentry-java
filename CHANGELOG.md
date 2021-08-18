@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Do not crash if SENSOR_SERVICE throws (#1655)
+
 ## 5.1.0
 
 * Feat: Spring WebClient integration (#1621)
