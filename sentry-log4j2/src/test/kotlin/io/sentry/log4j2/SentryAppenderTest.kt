@@ -9,7 +9,7 @@ import io.sentry.HubAdapter
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryLevel
-import io.sentry.test.checkEvent
+import io.sentry.checkEvent
 import io.sentry.transport.ITransport
 import java.time.Instant
 import java.time.LocalDateTime

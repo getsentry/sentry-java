@@ -18,13 +18,13 @@ import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.checkEvent
 import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.SpringSecuritySentryUserProvider
 import io.sentry.spring.tracing.SentryTracingFilter
-import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory

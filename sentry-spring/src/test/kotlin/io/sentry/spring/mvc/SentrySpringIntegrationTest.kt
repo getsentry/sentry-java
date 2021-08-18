@@ -12,6 +12,8 @@ import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
+import io.sentry.checkEvent
+import io.sentry.checkTransaction
 import io.sentry.spring.EnableSentry
 import io.sentry.spring.SentryExceptionResolver
 import io.sentry.spring.SentrySpringFilter
@@ -20,8 +22,6 @@ import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.tracing.SentryTracingConfiguration
 import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.spring.tracing.SentryTransaction
-import io.sentry.test.checkEvent
-import io.sentry.test.checkTransaction
 import io.sentry.transport.ITransport
 import java.lang.Exception
 import java.time.Duration
@@ -164,11 +164,9 @@ class SentrySpringIntegrationTest {
 
         restTemplate.getForEntity("http://localhost:$port/throws", String::class.java)
 
-        await.untilAsserted {
-            verify(transport).send(checkEvent { event ->
-                assertThat(event.transaction).isEqualTo("GET /throws")
-            }, anyOrNull())
-        }
+        verify(transport).send(checkEvent { event ->
+            assertThat(event.transaction).isEqualTo("GET /throws")
+        }, anyOrNull())
     }
 
     @Test
@@ -187,11 +185,9 @@ class SentrySpringIntegrationTest {
     @Test
     fun `calling a method annotated with @SentryTransaction creates transaction`() {
         someService.aMethod()
-        await.untilAsserted {
-            verify(transport).send(checkTransaction {
-                assertThat(it.status).isEqualTo(SpanStatus.OK)
-            }, anyOrNull())
-        }
+        verify(transport).send(checkTransaction {
+            assertThat(it.status).isEqualTo(SpanStatus.OK)
+        }, anyOrNull())
     }
 
     @Test

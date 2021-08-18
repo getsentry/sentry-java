@@ -10,8 +10,8 @@ import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.checkEvent
 import io.sentry.protocol.User
-import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import kotlin.test.Test
 import kotlin.test.assertEquals

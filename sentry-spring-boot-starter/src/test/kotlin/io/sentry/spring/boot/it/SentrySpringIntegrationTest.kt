@@ -10,9 +10,9 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
+import io.sentry.checkEvent
+import io.sentry.checkTransaction
 import io.sentry.spring.tracing.SentrySpan
-import io.sentry.test.checkEvent
-import io.sentry.test.checkTransaction
 import io.sentry.transport.ITransport
 import java.lang.RuntimeException
 import org.assertj.core.api.Assertions.assertThat
