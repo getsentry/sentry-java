@@ -3,6 +3,10 @@
 ## Unreleased
 
 * Fix: Remove onActivityPreCreated call in favor of onActivityCreated (#1661)
+* Fix: Do not crash if SENSOR_SERVICE throws (#1655)
+* Feat: Add support for async methods in Spring MVC (#1652)
+* Feat: Add secondary constructor taking IHub to SentryOkHttpInterceptor (#1657)
+* Feat: Merge external map properties (#1656)
 
 ## 5.1.0
 
