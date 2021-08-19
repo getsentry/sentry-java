@@ -83,6 +83,10 @@ object Config {
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
         val reactorCore = "io.projectreactor:reactor-core:3.4.6"
+
+        private val feignVersion = "11.6"
+        val feignCore = "io.github.openfeign:feign-core:$feignVersion"
+        val feignGson = "io.github.openfeign:feign-gson:$feignVersion"
     }
 
     object AnnotationProcessors {
@@ -122,8 +126,9 @@ object Config {
         // use RC2 to drop jcenter because of kotlinx-html
         val detektVersion = "1.17.1"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:0.5.0"
-        val binaryCompatibilityValidator = "binary-compatibility-validator"
+        val binaryCompatibilityValidatorVersion = "0.6.0"
+        val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
+        val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
     }
 
     object Sentry {

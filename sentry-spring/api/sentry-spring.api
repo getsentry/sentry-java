@@ -63,6 +63,11 @@ public class io/sentry/spring/SentrySpringServletContainerInitializer : javax/se
 	public fun onStartup (Ljava/util/Set;Ljavax/servlet/ServletContext;)V
 }
 
+public final class io/sentry/spring/SentryTaskDecorator : org/springframework/core/task/TaskDecorator {
+	public fun <init> ()V
+	public fun decorate (Ljava/lang/Runnable;)Ljava/lang/Runnable;
+}
+
 public class io/sentry/spring/SentryUserFilter : javax/servlet/Filter {
 	public fun <init> (Lio/sentry/IHub;Ljava/util/List;)V
 	public fun doFilter (Ljavax/servlet/ServletRequest;Ljavax/servlet/ServletResponse;Ljavax/servlet/FilterChain;)V
@@ -112,6 +117,11 @@ public class io/sentry/spring/tracing/SentrySpanAdvice : org/aopalliance/interce
 public class io/sentry/spring/tracing/SentrySpanClientHttpRequestInterceptor : org/springframework/http/client/ClientHttpRequestInterceptor {
 	public fun <init> (Lio/sentry/IHub;)V
 	public fun intercept (Lorg/springframework/http/HttpRequest;[BLorg/springframework/http/client/ClientHttpRequestExecution;)Lorg/springframework/http/client/ClientHttpResponse;
+}
+
+public class io/sentry/spring/tracing/SentrySpanClientWebRequestFilter : org/springframework/web/reactive/function/client/ExchangeFilterFunction {
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun filter (Lorg/springframework/web/reactive/function/client/ClientRequest;Lorg/springframework/web/reactive/function/client/ExchangeFunction;)Lreactor/core/publisher/Mono;
 }
 
 public class io/sentry/spring/tracing/SentrySpanPointcutConfiguration {

@@ -14,6 +14,6 @@ configure<JavaPluginConvention> {
 }
 
 dependencies {
-    implementation(project(":sentry-logback"))
+    implementation(projects.sentryLogback)
     implementation(Config.Libs.logbackClassic)
 }

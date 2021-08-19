@@ -72,7 +72,7 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
 
     api(Config.Libs.timber)
 

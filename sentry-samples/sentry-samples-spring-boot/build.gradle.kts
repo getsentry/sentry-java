@@ -19,13 +19,14 @@ repositories {
 dependencies {
     implementation(Config.Libs.springBootStarterSecurity)
     implementation(Config.Libs.springBootStarterWeb)
+    implementation(Config.Libs.springBootStarterWebflux)
     implementation(Config.Libs.springBootStarterAop)
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBootStarter)
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-    implementation(project(":sentry-spring-boot-starter"))
-    implementation(project(":sentry-logback"))
+    implementation(projects.sentrySpringBootStarter)
+    implementation(projects.sentryLogback)
     testImplementation(Config.Libs.springBootStarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }

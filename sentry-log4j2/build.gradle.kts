@@ -20,7 +20,7 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
     implementation(Config.Libs.log4j2Api)
     implementation(Config.Libs.log4j2Core)
 
@@ -32,11 +32,10 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
-    testImplementation(project(":sentry-test-support"))
+    testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.awaitility)
 }
 
 configure<SourceSetContainer> {
