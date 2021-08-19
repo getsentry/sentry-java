@@ -58,6 +58,12 @@ android {
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
+
+    variantFilter {
+        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
+            ignore = true
+        }
+    }
 }
 
 tasks.withType<Test> {
