@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.1.1
 
 * Fix: Remove onActivityPreCreated call in favor of onActivityCreated (#1661)
