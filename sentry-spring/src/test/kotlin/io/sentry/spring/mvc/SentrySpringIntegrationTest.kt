@@ -15,6 +15,7 @@ import io.sentry.SpanStatus
 import io.sentry.spring.EnableSentry
 import io.sentry.spring.SentryExceptionResolver
 import io.sentry.spring.SentrySpringFilter
+import io.sentry.spring.SentryTaskDecorator
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.tracing.SentryTracingConfiguration
@@ -23,8 +24,8 @@ import io.sentry.spring.tracing.SentryTransaction
 import io.sentry.test.checkEvent
 import io.sentry.test.checkTransaction
 import io.sentry.transport.ITransport
-import java.lang.Exception
 import java.time.Duration
+import java.util.concurrent.Callable
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.junit.Before
@@ -237,6 +238,21 @@ class SentrySpringIntegrationTest {
             }, anyOrNull())
         }
     }
+
+    @Test
+    fun `scope is applied to events triggered in async methods`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/callable", String::class.java)
+
+        await.untilAsserted {
+            verify(transport).send(checkEvent { event ->
+                assertThat(event.message!!.formatted).isEqualTo("this message should be in the scope of the request")
+                assertThat(event.request).isNotNull()
+                assertThat(event.request!!.url).isEqualTo("http://localhost:$port/callable")
+            }, anyOrNull())
+        }
+    }
 }
 
 @SpringBootApplication
@@ -278,6 +294,9 @@ open class App {
         this.filter = SentryTracingFilter(hub)
         this.order = Ordered.HIGHEST_PRECEDENCE + 1 // must run after SentrySpringFilter
     }
+
+    @Bean
+    open fun sentryTaskDecorator() = SentryTaskDecorator()
 }
 
 @Service
@@ -329,6 +348,14 @@ class HelloController {
     @GetMapping("/throws-handled")
     fun throwsHandled() {
         throw CustomException("handled exception")
+    }
+
+    @GetMapping("/callable")
+    fun callable(): Callable<String> {
+        return Callable {
+            Sentry.captureMessage("this message should be in the scope of the request")
+            "from callable"
+        }
     }
 }
 

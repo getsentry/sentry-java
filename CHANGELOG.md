@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Feat: Add support for async methods in Spring MVC (#1652)
 * Feat: Add secondary constructor taking IHub to SentryOkHttpInterceptor (#1657)
 * Feat: Merge external map properties (#1656)
 
