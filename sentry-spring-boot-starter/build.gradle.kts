@@ -68,7 +68,6 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
-    testImplementation(Config.TestLibs.awaitility)
 }
 
 configure<SourceSetContainer> {
