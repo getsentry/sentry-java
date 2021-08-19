@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.1.1
 
 * Fix: Remove onActivityPreCreated call in favor of onActivityCreated (#1661)
 * Fix: Do not crash if SENSOR_SERVICE throws (#1655)
