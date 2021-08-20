@@ -25,6 +25,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 import org.assertj.core.api.Assertions
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockHttpServletRequest
@@ -82,6 +83,19 @@ class SentrySpringFilterTest {
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
         verify(fixture.hub).popScope()
+    }
+
+    @Test
+    fun `pops scope when chain throws`() {
+        val listener = fixture.getSut()
+        whenever(fixture.chain.doFilter(any(), any())).thenThrow(RuntimeException())
+
+        try {
+            listener.doFilter(fixture.request, fixture.response, fixture.chain)
+            fail()
+        } catch (e: Exception) {
+            verify(fixture.hub).popScope()
+        }
     }
 
     @Test

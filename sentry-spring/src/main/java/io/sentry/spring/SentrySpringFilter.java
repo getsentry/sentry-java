@@ -56,34 +56,40 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       }
       try {
         hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()));
-        hub.configureScope(
-            scope -> {
-              // set basic request information on the scope
-              scope.setRequest(requestResolver.resolveSentryRequest(request));
-              // transaction name is known at the later stage of request processing, thus it cannot
-              // be set on the scope
-              scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
-              // only if request caches body, add an event processor that sets body on the event
-              // body is not on the scope, to avoid using memory when no event is triggered during
-              // request processing
-              if (request instanceof CachedBodyHttpServletRequest) {
-                scope.addEventProcessor(
-                    new RequestBodyExtractingEventProcessor(request, hub.getOptions()));
-              }
-            });
-      } catch (Exception e) {
-        hub.getOptions()
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to set scope for HTTP request", e);
-      } finally {
+        configureScope(request);
         filterChain.doFilter(request, response);
+      } finally {
+        hub.popScope();
         if (hub.getOptions().isEnableAutoSessionTracking()) {
           hub.endSession();
         }
-        hub.popScope();
       }
     } else {
       filterChain.doFilter(servletRequest, response);
+    }
+  }
+
+  private void configureScope(HttpServletRequest request) {
+    try {
+      hub.configureScope(
+          scope -> {
+            // set basic request information on the scope
+            scope.setRequest(requestResolver.resolveSentryRequest(request));
+            // transaction name is known at the later stage of request processing, thus it cannot
+            // be set on the scope
+            scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
+            // only if request caches body, add an event processor that sets body on the event
+            // body is not on the scope, to avoid using memory when no event is triggered during
+            // request processing
+            if (request instanceof CachedBodyHttpServletRequest) {
+              scope.addEventProcessor(
+                  new RequestBodyExtractingEventProcessor(request, hub.getOptions()));
+            }
+          });
+    } catch (Exception e) {
+      hub.getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to set scope for HTTP request", e);
     }
   }
 
