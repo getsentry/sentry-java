@@ -113,13 +113,3 @@ dependencies {
 
     testImplementation(Config.TestLibs.mockitoKotlin)
 }
-
-val initNative = tasks.register<Exec>("initNative") {
-    logger.log(LogLevel.LIFECYCLE, "Initializing git submodules")
-    commandLine("git", "submodule", "update", "--init", "--recursive")
-    outputs.dir("${project.projectDir}/$sentryNativeSrc")
-}
-
-tasks.named("preBuild") {
-    dependsOn(initNative)
-}
