@@ -1,10 +1,16 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import java.io.IOException;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class SentryId {
+public final class SentryId implements JsonSerializable {
   private final @NotNull UUID uuid;
 
   public static final SentryId EMPTY_ID = new SentryId(new UUID(0, 0));
@@ -61,5 +67,23 @@ public final class SentryId {
     }
 
     return UUID.fromString(sentryIdString);
+  }
+
+  // JsonSerializable
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.value(toString());
+  }
+
+  // JsonElementDeserializer
+
+  public static final class Deserializer implements JsonDeserializer<SentryId> {
+    @Override
+    public @NotNull SentryId deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      return new SentryId(reader.nextString());
+    }
   }
 }
