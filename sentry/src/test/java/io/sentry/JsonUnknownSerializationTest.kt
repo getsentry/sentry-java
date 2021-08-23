@@ -1,8 +1,11 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.App
+import io.sentry.protocol.Device
 import io.sentry.protocol.SentryId
 import java.io.StringReader
 import java.io.StringWriter
@@ -25,6 +28,10 @@ class JsonUnknownSerializationTest {
             return givenJsonUnknown(App())
         }
 
+        fun getDevice(): Device {
+            return givenJsonUnknown(Device())
+        }
+
         private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T {
             return jsonUnknown.apply {
                 unknown = mapOf(
@@ -36,7 +43,7 @@ class JsonUnknownSerializationTest {
 
     private val fixture = Fixture()
 
-    // user feedback
+    // UserFeedback
 
     @Test
     fun `serializing and deserialize user feedback`() {
@@ -60,7 +67,7 @@ class JsonUnknownSerializationTest {
         verify(writer).value(logger, "fixture-value")
     }
 
-    // app
+    // App
 
     @Test
     fun `serializing and deserialize app`() {
@@ -75,8 +82,36 @@ class JsonUnknownSerializationTest {
     @Test
     fun `serializing unknown calls json object writer for app`() {
         val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
+
         val logger: ILogger = mock()
         val sut = fixture.getApp()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // Device
+
+    @Test
+    fun `serializing and deserialize device`() {
+        val sut = fixture.getDevice()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, Device.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for device`() {
+        val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
+
+        val logger: ILogger = mock()
+        val sut = fixture.getDevice()
 
         sut.serialize(writer, logger)
 
