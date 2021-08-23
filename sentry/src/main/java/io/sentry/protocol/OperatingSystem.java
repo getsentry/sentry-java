@@ -144,6 +144,13 @@ public final class OperatingSystem
     if (rooted != null) {
       writer.name(JsonKeys.ROOTED).value(rooted);
     }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
     writer.endObject();
   }
 

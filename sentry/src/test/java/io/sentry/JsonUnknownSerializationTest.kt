@@ -2,6 +2,7 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SentryId
 import java.io.StringReader
 import java.io.StringWriter
@@ -20,6 +21,10 @@ class JsonUnknownSerializationTest {
             return givenJsonUnknown(UserFeedback(eventId))
         }
 
+        fun getOperatingSystem(): OperatingSystem {
+            return givenJsonUnknown(OperatingSystem())
+        }
+
         private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T {
             return jsonUnknown.apply {
                 unknown = mapOf(
@@ -30,6 +35,8 @@ class JsonUnknownSerializationTest {
     }
 
     private val fixture = Fixture()
+
+    // UserFeedback
 
     @Test
     fun `serializing and deserialize user feedback`() {
@@ -46,6 +53,30 @@ class JsonUnknownSerializationTest {
         val writer: JsonObjectWriter = mock()
         val logger: ILogger = mock()
         val sut = fixture.getUserFeedback()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // OperatingSystem
+
+    @Test
+    fun `serializing and deserialize operating system`() {
+        val sut = fixture.getOperatingSystem()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, OperatingSystem.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for operating system`() {
+        val writer: JsonObjectWriter = mock()
+        val logger: ILogger = mock()
+        val sut = fixture.getOperatingSystem()
 
         sut.serialize(writer, logger)
 
