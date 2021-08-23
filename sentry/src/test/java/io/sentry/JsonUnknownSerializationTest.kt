@@ -1,7 +1,9 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
 import java.io.StringReader
 import java.io.StringWriter
@@ -18,6 +20,11 @@ class JsonUnknownSerializationTest {
         fun getUserFeedback(): UserFeedback {
             val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
             return givenJsonUnknown(UserFeedback(eventId))
+        }
+
+        fun getSpanContext(): SpanContext {
+            val operation = "c2fb8fee2e2b49758bcb67cda0f713c7"
+            return givenJsonUnknown(SpanContext(operation))
         }
 
         private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T {
@@ -46,6 +53,32 @@ class JsonUnknownSerializationTest {
         val writer: JsonObjectWriter = mock()
         val logger: ILogger = mock()
         val sut = fixture.getUserFeedback()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // SpanContext
+
+    @Test
+    fun `serializing and deserialize span context`() {
+        val sut = fixture.getSpanContext()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, SpanContext.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for span context`() {
+        val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
+
+        val logger: ILogger = mock()
+        val sut = fixture.getSpanContext()
 
         sut.serialize(writer, logger)
 
