@@ -22,7 +22,8 @@ public final class JsonObjectWriter extends JsonWriter {
    * @param object Object to encode. May be null.
    * @return this writer.
    */
-  JsonObjectWriter value(@NotNull ILogger logger, @Nullable Object object) throws IOException {
+  public JsonObjectWriter value(@NotNull ILogger logger, @Nullable Object object)
+      throws IOException {
     jsonObjectSerializer.serialize(this, logger, object);
     return this;
   }
