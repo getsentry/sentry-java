@@ -176,4 +176,26 @@ class JsonObjectReaderTest {
         val actual = reader.nextDateOrNull(fixture.logger)
         assertEquals(expected, actual)
     }
+
+    // nextTimeZoneOrNull
+
+    @Test
+    fun `returns null for null timezone`() {
+        val jsonString = "{\"key\": null}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        assertNull(reader.nextTimeZoneOrNull(fixture.logger))
+    }
+
+    @Test
+    fun `when deserializing a timezone ID string, it should become a Device-TimeZone`() {
+        val jsonString = "{\"timezone\": \"Europe/Vienna\"}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        assertEquals("Europe/Vienna", reader.nextTimeZoneOrNull(fixture.logger)?.id)
+    }
 }
