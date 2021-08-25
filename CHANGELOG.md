@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Servlet 3.1 compatibility issue (#1681)
+
 ## 5.1.1
 
 * Fix: Remove onActivityPreCreated call in favor of onActivityCreated (#1661)
