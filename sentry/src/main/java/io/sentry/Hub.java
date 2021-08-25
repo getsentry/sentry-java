@@ -676,14 +676,23 @@ public final class Hub implements IHub {
 
   @Override
   public @Nullable TraceStateHeader traceStateHeader() {
-    final Scope scope = stack.peek().getScope();
-    final TraceState traceState = TraceState.create(scope, options);
-    if (traceState != null) {
-      return TraceStateHeader.fromTraceState(
-          traceState, options.getSerializer(), options.getLogger());
+    TraceStateHeader header = null;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'traceStateHeader' call is a no-op.");
     } else {
-      return null;
+      final Scope scope = stack.peek().getScope();
+      final TraceState traceState = TraceState.create(scope, options);
+      if (traceState != null) {
+        header =
+            TraceStateHeader.fromTraceState(
+                traceState, options.getSerializer(), options.getLogger());
+      }
     }
+    return header;
   }
 
   @Override
