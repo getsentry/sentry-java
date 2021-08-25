@@ -610,7 +610,6 @@ public final class io/sentry/Sentry {
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Z)Lio/sentry/ITransaction;
 	public static fun traceHeaders ()Lio/sentry/SentryTraceHeader;
-	public static fun traceStateHeader ()Lio/sentry/TraceStateHeader;
 	public static fun withScope (Lio/sentry/ScopeCallback;)V
 }
 

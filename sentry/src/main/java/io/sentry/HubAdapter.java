@@ -211,7 +211,7 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @Nullable TraceStateHeader traceStateHeader() {
-    return Sentry.traceStateHeader();
+    return Sentry.getCurrentHub().traceStateHeader();
   }
 
   @Override
