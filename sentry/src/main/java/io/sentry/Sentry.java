@@ -699,6 +699,10 @@ public final class Sentry {
     return getCurrentHub().getSpan();
   }
 
+  public static @Nullable TraceStateHeader traceStateHeader() {
+    return getCurrentHub().traceStateHeader();
+  }
+
   /**
    * Configuration options callback
    *

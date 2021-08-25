@@ -73,6 +73,34 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
         writer.endObject();
       }
     }
+    TraceState trace = value.getTrace();
+    if (trace != null) {
+      writer.name("trace");
+      writer.beginObject();
+      writer.name("trace_id").value(trace.getTraceId().toString());
+      writer.name("public_key").value(trace.getPublicKey());
+      if (trace.getRelease() != null) {
+        writer.name("release").value(trace.getRelease());
+      }
+      if (trace.getEnvironment() != null) {
+        writer.name("environment").value(trace.getEnvironment());
+      }
+      if (trace.getTransaction() != null) {
+        writer.name("transaction").value(trace.getTransaction());
+      }
+      if (trace.getUser() != null) {
+        writer.name("user");
+        writer.beginObject();
+        if (trace.getUser().getId() != null) {
+          writer.name("id").value(trace.getUser().getId());
+        }
+        if (trace.getUser().getSegment() != null) {
+          writer.name("segment").value(trace.getUser().getSegment());
+        }
+        writer.endObject();
+      }
+      writer.endObject();
+    }
 
     writer.endObject();
   }

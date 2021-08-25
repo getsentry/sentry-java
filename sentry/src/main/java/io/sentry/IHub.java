@@ -445,6 +445,9 @@ public interface IHub {
   @Nullable
   SentryTraceHeader traceHeaders();
 
+  @Nullable
+  TraceStateHeader traceStateHeader();
+
   /**
    * Associates {@link ISpan} and the transaction name with the {@link Throwable}. Used to determine
    * in which trace the exception has been thrown in framework integrations.

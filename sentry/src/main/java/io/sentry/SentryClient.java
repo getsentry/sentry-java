@@ -128,7 +128,9 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(event, getAttachmentsFromScope(scope), session);
+      final SentryEnvelope envelope =
+          buildEnvelope(
+              event, getAttachmentsFromScope(scope), session, TraceState.create(scope, options));
 
       if (envelope != null) {
         transport.send(envelope, hint);
@@ -152,15 +154,10 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent event, final @Nullable List<Attachment> attachments)
-      throws IOException {
-    return this.buildEnvelope(event, attachments, null);
-  }
-
-  private @Nullable SentryEnvelope buildEnvelope(
       final @Nullable SentryBaseEvent event,
       final @Nullable List<Attachment> attachments,
-      final @Nullable Session session)
+      final @Nullable Session session,
+      final @Nullable TraceState traceState)
       throws IOException {
     SentryId sentryId = null;
 
@@ -189,7 +186,7 @@ public final class SentryClient implements ISentryClient {
 
     if (!envelopeItems.isEmpty()) {
       final SentryEnvelopeHeader envelopeHeader =
-          new SentryEnvelopeHeader(sentryId, options.getSdkVersion());
+          new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceState);
       return new SentryEnvelope(envelopeHeader, envelopeItems);
     }
 
@@ -437,7 +434,11 @@ public final class SentryClient implements ISentryClient {
 
     try {
       final SentryEnvelope envelope =
-          buildEnvelope(transaction, filterForTransaction(getAttachmentsFromScope(scope)));
+          buildEnvelope(
+              transaction,
+              filterForTransaction(getAttachmentsFromScope(scope)),
+              null,
+              scope != null ? TraceState.create(transaction, scope, options) : null);
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {

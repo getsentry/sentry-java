@@ -210,6 +210,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public @Nullable TraceStateHeader traceStateHeader() {
+    return Sentry.traceStateHeader();
+  }
+
+  @Override
   public void setSpanContext(
       final @NotNull Throwable throwable,
       final @NotNull ISpan span,

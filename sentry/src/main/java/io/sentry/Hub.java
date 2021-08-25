@@ -675,6 +675,18 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public @Nullable TraceStateHeader traceStateHeader() {
+    final Scope scope = stack.peek().getScope();
+    final TraceState traceState = TraceState.create(scope, options);
+    if (traceState != null) {
+      return TraceStateHeader.fromTraceState(
+          traceState, options.getSerializer(), options.getLogger());
+    } else {
+      return null;
+    }
+  }
+
+  @Override
   public @Nullable ISpan getSpan() {
     ISpan span = null;
     if (!isEnabled()) {

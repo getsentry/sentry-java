@@ -161,6 +161,11 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @Nullable TraceStateHeader traceStateHeader() {
+    return null;
+  }
+
+  @Override
   public void setSpanContext(
       final @NotNull Throwable throwable,
       final @NotNull ISpan spanContext,
