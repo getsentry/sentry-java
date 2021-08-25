@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Fix: Do not drop Contexts key if Collection, Array or Char
+* Fix: Do not drop Contexts key if Collection, Array or Char (#1680)
 
 ## 5.1.1
 
