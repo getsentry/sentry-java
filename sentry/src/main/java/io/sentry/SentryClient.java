@@ -438,7 +438,7 @@ public final class SentryClient implements ISentryClient {
               transaction,
               filterForTransaction(getAttachmentsFromScope(scope)),
               null,
-              scope != null ? TraceState.create(transaction, scope, options) : null);
+              TraceState.create(transaction, scope, options));
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {

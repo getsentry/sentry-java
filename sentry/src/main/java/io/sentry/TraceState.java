@@ -37,7 +37,7 @@ public final class TraceState {
 
   static @Nullable TraceState create(
       final @Nullable ITransaction transaction,
-      final @NotNull Scope scope,
+      final @Nullable Scope scope,
       final @NotNull SentryOptions sentryOptions) {
     return transaction != null
         ? new TraceState(
@@ -45,14 +45,14 @@ public final class TraceState {
             new Dsn(sentryOptions.getDsn()).getPublicKey(),
             sentryOptions.getRelease(),
             sentryOptions.getEnvironment(),
-            new TraceStateUser(scope.getUser()),
+            scope != null ? new TraceStateUser(scope.getUser()) : null,
             transaction.getName())
         : null;
   }
 
   static @Nullable TraceState create(
       final @Nullable SentryTransaction transaction,
-      final @NotNull Scope scope,
+      final @Nullable Scope scope,
       final @NotNull SentryOptions sentryOptions) {
     return transaction != null && transaction.getContexts().getTrace() != null
         ? new TraceState(
@@ -60,7 +60,7 @@ public final class TraceState {
             new Dsn(sentryOptions.getDsn()).getPublicKey(),
             sentryOptions.getRelease(),
             sentryOptions.getEnvironment(),
-            new TraceStateUser(scope.getUser()),
+            scope != null ? new TraceStateUser(scope.getUser()) : null,
             transaction.getTransaction())
         : null;
   }
