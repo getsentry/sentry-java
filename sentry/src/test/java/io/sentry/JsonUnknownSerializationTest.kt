@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.App
 import io.sentry.protocol.Browser
+import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SentryId
 import java.io.StringReader
 import java.io.StringWriter
@@ -30,6 +31,10 @@ class JsonUnknownSerializationTest {
             return givenJsonUnknown(Browser())
         }
 
+        fun getOperatingSystem(): OperatingSystem {
+            return givenJsonUnknown(OperatingSystem())
+        }
+
         private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T {
             return jsonUnknown.apply {
                 unknown = mapOf(
@@ -41,7 +46,7 @@ class JsonUnknownSerializationTest {
 
     private val fixture = Fixture()
 
-    // user feedback
+    // UserFeedback
 
     @Test
     fun `serializing and deserialize user feedback`() {
@@ -65,7 +70,7 @@ class JsonUnknownSerializationTest {
         verify(writer).value(logger, "fixture-value")
     }
 
-    // app
+    // App
 
     @Test
     fun `serializing and deserialize app`() {
@@ -90,7 +95,7 @@ class JsonUnknownSerializationTest {
         verify(writer).value(logger, "fixture-value")
     }
 
-    // browser
+    // Browser
 
     @Test
     fun `serializing and deserialize browser`() {
@@ -107,6 +112,30 @@ class JsonUnknownSerializationTest {
         val writer: JsonObjectWriter = mock()
         val logger: ILogger = mock()
         val sut = fixture.getBrowser()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // OperatingSystem
+
+    @Test
+    fun `serializing and deserialize operating system`() {
+        val sut = fixture.getOperatingSystem()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, OperatingSystem.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for operating system`() {
+        val writer: JsonObjectWriter = mock()
+        val logger: ILogger = mock()
+        val sut = fixture.getOperatingSystem()
 
         sut.serialize(writer, logger)
 
