@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.App
 import io.sentry.protocol.Browser
 import io.sentry.protocol.Device
+import io.sentry.protocol.Gpu
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryRuntime
@@ -26,26 +27,12 @@ class JsonUnknownSerializationTest {
             val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
             return givenJsonUnknown(UserFeedback(eventId))
         }
-
-        fun getApp(): App {
-            return givenJsonUnknown(App())
-        }
-
-        fun getDevice(): Device {
-            return givenJsonUnknown(Device())
-        }
-
-        fun getBrowser(): Browser {
-            return givenJsonUnknown(Browser())
-        }
-
-        fun getOperatingSystem(): OperatingSystem {
-            return givenJsonUnknown(OperatingSystem())
-        }
-
-        fun getSentryRuntime(): SentryRuntime {
-            return givenJsonUnknown(SentryRuntime())
-        }
+        fun getApp() = givenJsonUnknown(App())
+        fun getBrowser() = givenJsonUnknown(Browser())
+        fun getDevice() = givenJsonUnknown(Device())
+        fun getGpu() = givenJsonUnknown(Gpu())
+        fun getOperatingSystem() = givenJsonUnknown(OperatingSystem())
+        fun getSentryRuntime() = givenJsonUnknown(SentryRuntime())
 
         private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T {
             return jsonUnknown.apply {
@@ -108,12 +95,23 @@ class JsonUnknownSerializationTest {
         verify(writer).value(logger, "fixture-value")
     }
 
+    // Browser
+
     @Test
-    fun `serializing unknown calls json object writer for device`() {
+    fun `serializing and deserialize browser`() {
+        val sut = fixture.getBrowser()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, Browser.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for browser`() {
         val writer: JsonObjectWriter = mock()
-        whenever(writer.name(any())).thenReturn(writer)
         val logger: ILogger = mock()
-        val sut = fixture.getDevice()
+        val sut = fixture.getBrowser()
 
         sut.serialize(writer, logger)
 
@@ -133,23 +131,36 @@ class JsonUnknownSerializationTest {
         assertEquals(sut.unknown, deserialized.unknown)
     }
 
-    // Browser
+    @Test
+    fun `serializing unknown calls json object writer for device`() {
+        val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
+        val logger: ILogger = mock()
+        val sut = fixture.getDevice()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // GPU
 
     @Test
-    fun `serializing and deserialize browser`() {
-        val sut = fixture.getBrowser()
+    fun `serializing and deserialize gpu`() {
+        val sut = fixture.getGpu()
 
         val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, Browser.Deserializer())
+        val deserialized = deserialize(serialized, Gpu.Deserializer())
 
         assertEquals(sut.unknown, deserialized.unknown)
     }
 
     @Test
-    fun `serializing unknown calls json object writer for browser`() {
+    fun `serializing unknown calls json object writer for gpu`() {
         val writer: JsonObjectWriter = mock()
         val logger: ILogger = mock()
-        val sut = fixture.getBrowser()
+        val sut = fixture.getGpu()
 
         sut.serialize(writer, logger)
 
