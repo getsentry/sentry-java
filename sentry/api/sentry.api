@@ -353,10 +353,12 @@ public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/Jso
 	public fun nextBooleanOrNull ()Ljava/lang/Boolean;
 	public fun nextDateOrNull (Lio/sentry/ILogger;)Ljava/util/Date;
 	public fun nextDoubleOrNull ()Ljava/lang/Double;
+	public fun nextFloatOrNull ()Ljava/lang/Float;
 	public fun nextIntegerOrNull ()Ljava/lang/Integer;
 	public fun nextLongOrNull ()Ljava/lang/Long;
 	public fun nextObjectOrNull ()Ljava/lang/Object;
 	public fun nextStringOrNull ()Ljava/lang/String;
+	public fun nextTimeZoneOrNull (Lio/sentry/ILogger;)Ljava/util/TimeZone;
 	public fun nextUnknown (Lio/sentry/ILogger;Ljava/util/Map;Ljava/lang/String;)V
 }
 
@@ -1509,7 +1511,7 @@ public final class io/sentry/protocol/DebugMeta : io/sentry/IUnknownPropertiesCo
 	public fun setSdkInfo (Lio/sentry/protocol/SdkInfo;)V
 }
 
-public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
@@ -1538,11 +1540,13 @@ public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsu
 	public fun getScreenWidthPixels ()Ljava/lang/Integer;
 	public fun getStorageSize ()Ljava/lang/Long;
 	public fun getTimezone ()Ljava/util/TimeZone;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getUsableMemory ()Ljava/lang/Long;
 	public fun isCharging ()Ljava/lang/Boolean;
 	public fun isLowMemory ()Ljava/lang/Boolean;
 	public fun isOnline ()Ljava/lang/Boolean;
 	public fun isSimulator ()Ljava/lang/Boolean;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setArchs ([Ljava/lang/String;)V
 	public fun setBatteryLevel (Ljava/lang/Float;)V
 	public fun setBatteryTemperature (Ljava/lang/Float;)V
@@ -1572,14 +1576,62 @@ public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsu
 	public fun setSimulator (Ljava/lang/Boolean;)V
 	public fun setStorageSize (Ljava/lang/Long;)V
 	public fun setTimezone (Ljava/util/TimeZone;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUsableMemory (Ljava/lang/Long;)V
 }
 
-public final class io/sentry/protocol/Device$DeviceOrientation : java/lang/Enum {
+public final class io/sentry/protocol/Device$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Device;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Device$DeviceOrientation : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field LANDSCAPE Lio/sentry/protocol/Device$DeviceOrientation;
 	public static final field PORTRAIT Lio/sentry/protocol/Device$DeviceOrientation;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/protocol/Device$DeviceOrientation;
 	public static fun values ()[Lio/sentry/protocol/Device$DeviceOrientation;
+}
+
+public final class io/sentry/protocol/Device$DeviceOrientation$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Device$DeviceOrientation;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Device$JsonKeys {
+	public static final field ARCHS Ljava/lang/String;
+	public static final field BATTERY_LEVEL Ljava/lang/String;
+	public static final field BATTERY_TEMPERATURE Ljava/lang/String;
+	public static final field BOOT_TIME Ljava/lang/String;
+	public static final field BRAND Ljava/lang/String;
+	public static final field CHARGING Ljava/lang/String;
+	public static final field CONNECTION_TYPE Ljava/lang/String;
+	public static final field EXTERNAL_FREE_STORAGE Ljava/lang/String;
+	public static final field EXTERNAL_STORAGE_SIZE Ljava/lang/String;
+	public static final field FAMILY Ljava/lang/String;
+	public static final field FREE_MEMORY Ljava/lang/String;
+	public static final field FREE_STORAGE Ljava/lang/String;
+	public static final field ID Ljava/lang/String;
+	public static final field LANGUAGE Ljava/lang/String;
+	public static final field LOW_MEMORY Ljava/lang/String;
+	public static final field MANUFACTURER Ljava/lang/String;
+	public static final field MEMORY_SIZE Ljava/lang/String;
+	public static final field MODEL Ljava/lang/String;
+	public static final field MODEL_ID Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field ONLINE Ljava/lang/String;
+	public static final field ORIENTATION Ljava/lang/String;
+	public static final field SCREEN_DENSITY Ljava/lang/String;
+	public static final field SCREEN_DPI Ljava/lang/String;
+	public static final field SCREEN_HEIGHT_PIXELS Ljava/lang/String;
+	public static final field SCREEN_WIDTH_PIXELS Ljava/lang/String;
+	public static final field SIMULATOR Ljava/lang/String;
+	public static final field STORAGE_SIZE Ljava/lang/String;
+	public static final field TIMEZONE Ljava/lang/String;
+	public static final field USABLE_MEMORY Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/Gpu : io/sentry/IUnknownPropertiesConsumer {

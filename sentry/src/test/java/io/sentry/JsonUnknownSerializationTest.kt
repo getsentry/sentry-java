@@ -1,9 +1,12 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.App
 import io.sentry.protocol.Browser
+import io.sentry.protocol.Device
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryRuntime
@@ -26,6 +29,10 @@ class JsonUnknownSerializationTest {
 
         fun getApp(): App {
             return givenJsonUnknown(App())
+        }
+
+        fun getDevice(): Device {
+            return givenJsonUnknown(Device())
         }
 
         fun getBrowser(): Browser {
@@ -90,6 +97,8 @@ class JsonUnknownSerializationTest {
     @Test
     fun `serializing unknown calls json object writer for app`() {
         val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
+
         val logger: ILogger = mock()
         val sut = fixture.getApp()
 
@@ -97,6 +106,31 @@ class JsonUnknownSerializationTest {
 
         verify(writer).name("fixture-key")
         verify(writer).value(logger, "fixture-value")
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for device`() {
+        val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
+        val logger: ILogger = mock()
+        val sut = fixture.getDevice()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // Device
+
+    @Test
+    fun `serializing and deserialize device`() {
+        val sut = fixture.getDevice()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, Device.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
     }
 
     // Browser

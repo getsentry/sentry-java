@@ -170,8 +170,7 @@ public final class App implements IUnknownPropertiesConsumer, JsonUnknown, JsonS
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
-        writer.name(key);
-        writer.value(logger, value);
+        writer.name(key).value(logger, value);
       }
     }
     writer.endObject();
