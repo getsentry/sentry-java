@@ -1765,16 +1765,32 @@ public final class io/sentry/protocol/SentryPackage : io/sentry/IUnknownProperti
 	public fun setVersion (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/SentryRuntime : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/SentryRuntime : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getName ()Ljava/lang/String;
 	public fun getRawDescription ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setRawDescription (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersion (Ljava/lang/String;)V
+}
+
+public final class io/sentry/protocol/SentryRuntime$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SentryRuntime;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SentryRuntime$JsonKeys {
+	public static final field NAME Ljava/lang/String;
+	public static final field RAW_DESCRIPTION Ljava/lang/String;
+	public static final field VERSION Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/SentrySpan {

@@ -6,6 +6,7 @@ import io.sentry.protocol.App
 import io.sentry.protocol.Browser
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryRuntime
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
@@ -33,6 +34,10 @@ class JsonUnknownSerializationTest {
 
         fun getOperatingSystem(): OperatingSystem {
             return givenJsonUnknown(OperatingSystem())
+        }
+
+        fun getSentryRuntime(): SentryRuntime {
+            return givenJsonUnknown(SentryRuntime())
         }
 
         private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T {
@@ -83,7 +88,6 @@ class JsonUnknownSerializationTest {
     }
 
     @Test
-
     fun `serializing unknown calls json object writer for app`() {
         val writer: JsonObjectWriter = mock()
         val logger: ILogger = mock()
@@ -136,6 +140,30 @@ class JsonUnknownSerializationTest {
         val writer: JsonObjectWriter = mock()
         val logger: ILogger = mock()
         val sut = fixture.getOperatingSystem()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // SentryRuntime
+
+    @Test
+    fun `serializing and deserialize sentry runtime`() {
+        val sut = fixture.getSentryRuntime()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, SentryRuntime.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for sentry runtime`() {
+        val writer: JsonObjectWriter = mock()
+        val logger: ILogger = mock()
+        val sut = fixture.getUserFeedback()
 
         sut.serialize(writer, logger)
 
