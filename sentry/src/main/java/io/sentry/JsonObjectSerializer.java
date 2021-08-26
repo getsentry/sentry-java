@@ -3,7 +3,9 @@ package io.sentry;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +26,10 @@ public final class JsonObjectSerializer {
       writer.value((boolean) object);
     } else if (object instanceof Number) {
       writer.value((Number) object);
+    } else if (object instanceof Date) {
+      serializeDate(writer, logger, (Date) object);
+    } else if (object instanceof TimeZone) {
+      serializeTimeZone(writer, logger, (TimeZone) object);
     } else if (object instanceof Collection) {
       serializeCollection(writer, logger, (Collection<?>) object);
     } else if (object.getClass().isArray()) {
@@ -39,6 +45,28 @@ public final class JsonObjectSerializer {
   }
 
   // Helper
+
+  private void serializeDate(
+      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull Date date)
+      throws IOException {
+    try {
+      writer.value(DateUtils.getTimestamp(date));
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error when serializing Date", e);
+      writer.nullValue(); // Fallback to setting null when date is malformed.
+    }
+  }
+
+  private void serializeTimeZone(
+      @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull TimeZone timeZone)
+      throws IOException {
+    try {
+      writer.value(timeZone.getID());
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error when serializing TimeZone", e);
+      writer.nullValue(); // Fallback.
+    }
+  }
 
   private void serializeCollection(
       @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @NotNull Collection<?> collection)
