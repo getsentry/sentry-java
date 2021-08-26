@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.1.2
 
 * Fix: Servlet 3.1 compatibility issue (#1681)
