@@ -164,18 +164,20 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.TRACE_ID).value(traceId.toString());
-    writer.name(JsonKeys.SPAN_ID).value(spanId.toString());
+    writer.name(JsonKeys.TRACE_ID);
+    traceId.serialize(writer, logger);
+    writer.name(JsonKeys.SPAN_ID);
+    spanId.serialize(writer, logger);
     if (parentSpanId != null) {
-      writer.name(JsonKeys.PARENT_SPAN_ID).value(parentSpanId.toString());
+      writer.name(JsonKeys.PARENT_SPAN_ID);
+      parentSpanId.serialize(writer, logger);
     }
     writer.name(JsonKeys.OP).value(op);
     if (description != null) {
       writer.name(JsonKeys.DESCRIPTION).value(description);
     }
     if (status != null) {
-      writer.name(JsonKeys.STATUS);
-      writer.value(logger, status);
+      writer.name(JsonKeys.STATUS).value(logger, status);
     }
     if (!tags.isEmpty()) {
       writer.name(JsonKeys.TAGS).value(logger, tags);
@@ -219,13 +221,13 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.TRACE_ID:
-            traceId = new SentryId(reader.nextString());
+            traceId = new SentryId.Deserializer().deserialize(reader, logger);
             break;
           case JsonKeys.SPAN_ID:
-            spanId = new SpanId(reader.nextString());
+            spanId = new SpanId.Deserializer().deserialize(reader, logger);
             break;
           case JsonKeys.PARENT_SPAN_ID:
-            parentSpanId = new SpanId(reader.nextString());
+            parentSpanId = new SpanId.Deserializer().deserialize(reader, logger);
             break;
           case JsonKeys.OP:
             op = reader.nextString();
