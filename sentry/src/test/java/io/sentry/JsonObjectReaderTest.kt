@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.mock
 import java.io.StringReader
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -8,6 +9,7 @@ import org.junit.Test
 class JsonObjectReaderTest {
 
     class Fixture {
+        val logger = mock<ILogger>()
         fun getSut(jsonString: String): JsonObjectReader {
             return JsonObjectReader(StringReader(jsonString))
         }
@@ -122,5 +124,56 @@ class JsonObjectReaderTest {
         reader.nextName()
 
         assertEquals(true, reader.nextBooleanOrNull())
+    }
+
+    // nextDateOrNull
+
+    @Test
+    fun `returns null for null date`() {
+        val jsonString = "{\"key\": null}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        assertNull(reader.nextDateOrNull(fixture.logger))
+    }
+
+    @Test
+    fun `returns date for iso date`() {
+        val dateIsoFormat = "2000-12-31T23:59:58.000Z"
+        val jsonString = "{\"key\": \"${dateIsoFormat}\"}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        val expected = DateUtils.getDateTime(dateIsoFormat)
+        val actual = reader.nextDateOrNull(fixture.logger)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `returns date date for timestamp date`() {
+        val dateTimestampFormat = "1581410911"
+        val jsonString = "{\"key\": \"${dateTimestampFormat}\"}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        val expected = DateUtils.getDateTimeWithMillisPrecision(dateTimestampFormat)
+        val actual = reader.nextDateOrNull(fixture.logger)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `returns date for timestamp date with mills precision`() {
+        val dateTimestampWithMillis = "1581410911.988"
+        val jsonString = "{\"key\": \"${dateTimestampWithMillis}\"}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        val expected = DateUtils.getDateTimeWithMillisPrecision(dateTimestampWithMillis)
+        val actual = reader.nextDateOrNull(fixture.logger)
+        assertEquals(expected, actual)
     }
 }
