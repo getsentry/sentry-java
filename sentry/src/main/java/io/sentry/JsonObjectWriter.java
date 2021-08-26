@@ -14,6 +14,12 @@ public final class JsonObjectWriter extends JsonWriter {
     super(out);
   }
 
+  @Override
+  public JsonObjectWriter name(String name) throws IOException {
+    super.name(name);
+    return this;
+  }
+
   /**
    * Encodes a supported object (Null, String, Boolean, Number, Collection, Array, Map,
    * JsonSerializable).
