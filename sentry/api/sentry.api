@@ -1084,7 +1084,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
-public class io/sentry/SpanContext {
+public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	protected field description Ljava/lang/String;
 	protected field op Ljava/lang/String;
@@ -1102,10 +1102,30 @@ public class io/sentry/SpanContext {
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTags ()Ljava/util/Map;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/SpanContext$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SpanContext;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SpanContext$JsonKeys {
+	public static final field DESCRIPTION Ljava/lang/String;
+	public static final field OP Ljava/lang/String;
+	public static final field PARENT_SPAN_ID Ljava/lang/String;
+	public static final field SPAN_ID Ljava/lang/String;
+	public static final field STATUS Ljava/lang/String;
+	public static final field TAGS Ljava/lang/String;
+	public static final field TRACE_ID Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/SpanId : io/sentry/JsonSerializable {
@@ -1124,7 +1144,7 @@ public final class io/sentry/SpanId$Deserializer : io/sentry/JsonDeserializer {
 	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
-public final class io/sentry/SpanStatus : java/lang/Enum {
+public final class io/sentry/SpanStatus : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field ABORTED Lio/sentry/SpanStatus;
 	public static final field ALREADY_EXISTS Lio/sentry/SpanStatus;
 	public static final field CANCELLED Lio/sentry/SpanStatus;
@@ -1145,8 +1165,15 @@ public final class io/sentry/SpanStatus : java/lang/Enum {
 	public static final field UNKNOWN_ERROR Lio/sentry/SpanStatus;
 	public static fun fromHttpStatusCode (I)Lio/sentry/SpanStatus;
 	public static fun fromHttpStatusCode (Ljava/lang/Integer;Lio/sentry/SpanStatus;)Lio/sentry/SpanStatus;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SpanStatus;
 	public static fun values ()[Lio/sentry/SpanStatus;
+}
+
+public final class io/sentry/SpanStatus$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SpanStatus;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/SystemOutLogger : io/sentry/ILogger {

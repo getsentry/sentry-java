@@ -29,6 +29,10 @@ class JsonUnknownSerializationTest {
         fun getGpu() = givenJsonUnknown(Gpu())
         fun getOperatingSystem() = givenJsonUnknown(OperatingSystem())
         fun getSentryRuntime() = givenJsonUnknown(SentryRuntime())
+        fun getSpanContext(): SpanContext {
+            val operation = "c2fb8fee2e2b49758bcb67cda0f713c7"
+            return givenJsonUnknown(SpanContext(operation))
+        }
         fun getUserFeedback(): UserFeedback {
             val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
             return givenJsonUnknown(UserFeedback(eventId))
@@ -183,8 +187,34 @@ class JsonUnknownSerializationTest {
     @Test
     fun `serializing unknown calls json object writer for sentry runtime`() {
         val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
         val logger: ILogger = mock()
         val sut = fixture.getUserFeedback()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // SpanContext
+
+    @Test
+    fun `serializing and deserialize span context`() {
+        val sut = fixture.getSpanContext()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, SpanContext.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for span context`() {
+        val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
+        val logger: ILogger = mock()
+        val sut = fixture.getSpanContext()
 
         sut.serialize(writer, logger)
 
@@ -207,6 +237,7 @@ class JsonUnknownSerializationTest {
     @Test
     fun `serializing unknown calls json object writer for user feedback`() {
         val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
         val logger: ILogger = mock()
         val sut = fixture.getUserFeedback()
 
