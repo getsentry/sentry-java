@@ -1,10 +1,11 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.io.IOException;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 
-public final class SpanId {
+public final class SpanId implements JsonSerializable {
   public static final SpanId EMPTY_ID = new SpanId(new UUID(0, 0).toString());
 
   private final @NotNull String value;
@@ -37,5 +38,23 @@ public final class SpanId {
   @Override
   public String toString() {
     return this.value;
+  }
+
+  // JsonElementSerializer
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.value(value);
+  }
+
+  // JsonElementDeserializer
+
+  public static final class Deserializer implements JsonDeserializer<SpanId> {
+    @Override
+    public @NotNull SpanId deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      return new SpanId(reader.nextString());
+    }
   }
 }

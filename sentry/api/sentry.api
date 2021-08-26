@@ -1108,13 +1108,20 @@ public class io/sentry/SpanContext {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 }
 
-public final class io/sentry/SpanId {
+public final class io/sentry/SpanId : io/sentry/JsonSerializable {
 	public static final field EMPTY_ID Lio/sentry/SpanId;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/SpanId$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SpanId;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/SpanStatus : java/lang/Enum {
@@ -1819,14 +1826,21 @@ public final class io/sentry/protocol/SentryException : io/sentry/IUnknownProper
 	public fun setValue (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/SentryId {
+public final class io/sentry/protocol/SentryId : io/sentry/JsonSerializable {
 	public static final field EMPTY_ID Lio/sentry/protocol/SentryId;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/util/UUID;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/protocol/SentryId$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SentryId;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/protocol/SentryPackage : io/sentry/IUnknownPropertiesConsumer {
