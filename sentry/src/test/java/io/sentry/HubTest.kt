@@ -1071,7 +1071,7 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op", true), mock())), null)
-        verify(mockClient).captureTransaction(any(), any(), eq(null))
+        verify(mockClient).captureTransaction(any(), eq(null), any(), eq(null))
     }
 
     @Test

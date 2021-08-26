@@ -47,6 +47,7 @@ class GsonSerializerTest {
 
         init {
             val options = SentryOptions()
+            options.dsn = "https://key@sentry.io/proj"
             options.setLogger(logger)
             options.setDebug(true)
             options.setEnvelopeReader(EnvelopeReader())

@@ -40,7 +40,9 @@ class SentryOkHttpInterceptorTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
         init {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            })
         }
 
         fun getSut(

@@ -200,8 +200,17 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   @NotNull
+  default SentryId captureTransaction(
+      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Object hint) {
+    return captureTransaction(transaction, null, scope, hint);
+  }
+
+  @NotNull
   SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Object hint);
+      @NotNull SentryTransaction transaction,
+      @Nullable TraceState traceState,
+      @Nullable Scope scope,
+      @Nullable Object hint);
 
   /**
    * Captures a transaction without scope nor hint.
@@ -209,7 +218,8 @@ public interface ISentryClient {
    * @param transaction the {@link ITransaction} to send
    * @return The Id (SentryId object) of the event
    */
-  default @NotNull SentryId captureTransaction(@NotNull SentryTransaction transaction) {
-    return captureTransaction(transaction, null, null);
+  default @NotNull SentryId captureTransaction(
+      @NotNull SentryTransaction transaction, @NotNull TraceState traceState) {
+    return captureTransaction(transaction, traceState, null, null);
   }
 }

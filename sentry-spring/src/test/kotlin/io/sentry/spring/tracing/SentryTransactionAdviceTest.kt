@@ -9,9 +9,8 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
-import io.sentry.Scope
-import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
+import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import kotlin.test.BeforeTest
@@ -46,7 +45,10 @@ class SentryTransactionAdviceTest {
     @BeforeTest
     fun setup() {
         reset(hub)
-        whenever(hub.startTransaction(any<String>(), any(), eq(true))).thenAnswer { io.sentry.SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
+        whenever(hub.startTransaction(any<String>(), any(), eq(true))).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
+        whenever(hub.options).thenReturn(SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+        })
     }
 
     @Test
@@ -56,7 +58,7 @@ class SentryTransactionAdviceTest {
             assertThat(it.transaction).isEqualTo("customName")
             assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
             assertThat(it.status).isEqualTo(SpanStatus.OK)
-        })
+        }, any())
     }
 
     @Test
@@ -64,7 +66,7 @@ class SentryTransactionAdviceTest {
         assertThrows<RuntimeException> { sampleService.methodThrowingException() }
         verify(hub).captureTransaction(check {
             assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        })
+        }, any())
     }
 
     @Test
@@ -73,19 +75,15 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
             assertThat(it.contexts.trace!!.operation).isEqualTo("op")
-        })
+        }, any())
     }
 
     @Test
     fun `when transaction is already active, does not start new transaction`() {
-        val scope = Scope(SentryOptions())
-        scope.setTransaction(io.sentry.SentryTracer(TransactionContext("aTransaction", "op"), hub))
-
-        whenever(hub.configureScope(any())).thenAnswer {
-            (it.arguments[0] as ScopeCallback).run(scope)
-        }
+        whenever(hub.span).thenReturn(SentryTracer(TransactionContext("aTransaction", "op"), hub))
 
         sampleService.methodWithTransactionNameSet()
+
         verify(hub, times(0)).captureTransaction(any(), any())
     }
 
@@ -95,7 +93,7 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
             assertThat(it.contexts.trace!!.operation).isEqualTo("op")
-        })
+        }, any())
     }
 
     @Test
@@ -104,7 +102,7 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
             assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
-        })
+        }, any())
     }
 
     @Test

@@ -5,6 +5,8 @@ import static io.sentry.vendor.Base64.DEFAULT;
 import io.sentry.vendor.Base64;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,8 +20,19 @@ public final class TraceStateHeader {
       final @NotNull TraceState traceState,
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger) {
-    return new TraceStateHeader(
-        stripForbiddenChars(base64(toBytes(toJson(traceState, serializer, logger)))));
+    return new TraceStateHeader(toHttpHeaderFriendlyBase64(toJson(traceState, serializer, logger)));
+  }
+
+  static @NotNull String toHttpHeaderFriendlyBase64(final @NotNull String input) {
+    return toUtf8(stripForbiddenChars(base64(toBytes(input))));
+  }
+
+  private static String toUtf8(String toJson) {
+    try {
+      return URLEncoder.encode(toJson, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      return toJson;
+    }
   }
 
   public TraceStateHeader(final @NotNull String value) {

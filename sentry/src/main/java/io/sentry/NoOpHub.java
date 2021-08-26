@@ -118,7 +118,9 @@ public final class NoOpHub implements IHub {
 
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction,
+      final @Nullable TraceState traceState,
+      final @Nullable Object hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -158,11 +160,6 @@ public final class NoOpHub implements IHub {
   @Override
   public @NotNull SentryTraceHeader traceHeaders() {
     return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, true);
-  }
-
-  @Override
-  public @Nullable TraceStateHeader traceStateHeader() {
-    return null;
   }
 
   @Override

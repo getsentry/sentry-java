@@ -163,7 +163,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               // transient property.
               transaction.getContexts().getTrace().setSampled(true);
             }
-            hub.captureTransaction(transaction, hint);
+            hub.captureTransaction(transaction, envelope.getHeader().getTrace(), hint);
             logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {

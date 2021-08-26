@@ -37,7 +37,9 @@ class SentryTracingFilterTest {
         val transactionNameProvider = spy(TransactionNameProvider())
 
         init {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            })
         }
 
         fun getSut(isEnabled: Boolean = true, status: Int = 200, sentryTraceHeader: String? = null): SentryTracingFilter {
@@ -72,7 +74,7 @@ class SentryTracingFilterTest {
             assertThat(it.transaction).isEqualTo("POST /product/{id}")
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
             assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
-        })
+        }, any())
     }
 
     @Test
@@ -83,7 +85,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        })
+        }, any())
     }
 
     @Test
@@ -94,7 +96,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.status).isNull()
-        })
+        }, any())
     }
 
     @Test
@@ -105,7 +107,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.parentSpanId).isNull()
-        })
+        }, any())
     }
 
     @Test
@@ -117,7 +119,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
-        })
+        }, any())
     }
 
     @Test
@@ -145,6 +147,6 @@ class SentryTracingFilterTest {
         }
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        })
+        }, any())
     }
 }

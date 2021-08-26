@@ -128,9 +128,12 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
+      final TraceState traceState =
+          scope != null && scope.getTransaction() != null
+              ? scope.getTransaction().traceState()
+              : null;
       final SentryEnvelope envelope =
-          buildEnvelope(
-              event, getAttachmentsFromScope(scope), session, TraceState.create(scope, options));
+          buildEnvelope(event, getAttachmentsFromScope(scope), session, traceState);
 
       if (envelope != null) {
         transport.send(envelope, hint);
@@ -396,6 +399,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
+      @Nullable TraceState traceState,
       final @Nullable Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
@@ -435,10 +439,7 @@ public final class SentryClient implements ISentryClient {
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
-              transaction,
-              filterForTransaction(getAttachmentsFromScope(scope)),
-              null,
-              TraceState.create(transaction, scope, options));
+              transaction, filterForTransaction(getAttachmentsFromScope(scope)), null, traceState);
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {

@@ -114,7 +114,7 @@ class SentryTracerTest {
         tracer.finish()
         verify(fixture.hub).captureTransaction(check {
             assertEquals(it.transaction, tracer.name)
-        })
+        }, any())
     }
 
     @Test
@@ -143,7 +143,7 @@ class SentryTracerTest {
         tracer.finish()
         verify(fixture.hub).captureTransaction(check {
             assertEquals(request, it.request)
-        })
+        }, any())
     }
 
     @Test
@@ -158,7 +158,7 @@ class SentryTracerTest {
             assertEquals(app, it.contexts.app)
             assertEquals("value", it.contexts["custom"])
             assertEquals(tracer.spanContext, it.contexts.trace)
-        })
+        }, any())
     }
 
     @Test
@@ -171,7 +171,7 @@ class SentryTracerTest {
         verify(fixture.hub).captureTransaction(check {
             assertNotEquals(spanContext, it.contexts.trace)
             assertEquals(tracer.spanContext, it.contexts.trace)
-        })
+        }, any())
     }
 
     @Test
@@ -297,7 +297,7 @@ class SentryTracerTest {
         verify(fixture.hub).setSpanContext(ex, transaction.root, "name")
         verify(fixture.hub).captureTransaction(check {
             assertEquals(transaction.root.spanContext, it.contexts.trace)
-        })
+        }, any())
 
         assertEquals(SpanStatus.OK, transaction.status)
         assertEquals(timestamp, transaction.timestamp)
@@ -338,7 +338,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         transaction.startChild("op")
         transaction.finish()
-        verify(fixture.hub, never()).captureTransaction(any())
+        verify(fixture.hub, never()).captureTransaction(any(), any())
     }
 
     @Test
@@ -347,7 +347,7 @@ class SentryTracerTest {
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
-        verify(fixture.hub).captureTransaction(any())
+        verify(fixture.hub).captureTransaction(any(), any())
     }
 
     @Test
@@ -368,7 +368,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         child.finish()
-        verify(fixture.hub, never()).captureTransaction(any())
+        verify(fixture.hub, never()).captureTransaction(any(), any())
     }
 
     @Test
@@ -376,10 +376,10 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
-        verify(fixture.hub, never()).captureTransaction(any())
+        verify(fixture.hub, never()).captureTransaction(any(), any())
         child.finish()
         verify(fixture.hub, times(1)).captureTransaction(check {
             assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
-        })
+        }, any())
     }
 }

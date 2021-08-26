@@ -35,7 +35,7 @@ class SentryOkHttpInterceptor(
             span?.toSentryTrace()?.let {
                 requestBuilder.addHeader(it.name, it.value)
             }
-            hub.traceStateHeader()?.let {
+            span?.toTraceStateHeader()?.let {
                 requestBuilder.addHeader(it.name, it.value)
             }
             request = requestBuilder.build()

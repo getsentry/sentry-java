@@ -4,11 +4,13 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +43,8 @@ public final class SentryTracer implements ITransaction {
    * transaction is captured.
    */
   private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
+
+  private @Nullable TraceState traceState;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -216,8 +220,27 @@ public final class SentryTracer implements ITransaction {
       if (transactionFinishedCallback != null) {
         transactionFinishedCallback.execute(this);
       }
-      hub.captureTransaction(transaction);
+      hub.captureTransaction(transaction, this.traceState());
     }
+  }
+
+  @Override
+  public @NotNull TraceState traceState() {
+    if (traceState == null) {
+      final AtomicReference<User> userAtomicReference = new AtomicReference<>();
+      hub.configureScope(
+          scope -> {
+            userAtomicReference.set(scope.getUser());
+          });
+      this.traceState = new TraceState(this, userAtomicReference.get(), hub.getOptions());
+    }
+    return this.traceState;
+  }
+
+  @Override
+  public @NotNull TraceStateHeader toTraceStateHeader() {
+    return TraceStateHeader.fromTraceState(
+        traceState(), hub.getOptions().getSerializer(), hub.getOptions().getLogger());
   }
 
   private boolean hasAllChildrenFinished() {

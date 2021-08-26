@@ -39,6 +39,12 @@ public interface ISpan {
   @NotNull
   SentryTraceHeader toSentryTrace();
 
+  @NotNull
+  TraceState traceState();
+
+  @NotNull
+  TraceStateHeader toTraceStateHeader();
+
   /** Sets span timestamp marking this span as finished. */
   void finish();
 

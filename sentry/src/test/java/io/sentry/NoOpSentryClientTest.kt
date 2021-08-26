@@ -45,5 +45,5 @@ class NoOpSentryClientTest {
 
     @Test
     fun `captureTransaction returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock()))
+        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock()))
 }

@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +14,11 @@ public final class TraceState {
   private @Nullable TraceState.TraceStateUser user;
   private @Nullable String transaction;
 
-  public TraceState(
+  TraceState(@NotNull SentryId traceId, @NotNull String publicKey) {
+    this(traceId, publicKey, null, null, null, null);
+  }
+
+  TraceState(
       @NotNull SentryId traceId,
       @NotNull String publicKey,
       @Nullable String release,
@@ -30,39 +33,17 @@ public final class TraceState {
     this.transaction = transaction;
   }
 
-  static @Nullable TraceState create(
-      final @Nullable Scope scope, final @NotNull SentryOptions sentryOptions) {
-    return scope != null ? create(scope.getTransaction(), scope, sentryOptions) : null;
-  }
-
-  static @Nullable TraceState create(
-      final @Nullable ITransaction transaction,
-      final @Nullable Scope scope,
+  TraceState(
+      final @NotNull ITransaction transaction,
+      final @Nullable User user,
       final @NotNull SentryOptions sentryOptions) {
-    return transaction != null
-        ? new TraceState(
-            transaction.getSpanContext().getTraceId(),
-            new Dsn(sentryOptions.getDsn()).getPublicKey(),
-            sentryOptions.getRelease(),
-            sentryOptions.getEnvironment(),
-            scope != null ? new TraceStateUser(scope.getUser()) : null,
-            transaction.getName())
-        : null;
-  }
-
-  static @Nullable TraceState create(
-      final @Nullable SentryTransaction transaction,
-      final @Nullable Scope scope,
-      final @NotNull SentryOptions sentryOptions) {
-    return transaction != null && transaction.getContexts().getTrace() != null
-        ? new TraceState(
-            transaction.getContexts().getTrace().getTraceId(),
-            new Dsn(sentryOptions.getDsn()).getPublicKey(),
-            sentryOptions.getRelease(),
-            sentryOptions.getEnvironment(),
-            scope != null ? new TraceStateUser(scope.getUser()) : null,
-            transaction.getTransaction())
-        : null;
+    this(
+        transaction.getSpanContext().getTraceId(),
+        new Dsn(sentryOptions.getDsn()).getPublicKey(),
+        sentryOptions.getRelease(),
+        sentryOptions.getEnvironment(),
+        user != null ? new TraceStateUser(user) : null,
+        transaction.getName());
   }
 
   public @NotNull SentryId getTraceId() {
