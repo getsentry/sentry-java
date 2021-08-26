@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.1.2
 
 * Fix: Servlet 3.1 compatibility issue (#1681)
 * Fix: Do not drop Contexts key if Collection, Array or Char (#1680)
