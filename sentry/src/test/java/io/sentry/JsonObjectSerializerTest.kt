@@ -54,6 +54,14 @@ internal class JsonObjectSerializerTest {
     }
 
     @Test
+    fun `serializing date`() {
+        val dateIsoFormat = "2021-08-05T15:15:15.000Z"
+        val date = DateUtils.getDateTime(dateIsoFormat)
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, date)
+        verify(fixture.writer).value(dateIsoFormat)
+    }
+
+    @Test
     fun `serializing collection`() {
         fixture.getSUT().serialize(fixture.writer, fixture.logger, listOf("fixture"))
         verify(fixture.writer).beginArray()
