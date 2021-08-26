@@ -2,6 +2,7 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import java.util.TimeZone
 import org.junit.Test
 
 internal class JsonObjectSerializerTest {
@@ -51,6 +52,22 @@ internal class JsonObjectSerializerTest {
     fun `serializing double`() {
         fixture.getSUT().serialize(fixture.writer, fixture.logger, 9.9)
         verify(fixture.writer).value(9.9 as Number)
+    }
+
+    @Test
+    fun `serializing date`() {
+        val dateIsoFormat = "2021-08-05T15:15:15.000Z"
+        val date = DateUtils.getDateTime(dateIsoFormat)
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, date)
+        verify(fixture.writer).value(dateIsoFormat)
+    }
+
+    @Test
+    fun `serializing timezone`() {
+        val id = "Europe/Vienna"
+        val timezone = TimeZone.getTimeZone(id)
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, timezone)
+        verify(fixture.writer).value(id)
     }
 
     @Test

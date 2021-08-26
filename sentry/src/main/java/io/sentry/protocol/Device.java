@@ -1,17 +1,26 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
-public final class Device implements IUnknownPropertiesConsumer {
+public final class Device implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
   public static final String TYPE = "device";
 
   /** Name of the device. */
@@ -384,20 +393,307 @@ public final class Device implements IUnknownPropertiesConsumer {
     this.batteryTemperature = batteryTemperature;
   }
 
-  @TestOnly
-  @Nullable
-  Map<String, Object> getUnknown() {
-    return unknown;
-  }
-
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
-  public enum DeviceOrientation {
+  public enum DeviceOrientation implements JsonSerializable {
     PORTRAIT,
-    LANDSCAPE
+    LANDSCAPE;
+
+    // JsonElementSerializer
+
+    @Override
+    public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+        throws IOException {
+      writer.value(toString().toLowerCase(Locale.ROOT));
+    }
+
+    // JsonElementDeserializer
+
+    public static final class Deserializer implements JsonDeserializer<DeviceOrientation> {
+      @Override
+      public @NotNull DeviceOrientation deserialize(
+          @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        return DeviceOrientation.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
+      }
+    }
   }
+
+  // region JsonSerializable
+
+  public static final class JsonKeys {
+    public static final String NAME = "name";
+    public static final String MANUFACTURER = "manufacturer";
+    public static final String BRAND = "brand";
+    public static final String FAMILY = "family";
+    public static final String MODEL = "model";
+    public static final String MODEL_ID = "model_id";
+    public static final String ARCHS = "archs";
+    public static final String BATTERY_LEVEL = "battery_level";
+    public static final String CHARGING = "charging";
+    public static final String ONLINE = "online";
+    public static final String ORIENTATION = "orientation";
+    public static final String SIMULATOR = "simulator";
+    public static final String MEMORY_SIZE = "memory_size";
+    public static final String FREE_MEMORY = "free_memory";
+    public static final String USABLE_MEMORY = "usable_memory";
+    public static final String LOW_MEMORY = "low_memory";
+    public static final String STORAGE_SIZE = "storage_size";
+    public static final String FREE_STORAGE = "free_storage";
+    public static final String EXTERNAL_STORAGE_SIZE = "external_storage_size";
+    public static final String EXTERNAL_FREE_STORAGE = "external_free_storage";
+    public static final String SCREEN_WIDTH_PIXELS = "screen_width_pixels";
+    public static final String SCREEN_HEIGHT_PIXELS = "screen_height_pixels";
+    public static final String SCREEN_DENSITY = "screen_density";
+    public static final String SCREEN_DPI = "screen_dpi";
+    public static final String BOOT_TIME = "boot_time";
+    public static final String TIMEZONE = "timezone";
+    public static final String ID = "id";
+    public static final String LANGUAGE = "language";
+    public static final String CONNECTION_TYPE = "connection_type";
+    public static final String BATTERY_TEMPERATURE = "battery_temperature";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (name != null) {
+      writer.name(JsonKeys.NAME).value(name);
+    }
+    if (manufacturer != null) {
+      writer.name(JsonKeys.MANUFACTURER).value(manufacturer);
+    }
+    if (brand != null) {
+      writer.name(JsonKeys.BRAND).value(brand);
+    }
+    if (family != null) {
+      writer.name(JsonKeys.FAMILY).value(family);
+    }
+    if (model != null) {
+      writer.name(JsonKeys.MODEL).value(model);
+    }
+    if (modelId != null) {
+      writer.name(JsonKeys.MODEL_ID).value(modelId);
+    }
+    if (archs != null) {
+      writer.name(JsonKeys.ARCHS).value(logger, archs);
+    }
+    if (batteryLevel != null) {
+      writer.name(JsonKeys.BATTERY_LEVEL).value(batteryLevel);
+    }
+    if (charging != null) {
+      writer.name(JsonKeys.CHARGING).value(charging);
+    }
+    if (online != null) {
+      writer.name(JsonKeys.ONLINE).value(online);
+    }
+    if (orientation != null) {
+      writer.name(JsonKeys.ORIENTATION).value(logger, orientation);
+    }
+    if (simulator != null) {
+      writer.name(JsonKeys.SIMULATOR).value(simulator);
+    }
+    if (memorySize != null) {
+      writer.name(JsonKeys.MEMORY_SIZE).value(memorySize);
+    }
+    if (freeMemory != null) {
+      writer.name(JsonKeys.FREE_MEMORY).value(freeMemory);
+    }
+    if (usableMemory != null) {
+      writer.name(JsonKeys.USABLE_MEMORY).value(usableMemory);
+    }
+    if (lowMemory != null) {
+      writer.name(JsonKeys.LOW_MEMORY).value(lowMemory);
+    }
+    if (storageSize != null) {
+      writer.name(JsonKeys.STORAGE_SIZE).value(storageSize);
+    }
+    if (freeStorage != null) {
+      writer.name(JsonKeys.FREE_STORAGE).value(freeStorage);
+    }
+    if (externalStorageSize != null) {
+      writer.name(JsonKeys.EXTERNAL_STORAGE_SIZE).value(externalStorageSize);
+    }
+    if (externalFreeStorage != null) {
+      writer.name(JsonKeys.EXTERNAL_FREE_STORAGE).value(externalFreeStorage);
+    }
+    if (screenWidthPixels != null) {
+      writer.name(JsonKeys.SCREEN_WIDTH_PIXELS).value(screenWidthPixels);
+    }
+    if (screenHeightPixels != null) {
+      writer.name(JsonKeys.SCREEN_HEIGHT_PIXELS).value(screenHeightPixels);
+    }
+    if (screenDensity != null) {
+      writer.name(JsonKeys.SCREEN_DENSITY).value(screenDensity);
+    }
+    if (screenDpi != null) {
+      writer.name(JsonKeys.SCREEN_DPI).value(screenDpi);
+    }
+    if (bootTime != null) {
+      writer.name(JsonKeys.BOOT_TIME).value(logger, bootTime);
+    }
+    if (timezone != null) {
+      writer.name(JsonKeys.TIMEZONE).value(logger, timezone);
+    }
+    if (id != null) {
+      writer.name(JsonKeys.ID).value(id);
+    }
+    if (language != null) {
+      writer.name(JsonKeys.LANGUAGE).value(language);
+    }
+    if (connectionType != null) {
+      writer.name(JsonKeys.CONNECTION_TYPE).value(connectionType);
+    }
+    if (batteryTemperature != null) {
+      writer.name(JsonKeys.BATTERY_TEMPERATURE).value(batteryTemperature);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class Deserializer implements JsonDeserializer<Device> {
+
+    @Override
+    public @NotNull Device deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      reader.beginObject();
+      Device device = new Device();
+      Map<String, Object> unknown = null;
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.NAME:
+            device.name = reader.nextStringOrNull();
+            break;
+          case JsonKeys.MANUFACTURER:
+            device.manufacturer = reader.nextStringOrNull();
+            break;
+          case JsonKeys.BRAND:
+            device.brand = reader.nextStringOrNull();
+            break;
+          case JsonKeys.FAMILY:
+            device.family = reader.nextStringOrNull();
+            break;
+          case JsonKeys.MODEL:
+            device.model = reader.nextStringOrNull();
+            break;
+          case JsonKeys.MODEL_ID:
+            device.modelId = reader.nextStringOrNull();
+            break;
+          case JsonKeys.ARCHS:
+            List<?> archsList = (List<?>) reader.nextObjectOrNull();
+            if (archsList != null) {
+              Object[] archsArray = new String[archsList.size()];
+              archsList.toArray(archsArray);
+              device.archs = (String[]) archsArray;
+            }
+            break;
+          case JsonKeys.BATTERY_LEVEL:
+            device.batteryLevel = reader.nextFloatOrNull();
+            break;
+          case JsonKeys.CHARGING:
+            device.charging = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.ONLINE:
+            device.online = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.ORIENTATION:
+            if (reader.peek() != JsonToken.NULL) {
+              device.orientation = new DeviceOrientation.Deserializer().deserialize(reader, logger);
+            }
+            break;
+          case JsonKeys.SIMULATOR:
+            device.simulator = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.MEMORY_SIZE:
+            device.memorySize = reader.nextLongOrNull();
+            break;
+          case JsonKeys.FREE_MEMORY:
+            device.freeMemory = reader.nextLongOrNull();
+            break;
+          case JsonKeys.USABLE_MEMORY:
+            device.usableMemory = reader.nextLongOrNull();
+            break;
+          case JsonKeys.LOW_MEMORY:
+            device.lowMemory = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.STORAGE_SIZE:
+            device.storageSize = reader.nextLongOrNull();
+            break;
+          case JsonKeys.FREE_STORAGE:
+            device.freeStorage = reader.nextLongOrNull();
+            break;
+          case JsonKeys.EXTERNAL_STORAGE_SIZE:
+            device.externalStorageSize = reader.nextLongOrNull();
+            break;
+          case JsonKeys.EXTERNAL_FREE_STORAGE:
+            device.externalFreeStorage = reader.nextLongOrNull();
+            break;
+          case JsonKeys.SCREEN_WIDTH_PIXELS:
+            device.screenWidthPixels = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.SCREEN_HEIGHT_PIXELS:
+            device.screenHeightPixels = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.SCREEN_DENSITY:
+            device.screenDensity = reader.nextFloatOrNull();
+            break;
+          case JsonKeys.SCREEN_DPI:
+            device.screenDpi = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.BOOT_TIME:
+            if (reader.peek() == JsonToken.STRING) {
+              device.bootTime = reader.nextDateOrNull(logger);
+            }
+            break;
+          case JsonKeys.TIMEZONE:
+            device.timezone = reader.nextTimeZoneOrNull(logger);
+            break;
+          case JsonKeys.ID:
+            device.id = reader.nextStringOrNull();
+            break;
+          case JsonKeys.LANGUAGE:
+            device.language = reader.nextStringOrNull();
+            break;
+          case JsonKeys.CONNECTION_TYPE:
+            device.connectionType = reader.nextStringOrNull();
+            break;
+          case JsonKeys.BATTERY_TEMPERATURE:
+            device.batteryTemperature = reader.nextFloatOrNull();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.hasNext());
+      device.setUnknown(unknown);
+      reader.endObject();
+      return device;
+    }
+  }
+
+  // endregion
 }

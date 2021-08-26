@@ -4,7 +4,9 @@ import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +23,10 @@ public final class JsonObjectReader extends JsonReader {
 
   public @Nullable Double nextDoubleOrNull() throws IOException {
     return peek() == JsonToken.NULL ? null : nextDouble();
+  }
+
+  public @Nullable Float nextFloatOrNull() throws IOException {
+    return peek() == JsonToken.NULL ? null : (float) nextDouble();
   }
 
   public @Nullable Long nextLongOrNull() throws IOException {
@@ -41,6 +47,39 @@ public final class JsonObjectReader extends JsonReader {
     } catch (Exception exception) {
       logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
     }
+  }
+
+  public @Nullable Date nextDateOrNull(ILogger logger) throws IOException {
+    if (peek() == JsonToken.NULL) {
+      return null;
+    }
+    String dateString = nextString();
+    try {
+      return DateUtils.getDateTime(dateString);
+    } catch (Exception e) {
+      logger.log(
+          SentryLevel.DEBUG,
+          "Error when deserializing UTC timestamp format, it might be millis timestamp format.",
+          e);
+    }
+    try {
+      return DateUtils.getDateTimeWithMillisPrecision(dateString);
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error when deserializing millis timestamp format.", e);
+    }
+    return null;
+  }
+
+  public @Nullable TimeZone nextTimeZoneOrNull(ILogger logger) throws IOException {
+    if (peek() == JsonToken.NULL) {
+      return null;
+    }
+    try {
+      return TimeZone.getTimeZone(nextString());
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error when deserializing TimeZone", e);
+    }
+    return null;
   }
 
   /**

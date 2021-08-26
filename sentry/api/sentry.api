@@ -351,11 +351,14 @@ public final class io/sentry/JsonObjectDeserializer {
 public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/JsonReader {
 	public fun <init> (Ljava/io/Reader;)V
 	public fun nextBooleanOrNull ()Ljava/lang/Boolean;
+	public fun nextDateOrNull (Lio/sentry/ILogger;)Ljava/util/Date;
 	public fun nextDoubleOrNull ()Ljava/lang/Double;
+	public fun nextFloatOrNull ()Ljava/lang/Float;
 	public fun nextIntegerOrNull ()Ljava/lang/Integer;
 	public fun nextLongOrNull ()Ljava/lang/Long;
 	public fun nextObjectOrNull ()Ljava/lang/Object;
 	public fun nextStringOrNull ()Ljava/lang/String;
+	public fun nextTimeZoneOrNull (Lio/sentry/ILogger;)Ljava/util/TimeZone;
 	public fun nextUnknown (Lio/sentry/ILogger;Ljava/util/Map;Ljava/lang/String;)V
 }
 
@@ -367,6 +370,9 @@ public final class io/sentry/JsonObjectSerializer {
 
 public final class io/sentry/JsonObjectWriter : io/sentry/vendor/gson/stream/JsonWriter {
 	public fun <init> (Ljava/io/Writer;)V
+	public fun name (Ljava/lang/String;)Lio/sentry/JsonObjectWriter;
+	public synthetic fun name (Ljava/lang/String;)Lio/sentry/vendor/gson/stream/JsonWriter;
+	public fun value (Lio/sentry/ILogger;Ljava/lang/Object;)Lio/sentry/JsonObjectWriter;
 }
 
 public abstract interface class io/sentry/JsonSerializable {
@@ -1395,7 +1401,7 @@ public abstract interface class io/sentry/hints/SubmissionResult {
 	public abstract fun setResult (Z)V
 }
 
-public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
@@ -1406,6 +1412,8 @@ public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer
 	public fun getAppVersion ()Ljava/lang/String;
 	public fun getBuildType ()Ljava/lang/String;
 	public fun getDeviceAppHash ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAppBuild (Ljava/lang/String;)V
 	public fun setAppIdentifier (Ljava/lang/String;)V
 	public fun setAppName (Ljava/lang/String;)V
@@ -1413,16 +1421,49 @@ public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer
 	public fun setAppVersion (Ljava/lang/String;)V
 	public fun setBuildType (Ljava/lang/String;)V
 	public fun setDeviceAppHash (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 }
 
-public final class io/sentry/protocol/Browser : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/App$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/App;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/App$JsonKeys {
+	public static final field APP_BUILD Ljava/lang/String;
+	public static final field APP_IDENTIFIER Ljava/lang/String;
+	public static final field APP_NAME Ljava/lang/String;
+	public static final field APP_START_TIME Ljava/lang/String;
+	public static final field APP_VERSION Ljava/lang/String;
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEVICE_APP_HASH Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/Browser : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getName ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersion (Ljava/lang/String;)V
+}
+
+public final class io/sentry/protocol/Browser$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Browser;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Browser$JsonKeys {
+	public static final field NAME Ljava/lang/String;
+	public static final field VERSION Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMap {
@@ -1477,7 +1518,7 @@ public final class io/sentry/protocol/DebugMeta : io/sentry/IUnknownPropertiesCo
 	public fun setSdkInfo (Lio/sentry/protocol/SdkInfo;)V
 }
 
-public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
@@ -1506,11 +1547,13 @@ public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsu
 	public fun getScreenWidthPixels ()Ljava/lang/Integer;
 	public fun getStorageSize ()Ljava/lang/Long;
 	public fun getTimezone ()Ljava/util/TimeZone;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getUsableMemory ()Ljava/lang/Long;
 	public fun isCharging ()Ljava/lang/Boolean;
 	public fun isLowMemory ()Ljava/lang/Boolean;
 	public fun isOnline ()Ljava/lang/Boolean;
 	public fun isSimulator ()Ljava/lang/Boolean;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setArchs ([Ljava/lang/String;)V
 	public fun setBatteryLevel (Ljava/lang/Float;)V
 	public fun setBatteryTemperature (Ljava/lang/Float;)V
@@ -1540,17 +1583,65 @@ public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsu
 	public fun setSimulator (Ljava/lang/Boolean;)V
 	public fun setStorageSize (Ljava/lang/Long;)V
 	public fun setTimezone (Ljava/util/TimeZone;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUsableMemory (Ljava/lang/Long;)V
 }
 
-public final class io/sentry/protocol/Device$DeviceOrientation : java/lang/Enum {
+public final class io/sentry/protocol/Device$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Device;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Device$DeviceOrientation : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field LANDSCAPE Lio/sentry/protocol/Device$DeviceOrientation;
 	public static final field PORTRAIT Lio/sentry/protocol/Device$DeviceOrientation;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/protocol/Device$DeviceOrientation;
 	public static fun values ()[Lio/sentry/protocol/Device$DeviceOrientation;
 }
 
-public final class io/sentry/protocol/Gpu : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/Device$DeviceOrientation$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Device$DeviceOrientation;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Device$JsonKeys {
+	public static final field ARCHS Ljava/lang/String;
+	public static final field BATTERY_LEVEL Ljava/lang/String;
+	public static final field BATTERY_TEMPERATURE Ljava/lang/String;
+	public static final field BOOT_TIME Ljava/lang/String;
+	public static final field BRAND Ljava/lang/String;
+	public static final field CHARGING Ljava/lang/String;
+	public static final field CONNECTION_TYPE Ljava/lang/String;
+	public static final field EXTERNAL_FREE_STORAGE Ljava/lang/String;
+	public static final field EXTERNAL_STORAGE_SIZE Ljava/lang/String;
+	public static final field FAMILY Ljava/lang/String;
+	public static final field FREE_MEMORY Ljava/lang/String;
+	public static final field FREE_STORAGE Ljava/lang/String;
+	public static final field ID Ljava/lang/String;
+	public static final field LANGUAGE Ljava/lang/String;
+	public static final field LOW_MEMORY Ljava/lang/String;
+	public static final field MANUFACTURER Ljava/lang/String;
+	public static final field MEMORY_SIZE Ljava/lang/String;
+	public static final field MODEL Ljava/lang/String;
+	public static final field MODEL_ID Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field ONLINE Ljava/lang/String;
+	public static final field ORIENTATION Ljava/lang/String;
+	public static final field SCREEN_DENSITY Ljava/lang/String;
+	public static final field SCREEN_DPI Ljava/lang/String;
+	public static final field SCREEN_HEIGHT_PIXELS Ljava/lang/String;
+	public static final field SCREEN_WIDTH_PIXELS Ljava/lang/String;
+	public static final field SIMULATOR Ljava/lang/String;
+	public static final field STORAGE_SIZE Ljava/lang/String;
+	public static final field TIMEZONE Ljava/lang/String;
+	public static final field USABLE_MEMORY Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/Gpu : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
@@ -1559,19 +1650,41 @@ public final class io/sentry/protocol/Gpu : io/sentry/IUnknownPropertiesConsumer
 	public fun getMemorySize ()Ljava/lang/Integer;
 	public fun getName ()Ljava/lang/String;
 	public fun getNpotSupport ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getVendorId ()Ljava/lang/Integer;
 	public fun getVendorName ()Ljava/lang/String;
 	public fun getVersion ()Ljava/lang/String;
 	public fun isMultiThreadedRendering ()Ljava/lang/Boolean;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setApiType (Ljava/lang/String;)V
 	public fun setId (Ljava/lang/Integer;)V
 	public fun setMemorySize (Ljava/lang/Integer;)V
 	public fun setMultiThreadedRendering (Ljava/lang/Boolean;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setNpotSupport (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVendorId (Ljava/lang/Integer;)V
 	public fun setVendorName (Ljava/lang/String;)V
 	public fun setVersion (Ljava/lang/String;)V
+}
+
+public final class io/sentry/protocol/Gpu$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Gpu;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Gpu$JsonKeys {
+	public static final field API_TYPE Ljava/lang/String;
+	public static final field ID Ljava/lang/String;
+	public static final field MEMORY_SIZE Ljava/lang/String;
+	public static final field MULTI_THREADED_RENDERING Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field NPOT_SUPPORT Ljava/lang/String;
+	public static final field VENDOR_ID Ljava/lang/String;
+	public static final field VENDOR_NAME Ljava/lang/String;
+	public static final field VERSION Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/MeasurementValue {
@@ -1609,7 +1722,7 @@ public final class io/sentry/protocol/Message : io/sentry/IUnknownPropertiesCons
 	public fun setParams (Ljava/util/List;)V
 }
 
-public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
@@ -1617,14 +1730,33 @@ public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownProper
 	public fun getKernelVersion ()Ljava/lang/String;
 	public fun getName ()Ljava/lang/String;
 	public fun getRawDescription ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
 	public fun isRooted ()Ljava/lang/Boolean;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setBuild (Ljava/lang/String;)V
 	public fun setKernelVersion (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setRawDescription (Ljava/lang/String;)V
 	public fun setRooted (Ljava/lang/Boolean;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersion (Ljava/lang/String;)V
+}
+
+public final class io/sentry/protocol/OperatingSystem$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/OperatingSystem;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/OperatingSystem$JsonKeys {
+	public static final field BUILD Ljava/lang/String;
+	public static final field KERNEL_VERSION Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field RAW_DESCRIPTION Ljava/lang/String;
+	public static final field ROOTED Ljava/lang/String;
+	public static final field VERSION Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesConsumer {
@@ -1721,16 +1853,32 @@ public final class io/sentry/protocol/SentryPackage : io/sentry/IUnknownProperti
 	public fun setVersion (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/SentryRuntime : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/SentryRuntime : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getName ()Ljava/lang/String;
 	public fun getRawDescription ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setRawDescription (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersion (Ljava/lang/String;)V
+}
+
+public final class io/sentry/protocol/SentryRuntime$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SentryRuntime;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SentryRuntime$JsonKeys {
+	public static final field NAME Ljava/lang/String;
+	public static final field RAW_DESCRIPTION Ljava/lang/String;
+	public static final field VERSION Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/SentrySpan {
