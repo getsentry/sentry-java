@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Adds additional information about what happened to an event. */
-public final class UserFeedback implements JsonSerializable {
+public final class UserFeedback implements JsonUnknown, JsonSerializable {
 
   private final SentryId eventId;
   private @Nullable String name;
@@ -131,6 +131,18 @@ public final class UserFeedback implements JsonSerializable {
     public static final String COMMENTS = "comments";
   }
 
+  // JsonUnknown
+
+  @Override
+  public @Nullable Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
   // JsonSerializable
 
   @Override
@@ -159,16 +171,6 @@ public final class UserFeedback implements JsonSerializable {
       }
     }
     writer.endObject();
-  }
-
-  @Override
-  public @Nullable Map<String, Object> getUnknown() {
-    return unknown;
-  }
-
-  @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   // JsonDeserializer

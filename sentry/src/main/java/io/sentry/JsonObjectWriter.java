@@ -14,6 +14,12 @@ public final class JsonObjectWriter extends JsonWriter {
     super(out);
   }
 
+  @Override
+  public JsonObjectWriter name(String name) throws IOException {
+    super.name(name);
+    return this;
+  }
+
   /**
    * Encodes a supported object (Null, String, Boolean, Number, Collection, Array, Map,
    * JsonSerializable).
@@ -22,7 +28,8 @@ public final class JsonObjectWriter extends JsonWriter {
    * @param object Object to encode. May be null.
    * @return this writer.
    */
-  JsonObjectWriter value(@NotNull ILogger logger, @Nullable Object object) throws IOException {
+  public JsonObjectWriter value(@NotNull ILogger logger, @Nullable Object object)
+      throws IOException {
     jsonObjectSerializer.serialize(this, logger, object);
     return this;
   }

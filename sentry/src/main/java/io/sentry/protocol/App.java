@@ -1,16 +1,23 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
-public final class App implements IUnknownPropertiesConsumer {
+public final class App implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
   public static final String TYPE = "app";
 
   /** Version-independent application identifier, often a dotted bundle ID. */
@@ -106,15 +113,112 @@ public final class App implements IUnknownPropertiesConsumer {
     this.appBuild = appBuild;
   }
 
-  @TestOnly
-  @Nullable
-  Map<String, Object> getUnknown() {
-    return unknown;
-  }
-
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(@NotNull Map<String, Object> unknown) {
     this.unknown = new ConcurrentHashMap<>(unknown);
+  }
+
+  // region json
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class JsonKeys {
+    public static final String APP_IDENTIFIER = "app_identifier";
+    public static final String APP_START_TIME = "app_start_time";
+    public static final String DEVICE_APP_HASH = "device_app_hash";
+    public static final String BUILD_TYPE = "build_type";
+    public static final String APP_NAME = "app_name";
+    public static final String APP_VERSION = "app_version";
+    public static final String APP_BUILD = "app_build";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (appIdentifier != null) {
+      writer.name(JsonKeys.APP_IDENTIFIER).value(appIdentifier);
+    }
+    if (appStartTime != null) {
+      writer.name(JsonKeys.APP_START_TIME).value(logger, appStartTime);
+    }
+    if (deviceAppHash != null) {
+      writer.name(JsonKeys.DEVICE_APP_HASH).value(deviceAppHash);
+    }
+    if (buildType != null) {
+      writer.name(JsonKeys.BUILD_TYPE).value(buildType);
+    }
+    if (appName != null) {
+      writer.name(JsonKeys.APP_NAME).value(appName);
+    }
+    if (appVersion != null) {
+      writer.name(JsonKeys.APP_VERSION).value(appVersion);
+    }
+    if (appBuild != null) {
+      writer.name(JsonKeys.APP_BUILD).value(appBuild);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  public static final class Deserializer implements JsonDeserializer<App> {
+    @Override
+    public @NotNull App deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      reader.beginObject();
+      App app = new App();
+      Map<String, Object> unknown = null;
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.APP_IDENTIFIER:
+            app.appIdentifier = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_START_TIME:
+            app.appStartTime = reader.nextDateOrNull(logger);
+            break;
+          case JsonKeys.DEVICE_APP_HASH:
+            app.deviceAppHash = reader.nextStringOrNull();
+            break;
+          case JsonKeys.BUILD_TYPE:
+            app.buildType = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_NAME:
+            app.appName = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_VERSION:
+            app.appVersion = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_BUILD:
+            app.appBuild = reader.nextStringOrNull();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.peek() == JsonToken.NAME);
+      app.setUnknown(unknown);
+      reader.endObject();
+      return app;
+    }
   }
 }
