@@ -150,24 +150,20 @@ public final class UserFeedback implements JsonUnknown, JsonSerializable {
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.EVENT_ID);
-    writer.value(eventId.toString());
+    eventId.serialize(writer, logger);
     if (name != null) {
-      writer.name(JsonKeys.NAME);
-      writer.value(name);
+      writer.name(JsonKeys.NAME).value(name);
     }
     if (email != null) {
-      writer.name(JsonKeys.EMAIL);
-      writer.value(email);
+      writer.name(JsonKeys.EMAIL).value(email);
     }
     if (comments != null) {
-      writer.name(JsonKeys.COMMENTS);
-      writer.value(comments);
+      writer.name(JsonKeys.COMMENTS).value(comments);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
-        writer.name(key);
-        writer.value(logger, value);
+        writer.name(key).value(logger, value);
       }
     }
     writer.endObject();
@@ -190,7 +186,7 @@ public final class UserFeedback implements JsonUnknown, JsonSerializable {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.EVENT_ID:
-            sentryId = new SentryId(reader.nextString());
+            sentryId = new SentryId.Deserializer().deserialize(reader, logger);
             break;
           case JsonKeys.NAME:
             name = reader.nextStringOrNull();
