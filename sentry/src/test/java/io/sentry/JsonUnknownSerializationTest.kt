@@ -2,6 +2,7 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.protocol.App
 import io.sentry.protocol.Browser
 import io.sentry.protocol.SentryId
 import java.io.StringReader
@@ -21,6 +22,10 @@ class JsonUnknownSerializationTest {
             return givenJsonUnknown(UserFeedback(eventId))
         }
 
+        fun getApp(): App {
+            return givenJsonUnknown(App())
+        }
+
         fun getBrowser(): Browser {
             return givenJsonUnknown(Browser())
         }
@@ -35,6 +40,8 @@ class JsonUnknownSerializationTest {
     }
 
     private val fixture = Fixture()
+
+    // user feedback
 
     @Test
     fun `serializing and deserialize user feedback`() {
@@ -51,6 +58,31 @@ class JsonUnknownSerializationTest {
         val writer: JsonObjectWriter = mock()
         val logger: ILogger = mock()
         val sut = fixture.getUserFeedback()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // app
+
+    @Test
+    fun `serializing and deserialize app`() {
+        val sut = fixture.getApp()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, App.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+
+    fun `serializing unknown calls json object writer for app`() {
+        val writer: JsonObjectWriter = mock()
+        val logger: ILogger = mock()
+        val sut = fixture.getApp()
 
         sut.serialize(writer, logger)
 
