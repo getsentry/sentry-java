@@ -73,7 +73,7 @@ object Config {
         val springSecurityConfig = "org.springframework.security:spring-security-config"
         val springAop = "org.springframework:spring-aop"
         val aspectj = "org.aspectj:aspectjweaver"
-        val servletApi = "javax.servlet:javax.servlet-api"
+        val servletApi = "javax.servlet:javax.servlet-api:3.1.0"
 
         val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.4"
 

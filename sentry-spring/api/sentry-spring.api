@@ -68,9 +68,9 @@ public final class io/sentry/spring/SentryTaskDecorator : org/springframework/co
 	public fun decorate (Ljava/lang/Runnable;)Ljava/lang/Runnable;
 }
 
-public class io/sentry/spring/SentryUserFilter : javax/servlet/Filter {
+public class io/sentry/spring/SentryUserFilter : org/springframework/web/filter/OncePerRequestFilter {
 	public fun <init> (Lio/sentry/IHub;Ljava/util/List;)V
-	public fun doFilter (Ljavax/servlet/ServletRequest;Ljavax/servlet/ServletResponse;Ljavax/servlet/FilterChain;)V
+	protected fun doFilterInternal (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljavax/servlet/FilterChain;)V
 	public fun getSentryUserProviders ()Ljava/util/List;
 }
 

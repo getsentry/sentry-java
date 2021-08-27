@@ -6,6 +6,7 @@ import io.sentry.protocol.User;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -521,6 +522,42 @@ public final class Scope {
    */
   public void setContexts(final @NotNull String key, final @NotNull Number value) {
     final Map<String, Number> map = new HashMap<>();
+    map.put("value", value);
+    setContexts(key, map);
+  }
+
+  /**
+   * Sets the Scope's contexts
+   *
+   * @param key the context key
+   * @param value the context value
+   */
+  public void setContexts(final @NotNull String key, final @NotNull Collection<?> value) {
+    final Map<String, Collection<?>> map = new HashMap<>();
+    map.put("value", value);
+    setContexts(key, map);
+  }
+
+  /**
+   * Sets the Scope's contexts
+   *
+   * @param key the context key
+   * @param value the context value
+   */
+  public void setContexts(final @NotNull String key, final @NotNull Object[] value) {
+    final Map<String, Object[]> map = new HashMap<>();
+    map.put("value", value);
+    setContexts(key, map);
+  }
+
+  /**
+   * Sets the Scope's contexts
+   *
+   * @param key the context key
+   * @param value the context value
+   */
+  public void setContexts(final @NotNull String key, final @NotNull Character value) {
+    final Map<String, Character> map = new HashMap<>();
     map.put("value", value);
     setContexts(key, map);
   }
