@@ -12,6 +12,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.TraceStateHeader
 import io.sentry.TransactionContext
 import java.io.IOException
 import kotlin.test.Test
@@ -75,11 +76,12 @@ class SentryOkHttpInterceptorTest {
                     .toMediaType())).url(fixture.server.url("/hello")).build() }
 
     @Test
-    fun `when there is an active span, adds sentry trace header to the request`() {
+    fun `when there is an active span, adds sentry trace headers to the request`() {
         val sut = fixture.getSut()
         sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[TraceStateHeader.TRACE_STATE_HEADER])
     }
 
     @Test
@@ -88,6 +90,7 @@ class SentryOkHttpInterceptorTest {
         sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[TraceStateHeader.TRACE_STATE_HEADER])
     }
 
     @Test

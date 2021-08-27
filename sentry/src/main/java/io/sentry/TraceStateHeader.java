@@ -11,9 +11,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
 public final class TraceStateHeader {
+  public static final String TRACE_STATE_HEADER = "tracestate";
+
   private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
-  private static final String TRACE_STATE_HEADER = "tracestate";
   private final @NotNull String value;
 
   public static @NotNull TraceStateHeader fromTraceState(
