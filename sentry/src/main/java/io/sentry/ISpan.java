@@ -39,9 +39,20 @@ public interface ISpan {
   @NotNull
   SentryTraceHeader toSentryTrace();
 
+  /**
+   * Returns the trace state information. @see <a
+   * href="https://develop.sentry.dev/sdk/trace-context/">Trace Context</a>.
+   *
+   * @return a trace state
+   */
   @NotNull
   TraceState traceState();
 
+  /**
+   * Returns the trace state that can be sent as a "tracestate" header.
+   *
+   * @return TraceStateHeader
+   */
   @NotNull
   TraceStateHeader toTraceStateHeader();
 

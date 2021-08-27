@@ -1140,6 +1140,7 @@ public final class io/sentry/TraceState {
 }
 
 public final class io/sentry/TraceStateHeader {
+	public static final field TRACE_STATE_HEADER Ljava/lang/String;
 	public fun <init> (Ljava/lang/String;)V
 	public static fun fromTraceState (Lio/sentry/TraceState;Lio/sentry/ISerializer;Lio/sentry/ILogger;)Lio/sentry/TraceStateHeader;
 	public fun getName ()Ljava/lang/String;
