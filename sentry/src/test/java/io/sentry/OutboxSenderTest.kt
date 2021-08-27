@@ -108,8 +108,7 @@ class OutboxSenderTest {
         assertTrue(File(path).exists())
         sut.processEnvelopeFile(path, mock<Retryable>())
 
-        // TODO: fix test
-//        verify(fixture.hub).captureTransaction(eq(expected), any(), any())
+        verify(fixture.hub).captureTransaction(eq(expected), any(), any())
         assertFalse(File(path).exists())
         assertTrue(transactionContext.sampled ?: false)
 

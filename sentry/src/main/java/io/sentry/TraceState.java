@@ -74,7 +74,12 @@ public final class TraceState {
     private @Nullable String id;
     private @Nullable String segment;
 
-    TraceStateUser(final @Nullable User protocolUser) {
+    TraceStateUser(final @Nullable String id, final @Nullable String segment) {
+      this.id = id;
+      this.segment = segment;
+    }
+
+    public TraceStateUser(final @Nullable User protocolUser) {
       if (protocolUser != null) {
         this.id = protocolUser.getId();
         this.segment = getSegment(protocolUser);
