@@ -1,14 +1,14 @@
 package io.sentry;
 
-import static io.sentry.vendor.Base64.DEFAULT;
+import static io.sentry.vendor.Base64.NO_PADDING;
+import static io.sentry.vendor.Base64.NO_WRAP;
 
 import io.sentry.vendor.Base64;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 
 public final class TraceStateHeader {
   private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
@@ -20,19 +20,7 @@ public final class TraceStateHeader {
       final @NotNull TraceState traceState,
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger) {
-    return new TraceStateHeader(toHttpHeaderFriendlyBase64(toJson(traceState, serializer, logger)));
-  }
-
-  static @NotNull String toHttpHeaderFriendlyBase64(final @NotNull String input) {
-    return toUtf8(stripForbiddenChars(base64(toBytes(input))));
-  }
-
-  private static String toUtf8(String toJson) {
-    try {
-      return URLEncoder.encode(toJson, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      return toJson;
-    }
+    return new TraceStateHeader(base64encode(toJson(traceState, serializer, logger)));
   }
 
   public TraceStateHeader(final @NotNull String value) {
@@ -45,14 +33,6 @@ public final class TraceStateHeader {
 
   public @NotNull String getValue() {
     return value;
-  }
-
-  private static @NotNull String base64(final @NotNull byte[] input) {
-    return Base64.encodeToString(input, DEFAULT);
-  }
-
-  private static @NotNull String stripForbiddenChars(final @NotNull String input) {
-    return input.replace("=", "");
   }
 
   private static @NotNull String toJson(
@@ -69,7 +49,13 @@ public final class TraceStateHeader {
     }
   }
 
-  private static @NotNull byte[] toBytes(final @NotNull String input) {
-    return input.getBytes(UTF8_CHARSET);
+  @VisibleForTesting
+  static @NotNull String base64encode(final @NotNull String input) {
+    return Base64.encodeToString(input.getBytes(UTF8_CHARSET), NO_WRAP | NO_PADDING);
+  }
+
+  @VisibleForTesting
+  static @NotNull String base64decode(final @NotNull String input) {
+    return new String(Base64.decode(input, NO_WRAP | NO_PADDING), UTF8_CHARSET);
   }
 }

@@ -6,7 +6,12 @@ import kotlin.test.assertEquals
 class TraceStateHeaderTest {
 
     @Test
-    fun `converts to header friendly base64 string`() {
-        assertEquals("eyJ4IjoiYS3wn5iQLeivu%2BWGmeaxieWtlyAtIOWtpuS4reaWhyJ9%0A", TraceStateHeader.toHttpHeaderFriendlyBase64("{\"x\":\"a-😐-读写汉字 - 学中文\"}"))
+    fun `encodes to base64`() {
+        assertEquals("eyJ4IjoiYS3wn5mCLeivu+WGmeaxieWtlyAtIOWtpuS4reaWhyJ9", TraceStateHeader.base64encode("{\"x\":\"a-🙂-读写汉字 - 学中文\"}"))
+    }
+
+    @Test
+    fun `decode from base64`() {
+        assertEquals("{\"x\":\"a-🙂-读写汉字 - 学中文\"}", TraceStateHeader.base64decode("eyJ4IjoiYS3wn5mCLeivu+WGmeaxieWtlyAtIOWtpuS4reaWhyJ9"))
     }
 }
