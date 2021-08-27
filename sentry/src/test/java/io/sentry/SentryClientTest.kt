@@ -935,6 +935,42 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when scope has an active transaction, trace state is set on the envelope`() {
+        val event = SentryEvent()
+        val sut = fixture.getSut()
+        val scope = createScope()
+        val transaction = fixture.sentryTracer
+        scope.setTransaction(transaction)
+        transaction.finish()
+        sut.captureEvent(event, scope)
+        verify(fixture.transport).send(check {
+            assertNotNull(it.header.trace) {
+                assertEquals(transaction.spanContext.traceId, it.traceId)
+            }
+        }, anyOrNull())
+    }
+
+    @Test
+    fun `when scope does not have an active transaction, trace state is not set on the envelope`() {
+        val sut = fixture.getSut()
+        sut.captureEvent(SentryEvent(), createScope())
+        verify(fixture.transport).send(check {
+            assertNull(it.header.trace)
+        }, anyOrNull())
+    }
+
+    @Test
+    fun `when transaction is captured, trace state is set on the envelope`() {
+        val sut = fixture.getSut()
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        val traceState = fixture.sentryTracer.traceState()
+        sut.captureTransaction(transaction, traceState)
+        verify(fixture.transport).send(check {
+            assertEquals(traceState, it.header.trace)
+        }, anyOrNull())
+    }
+
+    @Test
     fun `when transaction does not have environment and release set, and the environment is set on options, options values are applied to transactions`() {
         fixture.sentryOptions.release = "optionsRelease"
         fixture.sentryOptions.environment = "optionsEnvironment"
