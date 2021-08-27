@@ -88,7 +88,8 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
       if (trace.getTransaction() != null) {
         writer.name("transaction").value(trace.getTransaction());
       }
-      if (trace.getUser() != null) {
+      if (trace.getUser() != null
+          && (trace.getUser().getId() != null || trace.getUser().getSegment() != null)) {
         writer.name("user");
         writer.beginObject();
         if (trace.getUser().getId() != null) {
@@ -260,7 +261,9 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
                       publicKey,
                       release,
                       environment,
-                      new TraceState.TraceStateUser(userId, segment),
+                      userId != null || segment != null
+                          ? new TraceState.TraceStateUser(userId, segment)
+                          : null,
                       transaction);
             }
             reader.endObject();
