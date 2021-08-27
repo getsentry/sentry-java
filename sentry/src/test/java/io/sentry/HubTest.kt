@@ -1070,7 +1070,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        val sentryTracer = SentryTracer(TransactionContext("name", "op", true), mock())
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
         val traceState = sentryTracer.traceState()
         sut.captureTransaction(SentryTransaction(sentryTracer), traceState)
         verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null))
@@ -1086,7 +1086,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        val sentryTracer = SentryTracer(TransactionContext("name", "op", false), mock())
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", false), sut)
         val traceState = sentryTracer.traceState()
         sut.captureTransaction(SentryTransaction(sentryTracer), traceState)
         verify(mockClient, times(0)).captureTransaction(any(), eq(traceState), any(), eq(null))

@@ -17,7 +17,9 @@ class SpanTest {
         val hub = mock<IHub>()
 
         init {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            })
         }
 
         fun getSut(): Span {
@@ -141,6 +143,22 @@ class SpanTest {
         verify(fixture.hub).setSpanContext(any(), any(), any())
         assertEquals(SpanStatus.OK, span.status)
         assertEquals(timestamp, span.timestamp)
+    }
+
+    @Test
+    fun `child trace state is equal to transaction trace state`() {
+        val transaction = getTransaction()
+        val span = transaction.startChild("operation", "description")
+
+        assertEquals(transaction.traceState(), span.traceState())
+    }
+
+    @Test
+    fun `child trace state header is equal to transaction trace state header`() {
+        val transaction = getTransaction()
+        val span = transaction.startChild("operation", "description")
+
+        assertEquals(transaction.toTraceStateHeader().value, span.toTraceStateHeader().value)
     }
 
     private fun getTransaction(): SentryTracer {

@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.App
 import io.sentry.protocol.Request
+import io.sentry.protocol.User
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,6 +28,8 @@ class SentryTracerTest {
 
         init {
             options.dsn = "https://key@sentry.io/proj"
+            options.environment = "environment"
+            options.release = "release@3.0.0"
             hub = spy(Hub(options))
             hub.bindClient(mock())
         }
@@ -381,5 +384,44 @@ class SentryTracerTest {
         verify(fixture.hub, times(1)).captureTransaction(check {
             assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
         }, any())
+    }
+
+    @Test
+    fun `returns trace state`() {
+        val transaction = fixture.getSut()
+        fixture.hub.setUser(User().apply {
+            id = "user-id"
+            others = mapOf("segment" to "pro")
+        })
+        val trace = transaction.traceState()
+        assertEquals(transaction.spanContext.traceId, trace.traceId)
+        assertEquals("key", trace.publicKey)
+        assertEquals("environment", trace.environment)
+        assertEquals("release@3.0.0", trace.release)
+        assertEquals(transaction.name, trace.transaction)
+        assertNotNull(trace.user) {
+            assertEquals("user-id", it.id)
+            assertEquals("pro", it.segment)
+        }
+    }
+
+    @Test
+    fun `trace state does not change once computed`() {
+        val transaction = fixture.getSut()
+        val traceBeforeUserSet = transaction.traceState()
+        fixture.hub.setUser(User().apply {
+            id = "user-id"
+        })
+        val traceAfterUserSet = transaction.traceState()
+        assertEquals(traceBeforeUserSet, traceAfterUserSet)
+        assertNull(traceAfterUserSet.user)
+    }
+
+    @Test
+    fun `returns trace state header`() {
+        val transaction = fixture.getSut()
+        val header = transaction.toTraceStateHeader()
+        assertEquals("tracestate", header.name)
+        assertNotNull(header.value)
     }
 }
