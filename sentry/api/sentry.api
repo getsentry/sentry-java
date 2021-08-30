@@ -1808,17 +1808,34 @@ public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesCons
 	public fun setUrl (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/SdkInfo : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/SdkInfo : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getSdkName ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersionMajor ()Ljava/lang/Integer;
 	public fun getVersionMinor ()Ljava/lang/Integer;
 	public fun getVersionPatchlevel ()Ljava/lang/Integer;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setSdkName (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersionMajor (Ljava/lang/Integer;)V
 	public fun setVersionMinor (Ljava/lang/Integer;)V
 	public fun setVersionPatchlevel (Ljava/lang/Integer;)V
+}
+
+public final class io/sentry/protocol/SdkInfo$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SdkInfo;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SdkInfo$JsonKeys {
+	public static final field SDK_NAME Ljava/lang/String;
+	public static final field VERSION_MAJOR Ljava/lang/String;
+	public static final field VERSION_MINOR Ljava/lang/String;
+	public static final field VERSION_PATCHLEVEL Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/SdkVersion : io/sentry/IUnknownPropertiesConsumer {
