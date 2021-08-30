@@ -18,30 +18,51 @@ import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Test serialization/deserialization for all classes implementing JsonUnknown
  */
-class JsonUnknownSerializationTest {
-    private class Fixture {
-        var logger: ILogger = mock()
+@RunWith(Parameterized::class)
+class JsonUnknownSerializationTest(
+    private val jsonUnknown: JsonUnknown,
+    private val jsonSerializable: JsonSerializable,
+    private val deserializer: (JsonObjectReader, ILogger) -> JsonUnknown
+) {
 
-        fun getApp() = givenJsonUnknown(App())
-        fun getBrowser() = givenJsonUnknown(Browser())
-        fun getDevice() = givenJsonUnknown(Device())
-        fun getGpu() = givenJsonUnknown(Gpu())
-        fun getOperatingSystem() = givenJsonUnknown(OperatingSystem())
-        fun getSentryRuntime() = givenJsonUnknown(SentryRuntime())
-        fun getSpanContext(): SpanContext {
-            val operation = "c2fb8fee2e2b49758bcb67cda0f713c7"
-            return givenJsonUnknown(SpanContext(operation))
-        }
-        fun getSentryStackFrame() = givenJsonUnknown(SentryStackFrame())
-        fun getSentryStackTrace() = givenJsonUnknown(SentryStackTrace())
-        fun getSentryThread() = givenJsonUnknown(SentryThread())
-        fun getUserFeedback(): UserFeedback {
-            val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-            return givenJsonUnknown(UserFeedback(eventId))
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters
+        fun data(): Collection<Array<Any>> {
+            val app = givenJsonUnknown(App())
+            val browser = givenJsonUnknown(Browser())
+            val device = givenJsonUnknown(Device())
+            val gpu = givenJsonUnknown(Gpu())
+            val operatingSystem = givenJsonUnknown(OperatingSystem())
+            val sentryRuntime = givenJsonUnknown(SentryRuntime())
+            val spanContext = givenJsonUnknown(SpanContext("c2fb8fee2e2b49758bcb67cda0f713c7"))
+            val sentryStackFrame = givenJsonUnknown(SentryStackFrame())
+            val sentryStackTrace = givenJsonUnknown(SentryStackTrace())
+            val sentryThread = givenJsonUnknown(SentryThread())
+            val userFeedback = givenJsonUnknown(UserFeedback(SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")))
+
+            // Same instance for first and second param, so we cann access both JsonUnknown and
+            // JsonSerializable in the test method. Third param is the method reference, so we
+            // don't have to deal with generics.
+            return listOf(
+                arrayOf(app, app, App.Deserializer()::deserialize),
+                arrayOf(browser, browser, Browser.Deserializer()::deserialize),
+                arrayOf(device, device, Device.Deserializer()::deserialize),
+                arrayOf(gpu, gpu, Gpu.Deserializer()::deserialize),
+                arrayOf(operatingSystem, operatingSystem, OperatingSystem.Deserializer()::deserialize),
+                arrayOf(sentryRuntime, sentryRuntime, SentryRuntime.Deserializer()::deserialize),
+                arrayOf(spanContext, spanContext, SpanContext.Deserializer()::deserialize),
+                arrayOf(sentryStackFrame, sentryStackFrame, SentryStackFrame.Deserializer()::deserialize),
+                arrayOf(sentryStackTrace, sentryStackTrace, SentryStackTrace.Deserializer()::deserialize),
+                arrayOf(sentryThread, sentryThread, SentryThread.Deserializer()::deserialize),
+                arrayOf(userFeedback, userFeedback, UserFeedback.Deserializer()::deserialize)
+            )
         }
 
         private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T {
@@ -53,18 +74,16 @@ class JsonUnknownSerializationTest {
         }
     }
 
-    private val fixture = Fixture()
-
-    // App
-
     @Test
     fun `serializing and deserialize app`() {
-        val sut = fixture.getApp()
+        val sut = jsonSerializable
 
         val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, App.Deserializer())
+        val reader = JsonObjectReader(StringReader(serialized))
+        val logger = mock<ILogger>()
+        val deserialized = deserializer(reader, logger)
 
-        assertEquals(sut.unknown, deserialized.unknown)
+        assertEquals(jsonUnknown.unknown, deserialized.unknown)
     }
 
     @Test
@@ -73,254 +92,7 @@ class JsonUnknownSerializationTest {
         whenever(writer.name(any())).thenReturn(writer)
 
         val logger: ILogger = mock()
-        val sut = fixture.getApp()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // Browser
-
-    @Test
-    fun `serializing and deserialize browser`() {
-        val sut = fixture.getBrowser()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, Browser.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for browser`() {
-        val writer: JsonObjectWriter = mock()
-        val logger: ILogger = mock()
-        val sut = fixture.getBrowser()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // Device
-
-    @Test
-    fun `serializing and deserialize device`() {
-        val sut = fixture.getDevice()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, Device.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for device`() {
-        val writer: JsonObjectWriter = mock()
-        whenever(writer.name(any())).thenReturn(writer)
-        val logger: ILogger = mock()
-        val sut = fixture.getDevice()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // GPU
-
-    @Test
-    fun `serializing and deserialize gpu`() {
-        val sut = fixture.getGpu()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, Gpu.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for gpu`() {
-        val writer: JsonObjectWriter = mock()
-        val logger: ILogger = mock()
-        val sut = fixture.getGpu()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // OperatingSystem
-
-    @Test
-    fun `serializing and deserialize operating system`() {
-        val sut = fixture.getOperatingSystem()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, OperatingSystem.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for operating system`() {
-        val writer: JsonObjectWriter = mock()
-        val logger: ILogger = mock()
-        val sut = fixture.getOperatingSystem()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // SentryRuntime
-
-    @Test
-    fun `serializing and deserialize sentry runtime`() {
-        val sut = fixture.getSentryRuntime()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, SentryRuntime.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for sentry runtime`() {
-        val writer: JsonObjectWriter = mock()
-        whenever(writer.name(any())).thenReturn(writer)
-        val logger: ILogger = mock()
-        val sut = fixture.getUserFeedback()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // SentryStackFrame
-
-    @Test
-    fun `serializing and deserialize sentry stack trace`() {
-        val sut = fixture.getSentryStackTrace()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, SentryStackTrace.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for sentry stack trace`() {
-        val writer: JsonObjectWriter = mock()
-        whenever(writer.name(any())).thenReturn(writer)
-        val logger: ILogger = mock()
-        val sut = fixture.getSentryStackTrace()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // SentryStackTrace
-
-    @Test
-    fun `serializing and deserialize sentry stack frame`() {
-        val sut = fixture.getSentryStackFrame()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, SentryStackFrame.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for sentry stack frame`() {
-        val writer: JsonObjectWriter = mock()
-        whenever(writer.name(any())).thenReturn(writer)
-        val logger: ILogger = mock()
-        val sut = fixture.getSentryStackFrame()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // SentryThread
-
-    @Test
-    fun `serializing and deserialize sentry thread`() {
-        val sut = fixture.getSentryThread()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, SentryThread.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for sentry thread`() {
-        val writer: JsonObjectWriter = mock()
-        whenever(writer.name(any())).thenReturn(writer)
-        val logger: ILogger = mock()
-        val sut = fixture.getSentryThread()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // SpanContext
-
-    @Test
-    fun `serializing and deserialize span context`() {
-        val sut = fixture.getSpanContext()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, SpanContext.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for span context`() {
-        val writer: JsonObjectWriter = mock()
-        whenever(writer.name(any())).thenReturn(writer)
-        val logger: ILogger = mock()
-        val sut = fixture.getSpanContext()
-
-        sut.serialize(writer, logger)
-
-        verify(writer).name("fixture-key")
-        verify(writer).value(logger, "fixture-value")
-    }
-
-    // UserFeedback
-
-    @Test
-    fun `serializing and deserialize user feedback`() {
-        val sut = fixture.getUserFeedback()
-
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized, UserFeedback.Deserializer())
-
-        assertEquals(sut.unknown, deserialized.unknown)
-    }
-
-    @Test
-    fun `serializing unknown calls json object writer for user feedback`() {
-        val writer: JsonObjectWriter = mock()
-        whenever(writer.name(any())).thenReturn(writer)
-        val logger: ILogger = mock()
-        val sut = fixture.getUserFeedback()
+        val sut = jsonSerializable
 
         sut.serialize(writer, logger)
 
@@ -333,12 +105,8 @@ class JsonUnknownSerializationTest {
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()
         val jsonWrt = JsonObjectWriter(wrt)
-        jsonSerializable.serialize(jsonWrt, fixture.logger)
+        val logger = mock<ILogger>()
+        jsonSerializable.serialize(jsonWrt, logger)
         return wrt.toString()
-    }
-
-    private fun <T> deserialize(json: String, deserializer: JsonDeserializer<T>): T {
-        val reader = JsonObjectReader(StringReader(json))
-        return deserializer.deserialize(reader, fixture.logger)
     }
 }
