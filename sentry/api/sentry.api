@@ -1911,7 +1911,7 @@ public final class io/sentry/protocol/SdkVersion : io/sentry/IUnknownPropertiesC
 	public static fun updateSdkVersion (Lio/sentry/protocol/SdkVersion;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/protocol/SdkVersion;
 }
 
-public final class io/sentry/protocol/SentryException : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/SentryException : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getMechanism ()Lio/sentry/protocol/Mechanism;
@@ -1919,13 +1919,32 @@ public final class io/sentry/protocol/SentryException : io/sentry/IUnknownProper
 	public fun getStacktrace ()Lio/sentry/protocol/SentryStackTrace;
 	public fun getThreadId ()Ljava/lang/Long;
 	public fun getType ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setMechanism (Lio/sentry/protocol/Mechanism;)V
 	public fun setModule (Ljava/lang/String;)V
 	public fun setStacktrace (Lio/sentry/protocol/SentryStackTrace;)V
 	public fun setThreadId (Ljava/lang/Long;)V
 	public fun setType (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setValue (Ljava/lang/String;)V
+}
+
+public final class io/sentry/protocol/SentryException$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SentryException;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SentryException$JsonKeys {
+	public static final field MECHANISM Ljava/lang/String;
+	public static final field MODULE Ljava/lang/String;
+	public static final field STACKTRACE Ljava/lang/String;
+	public static final field THREAD_ID Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public static final field VALUE Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/SentryId : io/sentry/JsonSerializable {
