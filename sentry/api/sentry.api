@@ -346,6 +346,7 @@ public abstract interface class io/sentry/JsonDeserializer {
 public final class io/sentry/JsonObjectDeserializer {
 	public fun <init> ()V
 	public fun deserialize (Lio/sentry/JsonObjectReader;)Ljava/lang/Object;
+	public fun deserializeList (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
 }
 
 public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/JsonReader {
@@ -355,6 +356,7 @@ public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/Jso
 	public fun nextDoubleOrNull ()Ljava/lang/Double;
 	public fun nextFloatOrNull ()Ljava/lang/Float;
 	public fun nextIntegerOrNull ()Ljava/lang/Integer;
+	public fun nextList (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
 	public fun nextLongOrNull ()Ljava/lang/Long;
 	public fun nextObjectOrNull ()Ljava/lang/Object;
 	public fun nextStringOrNull ()Ljava/lang/String;
@@ -1558,13 +1560,28 @@ public final class io/sentry/protocol/DebugImage$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/DebugMeta : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/DebugMeta : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getImages ()Ljava/util/List;
 	public fun getSdkInfo ()Lio/sentry/protocol/SdkInfo;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setImages (Ljava/util/List;)V
 	public fun setSdkInfo (Lio/sentry/protocol/SdkInfo;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/DebugMeta$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/DebugMeta;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/DebugMeta$JsonKeys {
+	public static final field IMAGES Ljava/lang/String;
+	public static final field SDK_INFO Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {

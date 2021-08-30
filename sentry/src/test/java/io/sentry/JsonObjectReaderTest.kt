@@ -126,6 +126,26 @@ class JsonObjectReaderTest {
         assertEquals(true, reader.nextBooleanOrNull())
     }
 
+    // nextList
+
+    @Test
+    fun `returns list of deserializables for list`() {
+        val deserializableA = "{\"foo\": \"foo\", \"bar\": \"bar\"}"
+        val deserializableB = "{\"foo\": \"fooo\", \"bar\": \"baar\"}"
+        val jsonString = "{\"deserializable\": [$deserializableA,$deserializableB]}"
+        val reader = fixture.getSut(jsonString)
+        val logger = mock<ILogger>()
+        reader.beginObject()
+        reader.nextName()
+
+        val expected = listOf(
+            Deserializable("foo", "bar"),
+            Deserializable("fooo", "baar")
+        )
+        val actual = reader.nextList(logger, Deserializable.Deserializer())
+        assertEquals(expected, actual)
+    }
+
     // nextDateOrNull
 
     @Test
@@ -197,5 +217,23 @@ class JsonObjectReaderTest {
         reader.nextName()
 
         assertEquals("Europe/Vienna", reader.nextTimeZoneOrNull(fixture.logger)?.id)
+    }
+
+    data class Deserializable(
+        var foo: String? = null,
+        var bar: String? = null
+    ) {
+        class Deserializer : JsonDeserializer<Deserializable> {
+            override fun deserialize(reader: JsonObjectReader, logger: ILogger): Deserializable {
+                return Deserializable().apply {
+                    reader.beginObject()
+                    reader.nextName()
+                    foo = reader.nextStringOrNull()
+                    reader.nextName()
+                    bar = reader.nextStringOrNull()
+                    reader.endObject()
+                }
+            }
+        }
     }
 }
