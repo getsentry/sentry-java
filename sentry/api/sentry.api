@@ -1924,7 +1924,7 @@ public final class io/sentry/protocol/SentrySpan {
 	public fun isFinished ()Z
 }
 
-public final class io/sentry/protocol/SentryStackFrame : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/SentryStackFrame : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getAbsPath ()Ljava/lang/String;
@@ -1943,9 +1943,11 @@ public final class io/sentry/protocol/SentryStackFrame : io/sentry/IUnknownPrope
 	public fun getPreContext ()Ljava/util/List;
 	public fun getRawFunction ()Ljava/lang/String;
 	public fun getSymbolAddr ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getVars ()Ljava/util/Map;
 	public fun isInApp ()Ljava/lang/Boolean;
 	public fun isNative ()Ljava/lang/Boolean;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAbsPath (Ljava/lang/String;)V
 	public fun setColno (Ljava/lang/Integer;)V
 	public fun setContextLine (Ljava/lang/String;)V
@@ -1964,7 +1966,33 @@ public final class io/sentry/protocol/SentryStackFrame : io/sentry/IUnknownPrope
 	public fun setPreContext (Ljava/util/List;)V
 	public fun setRawFunction (Ljava/lang/String;)V
 	public fun setSymbolAddr (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVars (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/SentryStackFrame$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SentryStackFrame;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
+	public static final field ABS_PATH Ljava/lang/String;
+	public static final field COLNO Ljava/lang/String;
+	public static final field CONTEXT_LINE Ljava/lang/String;
+	public static final field FILENAME Ljava/lang/String;
+	public static final field FUNCTION Ljava/lang/String;
+	public static final field IMAGE_ADDR Ljava/lang/String;
+	public static final field INSTRUCTION_ADDR Ljava/lang/String;
+	public static final field IN_APP Ljava/lang/String;
+	public static final field LINENO Ljava/lang/String;
+	public static final field MODULE Ljava/lang/String;
+	public static final field NATIVE Ljava/lang/String;
+	public static final field PACKAGE Ljava/lang/String;
+	public static final field PLATFORM Ljava/lang/String;
+	public static final field RAW_FUNCTION Ljava/lang/String;
+	public static final field SYMBOL_ADDR Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/SentryStackTrace : io/sentry/IUnknownPropertiesConsumer {

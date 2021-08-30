@@ -11,6 +11,7 @@ import io.sentry.protocol.Gpu
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryRuntime
+import io.sentry.protocol.SentryStackFrame
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
@@ -33,6 +34,7 @@ class JsonUnknownSerializationTest {
             val operation = "c2fb8fee2e2b49758bcb67cda0f713c7"
             return givenJsonUnknown(SpanContext(operation))
         }
+        fun getSentryStackFrame() = givenJsonUnknown(SentryStackFrame())
         fun getUserFeedback(): UserFeedback {
             val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
             return givenJsonUnknown(UserFeedback(eventId))
@@ -190,6 +192,31 @@ class JsonUnknownSerializationTest {
         whenever(writer.name(any())).thenReturn(writer)
         val logger: ILogger = mock()
         val sut = fixture.getUserFeedback()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // SentryStackFrame
+
+    @Test
+    fun `serializing and deserialize sentry stack frame`() {
+        val sut = fixture.getSentryStackFrame()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, SentryStackFrame.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for sentry stack frame`() {
+        val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
+        val logger: ILogger = mock()
+        val sut = fixture.getSentryStackFrame()
 
         sut.serialize(writer, logger)
 
