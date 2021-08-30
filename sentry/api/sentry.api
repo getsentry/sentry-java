@@ -2068,7 +2068,7 @@ public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEv
 	public fun isSampled ()Z
 }
 
-public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/User;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
@@ -2076,12 +2076,30 @@ public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsume
 	public fun getId ()Ljava/lang/String;
 	public fun getIpAddress ()Ljava/lang/String;
 	public fun getOthers ()Ljava/util/Map;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getUsername ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setEmail (Ljava/lang/String;)V
 	public fun setId (Ljava/lang/String;)V
 	public fun setIpAddress (Ljava/lang/String;)V
 	public fun setOthers (Ljava/util/Map;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUsername (Ljava/lang/String;)V
+}
+
+public final class io/sentry/protocol/User$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/User;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/User$JsonKeys {
+	public static final field EMAIL Ljava/lang/String;
+	public static final field ID Ljava/lang/String;
+	public static final field IP_ADDRESS Ljava/lang/String;
+	public static final field OTHER Ljava/lang/String;
+	public static final field USERNAME Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
