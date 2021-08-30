@@ -12,6 +12,7 @@ import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryRuntime
 import io.sentry.protocol.SentryStackFrame
+import io.sentry.protocol.SentryStackTrace
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
@@ -35,6 +36,7 @@ class JsonUnknownSerializationTest {
             return givenJsonUnknown(SpanContext(operation))
         }
         fun getSentryStackFrame() = givenJsonUnknown(SentryStackFrame())
+        fun getSentryStackTrace() = givenJsonUnknown(SentryStackTrace())
         fun getUserFeedback(): UserFeedback {
             val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
             return givenJsonUnknown(UserFeedback(eventId))
@@ -200,6 +202,31 @@ class JsonUnknownSerializationTest {
     }
 
     // SentryStackFrame
+
+    @Test
+    fun `serializing and deserialize sentry stack trace`() {
+        val sut = fixture.getSentryStackTrace()
+
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized, SentryStackTrace.Deserializer())
+
+        assertEquals(sut.unknown, deserialized.unknown)
+    }
+
+    @Test
+    fun `serializing unknown calls json object writer for sentry stack trace`() {
+        val writer: JsonObjectWriter = mock()
+        whenever(writer.name(any())).thenReturn(writer)
+        val logger: ILogger = mock()
+        val sut = fixture.getSentryStackTrace()
+
+        sut.serialize(writer, logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(logger, "fixture-value")
+    }
+
+    // SentryStackTrace
 
     @Test
     fun `serializing and deserialize sentry stack frame`() {
