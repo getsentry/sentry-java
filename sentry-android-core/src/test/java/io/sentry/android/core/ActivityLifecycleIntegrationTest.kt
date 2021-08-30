@@ -345,7 +345,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.OK, it.status)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -363,7 +363,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -377,7 +377,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), any())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -388,7 +388,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), any())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -401,7 +401,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), any())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -438,7 +438,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(mock(), mock())
 
         sut.onActivityCreated(mock(), fixture.bundle)
-        verify(fixture.hub).captureTransaction(any(), any())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -478,7 +478,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), any())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test

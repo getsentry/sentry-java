@@ -43,6 +43,7 @@ class SentryOkHttpInterceptorTest {
         init {
             whenever(hub.options).thenReturn(SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
+                isTraceSampling = true
             })
         }
 

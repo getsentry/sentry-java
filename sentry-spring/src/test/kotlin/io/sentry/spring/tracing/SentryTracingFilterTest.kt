@@ -1,6 +1,7 @@
 package io.sentry.spring.tracing
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
@@ -74,7 +75,7 @@ class SentryTracingFilterTest {
             assertThat(it.transaction).isEqualTo("POST /product/{id}")
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
             assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -85,7 +86,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -96,7 +97,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.status).isNull()
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -107,7 +108,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.parentSpanId).isNull()
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -119,7 +120,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -147,6 +148,6 @@ class SentryTracingFilterTest {
         }
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        }, any())
+        }, anyOrNull())
     }
 }

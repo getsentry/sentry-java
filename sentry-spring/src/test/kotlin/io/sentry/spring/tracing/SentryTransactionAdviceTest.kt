@@ -1,6 +1,7 @@
 package io.sentry.spring.tracing
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
@@ -58,7 +59,7 @@ class SentryTransactionAdviceTest {
             assertThat(it.transaction).isEqualTo("customName")
             assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
             assertThat(it.status).isEqualTo(SpanStatus.OK)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -66,7 +67,7 @@ class SentryTransactionAdviceTest {
         assertThrows<RuntimeException> { sampleService.methodThrowingException() }
         verify(hub).captureTransaction(check {
             assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -75,7 +76,7 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
             assertThat(it.contexts.trace!!.operation).isEqualTo("op")
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -93,7 +94,7 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
             assertThat(it.contexts.trace!!.operation).isEqualTo("op")
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -102,7 +103,7 @@ class SentryTransactionAdviceTest {
         verify(hub).captureTransaction(check {
             assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
             assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
