@@ -106,12 +106,12 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public @NotNull TraceState traceState() {
+  public @Nullable TraceState traceState() {
     return transaction.traceState();
   }
 
   @Override
-  public @NotNull TraceStateHeader toTraceStateHeader() {
+  public @Nullable TraceStateHeader toTraceStateHeader() {
     return transaction.toTraceStateHeader();
   }
 

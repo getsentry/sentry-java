@@ -43,18 +43,19 @@ public interface ISpan {
    * Returns the trace state information. @see <a
    * href="https://develop.sentry.dev/sdk/trace-context/">Trace Context</a>.
    *
-   * @return a trace state
+   * @return a trace state or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
    */
-  @NotNull
+  @Nullable
   @ApiStatus.Experimental
   TraceState traceState();
 
   /**
    * Returns the trace state that can be sent as a "tracestate" header.
    *
-   * @return TraceStateHeader
+   * @return TraceStateHeader or {@code null} if {@link SentryOptions#isTraceSampling()} is
+   *     disabled.
    */
-  @NotNull
+  @Nullable
   @ApiStatus.Experimental
   TraceStateHeader toTraceStateHeader();
 

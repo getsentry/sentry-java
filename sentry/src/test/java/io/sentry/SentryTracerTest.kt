@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -117,7 +118,7 @@ class SentryTracerTest {
         tracer.finish()
         verify(fixture.hub).captureTransaction(check {
             assertEquals(it.transaction, tracer.name)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -146,7 +147,7 @@ class SentryTracerTest {
         tracer.finish()
         verify(fixture.hub).captureTransaction(check {
             assertEquals(request, it.request)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -161,7 +162,7 @@ class SentryTracerTest {
             assertEquals(app, it.contexts.app)
             assertEquals("value", it.contexts["custom"])
             assertEquals(tracer.spanContext, it.contexts.trace)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -174,7 +175,7 @@ class SentryTracerTest {
         verify(fixture.hub).captureTransaction(check {
             assertNotEquals(spanContext, it.contexts.trace)
             assertEquals(tracer.spanContext, it.contexts.trace)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
@@ -300,7 +301,7 @@ class SentryTracerTest {
         verify(fixture.hub).setSpanContext(ex, transaction.root, "name")
         verify(fixture.hub).captureTransaction(check {
             assertEquals(transaction.root.spanContext, it.contexts.trace)
-        }, any())
+        }, anyOrNull())
 
         assertEquals(SpanStatus.OK, transaction.status)
         assertEquals(timestamp, transaction.timestamp)
@@ -350,7 +351,7 @@ class SentryTracerTest {
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
-        verify(fixture.hub).captureTransaction(any(), any())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -383,45 +384,57 @@ class SentryTracerTest {
         child.finish()
         verify(fixture.hub, times(1)).captureTransaction(check {
             assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
-        }, any())
+        }, anyOrNull())
     }
 
     @Test
     fun `returns trace state`() {
-        val transaction = fixture.getSut()
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+        })
         fixture.hub.setUser(User().apply {
             id = "user-id"
             others = mapOf("segment" to "pro")
         })
         val trace = transaction.traceState()
-        assertEquals(transaction.spanContext.traceId, trace.traceId)
-        assertEquals("key", trace.publicKey)
-        assertEquals("environment", trace.environment)
-        assertEquals("release@3.0.0", trace.release)
-        assertEquals(transaction.name, trace.transaction)
-        assertNotNull(trace.user) {
-            assertEquals("user-id", it.id)
-            assertEquals("pro", it.segment)
+        assertNotNull(trace) {
+            assertEquals(transaction.spanContext.traceId, it.traceId)
+            assertEquals("key", it.publicKey)
+            assertEquals("environment", it.environment)
+            assertEquals("release@3.0.0", it.release)
+            assertEquals(transaction.name, it.transaction)
+            assertNotNull(it.user) {
+                assertEquals("user-id", it.id)
+                assertEquals("pro", it.segment)
+            }
         }
     }
 
     @Test
     fun `trace state does not change once computed`() {
-        val transaction = fixture.getSut()
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+        })
         val traceBeforeUserSet = transaction.traceState()
         fixture.hub.setUser(User().apply {
             id = "user-id"
         })
         val traceAfterUserSet = transaction.traceState()
-        assertEquals(traceBeforeUserSet, traceAfterUserSet)
-        assertNull(traceAfterUserSet.user)
+        assertNotNull(traceAfterUserSet) {
+            assertEquals(it, traceBeforeUserSet)
+            assertNull(it.user)
+        }
     }
 
     @Test
     fun `returns trace state header`() {
-        val transaction = fixture.getSut()
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+        })
         val header = transaction.toTraceStateHeader()
-        assertEquals("tracestate", header.name)
-        assertNotNull(header.value)
+        assertNotNull(header) {
+            assertEquals("tracestate", it.name)
+            assertNotNull(it.value)
+        }
     }
 }

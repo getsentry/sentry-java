@@ -232,7 +232,7 @@ public interface ISentryClient {
    */
   @ApiStatus.Experimental
   default @NotNull SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @NotNull TraceState traceState) {
+      @NotNull SentryTransaction transaction, @Nullable TraceState traceState) {
     return captureTransaction(transaction, traceState, null, null);
   }
 

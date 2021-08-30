@@ -19,6 +19,7 @@ class SpanTest {
         init {
             whenever(hub.options).thenReturn(SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
+                isTraceSampling = true
             })
         }
 
@@ -158,7 +159,9 @@ class SpanTest {
         val transaction = getTransaction()
         val span = transaction.startChild("operation", "description")
 
-        assertEquals(transaction.toTraceStateHeader().value, span.toTraceStateHeader().value)
+        assertNotNull(transaction.toTraceStateHeader()) {
+            assertEquals(it.value, span.toTraceStateHeader()!!.value)
+        }
     }
 
     private fun getTransaction(): SentryTracer {

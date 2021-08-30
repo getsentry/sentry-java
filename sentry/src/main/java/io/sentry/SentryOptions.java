@@ -280,6 +280,9 @@ public class SentryOptions {
    */
   private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
 
+  /** Controls if the `tracestate` header is attached to envelopes and HTTP client integrations. */
+  private boolean traceSampling;
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -1436,6 +1439,22 @@ public class SentryOptions {
 
   public void setMaxRequestBodySize(final @NotNull RequestSize maxRequestBodySize) {
     this.maxRequestBodySize = maxRequestBodySize;
+  }
+
+  /** Note: this is an experimental API and will be removed without notice. */
+  @ApiStatus.Experimental
+  public boolean isTraceSampling() {
+    return traceSampling;
+  }
+
+  /**
+   * Note: this is an experimental API and will be removed without notice.
+   *
+   * @param traceSampling - if trace sampling should be enabled
+   */
+  @ApiStatus.Experimental
+  public void setTraceSampling(boolean traceSampling) {
+    this.traceSampling = traceSampling;
   }
 
   /** The BeforeSend callback */

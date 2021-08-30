@@ -225,22 +225,31 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @NotNull TraceState traceState() {
-    if (traceState == null) {
-      final AtomicReference<User> userAtomicReference = new AtomicReference<>();
-      hub.configureScope(
-          scope -> {
-            userAtomicReference.set(scope.getUser());
-          });
-      this.traceState = new TraceState(this, userAtomicReference.get(), hub.getOptions());
+  public @Nullable TraceState traceState() {
+    if (hub.getOptions().isTraceSampling()) {
+      if (traceState == null) {
+        final AtomicReference<User> userAtomicReference = new AtomicReference<>();
+        hub.configureScope(
+            scope -> {
+              userAtomicReference.set(scope.getUser());
+            });
+        this.traceState = new TraceState(this, userAtomicReference.get(), hub.getOptions());
+      }
+      return this.traceState;
+    } else {
+      return null;
     }
-    return this.traceState;
   }
 
   @Override
-  public @NotNull TraceStateHeader toTraceStateHeader() {
-    return TraceStateHeader.fromTraceState(
-        traceState(), hub.getOptions().getSerializer(), hub.getOptions().getLogger());
+  public @Nullable TraceStateHeader toTraceStateHeader() {
+    final TraceState traceState = traceState();
+    if (hub.getOptions().isTraceSampling() && traceState != null) {
+      return TraceStateHeader.fromTraceState(
+          traceState, hub.getOptions().getSerializer(), hub.getOptions().getLogger());
+    } else {
+      return null;
+    }
   }
 
   private boolean hasAllChildrenFinished() {

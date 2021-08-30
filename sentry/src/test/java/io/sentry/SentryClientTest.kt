@@ -67,6 +67,7 @@ class SentryClientTest {
             maxAttachmentSize = this@Fixture.maxAttachmentSize
             setTransportFactory(factory)
             release = "0.0.1"
+            isTraceSampling = true
         }
 
         init {
