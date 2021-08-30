@@ -1756,7 +1756,7 @@ public final class io/sentry/protocol/MeasurementValue {
 	public fun <init> (F)V
 }
 
-public final class io/sentry/protocol/Mechanism : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/Mechanism : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Thread;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
@@ -1766,7 +1766,9 @@ public final class io/sentry/protocol/Mechanism : io/sentry/IUnknownPropertiesCo
 	public fun getMeta ()Ljava/util/Map;
 	public fun getSynthetic ()Ljava/lang/Boolean;
 	public fun getType ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun isHandled ()Ljava/lang/Boolean;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setData (Ljava/util/Map;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setHandled (Ljava/lang/Boolean;)V
@@ -1774,6 +1776,24 @@ public final class io/sentry/protocol/Mechanism : io/sentry/IUnknownPropertiesCo
 	public fun setMeta (Ljava/util/Map;)V
 	public fun setSynthetic (Ljava/lang/Boolean;)V
 	public fun setType (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/Mechanism$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Mechanism;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Mechanism$JsonKeys {
+	public static final field DATA Ljava/lang/String;
+	public static final field DESCRIPTION Ljava/lang/String;
+	public static final field HANDLED Ljava/lang/String;
+	public static final field HELP_LINK Ljava/lang/String;
+	public static final field META Ljava/lang/String;
+	public static final field SYNTHETIC Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/Message : io/sentry/IUnknownPropertiesConsumer {
