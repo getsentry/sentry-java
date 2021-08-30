@@ -46,6 +46,7 @@ public interface ISpan {
    * @return a trace state
    */
   @NotNull
+  @ApiStatus.Experimental
   TraceState traceState();
 
   /**
@@ -54,6 +55,7 @@ public interface ISpan {
    * @return TraceStateHeader
    */
   @NotNull
+  @ApiStatus.Experimental
   TraceStateHeader toTraceStateHeader();
 
   /** Sets span timestamp marking this span as finished. */

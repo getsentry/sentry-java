@@ -3,9 +3,11 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Experimental
 public final class TraceState {
   private @NotNull SentryId traceId;
   private @NotNull String publicKey;

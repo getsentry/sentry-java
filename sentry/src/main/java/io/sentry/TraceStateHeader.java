@@ -7,9 +7,11 @@ import io.sentry.vendor.Base64;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
+@ApiStatus.Experimental
 public final class TraceStateHeader {
   public static final String TRACE_STATE_HEADER = "tracestate";
 

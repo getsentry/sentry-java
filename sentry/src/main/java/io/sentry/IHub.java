@@ -270,6 +270,7 @@ public interface IHub {
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction
+   * @param traceState the trace state
    * @param hint the hint
    * @return transaction's id
    */
@@ -291,6 +292,7 @@ public interface IHub {
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction
+   * @param traceState the trace state
    * @return transaction's id
    */
   @ApiStatus.Internal
