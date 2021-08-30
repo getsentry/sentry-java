@@ -1,7 +1,15 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>```json { "debug_meta": { "images": [], "sdk_info": { "sdk_name": "iOS", "version_major": 10,
  * "version_minor": 3, "version_patchlevel": 0 } } } ```
  */
-public final class DebugMeta implements IUnknownPropertiesConsumer {
+public final class DebugMeta implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
   /** Information about the system SDK (e.g. iOS SDK). */
   private @Nullable SdkInfo sdkInfo;
   /** List of debug information files (debug images). */
@@ -48,5 +56,80 @@ public final class DebugMeta implements IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  // JsonKeys
+
+  public static final class JsonKeys {
+    public static final String SDK_INFO = "sdk_info";
+    public static final String IMAGES = "images";
+  }
+
+  // JsonUnknown
+
+  @Override
+  public @Nullable Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  // JsonSerializable
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (sdkInfo != null) {
+      writer.name(JsonKeys.SDK_INFO).value(logger, sdkInfo);
+    }
+    if (images != null) {
+      writer.name(JsonKeys.IMAGES).value(logger, images);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  // JsonDeserializer
+
+  public static final class Deserializer implements JsonDeserializer<DebugMeta> {
+    @Override
+    public @NotNull DebugMeta deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+
+      DebugMeta debugMeta = new DebugMeta();
+      Map<String, Object> unknown = null;
+
+      reader.beginObject();
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.SDK_INFO:
+            debugMeta.sdkInfo = new SdkInfo.Deserializer().deserialize(reader, logger);
+            break;
+          case JsonKeys.IMAGES:
+            debugMeta.images = reader.nextList(logger, new DebugImage.Deserializer());
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.hasNext());
+      reader.endObject();
+
+      debugMeta.setUnknown(unknown);
+      return debugMeta;
+    }
   }
 }

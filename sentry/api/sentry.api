@@ -1513,7 +1513,7 @@ public final class io/sentry/protocol/Contexts : java/util/concurrent/Concurrent
 	public fun setTrace (Lio/sentry/SpanContext;)V
 }
 
-public final class io/sentry/protocol/DebugImage : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/DebugImage : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getArch ()Ljava/lang/String;
@@ -1524,7 +1524,9 @@ public final class io/sentry/protocol/DebugImage : io/sentry/IUnknownPropertiesC
 	public fun getImageAddr ()Ljava/lang/String;
 	public fun getImageSize ()Ljava/lang/Long;
 	public fun getType ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getUuid ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setArch (Ljava/lang/String;)V
 	public fun setCodeFile (Ljava/lang/String;)V
 	public fun setCodeId (Ljava/lang/String;)V
@@ -1534,16 +1536,51 @@ public final class io/sentry/protocol/DebugImage : io/sentry/IUnknownPropertiesC
 	public fun setImageSize (J)V
 	public fun setImageSize (Ljava/lang/Long;)V
 	public fun setType (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUuid (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/DebugMeta : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/DebugImage$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/DebugImage;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/DebugImage$JsonKeys {
+	public static final field ARCH Ljava/lang/String;
+	public static final field CODE_FILE Ljava/lang/String;
+	public static final field CODE_ID Ljava/lang/String;
+	public static final field DEBUG_FILE Ljava/lang/String;
+	public static final field DEBUG_ID Ljava/lang/String;
+	public static final field IMAGE_ADDR Ljava/lang/String;
+	public static final field IMAGE_SIZE Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public static final field UUID Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/DebugMeta : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getImages ()Ljava/util/List;
 	public fun getSdkInfo ()Lio/sentry/protocol/SdkInfo;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setImages (Ljava/util/List;)V
 	public fun setSdkInfo (Lio/sentry/protocol/SdkInfo;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/DebugMeta$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/DebugMeta;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/DebugMeta$JsonKeys {
+	public static final field IMAGES Ljava/lang/String;
+	public static final field SDK_INFO Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -1809,17 +1846,34 @@ public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesCons
 	public fun setUrl (Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/SdkInfo : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/SdkInfo : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getSdkName ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersionMajor ()Ljava/lang/Integer;
 	public fun getVersionMinor ()Ljava/lang/Integer;
 	public fun getVersionPatchlevel ()Ljava/lang/Integer;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setSdkName (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersionMajor (Ljava/lang/Integer;)V
 	public fun setVersionMinor (Ljava/lang/Integer;)V
 	public fun setVersionPatchlevel (Ljava/lang/Integer;)V
+}
+
+public final class io/sentry/protocol/SdkInfo$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SdkInfo;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SdkInfo$JsonKeys {
+	public static final field SDK_NAME Ljava/lang/String;
+	public static final field VERSION_MAJOR Ljava/lang/String;
+	public static final field VERSION_MINOR Ljava/lang/String;
+	public static final field VERSION_PATCHLEVEL Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/SdkVersion : io/sentry/IUnknownPropertiesConsumer {

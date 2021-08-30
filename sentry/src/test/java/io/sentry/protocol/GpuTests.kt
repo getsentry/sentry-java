@@ -14,7 +14,7 @@ import org.junit.Test
 class GpuSerializationTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut() = Gpu().apply {
             name = "d623a6b5-e1ab-4402-931b-c06f5a43a5ae"

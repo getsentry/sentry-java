@@ -16,7 +16,7 @@ import org.junit.Test
 class UserFeedbackSerializationTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut(): UserFeedback {
             val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")

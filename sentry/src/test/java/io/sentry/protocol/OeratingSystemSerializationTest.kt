@@ -13,7 +13,7 @@ import org.junit.Test
 
 class OperatingSystemSerializationTest {
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut() = OperatingSystem().apply {
             name = "686a11a8-eae7-4393-aa10-a1368d523cb2"

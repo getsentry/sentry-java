@@ -6,9 +6,12 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.App
 import io.sentry.protocol.Browser
+import io.sentry.protocol.DebugImage
+import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.Device
 import io.sentry.protocol.Gpu
 import io.sentry.protocol.OperatingSystem
+import io.sentry.protocol.SdkInfo
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryRuntime
 import io.sentry.protocol.SentryStackFrame
@@ -37,14 +40,17 @@ class JsonUnknownSerializationTest(
         fun data(): Collection<Array<Any>> {
             val app = givenJsonUnknown(App())
             val browser = givenJsonUnknown(Browser())
+            val debugImage = givenJsonUnknown(DebugImage())
+            val debugMeta = givenJsonUnknown(DebugMeta())
             val device = givenJsonUnknown(Device())
             val gpu = givenJsonUnknown(Gpu())
             val operatingSystem = givenJsonUnknown(OperatingSystem())
+            val sdkInfo = givenJsonUnknown(SdkInfo())
             val sentryRuntime = givenJsonUnknown(SentryRuntime())
-            val spanContext = givenJsonUnknown(SpanContext("c2fb8fee2e2b49758bcb67cda0f713c7"))
             val sentryStackFrame = givenJsonUnknown(SentryStackFrame())
             val sentryStackTrace = givenJsonUnknown(SentryStackTrace())
             val sentryThread = givenJsonUnknown(SentryThread())
+            val spanContext = givenJsonUnknown(SpanContext("c2fb8fee2e2b49758bcb67cda0f713c7"))
             val userFeedback = givenJsonUnknown(UserFeedback(SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")))
 
             // Same instance for first and second param, so we cann access both JsonUnknown and
@@ -53,14 +59,17 @@ class JsonUnknownSerializationTest(
             return listOf(
                 arrayOf(app, app, App.Deserializer()::deserialize),
                 arrayOf(browser, browser, Browser.Deserializer()::deserialize),
+                arrayOf(debugImage, debugImage, DebugImage.Deserializer()::deserialize),
+                arrayOf(debugMeta, debugMeta, DebugMeta.Deserializer()::deserialize),
                 arrayOf(device, device, Device.Deserializer()::deserialize),
                 arrayOf(gpu, gpu, Gpu.Deserializer()::deserialize),
                 arrayOf(operatingSystem, operatingSystem, OperatingSystem.Deserializer()::deserialize),
+                arrayOf(sdkInfo, sdkInfo, SdkInfo.Deserializer()::deserialize),
                 arrayOf(sentryRuntime, sentryRuntime, SentryRuntime.Deserializer()::deserialize),
-                arrayOf(spanContext, spanContext, SpanContext.Deserializer()::deserialize),
                 arrayOf(sentryStackFrame, sentryStackFrame, SentryStackFrame.Deserializer()::deserialize),
                 arrayOf(sentryStackTrace, sentryStackTrace, SentryStackTrace.Deserializer()::deserialize),
                 arrayOf(sentryThread, sentryThread, SentryThread.Deserializer()::deserialize),
+                arrayOf(spanContext, spanContext, SpanContext.Deserializer()::deserialize),
                 arrayOf(userFeedback, userFeedback, UserFeedback.Deserializer()::deserialize)
             )
         }
