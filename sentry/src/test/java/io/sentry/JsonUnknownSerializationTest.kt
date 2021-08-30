@@ -13,6 +13,7 @@ import io.sentry.protocol.Gpu
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SdkInfo
+import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryRuntime
 import io.sentry.protocol.SentryStackFrame
@@ -48,6 +49,7 @@ class JsonUnknownSerializationTest(
             val mechanism = givenJsonUnknown(Mechanism())
             val operatingSystem = givenJsonUnknown(OperatingSystem())
             val sdkInfo = givenJsonUnknown(SdkInfo())
+            val sentryException = givenJsonUnknown(SentryException())
             val sentryRuntime = givenJsonUnknown(SentryRuntime())
             val sentryStackFrame = givenJsonUnknown(SentryStackFrame())
             val sentryStackTrace = givenJsonUnknown(SentryStackTrace())
@@ -68,6 +70,7 @@ class JsonUnknownSerializationTest(
                 arrayOf(mechanism, mechanism, Mechanism.Deserializer()::deserialize),
                 arrayOf(operatingSystem, operatingSystem, OperatingSystem.Deserializer()::deserialize),
                 arrayOf(sdkInfo, sdkInfo, SdkInfo.Deserializer()::deserialize),
+                arrayOf(sentryException, sentryException, SentryException.Deserializer()::deserialize),
                 arrayOf(sentryRuntime, sentryRuntime, SentryRuntime.Deserializer()::deserialize),
                 arrayOf(sentryStackFrame, sentryStackFrame, SentryStackFrame.Deserializer()::deserialize),
                 arrayOf(sentryStackTrace, sentryStackTrace, SentryStackTrace.Deserializer()::deserialize),
