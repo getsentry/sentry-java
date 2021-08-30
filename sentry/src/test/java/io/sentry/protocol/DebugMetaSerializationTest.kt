@@ -14,7 +14,7 @@ import org.junit.Test
 class DebugMetaSerializationTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut() = DebugMeta().apply {
             sdkInfo = SdkInfo().apply {

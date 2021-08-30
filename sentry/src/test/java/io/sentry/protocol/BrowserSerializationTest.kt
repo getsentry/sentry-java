@@ -14,7 +14,7 @@ import org.junit.Test
 class BrowserSerializationTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut() = Browser().apply {
             name = "e1c723db-7408-4043-baa7-f4e96234e5dc"

@@ -14,7 +14,7 @@ import org.junit.Test
 class SentryRuntimeSerializationTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut() = SentryRuntime().apply {
             name = "4ed019c4-9af9-43e0-830e-bfde9fe4461c"

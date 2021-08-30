@@ -14,7 +14,7 @@ import org.junit.Test
 class SdkInfoSerializationTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut() = SdkInfo().apply {
             sdkName = "182c4407-c1e1-4427-9b5a-ad2e22b1046a"

@@ -15,7 +15,7 @@ import org.junit.Test
 class AppSerializationTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut() = App().apply {
             appIdentifier = "3b7a3313-53b4-43f4-a6a1-7a7c36a9b0db"

@@ -14,7 +14,7 @@ import org.junit.Test
 class DebugImageSerializationTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut() = DebugImage().apply {
             uuid = "8994027e-1cd9-4be8-b611-88ce08cf16e6"
