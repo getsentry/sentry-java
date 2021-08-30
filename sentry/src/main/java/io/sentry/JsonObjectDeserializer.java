@@ -1,10 +1,8 @@
 package io.sentry;
 
-import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -78,25 +76,6 @@ public final class JsonObjectDeserializer {
     } else {
       return null;
     }
-  }
-
-  public <T> List<T> deserializeList(
-      @NotNull JsonObjectReader reader,
-      @NotNull ILogger logger,
-      @NotNull JsonDeserializer<T> deserializer)
-      throws IOException {
-    reader.beginArray();
-    List<T> list = new ArrayList<>();
-    do {
-      try {
-        list.add(deserializer.deserialize(reader, logger));
-      } catch (Exception e) {
-        logger.log(SentryLevel.ERROR, "Failed to deserialize object in list.", e);
-        e.printStackTrace();
-      }
-    } while (reader.peek() == JsonToken.BEGIN_OBJECT);
-    reader.endArray();
-    return list;
   }
 
   // Helper
