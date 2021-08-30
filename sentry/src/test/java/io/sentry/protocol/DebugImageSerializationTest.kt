@@ -1,7 +1,6 @@
 package io.sentry.protocol
 
 import com.nhaarman.mockitokotlin2.mock
-import io.sentry.DateUtils
 import io.sentry.FileFromResources
 import io.sentry.ILogger
 import io.sentry.JsonObjectReader
@@ -12,33 +11,35 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class AppSerializationTest {
+class DebugImageSerializationTest {
 
     private class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = App().apply {
-            appIdentifier = "3b7a3313-53b4-43f4-a6a1-7a7c36a9b0db"
-            appStartTime = DateUtils.getDateTime("1918-11-17T07:46:04.000Z")
-            deviceAppHash = "3d1fcf36-2c25-4378-bdf8-1e65239f1df4"
-            buildType = "d78c56cd-eb0f-4213-8899-cd10ddf20763"
-            appName = "873656fd-f620-4edf-bb7a-a0d13325dba0"
-            appVersion = "801aab22-ad4b-44fb-995c-bacb5387e20c"
-            appBuild = "660f0cde-eedb-49dc-a973-8aa1c04f4a28"
+        fun getSut() = DebugImage().apply {
+            uuid = "8994027e-1cd9-4be8-b611-88ce08cf16e6"
+            type = "fd6e053b-a7fe-4754-916e-bfb3ab77177d"
+            debugId = "8c653f5a-3418-4823-ba91-29a84c9c1235"
+            debugFile = "55cc15dd-51f3-4cad-803c-6fd90eac21f6"
+            codeId = "01230ece-f729-4af4-8b48-df74700aa4bf"
+            codeFile = "415c8995-1cb4-4bed-ba5c-5b3d6ba1ad47"
+            imageAddr = "8a258c81-641d-4e54-b06e-a0f56b1ee2ef"
+            imageSize = -7905338721846826571L
+            arch = "d00d5bea-fb5c-43c9-85f0-dc1350d957a4"
         }
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/app.json")
+        val expected = sanitizedFile("gson/debug_image.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/app.json")
+        val expectedJson = sanitizedFile("gson/debug_image.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
@@ -59,8 +60,8 @@ class AppSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): App {
+    private fun deserialize(json: String): DebugImage {
         val reader = JsonObjectReader(StringReader(json))
-        return App.Deserializer().deserialize(reader, fixture.logger)
+        return DebugImage.Deserializer().deserialize(reader, fixture.logger)
     }
 }

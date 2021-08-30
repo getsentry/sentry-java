@@ -21,7 +21,7 @@ import org.junit.Test
  */
 class JsonUnknownSerializationTest {
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getApp() = givenJsonUnknown(App())
         fun getBrowser() = givenJsonUnknown(Browser())

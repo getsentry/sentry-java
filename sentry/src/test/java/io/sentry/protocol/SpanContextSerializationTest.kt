@@ -19,7 +19,7 @@ import org.junit.Test
 class SpanContextSerializationTest {
 
     private class Fixture {
-        var logger: ILogger = mock()
+        val logger = mock<ILogger>()
 
         fun getSut() = SpanContext(
             SentryId("afcb46b1140ade5187c4bbb5daa804df"),
