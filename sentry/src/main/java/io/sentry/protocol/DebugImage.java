@@ -1,6 +1,14 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +49,7 @@ import org.jetbrains.annotations.Nullable;
  * names. The Java SDK integrations assign this file a unique identifier, which has to be included
  * in the list of images.
  */
-public final class DebugImage implements IUnknownPropertiesConsumer {
+public final class DebugImage implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
 
   /**
    * The unique UUID of the image.
@@ -237,5 +245,129 @@ public final class DebugImage implements IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  // JsonKeys
+
+  public static final class JsonKeys {
+    public static final String UUID = "uuid";
+    public static final String TYPE = "type";
+    public static final String DEBUG_ID = "debug_id";
+    public static final String DEBUG_FILE = "debug_file";
+    public static final String CODE_ID = "code_id";
+    public static final String CODE_FILE = "code_file";
+    public static final String IMAGE_ADDR = "image_addr";
+    public static final String IMAGE_SIZE = "image_size";
+    public static final String ARCH = "arch";
+  }
+
+  // JsonUnknown
+
+  @Override
+  public @Nullable Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  // JsonSerializable
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (uuid != null) {
+      writer.name(JsonKeys.UUID).value(uuid);
+    }
+    if (type != null) {
+      writer.name(JsonKeys.TYPE).value(type);
+    }
+    if (debugId != null) {
+      writer.name(JsonKeys.DEBUG_ID).value(debugId);
+    }
+    if (debugFile != null) {
+      writer.name(JsonKeys.DEBUG_FILE).value(debugFile);
+    }
+    if (codeId != null) {
+      writer.name(JsonKeys.CODE_ID).value(codeId);
+    }
+    if (codeFile != null) {
+      writer.name(JsonKeys.CODE_FILE).value(codeFile);
+    }
+    if (imageAddr != null) {
+      writer.name(JsonKeys.IMAGE_ADDR).value(imageAddr);
+    }
+    if (imageSize != null) {
+      writer.name(JsonKeys.IMAGE_SIZE).value(imageSize);
+    }
+    if (arch != null) {
+      writer.name(JsonKeys.ARCH).value(arch);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  // JsonDeserializer
+
+  public static final class Deserializer implements JsonDeserializer<DebugImage> {
+    @Override
+    public @NotNull DebugImage deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+
+      DebugImage debugImage = new DebugImage();
+      Map<String, Object> unknown = null;
+
+      reader.beginObject();
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.UUID:
+            debugImage.uuid = reader.nextStringOrNull();
+            break;
+          case JsonKeys.TYPE:
+            debugImage.type = reader.nextStringOrNull();
+            break;
+          case JsonKeys.DEBUG_ID:
+            debugImage.debugId = reader.nextStringOrNull();
+            break;
+          case JsonKeys.DEBUG_FILE:
+            debugImage.debugFile = reader.nextStringOrNull();
+            break;
+          case JsonKeys.CODE_ID:
+            debugImage.codeId = reader.nextStringOrNull();
+            break;
+          case JsonKeys.CODE_FILE:
+            debugImage.codeFile = reader.nextStringOrNull();
+            break;
+          case JsonKeys.IMAGE_ADDR:
+            debugImage.imageAddr = reader.nextStringOrNull();
+            break;
+          case JsonKeys.IMAGE_SIZE:
+            debugImage.imageSize = reader.nextLongOrNull();
+            break;
+          case JsonKeys.ARCH:
+            debugImage.arch = reader.nextStringOrNull();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.hasNext());
+      reader.endObject();
+
+      debugImage.setUnknown(unknown);
+      return debugImage;
+    }
   }
 }
