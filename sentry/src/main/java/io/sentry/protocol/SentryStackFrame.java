@@ -1,9 +1,18 @@
 package io.sentry.protocol;
 
 import com.google.gson.annotations.SerializedName;
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,7 +23,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>Each object should contain **at least** a `filename`, `function` or `instruction_addr`
  * attribute. All values are optional, but recommended.
  */
-public final class SentryStackFrame implements IUnknownPropertiesConsumer {
+public final class SentryStackFrame
+    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
   /** Source code leading up to `lineno`. */
   private @Nullable List<String> preContext;
   /** Source code of the lines after `lineno`. */
@@ -268,4 +278,165 @@ public final class SentryStackFrame implements IUnknownPropertiesConsumer {
   public void setRawFunction(final @Nullable String rawFunction) {
     this.rawFunction = rawFunction;
   }
+
+  // region json
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class JsonKeys {
+    public static final String FILENAME = "filename";
+    public static final String FUNCTION = "function";
+    public static final String MODULE = "module";
+    public static final String LINENO = "lineno";
+    public static final String COLNO = "colno";
+    public static final String ABS_PATH = "abs_path";
+    public static final String CONTEXT_LINE = "context_line";
+    public static final String IN_APP = "in_app";
+    public static final String PACKAGE = "package";
+    public static final String NATIVE = "native";
+    public static final String PLATFORM = "platform";
+    public static final String IMAGE_ADDR = "image_addr";
+    public static final String SYMBOL_ADDR = "symbol_addr";
+    public static final String INSTRUCTION_ADDR = "instruction_addr";
+    public static final String RAW_FUNCTION = "raw_function";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (filename != null) {
+      writer.name(JsonKeys.FILENAME).value(filename);
+    }
+    if (function != null) {
+      writer.name(JsonKeys.FUNCTION).value(function);
+    }
+    if (module != null) {
+      writer.name(JsonKeys.MODULE).value(module);
+    }
+    if (lineno != null) {
+      writer.name(JsonKeys.LINENO).value(lineno);
+    }
+    if (colno != null) {
+      writer.name(JsonKeys.COLNO).value(colno);
+    }
+    if (absPath != null) {
+      writer.name(JsonKeys.ABS_PATH).value(absPath);
+    }
+    if (contextLine != null) {
+      writer.name(JsonKeys.CONTEXT_LINE).value(contextLine);
+    }
+    if (inApp != null) {
+      writer.name(JsonKeys.IN_APP).value(inApp);
+    }
+    if (_package != null) {
+      writer.name(JsonKeys.PACKAGE).value(_package);
+    }
+    if (_native != null) {
+      writer.name(JsonKeys.NATIVE).value(_native);
+    }
+    if (platform != null) {
+      writer.name(JsonKeys.PLATFORM).value(platform);
+    }
+    if (imageAddr != null) {
+      writer.name(JsonKeys.IMAGE_ADDR).value(imageAddr);
+    }
+    if (symbolAddr != null) {
+      writer.name(JsonKeys.SYMBOL_ADDR).value(symbolAddr);
+    }
+    if (instructionAddr != null) {
+      writer.name(JsonKeys.INSTRUCTION_ADDR).value(instructionAddr);
+    }
+    if (rawFunction != null) {
+      writer.name(JsonKeys.RAW_FUNCTION).value(rawFunction);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  public static final class Deserializer implements JsonDeserializer<SentryStackFrame> {
+    @Override
+    public @NotNull SentryStackFrame deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      SentryStackFrame sentryStackFrame = new SentryStackFrame();
+      Map<String, Object> unknown = null;
+      reader.beginObject();
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.FILENAME:
+            sentryStackFrame.filename = reader.nextStringOrNull();
+            break;
+          case JsonKeys.FUNCTION:
+            sentryStackFrame.function = reader.nextStringOrNull();
+            break;
+          case JsonKeys.MODULE:
+            sentryStackFrame.module = reader.nextStringOrNull();
+            break;
+          case JsonKeys.LINENO:
+            sentryStackFrame.lineno = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.COLNO:
+            sentryStackFrame.colno = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.ABS_PATH:
+            sentryStackFrame.absPath = reader.nextStringOrNull();
+            break;
+          case JsonKeys.CONTEXT_LINE:
+            sentryStackFrame.contextLine = reader.nextStringOrNull();
+            break;
+          case JsonKeys.IN_APP:
+            sentryStackFrame.inApp = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.PACKAGE:
+            sentryStackFrame._package = reader.nextStringOrNull();
+            break;
+          case JsonKeys.NATIVE:
+            sentryStackFrame._native = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.PLATFORM:
+            sentryStackFrame.platform = reader.nextStringOrNull();
+            break;
+          case JsonKeys.IMAGE_ADDR:
+            sentryStackFrame.imageAddr = reader.nextStringOrNull();
+            break;
+          case JsonKeys.SYMBOL_ADDR:
+            sentryStackFrame.symbolAddr = reader.nextStringOrNull();
+            break;
+          case JsonKeys.INSTRUCTION_ADDR:
+            sentryStackFrame.instructionAddr = reader.nextStringOrNull();
+            break;
+          case JsonKeys.RAW_FUNCTION:
+            sentryStackFrame.rawFunction = reader.nextStringOrNull();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      sentryStackFrame.setUnknown(unknown);
+      reader.endObject();
+      return sentryStackFrame;
+    }
+  }
+
+  // endregion
 }
