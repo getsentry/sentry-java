@@ -1,12 +1,20 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 /**
  * Http request information.
@@ -44,7 +52,7 @@ import org.jetbrains.annotations.TestOnly;
  * csrftoken=u32t4o3tb3gg43; _gat=1;", "headers": { "content-type": "text/html" }, "env": {
  * "REMOTE_ADDR": "192.168.0.1" } } } ```
  */
-public final class Request implements IUnknownPropertiesConsumer {
+public final class Request implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
   /**
    * The URL of the request if available.
    *
@@ -177,20 +185,132 @@ public final class Request implements IUnknownPropertiesConsumer {
     this.other = CollectionUtils.newConcurrentHashMap(other);
   }
 
-  /**
-   * the Request's unknown fields
-   *
-   * @return the unknown map
-   */
-  @TestOnly
-  @Nullable
-  Map<String, Object> getUnknown() {
-    return unknown;
-  }
-
   @ApiStatus.Internal
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
+
+  // region json
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class JsonKeys {
+    public static final String URL = "url";
+    public static final String METHOD = "method";
+    public static final String QUERY_STRING = "query_string";
+    public static final String DATA = "data";
+    public static final String COOKIES = "cookies";
+    public static final String HEADERS = "headers";
+    public static final String ENV = "env";
+    public static final String OTHER = "other";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (url != null) {
+      writer.name(JsonKeys.URL).value(url);
+    }
+    if (method != null) {
+      writer.name(JsonKeys.METHOD).value(method);
+    }
+    if (queryString != null) {
+      writer.name(JsonKeys.QUERY_STRING).value(queryString);
+    }
+    if (data != null) {
+      writer.name(JsonKeys.DATA).value(logger, data);
+    }
+    if (cookies != null) {
+      writer.name(JsonKeys.COOKIES).value(cookies);
+    }
+    if (headers != null) {
+      writer.name(JsonKeys.HEADERS).value(logger, headers);
+    }
+    if (env != null) {
+      writer.name(JsonKeys.ENV).value(logger, env);
+    }
+    if (other != null) {
+      writer.name(JsonKeys.OTHER).value(logger, other);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  @SuppressWarnings("unchecked")
+  public static final class Deserializer implements JsonDeserializer<Request> {
+    @Override
+    public @NotNull Request deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      reader.beginObject();
+      Request request = new Request();
+      Map<String, Object> unknown = null;
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.URL:
+            request.url = reader.nextStringOrNull();
+            break;
+          case JsonKeys.METHOD:
+            request.method = reader.nextStringOrNull();
+            break;
+          case JsonKeys.QUERY_STRING:
+            request.queryString = reader.nextStringOrNull();
+            break;
+          case JsonKeys.DATA:
+            request.data = reader.nextObjectOrNull();
+            break;
+          case JsonKeys.COOKIES:
+            request.cookies = reader.nextStringOrNull();
+            break;
+          case JsonKeys.HEADERS:
+            Map<String, String> deserializedHeaders =
+                (Map<String, String>) reader.nextObjectOrNull();
+            if (deserializedHeaders != null) {
+              request.headers = CollectionUtils.newConcurrentHashMap(deserializedHeaders);
+            }
+            break;
+          case JsonKeys.ENV:
+            Map<String, String> deserializedEnv = (Map<String, String>) reader.nextObjectOrNull();
+            if (deserializedEnv != null) {
+              request.env = CollectionUtils.newConcurrentHashMap(deserializedEnv);
+            }
+            break;
+          case JsonKeys.OTHER:
+            Map<String, String> deserializedOther = (Map<String, String>) reader.nextObjectOrNull();
+            if (deserializedOther != null) {
+              request.other = CollectionUtils.newConcurrentHashMap(deserializedOther);
+            }
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      request.setUnknown(unknown);
+      reader.endObject();
+      return request;
+    }
+  }
+
+  // endregion
 }

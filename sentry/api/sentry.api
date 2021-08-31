@@ -1844,7 +1844,7 @@ public final class io/sentry/protocol/OperatingSystem$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Request;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
@@ -1855,7 +1855,9 @@ public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesCons
 	public fun getMethod ()Ljava/lang/String;
 	public fun getOthers ()Ljava/util/Map;
 	public fun getQueryString ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getUrl ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setCookies (Ljava/lang/String;)V
 	public fun setData (Ljava/lang/Object;)V
 	public fun setEnvs (Ljava/util/Map;)V
@@ -1863,7 +1865,26 @@ public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesCons
 	public fun setMethod (Ljava/lang/String;)V
 	public fun setOthers (Ljava/util/Map;)V
 	public fun setQueryString (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUrl (Ljava/lang/String;)V
+}
+
+public final class io/sentry/protocol/Request$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Request;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Request$JsonKeys {
+	public static final field COOKIES Ljava/lang/String;
+	public static final field DATA Ljava/lang/String;
+	public static final field ENV Ljava/lang/String;
+	public static final field HEADERS Ljava/lang/String;
+	public static final field METHOD Ljava/lang/String;
+	public static final field OTHER Ljava/lang/String;
+	public static final field QUERY_STRING Ljava/lang/String;
+	public static final field URL Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/SdkInfo : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
