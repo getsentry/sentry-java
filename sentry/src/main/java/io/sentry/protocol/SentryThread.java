@@ -1,7 +1,16 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +29,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>```json { "threads": { "values": [ { "id": "0", "name": "main", "crashed": true, "stacktrace":
  * {} } ] } } ```
  */
-public final class SentryThread implements IUnknownPropertiesConsumer {
+public final class SentryThread
+    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
   private @Nullable Long id;
   private @Nullable Integer priority;
   private @Nullable String name;
@@ -182,4 +192,117 @@ public final class SentryThread implements IUnknownPropertiesConsumer {
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
   }
+  // region json
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class JsonKeys {
+    public static final String ID = "id";
+    public static final String PRIORITY = "priority";
+    public static final String NAME = "name";
+    public static final String STATE = "state";
+    public static final String CRASHED = "crashed";
+    public static final String CURRENT = "current";
+    public static final String DAEMON = "daemon";
+    public static final String STACKTRACE = "stacktrace";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (id != null) {
+      writer.name(JsonKeys.ID).value(id);
+    }
+    if (priority != null) {
+      writer.name(JsonKeys.PRIORITY).value(priority);
+    }
+    if (name != null) {
+      writer.name(JsonKeys.NAME).value(name);
+    }
+    if (state != null) {
+      writer.name(JsonKeys.STATE).value(state);
+    }
+    if (crashed != null) {
+      writer.name(JsonKeys.CRASHED).value(crashed);
+    }
+    if (current != null) {
+      writer.name(JsonKeys.CURRENT).value(current);
+    }
+    if (daemon != null) {
+      writer.name(JsonKeys.DAEMON).value(daemon);
+    }
+    if (stacktrace != null) {
+      writer.name(JsonKeys.STACKTRACE).value(logger, stacktrace);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  public static final class Deserializer implements JsonDeserializer<SentryThread> {
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull SentryThread deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      SentryThread sentryThread = new SentryThread();
+      Map<String, Object> unknown = null;
+      reader.beginObject();
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.ID:
+            sentryThread.id = reader.nextLongOrNull();
+            break;
+          case JsonKeys.PRIORITY:
+            sentryThread.priority = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.NAME:
+            sentryThread.name = reader.nextStringOrNull();
+            break;
+          case JsonKeys.STATE:
+            sentryThread.state = reader.nextStringOrNull();
+            break;
+          case JsonKeys.CRASHED:
+            sentryThread.crashed = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.CURRENT:
+            sentryThread.current = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.DAEMON:
+            sentryThread.daemon = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.STACKTRACE:
+            sentryThread.stacktrace =
+                new SentryStackTrace.Deserializer().deserialize(reader, logger);
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      sentryThread.setUnknown(unknown);
+      reader.endObject();
+      return sentryThread;
+    }
+  }
+
+  // endregion
 }

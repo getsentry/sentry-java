@@ -1,7 +1,15 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * This includes general exception values obtained from the operating system or runtime APIs, as
  * well as mechanism-specific values.
  */
-public final class Mechanism implements IUnknownPropertiesConsumer {
+public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
   private final transient @Nullable Thread thread;
   /**
    * Mechanism type (required).
@@ -137,5 +145,117 @@ public final class Mechanism implements IUnknownPropertiesConsumer {
   @Override
   public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  // JsonKeys
+
+  public static final class JsonKeys {
+    public static final String TYPE = "type";
+    public static final String DESCRIPTION = "description";
+    public static final String HELP_LINK = "help_link";
+    public static final String HANDLED = "handled";
+    public static final String SYNTHETIC = "synthetic";
+    public static final String META = "meta";
+    public static final String DATA = "data";
+  }
+
+  // JsonUnknown
+
+  @Override
+  public @Nullable Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  // JsonSerializable
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (type != null) {
+      writer.name(JsonKeys.TYPE).value(type);
+    }
+    if (description != null) {
+      writer.name(JsonKeys.DESCRIPTION).value(description);
+    }
+    if (helpLink != null) {
+      writer.name(JsonKeys.HELP_LINK).value(helpLink);
+    }
+    if (handled != null) {
+      writer.name(JsonKeys.HANDLED).value(handled);
+    }
+    if (synthetic != null) {
+      writer.name(JsonKeys.SYNTHETIC).value(synthetic);
+    }
+    if (meta != null) {
+      writer.name(JsonKeys.META).value(logger, meta);
+    }
+    if (data != null) {
+      writer.name(JsonKeys.DATA).value(logger, data);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  // JsonDeserializer
+
+  public static final class Deserializer implements JsonDeserializer<Mechanism> {
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull Mechanism deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      Mechanism mechanism = new Mechanism();
+      Map<String, Object> unknown = null;
+      reader.beginObject();
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.TYPE:
+            mechanism.type = reader.nextStringOrNull();
+            break;
+          case JsonKeys.DESCRIPTION:
+            mechanism.description = reader.nextStringOrNull();
+            break;
+          case JsonKeys.HELP_LINK:
+            mechanism.helpLink = reader.nextStringOrNull();
+            break;
+          case JsonKeys.HANDLED:
+            mechanism.handled = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.SYNTHETIC:
+            mechanism.synthetic = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.META:
+            mechanism.meta =
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, Object>) reader.nextObjectOrNull());
+            break;
+          case JsonKeys.DATA:
+            mechanism.data =
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, Object>) reader.nextObjectOrNull());
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.hasNext());
+      reader.endObject();
+      mechanism.setUnknown(unknown);
+      return mechanism;
+    }
   }
 }

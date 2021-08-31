@@ -1,8 +1,18 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
+import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,7 +47,8 @@ import org.jetbrains.annotations.Nullable;
  * "0x7fff5bf346c0"}, ], "registers": { "rip": "0x00007ff6eef54be2", "rsp": "0x0000003b710cd9e0" } }
  * ```
  */
-public final class SentryStackTrace implements IUnknownPropertiesConsumer {
+public final class SentryStackTrace
+    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
   /**
    * Required. A non-empty list of stack frames. The list is ordered from caller to callee, or
    * oldest to youngest. The last frame is the one creating the exception.
@@ -105,4 +116,84 @@ public final class SentryStackTrace implements IUnknownPropertiesConsumer {
   public void setSnapshot(final @Nullable Boolean snapshot) {
     this.snapshot = snapshot;
   }
+
+  // region json
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class JsonKeys {
+    public static final String FRAMES = "frames";
+    public static final String REGISTERS = "registers";
+    public static final String SNAPSHOT = "snapshot";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (frames != null) {
+      writer.name(JsonKeys.FRAMES).value(logger, frames);
+    }
+    if (registers != null) {
+      writer.name(JsonKeys.REGISTERS).value(logger, registers);
+    }
+    if (snapshot != null) {
+      writer.name(JsonKeys.SNAPSHOT).value(snapshot);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  public static final class Deserializer implements JsonDeserializer<SentryStackTrace> {
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull SentryStackTrace deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      SentryStackTrace sentryStackTrace = new SentryStackTrace();
+      Map<String, Object> unknown = null;
+      reader.beginObject();
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.FRAMES:
+            sentryStackTrace.frames = reader.nextList(logger, new SentryStackFrame.Deserializer());
+            break;
+          case JsonKeys.REGISTERS:
+            sentryStackTrace.registers =
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, String>) reader.nextObjectOrNull());
+            break;
+          case JsonKeys.SNAPSHOT:
+            sentryStackTrace.snapshot = reader.nextBooleanOrNull();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      sentryStackTrace.setUnknown(unknown);
+      reader.endObject();
+      return sentryStackTrace;
+    }
+  }
+
+  // endregion
 }
