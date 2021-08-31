@@ -21,8 +21,7 @@
     ],
     "registers":
     {
-        "160eef70-2b1f-4ad8-8449-902bf7bef11b": "6000b565-2a55-4337-99be-edf8a2668d1b",
-        "e7a3db0b-8cad-4eab-8315-03d5dc2edcd9": "8bba0819-ac58-4e5c-bec7-32e1033b7bdf"
+        "160eef70-2b1f-4ad8-8449-902bf7bef11b": "6000b565-2a55-4337-99be-edf8a2668d1b"
     },
     "snapshot": true
 }
