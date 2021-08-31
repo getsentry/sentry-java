@@ -1514,7 +1514,7 @@ public final class io/sentry/protocol/Browser$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMap {
+public final class io/sentry/protocol/Contexts : java/util/concurrent/ConcurrentHashMap, io/sentry/JsonSerializable {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Contexts;)V
 	public fun getApp ()Lio/sentry/protocol/App;
@@ -1524,6 +1524,7 @@ public final class io/sentry/protocol/Contexts : java/util/concurrent/Concurrent
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getRuntime ()Lio/sentry/protocol/SentryRuntime;
 	public fun getTrace ()Lio/sentry/SpanContext;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setApp (Lio/sentry/protocol/App;)V
 	public fun setBrowser (Lio/sentry/protocol/Browser;)V
 	public fun setDevice (Lio/sentry/protocol/Device;)V
@@ -1531,6 +1532,12 @@ public final class io/sentry/protocol/Contexts : java/util/concurrent/Concurrent
 	public fun setOperatingSystem (Lio/sentry/protocol/OperatingSystem;)V
 	public fun setRuntime (Lio/sentry/protocol/SentryRuntime;)V
 	public fun setTrace (Lio/sentry/SpanContext;)V
+}
+
+public final class io/sentry/protocol/Contexts$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Contexts;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/protocol/DebugImage : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {

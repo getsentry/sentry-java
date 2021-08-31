@@ -7,6 +7,7 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.SpanContext;
 import io.sentry.util.Objects;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -112,6 +113,34 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
+    App app = getApp();
+    if (app != null) {
+      writer.name(App.TYPE).value(logger, app);
+    }
+    Browser browser = getBrowser();
+    if (browser != null) {
+      writer.name(Browser.TYPE).value(logger, browser);
+    }
+    Device device = getDevice();
+    if (device != null) {
+      writer.name(Device.TYPE).value(logger, device);
+    }
+    OperatingSystem os = getOperatingSystem();
+    if (os != null) {
+      writer.name(OperatingSystem.TYPE).value(logger, os);
+    }
+    SentryRuntime runtime = getRuntime();
+    if (runtime != null) {
+      writer.name(SentryRuntime.TYPE).value(logger, runtime);
+    }
+    Gpu gpu = getGpu();
+    if (gpu != null) {
+      writer.name(Gpu.TYPE).value(logger, gpu);
+    }
+    SpanContext trace = getTrace();
+    if (trace != null) {
+      writer.name(SpanContext.TYPE).value(logger, trace);
+    }
     writer.endObject();
   }
 
@@ -120,7 +149,39 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
     @Override
     public @NotNull Contexts deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
         throws Exception {
-      return new Contexts();
+      Contexts contexts = new Contexts();
+      reader.beginObject();
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case App.TYPE:
+            contexts.setApp(new App.Deserializer().deserialize(reader, logger));
+            break;
+          case Browser.TYPE:
+            contexts.setBrowser(new Browser.Deserializer().deserialize(reader, logger));
+            break;
+          case Device.TYPE:
+            contexts.setDevice(new Device.Deserializer().deserialize(reader, logger));
+            break;
+          case OperatingSystem.TYPE:
+            contexts.setOperatingSystem(
+                new OperatingSystem.Deserializer().deserialize(reader, logger));
+            break;
+          case SentryRuntime.TYPE:
+            contexts.setRuntime(new SentryRuntime.Deserializer().deserialize(reader, logger));
+            break;
+          case Gpu.TYPE:
+            contexts.setGpu(new Gpu.Deserializer().deserialize(reader, logger));
+            break;
+          case SpanContext.TYPE:
+            contexts.setTrace(new SpanContext.Deserializer().deserialize(reader, logger));
+            break;
+          default:
+            break;
+        }
+      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      reader.endObject();
+      return contexts;
     }
   }
 
