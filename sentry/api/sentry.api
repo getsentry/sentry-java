@@ -1917,7 +1917,7 @@ public final class io/sentry/protocol/SdkInfo$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SdkVersion : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/SdkVersion : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
@@ -1926,10 +1926,27 @@ public final class io/sentry/protocol/SdkVersion : io/sentry/IUnknownPropertiesC
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getName ()Ljava/lang/String;
 	public fun getPackages ()Ljava/util/List;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setName (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun setVersion (Ljava/lang/String;)V
 	public static fun updateSdkVersion (Lio/sentry/protocol/SdkVersion;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/protocol/SdkVersion;
+}
+
+public final class io/sentry/protocol/SdkVersion$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SdkVersion;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SdkVersion$JsonKeys {
+	public static final field INTEGRATIONS Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field PACKAGES Ljava/lang/String;
+	public static final field VERSION Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/SentryException : io/sentry/IUnknownPropertiesConsumer {
