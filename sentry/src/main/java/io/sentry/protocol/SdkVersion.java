@@ -1,8 +1,17 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
+import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -13,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
  * The SDK Interface describes the Sentry SDK and its configuration used to capture and transmit an
  * event.
  */
-public final class SdkVersion implements IUnknownPropertiesConsumer {
+public final class SdkVersion implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
   /**
    * Unique SDK name. _Required._
    *
@@ -141,5 +150,117 @@ public final class SdkVersion implements IUnknownPropertiesConsumer {
       sdk.setVersion(version);
     }
     return sdk;
+  }
+
+  // JsonKeys
+
+  public static final class JsonKeys {
+    public static final String NAME = "name";
+    public static final String VERSION = "version";
+    public static final String PACKAGES = "packages";
+    public static final String INTEGRATIONS = "integrations";
+  }
+
+  // JsonUnknown
+
+  @Override
+  public @Nullable Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  // JsonSerializable
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    writer.name(JsonKeys.NAME).value(name);
+    writer.name(JsonKeys.VERSION).value(version);
+    if (packages != null && !packages.isEmpty()) {
+      writer.name(JsonKeys.PACKAGES).value(logger, packages);
+    }
+    if (integrations != null && !integrations.isEmpty()) {
+      writer.name(JsonKeys.INTEGRATIONS).value(logger, integrations);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  // JsonDeserializer
+
+  @SuppressWarnings("unchecked")
+  public static final class Deserializer implements JsonDeserializer<SdkVersion> {
+    @Override
+    public @NotNull SdkVersion deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+
+      String name = null;
+      String version = null;
+      List<SentryPackage> packages = new ArrayList<>();
+      List<String> integrations = new ArrayList<>();
+      Map<String, Object> unknown = null;
+
+      reader.beginObject();
+      do {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.NAME:
+            name = reader.nextString();
+            break;
+          case JsonKeys.VERSION:
+            version = reader.nextString();
+            break;
+          case JsonKeys.PACKAGES:
+            List<SentryPackage> deserializedPackages =
+                reader.nextList(logger, new SentryPackage.Deserializer());
+            if (deserializedPackages != null) {
+              packages.addAll(deserializedPackages);
+            }
+            break;
+          case JsonKeys.INTEGRATIONS:
+            List<String> deserializedIntegrations = (List<String>) reader.nextObjectOrNull();
+            if (deserializedIntegrations != null) {
+              integrations.addAll(deserializedIntegrations);
+            }
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      } while (reader.hasNext());
+      reader.endObject();
+
+      if (name == null) {
+        String message = "Missing required field \"" + JsonKeys.NAME + "\"";
+        Exception exception = new IllegalStateException(message);
+        logger.log(SentryLevel.ERROR, message, exception);
+        throw exception;
+      }
+      if (version == null) {
+        String message = "Missing required field \"" + JsonKeys.VERSION + "\"";
+        Exception exception = new IllegalStateException(message);
+        logger.log(SentryLevel.ERROR, message, exception);
+        throw exception;
+      }
+
+      SdkVersion sdkVersion = new SdkVersion(name, version);
+      sdkVersion.packages = packages;
+      sdkVersion.integrations = integrations;
+      sdkVersion.setUnknown(unknown);
+      return sdkVersion;
+    }
   }
 }
