@@ -9,7 +9,9 @@ import io.sentry.SpanContext;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -113,6 +115,7 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
+
     App app = getApp();
     if (app != null) {
       writer.name(App.TYPE).value(logger, app);
@@ -140,6 +143,26 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
     SpanContext trace = getTrace();
     if (trace != null) {
       writer.name(SpanContext.TYPE).value(logger, trace);
+    }
+
+    Set<String> knownKeys = new HashSet<>();
+    knownKeys.add(App.TYPE);
+    knownKeys.add(Browser.TYPE);
+    knownKeys.add(Device.TYPE);
+    knownKeys.add(OperatingSystem.TYPE);
+    knownKeys.add(SentryRuntime.TYPE);
+    knownKeys.add(Gpu.TYPE);
+    knownKeys.add(SpanContext.TYPE);
+
+    // Serialize other "unknown" entries.
+    for (Map.Entry<String, Object> entry : entrySet()) {
+      if (entry != null) {
+        String key = entry.getKey();
+        if (!knownKeys.contains(key)) {
+          Object value = entry.getValue();
+          writer.name(key).value(logger, value);
+        }
+      }
     }
     writer.endObject();
   }
@@ -177,6 +200,10 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
             contexts.setTrace(new SpanContext.Deserializer().deserialize(reader, logger));
             break;
           default:
+            Object object = reader.nextObjectOrNull();
+            if (object != null) {
+              contexts.put(nextName, object);
+            }
             break;
         }
       } while (reader.hasNext() && reader.peek() == JsonToken.NAME);

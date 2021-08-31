@@ -1,6 +1,9 @@
 package io.sentry.protocol
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.FileFromResources
 import io.sentry.ILogger
 import io.sentry.JsonObjectReader
@@ -36,11 +39,34 @@ class ContextsSerializationTest {
     }
 
     @Test
+    fun serializeUnknownEntry() {
+        val sut = fixture.getSut()
+        sut["fixture-key"] = "fixture-value"
+
+        val writer = mock<JsonObjectWriter>().apply {
+            whenever(name(any())).thenReturn(this)
+        }
+        sut.serialize(writer, fixture.logger)
+
+        verify(writer).name("fixture-key")
+        verify(writer).value(fixture.logger, "fixture-value")
+    }
+
+    @Test
     fun deserialize() {
         val expectedJson = sanitizedFile("gson/contexts.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
+    }
+
+    @Test
+    fun deserializeUnknownEntry() {
+        val sut = fixture.getSut()
+        sut["fixture-key"] = "fixture-value"
+        val serialized = serialize(sut)
+        val deserialized = deserialize(serialized)
+        assertEquals("fixture-value", deserialized["fixture-key"])
     }
 
     // Helper
