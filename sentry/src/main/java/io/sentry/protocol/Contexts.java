@@ -1,13 +1,19 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
 import io.sentry.SpanContext;
 import io.sentry.util.Objects;
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Contexts extends ConcurrentHashMap<String, Object> {
+public final class Contexts extends ConcurrentHashMap<String, Object> implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
 
   public Contexts() {}
@@ -99,4 +105,24 @@ public final class Contexts extends ConcurrentHashMap<String, Object> {
   public void setGpu(final @NotNull Gpu gpu) {
     this.put(Gpu.TYPE, gpu);
   }
+
+  // region json
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    writer.endObject();
+  }
+
+  public static final class Deserializer implements JsonDeserializer<Contexts> {
+
+    @Override
+    public @NotNull Contexts deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      return new Contexts();
+    }
+  }
+
+  // endregion
 }

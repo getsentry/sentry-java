@@ -11,28 +11,32 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class BrowserSerializationTest {
+class ContextsSerializationTest {
 
-    class Fixture {
+    private class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = Browser().apply {
-            name = "e1c723db-7408-4043-baa7-f4e96234e5dc"
-            version = "724a48e9-2d35-416b-9f79-132beba2473a"
+        fun getSut() = Contexts().apply {
+            setApp(AppSerializationTest.Fixture().getSut())
+            setBrowser(BrowserSerializationTest.Fixture().getSut())
+            setDevice(DeviceSerializationTest.Fixture().getSut())
+            setOperatingSystem(OperatingSystemSerializationTest.Fixture().getSut())
+            setRuntime(SentryRuntimeSerializationTest.Fixture().getSut())
+            setGpu(GpuSerializationTest.Fixture().getSut())
         }
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/browser.json")
+        val expected = sanitizedFile("gson/contexts.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/browser.json")
+        val expectedJson = sanitizedFile("gson/contexts.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
@@ -53,8 +57,8 @@ class BrowserSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): Browser {
+    private fun deserialize(json: String): Contexts {
         val reader = JsonObjectReader(StringReader(json))
-        return Browser.Deserializer().deserialize(reader, fixture.logger)
+        return Contexts.Deserializer().deserialize(reader, fixture.logger)
     }
 }

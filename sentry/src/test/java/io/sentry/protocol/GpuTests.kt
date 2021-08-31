@@ -13,7 +13,7 @@ import org.junit.Test
 
 class GpuSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = Gpu().apply {

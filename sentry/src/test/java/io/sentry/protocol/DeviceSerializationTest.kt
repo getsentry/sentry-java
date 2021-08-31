@@ -15,7 +15,7 @@ import org.junit.Test
 
 class DeviceSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = Device().apply {
