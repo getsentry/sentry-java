@@ -12,7 +12,7 @@
 
 # Application classes that will be serialized/deserialized over Gson
 -keep class io.sentry.** { *; }
--keepclassmembers enum * { *; }
+-keepclassmembers enum io.sentry.** { *; }
 -keep class io.sentry.android.core.** { *; }
 
 # Prevent proguard from stripping interface information from TypeAdapter, TypeAdapterFactory,

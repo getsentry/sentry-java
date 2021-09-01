@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Breaking changes:
+
+* Updated proguard keep rule for enums, which affects consumer application code (#1684)
+
 ## 5.1.2
 
 * Fix: Servlet 3.1 compatibility issue (#1681)
