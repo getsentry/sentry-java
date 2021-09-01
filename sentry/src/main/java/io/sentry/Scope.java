@@ -302,7 +302,7 @@ public final class Scope {
           .getLogger()
           .log(
               SentryLevel.ERROR,
-              "The BeforeBreadcrumbCallback callback threw an exception. It will be added as breadcrumb and continue.",
+              "The BeforeBreadcrumbCallback callback threw an exception. Exception details will be added to the breadcrumb.",
               e);
 
       if (e.getMessage() != null) {
