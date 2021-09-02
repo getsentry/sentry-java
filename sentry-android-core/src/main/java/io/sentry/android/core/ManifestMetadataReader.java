@@ -8,6 +8,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
 import java.util.Locale;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,6 +50,8 @@ final class ManifestMetadataReader {
   static final String TRACES_ACTIVITY_ENABLE = "io.sentry.traces.activity.enable";
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
       "io.sentry.traces.activity.auto-finish.enable";
+
+  @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
 
@@ -183,6 +186,9 @@ final class ManifestMetadataReader {
             options.setTracesSampleRate(tracesSampleRate);
           }
         }
+
+        options.setTraceSampling(
+            readBool(metadata, logger, TRACE_SAMPLING, options.isTraceSampling()));
 
         options.setEnableAutoActivityLifecycleTracing(
             readBool(

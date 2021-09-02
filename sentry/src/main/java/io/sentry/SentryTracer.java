@@ -231,9 +231,9 @@ public final class SentryTracer implements ITransaction {
         if (traceState == null) {
           final AtomicReference<User> userAtomicReference = new AtomicReference<>();
           hub.configureScope(
-            scope -> {
-              userAtomicReference.set(scope.getUser());
-            });
+              scope -> {
+                userAtomicReference.set(scope.getUser());
+              });
           this.traceState = new TraceState(this, userAtomicReference.get(), hub.getOptions());
         }
         return this.traceState;
