@@ -128,7 +128,12 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(event, getAttachmentsFromScope(scope), session);
+      final TraceState traceState =
+          scope != null && scope.getTransaction() != null
+              ? scope.getTransaction().traceState()
+              : null;
+      final SentryEnvelope envelope =
+          buildEnvelope(event, getAttachmentsFromScope(scope), session, traceState);
 
       if (envelope != null) {
         transport.send(envelope, hint);
@@ -152,15 +157,10 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent event, final @Nullable List<Attachment> attachments)
-      throws IOException {
-    return this.buildEnvelope(event, attachments, null);
-  }
-
-  private @Nullable SentryEnvelope buildEnvelope(
       final @Nullable SentryBaseEvent event,
       final @Nullable List<Attachment> attachments,
-      final @Nullable Session session)
+      final @Nullable Session session,
+      final @Nullable TraceState traceState)
       throws IOException {
     SentryId sentryId = null;
 
@@ -189,7 +189,7 @@ public final class SentryClient implements ISentryClient {
 
     if (!envelopeItems.isEmpty()) {
       final SentryEnvelopeHeader envelopeHeader =
-          new SentryEnvelopeHeader(sentryId, options.getSdkVersion());
+          new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceState);
       return new SentryEnvelope(envelopeHeader, envelopeItems);
     }
 
@@ -399,6 +399,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
+      @Nullable TraceState traceState,
       final @Nullable Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
@@ -437,7 +438,8 @@ public final class SentryClient implements ISentryClient {
 
     try {
       final SentryEnvelope envelope =
-          buildEnvelope(transaction, filterForTransaction(getAttachmentsFromScope(scope)));
+          buildEnvelope(
+              transaction, filterForTransaction(getAttachmentsFromScope(scope)), null, traceState);
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {

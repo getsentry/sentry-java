@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Add tracestate HTTP header support (#1683)
+
 Breaking changes:
 
 * Updated proguard keep rule for enums, which affects consumer application code (#1694)

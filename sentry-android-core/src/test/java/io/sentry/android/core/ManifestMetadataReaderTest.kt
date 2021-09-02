@@ -663,4 +663,29 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.isEnableActivityLifecycleTracingAutoFinish)
     }
+
+    @Test
+    fun `applyMetadata reads tracSampling to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isTraceSampling)
+    }
+
+    @Test
+    fun `applyMetadata reads traceSampling to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isTraceSampling)
+    }
 }

@@ -32,6 +32,11 @@ class OutboxSenderTest {
         val serializer = mock<ISerializer>()
         val logger = mock<ILogger>()
 
+        init {
+            whenever(options.dsn).thenReturn("https://key@sentry.io/proj")
+            whenever(hub.options).thenReturn(this.options)
+        }
+
         fun getSut(): OutboxSender {
             return OutboxSender(hub, envelopeReader, serializer, logger, 15000)
         }
@@ -103,7 +108,7 @@ class OutboxSenderTest {
         assertTrue(File(path).exists())
         sut.processEnvelopeFile(path, mock<Retryable>())
 
-        verify(fixture.hub).captureTransaction(eq(expected), any())
+        verify(fixture.hub).captureTransaction(eq(expected), any(), any())
         assertFalse(File(path).exists())
         assertTrue(transactionContext.sampled ?: false)
 

@@ -31,9 +31,14 @@ class SentryOkHttpInterceptor(
 
         var code: Int? = null
         try {
+            val requestBuilder = request.newBuilder()
             span?.toSentryTrace()?.let {
-                request = request.newBuilder().addHeader(it.name, it.value).build()
+                requestBuilder.addHeader(it.name, it.value)
             }
+            span?.toTraceStateHeader()?.let {
+                requestBuilder.addHeader(it.name, it.value)
+            }
+            request = requestBuilder.build()
             response = chain.proceed(request)
             code = response.code
             span?.status = SpanStatus.fromHttpStatusCode(code)
