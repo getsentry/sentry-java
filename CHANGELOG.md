@@ -4,7 +4,7 @@
 
 Breaking changes:
 
-* Updated proguard keep rule for enums, which affects consumer application code (#1684)
+* Updated proguard keep rule for enums, which affects consumer application code (#1694)
 
 ## 5.1.2
 
