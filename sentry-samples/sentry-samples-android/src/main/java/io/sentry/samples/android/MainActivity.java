@@ -172,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
     super.onResume();
     final ISpan span = Sentry.getSpan();
     if (span != null) {
+      span.setTag("myTag", "myValue");
       span.finish(SpanStatus.OK);
     }
   }

@@ -1,13 +1,6 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-}
-
 plugins {
     id("com.android.application")
     kotlin("android")
-    id("io.sentry.android.gradle") version "2.1.0"
 }
 
 android {
