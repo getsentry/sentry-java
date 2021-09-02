@@ -19,7 +19,7 @@ jobs:
         # TODO: windows-latest
         os: [ubuntu-latest, macos-latest]
         # Zulu Community distribution of OpenJDK
-        java: [ '8', '11' ]
+        java: [ '11' ]
 
     steps:
       - name: Git checkout
