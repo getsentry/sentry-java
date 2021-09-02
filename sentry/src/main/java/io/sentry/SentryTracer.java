@@ -227,15 +227,17 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @Nullable TraceState traceState() {
     if (hub.getOptions().isTraceSampling()) {
-      if (traceState == null) {
-        final AtomicReference<User> userAtomicReference = new AtomicReference<>();
-        hub.configureScope(
+      synchronized (this) {
+        if (traceState == null) {
+          final AtomicReference<User> userAtomicReference = new AtomicReference<>();
+          hub.configureScope(
             scope -> {
               userAtomicReference.set(scope.getUser());
             });
-        this.traceState = new TraceState(this, userAtomicReference.get(), hub.getOptions());
+          this.traceState = new TraceState(this, userAtomicReference.get(), hub.getOptions());
+        }
+        return this.traceState;
       }
-      return this.traceState;
     } else {
       return null;
     }
