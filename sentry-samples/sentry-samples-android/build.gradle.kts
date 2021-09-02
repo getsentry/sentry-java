@@ -90,6 +90,12 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
+
+    variantFilter {
+        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
+            ignore = true
+        }
+    }
 }
 
 dependencies {
@@ -97,13 +103,13 @@ dependencies {
 
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
-    implementation(project(":sentry-android"))
-    implementation(project(":sentry-android-okhttp"))
-    implementation(project(":sentry-android-fragment"))
+    implementation(projects.sentryAndroid)
+    implementation(projects.sentryAndroidOkhttp)
+    implementation(projects.sentryAndroidFragment)
     implementation(Config.Libs.fragment)
 
 //    how to exclude androidx if release health feature is disabled
-//    implementation(project(":sentry-android")) {
+//    implementation(projects.sentryAndroid) {
 //        exclude(group = "androidx.lifecycle", module = "lifecycle-process")
 //        exclude(group = "androidx.lifecycle", module = "lifecycle-common-java8")
 //    }

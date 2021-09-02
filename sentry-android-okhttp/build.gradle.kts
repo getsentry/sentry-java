@@ -50,6 +50,12 @@ android {
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         isCheckReleaseBuilds = false
     }
+
+    variantFilter {
+        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
+            ignore = true
+        }
+    }
 }
 
 tasks.withType<Test> {
@@ -63,7 +69,7 @@ kotlin {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
 
     implementation(Config.Libs.okhttpBom)
     implementation(Config.Libs.okhttp)

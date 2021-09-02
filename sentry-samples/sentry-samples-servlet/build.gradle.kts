@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":sentry-servlet"))
+    implementation(projects.sentryServlet)
     implementation("javax.servlet:javax.servlet-api:4.0.1")
 }
 

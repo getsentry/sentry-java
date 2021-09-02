@@ -225,39 +225,13 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityPreCreated(
-      final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-
-    // only executed if API >= 29 otherwise it happens on onActivityCreated
-    if (isAllActivityCallbacksAvailable) {
-      // start collecting frame metrics for transaction
-      activityFramesTracker.addActivity(activity);
-
-      setColdStart(savedInstanceState);
-
-      // if activity has global fields being init. and
-      // they are slow, this won't count the whole fields/ctor initialization time, but only
-      // when onCreate is actually called.
-      startTracing(activity);
-    }
-  }
-
-  @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    if (!isAllActivityCallbacksAvailable) {
-      // start collecting frame metrics for transaction
-      activityFramesTracker.addActivity(activity);
-
-      setColdStart(savedInstanceState);
-    }
-
+    activityFramesTracker.addActivity(activity);
+    setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
+    startTracing(activity);
 
-    // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
-    if (!isAllActivityCallbacksAvailable) {
-      startTracing(activity);
-    }
     firstActivityCreated = true;
   }
 

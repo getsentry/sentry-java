@@ -18,13 +18,13 @@ import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.checkEvent
 import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.SpringSecuritySentryUserProvider
 import io.sentry.spring.tracing.SentryTracingFilter
-import io.sentry.test.checkEvent
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
@@ -36,7 +36,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.kotlin.await
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
@@ -53,6 +52,7 @@ import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
 
 class SentryAutoConfigurationTest {
 
@@ -218,17 +218,15 @@ class SentryAutoConfigurationTest {
             .run {
                 Sentry.captureMessage("Some message")
                 val transport = it.getBean(ITransport::class.java)
-                await.untilAsserted {
-                    verify(transport).send(checkEvent { event ->
-                        assertThat(event.sdk).isNotNull()
-                        val sdk = event.sdk!!
-                        assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
-                        assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
-                        assertThat(sdk.packages).anyMatch { pkg ->
-                            pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
-                        }
-                    }, anyOrNull())
-                }
+                verify(transport).send(checkEvent { event ->
+                    assertThat(event.sdk).isNotNull()
+                    val sdk = event.sdk!!
+                    assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
+                    assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
+                    assertThat(sdk.packages).anyMatch { pkg ->
+                        pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
+                    }
+                }, anyOrNull())
             }
     }
 
@@ -284,11 +282,9 @@ class SentryAutoConfigurationTest {
             .run {
                 Sentry.captureMessage("Some message")
                 val transport = it.getBean(ITransport::class.java)
-                await.untilAsserted {
-                    verify(transport).send(checkEvent { event ->
-                        assertThat(event.release).isEqualTo("git-commit-id")
-                    }, anyOrNull())
-                }
+                verify(transport).send(checkEvent { event ->
+                    assertThat(event.release).isEqualTo("git-commit-id")
+                }, anyOrNull())
             }
     }
 
@@ -299,11 +295,10 @@ class SentryAutoConfigurationTest {
             .run {
                 Sentry.captureMessage("Some message")
                 val transport = it.getBean(ITransport::class.java)
-                await.untilAsserted {
-                    verify(transport).send(checkEvent { event ->
-                        assertThat(event.release).isEqualTo("my-release")
-                    }, anyOrNull())
-                }
+
+                verify(transport).send(checkEvent { event ->
+                    assertThat(event.release).isEqualTo("my-release")
+                }, anyOrNull())
             }
     }
 
@@ -549,6 +544,23 @@ class SentryAutoConfigurationTest {
             .withClassLoader(FilteredClassLoader(RestTemplate::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentrySpanRestTemplateCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and WebClient is on the classpath, SentrySpanWebClientCustomizer bean is created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .run {
+                assertThat(it).hasSingleBean(SentrySpanWebClientCustomizer::class.java)
+            }
+    }
+
+    @Test
+    fun `when tracing is enabled and WebClient is not on the classpath, SentrySpanWebClientCustomizer bean is not created`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+            .withClassLoader(FilteredClassLoader(WebClient::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(SentrySpanWebClientCustomizer::class.java)
             }
     }
 

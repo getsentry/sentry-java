@@ -36,6 +36,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -47,6 +48,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sentry.dsn")
@@ -238,6 +240,17 @@ public class SentryAutoConfiguration {
       @Bean
       public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IHub hub) {
         return new SentrySpanRestTemplateCustomizer(hub);
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @AutoConfigureBefore(WebClientAutoConfiguration.class)
+    @ConditionalOnClass(WebClient.class)
+    @Open
+    static class SentryPerformanceWebClientConfiguration {
+      @Bean
+      public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IHub hub) {
+        return new SentrySpanWebClientCustomizer(hub);
       }
     }
 

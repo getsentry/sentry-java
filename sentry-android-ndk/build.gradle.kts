@@ -88,6 +88,12 @@ android {
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
+
+    variantFilter {
+        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
+            ignore = true
+        }
+    }
 }
 
 tasks.withType<Test> {
@@ -97,8 +103,8 @@ tasks.withType<Test> {
 }
 
 dependencies {
-    api(project(":sentry"))
-    api(project(":sentry-android-core"))
+    api(projects.sentry)
+    api(projects.sentryAndroidCore)
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
@@ -106,14 +112,4 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
 
     testImplementation(Config.TestLibs.mockitoKotlin)
-}
-
-val initNative = tasks.register<Exec>("initNative") {
-    logger.log(LogLevel.LIFECYCLE, "Initializing git submodules")
-    commandLine("git", "submodule", "update", "--init", "--recursive")
-    outputs.dir("${project.projectDir}/$sentryNativeSrc")
-}
-
-tasks.named("preBuild") {
-    dependsOn(initNative)
 }

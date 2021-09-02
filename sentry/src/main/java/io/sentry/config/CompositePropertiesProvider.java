@@ -31,12 +31,10 @@ final class CompositePropertiesProvider implements PropertiesProvider {
 
   @Override
   public @NotNull Map<String, String> getMap(final @NotNull String property) {
+    final Map<String, String> result = new ConcurrentHashMap<>();
     for (final PropertiesProvider provider : providers) {
-      final Map<String, String> result = provider.getMap(property);
-      if (!result.isEmpty()) {
-        return result;
-      }
+      result.putAll(provider.getMap(property));
     }
-    return new ConcurrentHashMap<>();
+    return result;
   }
 }

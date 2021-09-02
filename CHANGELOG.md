@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## 5.1.2
+
+* Fix: Servlet 3.1 compatibility issue (#1681)
+* Fix: Do not drop Contexts key if Collection, Array or Char (#1680)
+
+## 5.1.1
+
+* Fix: Remove onActivityPreCreated call in favor of onActivityCreated (#1661)
+* Fix: Do not crash if SENSOR_SERVICE throws (#1655)
+* Feat: Add support for async methods in Spring MVC (#1652)
+* Feat: Add secondary constructor taking IHub to SentryOkHttpInterceptor (#1657)
+* Feat: Merge external map properties (#1656)
+* Fix: Make sure scope is popped when processing request results in exception (#1665)
+
+## 5.1.0
+
+* Feat: Spring WebClient integration (#1621)
+* Feat: OpenFeign integration (#1632)
+* Feat: Add more convenient way to pass BeforeSpanCallback in OpenFeign integration (#1637)
+* Bump: sentry-native to 0.4.12 (#1651)
+
 ## 5.1.0-beta.9
 
 - No documented changes.
