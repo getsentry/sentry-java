@@ -503,9 +503,12 @@ public final class io/sentry/Scope {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setContexts (Ljava/lang/String;Ljava/util/Collection;)V
+	public fun setContexts (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V

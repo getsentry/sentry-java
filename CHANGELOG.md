@@ -4,6 +4,11 @@
 
 * Feat: Release Health - server side session tracking (#1572)
 
+## 5.1.2
+
+* Fix: Servlet 3.1 compatibility issue (#1681)
+* Fix: Do not drop Contexts key if Collection, Array or Char (#1680)
+
 ## 5.1.1
 
 * Fix: Remove onActivityPreCreated call in favor of onActivityCreated (#1661)
