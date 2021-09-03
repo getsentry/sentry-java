@@ -6,6 +6,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
+import io.sentry.TracingOrigins;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +41,11 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       span.setDescription(request.getMethodValue() + " " + request.getURI());
 
       final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-      request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+
+      if (new TracingOrigins(hub.getOptions().getTracingOrigins()).contain(request.getURI())) {
+        request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+      }
+
       try {
         final ClientHttpResponse response = execution.execute(request, body);
         // handles both success and error responses
