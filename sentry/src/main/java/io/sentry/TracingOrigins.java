@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -28,5 +29,9 @@ public final class TracingOrigins {
       }
     }
     return false;
+  }
+
+  public boolean contain(final URI uri) {
+    return contain(uri.toString());
   }
 }
