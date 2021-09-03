@@ -284,6 +284,11 @@ public class SentryOptions {
   private boolean traceSampling;
 
   /**
+   * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   */
+  private @NotNull List<String> tracingOrigins = new ArrayList<>();
+
+  /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
    * @param propertiesProvider the properties provider
@@ -1455,6 +1460,24 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setTraceSampling(boolean traceSampling) {
     this.traceSampling = traceSampling;
+  }
+
+  /**
+   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @return the list of origins
+   */
+  public @NotNull List<String> getTracingOrigins() {
+    return tracingOrigins;
+  }
+
+  /**
+   * Sets a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @param tracingOrigins - the tracing origins
+   */
+  public void setTracingOrigins(final @NotNull List<String> tracingOrigins) {
+    this.tracingOrigins = tracingOrigins;
   }
 
   /** The BeforeSend callback */
