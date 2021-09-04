@@ -42,7 +42,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
 
       final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
 
-      if (new TracingOrigins(hub.getOptions().getTracingOrigins()).contain(request.getURI())) {
+      if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), request.getURI())) {
         request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
       }
 

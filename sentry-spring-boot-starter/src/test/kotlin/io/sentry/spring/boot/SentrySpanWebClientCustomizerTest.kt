@@ -38,10 +38,10 @@ class SentrySpanWebClientCustomizerTest {
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false, includeMockServerInTracingOrigins: Boolean = true): WebClient {
             sentryOptions = SentryOptions().apply {
-                tracingOrigins = if (includeMockServerInTracingOrigins) {
-                    listOf(mockServer.hostName)
+                if (includeMockServerInTracingOrigins) {
+                    tracingOrigins.add(mockServer.hostName)
                 } else {
-                    listOf("other-api")
+                    tracingOrigins.add("other-api")
                 }
             }
             whenever(hub.options).thenReturn(sentryOptions)

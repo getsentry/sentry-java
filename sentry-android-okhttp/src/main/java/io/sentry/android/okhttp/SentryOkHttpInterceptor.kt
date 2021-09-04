@@ -33,7 +33,7 @@ class SentryOkHttpInterceptor(
         var code: Int? = null
         try {
             val requestBuilder = request.newBuilder()
-            if (span != null && TracingOrigins(hub.options.tracingOrigins).contain(request.url.toString())) {
+            if (span != null && TracingOrigins.contain(hub.options.tracingOrigins, request.url.toString())) {
                 span.toSentryTrace().let {
                     requestBuilder.addHeader(it.name, it.value)
                 }

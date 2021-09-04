@@ -286,7 +286,7 @@ public class SentryOptions {
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
-  private @NotNull List<String> tracingOrigins = new ArrayList<>();
+  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
 
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
@@ -1472,12 +1472,12 @@ public class SentryOptions {
   }
 
   /**
-   * Sets a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
    *
-   * @param tracingOrigins - the tracing origins
+   * @param tracingOrigin - the tracing origin
    */
-  public void setTracingOrigins(final @NotNull List<String> tracingOrigins) {
-    this.tracingOrigins = tracingOrigins;
+  public void addTracingOrigin(final @NotNull String tracingOrigin) {
+    this.tracingOrigins.add(tracingOrigin);
   }
 
   /** The BeforeSend callback */

@@ -795,6 +795,7 @@ public class io/sentry/SentryOptions {
 	public fun addInAppInclude (Ljava/lang/String;)V
 	public fun addIntegration (Lio/sentry/Integration;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
+	public fun addTracingOrigin (Ljava/lang/String;)V
 	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/SentryOptions;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
@@ -905,7 +906,6 @@ public class io/sentry/SentryOptions {
 	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
-	public fun setTracingOrigins (Ljava/util/List;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
 }
@@ -1156,10 +1156,9 @@ public final class io/sentry/TraceStateHeader {
 }
 
 public final class io/sentry/TracingOrigins {
-	public fun <init> (Ljava/util/List;)V
-	public fun <init> ([Ljava/lang/String;)V
-	public fun contain (Ljava/lang/String;)Z
-	public fun contain (Ljava/net/URI;)Z
+	public fun <init> ()V
+	public static fun contain (Ljava/util/List;Ljava/lang/String;)Z
+	public static fun contain (Ljava/util/List;Ljava/net/URI;)Z
 }
 
 public final class io/sentry/TransactionContext : io/sentry/SpanContext {

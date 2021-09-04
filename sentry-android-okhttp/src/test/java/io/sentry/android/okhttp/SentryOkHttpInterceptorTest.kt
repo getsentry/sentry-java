@@ -53,10 +53,10 @@ class SentryOkHttpInterceptorTest {
             whenever(hub.options).thenReturn(SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
                 isTraceSampling = true
-                tracingOrigins = if (includeMockServerInTracingOrigins) {
-                    listOf(server.hostName)
+                if (includeMockServerInTracingOrigins) {
+                    tracingOrigins.add(server.hostName)
                 } else {
-                    listOf("other-api")
+                    tracingOrigins.add("other-api")
                 }
             })
 

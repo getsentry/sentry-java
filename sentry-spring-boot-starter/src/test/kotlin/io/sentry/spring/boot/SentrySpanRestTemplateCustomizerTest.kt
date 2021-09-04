@@ -38,10 +38,10 @@ class SentrySpanRestTemplateCustomizerTest {
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN, includeMockServerInTracingOrigins: Boolean = true): RestTemplate {
             customizer.customize(restTemplate)
 
-            sentryOptions.tracingOrigins = if (includeMockServerInTracingOrigins) {
-                listOf(mockServer.hostName)
+            if (includeMockServerInTracingOrigins) {
+                sentryOptions.tracingOrigins.add(mockServer.hostName)
             } else {
-                listOf("other-api")
+                sentryOptions.tracingOrigins.add("other-api")
             }
 
             mockServer.enqueue(MockResponse()
