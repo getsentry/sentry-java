@@ -207,6 +207,25 @@ public final class SentryTracer implements ITransaction {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
       root.finish(finishStatus.spanStatus);
+
+      // finish unfinished children
+      for (Span child : children) {
+        if (!child.isFinished()) {
+          final Date rootTimestamp = root.getTimestamp();
+          if (rootTimestamp != null) {
+            child.finish(SpanStatus.DEADLINE_EXCEEDED, rootTimestamp);
+          } else {
+            hub.getOptions()
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Root span - op: %s, description: %s - has no timestamp set, when finishing unfinished spans.",
+                    root.getOperation(),
+                    root.getDescription());
+          }
+        }
+      }
+
       hub.configureScope(
           scope -> {
             scope.withTransaction(

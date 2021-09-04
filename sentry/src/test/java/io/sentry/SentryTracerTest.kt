@@ -396,7 +396,7 @@ class SentryTracerTest {
         verify(fixture.hub, times(1)).captureTransaction(check {
             val timestamp = it.timestamp
             assertEquals(2, it.spans.size)
-            assertEquals(timestamp!!.time, it.spans[0].timestamp!!.time)
+            assertEquals(timestamp, it.spans[0].timestamp)
             assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[0].status)
             assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
         }, anyOrNull())
