@@ -894,25 +894,6 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when captureTransactions unfinished spans are removed`() {
-        val sut = fixture.getSut()
-        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), fixture.hub)
-        val span1 = transaction.startChild("span1")
-        span1.finish()
-        val span2 = transaction.startChild("span2")
-
-        sut.captureTransaction(SentryTransaction(transaction), Scope(fixture.sentryOptions), null)
-        verify(fixture.transport).send(check {
-            val sentTransaction = it.items.first().getTransaction(fixture.sentryOptions.serializer)
-            assertNotNull(sentTransaction) { tx ->
-                val sentSpanIds = tx.spans.map { span -> span.spanId }
-                assertTrue(sentSpanIds.contains(span1.spanContext.spanId))
-                assertFalse(sentSpanIds.contains(span2.spanContext.spanId))
-            }
-        }, eq(null))
-    }
-
-    @Test
     fun `when captureTransaction with attachments`() {
         val transaction = SentryTransaction(fixture.sentryTracer)
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
