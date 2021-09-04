@@ -147,7 +147,8 @@ class SentryAutoConfigurationTest {
             "sentry.traces-sample-rate=0.3",
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
-            "sentry.ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,io.sentry.Sentry"
+            "sentry.ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,io.sentry.Sentry",
+            "sentry.tracing-origins=localhost,^(http|https)://api\\..*\$"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -175,6 +176,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
+            assertThat(options.tracingOrigins).containsOnly("localhost", "^(http|https)://api\\..*\$")
         }
     }
 

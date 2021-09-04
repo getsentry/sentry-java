@@ -333,6 +333,9 @@ public class SentryOptions {
     for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
       options.addInAppExclude(inAppExclude);
     }
+    for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
+      options.addTracingOrigin(tracingOrigin);
+    }
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
       try {
@@ -1615,6 +1618,10 @@ public class SentryOptions {
     for (final Class<? extends Throwable> exceptionType :
         new HashSet<>(options.getIgnoredExceptionsForType())) {
       addIgnoredExceptionForType(exceptionType);
+    }
+    final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
+    for (final String tracingOrigin : tracingOrigins) {
+      addTracingOrigin(tracingOrigin);
     }
   }
 
