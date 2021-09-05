@@ -209,20 +209,20 @@ public final class SentryTracer implements ITransaction {
       root.finish(finishStatus.spanStatus);
 
       // finish unfinished children
-      for (Span child : children) {
+      Date finishTimestamp = root.getTimestamp();
+      if (finishTimestamp == null) {
+        hub.getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Root span - op: %s, description: %s - has no timestamp set, when finishing unfinished spans.",
+                root.getOperation(),
+                root.getDescription());
+        finishTimestamp = DateUtils.getCurrentDateTime();
+      }
+      for (final Span child : children) {
         if (!child.isFinished()) {
-          final Date rootTimestamp = root.getTimestamp();
-          if (rootTimestamp != null) {
-            child.finish(SpanStatus.DEADLINE_EXCEEDED, rootTimestamp);
-          } else {
-            hub.getOptions()
-                .getLogger()
-                .log(
-                    SentryLevel.WARNING,
-                    "Root span - op: %s, description: %s - has no timestamp set, when finishing unfinished spans.",
-                    root.getOperation(),
-                    root.getDescription());
-          }
+          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
         }
       }
 
