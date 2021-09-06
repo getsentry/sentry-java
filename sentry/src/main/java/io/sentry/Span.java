@@ -122,13 +122,23 @@ public final class Span implements ISpan {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
+    finish(status, DateUtils.getCurrentDateTime());
+  }
+
+  /**
+   * Used to finish unfinished spans by {@link SentryTracer}.
+   *
+   * @param status - status to finish span with
+   * @param timestamp - the root span timestamp.
+   */
+  void finish(@Nullable SpanStatus status, Date timestamp) {
     // the span can be finished only once
     if (!finished.compareAndSet(false, true)) {
       return;
     }
 
     this.context.setStatus(status);
-    timestamp = DateUtils.getCurrentDateTime();
+    this.timestamp = timestamp;
     if (throwable != null) {
       hub.setSpanContext(throwable, this, this.transaction.getName());
     }

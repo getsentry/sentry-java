@@ -388,6 +388,21 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `finishing unfinished spans with the transaction timestamp`() {
+        val transaction = fixture.getSut()
+        transaction.startChild("op")
+        transaction.startChild("op2")
+        transaction.finish(SpanStatus.INVALID_ARGUMENT)
+        verify(fixture.hub, times(1)).captureTransaction(check {
+            val timestamp = it.timestamp
+            assertEquals(2, it.spans.size)
+            assertEquals(timestamp, it.spans[0].timestamp)
+            assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[0].status)
+            assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
+        }, anyOrNull())
+    }
+
+    @Test
     fun `returns trace state`() {
         val transaction = fixture.getSut({
             it.isTraceSampling = true
