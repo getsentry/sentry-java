@@ -524,6 +524,7 @@ class GsonSerializerTest {
         assertNotNull(element["start_timestamp"].asString)
         assertNotNull(element["event_id"].asString)
         assertNotNull(element["spans"].asJsonArray)
+        assertEquals("myValue", element["tags"].asJsonObject["myTag"].asString)
 
         val jsonSpan = element["spans"].asJsonArray[0].asJsonObject
         assertNotNull(jsonSpan["trace_id"])
@@ -540,7 +541,6 @@ class GsonSerializerTest {
         assertEquals("http", jsonTrace["op"].asString)
         assertEquals("some request", jsonTrace["description"].asString)
         assertEquals("ok", jsonTrace["status"].asString)
-        assertEquals("myValue", jsonTrace["tags"].asJsonObject["myTag"].asString)
     }
 
     @Test
