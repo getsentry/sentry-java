@@ -665,7 +665,7 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads tracSampling to options`() {
+    fun `applyMetadata reads traceSampling to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to true)
         val context = fixture.getContext(metaData = bundle)
@@ -687,5 +687,31 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertFalse(fixture.options.isTraceSampling)
+    }
+
+    @Test
+    fun `applyMetadata reads tracingOrigins to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """localhost,^(http|https)://api\..*$""")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracingOrigins)
+    }
+
+    @Test
+    fun `applyMetadata reads tracingOrigins to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        println(fixture.options.tracingOrigins)
+        assertTrue(fixture.options.tracingOrigins.isEmpty())
     }
 }
