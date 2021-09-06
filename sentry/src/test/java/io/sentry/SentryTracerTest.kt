@@ -328,8 +328,8 @@ class SentryTracerTest {
         transaction.finish(SpanStatus.UNKNOWN_ERROR)
 
         // call only once
-        verify(fixture.hub, times(1)).setSpanContext(ex, transaction.root, "name")
-        verify(fixture.hub, times(1)).captureTransaction(check {
+        verify(fixture.hub).setSpanContext(ex, transaction.root, "name")
+        verify(fixture.hub).captureTransaction(check {
             assertNotNull(it.contexts.trace) {
                 assertEquals(SpanStatus.OK, it.status)
             }
