@@ -284,6 +284,11 @@ public class SentryOptions {
   private boolean traceSampling;
 
   /**
+   * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   */
+  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+
+  /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
    * @param propertiesProvider the properties provider
@@ -327,6 +332,9 @@ public class SentryOptions {
     }
     for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
       options.addInAppExclude(inAppExclude);
+    }
+    for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
+      options.addTracingOrigin(tracingOrigin);
     }
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -1457,6 +1465,24 @@ public class SentryOptions {
     this.traceSampling = traceSampling;
   }
 
+  /**
+   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @return the list of origins
+   */
+  public @NotNull List<String> getTracingOrigins() {
+    return tracingOrigins;
+  }
+
+  /**
+   * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @param tracingOrigin - the tracing origin
+   */
+  public void addTracingOrigin(final @NotNull String tracingOrigin) {
+    this.tracingOrigins.add(tracingOrigin);
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1592,6 +1618,10 @@ public class SentryOptions {
     for (final Class<? extends Throwable> exceptionType :
         new HashSet<>(options.getIgnoredExceptionsForType())) {
       addIgnoredExceptionForType(exceptionType);
+    }
+    final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
+    for (final String tracingOrigin : tracingOrigins) {
+      addTracingOrigin(tracingOrigin);
     }
   }
 

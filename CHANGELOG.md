@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Feat: Add tracestate HTTP header support (#1683)
+* Feat: Add option to filter which origins receive tracing headers (#1698)
 * Feat: Include unfinished spans in transaction (#1699)
 * Fix: Move tags from transaction.contexts.trace.tags to transaction.tags (#1700)
 

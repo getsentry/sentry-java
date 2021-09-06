@@ -8,11 +8,14 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.SentryOptions
+import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -27,17 +30,21 @@ import org.springframework.web.reactive.function.client.WebClient
 
 class SentrySpanWebClientCustomizerTest {
     class Fixture {
-        val sentryOptions = SentryOptions()
+        lateinit var sentryOptions: SentryOptions
         val hub = mock<IHub>()
         var mockServer = MockWebServer()
         val transaction = SentryTracer(TransactionContext("aTransaction", "op", true), hub)
         private val customizer = SentrySpanWebClientCustomizer(hub)
 
-        init {
+        fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false, includeMockServerInTracingOrigins: Boolean = true): WebClient {
+            sentryOptions = SentryOptions().apply {
+                if (includeMockServerInTracingOrigins) {
+                    tracingOrigins.add(mockServer.hostName)
+                } else {
+                    tracingOrigins.add("other-api")
+                }
+            }
             whenever(hub.options).thenReturn(sentryOptions)
-        }
-
-        fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false): WebClient {
             val webClientBuilder = WebClient.builder()
             customizer.customize(webClientBuilder)
             val webClient = webClientBuilder.build()
@@ -51,16 +58,16 @@ class SentrySpanWebClientCustomizerTest {
             val dispatcher: Dispatcher = object : Dispatcher() {
                 @Throws(InterruptedException::class)
                 override fun dispatch(request: RecordedRequest): MockResponse {
-                    if (isTransactionActive) {
+                    if (isTransactionActive && includeMockServerInTracingOrigins) {
                         assertThat(request.headers["sentry-trace"]!!)
                             .startsWith(transaction.spanContext.traceId.toString())
                             .endsWith("-1")
                             .doesNotContain(transaction.spanContext.spanId.toString())
-                        if (throwIOException) {
-                            return MockResponse().setResponseCode(500)
+                        return if (throwIOException) {
+                            MockResponse().setResponseCode(500)
                                 .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                         } else {
-                            return MockResponse().setResponseCode(status.value()).setBody("OK")
+                            MockResponse().setResponseCode(status.value()).setBody("OK")
                                 .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                         }
                     } else {
@@ -101,6 +108,30 @@ class SentrySpanWebClientCustomizerTest {
         assertThat(span.operation).isEqualTo("http.client")
         assertThat(span.description).isEqualTo("GET $uri")
         assertThat(span.status).isEqualTo(SpanStatus.OK)
+    }
+
+    @Test
+    fun `when transaction is active and server is not listed in tracing origins, does not add sentry trace header to the request`() {
+        fixture.getSut(isTransactionActive = true, includeMockServerInTracingOrigins = false)
+            .get()
+            .uri(fixture.mockServer.url("/test/123").toUri())
+            .retrieve()
+            .bodyToMono(String::class.java)
+            .block()
+        val recordedRequest = fixture.mockServer.takeRequest()
+        assertNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    }
+
+    @Test
+    fun `when transaction is active and server is listed in tracing origins, adds sentry trace header to the request`() {
+        fixture.getSut(isTransactionActive = true)
+            .get()
+            .uri(fixture.mockServer.url("/test/123").toUri())
+            .retrieve()
+            .bodyToMono(String::class.java)
+            .block()
+        val recordedRequest = fixture.mockServer.takeRequest()
+        assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
     }
 
     @Test

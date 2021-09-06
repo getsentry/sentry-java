@@ -6,6 +6,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
+import io.sentry.TracingOrigins;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,10 +38,13 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
     final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
 
-    final ClientRequest clientRequestWithSentryTraceHeader =
-        ClientRequest.from(request)
-            .header(sentryTraceHeader.getName(), sentryTraceHeader.getValue())
-            .build();
+    final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
+
+    if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), request.url())) {
+      requestBuilder.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+    }
+
+    final ClientRequest clientRequestWithSentryTraceHeader = requestBuilder.build();
 
     return next.exchange(clientRequestWithSentryTraceHeader)
         .flatMap(

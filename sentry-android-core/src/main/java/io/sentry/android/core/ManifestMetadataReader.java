@@ -7,6 +7,8 @@ import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +54,8 @@ final class ManifestMetadataReader {
       "io.sentry.traces.activity.auto-finish.enable";
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
+
+  static final String TRACING_ORIGINS = "io.sentry.traces.tracing-origins";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
 
@@ -203,7 +207,15 @@ final class ManifestMetadataReader {
                 logger,
                 TRACES_ACTIVITY_AUTO_FINISH_ENABLE,
                 options.isEnableActivityLifecycleTracingAutoFinish()));
+
+        final List<String> tracingOrigins = readList(metadata, logger, TRACING_ORIGINS);
+        if (tracingOrigins != null) {
+          for (final String tracingOrigin : tracingOrigins) {
+            options.addTracingOrigin(tracingOrigin);
+          }
+        }
       }
+
       options
           .getLogger()
           .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
@@ -233,6 +245,17 @@ final class ManifestMetadataReader {
     final String value = metadata.getString(key, defaultValue);
     logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
     return value;
+  }
+
+  private static @Nullable List<String> readList(
+      final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
+    final String value = metadata.getString(key);
+    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    if (value != null) {
+      return Arrays.asList(value.split(",", -1));
+    } else {
+      return null;
+    }
   }
 
   private static @NotNull Double readDouble(
