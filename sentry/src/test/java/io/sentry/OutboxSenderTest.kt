@@ -2,6 +2,7 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argWhere
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -19,6 +20,7 @@ import java.nio.file.Paths
 import java.util.Date
 import java.util.UUID
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -108,9 +110,11 @@ class OutboxSenderTest {
         assertTrue(File(path).exists())
         sut.processEnvelopeFile(path, mock<Retryable>())
 
-        verify(fixture.hub).captureTransaction(eq(expected), any(), any())
+        verify(fixture.hub).captureTransaction(check {
+            assertEquals(expected, it)
+            assertTrue(it.isSampled)
+        }, any(), any())
         assertFalse(File(path).exists())
-        assertTrue(transactionContext.sampled ?: false)
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())

@@ -161,7 +161,15 @@ class SentryTracerTest {
         verify(fixture.hub).captureTransaction(check {
             assertEquals(app, it.contexts.app)
             assertEquals("value", it.contexts["custom"])
-            assertEquals(tracer.spanContext, it.contexts.trace)
+            assertNotNull(it.contexts.trace) {
+                assertEquals(tracer.spanContext.traceId, it.traceId)
+                assertEquals(tracer.spanContext.spanId, it.spanId)
+                assertEquals(tracer.spanContext.parentSpanId, it.parentSpanId)
+                assertEquals(tracer.spanContext.op, it.op)
+                assertEquals(tracer.spanContext.description, it.description)
+                assertEquals(tracer.spanContext.status, it.status)
+                assertEquals(tracer.spanContext.sampled, it.sampled)
+            }
         }, anyOrNull())
     }
 
@@ -173,8 +181,30 @@ class SentryTracerTest {
         contexts.trace = spanContext
         tracer.finish()
         verify(fixture.hub).captureTransaction(check {
-            assertNotEquals(spanContext, it.contexts.trace)
-            assertEquals(tracer.spanContext, it.contexts.trace)
+            assertNotNull(it.contexts.trace) {
+                assertNotEquals(spanContext, it)
+                assertEquals(tracer.spanContext.traceId, it.traceId)
+                assertEquals(tracer.spanContext.spanId, it.spanId)
+                assertEquals(tracer.spanContext.parentSpanId, it.parentSpanId)
+                assertEquals(tracer.spanContext.op, it.op)
+                assertEquals(tracer.spanContext.description, it.description)
+                assertEquals(tracer.spanContext.status, it.status)
+                assertEquals(tracer.spanContext.sampled, it.sampled)
+            }
+        }, anyOrNull())
+    }
+
+    @Test
+    fun `when transaction with tags set is finished, tags are set on the transaction but not on the trace context`() {
+        val tracer = fixture.getSut()
+        tracer.setTag("tag1", "val1")
+        tracer.setTag("tag2", "val2")
+        tracer.finish()
+        verify(fixture.hub).captureTransaction(check {
+            assertEquals(mapOf("tag1" to "val1", "tag2" to "val2"), it.tags)
+            assertNotNull(it.contexts.trace) {
+                assertEquals(emptyMap(), it.tags)
+            }
         }, anyOrNull())
     }
 
@@ -298,9 +328,11 @@ class SentryTracerTest {
         transaction.finish(SpanStatus.UNKNOWN_ERROR)
 
         // call only once
-        verify(fixture.hub).setSpanContext(ex, transaction.root, "name")
-        verify(fixture.hub).captureTransaction(check {
-            assertEquals(transaction.root.spanContext, it.contexts.trace)
+        verify(fixture.hub, times(1)).setSpanContext(ex, transaction.root, "name")
+        verify(fixture.hub, times(1)).captureTransaction(check {
+            assertNotNull(it.contexts.trace) {
+                assertEquals(SpanStatus.OK, it.status)
+            }
         }, anyOrNull())
 
         assertEquals(SpanStatus.OK, transaction.status)
