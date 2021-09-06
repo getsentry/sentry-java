@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.util.ApplyScopeUtils;
@@ -434,8 +433,6 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
-    processTransaction(transaction);
-
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
@@ -467,23 +464,6 @@ public final class SentryClient implements ISentryClient {
     }
 
     return attachmentsToSend;
-  }
-
-  private @NotNull SentryTransaction processTransaction(
-      final @NotNull SentryTransaction transaction) {
-    final List<SentrySpan> unfinishedSpans = new ArrayList<>();
-    for (SentrySpan span : transaction.getSpans()) {
-      if (!span.isFinished()) {
-        unfinishedSpans.add(span);
-      }
-    }
-    if (!unfinishedSpans.isEmpty()) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Dropping %d unfinished spans", unfinishedSpans.size());
-    }
-    transaction.getSpans().removeAll(unfinishedSpans);
-    return transaction;
   }
 
   private @Nullable SentryEvent applyScope(

@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Feat: Add tracestate HTTP header support (#1683)
+* Feat: Include unfinished spans in transaction (#1699)
 
 Breaking changes:
 
