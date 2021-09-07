@@ -24,6 +24,8 @@ public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer {
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/util/Date;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
+	public static fun debug (Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun error (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public fun getCategory ()Ljava/lang/String;
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
@@ -33,12 +35,18 @@ public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer {
 	public fun getType ()Ljava/lang/String;
 	public static fun http (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun http (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)Lio/sentry/Breadcrumb;
+	public static fun info (Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun navigation (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun query (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public fun removeData (Ljava/lang/String;)V
 	public fun setCategory (Ljava/lang/String;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setMessage (Ljava/lang/String;)V
 	public fun setType (Ljava/lang/String;)V
+	public static fun transaction (Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun ui (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun user (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 }
 
 public final class io/sentry/BuildConfig {
