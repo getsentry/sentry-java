@@ -6,6 +6,7 @@
 * Feat: Add option to filter which origins receive tracing headers (#1698)
 * Feat: Include unfinished spans in transaction (#1699)
 * Fix: Move tags from transaction.contexts.trace.tags to transaction.tags (#1700)
+* Feat: Attach Java vendor and version to events and transactions (#1703)
 
 Breaking changes:
 
