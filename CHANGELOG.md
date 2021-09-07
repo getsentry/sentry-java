@@ -6,6 +6,7 @@
 * Feat: Add option to filter which origins receive tracing headers (#1698)
 * Feat: Include unfinished spans in transaction (#1699)
 * Fix: Move tags from transaction.contexts.trace.tags to transaction.tags (#1700)
+* Feat: Add static helpers for creating breadcrumbs (#1702)
 
 Breaking changes:
 
