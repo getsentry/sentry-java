@@ -1560,6 +1560,7 @@ public class SentryOptions {
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
+      eventProcessors.add(new SentryRuntimeEventProcessor());
 
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       setSdkVersion(createSdkVersion());
