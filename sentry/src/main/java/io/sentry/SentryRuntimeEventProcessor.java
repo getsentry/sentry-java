@@ -21,27 +21,25 @@ final class SentryRuntimeEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @Nullable SentryEvent process(
+  public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, final @Nullable Object hint) {
     return process(event);
   }
 
   @Override
-  public @Nullable SentryTransaction process(
+  public @NotNull SentryTransaction process(
       final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
     return process(transaction);
   }
 
-  private <T extends SentryBaseEvent> @Nullable T process(final @Nullable T event) {
-    if (event != null) {
-      if (event.getContexts().getRuntime() == null) {
-        event.getContexts().setRuntime(new SentryRuntime());
-      }
-      final SentryRuntime runtime = event.getContexts().getRuntime();
-      if (runtime != null && runtime.getName() == null && runtime.getVersion() == null) {
-        runtime.setName(javaVendor);
-        runtime.setVersion(javaVersion);
-      }
+  private <T extends SentryBaseEvent> @NotNull T process(final @NotNull T event) {
+    if (event.getContexts().getRuntime() == null) {
+      event.getContexts().setRuntime(new SentryRuntime());
+    }
+    final SentryRuntime runtime = event.getContexts().getRuntime();
+    if (runtime != null && runtime.getName() == null && runtime.getVersion() == null) {
+      runtime.setName(javaVendor);
+      runtime.setVersion(javaVersion);
     }
     return event;
   }
