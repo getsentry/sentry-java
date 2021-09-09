@@ -7,6 +7,7 @@
 * Feat: Include unfinished spans in transaction (#1699)
 * Fix: Move tags from transaction.contexts.trace.tags to transaction.tags (#1700)
 * Feat: Add static helpers for creating breadcrumbs (#1702)
+* Feat: Performance support for Android Apollo (#1705)
 
 Breaking changes:
 
