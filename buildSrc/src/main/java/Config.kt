@@ -91,6 +91,10 @@ object Config {
         private val feignVersion = "11.6"
         val feignCore = "io.github.openfeign:feign-core:$feignVersion"
         val feignGson = "io.github.openfeign:feign-gson:$feignVersion"
+
+        private val apolloVersion = "2.5.9"
+        val apolloAndroid = "com.apollographql.apollo:apollo-runtime:$apolloVersion"
+        val apolloCoroutines = "com.apollographql.apollo:apollo-coroutines-support:$apolloVersion"
     }
 
     object AnnotationProcessors {
@@ -111,6 +115,7 @@ object Config {
         val mockitoInline = "org.mockito:mockito-inline:3.10.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
+        val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
         // bumping to 2.26.0 breaks tests
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.11.1"
     }
