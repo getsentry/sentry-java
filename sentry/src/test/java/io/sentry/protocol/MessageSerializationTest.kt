@@ -57,8 +57,8 @@ class MessageSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): DebugImage {
+    private fun deserialize(json: String): Message {
         val reader = JsonObjectReader(StringReader(json))
-        return DebugImage.Deserializer().deserialize(reader, fixture.logger)
+        return Message.Deserializer().deserialize(reader, fixture.logger)
     }
 }

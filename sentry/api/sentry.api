@@ -811,7 +811,7 @@ public final class io/sentry/SentryEnvelopeItemHeaderAdapter : com/google/gson/T
 	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
 }
 
-public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Throwable;)V
 	public fun <init> (Ljava/util/Date;)V
@@ -830,6 +830,7 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun isCrashed ()Z
 	public fun isErrored ()Z
 	public fun removeModule (Ljava/lang/String;)V
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
 	public fun setExceptions (Ljava/util/List;)V
 	public fun setFingerprints (Ljava/util/List;)V
@@ -840,6 +841,27 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun setModules (Ljava/util/Map;)V
 	public fun setThreads (Ljava/util/List;)V
 	public fun setTransaction (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/SentryEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryEvent;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SentryEvent$JsonKeys {
+	public static final field DEBUG_META Ljava/lang/String;
+	public static final field EXCEPTION Ljava/lang/String;
+	public static final field FINGERPRINT Ljava/lang/String;
+	public static final field LEVEL Ljava/lang/String;
+	public static final field LOGGER Ljava/lang/String;
+	public static final field MESSAGE Ljava/lang/String;
+	public static final field MODULES Ljava/lang/String;
+	public static final field THREADS Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public static final field TRANSACTION Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/SentryItemType : java/lang/Enum {

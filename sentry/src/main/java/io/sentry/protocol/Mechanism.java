@@ -154,9 +154,9 @@ public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown,
     public static final String DESCRIPTION = "description";
     public static final String HELP_LINK = "help_link";
     public static final String HANDLED = "handled";
-    public static final String SYNTHETIC = "synthetic";
     public static final String META = "meta";
     public static final String DATA = "data";
+    public static final String SYNTHETIC = "synthetic";
   }
 
   // JsonUnknown
@@ -189,14 +189,14 @@ public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown,
     if (handled != null) {
       writer.name(JsonKeys.HANDLED).value(handled);
     }
-    if (synthetic != null) {
-      writer.name(JsonKeys.SYNTHETIC).value(synthetic);
-    }
     if (meta != null) {
       writer.name(JsonKeys.META).value(logger, meta);
     }
     if (data != null) {
       writer.name(JsonKeys.DATA).value(logger, data);
+    }
+    if (synthetic != null) {
+      writer.name(JsonKeys.SYNTHETIC).value(synthetic);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
