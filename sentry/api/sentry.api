@@ -720,6 +720,33 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun setUser (Lio/sentry/protocol/User;)V
 }
 
+public final class io/sentry/SentryBaseEvent$Deserializer {
+	public fun <init> ()V
+	public fun deserializeValue (Lio/sentry/SentryBaseEvent;Ljava/lang/String;Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Z
+}
+
+public final class io/sentry/SentryBaseEvent$JsonKeys {
+	public static final field BREADCRUMBS Ljava/lang/String;
+	public static final field CONTEXTS Ljava/lang/String;
+	public static final field DIST Ljava/lang/String;
+	public static final field ENVIRONMENT Ljava/lang/String;
+	public static final field EVENT_ID Ljava/lang/String;
+	public static final field EXTRA Ljava/lang/String;
+	public static final field PLATFORM Ljava/lang/String;
+	public static final field RELEASE Ljava/lang/String;
+	public static final field REQUEST Ljava/lang/String;
+	public static final field SDK Ljava/lang/String;
+	public static final field SERVER_NAME Ljava/lang/String;
+	public static final field TAGS Ljava/lang/String;
+	public static final field USER Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/SentryBaseEvent$Serializer {
+	public fun <init> ()V
+	public fun serialize (Lio/sentry/SentryBaseEvent;Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+}
+
 public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Scope;Ljava/lang/Object;)Lio/sentry/protocol/SentryId;
