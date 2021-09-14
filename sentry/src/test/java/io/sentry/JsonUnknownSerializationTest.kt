@@ -11,6 +11,7 @@ import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.Device
 import io.sentry.protocol.Gpu
 import io.sentry.protocol.Mechanism
+import io.sentry.protocol.Message
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkInfo
@@ -52,6 +53,7 @@ class JsonUnknownSerializationTest(
             val device = givenJsonUnknown(Device())
             val gpu = givenJsonUnknown(Gpu())
             val mechanism = givenJsonUnknown(Mechanism())
+            val message = givenJsonUnknown(Message())
             val operatingSystem = givenJsonUnknown(OperatingSystem())
             val request = givenJsonUnknown(Request())
             val sdkInfo = givenJsonUnknown(SdkInfo())
@@ -78,6 +80,7 @@ class JsonUnknownSerializationTest(
                 arrayOf(device, device, Device.Deserializer()::deserialize),
                 arrayOf(gpu, gpu, Gpu.Deserializer()::deserialize),
                 arrayOf(mechanism, mechanism, Mechanism.Deserializer()::deserialize),
+                arrayOf(message, message, Message.Deserializer()::deserialize),
                 arrayOf(operatingSystem, operatingSystem, OperatingSystem.Deserializer()::deserialize),
                 arrayOf(request, user, Request.Deserializer()::deserialize),
                 arrayOf(sdkInfo, sdkInfo, SdkInfo.Deserializer()::deserialize),

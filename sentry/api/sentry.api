@@ -1850,15 +1850,31 @@ public final class io/sentry/protocol/Mechanism$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Message : io/sentry/IUnknownPropertiesConsumer {
+public final class io/sentry/protocol/Message : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getFormatted ()Ljava/lang/String;
 	public fun getMessage ()Ljava/lang/String;
 	public fun getParams ()Ljava/util/List;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setFormatted (Ljava/lang/String;)V
 	public fun setMessage (Ljava/lang/String;)V
 	public fun setParams (Ljava/util/List;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/Message$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Message;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Message$JsonKeys {
+	public static final field FORMATTED Ljava/lang/String;
+	public static final field MESSAGE Ljava/lang/String;
+	public static final field PARAMS Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
