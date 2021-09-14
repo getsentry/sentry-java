@@ -195,7 +195,9 @@ class SentryFeignClientTest {
         val sut = fixture.getSut { _, _, _ -> null }
         sut.getOk()
         val httpClientSpan = fixture.sentryTracer.children.first()
-        assertFalse(httpClientSpan.isFinished)
+        assertNotNull(httpClientSpan.spanContext.sampled) {
+            assertFalse(it)
+        }
     }
 
     interface MockApi {

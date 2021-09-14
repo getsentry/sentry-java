@@ -155,7 +155,8 @@ public class SpanContext {
     return sampled;
   }
 
-  void setSampled(final @Nullable Boolean sampled) {
+  @ApiStatus.Internal
+  public void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
   }
 }

@@ -20,7 +20,7 @@ class PerformanceAndroidEventProcessorTest {
         val options = SentryAndroidOptions()
 
         val hub = mock<IHub>()
-        val context = TransactionContext("name", "op")
+        val context = TransactionContext("name", "op", true)
         val tracer = SentryTracer(context, hub)
         val activityFramesTracker = mock<ActivityFramesTracker>()
 
