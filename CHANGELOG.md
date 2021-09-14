@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.2.0-beta.1
 
 * Feat: Add tracestate HTTP header support (#1683)
