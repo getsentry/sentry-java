@@ -30,14 +30,14 @@ public final class JsonObjectSerializer {
       serializeDate(writer, logger, (Date) object);
     } else if (object instanceof TimeZone) {
       serializeTimeZone(writer, logger, (TimeZone) object);
+    } else if (object instanceof JsonSerializable) {
+      ((JsonSerializable) object).serialize(writer, logger);
     } else if (object instanceof Collection) {
       serializeCollection(writer, logger, (Collection<?>) object);
     } else if (object.getClass().isArray()) {
       serializeCollection(writer, logger, Arrays.asList((Object[]) object));
     } else if (object instanceof Map) {
       serializeMap(writer, logger, (Map<?, ?>) object);
-    } else if (object instanceof JsonSerializable) {
-      ((JsonSerializable) object).serialize(writer, logger);
     } else {
       // TODO: Use reflection to support object serialization.
       writer.value(OBJECT_PLACEHOLDER);

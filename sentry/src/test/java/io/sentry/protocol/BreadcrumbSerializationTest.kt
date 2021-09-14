@@ -16,7 +16,7 @@ import org.junit.Test
 
 class BreadcrumbSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = Breadcrumb(

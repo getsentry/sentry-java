@@ -13,7 +13,7 @@ import org.junit.Test
 
 class RequestSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = Request().apply {

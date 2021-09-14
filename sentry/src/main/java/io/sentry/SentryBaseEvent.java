@@ -7,6 +7,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.CollectionUtils;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -320,4 +321,126 @@ public abstract class SentryBaseEvent {
   public void addBreadcrumb(final @Nullable String message) {
     this.addBreadcrumb(new Breadcrumb(message));
   }
+
+  // region json
+
+  public static final class JsonKeys {
+    public static final String EVENT_ID = "event_id";
+    public static final String CONTEXTS = "contexts";
+    public static final String SDK = "sdk";
+    public static final String REQUEST = "request";
+    public static final String TAGS = "tags";
+    public static final String RELEASE = "release";
+    public static final String ENVIRONMENT = "environment";
+    public static final String PLATFORM = "platform";
+    public static final String USER = "user";
+    public static final String SERVER_NAME = "server_name";
+    public static final String DIST = "dist";
+    public static final String BREADCRUMBS = "breadcrumbs";
+    public static final String EXTRA = "extra";
+  }
+
+  public static final class Serializer {
+    public void serialize(
+        @NotNull SentryBaseEvent baseEvent,
+        @NotNull JsonObjectWriter writer,
+        @NotNull ILogger logger)
+        throws IOException {
+      if (baseEvent.eventId != null) {
+        writer.name(JsonKeys.EVENT_ID).value(logger, baseEvent.eventId);
+      }
+      writer.name(JsonKeys.CONTEXTS).value(logger, baseEvent.contexts);
+      if (baseEvent.sdk != null) {
+        writer.name(JsonKeys.SDK).value(logger, baseEvent.sdk);
+      }
+      if (baseEvent.request != null) {
+        writer.name(JsonKeys.REQUEST).value(logger, baseEvent.request);
+      }
+      if (baseEvent.tags != null) {
+        writer.name(JsonKeys.TAGS).value(logger, baseEvent.tags);
+      }
+      if (baseEvent.release != null) {
+        writer.name(JsonKeys.RELEASE).value(baseEvent.release);
+      }
+      if (baseEvent.environment != null) {
+        writer.name(JsonKeys.ENVIRONMENT).value(baseEvent.environment);
+      }
+      if (baseEvent.platform != null) {
+        writer.name(JsonKeys.PLATFORM).value(baseEvent.platform);
+      }
+      if (baseEvent.user != null) {
+        writer.name(JsonKeys.USER).value(logger, baseEvent.user);
+      }
+      if (baseEvent.serverName != null) {
+        writer.name(JsonKeys.SERVER_NAME).value(baseEvent.serverName);
+      }
+      if (baseEvent.dist != null) {
+        writer.name(JsonKeys.DIST).value(baseEvent.dist);
+      }
+      if (baseEvent.breadcrumbs != null) {
+        writer.name(JsonKeys.BREADCRUMBS).value(logger, baseEvent.breadcrumbs);
+      }
+      if (baseEvent.extra != null) {
+        writer.name(JsonKeys.EXTRA).value(logger, baseEvent.extra);
+      }
+    }
+  }
+
+  public static final class Deserializer {
+    @SuppressWarnings("unchecked")
+    public boolean deserializeValue(
+        @NotNull SentryBaseEvent baseEvent,
+        @NotNull String nextName,
+        @NotNull JsonObjectReader reader,
+        @NotNull ILogger logger)
+        throws Exception {
+      switch (nextName) {
+        case JsonKeys.EVENT_ID:
+          baseEvent.eventId = new SentryId.Deserializer().deserialize(reader, logger);
+          return true;
+        case JsonKeys.CONTEXTS:
+          Contexts deserializedContexts = new Contexts.Deserializer().deserialize(reader, logger);
+          baseEvent.contexts.putAll(deserializedContexts);
+          return true;
+        case JsonKeys.SDK:
+          baseEvent.sdk = new SdkVersion.Deserializer().deserialize(reader, logger);
+          return true;
+        case JsonKeys.REQUEST:
+          baseEvent.request = new Request.Deserializer().deserialize(reader, logger);
+          return true;
+        case JsonKeys.TAGS:
+          Map<String, String> deserializedTags = (Map<String, String>) reader.nextObjectOrNull();
+          baseEvent.tags = CollectionUtils.newConcurrentHashMap(deserializedTags);
+          return true;
+        case JsonKeys.RELEASE:
+          baseEvent.release = reader.nextStringOrNull();
+          return true;
+        case JsonKeys.ENVIRONMENT:
+          baseEvent.environment = reader.nextStringOrNull();
+          return true;
+        case JsonKeys.PLATFORM:
+          baseEvent.platform = reader.nextStringOrNull();
+          return true;
+        case JsonKeys.USER:
+          baseEvent.user = new User.Deserializer().deserialize(reader, logger);
+          return true;
+        case JsonKeys.SERVER_NAME:
+          baseEvent.serverName = reader.nextStringOrNull();
+          return true;
+        case JsonKeys.DIST:
+          baseEvent.dist = reader.nextStringOrNull();
+          return true;
+        case JsonKeys.BREADCRUMBS:
+          baseEvent.breadcrumbs = reader.nextList(logger, new Breadcrumb.Deserializer());
+          return true;
+        case JsonKeys.EXTRA:
+          Map<String, Object> deserializedExtra = (Map<String, Object>) reader.nextObjectOrNull();
+          baseEvent.extra = CollectionUtils.newConcurrentHashMap(deserializedExtra);
+          return true;
+      }
+      return false;
+    }
+  }
+
+  // endregion
 }

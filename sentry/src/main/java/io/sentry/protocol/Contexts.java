@@ -9,9 +9,9 @@ import io.sentry.SpanContext;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -115,53 +115,13 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-
-    App app = getApp();
-    if (app != null) {
-      writer.name(App.TYPE).value(logger, app);
-    }
-    Browser browser = getBrowser();
-    if (browser != null) {
-      writer.name(Browser.TYPE).value(logger, browser);
-    }
-    Device device = getDevice();
-    if (device != null) {
-      writer.name(Device.TYPE).value(logger, device);
-    }
-    OperatingSystem os = getOperatingSystem();
-    if (os != null) {
-      writer.name(OperatingSystem.TYPE).value(logger, os);
-    }
-    SentryRuntime runtime = getRuntime();
-    if (runtime != null) {
-      writer.name(SentryRuntime.TYPE).value(logger, runtime);
-    }
-    Gpu gpu = getGpu();
-    if (gpu != null) {
-      writer.name(Gpu.TYPE).value(logger, gpu);
-    }
-    SpanContext trace = getTrace();
-    if (trace != null) {
-      writer.name(SpanContext.TYPE).value(logger, trace);
-    }
-
-    Set<String> knownKeys = new HashSet<>();
-    knownKeys.add(App.TYPE);
-    knownKeys.add(Browser.TYPE);
-    knownKeys.add(Device.TYPE);
-    knownKeys.add(OperatingSystem.TYPE);
-    knownKeys.add(SentryRuntime.TYPE);
-    knownKeys.add(Gpu.TYPE);
-    knownKeys.add(SpanContext.TYPE);
-
-    // Serialize other "unknown" entries.
-    for (Map.Entry<String, Object> entry : entrySet()) {
-      if (entry != null) {
-        String key = entry.getKey();
-        if (!knownKeys.contains(key)) {
-          Object value = entry.getValue();
-          writer.name(key).value(logger, value);
-        }
+    // Serialize in alphabetical order to keep determinism.
+    List<String> sortedKeys = Collections.list(keys());
+    java.util.Collections.sort(sortedKeys);
+    for (String key : sortedKeys) {
+      Object value = get(key);
+      if (value != null) {
+        writer.name(key).value(logger, value);
       }
     }
     writer.endObject();
@@ -186,15 +146,15 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
           case Device.TYPE:
             contexts.setDevice(new Device.Deserializer().deserialize(reader, logger));
             break;
+          case Gpu.TYPE:
+            contexts.setGpu(new Gpu.Deserializer().deserialize(reader, logger));
+            break;
           case OperatingSystem.TYPE:
             contexts.setOperatingSystem(
                 new OperatingSystem.Deserializer().deserialize(reader, logger));
             break;
           case SentryRuntime.TYPE:
             contexts.setRuntime(new SentryRuntime.Deserializer().deserialize(reader, logger));
-            break;
-          case Gpu.TYPE:
-            contexts.setGpu(new Gpu.Deserializer().deserialize(reader, logger));
             break;
           case SpanContext.TYPE:
             contexts.setTrace(new SpanContext.Deserializer().deserialize(reader, logger));
