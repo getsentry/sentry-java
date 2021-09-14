@@ -73,6 +73,7 @@ class SentryOkHttpInterceptor(
                 if (result == null) {
                     // span is dropped
                     span.spanContext.sampled = false
+                } else {
                     span.finish()
                 }
             } else {

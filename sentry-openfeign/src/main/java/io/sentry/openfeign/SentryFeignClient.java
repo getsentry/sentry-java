@@ -66,7 +66,6 @@ public final class SentryFeignClient implements Client {
             // span is dropped
             span.getSpanContext().setSampled(false);
           } else {
-            span = result;
             span.finish();
           }
         } else {
