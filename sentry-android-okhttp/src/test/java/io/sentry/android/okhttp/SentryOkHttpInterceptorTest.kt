@@ -227,6 +227,8 @@ class SentryOkHttpInterceptorTest {
         } })
         sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()
-        assertFalse(httpClientSpan.isFinished)
+        assertNotNull(httpClientSpan.spanContext.sampled) {
+            assertFalse(it)
+        }
     }
 }

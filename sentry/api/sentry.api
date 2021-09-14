@@ -1101,6 +1101,7 @@ public class io/sentry/SpanContext {
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
+	public fun setSampled (Ljava/lang/Boolean;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 }

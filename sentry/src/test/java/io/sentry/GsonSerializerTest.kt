@@ -510,6 +510,7 @@ class GsonSerializerTest {
         trace.description = "some request"
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
+        trace.sampled = true
         val tracer = SentryTracer(trace, fixture.hub)
         val span = tracer.startChild("child")
         span.finish(SpanStatus.OK)
