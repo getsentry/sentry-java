@@ -4,6 +4,7 @@ import com.apollographql.apollo.api.Mutation
 import com.apollographql.apollo.api.Query
 import com.apollographql.apollo.api.Subscription
 import com.apollographql.apollo.exception.ApolloException
+import com.apollographql.apollo.exception.ApolloHttpException
 import com.apollographql.apollo.interceptor.ApolloInterceptor
 import com.apollographql.apollo.interceptor.ApolloInterceptor.CallBack
 import com.apollographql.apollo.interceptor.ApolloInterceptor.FetchSourceType
@@ -40,7 +41,8 @@ class SentryApolloInterceptor(
 
             chain.proceedAsync(requestWithHeader, dispatcher, object : CallBack {
                 override fun onResponse(response: InterceptorResponse) {
-                    span.status = response.httpResponse.map { SpanStatus.fromHttpStatusCode(it.code(), SpanStatus.INTERNAL_ERROR) }
+                    // onResponse is called only for statuses 2xx
+                    span.status = response.httpResponse.map { SpanStatus.fromHttpStatusCode(it.code(), SpanStatus.UNKNOWN) }
                         .or(SpanStatus.UNKNOWN)
 
                     finish(span, requestWithHeader, response)
@@ -53,7 +55,7 @@ class SentryApolloInterceptor(
 
                 override fun onFailure(e: ApolloException) {
                     span.apply {
-                        status = SpanStatus.INTERNAL_ERROR
+                        status = if (e is ApolloHttpException) SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR) else SpanStatus.INTERNAL_ERROR
                         throwable = e
                     }
                     finish(span, requestWithHeader)

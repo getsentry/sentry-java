@@ -14,6 +14,7 @@ import io.sentry.SentryTraceHeader
 import io.sentry.SpanStatus
 import io.sentry.checkTransaction
 import io.sentry.kotlin.SentryContext
+import io.sentry.protocol.SentryTransaction
 import io.sentry.transport.ITransport
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -76,32 +77,32 @@ class SentryApolloInterceptorTest {
     private val fixture = Fixture()
 
     @Test
-    fun `creates a span around the request`() = runBlocking {
+    fun `creates a span around the successful request`() = runBlocking {
         executeQuery()
 
         verify(fixture.transport).send(checkTransaction {
-            assertEquals(1, it.spans.size)
-            val httpClientSpan = it.spans.first()
-            assertEquals("LaunchDetails", httpClientSpan.op)
-            assertEquals("query LaunchDetails", httpClientSpan.description)
-            assertNotNull(httpClientSpan.tags["operationId"])
-            assertEquals("{id=83}", httpClientSpan.tags["variables"])
-            assertEquals(SpanStatus.OK, httpClientSpan.status)
+            assertTransactionDetails(it)
+            assertEquals(SpanStatus.OK, it.spans.first().status)
         }, anyOrNull())
     }
 
     @Test
     fun `creates a span around the failed request`() = runBlocking {
+        executeQuery(fixture.getSut(httpStatusCode = 403))
+
+        verify(fixture.transport).send(checkTransaction {
+            assertTransactionDetails(it)
+            assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
+        }, anyOrNull())
+    }
+
+    @Test
+    fun `creates a span around the request failing with network error`() = runBlocking {
         executeQuery(fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_DURING_REQUEST_BODY))
 
         verify(fixture.transport).send(checkTransaction {
-            assertEquals(1, it.spans.size)
-            val httpClientSpan = it.spans.first()
-            assertEquals("LaunchDetails", httpClientSpan.op)
-            assertEquals("query LaunchDetails", httpClientSpan.description)
-            assertNotNull(httpClientSpan.tags["operationId"])
-            assertEquals("{id=83}", httpClientSpan.tags["variables"])
-            assertEquals(SpanStatus.INTERNAL_ERROR, httpClientSpan.status)
+            assertTransactionDetails(it)
+            assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
         }, anyOrNull())
     }
 
@@ -134,6 +135,15 @@ class SentryApolloInterceptorTest {
             val httpClientSpan = it.spans.first()
             assertEquals("overwritten description", httpClientSpan.description)
         }, anyOrNull())
+    }
+
+    private fun assertTransactionDetails(it: SentryTransaction) {
+        assertEquals(1, it.spans.size)
+        val httpClientSpan = it.spans.first()
+        assertEquals("LaunchDetails", httpClientSpan.op)
+        assertEquals("query LaunchDetails", httpClientSpan.description)
+        assertNotNull(httpClientSpan.tags["operationId"])
+        assertEquals("{id=83}", httpClientSpan.tags["variables"])
     }
 
     private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true) = runBlocking {
