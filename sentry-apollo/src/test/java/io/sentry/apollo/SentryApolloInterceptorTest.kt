@@ -137,6 +137,19 @@ class SentryApolloInterceptorTest {
         }, anyOrNull())
     }
 
+    @Test
+    fun `when customizer throws, exception is handled`() {
+        executeQuery(fixture.getSut(beforeSpan = object : SentryApolloInterceptor.BeforeSpanCallback {
+            override fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan {
+                throw RuntimeException()
+            }
+        }))
+
+        verify(fixture.transport).send(checkTransaction {
+            assertEquals(1, it.spans.size)
+        }, anyOrNull())
+    }
+
     private fun assertTransactionDetails(it: SentryTransaction) {
         assertEquals(1, it.spans.size)
         val httpClientSpan = it.spans.first()

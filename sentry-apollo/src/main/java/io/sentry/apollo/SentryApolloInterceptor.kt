@@ -14,6 +14,7 @@ import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
+import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import java.util.concurrent.Executor
 
@@ -86,7 +87,11 @@ class SentryApolloInterceptor(
     private fun finish(span: ISpan, request: InterceptorRequest, response: InterceptorResponse? = null) {
         var newSpan: ISpan = span
         if (beforeSpan != null) {
-            newSpan = beforeSpan.execute(span, request, response)
+            try {
+                newSpan = beforeSpan.execute(span, request, response)
+            } catch (e: Exception) {
+                hub.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
+            }
         }
         newSpan.finish()
     }
