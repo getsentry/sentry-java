@@ -167,7 +167,7 @@ public final class SentryStackTrace
       SentryStackTrace sentryStackTrace = new SentryStackTrace();
       Map<String, Object> unknown = null;
       reader.beginObject();
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.FRAMES:
@@ -188,7 +188,7 @@ public final class SentryStackTrace
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      }
       sentryStackTrace.setUnknown(unknown);
       reader.endObject();
       return sentryStackTrace;

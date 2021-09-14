@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.*;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -333,7 +334,7 @@ public final class SentryEvent extends SentryBaseEvent
 
       SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();
 
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.TIMESTAMP:
@@ -391,7 +392,7 @@ public final class SentryEvent extends SentryBaseEvent
             }
             break;
         }
-      } while (reader.hasNext());
+      }
       event.setUnknown(unknown);
       reader.endObject();
       return event;

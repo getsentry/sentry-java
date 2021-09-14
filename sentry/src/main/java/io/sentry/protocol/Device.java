@@ -579,7 +579,7 @@ public final class Device implements IUnknownPropertiesConsumer, JsonUnknown, Js
       reader.beginObject();
       Device device = new Device();
       Map<String, Object> unknown = null;
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.NAME:
@@ -688,7 +688,7 @@ public final class Device implements IUnknownPropertiesConsumer, JsonUnknown, Js
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext());
+      }
       device.setUnknown(unknown);
       reader.endObject();
       return device;

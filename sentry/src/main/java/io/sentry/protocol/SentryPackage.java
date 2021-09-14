@@ -9,6 +9,7 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -112,7 +113,7 @@ public final class SentryPackage
       Map<String, Object> unknown = null;
 
       reader.beginObject();
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.NAME:
@@ -128,7 +129,7 @@ public final class SentryPackage
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext());
+      }
       reader.endObject();
 
       if (name == null) {

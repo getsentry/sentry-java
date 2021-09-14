@@ -57,6 +57,7 @@ class JsonUnknownSerializationTest(
             val operatingSystem = givenJsonUnknown(OperatingSystem())
             val request = givenJsonUnknown(Request())
             val sdkInfo = givenJsonUnknown(SdkInfo())
+            val sentryEvent = givenJsonUnknown(SentryEvent())
             val sentryException = givenJsonUnknown(SentryException())
             val sentryPackage = givenJsonUnknown(SentryPackage("b59a1949-9950-4203-b394-ddd8d02c9633", "3d7790f3-7f32-43f7-b82f-9f5bc85205a8"))
             val sentryRuntime = givenJsonUnknown(SentryRuntime())
@@ -84,6 +85,7 @@ class JsonUnknownSerializationTest(
                 arrayOf(operatingSystem, operatingSystem, OperatingSystem.Deserializer()::deserialize),
                 arrayOf(request, user, Request.Deserializer()::deserialize),
                 arrayOf(sdkInfo, sdkInfo, SdkInfo.Deserializer()::deserialize),
+                arrayOf(sentryEvent, sentryEvent, SentryEvent.Deserializer()::deserialize),
                 arrayOf(sentryException, sentryException, SentryException.Deserializer()::deserialize),
                 arrayOf(sentryPackage, sentryPackage, SentryPackage.Deserializer()::deserialize),
                 arrayOf(sentryRuntime, sentryRuntime, SentryRuntime.Deserializer()::deserialize),

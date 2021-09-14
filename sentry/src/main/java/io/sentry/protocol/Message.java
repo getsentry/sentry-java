@@ -8,6 +8,7 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -143,7 +144,7 @@ public final class Message implements IUnknownPropertiesConsumer, JsonUnknown, J
       reader.beginObject();
       Message message = new Message();
       Map<String, Object> unknown = null;
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.FORMATTED:
@@ -165,7 +166,7 @@ public final class Message implements IUnknownPropertiesConsumer, JsonUnknown, J
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext());
+      }
       message.setUnknown(unknown);
       reader.endObject();
       return message;

@@ -376,7 +376,7 @@ public final class SentryStackFrame
       SentryStackFrame sentryStackFrame = new SentryStackFrame();
       Map<String, Object> unknown = null;
       reader.beginObject();
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.FILENAME:
@@ -431,7 +431,7 @@ public final class SentryStackFrame
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      }
       sentryStackFrame.setUnknown(unknown);
       reader.endObject();
       return sentryStackFrame;

@@ -304,7 +304,7 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer, JsonUnknown
       SentryLevel level = null;
 
       Map<String, Object> unknown = null;
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.TIMESTAMP:
@@ -340,7 +340,7 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer, JsonUnknown
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      }
 
       Breadcrumb breadcrumb = new Breadcrumb(timestamp);
       breadcrumb.message = message;
