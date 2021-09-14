@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Bump AGP to 7.0.2 (#1650)
+* Fix: drop spans in BeforeSpanCallback. (#1713)
 
 ## 5.2.0-beta.1
 
