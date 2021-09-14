@@ -31,10 +31,10 @@ class SentryAndroidOptionsTest {
             it.version == BuildConfig.VERSION_NAME
         })
 
-//        assertTrue(sdkVersion.packages!!.any {
-//            it.name == "maven:io.sentry:sentry" &&
-//            it.version == BuildConfig.VERSION_NAME
-//        })
+        assertTrue(sdkVersion.packages!!.any {
+            it.name == "maven:io.sentry:sentry" &&
+            it.version == BuildConfig.VERSION_NAME
+        })
     }
 
     @Test

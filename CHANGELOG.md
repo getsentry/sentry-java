@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Bump AGP to 7.0.2 (#1650)
+
 ## 5.2.0-beta.1
 
 * Feat: Add tracestate HTTP header support (#1683)
