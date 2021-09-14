@@ -280,6 +280,14 @@ public class SentryOptions {
    */
   private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
 
+  /** Controls if the `tracestate` header is attached to envelopes and HTTP client integrations. */
+  private boolean traceSampling;
+
+  /**
+   * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   */
+  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -324,6 +332,9 @@ public class SentryOptions {
     }
     for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
       options.addInAppExclude(inAppExclude);
+    }
+    for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
+      options.addTracingOrigin(tracingOrigin);
     }
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -1438,6 +1449,40 @@ public class SentryOptions {
     this.maxRequestBodySize = maxRequestBodySize;
   }
 
+  /** Note: this is an experimental API and will be removed without notice. */
+  @ApiStatus.Experimental
+  public boolean isTraceSampling() {
+    return traceSampling;
+  }
+
+  /**
+   * Note: this is an experimental API and will be removed without notice.
+   *
+   * @param traceSampling - if trace sampling should be enabled
+   */
+  @ApiStatus.Experimental
+  public void setTraceSampling(boolean traceSampling) {
+    this.traceSampling = traceSampling;
+  }
+
+  /**
+   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @return the list of origins
+   */
+  public @NotNull List<String> getTracingOrigins() {
+    return tracingOrigins;
+  }
+
+  /**
+   * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @param tracingOrigin - the tracing origin
+   */
+  public void addTracingOrigin(final @NotNull String tracingOrigin) {
+    this.tracingOrigins.add(tracingOrigin);
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1573,6 +1618,10 @@ public class SentryOptions {
     for (final Class<? extends Throwable> exceptionType :
         new HashSet<>(options.getIgnoredExceptionsForType())) {
       addIgnoredExceptionForType(exceptionType);
+    }
+    final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
+    for (final String tracingOrigin : tracingOrigins) {
+      addTracingOrigin(tracingOrigin);
     }
   }
 

@@ -1070,8 +1070,10 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op", true), mock())), null)
-        verify(mockClient).captureTransaction(any(), any(), eq(null))
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
+        val traceState = sentryTracer.traceState()
+        sut.captureTransaction(SentryTransaction(sentryTracer), traceState)
+        verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null))
     }
 
     @Test
@@ -1084,8 +1086,10 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op", false), mock())), null)
-        verify(mockClient, times(0)).captureTransaction(any(), any(), eq(null))
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", false), sut)
+        val traceState = sentryTracer.traceState()
+        sut.captureTransaction(SentryTransaction(sentryTracer), traceState)
+        verify(mockClient, times(0)).captureTransaction(any(), eq(traceState), any(), eq(null))
     }
     //endregion
 

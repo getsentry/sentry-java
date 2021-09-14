@@ -531,7 +531,9 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction,
+      final @Nullable TraceState traceState,
+      final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -561,7 +563,8 @@ public final class Hub implements IHub {
         StackItem item = null;
         try {
           item = stack.peek();
-          sentryId = item.getClient().captureTransaction(transaction, item.getScope(), hint);
+          sentryId =
+              item.getClient().captureTransaction(transaction, traceState, item.getScope(), hint);
         } catch (Exception e) {
           options
               .getLogger()

@@ -5,6 +5,7 @@ import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SpanStatus
+import io.sentry.TracingOrigins
 import java.io.IOException
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -31,9 +32,16 @@ class SentryOkHttpInterceptor(
 
         var code: Int? = null
         try {
-            span?.toSentryTrace()?.let {
-                request = request.newBuilder().addHeader(it.name, it.value).build()
+            val requestBuilder = request.newBuilder()
+            if (span != null && TracingOrigins.contain(hub.options.tracingOrigins, request.url.toString())) {
+                span.toSentryTrace().let {
+                    requestBuilder.addHeader(it.name, it.value)
+                }
+                span.toTraceStateHeader()?.let {
+                    requestBuilder.addHeader(it.name, it.value)
+                }
             }
+            request = requestBuilder.build()
             response = chain.proceed(request)
             code = response.code
             span?.status = SpanStatus.fromHttpStatusCode(code)

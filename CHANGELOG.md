@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 5.2.0-beta.1
+
+* Feat: Add tracestate HTTP header support (#1683)
+* Feat: Add option to filter which origins receive tracing headers (#1698)
+* Feat: Include unfinished spans in transaction (#1699)
+* Fix: Move tags from transaction.contexts.trace.tags to transaction.tags (#1700)
+* Feat: Add static helpers for creating breadcrumbs (#1702)
+
+Breaking changes:
+
+* Updated proguard keep rule for enums, which affects consumer application code (#1694)
+
 ## 5.1.2
 
 * Fix: Servlet 3.1 compatibility issue (#1681)

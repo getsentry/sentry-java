@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -200,8 +201,40 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   @NotNull
+  default SentryId captureTransaction(
+      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Object hint) {
+    return captureTransaction(transaction, null, scope, hint);
+  }
+
+  /**
+   * Captures a transaction.
+   *
+   * @param transaction the {@link ITransaction} to send
+   * @param traceState the trace state
+   * @param scope An optional scope to be applied to the event.
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull
+  @ApiStatus.Experimental
   SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Object hint);
+      @NotNull SentryTransaction transaction,
+      @Nullable TraceState traceState,
+      @Nullable Scope scope,
+      @Nullable Object hint);
+
+  /**
+   * Captures a transaction without scope nor hint.
+   *
+   * @param transaction the {@link ITransaction} to send
+   * @param traceState the trace state
+   * @return The Id (SentryId object) of the event
+   */
+  @ApiStatus.Experimental
+  default @NotNull SentryId captureTransaction(
+      @NotNull SentryTransaction transaction, @Nullable TraceState traceState) {
+    return captureTransaction(transaction, traceState, null, null);
+  }
 
   /**
    * Captures a transaction without scope nor hint.
@@ -210,6 +243,6 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureTransaction(@NotNull SentryTransaction transaction) {
-    return captureTransaction(transaction, null, null);
+    return captureTransaction(transaction, null, null, null);
   }
 }
