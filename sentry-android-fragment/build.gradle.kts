@@ -17,7 +17,7 @@ android {
         minSdkVersion(Config.Android.minSdkVersion)
 
         // for AGP 4.1
-        buildConfigField("String", "VERSION_NAME", "\"$project.version\"")
+        buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
 
     buildTypes {

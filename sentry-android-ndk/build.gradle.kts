@@ -38,7 +38,7 @@ android {
         }
 
         // for AGP 4.1
-        buildConfigField("String", "VERSION_NAME", "\"$project.version\"")
+        buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
 
     // we use the default NDK and CMake versions based on the AGP's version
