@@ -30,15 +30,6 @@ version_digit_to_bump="$( awk "/$VERSION_NAME_PATTERN/" $GRADLE_FILEPATH | egrep
 new_version="$( echo $version | sed "s/[0-9]*$/$version_digit_to_bump/g" )"
 sed -i "" -e "s/$VERSION_NAME_PATTERN=.*$/$VERSION_NAME_PATTERN=$new_version-SNAPSHOT/g" $GRADLE_FILEPATH
 
-# Increment `buildVersionCode`
-# After having incremented the version name (see comments above), the new version
-# still has the version code of the version in production. This must be
-# incremented to align with the new version.
-VERSION_CODE_PATTERN="buildVersionCode"
-VERSION_NUMBER="$( awk "/$VERSION_CODE_PATTERN/" $GRADLE_FILEPATH | grep -o '[0-9]\+' )"
-((VERSION_NUMBER++))
-sed -i "" -e "s/$VERSION_CODE_PATTERN=.*$/$VERSION_CODE_PATTERN=$VERSION_NUMBER/g" $GRADLE_FILEPATH
-
 git add .
 git commit -m "Prepare $new_version"
 git push
