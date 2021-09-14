@@ -17,9 +17,6 @@ android {
         targetSdkVersion(Config.Android.targetSdkVersion)
         minSdkVersion(Config.Android.minSdkVersionOkHttp)
 
-//        versionName = project.version.toString()
-//        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
-
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"$project.version\"")
     }

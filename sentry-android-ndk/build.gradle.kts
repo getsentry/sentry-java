@@ -26,9 +26,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-//        versionName = project.version.toString()
-//        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
-
         externalNativeBuild {
             cmake {
                 arguments.add(0, "-DANDROID_STL=c++_static")
