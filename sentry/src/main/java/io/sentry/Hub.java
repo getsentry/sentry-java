@@ -180,7 +180,7 @@ public final class Hub implements IHub {
   }
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
-    if (event.getThrowable() != null) {
+    if (options.isTracingEnabled() && event.getThrowable() != null) {
       final Pair<ISpan, String> pair =
           throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
       if (pair != null) {
