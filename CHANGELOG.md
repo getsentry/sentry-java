@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.2.0-beta.1
 
 * Feat: Add tracestate HTTP header support (#1683)
 * Feat: Add option to filter which origins receive tracing headers (#1698)
