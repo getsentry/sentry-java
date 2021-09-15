@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Fix: Check at runtime if AndroidX.Core is available (#1718)
 * Feat: Add "data" to spans (#1717)
 * Fix: Should not capture unfinished transaction (#1719)
 

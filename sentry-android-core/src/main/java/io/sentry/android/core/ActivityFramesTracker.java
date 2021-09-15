@@ -14,25 +14,52 @@ import org.jetbrains.annotations.TestOnly;
 
 final class ActivityFramesTracker {
 
-  private final @NotNull FrameMetricsAggregator frameMetricsAggregator;
-
-  ActivityFramesTracker() {
-    this(new FrameMetricsAggregator());
-  }
-
-  @TestOnly
-  ActivityFramesTracker(final @NotNull FrameMetricsAggregator frameMetricsAggregator) {
-    this.frameMetricsAggregator = frameMetricsAggregator;
-  }
+  private @Nullable FrameMetricsAggregator frameMetricsAggregator = null;
+  private boolean androidXAvailable = true;
 
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
       activityMeasurements = new ConcurrentHashMap<>();
 
+  ActivityFramesTracker(final @NotNull LoadClass loadClass) {
+    androidXAvailable = checkAndroidXAvailability(loadClass);
+    if (androidXAvailable) {
+      frameMetricsAggregator = new FrameMetricsAggregator();
+    }
+  }
+
+  @TestOnly
+  ActivityFramesTracker(final @Nullable FrameMetricsAggregator frameMetricsAggregator) {
+    this.frameMetricsAggregator = frameMetricsAggregator;
+  }
+
+  private static boolean checkAndroidXAvailability(final @NotNull LoadClass loadClass) {
+    try {
+      loadClass.loadClass("androidx.core.app.FrameMetricsAggregator");
+      return true;
+    } catch (ClassNotFoundException ignored) {
+      // androidx.core isn't available.
+      return false;
+    }
+  }
+
+  private boolean isFrameMetricsAggregatorAvailable() {
+    return androidXAvailable && frameMetricsAggregator != null;
+  }
+
+  @SuppressWarnings("NullAway")
   void addActivity(final @NotNull Activity activity) {
+    if (!isFrameMetricsAggregatorAvailable()) {
+      return;
+    }
     frameMetricsAggregator.add(activity);
   }
 
+  @SuppressWarnings("NullAway")
   void setMetrics(final @NotNull Activity activity, final @NotNull SentryId sentryId) {
+    if (!isFrameMetricsAggregatorAvailable()) {
+      return;
+    }
+
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
@@ -75,14 +102,21 @@ final class ActivityFramesTracker {
 
   @Nullable
   Map<String, @NotNull MeasurementValue> takeMetrics(final @NotNull SentryId sentryId) {
+    if (!isFrameMetricsAggregatorAvailable()) {
+      return null;
+    }
+
     final Map<String, @NotNull MeasurementValue> stringMeasurementValueMap =
         activityMeasurements.get(sentryId);
     activityMeasurements.remove(sentryId);
     return stringMeasurementValueMap;
   }
 
+  @SuppressWarnings("NullAway")
   void stop() {
-    frameMetricsAggregator.stop();
+    if (isFrameMetricsAggregatorAvailable()) {
+      frameMetricsAggregator.stop();
+    }
     activityMeasurements.clear();
   }
 }

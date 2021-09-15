@@ -76,14 +76,14 @@ final class AndroidOptionsInitializer {
    * @param context the Application context
    * @param logger the ILogger interface
    * @param buildInfoProvider the IBuildInfoProvider interface
-   * @param loadClass the ILoadClass interface
+   * @param loadClass the LoadClass wrapper
    */
   static void init(
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull IBuildInfoProvider buildInfoProvider,
-      final @NotNull ILoadClass loadClass) {
+      final @NotNull LoadClass loadClass) {
     Objects.requireNonNull(context, "The context is required.");
 
     // it returns null if ContextImpl, so let's check for nullability
@@ -100,7 +100,7 @@ final class AndroidOptionsInitializer {
     ManifestMetadataReader.applyMetadata(context, options);
     initializeCacheDirs(context, options);
 
-    final ActivityFramesTracker activityFramesTracker = new ActivityFramesTracker();
+    final ActivityFramesTracker activityFramesTracker = new ActivityFramesTracker(loadClass);
     installDefaultIntegrations(
         context, options, buildInfoProvider, loadClass, activityFramesTracker);
 
@@ -116,7 +116,7 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull SentryOptions options,
       final @NotNull IBuildInfoProvider buildInfoProvider,
-      final @NotNull ILoadClass loadClass,
+      final @NotNull LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
 
     options.addIntegration(
@@ -224,7 +224,7 @@ final class AndroidOptionsInitializer {
   private static @Nullable Class<?> loadNdkIfAvailable(
       final @NotNull SentryOptions options,
       final @NotNull IBuildInfoProvider buildInfoProvider,
-      final @NotNull ILoadClass loadClass) {
+      final @NotNull LoadClass loadClass) {
     if (isNdkAvailable(buildInfoProvider)) {
       try {
         return loadClass.loadClass(SENTRY_NDK_CLASS_NAME);
