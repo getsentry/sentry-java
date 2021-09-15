@@ -4,6 +4,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +35,8 @@ public final class Span implements ISpan {
   private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
   private final @Nullable SpanFinishedCallback spanFinishedCallback;
+
+  private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
 
   Span(
       final @NotNull SentryId traceId,
@@ -197,6 +200,10 @@ public final class Span implements ISpan {
     return finished.get();
   }
 
+  public @NotNull Map<String, Object> getData() {
+    return data;
+  }
+
   public @Nullable Boolean isSampled() {
     return context.getSampled();
   }
@@ -226,5 +233,15 @@ public final class Span implements ISpan {
 
   public Map<String, String> getTags() {
     return context.getTags();
+  }
+
+  @Override
+  public void setData(@NotNull String key, @NotNull Object value) {
+    data.put(key, value);
+  }
+
+  @Override
+  public @Nullable Object getData(@NotNull String key) {
+    return data.get(key);
   }
 }

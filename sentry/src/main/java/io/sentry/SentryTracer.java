@@ -9,6 +9,7 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -343,6 +344,20 @@ public final class SentryTracer implements ITransaction {
   @Override
   public boolean isFinished() {
     return this.root.isFinished();
+  }
+
+  @Override
+  public void setData(@NotNull String key, @NotNull Object value) {
+    this.root.setData(key, value);
+  }
+
+  @Override
+  public @Nullable Object getData(@NotNull String key) {
+    return this.root.getData(key);
+  }
+
+  public @Nullable Map<String, Object> getData() {
+    return this.root.getData();
   }
 
   @Override

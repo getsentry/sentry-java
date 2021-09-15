@@ -180,7 +180,7 @@ public final class Hub implements IHub {
   }
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
-    if (event.getThrowable() != null) {
+    if (options.isTracingEnabled() && event.getThrowable() != null) {
       final Pair<ISpan, String> pair =
           throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
       if (pair != null) {
@@ -549,29 +549,30 @@ public final class Hub implements IHub {
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Capturing unfinished transaction: %s",
-                transaction.getEventId());
-      }
-      if (!Boolean.TRUE.equals(transaction.isSampled())) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Transaction %s was dropped due to sampling decision.",
+                "Transaction: %s is not finished and this 'captureTransaction' call is a no-op.",
                 transaction.getEventId());
       } else {
-        StackItem item = null;
-        try {
-          item = stack.peek();
-          sentryId =
-              item.getClient().captureTransaction(transaction, traceState, item.getScope(), hint);
-        } catch (Exception e) {
+        if (!Boolean.TRUE.equals(transaction.isSampled())) {
           options
               .getLogger()
               .log(
-                  SentryLevel.ERROR,
-                  "Error while capturing transaction with id: " + transaction.getEventId(),
-                  e);
+                  SentryLevel.DEBUG,
+                  "Transaction %s was dropped due to sampling decision.",
+                  transaction.getEventId());
+        } else {
+          StackItem item = null;
+          try {
+            item = stack.peek();
+            sentryId =
+                item.getClient().captureTransaction(transaction, traceState, item.getScope(), hint);
+          } catch (Exception e) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.ERROR,
+                    "Error while capturing transaction with id: " + transaction.getEventId(),
+                    e);
+          }
         }
       }
     }

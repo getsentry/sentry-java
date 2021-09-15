@@ -9,7 +9,7 @@ object Config {
     val springKotlinCompatibleLanguageVersion = "1.3"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:4.2.2"
+        val androidGradle = "com.android.tools.build:gradle:7.0.2"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.0"
@@ -152,7 +152,6 @@ object Config {
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"
-        val buildVersionCodeProp = "buildVersionCode"
     }
 
     object CompileOnly {

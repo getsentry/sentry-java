@@ -39,10 +39,11 @@ class SentryTracerTest {
             optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {},
             startTimestamp: Date? = null,
             waitForChildren: Boolean = false,
-            transactionFinishedCallback: TransactionFinishedCallback? = null
+            transactionFinishedCallback: TransactionFinishedCallback? = null,
+            sampled: Boolean? = null
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op"), hub, startTimestamp, waitForChildren, transactionFinishedCallback)
+            return SentryTracer(TransactionContext("name", "op", sampled), hub, startTimestamp, waitForChildren, transactionFinishedCallback)
         }
     }
 
@@ -205,6 +206,19 @@ class SentryTracerTest {
             assertNotNull(it.contexts.trace) {
                 assertEquals(emptyMap(), it.tags)
             }
+        }, anyOrNull())
+    }
+
+    @Test
+    fun `not sampled spans are filtered out`() {
+        val tracer = fixture.getSut(sampled = true)
+        tracer.startChild("op1")
+        val span = tracer.startChild("op2")
+        span.spanContext.sampled = false
+        tracer.finish()
+        verify(fixture.hub).captureTransaction(check {
+            assertEquals(1, it.spans.size)
+            assertEquals("op1", it.spans.first().op)
         }, anyOrNull())
     }
 
@@ -421,7 +435,7 @@ class SentryTracerTest {
 
     @Test
     fun `finishing unfinished spans with the transaction timestamp`() {
-        val transaction = fixture.getSut()
+        val transaction = fixture.getSut(sampled = true)
         transaction.startChild("op")
         transaction.startChild("op2")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
@@ -483,5 +497,29 @@ class SentryTracerTest {
             assertEquals("tracestate", it.name)
             assertNotNull(it.value)
         }
+    }
+
+    @Test
+    fun `sets ITransaction data as extra in SentryTransaction`() {
+        val transaction = fixture.getSut(sampled = true)
+        transaction.setData("key", "val")
+        transaction.finish()
+        verify(fixture.hub).captureTransaction(check {
+            assertEquals("val", it.getExtra("key"))
+        }, anyOrNull())
+    }
+
+    @Test
+    fun `sets Span data as data in SentrySpan`() {
+        val transaction = fixture.getSut(sampled = true)
+        val span = transaction.startChild("op")
+        span.setData("key", "val")
+        span.finish()
+        transaction.finish()
+        verify(fixture.hub).captureTransaction(check {
+            assertNotNull(it.spans.first().data) {
+                assertEquals("val", it["key"])
+            }
+        }, anyOrNull())
     }
 }

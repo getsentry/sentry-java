@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+* Feat: Add "data" to spans (#1717)
+* Fix: Should not capture unfinished transaction (#1719)
+
+## 5.2.0-beta.2
+
+* Bump AGP to 7.0.2 (#1650)
+* Fix: drop spans in BeforeSpanCallback. (#1713)
+
+## 5.2.0-beta.1
+
 * Feat: Add tracestate HTTP header support (#1683)
 * Feat: Add option to filter which origins receive tracing headers (#1698)
 * Feat: Include unfinished spans in transaction (#1699)

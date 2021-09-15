@@ -510,7 +510,9 @@ class GsonSerializerTest {
         trace.description = "some request"
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
+        trace.sampled = true
         val tracer = SentryTracer(trace, fixture.hub)
+        tracer.setData("dataKey", "dataValue")
         val span = tracer.startChild("child")
         span.finish(SpanStatus.OK)
         tracer.finish()
@@ -525,6 +527,8 @@ class GsonSerializerTest {
         assertNotNull(element["event_id"].asString)
         assertNotNull(element["spans"].asJsonArray)
         assertEquals("myValue", element["tags"].asJsonObject["myTag"].asString)
+
+        assertEquals("dataValue", element["extra"].asJsonObject["dataKey"].asString)
 
         val jsonSpan = element["spans"].asJsonArray[0].asJsonObject
         assertNotNull(jsonSpan["trace_id"])
@@ -562,6 +566,9 @@ class GsonSerializerTest {
                               "some-key": "some-value"
                             }
                           },
+                          "extra": {
+                            "extraKey": "extraValue"
+                          },
                           "spans": [
                             {
                               "start_timestamp": "2021-03-05T08:51:12.838Z",
@@ -595,6 +602,8 @@ class GsonSerializerTest {
         assertEquals("http", transaction.contexts.trace!!.operation)
         assertNotNull(transaction.contexts["custom"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
+
+        assertEquals("extraValue", transaction.getExtra("extraKey"))
 
         assertNotNull(transaction.spans)
         assertEquals(1, transaction.spans.size)
