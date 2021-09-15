@@ -516,7 +516,7 @@ class SentryTracerTest {
         span.setData("key", "val")
         span.finish()
         transaction.finish()
-        verify(fixture.hub, times(1)).captureTransaction(check {
+        verify(fixture.hub).captureTransaction(check {
             assertNotNull(it.spans.first().data) {
                 assertEquals("val", it["key"])
             }
