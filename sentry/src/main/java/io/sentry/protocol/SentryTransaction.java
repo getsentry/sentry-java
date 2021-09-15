@@ -67,6 +67,13 @@ public final class SentryTransaction extends SentryBaseEvent {
     for (final Map.Entry<String, String> tag : tracerContext.getTags().entrySet()) {
       this.setTag(tag.getKey(), tag.getValue());
     }
+
+    final Map<String, Object> data = sentryTracer.getData();
+    if (data != null) {
+      for (final Map.Entry<String, Object> tag : data.entrySet()) {
+        this.setExtra(tag.getKey(), tag.getValue());
+      }
+    }
   }
 
   public @NotNull List<SentrySpan> getSpans() {

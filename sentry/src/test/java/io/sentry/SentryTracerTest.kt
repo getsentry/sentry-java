@@ -498,4 +498,28 @@ class SentryTracerTest {
             assertNotNull(it.value)
         }
     }
+
+    @Test
+    fun `sets ITransaction data as extra in SentryTransaction`() {
+        val transaction = fixture.getSut(sampled = true)
+        transaction.setData("key", "val")
+        transaction.finish()
+        verify(fixture.hub).captureTransaction(check {
+            assertEquals("val", it.getExtra("key"))
+        }, anyOrNull())
+    }
+
+    @Test
+    fun `sets Span data as data in SentrySpan`() {
+        val transaction = fixture.getSut(sampled = true)
+        val span = transaction.startChild("op")
+        span.setData("key", "val")
+        span.finish()
+        transaction.finish()
+        verify(fixture.hub).captureTransaction(check {
+            assertNotNull(it.spans.first().data) {
+                assertEquals("val", it["key"])
+            }
+        }, anyOrNull())
+    }
 }
