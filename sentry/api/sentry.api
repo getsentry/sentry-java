@@ -372,6 +372,7 @@ public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/Jso
 	public fun nextBooleanOrNull ()Ljava/lang/Boolean;
 	public fun nextDateOrNull (Lio/sentry/ILogger;)Ljava/util/Date;
 	public fun nextDoubleOrNull ()Ljava/lang/Double;
+	public fun nextFloat ()Ljava/lang/Float;
 	public fun nextFloatOrNull ()Ljava/lang/Float;
 	public fun nextIntegerOrNull ()Ljava/lang/Integer;
 	public fun nextList (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
@@ -1828,8 +1829,20 @@ public final class io/sentry/protocol/Gpu$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/MeasurementValue {
+public final class io/sentry/protocol/MeasurementValue : io/sentry/JsonSerializable {
 	public fun <init> (F)V
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/protocol/MeasurementValue$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/MeasurementValue;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/MeasurementValue$JsonKeys {
+	public static final field VALUE Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/Mechanism : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -2147,9 +2160,10 @@ public final class io/sentry/protocol/SentryRuntime$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SentrySpan {
+public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/Span;)V
 	public fun <init> (Lio/sentry/Span;Ljava/util/Map;)V
+	public fun <init> (Ljava/util/Date;Ljava/util/Date;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanStatus;Ljava/util/Map;Ljava/util/Map;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
@@ -2160,7 +2174,30 @@ public final class io/sentry/protocol/SentrySpan {
 	public fun getTags ()Ljava/util/Map;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun isFinished ()Z
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/SentrySpan$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SentrySpan;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SentrySpan$JsonKeys {
+	public static final field DATA Ljava/lang/String;
+	public static final field DESCRIPTION Ljava/lang/String;
+	public static final field OP Ljava/lang/String;
+	public static final field PARENT_SPAN_ID Ljava/lang/String;
+	public static final field SPAN_ID Ljava/lang/String;
+	public static final field START_TIMESTAMP Ljava/lang/String;
+	public static final field STATUS Ljava/lang/String;
+	public static final field TAGS Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public static final field TRACE_ID Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/SentryStackFrame : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -2304,8 +2341,9 @@ public final class io/sentry/protocol/SentryThread$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEvent {
+public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/SentryTracer;)V
+	public fun <init> (Ljava/lang/String;Ljava/util/Date;Ljava/util/Date;Ljava/util/List;Ljava/util/Map;)V
 	public fun getMeasurements ()Ljava/util/Map;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStartTimestamp ()Ljava/util/Date;
@@ -2313,8 +2351,27 @@ public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEv
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun getType ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun isFinished ()Z
 	public fun isSampled ()Z
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/SentryTransaction$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SentryTransaction;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SentryTransaction$JsonKeys {
+	public static final field MEASUREMENTS Ljava/lang/String;
+	public static final field SPANS Ljava/lang/String;
+	public static final field START_TIMESTAMP Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public static final field TRANSACTION Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
