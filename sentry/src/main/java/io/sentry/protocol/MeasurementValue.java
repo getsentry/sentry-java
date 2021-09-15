@@ -28,7 +28,7 @@ public final class MeasurementValue implements JsonSerializable {
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.VALUE).value((double) value);
+    writer.name(JsonKeys.VALUE).value(value);
     writer.endObject();
   }
 

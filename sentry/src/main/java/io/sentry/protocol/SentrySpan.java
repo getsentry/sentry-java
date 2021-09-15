@@ -195,15 +195,15 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
         @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
 
-      Date startTimestamp = null; // @NotNull
+      Date startTimestamp = null;
       Date timestamp = null;
-      SentryId traceId = null; // @NotNull
-      SpanId spanId = null; // @NotNull
+      SentryId traceId = null;
+      SpanId spanId = null;
       SpanId parentSpanId = null;
-      String op = null; // @NotNull
+      String op = null;
       String description = null;
       SpanStatus status = null;
-      Map<String, String> tags = null; // @NotNull
+      Map<String, String> tags = null;
       Map<String, Object> data = null;
 
       Map<String, Object> unknown = null;
