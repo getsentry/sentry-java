@@ -156,7 +156,7 @@ public interface ISpan {
   boolean isFinished();
 
   /**
-   * Sets extra data on span on transaction.
+   * Sets extra data on span or transaction.
    *
    * @param key the data key
    * @param value the data value
