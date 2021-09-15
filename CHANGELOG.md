@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Add "data" to spans (#1717)
+
 ## 5.2.0-beta.2
 
 * Bump AGP to 7.0.2 (#1650)
