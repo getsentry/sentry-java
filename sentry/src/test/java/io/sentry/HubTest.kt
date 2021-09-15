@@ -1056,7 +1056,9 @@ class HubTest {
         sut.bindClient(mockClient)
         sut.close()
 
-        sut.captureTransaction(SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock())), null)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), sut)
+        sentryTracer.finish()
+        sut.captureTransaction(SentryTransaction(sentryTracer), null)
         verify(mockClient, never()).captureTransaction(any(), any(), any())
     }
 
@@ -1071,13 +1073,28 @@ class HubTest {
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
+        sentryTracer.finish()
         val traceState = sentryTracer.traceState()
-        sut.captureTransaction(SentryTransaction(sentryTracer), traceState)
         verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null))
     }
 
     @Test
-    fun `when captureTransaction and transaction is not sampled, captureTransaction on the client should be called`() {
+    fun `when captureTransaction and transaction is not finished, captureTransaction on the client should not be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
+        sut.captureTransaction(SentryTransaction(sentryTracer), null)
+        verify(mockClient, never()).captureTransaction(any(), any(), any(), eq(null))
+    }
+
+    @Test
+    fun `when captureTransaction and transaction is not sampled, captureTransaction on the client should not be called`() {
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
@@ -1087,9 +1104,9 @@ class HubTest {
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", false), sut)
+        sentryTracer.finish()
         val traceState = sentryTracer.traceState()
-        sut.captureTransaction(SentryTransaction(sentryTracer), traceState)
-        verify(mockClient, times(0)).captureTransaction(any(), eq(traceState), any(), eq(null))
+        verify(mockClient, never()).captureTransaction(any(), eq(traceState), any(), eq(null))
     }
     //endregion
 
