@@ -27,6 +27,7 @@ import io.sentry.protocol.SentryStackTrace
 import io.sentry.protocol.SentryThread
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.SentryTransactionSerializationTest
+import io.sentry.protocol.SessionSerializationTest
 import io.sentry.protocol.User
 import java.io.StringReader
 import java.io.StringWriter
@@ -70,6 +71,7 @@ class JsonUnknownSerializationTest(
             val sentryStackTrace = givenJsonUnknown(SentryStackTrace())
             val sentryThread = givenJsonUnknown(SentryThread())
             val sentryTransaction = givenJsonUnknown(SentryTransactionSerializationTest.Fixture().getSut())
+            val session = givenJsonUnknown(SessionSerializationTest.Fixture().getSut())
             val skdVersion = givenJsonUnknown(SdkVersion("3e934135-3f2b-49bc-8756-9f025b55143e", "3e31738e-4106-42d0-8be2-4a3a1bc648d3"))
             val spanContext = givenJsonUnknown(SpanContext("c2fb8fee2e2b49758bcb67cda0f713c7"))
             val user = givenJsonUnknown(User())
@@ -100,6 +102,7 @@ class JsonUnknownSerializationTest(
                 arrayOf(sentryStackTrace, sentryStackTrace, SentryStackTrace.Deserializer()::deserialize),
                 arrayOf(sentryThread, sentryThread, SentryThread.Deserializer()::deserialize),
                 arrayOf(sentryTransaction, sentryTransaction, SentryTransaction.Deserializer()::deserialize),
+                arrayOf(session, session, Session.Deserializer()::deserialize),
                 arrayOf(skdVersion, skdVersion, SdkVersion.Deserializer()::deserialize),
                 arrayOf(spanContext, spanContext, SpanContext.Deserializer()::deserialize),
                 arrayOf(user, user, User.Deserializer()::deserialize),
