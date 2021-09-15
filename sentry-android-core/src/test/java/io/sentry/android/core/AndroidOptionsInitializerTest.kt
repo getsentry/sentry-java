@@ -332,14 +332,14 @@ class AndroidOptionsInitializerTest {
         return buildInfo
     }
 
-    private fun createClassMock(clazz: Class<*> = SentryNdk::class.java): ILoadClass {
-        val loadClassMock = mock<ILoadClass>()
+    private fun createClassMock(clazz: Class<*> = SentryNdk::class.java): LoadClass {
+        val loadClassMock = mock<LoadClass>()
         whenever(loadClassMock.loadClass(any())).thenReturn(clazz)
         return loadClassMock
     }
 
-    private fun createClassMockThrows(ex: Throwable): ILoadClass {
-        val loadClassMock = mock<ILoadClass>()
+    private fun createClassMockThrows(ex: Throwable): LoadClass {
+        val loadClassMock = mock<LoadClass>()
         whenever(loadClassMock.loadClass(any())).thenThrow(ex)
         return loadClassMock
     }

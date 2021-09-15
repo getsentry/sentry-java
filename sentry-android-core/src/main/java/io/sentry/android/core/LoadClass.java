@@ -2,8 +2,16 @@ package io.sentry.android.core;
 
 import org.jetbrains.annotations.NotNull;
 
-final class LoadClass implements ILoadClass {
-  @Override
+/** An Adapter for making Class.forName testable */
+final class LoadClass {
+
+  /**
+   * Try to load a class via reflection
+   *
+   * @param clazz the full class name
+   * @return a Class<?>
+   * @throws ClassNotFoundException if class is not found
+   */
   public @NotNull Class<?> loadClass(@NotNull String clazz) throws ClassNotFoundException {
     return Class.forName(clazz);
   }

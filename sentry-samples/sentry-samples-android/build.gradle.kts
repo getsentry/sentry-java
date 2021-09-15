@@ -105,6 +105,7 @@ dependencies {
 //    implementation(projects.sentryAndroid) {
 //        exclude(group = "androidx.lifecycle", module = "lifecycle-process")
 //        exclude(group = "androidx.lifecycle", module = "lifecycle-common-java8")
+//        exclude(group = "androidx.core", module = "core")
 //    }
 
     implementation(Config.Libs.appCompat)

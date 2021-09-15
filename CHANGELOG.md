@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Check at runtime if AndroidX.Core is available (#)
+
 ## 5.2.0-beta.2
 
 * Bump AGP to 7.0.2 (#1650)
