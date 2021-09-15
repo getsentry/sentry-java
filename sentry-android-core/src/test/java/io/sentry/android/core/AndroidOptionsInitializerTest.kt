@@ -16,6 +16,7 @@ import io.sentry.MainEventProcessor
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME
 import java.io.File
 import java.lang.RuntimeException
 import kotlin.test.BeforeTest
@@ -340,7 +341,7 @@ class AndroidOptionsInitializerTest {
 
     private fun createClassMockThrows(ex: Throwable): LoadClass {
         val loadClassMock = mock<LoadClass>()
-        whenever(loadClassMock.loadClass(any())).thenThrow(ex)
+        whenever(loadClassMock.loadClass(eq(SENTRY_NDK_CLASS_NAME))).thenThrow(ex)
         return loadClassMock
     }
 }
