@@ -159,4 +159,12 @@ public final class NoOpTransaction implements ITransaction {
   public @Nullable Boolean isSampled() {
     return null;
   }
+
+  @Override
+  public void setData(@NotNull String key, @NotNull Object value) {}
+
+  @Override
+  public @Nullable Object getData(@NotNull String key) {
+    return null;
+  }
 }
