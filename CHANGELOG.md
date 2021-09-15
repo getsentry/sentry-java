@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.2.0-beta.3
 
 * Fix: Check at runtime if AndroidX.Core is available (#1718)
