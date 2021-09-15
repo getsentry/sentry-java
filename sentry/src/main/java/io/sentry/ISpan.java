@@ -154,4 +154,20 @@ public interface ISpan {
    * @return if span has finished.
    */
   boolean isFinished();
+
+  /**
+   * Sets extra data on span on transaction.
+   *
+   * @param key the data key
+   * @param value the data value
+   */
+  void setData(@NotNull String key, @NotNull Object value);
+
+  /**
+   * Returns extra data from span or transaction.
+   *
+   * @return the data
+   */
+  @Nullable
+  Object getData(@NotNull String key);
 }

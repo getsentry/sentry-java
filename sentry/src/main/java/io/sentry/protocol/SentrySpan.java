@@ -26,7 +26,7 @@ public final class SentrySpan {
   private final @Nullable Map<String, Object> data;
 
   public SentrySpan(final @NotNull Span span) {
-    this(span, null);
+    this(span, span.getData());
   }
 
   @ApiStatus.Internal
