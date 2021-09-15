@@ -155,8 +155,6 @@ class SentryApolloInterceptorTest {
         val httpClientSpan = it.spans.first()
         assertEquals("LaunchDetails", httpClientSpan.op)
         assertEquals("query LaunchDetails", httpClientSpan.description)
-        assertNotNull(httpClientSpan.tags["operationId"])
-        assertEquals("{id=83}", httpClientSpan.tags["variables"])
     }
 
     private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true) = runBlocking {

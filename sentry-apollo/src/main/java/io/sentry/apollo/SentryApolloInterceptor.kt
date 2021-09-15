@@ -37,8 +37,6 @@ class SentryApolloInterceptor(
             // we have no access to URI, no way to verify tracing origins
             val headers = request.requestHeaders.toBuilder().addHeader(sentryTraceHeader.name, sentryTraceHeader.value).build()
             val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
-            span.setTag("operationId", requestWithHeader.operation.operationId())
-            span.setTag("variables", requestWithHeader.operation.variables().valueMap().toString())
 
             chain.proceedAsync(requestWithHeader, dispatcher, object : CallBack {
                 override fun onResponse(response: InterceptorResponse) {
