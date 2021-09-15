@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Should not capture unfinished transaction (#1719)
+
 ## 5.2.0-beta.2
 
 * Bump AGP to 7.0.2 (#1650)
