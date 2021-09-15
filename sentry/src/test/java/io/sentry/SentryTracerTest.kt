@@ -504,7 +504,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(sampled = true)
         transaction.setData("key", "val")
         transaction.finish()
-        verify(fixture.hub, times(1)).captureTransaction(check {
+        verify(fixture.hub).captureTransaction(check {
             assertEquals("val", it.getExtra("key"))
         }, anyOrNull())
     }
