@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Fix: Check at runtime if AndroidX.Core is available (#1718)
+* Fix: Should not capture unfinished transaction (#1719)
 
 ## 5.2.0-beta.2
 
