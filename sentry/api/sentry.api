@@ -1078,7 +1078,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 }
 
-public final class io/sentry/Session {
+public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/Session$State;Ljava/util/Date;Ljava/util/Date;ILjava/lang/String;Ljava/util/UUID;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/User;Ljava/lang/String;Ljava/lang/String;)V
 	public fun clone ()Lio/sentry/Session;
@@ -1097,9 +1097,36 @@ public final class io/sentry/Session {
 	public fun getStarted ()Ljava/util/Date;
 	public fun getStatus ()Lio/sentry/Session$State;
 	public fun getTimestamp ()Ljava/util/Date;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserAgent ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
+	public fun setUnknown (Ljava/util/Map;)V
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;Z)Z
+}
+
+public final class io/sentry/Session$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/Session;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/Session$JsonKeys {
+	public static final field ATTRS Ljava/lang/String;
+	public static final field DID Ljava/lang/String;
+	public static final field DURATION Ljava/lang/String;
+	public static final field ENVIRONMENT Ljava/lang/String;
+	public static final field ERRORS Ljava/lang/String;
+	public static final field INIT Ljava/lang/String;
+	public static final field IP_ADDRESS Ljava/lang/String;
+	public static final field RELEASE Ljava/lang/String;
+	public static final field SEQ Ljava/lang/String;
+	public static final field SID Ljava/lang/String;
+	public static final field STARTED Ljava/lang/String;
+	public static final field STATUS Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public static final field USER_AGENT Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/Session$State : java/lang/Enum {
