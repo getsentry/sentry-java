@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Allow setting proguard via Options and/or external resources (#1728)
+
 ## 5.2.0-beta.3
 
 * Fix: Check at runtime if AndroidX.Core is available (#1718)
