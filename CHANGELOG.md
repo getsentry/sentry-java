@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Add breadcrumbs for the Apollo integration (#1726)
+
 ## 5.2.0-beta.3
 
 * Fix: Check at runtime if AndroidX.Core is available (#1718)
