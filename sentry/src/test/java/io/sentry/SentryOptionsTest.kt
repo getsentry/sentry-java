@@ -366,6 +366,13 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `creates options with proguardUuids using external properties`() {
+        withPropertiesFile("proguard-uuids=id1,id2") {
+            assertEquals(listOf("id1", "id2"), it.proguardUuids)
+        }
+    }
+
+    @Test
     fun `creates options with ignored exception types using external properties`() {
         val logger = mock<ILogger>()
         // Setting few types of classes:

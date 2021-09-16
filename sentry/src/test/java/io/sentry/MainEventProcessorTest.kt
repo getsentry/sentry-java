@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
+import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -32,7 +33,7 @@ class MainEventProcessorTest {
         val getLocalhost = mock<InetAddress>()
         val sentryTracer = SentryTracer(TransactionContext("", ""), mock())
 
-        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap(), sendDefaultPii: Boolean? = null, serverName: String? = "server", host: String? = null, resolveHostDelay: Long? = null, hostnameCacheDuration: Long = 10): MainEventProcessor {
+        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap(), sendDefaultPii: Boolean? = null, serverName: String? = "server", host: String? = null, resolveHostDelay: Long? = null, hostnameCacheDuration: Long = 10, proguardUuids: List<String> = emptyList()): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
             sentryOptions.isAttachStacktrace = attachStackTrace
             sentryOptions.environment = environment
@@ -40,6 +41,7 @@ class MainEventProcessorTest {
             if (sendDefaultPii != null) {
                 sentryOptions.isSendDefaultPii = sendDefaultPii
             }
+            proguardUuids.forEach { sentryOptions.addProguardUuid(it) }
             tags.forEach { sentryOptions.setTag(it.key, it.value) }
             whenever(getLocalhost.canonicalHostName).thenAnswer {
                 if (resolveHostDelay != null) {
@@ -402,6 +404,36 @@ class MainEventProcessorTest {
         event = sut.process(event, CustomCachedApplyScopeDataHint())
 
         assertNull(event.threads)
+    }
+
+    @Test
+    fun `when event does not have debug meta and proguard uuids are set, attaches debug information`() {
+        val sut = fixture.getSut(proguardUuids = listOf("id1", "id2"))
+
+        var event = SentryEvent()
+        event = sut.process(event, null)
+
+        assertNotNull(event.debugMeta) {
+            assertNotNull(it.images) { images ->
+                assertEquals("id1", images[0].uuid)
+                assertEquals("proguard", images[0].type)
+                assertEquals("id2", images[1].uuid)
+                assertEquals("proguard", images[1].type)
+            }
+        }
+    }
+
+    @Test
+    fun `when event has debug meta and proguard uuids are set, does not attach debug information`() {
+        val sut = fixture.getSut(proguardUuids = listOf("id1", "id2"))
+
+        var event = SentryEvent()
+        event.debugMeta = DebugMeta()
+        event = sut.process(event, null)
+
+        assertNotNull(event.debugMeta) {
+            assertNull(it.images)
+        }
     }
 
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {

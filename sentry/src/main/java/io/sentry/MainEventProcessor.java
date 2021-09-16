@@ -1,6 +1,8 @@
 package io.sentry;
 
 import io.sentry.hints.Cached;
+import io.sentry.protocol.DebugImage;
+import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -63,6 +65,7 @@ public final class MainEventProcessor implements EventProcessor {
       final @NotNull SentryEvent event, final @Nullable Object hint) {
     setCommons(event);
     setExceptions(event);
+    setDebugMeta(event);
 
     if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
@@ -70,6 +73,21 @@ public final class MainEventProcessor implements EventProcessor {
     }
 
     return event;
+  }
+
+  private void setDebugMeta(final @NotNull SentryEvent event) {
+    if (event.getDebugMeta() == null && !options.getProguardUuids().isEmpty()) {
+      final DebugMeta debugMeta = new DebugMeta();
+      final List<DebugImage> images = new ArrayList<>();
+      for (final String uuid : options.getProguardUuids()) {
+        final DebugImage debugImage = new DebugImage();
+        debugImage.setType("proguard");
+        debugImage.setUuid(uuid);
+        images.add(debugImage);
+      }
+      debugMeta.setImages(images);
+      event.setDebugMeta(debugMeta);
+    }
   }
 
   private boolean shouldApplyScopeData(
