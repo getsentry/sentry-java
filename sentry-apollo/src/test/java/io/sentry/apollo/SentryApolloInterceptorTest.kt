@@ -7,7 +7,10 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.Breadcrumb
+import io.sentry.HubAdapter
 import io.sentry.ISpan
 import io.sentry.Sentry
 import io.sentry.SentryTraceHeader
@@ -30,8 +33,9 @@ class SentryApolloInterceptorTest {
 
     class Fixture {
         val server = MockWebServer()
+        val hub = spy(HubAdapter.getInstance())
         val transport = mock<ITransport>()
-        var interceptor = SentryApolloInterceptor()
+        var interceptor = SentryApolloInterceptor(hub)
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -65,7 +69,7 @@ class SentryApolloInterceptorTest {
                 .setResponseCode(httpStatusCode))
 
             if (beforeSpan != null) {
-                interceptor = SentryApolloInterceptor(beforeSpan)
+                interceptor = SentryApolloInterceptor(hub, beforeSpan)
             }
             return ApolloClient.builder()
                 .serverUrl(server.url("/"))
@@ -148,6 +152,16 @@ class SentryApolloInterceptorTest {
         verify(fixture.transport).send(checkTransaction {
             assertEquals(1, it.spans.size)
         }, anyOrNull())
+    }
+
+    @Test
+    fun `adds breadcrumb when http calls succeeds`() {
+        executeQuery()
+        verify(fixture.hub).addBreadcrumb(com.nhaarman.mockitokotlin2.check<Breadcrumb> {
+            assertEquals("http", it.type)
+            assertEquals(280L, it.data["response_body_size"])
+            assertEquals(193L, it.data["request_body_size"])
+        })
     }
 
     private fun assertTransactionDetails(it: SentryTransaction) {
