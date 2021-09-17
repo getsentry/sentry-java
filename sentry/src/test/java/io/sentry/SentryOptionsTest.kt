@@ -366,9 +366,9 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `creates options with proguardUuids using external properties`() {
-        withPropertiesFile("proguard-uuids=id1,id2") {
-            assertEquals(listOf("id1", "id2"), it.proguardUuids)
+    fun `creates options with proguardUuid using external properties`() {
+        withPropertiesFile("proguard-uuid=id") {
+            assertEquals("id", it.proguardUuid)
         }
     }
 

@@ -288,8 +288,8 @@ public class SentryOptions {
    */
   private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
 
-  /** Proguard UUIDs. */
-  private final @NotNull List<String> proguardUuids = new CopyOnWriteArrayList<>();
+  /** Proguard UUID. */
+  private @Nullable String proguardUuid;
 
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
@@ -339,9 +339,8 @@ public class SentryOptions {
     for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
       options.addTracingOrigin(tracingOrigin);
     }
-    for (final String proguardUuids : propertiesProvider.getList("proguard-uuids")) {
-      options.addProguardUuid(proguardUuids);
-    }
+    options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
+
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
       try {
@@ -1490,21 +1489,21 @@ public class SentryOptions {
   }
 
   /**
-   * Returns a list of Proguard UUIDs.
+   * Returns a Proguard UUID.
    *
-   * @return the list of Proguard UUIDs.
+   * @return the Proguard UUIDs.
    */
-  public @NotNull List<String> getProguardUuids() {
-    return proguardUuids;
+  public @Nullable String getProguardUuid() {
+    return proguardUuid;
   }
 
   /**
-   * Adds a Proguard UUID.
+   * Sets a Proguard UUID.
    *
-   * @param uuid - the Proguard UUID
+   * @param proguardUuid - the Proguard UUID
    */
-  public void addProguardUuid(final @NotNull String uuid) {
-    this.proguardUuids.add(uuid);
+  public void setProguardUuid(final @Nullable String proguardUuid) {
+    this.proguardUuid = proguardUuid;
   }
 
   /** The BeforeSend callback */
@@ -1647,9 +1646,8 @@ public class SentryOptions {
     for (final String tracingOrigin : tracingOrigins) {
       addTracingOrigin(tracingOrigin);
     }
-    final List<String> proguardUuids = new ArrayList<>(options.getProguardUuids());
-    for (final String proguardUuid : proguardUuids) {
-      addProguardUuid(proguardUuid);
+    if (options.getProguardUuid() != null) {
+      setProguardUuid(options.getProguardUuid());
     }
   }
 

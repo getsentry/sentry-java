@@ -76,17 +76,23 @@ public final class MainEventProcessor implements EventProcessor {
   }
 
   private void setDebugMeta(final @NotNull SentryEvent event) {
-    if (event.getDebugMeta() == null && !options.getProguardUuids().isEmpty()) {
-      final DebugMeta debugMeta = new DebugMeta();
-      final List<DebugImage> images = new ArrayList<>();
-      for (final String uuid : options.getProguardUuids()) {
+    if (options.getProguardUuid() != null) {
+      DebugMeta debugMeta = event.getDebugMeta();
+
+      if (debugMeta == null) {
+        debugMeta = new DebugMeta();
+        debugMeta.setImages(new ArrayList<>());
+      } else if (debugMeta.getImages() == null) {
+        debugMeta.setImages(new ArrayList<>());
+      }
+      List<DebugImage> images = debugMeta.getImages();
+      if (images != null) {
         final DebugImage debugImage = new DebugImage();
         debugImage.setType("proguard");
-        debugImage.setUuid(uuid);
+        debugImage.setUuid(options.getProguardUuid());
         images.add(debugImage);
+        event.setDebugMeta(debugMeta);
       }
-      debugMeta.setImages(images);
-      event.setDebugMeta(debugMeta);
     }
   }
 
