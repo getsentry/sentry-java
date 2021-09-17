@@ -6,19 +6,20 @@ import com.apollographql.apollo.exception.ApolloException
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
-import io.sentry.HubAdapter
+import io.sentry.IHub
 import io.sentry.ISpan
-import io.sentry.Sentry
+import io.sentry.ITransaction
+import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
+import io.sentry.SentryTracer
 import io.sentry.SpanStatus
-import io.sentry.checkTransaction
-import io.sentry.kotlin.SentryContext
+import io.sentry.TransactionContext
 import io.sentry.protocol.SentryTransaction
-import io.sentry.transport.ITransport
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -33,9 +34,8 @@ class SentryApolloInterceptorTest {
 
     class Fixture {
         val server = MockWebServer()
-        val hub = spy(HubAdapter.getInstance())
-        val transport = mock<ITransport>()
-        var interceptor = SentryApolloInterceptor(hub)
+        val hub = mock<IHub>()
+        private var interceptor = SentryApolloInterceptor(hub)
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -57,11 +57,7 @@ class SentryApolloInterceptorTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: SentryApolloInterceptor.BeforeSpanCallback? = null
         ): ApolloClient {
-            Sentry.init {
-                it.dsn = "http://key@localhost/proj"
-                it.tracesSampleRate = 1.0
-                it.setTransportFactory { _, _ -> transport }
-            }
+            whenever(hub.options).thenReturn(SentryOptions())
 
             server.enqueue(MockResponse()
                 .setBody(responseBody)
@@ -81,30 +77,30 @@ class SentryApolloInterceptorTest {
     private val fixture = Fixture()
 
     @Test
-    fun `creates a span around the successful request`() = runBlocking {
+    fun `creates a span around the successful request`() {
         executeQuery()
 
-        verify(fixture.transport).send(checkTransaction {
+        verify(fixture.hub).captureTransaction(check {
             assertTransactionDetails(it)
             assertEquals(SpanStatus.OK, it.spans.first().status)
         }, anyOrNull())
     }
 
     @Test
-    fun `creates a span around the failed request`() = runBlocking {
+    fun `creates a span around the failed request`() {
         executeQuery(fixture.getSut(httpStatusCode = 403))
 
-        verify(fixture.transport).send(checkTransaction {
+        verify(fixture.hub).captureTransaction(check {
             assertTransactionDetails(it)
             assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
         }, anyOrNull())
     }
 
     @Test
-    fun `creates a span around the request failing with network error`() = runBlocking {
+    fun `creates a span around the request failing with network error`() {
         executeQuery(fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_DURING_REQUEST_BODY))
 
-        verify(fixture.transport).send(checkTransaction {
+        verify(fixture.hub).captureTransaction(check {
             assertTransactionDetails(it)
             assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
         }, anyOrNull())
@@ -134,7 +130,7 @@ class SentryApolloInterceptorTest {
             }
         }))
 
-        verify(fixture.transport).send(checkTransaction {
+        verify(fixture.hub).captureTransaction(check {
             assertEquals(1, it.spans.size)
             val httpClientSpan = it.spans.first()
             assertEquals("overwritten description", httpClientSpan.description)
@@ -149,7 +145,7 @@ class SentryApolloInterceptorTest {
             }
         }))
 
-        verify(fixture.transport).send(checkTransaction {
+        verify(fixture.hub).captureTransaction(check {
             assertEquals(1, it.spans.size)
         }, anyOrNull())
     }
@@ -157,7 +153,7 @@ class SentryApolloInterceptorTest {
     @Test
     fun `adds breadcrumb when http calls succeeds`() {
         executeQuery()
-        verify(fixture.hub).addBreadcrumb(com.nhaarman.mockitokotlin2.check<Breadcrumb> {
+        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
             assertEquals(280L, it.data["response_body_size"])
             assertEquals(193L, it.data["request_body_size"])
@@ -176,9 +172,13 @@ class SentryApolloInterceptorTest {
     }
 
     private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true) = runBlocking {
-        val tx = if (isSpanActive) Sentry.startTransaction("op", "desc", true) else null
+        var tx: ITransaction? = null
+        if (isSpanActive) {
+            tx = SentryTracer(TransactionContext("op", "desc", true), fixture.hub)
+            whenever(fixture.hub.span).thenReturn(tx)
+        }
 
-        val coroutine = launch(SentryContext()) {
+        val coroutine = launch {
             try {
                 sut.query(LaunchDetailsQuery.builder().id("83").build()).await()
             } catch (e: ApolloException) {
