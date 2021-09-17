@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Feat: Add breadcrumbs for the Apollo integration (#1726)
+* Fix: Don't set lastEventId for transactions (#1727)
 
 ## 5.2.0-beta.3
 

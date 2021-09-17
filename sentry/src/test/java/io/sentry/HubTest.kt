@@ -927,6 +927,21 @@ class HubTest {
         sut.captureEnvelope(envelope)
         verify(mockClient).captureEnvelope(any(), anyOrNull())
     }
+
+    @Test
+    fun `when captureEnvelope is called, lastEventId is not set`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            setSerializer(mock())
+        }
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        whenever(mockClient.captureEnvelope(any(), anyOrNull())).thenReturn(SentryId())
+        val envelope = SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf())
+        sut.captureEnvelope(envelope)
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+    }
     //endregion
 
     //region startSession tests
@@ -1076,6 +1091,22 @@ class HubTest {
         sentryTracer.finish()
         val traceState = sentryTracer.traceState()
         verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null))
+    }
+
+    @Test
+    fun `when captureTransaction is called, lastEventId is not set`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            setSerializer(mock())
+        }
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        whenever(mockClient.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(SentryId())
+
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
+        sentryTracer.finish()
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
     }
 
     @Test
