@@ -88,7 +88,7 @@ public final class MainEventProcessor implements EventProcessor {
       List<DebugImage> images = debugMeta.getImages();
       if (images != null) {
         final DebugImage debugImage = new DebugImage();
-        debugImage.setType("proguard");
+        debugImage.setType(DebugImage.PROGUARD);
         debugImage.setUuid(options.getProguardUuid());
         images.add(debugImage);
         event.setDebugMeta(debugMeta);

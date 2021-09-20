@@ -286,7 +286,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     for (String item : proguardUUIDs) {
       DebugImage debugImage = new DebugImage();
-      debugImage.setType("proguard");
+      debugImage.setType(DebugImage.PROGUARD);
       debugImage.setUuid(item);
       images.add(debugImage);
     }

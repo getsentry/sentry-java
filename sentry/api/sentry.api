@@ -1467,6 +1467,7 @@ public final class io/sentry/protocol/Contexts : java/util/concurrent/Concurrent
 }
 
 public final class io/sentry/protocol/DebugImage : io/sentry/IUnknownPropertiesConsumer {
+	public static final field PROGUARD Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getArch ()Ljava/lang/String;
