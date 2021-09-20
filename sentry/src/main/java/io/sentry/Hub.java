@@ -146,7 +146,6 @@ public final class Hub implements IHub {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
       }
     }
-    this.lastEventId = sentryId;
     return sentryId;
   }
 
@@ -576,7 +575,6 @@ public final class Hub implements IHub {
         }
       }
     }
-    this.lastEventId = sentryId;
     return sentryId;
   }
 
