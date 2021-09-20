@@ -11,6 +11,7 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor.FetchSourceType
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
+import io.sentry.Breadcrumb
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
@@ -94,6 +95,29 @@ class SentryApolloInterceptor(
             }
         }
         newSpan.finish()
+
+        response?.let {
+            if (it.httpResponse.isPresent) {
+                val httpResponse = it.httpResponse.get()
+                val httpRequest = httpResponse.request()
+
+                val breadcrumb = Breadcrumb.http(httpRequest.url().toString(), httpRequest.method(), httpResponse.code())
+
+                httpRequest.body()?.contentLength().ifHasValidLength { contentLength ->
+                    breadcrumb.setData("request_body_size", contentLength)
+                }
+                httpResponse.body()?.contentLength().ifHasValidLength { contentLength ->
+                    breadcrumb.setData("response_body_size", contentLength)
+                }
+                hub.addBreadcrumb(breadcrumb)
+            }
+        }
+    }
+
+    private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
+        if (this != null && this != -1L) {
+            fn.invoke(this)
+        }
     }
 
     /**
