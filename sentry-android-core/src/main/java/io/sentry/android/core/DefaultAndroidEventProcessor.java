@@ -55,7 +55,6 @@ import org.jetbrains.annotations.TestOnly;
 
 final class DefaultAndroidEventProcessor implements EventProcessor {
 
-  @TestOnly static final String PROGUARD_UUID = "proGuardUuids";
   @TestOnly static final String ROOTED = "rooted";
   @TestOnly static final String KERNEL_VERSION = "kernelVersion";
   @TestOnly static final String EMULATOR = "emulator";
