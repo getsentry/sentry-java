@@ -81,8 +81,8 @@ public final class MainEventProcessor implements EventProcessor {
 
       if (debugMeta == null) {
         debugMeta = new DebugMeta();
-        debugMeta.setImages(new ArrayList<>());
-      } else if (debugMeta.getImages() == null) {
+      }
+      if (debugMeta.getImages() == null) {
         debugMeta.setImages(new ArrayList<>());
       }
       List<DebugImage> images = debugMeta.getImages();
