@@ -711,7 +711,31 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        println(fixture.options.tracingOrigins)
         assertTrue(fixture.options.tracingOrigins.isEmpty())
+    }
+
+    @Test
+    fun `applyMetadata reads proguardUuid to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PROGUARD_UUID to "proguard-id")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals("proguard-id", fixture.options.proguardUuid)
+    }
+
+    @Test
+    fun `applyMetadata reads proguardUuid to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertNull(fixture.options.proguardUuid)
     }
 }

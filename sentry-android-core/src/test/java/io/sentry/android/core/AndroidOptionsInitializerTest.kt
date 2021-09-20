@@ -161,6 +161,16 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `init should set proguard uuid id on start`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithProguardUuid())
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+
+        assertEquals("proguard-uuid", sentryOptions.proguardUuid)
+    }
+
+    @Test
     fun `init should set Android transport gate`() {
         val sentryOptions = SentryAndroidOptions()
         val mockContext = createMockContext()
@@ -324,6 +334,12 @@ class AndroidOptionsInitializerTest {
     private fun createBundleWithDsn(): Bundle {
         return Bundle().apply {
             putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+        }
+    }
+
+    private fun createBundleWithProguardUuid(): Bundle {
+        return Bundle().apply {
+            putString(ManifestMetadataReader.PROGUARD_UUID, "proguard-uuid")
         }
     }
 

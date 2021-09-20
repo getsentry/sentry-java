@@ -10,7 +10,6 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
@@ -30,8 +29,6 @@ import io.sentry.android.core.util.DeviceOrientations;
 import io.sentry.android.core.util.MainThreadChecker;
 import io.sentry.android.core.util.RootChecker;
 import io.sentry.protocol.App;
-import io.sentry.protocol.DebugImage;
-import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.SentryThread;
@@ -39,21 +36,15 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -64,7 +55,6 @@ import org.jetbrains.annotations.TestOnly;
 
 final class DefaultAndroidEventProcessor implements EventProcessor {
 
-  @TestOnly static final String PROGUARD_UUID = "proGuardUuids";
   @TestOnly static final String ROOTED = "rooted";
   @TestOnly static final String KERNEL_VERSION = "kernelVersion";
   @TestOnly static final String EMULATOR = "emulator";
@@ -106,10 +96,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private @NotNull Map<String, Object> loadContextData() {
     Map<String, Object> map = new HashMap<>();
-    String[] proguardUUIDs = getProguardUUIDs();
-    if (proguardUUIDs != null) {
-      map.put(PROGUARD_UUID, proguardUUIDs);
-    }
 
     map.put(ROOTED, rootChecker.isDeviceRooted());
 
@@ -138,7 +124,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       // enriched on restart, so non static data might be wrong, eg lowMemory or availMem will
       // be different if the App. crashes because of OOM.
       processNonCachedEvent(event);
-      mergeDebugImages(event);
       setThreads(event);
     }
 
@@ -243,55 +228,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (event.getDist() == null) {
       event.setDist(versionCode);
     }
-  }
-
-  private void mergeDebugImages(final @NotNull SentryEvent event) {
-    final List<DebugImage> debugImages = getDebugImages();
-    if (debugImages == null) {
-      return;
-    }
-
-    DebugMeta debugMeta = event.getDebugMeta();
-
-    if (debugMeta == null) {
-      debugMeta = new DebugMeta();
-    }
-
-    // sets the imageList or append to the list if it already exists
-    if (debugMeta.getImages() == null) {
-      debugMeta.setImages(debugImages);
-    } else {
-      debugMeta.getImages().addAll(debugImages);
-    }
-    event.setDebugMeta(debugMeta);
-  }
-
-  private @Nullable List<DebugImage> getDebugImages() {
-    String[] proguardUUIDs = null;
-    try {
-      Object proguardUUIDsObject = contextData.get().get(PROGUARD_UUID);
-      if (proguardUUIDsObject != null) {
-        proguardUUIDs = (String[]) proguardUUIDsObject;
-      }
-    } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
-      return null;
-    }
-
-    if (proguardUUIDs == null || proguardUUIDs.length == 0) {
-      return null;
-    }
-
-    List<DebugImage> images = new ArrayList<>();
-
-    for (String item : proguardUUIDs) {
-      DebugImage debugImage = new DebugImage();
-      debugImage.setType("proguard");
-      debugImage.setUuid(item);
-      images.add(debugImage);
-    }
-
-    return images;
   }
 
   private void setAppExtras(final @NotNull App app) {
@@ -891,40 +827,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Error getting installationId.", e);
     }
-    return null;
-  }
-
-  private @Nullable String[] getProguardUUIDs() {
-    final AssetManager assets = context.getAssets();
-    // one may have thousands of asset files and looking up this list might slow down the SDK init.
-    // quite a bit, for this reason, we try to open the file directly and take care of errors
-    // like FileNotFoundException
-    try (final InputStream is =
-        new BufferedInputStream(assets.open("sentry-debug-meta.properties"))) {
-      final Properties properties = new Properties();
-      properties.load(is);
-
-      final String uuid = properties.getProperty("io.sentry.ProguardUuids");
-      if (uuid != null && !uuid.isEmpty()) {
-        final String[] proguardUUIDs = uuid.split("\\|", -1);
-
-        // it should be only 1 proguard uuid, but the API accepts an array so we are keeping it for
-        // consistency
-        for (final String item : proguardUUIDs) {
-          logger.log(SentryLevel.DEBUG, "Proguard UUID found: %s", item);
-        }
-        return proguardUUIDs;
-      }
-      logger.log(
-          SentryLevel.INFO, "io.sentry.ProguardUuids property was not found or it is invalid.");
-    } catch (FileNotFoundException e) {
-      logger.log(SentryLevel.INFO, "sentry-debug-meta.properties file was not found.");
-    } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
-    } catch (RuntimeException e) {
-      logger.log(SentryLevel.ERROR, "sentry-debug-meta.properties file is malformed.", e);
-    }
-
     return null;
   }
 

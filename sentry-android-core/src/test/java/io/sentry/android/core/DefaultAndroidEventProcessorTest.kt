@@ -18,11 +18,8 @@ import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
-import io.sentry.android.core.DefaultAndroidEventProcessor.PROGUARD_UUID
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
 import io.sentry.android.core.DefaultAndroidEventProcessor.SIDE_LOADED
-import io.sentry.protocol.DebugImage
-import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryThread
@@ -106,11 +103,6 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(SentryEvent(), null)) {
             assertNotNull(it.contexts.app)
             assertNotNull(it.dist)
-            assertNotNull(it.debugMeta) { debugMeta ->
-                assertNotNull(debugMeta.images) { images ->
-                    assertEquals("test", images[0].uuid)
-                }
-            }
         }
     }
 
@@ -121,46 +113,6 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), null)) {
             assertNotNull(it.contexts.app)
             assertNotNull(it.dist)
-        }
-    }
-
-    @Test
-    fun `When debug meta is not null, set the image list`() {
-        val sut = fixture.getSut(context)
-        val event = SentryEvent().apply {
-            debugMeta = DebugMeta()
-        }
-
-        assertNotNull(sut.process(event, null)) {
-            assertNotNull(it.debugMeta) { debugMeta ->
-                assertNotNull(debugMeta.images) { images ->
-                    assertEquals("test", images[0].uuid)
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `When debug meta is not null and image list is not empty, append to the list`() {
-        val sut = fixture.getSut(context)
-
-        val image = DebugImage().apply {
-            uuid = "abc"
-            type = "proguard"
-        }
-        val event = SentryEvent().apply {
-            debugMeta = DebugMeta().apply {
-                images = mutableListOf(image)
-            }
-        }
-
-        assertNotNull(sut.process(event, null)) {
-            assertNotNull(it.debugMeta) { debugMeta ->
-                assertNotNull(debugMeta.images) { images ->
-                    assertEquals("abc", images.first().uuid)
-                    assertEquals("test", images.last().uuid)
-                }
-            }
         }
     }
 
@@ -276,7 +228,6 @@ class DefaultAndroidEventProcessorTest {
         val contextData = sut.contextData.get()
 
         assertNotNull(contextData)
-        assertEquals("test", (contextData[PROGUARD_UUID] as Array<*>)[0])
         assertNotNull(contextData[ROOTED])
         assertNotNull(contextData[KERNEL_VERSION])
         assertNotNull(contextData[EMULATOR])

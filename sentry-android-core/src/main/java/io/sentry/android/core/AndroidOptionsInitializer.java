@@ -5,6 +5,7 @@ import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.content.res.AssetManager;
 import android.os.Build;
 import io.sentry.ILogger;
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
@@ -13,7 +14,12 @@ import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -190,6 +196,35 @@ final class AndroidOptionsInitializer {
         options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
       }
     }
+
+    if (options.getProguardUuid() == null) {
+      options.setProguardUuid(getProguardUUID(context, options.getLogger()));
+    }
+  }
+
+  private static @Nullable String getProguardUUID(
+      final @NotNull Context context, final @NotNull ILogger logger) {
+    final AssetManager assets = context.getAssets();
+    // one may have thousands of asset files and looking up this list might slow down the SDK init.
+    // quite a bit, for this reason, we try to open the file directly and take care of errors
+    // like FileNotFoundException
+    try (final InputStream is =
+        new BufferedInputStream(assets.open("sentry-debug-meta.properties"))) {
+      final Properties properties = new Properties();
+      properties.load(is);
+
+      final String uuid = properties.getProperty("io.sentry.ProguardUuids");
+      logger.log(SentryLevel.DEBUG, "Proguard UUID found: %s", uuid);
+      return uuid;
+    } catch (FileNotFoundException e) {
+      logger.log(SentryLevel.INFO, "sentry-debug-meta.properties file was not found.");
+    } catch (IOException e) {
+      logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
+    } catch (RuntimeException e) {
+      logger.log(SentryLevel.ERROR, "sentry-debug-meta.properties file is malformed.", e);
+    }
+
+    return null;
   }
 
   /**
