@@ -58,6 +58,7 @@ final class ManifestMetadataReader {
   static final String TRACING_ORIGINS = "io.sentry.traces.tracing-origins";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
+  static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -214,6 +215,9 @@ final class ManifestMetadataReader {
             options.addTracingOrigin(tracingOrigin);
           }
         }
+
+        options.setProguardUuid(
+            readString(metadata, logger, PROGUARD_UUID, options.getProguardUuid()));
       }
 
       options
