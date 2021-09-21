@@ -769,13 +769,15 @@ public final class io/sentry/SentryEnvelope {
 	public fun getItems ()Ljava/lang/Iterable;
 }
 
-public final class io/sentry/SentryEnvelopeHeader : io/sentry/JsonSerializable {
+public final class io/sentry/SentryEnvelopeHeader : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/SentryId;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SdkVersion;)V
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
 }
 
 public final class io/sentry/SentryEnvelopeHeader$Deserializer : io/sentry/JsonDeserializer {
@@ -809,14 +811,16 @@ public final class io/sentry/SentryEnvelopeItem {
 	public fun getTransaction (Lio/sentry/ISerializer;)Lio/sentry/protocol/SentryTransaction;
 }
 
-public final class io/sentry/SentryEnvelopeItemHeader : io/sentry/JsonSerializable {
+public final class io/sentry/SentryEnvelopeItemHeader : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/SentryItemType;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFileName ()Ljava/lang/String;
 	public fun getLength ()I
 	public fun getType ()Lio/sentry/SentryItemType;
+	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
 }
 
 public final class io/sentry/SentryEnvelopeItemHeader$Deserializer : io/sentry/JsonDeserializer {

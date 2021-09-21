@@ -3,13 +3,15 @@ package io.sentry;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class SentryEnvelopeItemHeader implements JsonSerializable {
+public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnknown {
 
   private final @Nullable String contentType;
   private final @Nullable String fileName;
@@ -17,6 +19,8 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable {
   private final int length;
   @Nullable private final Callable<Integer> getLength;
   private final @Nullable String attachmentType;
+
+  private @Nullable Map<String, Object> unknown;
 
   public @NotNull SentryItemType getType() {
     return type;
@@ -112,6 +116,13 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable {
       writer.name(JsonKeys.ATTACHMENT_TYPE).value(attachmentType);
     }
     writer.name(JsonKeys.LENGTH).value(length);
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
     writer.endObject();
   }
 
@@ -126,6 +137,7 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable {
       SentryItemType type = null;
       int length = 0;
       String attachmentType = null;
+      Map<String, Object> unknown = null;
 
       while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
@@ -146,16 +158,21 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable {
             attachmentType = reader.nextStringOrNull();
             break;
           default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
             break;
         }
       }
       if (type == null) {
         throw missingRequiredFieldException(JsonKeys.TYPE, logger);
       }
-      SentryEnvelopeItemHeader sentryEnvelopeHeader =
+      SentryEnvelopeItemHeader sentryEnvelopeItemHeader =
           new SentryEnvelopeItemHeader(type, length, contentType, fileName, attachmentType);
+      sentryEnvelopeItemHeader.setUnknown(unknown);
       reader.endObject();
-      return sentryEnvelopeHeader;
+      return sentryEnvelopeItemHeader;
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -165,5 +182,18 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable {
       logger.log(SentryLevel.ERROR, message, exception);
       return exception;
     }
+  }
+
+  // JsonUnknown
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
 }
