@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 import org.junit.Test
 
 class OperatingSystemSerializationTest {
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = OperatingSystem().apply {

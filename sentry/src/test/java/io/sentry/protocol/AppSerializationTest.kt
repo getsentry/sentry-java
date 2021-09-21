@@ -14,7 +14,7 @@ import org.junit.Test
 
 class AppSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = App().apply {

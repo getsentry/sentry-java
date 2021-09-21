@@ -217,7 +217,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       Map<String, String> tags = null;
 
       Map<String, Object> unknown = null;
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.TRACE_ID:
@@ -252,7 +252,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext());
+      }
 
       if (traceId == null) {
         String message = "Missing required field \"" + JsonKeys.TRACE_ID + "\"";

@@ -18,7 +18,7 @@ import org.junit.Test
 
 class SpanContextSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = SpanContext(

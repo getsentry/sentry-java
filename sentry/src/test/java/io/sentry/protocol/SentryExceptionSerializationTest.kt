@@ -13,7 +13,7 @@ import org.junit.Test
 
 class SentryExceptionSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = SentryException().apply {

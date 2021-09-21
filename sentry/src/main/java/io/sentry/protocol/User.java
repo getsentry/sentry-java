@@ -215,7 +215,7 @@ public final class User implements IUnknownPropertiesConsumer, JsonUnknown, Json
       reader.beginObject();
       User user = new User();
       Map<String, Object> unknown = null;
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.EMAIL:
@@ -242,7 +242,7 @@ public final class User implements IUnknownPropertiesConsumer, JsonUnknown, Json
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      }
       user.setUnknown(unknown);
       reader.endObject();
       return user;
