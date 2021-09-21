@@ -769,12 +769,27 @@ public final class io/sentry/SentryEnvelope {
 	public fun getItems ()Ljava/lang/Iterable;
 }
 
-public final class io/sentry/SentryEnvelopeHeader {
+public final class io/sentry/SentryEnvelopeHeader : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/SentryId;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SdkVersion;)V
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/SentryEnvelopeHeader$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryEnvelopeHeader;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SentryEnvelopeHeader$JsonKeys {
+	public static final field EVENT_ID Ljava/lang/String;
+	public static final field SDK Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/SentryEnvelopeHeaderAdapter : com/google/gson/TypeAdapter {
@@ -796,12 +811,31 @@ public final class io/sentry/SentryEnvelopeItem {
 	public fun getTransaction (Lio/sentry/ISerializer;)Lio/sentry/protocol/SentryTransaction;
 }
 
-public final class io/sentry/SentryEnvelopeItemHeader {
+public final class io/sentry/SentryEnvelopeItemHeader : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Lio/sentry/SentryItemType;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFileName ()Ljava/lang/String;
 	public fun getLength ()I
 	public fun getType ()Lio/sentry/SentryItemType;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/SentryEnvelopeItemHeader$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryEnvelopeItemHeader;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SentryEnvelopeItemHeader$JsonKeys {
+	public static final field ATTACHMENT_TYPE Ljava/lang/String;
+	public static final field CONTENT_TYPE Ljava/lang/String;
+	public static final field FILENAME Ljava/lang/String;
+	public static final field LENGTH Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/SentryEnvelopeItemHeaderAdapter : com/google/gson/TypeAdapter {
@@ -865,7 +899,7 @@ public final class io/sentry/SentryEvent$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/SentryItemType : java/lang/Enum {
+public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field Attachment Lio/sentry/SentryItemType;
 	public static final field Event Lio/sentry/SentryItemType;
 	public static final field Session Lio/sentry/SentryItemType;
@@ -874,7 +908,9 @@ public final class io/sentry/SentryItemType : java/lang/Enum {
 	public static final field UserFeedback Lio/sentry/SentryItemType;
 	public fun getItemType ()Ljava/lang/String;
 	public static fun resolve (Ljava/lang/Object;)Lio/sentry/SentryItemType;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryItemType;
+	public static fun valueOfLabel (Ljava/lang/String;)Lio/sentry/SentryItemType;
 	public static fun values ()[Lio/sentry/SentryItemType;
 }
 
