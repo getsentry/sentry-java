@@ -5,6 +5,7 @@
 * Feat: Allow setting proguard via Options and/or external resources (#1728)
 * Feat: Add breadcrumbs for the Apollo integration (#1726)
 * Fix: Don't set lastEventId for transactions (#1727)
+* Fix: ActivityLifecycleIntegration#appStartSpan memory leak
 
 ## 5.2.0-beta.3
 

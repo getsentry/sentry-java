@@ -291,9 +291,20 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityDestroyed(final @NonNull Activity activity) {
     addBreadcrumb(activity, "destroyed");
 
+    // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
+    // memory leak
+    if (appStartSpan != null) {
+      if (!appStartSpan.isFinished()) {
+        appStartSpan.finish(SpanStatus.CANCELLED);
+      }
+    }
+
     // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
     // we make sure to finish it when the activity gets destroyed.
     stopTracing(activity, true);
+
+    // set it to null in case its been just finished as cancelled
+    appStartSpan = null;
 
     // clear it up, so we don't start again for the same activity if the activity is in the activity
     // stack still.
@@ -307,6 +318,12 @@ public final class ActivityLifecycleIntegration
   @NotNull
   WeakHashMap<Activity, ITransaction> getActivitiesWithOngoingTransactions() {
     return activitiesWithOngoingTransactions;
+  }
+
+  @TestOnly
+  @Nullable
+  ISpan getAppStartSpan() {
+    return appStartSpan;
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {
