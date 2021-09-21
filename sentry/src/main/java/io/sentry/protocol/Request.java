@@ -261,7 +261,7 @@ public final class Request implements IUnknownPropertiesConsumer, JsonUnknown, J
       reader.beginObject();
       Request request = new Request();
       Map<String, Object> unknown = null;
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.URL:
@@ -305,7 +305,7 @@ public final class Request implements IUnknownPropertiesConsumer, JsonUnknown, J
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      }
       request.setUnknown(unknown);
       reader.endObject();
       return request;

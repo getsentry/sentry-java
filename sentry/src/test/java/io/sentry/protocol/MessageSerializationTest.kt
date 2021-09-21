@@ -11,37 +11,32 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class MechanismSerializationTest {
+class MessageSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = Mechanism().apply {
-            type = "5f5e111d-5fd5-41e2-8fcb-2d40eb4e4b32"
-            description = "683d3710-ab97-459e-a219-3b72b98aa370"
-            helpLink = "bcbf2733-0b75-4491-b837-18f8d63099a5"
-            isHandled = false
-            meta = mapOf(
-                "91e0d6d4-0818-403e-9826-6e4443f2b54e" to "11707d85-3cae-4a4c-8157-7a9b717cbe1e"
+        fun getSut() = Message().apply {
+            formatted = "6a4706fe-386d-4e4c-acc4-cf27f0331ede"
+            message = "96d75ef6-49fa-47dc-bb68-98f4293fa1eb"
+            params = listOf(
+                "3937ad9c-e4e0-45c1-bb58-f94c25072bc7",
+                "1afbadaf-3db6-48ea-ab85-fdcd24fceda2"
             )
-            data = mapOf(
-                "0275caba-1fd8-4de3-9ead-b6c8dcdd5666" to "669cc6ad-1435-4233-b199-2800f901bbcd"
-            )
-            synthetic = false
         }
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/mechanism.json")
+        val expected = sanitizedFile("gson/message.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/mechanism.json")
+        val expectedJson = sanitizedFile("gson/message.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
@@ -62,8 +57,8 @@ class MechanismSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): Mechanism {
+    private fun deserialize(json: String): Message {
         val reader = JsonObjectReader(StringReader(json))
-        return Mechanism.Deserializer().deserialize(reader, fixture.logger)
+        return Message.Deserializer().deserialize(reader, fixture.logger)
     }
 }

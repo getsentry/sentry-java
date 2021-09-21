@@ -11,37 +11,25 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class MechanismSerializationTest {
+class MeasurementValueSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
-
-        fun getSut() = Mechanism().apply {
-            type = "5f5e111d-5fd5-41e2-8fcb-2d40eb4e4b32"
-            description = "683d3710-ab97-459e-a219-3b72b98aa370"
-            helpLink = "bcbf2733-0b75-4491-b837-18f8d63099a5"
-            isHandled = false
-            meta = mapOf(
-                "91e0d6d4-0818-403e-9826-6e4443f2b54e" to "11707d85-3cae-4a4c-8157-7a9b717cbe1e"
-            )
-            data = mapOf(
-                "0275caba-1fd8-4de3-9ead-b6c8dcdd5666" to "669cc6ad-1435-4233-b199-2800f901bbcd"
-            )
-            synthetic = false
-        }
+        // float cannot represent 0.3 correctly https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
+        fun getSut() = MeasurementValue(0.30000001192092896f)
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/mechanism.json")
+        val expected = sanitizedFile("gson/measurement_value.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/mechanism.json")
+        val expectedJson = sanitizedFile("gson/measurement_value.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
@@ -62,8 +50,8 @@ class MechanismSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): Mechanism {
+    private fun deserialize(json: String): MeasurementValue {
         val reader = JsonObjectReader(StringReader(json))
-        return Mechanism.Deserializer().deserialize(reader, fixture.logger)
+        return MeasurementValue.Deserializer().deserialize(reader, fixture.logger)
     }
 }

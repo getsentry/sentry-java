@@ -6,42 +6,38 @@ import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
+import io.sentry.SentryEnvelopeItemHeader
+import io.sentry.SentryItemType
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class MechanismSerializationTest {
+class SentryEnvelopeItemHeaderSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = Mechanism().apply {
-            type = "5f5e111d-5fd5-41e2-8fcb-2d40eb4e4b32"
-            description = "683d3710-ab97-459e-a219-3b72b98aa370"
-            helpLink = "bcbf2733-0b75-4491-b837-18f8d63099a5"
-            isHandled = false
-            meta = mapOf(
-                "91e0d6d4-0818-403e-9826-6e4443f2b54e" to "11707d85-3cae-4a4c-8157-7a9b717cbe1e"
-            )
-            data = mapOf(
-                "0275caba-1fd8-4de3-9ead-b6c8dcdd5666" to "669cc6ad-1435-4233-b199-2800f901bbcd"
-            )
-            synthetic = false
-        }
+        fun getSut() = SentryEnvelopeItemHeader(
+            SentryItemType.Event,
+            345,
+            "5def420f-3dac-4d7b-948b-49de6e551aef",
+            "54cf4644-8610-4ff3-a535-34ac1f367501",
+            "6f49ad85-a017-4d94-a5d7-6477251da602"
+        )
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/mechanism.json")
+        val expected = sanitizedFile("gson/sentry_envelope_item_header.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/mechanism.json")
+        val expectedJson = sanitizedFile("gson/sentry_envelope_item_header.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
@@ -62,8 +58,8 @@ class MechanismSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): Mechanism {
+    private fun deserialize(json: String): SentryEnvelopeItemHeader {
         val reader = JsonObjectReader(StringReader(json))
-        return Mechanism.Deserializer().deserialize(reader, fixture.logger)
+        return SentryEnvelopeItemHeader.Deserializer().deserialize(reader, fixture.logger)
     }
 }

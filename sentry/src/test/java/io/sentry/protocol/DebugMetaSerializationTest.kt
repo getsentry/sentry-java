@@ -13,7 +13,7 @@ import org.junit.Test
 
 class DebugMetaSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = DebugMeta().apply {

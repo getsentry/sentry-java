@@ -134,7 +134,7 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
         throws Exception {
       Contexts contexts = new Contexts();
       reader.beginObject();
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case App.TYPE:
@@ -166,7 +166,7 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
             }
             break;
         }
-      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      }
       reader.endObject();
       return contexts;
     }

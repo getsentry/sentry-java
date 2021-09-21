@@ -101,7 +101,7 @@ public final class Browser implements IUnknownPropertiesConsumer, JsonUnknown, J
       reader.beginObject();
       Browser browser = new Browser();
       Map<String, Object> unknown = null;
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.NAME:
@@ -117,7 +117,7 @@ public final class Browser implements IUnknownPropertiesConsumer, JsonUnknown, J
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      }
       browser.setUnknown(unknown);
       reader.endObject();
       return browser;

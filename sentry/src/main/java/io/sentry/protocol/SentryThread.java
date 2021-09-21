@@ -262,7 +262,7 @@ public final class SentryThread
       SentryThread sentryThread = new SentryThread();
       Map<String, Object> unknown = null;
       reader.beginObject();
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.ID:
@@ -297,7 +297,7 @@ public final class SentryThread
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext() && reader.peek() == JsonToken.NAME);
+      }
       sentryThread.setUnknown(unknown);
       reader.endObject();
       return sentryThread;

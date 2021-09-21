@@ -1,47 +1,52 @@
 package io.sentry.protocol
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.DateUtils
 import io.sentry.FileFromResources
 import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
+import io.sentry.Session
 import java.io.StringReader
 import java.io.StringWriter
+import java.util.UUID
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class MechanismSerializationTest {
+class SessionSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = Mechanism().apply {
-            type = "5f5e111d-5fd5-41e2-8fcb-2d40eb4e4b32"
-            description = "683d3710-ab97-459e-a219-3b72b98aa370"
-            helpLink = "bcbf2733-0b75-4491-b837-18f8d63099a5"
-            isHandled = false
-            meta = mapOf(
-                "91e0d6d4-0818-403e-9826-6e4443f2b54e" to "11707d85-3cae-4a4c-8157-7a9b717cbe1e"
-            )
-            data = mapOf(
-                "0275caba-1fd8-4de3-9ead-b6c8dcdd5666" to "669cc6ad-1435-4233-b199-2800f901bbcd"
-            )
-            synthetic = false
-        }
+        fun getSut() = Session(
+            Session.State.Crashed,
+            DateUtils.getDateTime("1945-06-16T06:36:49.000Z"),
+            DateUtils.getDateTime("1970-04-21T09:32:21.000Z"),
+            9001,
+            "631693c2-3d61-4a93-8fd1-89817426ba5a",
+            UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+            true,
+            4,
+            5.5,
+            "5a174e69-a297-4ba4-b6e1-2244a8299ec8",
+            "790da4ae-50ca-48a2-98f6-9b7f4e05a8c3",
+            "d732be55-b57e-48ec-afe6-b0040c7f93de",
+            "b2d0224b-4b1f-49db-94c9-fd4a439b3ef5"
+        )
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/mechanism.json")
+        val expected = sanitizedFile("gson/session.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/mechanism.json")
+        val expectedJson = sanitizedFile("gson/session.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
@@ -62,8 +67,8 @@ class MechanismSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): Mechanism {
+    private fun deserialize(json: String): Session {
         val reader = JsonObjectReader(StringReader(json))
-        return Mechanism.Deserializer().deserialize(reader, fixture.logger)
+        return Session.Deserializer().deserialize(reader, fixture.logger)
     }
 }
