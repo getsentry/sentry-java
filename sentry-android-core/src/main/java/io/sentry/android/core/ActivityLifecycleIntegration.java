@@ -293,10 +293,8 @@ public final class ActivityLifecycleIntegration
 
     // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
     // memory leak
-    if (appStartSpan != null) {
-      if (!appStartSpan.isFinished()) {
-        appStartSpan.finish(SpanStatus.CANCELLED);
-      }
+    if (appStartSpan != null && !appStartSpan.isFinished()) {
+      appStartSpan.finish(SpanStatus.CANCELLED);
     }
 
     // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
