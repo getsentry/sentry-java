@@ -29,7 +29,11 @@ public final class JsonObjectReader extends JsonReader {
   }
 
   public @Nullable Float nextFloatOrNull() throws IOException {
-    return peek() == JsonToken.NULL ? null : (float) nextDouble();
+    return peek() == JsonToken.NULL ? null : nextFloat();
+  }
+
+  public @NotNull Float nextFloat() throws IOException {
+    return (float) nextDouble();
   }
 
   public @Nullable Long nextLongOrNull() throws IOException {

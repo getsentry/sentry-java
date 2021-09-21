@@ -13,7 +13,7 @@ import org.junit.Test
 
 class SentryThreadSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         var logger: ILogger = mock()
 
         fun getSut() = SentryThread().apply {

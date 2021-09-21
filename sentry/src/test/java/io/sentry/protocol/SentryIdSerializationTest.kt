@@ -12,7 +12,7 @@ import org.junit.Test
 
 class SentryIdSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
         fun getSut() = SentryId("afcb46b1140ade5187c4bbb5daa804df")
     }

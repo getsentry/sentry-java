@@ -8,6 +8,7 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -154,9 +155,9 @@ public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown,
     public static final String DESCRIPTION = "description";
     public static final String HELP_LINK = "help_link";
     public static final String HANDLED = "handled";
-    public static final String SYNTHETIC = "synthetic";
     public static final String META = "meta";
     public static final String DATA = "data";
+    public static final String SYNTHETIC = "synthetic";
   }
 
   // JsonUnknown
@@ -189,14 +190,14 @@ public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown,
     if (handled != null) {
       writer.name(JsonKeys.HANDLED).value(handled);
     }
-    if (synthetic != null) {
-      writer.name(JsonKeys.SYNTHETIC).value(synthetic);
-    }
     if (meta != null) {
       writer.name(JsonKeys.META).value(logger, meta);
     }
     if (data != null) {
       writer.name(JsonKeys.DATA).value(logger, data);
+    }
+    if (synthetic != null) {
+      writer.name(JsonKeys.SYNTHETIC).value(synthetic);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -217,7 +218,7 @@ public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown,
       Mechanism mechanism = new Mechanism();
       Map<String, Object> unknown = null;
       reader.beginObject();
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.TYPE:
@@ -252,7 +253,7 @@ public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown,
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext());
+      }
       reader.endObject();
       mechanism.setUnknown(unknown);
       return mechanism;

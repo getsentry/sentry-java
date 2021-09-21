@@ -7,6 +7,7 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -109,7 +110,7 @@ public final class DebugMeta implements IUnknownPropertiesConsumer, JsonUnknown,
       Map<String, Object> unknown = null;
 
       reader.beginObject();
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.SDK_INFO:
@@ -125,7 +126,7 @@ public final class DebugMeta implements IUnknownPropertiesConsumer, JsonUnknown,
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext());
+      }
       reader.endObject();
 
       debugMeta.setUnknown(unknown);

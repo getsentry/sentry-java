@@ -8,6 +8,7 @@ import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -210,7 +211,7 @@ public final class Gpu implements IUnknownPropertiesConsumer, JsonUnknown, JsonS
       reader.beginObject();
       Gpu gpu = new Gpu();
       Map<String, Object> unknown = null;
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.NAME:
@@ -247,7 +248,7 @@ public final class Gpu implements IUnknownPropertiesConsumer, JsonUnknown, JsonS
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext());
+      }
       gpu.setUnknown(unknown);
       reader.endObject();
       return gpu;

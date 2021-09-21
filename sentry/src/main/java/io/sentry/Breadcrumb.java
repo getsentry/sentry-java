@@ -1,6 +1,8 @@
 package io.sentry;
 
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
@@ -8,10 +10,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 /** Series of application events */
-public final class Breadcrumb implements IUnknownPropertiesConsumer {
+public final class Breadcrumb implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
 
   /** A timestamp representing when the breadcrumb occurred. */
   private final @NotNull Date timestamp;
@@ -239,14 +240,120 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer {
     this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
-  /**
-   * Returns the unknown's map, internal usage only
-   *
-   * @return the unknown map
-   */
-  @TestOnly
+  // region json
+
   @Nullable
-  Map<String, Object> getUnknown() {
+  @Override
+  public Map<String, Object> getUnknown() {
     return unknown;
   }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class JsonKeys {
+    public static final String TIMESTAMP = "timestamp";
+    public static final String MESSAGE = "message";
+    public static final String TYPE = "type";
+    public static final String DATA = "data";
+    public static final String CATEGORY = "category";
+    public static final String LEVEL = "level";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+    if (message != null) {
+      writer.name(JsonKeys.MESSAGE).value(message);
+    }
+    if (type != null) {
+      writer.name(JsonKeys.TYPE).value(type);
+    }
+    writer.name(JsonKeys.DATA).value(logger, data);
+    if (category != null) {
+      writer.name(JsonKeys.CATEGORY).value(category);
+    }
+    if (level != null) {
+      writer.name(JsonKeys.LEVEL).value(logger, level);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  public static final class Deserializer implements JsonDeserializer<Breadcrumb> {
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull Breadcrumb deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      reader.beginObject();
+      @NotNull Date timestamp = DateUtils.getCurrentDateTime();
+      String message = null;
+      String type = null;
+      @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+      String category = null;
+      SentryLevel level = null;
+
+      Map<String, Object> unknown = null;
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.TIMESTAMP:
+            Date deserializedDate = reader.nextDateOrNull(logger);
+            if (deserializedDate != null) {
+              timestamp = deserializedDate;
+            }
+            break;
+          case JsonKeys.MESSAGE:
+            message = reader.nextStringOrNull();
+            break;
+          case JsonKeys.TYPE:
+            type = reader.nextStringOrNull();
+            break;
+          case JsonKeys.DATA:
+            Map<String, Object> deserializedData =
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, Object>) reader.nextObjectOrNull());
+            if (deserializedData != null) {
+              data = deserializedData;
+            }
+            break;
+          case JsonKeys.CATEGORY:
+            category = reader.nextStringOrNull();
+            break;
+          case JsonKeys.LEVEL:
+            level = new SentryLevel.Deserializer().deserialize(reader, logger);
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+
+      Breadcrumb breadcrumb = new Breadcrumb(timestamp);
+      breadcrumb.message = message;
+      breadcrumb.type = type;
+      breadcrumb.data = data;
+      breadcrumb.category = category;
+      breadcrumb.level = level;
+
+      breadcrumb.setUnknown(unknown);
+      reader.endObject();
+      return breadcrumb;
+    }
+  }
+
+  // endregion
 }

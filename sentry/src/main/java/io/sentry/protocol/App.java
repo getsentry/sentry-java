@@ -183,7 +183,7 @@ public final class App implements IUnknownPropertiesConsumer, JsonUnknown, JsonS
       reader.beginObject();
       App app = new App();
       Map<String, Object> unknown = null;
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.APP_IDENTIFIER:
@@ -214,7 +214,7 @@ public final class App implements IUnknownPropertiesConsumer, JsonUnknown, JsonS
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.peek() == JsonToken.NAME);
+      }
       app.setUnknown(unknown);
       reader.endObject();
       return app;

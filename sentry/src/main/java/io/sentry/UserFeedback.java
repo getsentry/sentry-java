@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -182,7 +183,7 @@ public final class UserFeedback implements JsonUnknown, JsonSerializable {
       Map<String, Object> unknown = null;
 
       reader.beginObject();
-      do {
+      while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.EVENT_ID:
@@ -204,7 +205,7 @@ public final class UserFeedback implements JsonUnknown, JsonSerializable {
             reader.nextUnknown(logger, unknown, nextName);
             break;
         }
-      } while (reader.hasNext());
+      }
       reader.endObject();
 
       if (sentryId == null) {

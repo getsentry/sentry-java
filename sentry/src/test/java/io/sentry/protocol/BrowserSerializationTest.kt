@@ -13,7 +13,7 @@ import org.junit.Test
 
 class BrowserSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = Browser().apply {

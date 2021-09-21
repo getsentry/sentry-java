@@ -13,7 +13,7 @@ import org.junit.Test
 
 class SentryRuntimeSerializationTest {
 
-    private class Fixture {
+    class Fixture {
         val logger = mock<ILogger>()
 
         fun getSut() = SentryRuntime().apply {
