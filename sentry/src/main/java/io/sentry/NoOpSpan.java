@@ -38,6 +38,16 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
+  public @NotNull TraceState traceState() {
+    return new TraceState(SentryId.EMPTY_ID, "");
+  }
+
+  @Override
+  public @NotNull TraceStateHeader toTraceStateHeader() {
+    return new TraceStateHeader("");
+  }
+
+  @Override
   public void finish() {}
 
   @Override
@@ -91,5 +101,13 @@ public final class NoOpSpan implements ISpan {
   @Override
   public boolean isFinished() {
     return false;
+  }
+
+  @Override
+  public void setData(@NotNull String key, @NotNull Object value) {}
+
+  @Override
+  public @Nullable Object getData(@NotNull String key) {
+    return null;
   }
 }

@@ -4,6 +4,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +34,9 @@ public final class Span implements ISpan {
 
   private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
-  private final @Nullable SpanListener spanListener;
+  private final @Nullable SpanFinishedCallback spanFinishedCallback;
+
+  private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
 
   Span(
       final @NotNull SentryId traceId,
@@ -51,13 +54,13 @@ public final class Span implements ISpan {
       final @NotNull String operation,
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp,
-      final @Nullable SpanListener spanListener) {
+      final @Nullable SpanFinishedCallback spanFinishedCallback) {
     this.context =
         new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.spanListener = spanListener;
+    this.spanFinishedCallback = spanFinishedCallback;
   }
 
   @VisibleForTesting
@@ -70,7 +73,7 @@ public final class Span implements ISpan {
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
-    this.spanListener = null;
+    this.spanFinishedCallback = null;
   }
 
   public @NotNull Date getStartTimestamp() {
@@ -106,24 +109,44 @@ public final class Span implements ISpan {
   }
 
   @Override
+  public @Nullable TraceState traceState() {
+    return transaction.traceState();
+  }
+
+  @Override
+  public @Nullable TraceStateHeader toTraceStateHeader() {
+    return transaction.toTraceStateHeader();
+  }
+
+  @Override
   public void finish() {
     this.finish(this.context.getStatus());
   }
 
   @Override
   public void finish(@Nullable SpanStatus status) {
+    finish(status, DateUtils.getCurrentDateTime());
+  }
+
+  /**
+   * Used to finish unfinished spans by {@link SentryTracer}.
+   *
+   * @param status - status to finish span with
+   * @param timestamp - the root span timestamp.
+   */
+  void finish(@Nullable SpanStatus status, Date timestamp) {
     // the span can be finished only once
     if (!finished.compareAndSet(false, true)) {
       return;
     }
 
     this.context.setStatus(status);
-    timestamp = DateUtils.getCurrentDateTime();
+    this.timestamp = timestamp;
     if (throwable != null) {
       hub.setSpanContext(throwable, this, this.transaction.getName());
     }
-    if (spanListener != null) {
-      spanListener.onSpanFinished(this);
+    if (spanFinishedCallback != null) {
+      spanFinishedCallback.execute(this);
     }
   }
 
@@ -177,6 +200,10 @@ public final class Span implements ISpan {
     return finished.get();
   }
 
+  public @NotNull Map<String, Object> getData() {
+    return data;
+  }
+
   public @Nullable Boolean isSampled() {
     return context.getSampled();
   }
@@ -206,5 +233,15 @@ public final class Span implements ISpan {
 
   public Map<String, String> getTags() {
     return context.getTags();
+  }
+
+  @Override
+  public void setData(@NotNull String key, @NotNull Object value) {
+    data.put(key, value);
+  }
+
+  @Override
+  public @Nullable Object getData(@NotNull String key) {
+    return data.get(key);
   }
 }

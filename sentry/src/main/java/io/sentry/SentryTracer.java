@@ -4,11 +4,14 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,33 +39,46 @@ public final class SentryTracer implements ITransaction {
    */
   private @NotNull FinishStatus finishStatus = FinishStatus.NOT_FINISHED;
 
+  /**
+   * When `waitForChildren` is set to `true` and this callback is set, it's called before the
+   * transaction is captured.
+   */
+  private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
+
+  private @Nullable TraceState traceState;
+
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
   }
 
   public SentryTracer(
-      final @NotNull TransactionContext context, final @NotNull IHub hub, boolean waitForChildren) {
-    this(context, hub, null, waitForChildren);
+      final @NotNull TransactionContext context,
+      final @NotNull IHub hub,
+      final boolean waitForChildren,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
+    this(context, hub, null, waitForChildren, transactionFinishedCallback);
   }
 
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp) {
-    this(context, hub, startTimestamp, false);
+    this(context, hub, startTimestamp, false, null);
   }
 
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp,
-      final boolean waitForChildren) {
+      final boolean waitForChildren,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.root = new Span(context, this, hub, startTimestamp);
     this.name = context.getName();
     this.hub = hub;
     this.waitForChildren = waitForChildren;
+    this.transactionFinishedCallback = transactionFinishedCallback;
   }
 
   public @NotNull List<Span> getChildren() {
@@ -192,6 +208,25 @@ public final class SentryTracer implements ITransaction {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
       root.finish(finishStatus.spanStatus);
+
+      // finish unfinished children
+      Date finishTimestamp = root.getTimestamp();
+      if (finishTimestamp == null) {
+        hub.getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Root span - op: %s, description: %s - has no timestamp set, when finishing unfinished spans.",
+                root.getOperation(),
+                root.getDescription());
+        finishTimestamp = DateUtils.getCurrentDateTime();
+      }
+      for (final Span child : children) {
+        if (!child.isFinished()) {
+          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
+        }
+      }
+
       hub.configureScope(
           scope -> {
             scope.withTransaction(
@@ -202,7 +237,40 @@ public final class SentryTracer implements ITransaction {
                 });
           });
       SentryTransaction transaction = new SentryTransaction(this);
-      hub.captureTransaction(transaction);
+      if (transactionFinishedCallback != null) {
+        transactionFinishedCallback.execute(this);
+      }
+      hub.captureTransaction(transaction, this.traceState());
+    }
+  }
+
+  @Override
+  public @Nullable TraceState traceState() {
+    if (hub.getOptions().isTraceSampling()) {
+      synchronized (this) {
+        if (traceState == null) {
+          final AtomicReference<User> userAtomicReference = new AtomicReference<>();
+          hub.configureScope(
+              scope -> {
+                userAtomicReference.set(scope.getUser());
+              });
+          this.traceState = new TraceState(this, userAtomicReference.get(), hub.getOptions());
+        }
+        return this.traceState;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  @Override
+  public @Nullable TraceStateHeader toTraceStateHeader() {
+    final TraceState traceState = traceState();
+    if (hub.getOptions().isTraceSampling() && traceState != null) {
+      return TraceStateHeader.fromTraceState(
+          traceState, hub.getOptions().getSerializer(), hub.getOptions().getLogger());
+    } else {
+      return null;
     }
   }
 
@@ -276,6 +344,20 @@ public final class SentryTracer implements ITransaction {
   @Override
   public boolean isFinished() {
     return this.root.isFinished();
+  }
+
+  @Override
+  public void setData(@NotNull String key, @NotNull Object value) {
+    this.root.setData(key, value);
+  }
+
+  @Override
+  public @Nullable Object getData(@NotNull String key) {
+    return this.root.getData(key);
+  }
+
+  public @Nullable Map<String, Object> getData() {
+    return this.root.getData();
   }
 
   @Override

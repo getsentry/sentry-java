@@ -2,6 +2,85 @@
 
 ## Unreleased
 
+## 5.2.0
+
+* Feat: Allow setting proguard via Options and/or external resources (#1728)
+* Feat: Add breadcrumbs for the Apollo integration (#1726)
+* Fix: Don't set lastEventId for transactions (#1727)
+* Fix: ActivityLifecycleIntegration#appStartSpan memory leak (#1732)
+
+## 5.2.0-beta.3
+
+* Fix: Check at runtime if AndroidX.Core is available (#1718)
+* Feat: Add "data" to spans (#1717)
+* Fix: Should not capture unfinished transaction (#1719)
+
+## 5.2.0-beta.2
+
+* Bump AGP to 7.0.2 (#1650)
+* Fix: drop spans in BeforeSpanCallback. (#1713)
+
+## 5.2.0-beta.1
+
+* Feat: Add tracestate HTTP header support (#1683)
+* Feat: Add option to filter which origins receive tracing headers (#1698)
+* Feat: Include unfinished spans in transaction (#1699)
+* Fix: Move tags from transaction.contexts.trace.tags to transaction.tags (#1700)
+* Feat: Add static helpers for creating breadcrumbs (#1702)
+* Feat: Performance support for Android Apollo (#1705)
+
+Breaking changes:
+
+* Updated proguard keep rule for enums, which affects consumer application code (#1694)
+
+## 5.1.2
+
+* Fix: Servlet 3.1 compatibility issue (#1681)
+* Fix: Do not drop Contexts key if Collection, Array or Char (#1680)
+
+## 5.1.1
+
+* Fix: Remove onActivityPreCreated call in favor of onActivityCreated (#1661)
+* Fix: Do not crash if SENSOR_SERVICE throws (#1655)
+* Feat: Add support for async methods in Spring MVC (#1652)
+* Feat: Add secondary constructor taking IHub to SentryOkHttpInterceptor (#1657)
+* Feat: Merge external map properties (#1656)
+* Fix: Make sure scope is popped when processing request results in exception (#1665)
+
+## 5.1.0
+
+* Feat: Spring WebClient integration (#1621)
+* Feat: OpenFeign integration (#1632)
+* Feat: Add more convenient way to pass BeforeSpanCallback in OpenFeign integration (#1637)
+* Bump: sentry-native to 0.4.12 (#1651)
+
+## 5.1.0-beta.9
+
+- No documented changes.
+
+## 5.1.0-beta.8
+
+* Feat: Generate Sentry BOM (#1486)
+
+## 5.1.0-beta.7
+
+* Feat: Slow/Frozen frames metrics (#1609)
+
+## 5.1.0-beta.6
+
+* Fix: set min sdk version of sentry-android-fragment to API 14 (#1608)
+* Fix: Ser/Deser of the UserFeedback from cached envelope (#1611)
+* Feat: Add request body extraction for Spring MVC integration (#1595)
+
+## 5.1.0-beta.5
+
+* Make SentryAppender non-final for Log4j2 and Logback (#1603) 
+* Fix: Do not throw IAE when tracing header contain invalid trace id (#1605)
+
+## 5.1.0-beta.4
+
+* Update sentry-native to 0.4.11 (#1591)
+
 ## 5.1.0-beta.3
 
 * Feat: Spring Webflux integration (#1529)

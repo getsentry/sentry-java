@@ -31,4 +31,18 @@ class CompositePropertiesProviderTest {
         whenever(second.getProperty("property")).thenReturn(null)
         assertNull(provider.getProperty("property"))
     }
+
+    @Test
+    fun `combines map results from multiple providers into single map`() {
+        whenever(first.getMap("tags")).thenReturn(mapOf("first_tag" to "val1"))
+        whenever(second.getMap("tags")).thenReturn(mapOf("second_tag" to "val2"))
+        assertEquals(mapOf("first_tag" to "val1", "second_tag" to "val2"), provider.getMap("tags"))
+    }
+
+    @Test
+    fun `when multiple providers return same map entries, the last one takes the precedence`() {
+        whenever(first.getMap("tags")).thenReturn(mapOf("first_tag" to "val1", "conflicting_tag" to "val3"))
+        whenever(second.getMap("tags")).thenReturn(mapOf("second_tag" to "val2", "conflicting_tag" to "val4"))
+        assertEquals(mapOf("first_tag" to "val1", "second_tag" to "val2", "conflicting_tag" to "val4"), provider.getMap("tags"))
+    }
 }

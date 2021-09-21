@@ -1,5 +1,6 @@
 package io.sentry.spring;
 
+import io.sentry.SentryOptions;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,8 +13,6 @@ import org.springframework.context.annotation.Import;
  * <ul>
  *   <li>creates bean of type {@link io.sentry.SentryOptions}
  *   <li>registers {@link io.sentry.IHub} for sending Sentry events
- *   <li>registers {@link SentrySpringRequestListener} for attaching request information to Sentry
- *       events
  *   <li>registers {@link SentryExceptionResolver} to send Sentry event for any uncaught exception
  *       in Spring MVC flow.
  * </ul>
@@ -44,4 +43,10 @@ public @interface EnableSentry {
    * @return the order to use for {@link SentryExceptionResolver}
    */
   int exceptionResolverOrder() default 1;
+
+  /**
+   * Controls the size of the request body to extract if any. No truncation is done by the SDK. If
+   * the request body is larger than the accepted size, nothing is sent.
+   */
+  SentryOptions.RequestSize maxRequestBodySize() default SentryOptions.RequestSize.NONE;
 }

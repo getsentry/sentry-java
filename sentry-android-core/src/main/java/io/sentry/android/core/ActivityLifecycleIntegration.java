@@ -28,7 +28,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
-  private static final String UI_LOAD_OP = "ui.load";
+  static final String UI_LOAD_OP = "ui.load";
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
 
@@ -50,10 +50,16 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ITransaction> activitiesWithOngoingTransactions =
       new WeakHashMap<>();
 
+  private final @NotNull ActivityFramesTracker activityFramesTracker;
+
   public ActivityLifecycleIntegration(
-      final @NotNull Application application, final @NotNull IBuildInfoProvider buildInfoProvider) {
+      final @NotNull Application application,
+      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
     this.application = Objects.requireNonNull(application, "Application is required");
     Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+    this.activityFramesTracker =
+        Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
@@ -95,6 +101,8 @@ public final class ActivityLifecycleIntegration
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
     }
+
+    activityFramesTracker.stop();
   }
 
   private void addBreadcrumb(final @NonNull Activity activity, final @NotNull String state) {
@@ -134,10 +142,26 @@ public final class ActivityLifecycleIntegration
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (firstActivityCreated || appStartTime == null) {
-        transaction = hub.startTransaction(activityName, UI_LOAD_OP, (Date) null, true);
+        transaction =
+            hub.startTransaction(
+                activityName,
+                UI_LOAD_OP,
+                (Date) null,
+                true,
+                (finishingTransaction) -> {
+                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
+                });
       } else {
         // start transaction with app start timestamp
-        transaction = hub.startTransaction(activityName, UI_LOAD_OP, appStartTime, true);
+        transaction =
+            hub.startTransaction(
+                activityName,
+                UI_LOAD_OP,
+                appStartTime,
+                true,
+                (finishingTransaction) -> {
+                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
+                });
         // start specific span for app start
 
         appStartSpan = transaction.startChild(getAppStartOp(), getAppStartDesc(), appStartTime);
@@ -185,6 +209,12 @@ public final class ActivityLifecycleIntegration
 
   private void finishTransaction(final @Nullable ITransaction transaction) {
     if (transaction != null) {
+      // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
+      // finished manually when this method is called.
+      if (transaction.isFinished()) {
+        return;
+      }
+
       SpanStatus status = transaction.getStatus();
       // status might be set by other integrations, let's not overwrite it
       if (status == null) {
@@ -195,33 +225,13 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityPreCreated(
-      final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-
-    // only executed if API >= 29 otherwise it happens on onActivityCreated
-    if (isAllActivityCallbacksAvailable) {
-      setColdStart(savedInstanceState);
-
-      // if activity has global fields being init. and
-      // they are slow, this won't count the whole fields/ctor initialization time, but only
-      // when onCreate is actually called.
-      startTracing(activity);
-    }
-  }
-
-  @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    if (!isAllActivityCallbacksAvailable) {
-      setColdStart(savedInstanceState);
-    }
-
+    activityFramesTracker.addActivity(activity);
+    setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
+    startTracing(activity);
 
-    // fallback call for API < 29 compatibility, otherwise it happens on onActivityPreCreated
-    if (!isAllActivityCallbacksAvailable) {
-      startTracing(activity);
-    }
     firstActivityCreated = true;
   }
 
@@ -281,9 +291,18 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityDestroyed(final @NonNull Activity activity) {
     addBreadcrumb(activity, "destroyed");
 
+    // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
+    // memory leak
+    if (appStartSpan != null && !appStartSpan.isFinished()) {
+      appStartSpan.finish(SpanStatus.CANCELLED);
+    }
+
     // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
     // we make sure to finish it when the activity gets destroyed.
     stopTracing(activity, true);
+
+    // set it to null in case its been just finished as cancelled
+    appStartSpan = null;
 
     // clear it up, so we don't start again for the same activity if the activity is in the activity
     // stack still.
@@ -297,6 +316,12 @@ public final class ActivityLifecycleIntegration
   @NotNull
   WeakHashMap<Activity, ITransaction> getActivitiesWithOngoingTransactions() {
     return activitiesWithOngoingTransactions;
+  }
+
+  @TestOnly
+  @Nullable
+  ISpan getAppStartSpan() {
+    return appStartSpan;
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {

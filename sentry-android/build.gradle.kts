@@ -10,18 +10,21 @@ android {
     defaultConfig {
         targetSdkVersion(Config.Android.targetSdkVersion)
         minSdkVersion(Config.Android.minSdkVersionNdk)
-
-        versionName = project.version.toString()
-        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
     }
 
     buildFeatures {
         // Determines whether to generate a BuildConfig class.
         buildConfig = false
     }
+
+    variantFilter {
+        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
+            ignore = true
+        }
+    }
 }
 
 dependencies {
-    api(project(":sentry-android-core"))
-    api(project(":sentry-android-ndk"))
+    api(projects.sentryAndroidCore)
+    api(projects.sentryAndroidNdk)
 }

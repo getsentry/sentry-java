@@ -20,7 +20,7 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
     api(Config.Libs.apacheHttpClient)
 
     compileOnly(Config.CompileOnly.nopen)
@@ -32,7 +32,7 @@ dependencies {
 
     // tests
     testImplementation(Config.Libs.apacheHttpClient)
-    testImplementation(project(":sentry-test-support"))
+    testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)

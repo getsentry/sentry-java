@@ -69,4 +69,9 @@ class SentryTraceHeaderTest {
         val header = SentryTraceHeader("$sentryId-$spanId-0")
         assertEquals("$sentryId-$spanId-0", header.value)
     }
+
+    @Test
+    fun `throws InvalidSentryTraceHeaderException when traceId has invalid value`() {
+        assertFailsWith<InvalidSentryTraceHeaderException> { SentryTraceHeader("xxx-${SpanId()}-0") }
+    }
 }

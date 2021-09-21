@@ -1,6 +1,5 @@
 package io.sentry.protocol;
 
-import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
@@ -54,17 +53,39 @@ public final class SentryTransaction extends SentryBaseEvent
     super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.startTimestamp = sentryTracer.getStartTimestamp();
-    this.timestamp = DateUtils.getCurrentDateTime();
+    this.timestamp = sentryTracer.getTimestamp();
     this.transaction = sentryTracer.getName();
     for (final Span span : sentryTracer.getChildren()) {
-      this.spans.add(new SentrySpan(span));
+      if (Boolean.TRUE.equals(span.isSampled())) {
+        this.spans.add(new SentrySpan(span));
+      }
     }
     final Contexts contexts = this.getContexts();
-    for (Map.Entry<String, Object> entry : sentryTracer.getContexts().entrySet()) {
+    for (final Map.Entry<String, Object> entry : sentryTracer.getContexts().entrySet()) {
       contexts.put(entry.getKey(), entry.getValue());
     }
-    contexts.setTrace(sentryTracer.getSpanContext());
     this.setRequest(sentryTracer.getRequest());
+    final SpanContext tracerContext = sentryTracer.getSpanContext();
+    // tags must be placed on the root of the transaction instead of contexts.trace.tags
+    contexts.setTrace(
+        new SpanContext(
+            tracerContext.getTraceId(),
+            tracerContext.getSpanId(),
+            tracerContext.getParentSpanId(),
+            tracerContext.getOperation(),
+            tracerContext.getDescription(),
+            tracerContext.getSampled(),
+            tracerContext.getStatus()));
+    for (final Map.Entry<String, String> tag : tracerContext.getTags().entrySet()) {
+      this.setTag(tag.getKey(), tag.getValue());
+    }
+
+    final Map<String, Object> data = sentryTracer.getData();
+    if (data != null) {
+      for (final Map.Entry<String, Object> tag : data.entrySet()) {
+        this.setExtra(tag.getKey(), tag.getValue());
+      }
+    }
   }
 
   @ApiStatus.Internal

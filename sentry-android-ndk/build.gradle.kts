@@ -26,9 +26,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        versionName = project.version.toString()
-        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
-
         externalNativeBuild {
             cmake {
                 arguments.add(0, "-DANDROID_STL=c++_static")
@@ -41,7 +38,7 @@ android {
         }
 
         // for AGP 4.1
-        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
+        buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
 
     // we use the default NDK and CMake versions based on the AGP's version
@@ -88,6 +85,12 @@ android {
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
+
+    variantFilter {
+        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
+            ignore = true
+        }
+    }
 }
 
 tasks.withType<Test> {
@@ -97,8 +100,8 @@ tasks.withType<Test> {
 }
 
 dependencies {
-    api(project(":sentry"))
-    api(project(":sentry-android-core"))
+    api(projects.sentry)
+    api(projects.sentryAndroidCore)
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
@@ -106,14 +109,4 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
 
     testImplementation(Config.TestLibs.mockitoKotlin)
-}
-
-val initNative = tasks.register<Exec>("initNative") {
-    logger.log(LogLevel.LIFECYCLE, "Initializing git submodules")
-    commandLine("git", "submodule", "update", "--init", "--recursive")
-    outputs.dir("${project.projectDir}/$sentryNativeSrc")
-}
-
-tasks.named("preBuild") {
-    dependsOn(initNative)
 }

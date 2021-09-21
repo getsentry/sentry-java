@@ -8,6 +8,7 @@ import io.sentry.JsonSerializable;
 import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class MeasurementValue implements JsonSerializable {
@@ -16,6 +17,11 @@ public final class MeasurementValue implements JsonSerializable {
 
   public MeasurementValue(final float value) {
     this.value = value;
+  }
+
+  @TestOnly
+  public float getValue() {
+    return value;
   }
 
   // JsonSerializable

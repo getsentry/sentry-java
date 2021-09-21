@@ -129,4 +129,68 @@ class BreadcrumbTest {
         assertEquals("http", breadcrumb.category)
         assertFalse(breadcrumb.data.containsKey("status_code"))
     }
+
+    @Test
+    fun `creates navigation breadcrumb`() {
+        val breadcrumb = Breadcrumb.navigation("from", "to")
+        assertEquals("from", breadcrumb.data["from"])
+        assertEquals("to", breadcrumb.data["to"])
+        assertEquals("navigation", breadcrumb.type)
+        assertEquals("navigation", breadcrumb.category)
+    }
+
+    @Test
+    fun `creates transaction breadcrumb`() {
+        val breadcrumb = Breadcrumb.transaction("message")
+        assertEquals("default", breadcrumb.type)
+        assertEquals("sentry.transaction", breadcrumb.category)
+        assertEquals("message", breadcrumb.message)
+    }
+
+    @Test
+    fun `creates query breadcrumb`() {
+        val breadcrumb = Breadcrumb.query("message")
+        assertEquals("query", breadcrumb.type)
+        assertEquals("message", breadcrumb.message)
+    }
+
+    @Test
+    fun `creates ui breadcrumb`() {
+        val breadcrumb = Breadcrumb.ui("click", "message")
+        assertEquals("default", breadcrumb.type)
+        assertEquals("ui.click", breadcrumb.category)
+        assertEquals("message", breadcrumb.message)
+    }
+
+    @Test
+    fun `creates user breadcrumb`() {
+        val breadcrumb = Breadcrumb.user("click", "message")
+        assertEquals("user", breadcrumb.type)
+        assertEquals("message", breadcrumb.message)
+        assertEquals("click", breadcrumb.category)
+    }
+
+    @Test
+    fun `creates debug breadcrumb`() {
+        val breadcrumb = Breadcrumb.debug("message")
+        assertEquals("debug", breadcrumb.type)
+        assertEquals("message", breadcrumb.message)
+        assertEquals(SentryLevel.DEBUG, breadcrumb.level)
+    }
+
+    @Test
+    fun `creates info breadcrumb`() {
+        val breadcrumb = Breadcrumb.info("message")
+        assertEquals("info", breadcrumb.type)
+        assertEquals("message", breadcrumb.message)
+        assertEquals(SentryLevel.INFO, breadcrumb.level)
+    }
+
+    @Test
+    fun `creates error breadcrumb`() {
+        val breadcrumb = Breadcrumb.error("message")
+        assertEquals("error", breadcrumb.type)
+        assertEquals("message", breadcrumb.message)
+        assertEquals(SentryLevel.ERROR, breadcrumb.level)
+    }
 }

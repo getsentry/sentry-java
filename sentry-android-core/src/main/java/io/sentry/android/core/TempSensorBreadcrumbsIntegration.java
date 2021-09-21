@@ -49,21 +49,27 @@ public final class TempSensorBreadcrumbsIntegration
             this.options.isEnableSystemEventBreadcrumbs());
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
-      sensorManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
-      if (sensorManager != null) {
-        final Sensor defaultSensor =
-            sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
-        if (defaultSensor != null) {
-          sensorManager.registerListener(this, defaultSensor, SensorManager.SENSOR_DELAY_NORMAL);
+      try {
+        sensorManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
+        if (sensorManager != null) {
+          final Sensor defaultSensor =
+              sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
+          if (defaultSensor != null) {
+            sensorManager.registerListener(this, defaultSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
-          options.getLogger().log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
+            options
+                .getLogger()
+                .log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
+          } else {
+            this.options
+                .getLogger()
+                .log(SentryLevel.INFO, "TYPE_AMBIENT_TEMPERATURE is not available.");
+          }
         } else {
-          this.options
-              .getLogger()
-              .log(SentryLevel.INFO, "TYPE_AMBIENT_TEMPERATURE is not available.");
+          this.options.getLogger().log(SentryLevel.INFO, "SENSOR_SERVICE is not available.");
         }
-      } else {
-        this.options.getLogger().log(SentryLevel.INFO, "SENSOR_SERVICE is not available.");
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Failed to init. the SENSOR_SERVICE.");
       }
     }
   }

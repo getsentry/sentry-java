@@ -11,7 +11,7 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
-import io.sentry.spring.SentrySpringRequestListener;
+import io.sentry.spring.SentrySpringFilter;
 import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
@@ -36,6 +36,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -47,6 +48,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sentry.dsn")
@@ -124,10 +126,13 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryWebMvcConfiguration {
 
+      private static final int SENTRY_SPRING_FILTER_PRECEDENCE = Ordered.HIGHEST_PRECEDENCE;
+
       @Configuration(proxyBeanMethods = false)
       @ConditionalOnClass(SecurityContextHolder.class)
       @Open
       static class SentrySecurityConfiguration {
+
         /**
          * Configures {@link SpringSecuritySentryUserProvider} only if Spring Security is on the
          * classpath. Its order is set to be higher than {@link
@@ -179,16 +184,13 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      public @NotNull SentrySpringRequestListener sentrySpringRequestListener(
-          final @NotNull IHub sentryHub, final @NotNull SentryRequestResolver requestResolver) {
-        return new SentrySpringRequestListener(sentryHub, requestResolver);
-      }
-
-      @Bean
-      @ConditionalOnMissingBean
-      public @NotNull SentryExceptionResolver sentryExceptionResolver(
-          final @NotNull IHub sentryHub, final @NotNull SentryProperties options) {
-        return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
+      @ConditionalOnMissingBean(name = "sentrySpringFilter")
+      public @NotNull FilterRegistrationBean<SentrySpringFilter> sentrySpringFilter(
+          final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
+        FilterRegistrationBean<SentrySpringFilter> filter =
+            new FilterRegistrationBean<>(new SentrySpringFilter(hub, requestResolver));
+        filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE);
+        return filter;
       }
 
       @Bean
@@ -198,8 +200,15 @@ public class SentryAutoConfiguration {
           final @NotNull IHub hub) {
         FilterRegistrationBean<SentryTracingFilter> filter =
             new FilterRegistrationBean<>(new SentryTracingFilter(hub));
-        filter.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE + 1); // must run after SentrySpringFilter
         return filter;
+      }
+
+      @Bean
+      @ConditionalOnMissingBean
+      public @NotNull SentryExceptionResolver sentryExceptionResolver(
+          final @NotNull IHub sentryHub, final @NotNull SentryProperties options) {
+        return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
       }
     }
 
@@ -231,6 +240,17 @@ public class SentryAutoConfiguration {
       @Bean
       public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IHub hub) {
         return new SentrySpanRestTemplateCustomizer(hub);
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @AutoConfigureBefore(WebClientAutoConfiguration.class)
+    @ConditionalOnClass(WebClient.class)
+    @Open
+    static class SentryPerformanceWebClientConfiguration {
+      @Bean
+      public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IHub hub) {
+        return new SentrySpanWebClientCustomizer(hub);
       }
     }
 

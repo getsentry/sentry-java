@@ -19,12 +19,14 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.TransactionFinishedCallback
 import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -33,17 +35,21 @@ class ActivityLifecycleIntegrationTest {
     private class Fixture {
         val application = mock<Application>()
         val hub = mock<Hub>()
-        val options = SentryAndroidOptions()
+        val options = SentryAndroidOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+        }
         val bundle = mock<Bundle>()
         val context = TransactionContext("name", "op")
-        val transaction = SentryTracer(context, hub)
+        val activityFramesTracker = mock<ActivityFramesTracker>()
+        val transactionFinishedCallback = mock<TransactionFinishedCallback>()
+        val transaction = SentryTracer(context, hub, true, transactionFinishedCallback)
         val buildInfo = mock<IBuildInfoProvider>()
 
         fun getSut(apiVersion: Int = 29): ActivityLifecycleIntegration {
             whenever(hub.options).thenReturn(options)
-            whenever(hub.startTransaction(any(), any(), anyOrNull<Date>(), any())).thenReturn(transaction)
+            whenever(hub.startTransaction(any(), any(), anyOrNull(), any(), any())).thenReturn(transaction)
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
-            return ActivityLifecycleIntegration(application, buildInfo)
+            return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker)
         }
     }
 
@@ -115,6 +121,16 @@ class ActivityLifecycleIntegrationTest {
         sut.close()
 
         verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+    }
+
+    @Test
+    fun `When ActivityBreadcrumbsIntegration is closed, it should close the ActivityFramesTracker`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        sut.close()
+
+        verify(fixture.activityFramesTracker).stop()
     }
 
     @Test
@@ -216,9 +232,9 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub, never()).startTransaction(any(), any(), anyOrNull<Date>(), any())
+        verify(fixture.hub, never()).startTransaction(any(), any(), anyOrNull(), any(), any())
     }
 
     @Test
@@ -228,10 +244,10 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), any(), anyOrNull<Date>(), any())
+        verify(fixture.hub).startTransaction(any(), any(), anyOrNull(), any(), any())
     }
 
     @Test
@@ -243,11 +259,23 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime()
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
         verify(fixture.hub).startTransaction(any(), check {
             assertEquals("ui.load", it)
-        }, anyOrNull<Date>(), any())
+        }, anyOrNull(), any(), any())
+    }
+
+    @Test
+    fun `Activity gets added to ActivityFramesTracker during transaction creation`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        verify(fixture.activityFramesTracker).addActivity(eq(activity))
     }
 
     @Test
@@ -259,11 +287,11 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime()
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
         verify(fixture.hub).startTransaction(check {
             assertEquals("Activity", it)
-        }, any(), anyOrNull<Date>(), any())
+        }, any(), anyOrNull(), any(), any())
     }
 
     @Test
@@ -282,7 +310,7 @@ class ActivityLifecycleIntegrationTest {
         }
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
     }
 
     @Test
@@ -303,7 +331,7 @@ class ActivityLifecycleIntegrationTest {
         }
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
     }
 
     @Test
@@ -313,12 +341,12 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
         verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.OK, it.status)
-        })
+        }, anyOrNull())
     }
 
     @Test
@@ -328,7 +356,7 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
         fixture.transaction.status = SpanStatus.UNKNOWN_ERROR
 
@@ -336,7 +364,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
-        })
+        }, anyOrNull())
     }
 
     @Test
@@ -347,10 +375,10 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -361,7 +389,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -371,10 +399,10 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.hub).captureTransaction(any())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -384,7 +412,7 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
         assertFalse(sut.activitiesWithOngoingTransactions.isEmpty())
     }
@@ -396,10 +424,42 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
         assertTrue(sut.activitiesWithOngoingTransactions.isEmpty())
+    }
+
+    @Test
+    fun `When Activity is destroyed, sets appStartSpan status to cancelled and finish it`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityDestroyed(activity)
+
+        val span = fixture.transaction.children.first()
+        assertEquals(span.status, SpanStatus.CANCELLED)
+        assertTrue(span.isFinished)
+    }
+
+    @Test
+    fun `When Activity is destroyed, sets appStartSpan to null`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityDestroyed(activity)
+
+        assertNull(sut.appStartSpan)
     }
 
     @Test
@@ -408,22 +468,10 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        sut.onActivityPreCreated(mock(), mock())
+        sut.onActivityCreated(mock(), mock())
 
-        sut.onActivityPreCreated(mock(), fixture.bundle)
-        verify(fixture.hub).captureTransaction(any())
-    }
-
-    @Test
-    fun `do not start transaction on created if API 29`() {
-        val sut = fixture.getSut()
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, mock())
-
-        verify(fixture.hub, never()).startTransaction(any(), any(), anyOrNull<Date>(), any())
+        sut.onActivityCreated(mock(), fixture.bundle)
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -433,10 +481,10 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, mock())
+        sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any())
+        verify(fixture.hub, never()).captureTransaction(any(), any())
     }
 
     @Test
@@ -450,7 +498,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
 
-        verify(fixture.hub).startTransaction(any(), any(), anyOrNull<Date>(), any())
+        verify(fixture.hub).startTransaction(any(), any(), anyOrNull(), any(), any())
     }
 
     @Test
@@ -463,7 +511,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub).captureTransaction(any())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -531,10 +579,10 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(date)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
         // call only once
-        verify(fixture.hub).startTransaction(any(), any(), eq(date), any())
+        verify(fixture.hub).startTransaction(any(), any(), eq(date), any(), any())
     }
 
     @Test
@@ -547,7 +595,7 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(date)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
         val span = fixture.transaction.children.first()
         assertEquals(span.operation, "app.start.warm")
@@ -564,7 +612,7 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(date)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, null)
+        sut.onActivityCreated(activity, null)
 
         val span = fixture.transaction.children.first()
         assertEquals(span.operation, "app.start.cold")
@@ -581,7 +629,7 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(date)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
         val span = fixture.transaction.children.first()
         assertEquals(span.description, "Warm Start")
@@ -598,7 +646,7 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(date)
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, null)
+        sut.onActivityCreated(activity, null)
 
         val span = fixture.transaction.children.first()
         assertEquals(span.description, "Cold Start")
@@ -615,17 +663,17 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime()
 
         val activity = mock<Activity>()
-        sut.onActivityPreCreated(activity, fixture.bundle)
+        sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), any(), eq(date), any())
+        verify(fixture.hub).startTransaction(any(), any(), eq(date), any(), any())
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
         val newActivity = mock<Activity>()
-        sut.onActivityPreCreated(newActivity, fixture.bundle)
+        sut.onActivityCreated(newActivity, fixture.bundle)
 
         val nullDate: Date? = null
-        verify(fixture.hub).startTransaction(any(), any(), eq(nullDate), any())
+        verify(fixture.hub).startTransaction(any(), any(), eq(nullDate), any(), any())
     }
 
     private fun setAppStartTime(date: Date = Date(0)) {

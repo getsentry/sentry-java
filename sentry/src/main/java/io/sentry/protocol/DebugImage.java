@@ -51,6 +51,7 @@ import org.jetbrains.annotations.Nullable;
  * in the list of images.
  */
 public final class DebugImage implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+  public static final String PROGUARD = "proguard";
 
   /**
    * The unique UUID of the image.

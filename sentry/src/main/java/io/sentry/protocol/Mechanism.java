@@ -233,9 +233,6 @@ public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown,
           case JsonKeys.HANDLED:
             mechanism.handled = reader.nextBooleanOrNull();
             break;
-          case JsonKeys.SYNTHETIC:
-            mechanism.synthetic = reader.nextBooleanOrNull();
-            break;
           case JsonKeys.META:
             mechanism.meta =
                 CollectionUtils.newConcurrentHashMap(
@@ -245,6 +242,9 @@ public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown,
             mechanism.data =
                 CollectionUtils.newConcurrentHashMap(
                     (Map<String, Object>) reader.nextObjectOrNull());
+            break;
+          case JsonKeys.SYNTHETIC:
+            mechanism.synthetic = reader.nextBooleanOrNull();
             break;
           default:
             if (unknown == null) {

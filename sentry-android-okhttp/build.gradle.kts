@@ -17,11 +17,8 @@ android {
         targetSdkVersion(Config.Android.targetSdkVersion)
         minSdkVersion(Config.Android.minSdkVersionOkHttp)
 
-        versionName = project.version.toString()
-        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
-
         // for AGP 4.1
-        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
+        buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
 
     buildTypes {
@@ -50,6 +47,12 @@ android {
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         isCheckReleaseBuilds = false
     }
+
+    variantFilter {
+        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
+            ignore = true
+        }
+    }
 }
 
 tasks.withType<Test> {
@@ -63,7 +66,7 @@ kotlin {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
 
     implementation(Config.Libs.okhttpBom)
     implementation(Config.Libs.okhttp)

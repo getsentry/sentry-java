@@ -10,9 +10,8 @@ plugins {
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
+    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
 }
-
-apply(plugin = Config.BuildPlugins.springDependencyManagement)
 
 the<DependencyManagementExtension>().apply {
     imports {
@@ -31,7 +30,7 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
     implementation(Config.Libs.servletApi)
 
     compileOnly(Config.CompileOnly.nopen)
@@ -42,7 +41,7 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
-    testImplementation(project(":sentry-test-support"))
+    testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)

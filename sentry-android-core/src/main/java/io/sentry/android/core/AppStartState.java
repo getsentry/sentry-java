@@ -2,12 +2,14 @@ package io.sentry.android.core;
 
 import android.os.SystemClock;
 import java.util.Date;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** AppStartState holds the state of the App Start metric and appStartTime */
-final class AppStartState {
+@ApiStatus.Internal
+public final class AppStartState {
 
   private static @NotNull AppStartState instance = new AppStartState();
 
@@ -23,7 +25,7 @@ final class AppStartState {
 
   private AppStartState() {}
 
-  static @NotNull AppStartState getInstance() {
+  public static @NotNull AppStartState getInstance() {
     return instance;
   }
 
@@ -49,7 +51,7 @@ final class AppStartState {
     return appStartEndMillis - appStartMillis;
   }
 
-  boolean isColdStart() {
+  public boolean isColdStart() {
     return coldStart;
   }
 
@@ -58,7 +60,7 @@ final class AppStartState {
   }
 
   @Nullable
-  Date getAppStartTime() {
+  public Date getAppStartTime() {
     return appStartTime;
   }
 

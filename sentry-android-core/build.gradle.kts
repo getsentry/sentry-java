@@ -18,13 +18,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        versionName = project.version.toString()
-        versionCode = project.properties[Config.Sentry.buildVersionCodeProp].toString().toInt()
-
         buildConfigField("String", "SENTRY_ANDROID_SDK_NAME", "\"${Config.Sentry.SENTRY_ANDROID_SDK_NAME}\"")
 
         // for AGP 4.1
-        buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
+        buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
 
     buildTypes {
@@ -58,6 +55,12 @@ android {
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
+
+    variantFilter {
+        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
+            ignore = true
+        }
+    }
 }
 
 tasks.withType<Test> {
@@ -74,11 +77,12 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 dependencies {
-    api(project(":sentry"))
+    api(projects.sentry)
 
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
     implementation(Config.Libs.lifecycleCommonJava8)
+    implementation(Config.Libs.androidxCore)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -98,5 +102,5 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(project(":sentry-test-support"))
+    testImplementation(projects.sentryTestSupport)
 }

@@ -146,7 +146,6 @@ public final class Hub implements IHub {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
       }
     }
-    this.lastEventId = sentryId;
     return sentryId;
   }
 
@@ -180,7 +179,7 @@ public final class Hub implements IHub {
   }
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
-    if (event.getThrowable() != null) {
+    if (options.isTracingEnabled() && event.getThrowable() != null) {
       final Pair<ISpan, String> pair =
           throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
       if (pair != null) {
@@ -531,7 +530,9 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction,
+      final @Nullable TraceState traceState,
+      final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -547,32 +548,33 @@ public final class Hub implements IHub {
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Capturing unfinished transaction: %s",
-                transaction.getEventId());
-      }
-      if (!Boolean.TRUE.equals(transaction.isSampled())) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Transaction %s was dropped due to sampling decision.",
+                "Transaction: %s is not finished and this 'captureTransaction' call is a no-op.",
                 transaction.getEventId());
       } else {
-        StackItem item = null;
-        try {
-          item = stack.peek();
-          sentryId = item.getClient().captureTransaction(transaction, item.getScope(), hint);
-        } catch (Exception e) {
+        if (!Boolean.TRUE.equals(transaction.isSampled())) {
           options
               .getLogger()
               .log(
-                  SentryLevel.ERROR,
-                  "Error while capturing transaction with id: " + transaction.getEventId(),
-                  e);
+                  SentryLevel.DEBUG,
+                  "Transaction %s was dropped due to sampling decision.",
+                  transaction.getEventId());
+        } else {
+          StackItem item = null;
+          try {
+            item = stack.peek();
+            sentryId =
+                item.getClient().captureTransaction(transaction, traceState, item.getScope(), hint);
+          } catch (Exception e) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.ERROR,
+                    "Error while capturing transaction with id: " + transaction.getEventId(),
+                    e);
+          }
         }
       }
     }
-    this.lastEventId = sentryId;
     return sentryId;
   }
 
@@ -581,7 +583,8 @@ public final class Hub implements IHub {
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
-    return createTransaction(transactionContext, customSamplingContext, bindToScope, null, false);
+    return createTransaction(
+        transactionContext, customSamplingContext, bindToScope, null, false, null);
   }
 
   @ApiStatus.Internal
@@ -592,7 +595,7 @@ public final class Hub implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, startTimestamp, false);
+        transactionContext, customSamplingContext, bindToScope, startTimestamp, false, null);
   }
 
   @ApiStatus.Internal
@@ -602,9 +605,15 @@ public final class Hub implements IHub {
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
-      final boolean waitForChildren) {
+      final boolean waitForChildren,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return createTransaction(
-        transactionContexts, customSamplingContext, bindToScope, startTimestamp, waitForChildren);
+        transactionContexts,
+        customSamplingContext,
+        bindToScope,
+        startTimestamp,
+        waitForChildren,
+        transactionFinishedCallback);
   }
 
   private @NotNull ITransaction createTransaction(
@@ -612,7 +621,8 @@ public final class Hub implements IHub {
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
-      final boolean waitForChildren) {
+      final boolean waitForChildren,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
     ITransaction transaction;
@@ -635,7 +645,13 @@ public final class Hub implements IHub {
       boolean samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSampled(samplingDecision);
 
-      transaction = new SentryTracer(transactionContext, this, startTimestamp, waitForChildren);
+      transaction =
+          new SentryTracer(
+              transactionContext,
+              this,
+              startTimestamp,
+              waitForChildren,
+              transactionFinishedCallback);
     }
     if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));

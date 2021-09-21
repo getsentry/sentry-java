@@ -38,7 +38,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
   private @Nullable Map<String, Object> unknown;
 
   public SentrySpan(final @NotNull Span span) {
-    this(span, null);
+    this(span, span.getData());
   }
 
   @ApiStatus.Internal

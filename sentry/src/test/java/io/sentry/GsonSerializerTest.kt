@@ -47,6 +47,7 @@ class GsonSerializerTest {
 
         init {
             val options = SentryOptions()
+            options.dsn = "https://key@sentry.io/proj"
             options.setLogger(logger)
             options.setDebug(true)
             options.setEnvelopeReader(EnvelopeReader())
@@ -447,12 +448,71 @@ class GsonSerializerTest {
     }
 
     @Test
+    fun `serializes trace state`() {
+        val traceState = SentryEnvelopeHeader(null, null, TraceState(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", TraceState.TraceStateUser("userId", "segment"), "transaction"))
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction","user":{"id":"userId","segment":"segment"}}}"""
+        val json = serializeToString(traceState)
+        assertEquals(expected, json)
+    }
+
+    @Test
+    fun `serializes trace state with null user`() {
+        val traceState = SentryEnvelopeHeader(null, null, TraceState(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", null, "transaction"))
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction"}}"""
+        val json = serializeToString(traceState)
+        assertEquals(expected, json)
+    }
+
+    @Test
+    fun `serializes trace state with user having null id and segment`() {
+        val traceState = SentryEnvelopeHeader(null, null, TraceState(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", TraceState.TraceStateUser(null, null), "transaction"))
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction"}}"""
+        val json = serializeToString(traceState)
+        assertEquals(expected, json)
+    }
+
+    @Test
+    fun `deserializes trace state`() {
+        val json = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user":{"id":"userId","segment":"segment"},"transaction":"transaction"}}"""
+        val actual = fixture.serializer.deserialize(StringReader(json), SentryEnvelopeHeader::class.java)
+        assertNotNull(actual) {
+            assertNotNull(it.trace) {
+                assertEquals(SentryId("3367f5196c494acaae85bbbd535379ac"), it.traceId)
+                assertEquals("key", it.publicKey)
+                assertEquals("release", it.release)
+                assertEquals("environment", it.environment)
+                assertNotNull(it.user) {
+                    assertEquals("userId", it.id)
+                    assertEquals("segment", it.segment)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `deserializes trace state without user`() {
+        val json = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction"}}"""
+        val actual = fixture.serializer.deserialize(StringReader(json), SentryEnvelopeHeader::class.java)
+        assertNotNull(actual) {
+            assertNotNull(it.trace) {
+                assertEquals(SentryId("3367f5196c494acaae85bbbd535379ac"), it.traceId)
+                assertEquals("key", it.publicKey)
+                assertEquals("release", it.release)
+                assertEquals("environment", it.environment)
+                assertNull(it.user)
+            }
+        }
+    }
+
+    @Test
     fun `serializes transaction`() {
         val trace = TransactionContext("transaction-name", "http")
         trace.description = "some request"
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
+        trace.sampled = true
         val tracer = SentryTracer(trace, fixture.hub)
+        tracer.setData("dataKey", "dataValue")
         val span = tracer.startChild("child")
         span.finish(SpanStatus.OK)
         tracer.finish()
@@ -466,6 +526,9 @@ class GsonSerializerTest {
         assertNotNull(element["start_timestamp"].asString)
         assertNotNull(element["event_id"].asString)
         assertNotNull(element["spans"].asJsonArray)
+        assertEquals("myValue", element["tags"].asJsonObject["myTag"].asString)
+
+        assertEquals("dataValue", element["extra"].asJsonObject["dataKey"].asString)
 
         val jsonSpan = element["spans"].asJsonArray[0].asJsonObject
         assertNotNull(jsonSpan["trace_id"])
@@ -482,7 +545,6 @@ class GsonSerializerTest {
         assertEquals("http", jsonTrace["op"].asString)
         assertEquals("some request", jsonTrace["description"].asString)
         assertEquals("ok", jsonTrace["status"].asString)
-        assertEquals("myValue", jsonTrace["tags"].asJsonObject["myTag"].asString)
     }
 
     @Test
@@ -503,6 +565,9 @@ class GsonSerializerTest {
                             "custom": {
                               "some-key": "some-value"
                             }
+                          },
+                          "extra": {
+                            "extraKey": "extraValue"
                           },
                           "spans": [
                             {
@@ -537,6 +602,8 @@ class GsonSerializerTest {
         assertEquals("http", transaction.contexts.trace!!.operation)
         assertNotNull(transaction.contexts["custom"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
+
+        assertEquals("extraValue", transaction.getExtra("extraKey"))
 
         assertNotNull(transaction.spans)
         assertEquals(1, transaction.spans.size)

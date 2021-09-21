@@ -14,6 +14,6 @@ configure<JavaPluginConvention> {
 }
 
 dependencies {
-    implementation(project(":sentry-log4j2"))
+    implementation(projects.sentryLog4j2)
     implementation(Config.Libs.log4j2Api)
 }

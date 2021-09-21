@@ -1,6 +1,7 @@
 package io.sentry.spring.tracing
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
@@ -37,7 +38,9 @@ class SentryTracingFilterTest {
         val transactionNameProvider = spy(TransactionNameProvider())
 
         init {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            })
         }
 
         fun getSut(isEnabled: Boolean = true, status: Int = 200, sentryTraceHeader: String? = null): SentryTracingFilter {
@@ -72,7 +75,7 @@ class SentryTracingFilterTest {
             assertThat(it.transaction).isEqualTo("POST /product/{id}")
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
             assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
-        })
+        }, anyOrNull())
     }
 
     @Test
@@ -83,7 +86,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        })
+        }, anyOrNull())
     }
 
     @Test
@@ -94,7 +97,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.status).isNull()
-        })
+        }, anyOrNull())
     }
 
     @Test
@@ -105,7 +108,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.parentSpanId).isNull()
-        })
+        }, anyOrNull())
     }
 
     @Test
@@ -117,7 +120,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
-        })
+        }, anyOrNull())
     }
 
     @Test
@@ -145,6 +148,6 @@ class SentryTracingFilterTest {
         }
         verify(fixture.hub).captureTransaction(check {
             assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        })
+        }, anyOrNull())
     }
 }

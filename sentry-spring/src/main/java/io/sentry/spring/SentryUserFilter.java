@@ -11,21 +11,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Sets the {@link User} on the {@link Scope} with information retrieved from {@link
  * SentryUserProvider}s.
  */
 @Open
-public class SentryUserFilter implements Filter {
+public class SentryUserFilter extends OncePerRequestFilter {
   private final @NotNull IHub hub;
   private final @NotNull List<SentryUserProvider> sentryUserProviders;
 
@@ -37,11 +37,11 @@ public class SentryUserFilter implements Filter {
   }
 
   @Override
-  public void doFilter(
-      final @NotNull ServletRequest request,
-      final @NotNull ServletResponse response,
+  protected void doFilterInternal(
+      final @NotNull HttpServletRequest request,
+      final @NotNull HttpServletResponse response,
       final @NotNull FilterChain chain)
-      throws IOException, ServletException {
+      throws ServletException, IOException {
     final User user = new User();
     for (final SentryUserProvider provider : sentryUserProviders) {
       apply(user, provider.provideUser());

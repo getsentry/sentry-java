@@ -1,10 +1,13 @@
 package io.sentry.android.core
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
+import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
+import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentryTransaction
 import java.util.Date
 import kotlin.test.BeforeTest
@@ -17,13 +20,14 @@ class PerformanceAndroidEventProcessorTest {
         val options = SentryAndroidOptions()
 
         val hub = mock<IHub>()
-        val context = TransactionContext("name", "op")
+        val context = TransactionContext("name", "op", true)
         val tracer = SentryTracer(context, hub)
+        val activityFramesTracker = mock<ActivityFramesTracker>()
 
         fun getSut(tracesSampleRate: Double? = 1.0): PerformanceAndroidEventProcessor {
             options.tracesSampleRate = tracesSampleRate
             whenever(hub.options).thenReturn(options)
-            return PerformanceAndroidEventProcessor(options)
+            return PerformanceAndroidEventProcessor(options, activityFramesTracker)
         }
     }
 
@@ -105,6 +109,41 @@ class PerformanceAndroidEventProcessorTest {
         tr = sut.process(tr, null)
 
         assertTrue(tr.measurements.isEmpty())
+    }
+
+    @Test
+    fun `do not add slow and frozen frames if not auto transaction`() {
+        val sut = fixture.getSut()
+        var tr = getTransaction("task")
+
+        tr = sut.process(tr, null)
+
+        assertTrue(tr.measurements.isEmpty())
+    }
+
+    @Test
+    fun `do not add slow and frozen frames if tracing is disabled`() {
+        val sut = fixture.getSut(null)
+        var tr = getTransaction("task")
+
+        tr = sut.process(tr, null)
+
+        assertTrue(tr.measurements.isEmpty())
+    }
+
+    @Test
+    fun `add slow and frozen frames if auto transaction`() {
+        val sut = fixture.getSut()
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+
+        val metrics = mapOf("frames_total" to MeasurementValue(1f))
+        whenever(fixture.activityFramesTracker.takeMetrics(any())).thenReturn(metrics)
+
+        tr = sut.process(tr, null)
+
+        assertTrue(tr.measurements.containsKey("frames_total"))
     }
 
     private fun setAppStart(coldStart: Boolean = true) {

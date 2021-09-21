@@ -37,7 +37,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.jsonUnit)
-    testImplementation(project(":sentry-test-support"))
+    testImplementation(projects.sentryTestSupport)
 }
 
 configure<SourceSetContainer> {
@@ -88,4 +88,5 @@ tasks.withType<JavaCompile>() {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
     }
+    options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/io/sentry/vendor/.*")
 }

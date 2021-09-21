@@ -10,6 +10,7 @@ plugins {
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
     `maven-publish`
+    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
 }
 
 buildscript {
@@ -36,7 +37,20 @@ buildscript {
     }
 }
 
-apply(plugin = Config.QualityPlugins.binaryCompatibilityValidator)
+apiValidation {
+    ignoredProjects.addAll(listOf(
+        "sentry-samples-android",
+        "sentry-samples-console",
+        "sentry-samples-jul",
+        "sentry-samples-log4j2",
+        "sentry-samples-logback",
+        "sentry-samples-openfeign",
+        "sentry-samples-servlet",
+        "sentry-samples-spring",
+        "sentry-samples-spring-boot",
+        "sentry-samples-spring-boot-webflux"
+    ))
+}
 
 allprojects {
     repositories {
@@ -79,12 +93,6 @@ subprojects {
             }
         }
 
-        val rootDir = this.project.rootProject.projectDir
-        val distDir = File("${rootDir}${sep}distributions")
-
-        // create dir if it does not exist
-        distDir.mkdirs()
-
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
@@ -92,12 +100,6 @@ subprojects {
                 val file = File(distributionFilePath)
                 if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
-
-                val newFile = File("${distDir}${sep}${file.name}")
-                file.copyTo(newFile, overwrite = true)
-
-                UnzipUtils.unzip(newFile, distDir.path)
-                newFile.delete()
             }
         }
 

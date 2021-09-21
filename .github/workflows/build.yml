@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Build Job ${{ matrix.os }}
+    name: Build Job ${{ matrix.os }} - Java ${{ matrix.java }}
     runs-on: ${{ matrix.os }}
     strategy:
       # we want that the matrix keeps running, default is to cancel them if it fails.
@@ -18,17 +18,17 @@ jobs:
       matrix:
         # TODO: windows-latest
         os: [ubuntu-latest, macos-latest]
+        # Zulu Community distribution of OpenJDK
+        java: [ '11' ]
 
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      # Zulu Community distribution of OpenJDK
-      - name: set up JDK 1.8
-        uses: actions/setup-java@v2
+      - name: "Set up Java: ${{ matrix.java }}"
+        uses: actions/setup-java@v1
         with:
-          distribution: 'adopt'
-          java-version: '8'
+          java-version: ${{ matrix.java }}
 
       - name: Cache Gradle packages
         uses: actions/cache@v2
@@ -51,7 +51,7 @@ jobs:
 
       - name: Archive packages
         # We need artifacts from only one the builds
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.java == '11'
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}
@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         # We need coverage data from only one the builds
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.java == '11'
         uses: codecov/codecov-action@v1
         with:
           name: sentry-java

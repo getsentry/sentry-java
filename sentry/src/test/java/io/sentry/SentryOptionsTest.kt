@@ -201,6 +201,8 @@ class SentryOptionsTest {
         externalOptions.tracesSampleRate = 0.5
         externalOptions.addInAppInclude("com.app")
         externalOptions.addInAppExclude("io.off")
+        externalOptions.addTracingOrigin("localhost")
+        externalOptions.addTracingOrigin("api.foo.com")
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -218,6 +220,7 @@ class SentryOptionsTest {
         assertEquals(0.5, options.tracesSampleRate)
         assertEquals(listOf("com.app"), options.inAppIncludes)
         assertEquals(listOf("io.off"), options.inAppExcludes)
+        assertEquals(listOf("localhost", "api.foo.com"), options.tracingOrigins)
     }
 
     @Test
@@ -345,6 +348,27 @@ class SentryOptionsTest {
     fun `creates options with enableDeduplication using external properties`() {
         withPropertiesFile("enable-deduplication=true") {
             assertTrue(it.isEnableDeduplication)
+        }
+    }
+
+    @Test
+    fun `creates options with maxRequestBodySize using external properties`() {
+        withPropertiesFile("max-request-body-size=small") {
+            assertEquals(SentryOptions.RequestSize.SMALL, it.maxRequestBodySize)
+        }
+    }
+
+    @Test
+    fun `creates options with tracing origins using external properties`() {
+        withPropertiesFile("""tracing-origins=localhost,^(http|https)://api\\..*$""") {
+            assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracingOrigins)
+        }
+    }
+
+    @Test
+    fun `creates options with proguardUuid using external properties`() {
+        withPropertiesFile("proguard-uuid=id") {
+            assertEquals("id", it.proguardUuid)
         }
     }
 

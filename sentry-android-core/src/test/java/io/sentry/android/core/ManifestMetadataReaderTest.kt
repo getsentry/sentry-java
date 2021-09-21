@@ -663,4 +663,79 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.isEnableActivityLifecycleTracingAutoFinish)
     }
+
+    @Test
+    fun `applyMetadata reads traceSampling to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isTraceSampling)
+    }
+
+    @Test
+    fun `applyMetadata reads traceSampling to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isTraceSampling)
+    }
+
+    @Test
+    fun `applyMetadata reads tracingOrigins to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """localhost,^(http|https)://api\..*$""")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracingOrigins)
+    }
+
+    @Test
+    fun `applyMetadata reads tracingOrigins to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.tracingOrigins.isEmpty())
+    }
+
+    @Test
+    fun `applyMetadata reads proguardUuid to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PROGUARD_UUID to "proguard-id")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals("proguard-id", fixture.options.proguardUuid)
+    }
+
+    @Test
+    fun `applyMetadata reads proguardUuid to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertNull(fixture.options.proguardUuid)
+    }
 }

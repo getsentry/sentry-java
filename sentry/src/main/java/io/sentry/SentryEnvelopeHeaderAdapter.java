@@ -73,6 +73,35 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
         writer.endObject();
       }
     }
+    TraceState trace = value.getTrace();
+    if (trace != null) {
+      writer.name("trace");
+      writer.beginObject();
+      writer.name("trace_id").value(trace.getTraceId().toString());
+      writer.name("public_key").value(trace.getPublicKey());
+      if (trace.getRelease() != null) {
+        writer.name("release").value(trace.getRelease());
+      }
+      if (trace.getEnvironment() != null) {
+        writer.name("environment").value(trace.getEnvironment());
+      }
+      if (trace.getTransaction() != null) {
+        writer.name("transaction").value(trace.getTransaction());
+      }
+      if (trace.getUser() != null
+          && (trace.getUser().getId() != null || trace.getUser().getSegment() != null)) {
+        writer.name("user");
+        writer.beginObject();
+        if (trace.getUser().getId() != null) {
+          writer.name("id").value(trace.getUser().getId());
+        }
+        if (trace.getUser().getSegment() != null) {
+          writer.name("segment").value(trace.getUser().getSegment());
+        }
+        writer.endObject();
+      }
+      writer.endObject();
+    }
 
     writer.endObject();
   }
@@ -100,6 +129,7 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
 
     SentryId eventId = null;
     SdkVersion sdkVersion = null;
+    TraceState traceState = null;
 
     reader.beginObject();
     while (reader.hasNext()) {
@@ -176,6 +206,69 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
             reader.endObject();
             break;
           }
+        case "trace":
+          {
+            reader.beginObject();
+            SentryId traceId = null;
+            String publicKey = null;
+            String release = null;
+            String environment = null;
+            String transaction = null;
+            String userId = null;
+            String segment = null;
+            while (reader.hasNext()) {
+              switch (reader.nextName()) {
+                case "trace_id":
+                  traceId = new SentryId(reader.nextString());
+                  break;
+                case "public_key":
+                  publicKey = reader.nextString();
+                  break;
+                case "release":
+                  release = reader.nextString();
+                  break;
+                case "environment":
+                  environment = reader.nextString();
+                  break;
+                case "transaction":
+                  transaction = reader.nextString();
+                  break;
+                case "user":
+                  reader.beginObject();
+                  while (reader.hasNext()) {
+                    switch (reader.nextName()) {
+                      case "id":
+                        userId = reader.nextString();
+                        break;
+                      case "segment":
+                        segment = reader.nextString();
+                        break;
+                      default:
+                        reader.skipValue();
+                    }
+                  }
+                  reader.endObject();
+                  break;
+                default:
+                  reader.skipValue();
+                  break;
+              }
+            }
+            if (traceId != null && publicKey != null) {
+              traceState =
+                  new TraceState(
+                      traceId,
+                      publicKey,
+                      release,
+                      environment,
+                      userId != null || segment != null
+                          ? new TraceState.TraceStateUser(userId, segment)
+                          : null,
+                      transaction);
+            }
+            reader.endObject();
+            break;
+          }
         default:
           reader.skipValue();
           break;
@@ -183,6 +276,6 @@ public final class SentryEnvelopeHeaderAdapter extends TypeAdapter<SentryEnvelop
     }
     reader.endObject();
 
-    return new SentryEnvelopeHeader(eventId, sdkVersion);
+    return new SentryEnvelopeHeader(eventId, sdkVersion, traceState);
   }
 }

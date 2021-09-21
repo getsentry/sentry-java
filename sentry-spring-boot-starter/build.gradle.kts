@@ -11,13 +11,13 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
     id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
+    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
 }
-
-apply(plugin = Config.BuildPlugins.springDependencyManagement)
 
 the<DependencyManagementExtension>().apply {
     imports {
         mavenBom(SpringBootPlugin.BOM_COORDINATES)
+        mavenBom(Config.Libs.okhttpBom)
     }
 }
 
@@ -32,12 +32,13 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    api(project(":sentry"))
-    api(project(":sentry-spring"))
-    compileOnly(project(":sentry-logback"))
-    compileOnly(project(":sentry-apache-http-client-5"))
+    api(projects.sentry)
+    api(projects.sentrySpring)
+    compileOnly(projects.sentryLogback)
+    compileOnly(projects.sentryApacheHttpClient5)
     implementation(Config.Libs.springBootStarter)
     compileOnly(Config.Libs.springWeb)
+    compileOnly(Config.Libs.springWebflux)
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.springBootStarterAop)
     compileOnly(Config.Libs.springBootStarterSecurity)
@@ -54,18 +55,19 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
-    testImplementation(project(":sentry-logback"))
-    testImplementation(project(":sentry-apache-http-client-5"))
-    testImplementation(project(":sentry-test-support"))
+    testImplementation(projects.sentryLogback)
+    testImplementation(projects.sentryApacheHttpClient5)
+    testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBootStarterTest)
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
-    testImplementation(Config.TestLibs.awaitility)
 }
 
 configure<SourceSetContainer> {

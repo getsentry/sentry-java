@@ -18,12 +18,22 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
 
   private final @Nullable SdkVersion sdkVersion;
 
+  private final @Nullable TraceState trace;
+
   private @Nullable Map<String, Object> unknown;
 
   public SentryEnvelopeHeader(
       final @Nullable SentryId eventId, final @Nullable SdkVersion sdkVersion) {
+    this(eventId, sdkVersion, null);
+  }
+
+  public SentryEnvelopeHeader(
+      final @Nullable SentryId eventId,
+      final @Nullable SdkVersion sdkVersion,
+      final @Nullable TraceState trace) {
     this.eventId = eventId;
     this.sdkVersion = sdkVersion;
+    this.trace = trace;
   }
 
   public SentryEnvelopeHeader(final @Nullable SentryId eventId) {
@@ -40,6 +50,10 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
 
   public @Nullable SdkVersion getSdkVersion() {
     return sdkVersion;
+  }
+
+  public @Nullable TraceState getTrace() {
+    return trace;
   }
 
   // JsonSerializable
