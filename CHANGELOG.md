@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.2.0
 
 * Feat: Allow setting proguard via Options and/or external resources (#1728)
