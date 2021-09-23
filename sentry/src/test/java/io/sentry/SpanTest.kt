@@ -162,6 +162,7 @@ class SpanTest {
 
         span.finish(SpanStatus.OK)
         val timestamp = span.timestamp
+        val highPrecisionTimestamp = span.highPrecisionTimestamp
 
         span.finish(SpanStatus.UNKNOWN_ERROR)
 
@@ -169,6 +170,7 @@ class SpanTest {
         verify(fixture.hub).setSpanContext(any(), any(), any())
         assertEquals(SpanStatus.OK, span.status)
         assertEquals(timestamp, span.timestamp)
+        assertEquals(highPrecisionTimestamp, span.highPrecisionTimestamp)
     }
 
     @Test

@@ -147,8 +147,9 @@ public final class Span implements ISpan {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    finish(status, DateUtils.dateToSeconds(DateUtils.getCurrentDateTime()));
-    this.endNanos = System.nanoTime();
+    if (finish(status, DateUtils.dateToSeconds(DateUtils.getCurrentDateTime()))) {
+      this.endNanos = System.nanoTime();
+    }
   }
 
   /**
@@ -156,11 +157,12 @@ public final class Span implements ISpan {
    *
    * @param status - status to finish span with
    * @param timestamp - the root span timestamp.
+   * @return true if finishing was successful, false if span has been already finished
    */
-  void finish(@Nullable SpanStatus status, @NotNull Double timestamp) {
+  boolean finish(@Nullable SpanStatus status, @NotNull Double timestamp) {
     // the span can be finished only once
     if (!finished.compareAndSet(false, true)) {
-      return;
+      return false;
     }
 
     this.context.setStatus(status);
@@ -171,6 +173,7 @@ public final class Span implements ISpan {
     if (spanFinishedCallback != null) {
       spanFinishedCallback.execute(this);
     }
+    return true;
   }
 
   @Override
