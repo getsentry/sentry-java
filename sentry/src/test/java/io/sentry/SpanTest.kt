@@ -48,7 +48,7 @@ class SpanTest {
 
         assertNotNull(span.highPrecisionTimestamp) { highPrecisionTimestamp ->
             assertNotNull(span.timestamp) { timestamp ->
-                assertTrue(highPrecisionTimestamp > timestamp)
+                assertTrue(highPrecisionTimestamp >= timestamp - 0.001)
                 assertTrue(highPrecisionTimestamp <= timestamp + 0.001)
             }
         }
