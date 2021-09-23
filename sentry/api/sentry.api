@@ -1253,6 +1253,12 @@ public final class io/sentry/adapters/DateSerializerAdapter : com/google/gson/Js
 	public fun serialize (Ljava/util/Date;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
 }
 
+public final class io/sentry/adapters/DoubleDeserializerAdapter : com/google/gson/JsonDeserializer {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Double;
+	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
+}
+
 public final class io/sentry/adapters/DoubleSerializerAdapter : com/google/gson/JsonSerializer {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun serialize (Ljava/lang/Double;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;

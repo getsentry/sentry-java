@@ -8,6 +8,7 @@ import io.sentry.adapters.ContextsDeserializerAdapter;
 import io.sentry.adapters.ContextsSerializerAdapter;
 import io.sentry.adapters.DateDeserializerAdapter;
 import io.sentry.adapters.DateSerializerAdapter;
+import io.sentry.adapters.DoubleDeserializerAdapter;
 import io.sentry.adapters.DoubleSerializerAdapter;
 import io.sentry.adapters.MapAdapter;
 import io.sentry.adapters.OrientationDeserializerAdapter;
@@ -97,6 +98,7 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(SpanStatus.class, new SpanStatusDeserializerAdapter(options))
         .registerTypeAdapter(SpanStatus.class, new SpanStatusSerializerAdapter(options))
         .registerTypeAdapter(Double.class, new DoubleSerializerAdapter(options))
+        .registerTypeAdapter(Double.class, new DoubleDeserializerAdapter(options))
         .registerTypeHierarchyAdapter(Collection.class, new CollectionAdapter())
         .registerTypeHierarchyAdapter(Map.class, new MapAdapter())
         .disableHtmlEscaping()
