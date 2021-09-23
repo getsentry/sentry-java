@@ -61,6 +61,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
   public static final class JsonKeys {
     public static final String EVENT_ID = "event_id";
     public static final String SDK = "sdk";
+    public static final String TRACE = "trace";
   }
 
   @Override
@@ -72,6 +73,9 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
     }
     if (sdkVersion != null) {
       writer.name(JsonKeys.SDK).value(logger, sdkVersion);
+    }
+    if (trace != null) {
+      writer.name(JsonKeys.TRACE).value(logger, trace);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -91,6 +95,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
 
       SentryId eventId = null;
       SdkVersion sdkVersion = null;
+      TraceState trace = null;
       Map<String, Object> unknown = null;
 
       while (reader.peek() == JsonToken.NAME) {
@@ -102,6 +107,9 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
           case JsonKeys.SDK:
             sdkVersion = new SdkVersion.Deserializer().deserialize(reader, logger);
             break;
+          case JsonKeys.TRACE:
+            trace = new TraceState.Deserializer().deserialize(reader, logger);
+            break;
           default:
             if (unknown == null) {
               unknown = new HashMap<>();
@@ -110,7 +118,8 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
             break;
         }
       }
-      SentryEnvelopeHeader sentryEnvelopeHeader = new SentryEnvelopeHeader(eventId, sdkVersion);
+      SentryEnvelopeHeader sentryEnvelopeHeader =
+          new SentryEnvelopeHeader(eventId, sdkVersion, trace);
       sentryEnvelopeHeader.setUnknown(unknown);
       reader.endObject();
       return sentryEnvelopeHeader;

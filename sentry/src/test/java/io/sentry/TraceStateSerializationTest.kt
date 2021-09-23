@@ -1,41 +1,38 @@
-package io.sentry.protocol
+package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
-import io.sentry.FileFromResources
-import io.sentry.ILogger
-import io.sentry.JsonObjectReader
-import io.sentry.JsonObjectWriter
-import io.sentry.JsonSerializable
-import io.sentry.SentryEnvelopeHeader
-import io.sentry.TraceStateSerializationTest
+import io.sentry.protocol.SentryId
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class SentryEnvelopeHeaderSerializationTest {
+class TraceStateSerializationTest {
 
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = SentryEnvelopeHeader(
-            SentryIdSerializationTest.Fixture().getSut(),
-            SdkVersionSerializationTest.Fixture().getSut(),
-            TraceStateSerializationTest.Fixture().getSut()
+        fun getSut() = TraceState(
+            SentryId("65bcd18546c942069ed957b15b4ace7c"),
+            "5d593cac-f833-4845-bb23-4eabdf720da2",
+            "9ee2c92c-401e-4296-b6f0-fb3b13edd9ee",
+            "0666ab02-6364-4135-aa59-02e8128ce052",
+            TraceStateUserSerializationTest.Fixture().getSut(),
+            "0252ec25-cd0a-4230-bd2f-936a4585637e"
         )
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/sentry_envelope_header.json")
+        val expected = sanitizedFile("gson/trace_state.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/sentry_envelope_header.json")
+        val expectedJson = sanitizedFile("gson/trace_state.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
@@ -56,8 +53,8 @@ class SentryEnvelopeHeaderSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): SentryEnvelopeHeader {
+    private fun deserialize(json: String): TraceState {
         val reader = JsonObjectReader(StringReader(json))
-        return SentryEnvelopeHeader.Deserializer().deserialize(reader, fixture.logger)
+        return TraceState.Deserializer().deserialize(reader, fixture.logger)
     }
 }
