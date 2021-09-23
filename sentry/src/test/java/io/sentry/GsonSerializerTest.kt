@@ -50,9 +50,9 @@ class GsonSerializerTest {
             options.dsn = "https://key@sentry.io/proj"
             options.setLogger(logger)
             options.setDebug(true)
-            options.setEnvelopeReader(EnvelopeReader())
             whenever(hub.options).thenReturn(options)
             serializer = GsonSerializer(options)
+            options.setEnvelopeReader(EnvelopeReader(serializer))
         }
     }
 

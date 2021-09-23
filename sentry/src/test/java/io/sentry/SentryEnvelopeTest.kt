@@ -12,6 +12,12 @@ import kotlin.test.assertNull
 
 class SentryEnvelopeTest {
 
+    class Fixture {
+        fun getEnvelopeReader() = EnvelopeReader(GsonSerializer(SentryOptions()))
+    }
+
+    val fixture = Fixture()
+
     @Test
     fun `deserialize sample envelope with event and two attachments`() {
         val envelope = readEnvelope("envelope-event-attachment.txt")
@@ -42,7 +48,7 @@ class SentryEnvelopeTest {
 
     @Test
     fun `when envelope is empty, reader throws illegal argument`() {
-        val envelopeReader = EnvelopeReader()
+        val envelopeReader = fixture.getEnvelopeReader()
         val stream = mock<InputStream>()
         whenever(stream.read(any())).thenReturn(-1)
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
@@ -51,7 +57,7 @@ class SentryEnvelopeTest {
 
     @Test
     fun `when envelope has no line break, reader throws illegal argument`() {
-        val envelopeReader = EnvelopeReader()
+        val envelopeReader = fixture.getEnvelopeReader()
         val stream = "{}".toInputStream()
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
         assertEquals("Envelope contains no header.", exception.message)
@@ -59,7 +65,7 @@ class SentryEnvelopeTest {
 
     @Test
     fun `when envelope terminates with line break, envelope parsed correctly`() {
-        val envelopeReader = EnvelopeReader()
+        val envelopeReader = fixture.getEnvelopeReader()
         val stream = "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}\n{\"length\":15,\"type\":\"event\"}\n{\"contexts\":{}}\n".toInputStream()
 
         val envelope = envelopeReader.read(stream)
@@ -77,7 +83,7 @@ class SentryEnvelopeTest {
 
     @Test
     fun `when envelope item length is bigger than the rest of the payload, reader throws illegal argument`() {
-        val envelopeReader = EnvelopeReader()
+        val envelopeReader = fixture.getEnvelopeReader()
         val stream = "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}\n{\"length\":\"3\"}\n{}".toInputStream()
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
         assertEquals("Invalid length for item at index '0'. Item is '66' bytes. There are '65' in the buffer.", exception.message)
@@ -85,7 +91,7 @@ class SentryEnvelopeTest {
 
     @Test
     fun `when envelope has only a header without line break, reader throws illegal argument`() {
-        val envelopeReader = EnvelopeReader()
+        val envelopeReader = fixture.getEnvelopeReader()
         val stream = "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}".toInputStream()
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
         assertEquals("Envelope contains no header.", exception.message)
@@ -93,7 +99,7 @@ class SentryEnvelopeTest {
 
     @Test
     fun `when envelope has only a header and line break, reader throws illegal argument`() {
-        val envelopeReader = EnvelopeReader()
+        val envelopeReader = fixture.getEnvelopeReader()
         val stream = "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}\n".toInputStream()
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
         assertEquals("Invalid envelope. Item at index '0'. has no header delimiter.", exception.message)
@@ -101,7 +107,7 @@ class SentryEnvelopeTest {
 
     @Test
     fun `when envelope has the first item missing length, reader throws illegal argument`() {
-        val envelopeReader = EnvelopeReader()
+        val envelopeReader = fixture.getEnvelopeReader()
         val stream = """{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
 {"content_type":"application/json","type":"event"}
 {}""".toInputStream()
@@ -111,7 +117,7 @@ class SentryEnvelopeTest {
 
     @Test
     fun `when envelope two items, returns envelope with items`() {
-        val envelopeReader = EnvelopeReader()
+        val envelopeReader = fixture.getEnvelopeReader()
         val stream = """{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
 {"type":"event","length":"2"}
 {}
@@ -151,7 +157,7 @@ abcdefghij""".toInputStream()
     }
 
     private fun readEnvelope(fileName: String): SentryEnvelope? {
-        val envelopeReader = EnvelopeReader()
+        val envelopeReader = fixture.getEnvelopeReader()
         val testFile = this::class.java.classLoader.getResource(fileName)
         val stream = testFile!!.openStream()
         return envelopeReader.read(stream)
