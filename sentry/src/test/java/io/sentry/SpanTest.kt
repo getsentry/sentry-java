@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -37,6 +38,30 @@ class SpanTest {
         span.finish()
 
         assertNotNull(span.timestamp)
+        assertNotNull(span.highPrecisionTimestamp)
+    }
+
+    @Test
+    fun `when span is created without a start timestamp, high precision timestamp is more precise than timestamp`() {
+        val span = fixture.getSut().startChild("op", "desc") as Span
+        span.finish()
+
+        assertNotNull(span.highPrecisionTimestamp) { highPrecisionTimestamp ->
+            assertNotNull(span.timestamp) { timestamp ->
+                assertTrue(highPrecisionTimestamp > timestamp)
+                assertTrue(highPrecisionTimestamp <= timestamp + 0.001)
+            }
+        }
+    }
+
+    @Test
+    fun `when span is created with a start timestamp, finish timestamp is equals to high precision timestamp`() {
+        val span = fixture.getSut().startChild("op", "desc", Date()) as Span
+        span.finish()
+
+        assertNotNull(span.timestamp)
+        assertNotNull(span.highPrecisionTimestamp)
+        assertEquals(span.timestamp, span.highPrecisionTimestamp)
     }
 
     @Test
