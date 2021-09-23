@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Use float instead of Date for protocol types for higher precision (#1737)
+
 ## 5.2.0
 
 * Feat: Allow setting proguard via Options and/or external resources (#1728)
