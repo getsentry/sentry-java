@@ -88,9 +88,14 @@ public final class Span implements ISpan {
     this.context = Objects.requireNonNull(context, "context is required");
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
-    this.startNanos = System.nanoTime();
     this.spanFinishedCallback = null;
+    if (startTimestamp != null) {
+      this.startTimestamp = startTimestamp;
+      this.startNanos = null;
+    } else {
+      this.startTimestamp = DateUtils.getCurrentDateTime();
+      this.startNanos = System.nanoTime();
+    }
   }
 
   public @NotNull Date getStartTimestamp() {
