@@ -1,11 +1,11 @@
 package io.sentry.protocol;
 
+import io.sentry.DateUtils;
 import io.sentry.Span;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
-import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentrySpan {
-  private final @NotNull Date startTimestamp;
-  private final @Nullable Date timestamp;
+  private final @NotNull Double startTimestamp;
+  private final @Nullable Double timestamp;
   private final @NotNull SentryId traceId;
   private final @NotNull SpanId spanId;
   private final @Nullable SpanId parentSpanId;
@@ -40,8 +40,8 @@ public final class SentrySpan {
     this.status = span.getStatus();
     final Map<String, String> tagsCopy = CollectionUtils.newConcurrentHashMap(span.getTags());
     this.tags = tagsCopy != null ? tagsCopy : new ConcurrentHashMap<>();
-    this.timestamp = span.getTimestamp();
-    this.startTimestamp = span.getStartTimestamp();
+    this.timestamp = span.getHighPrecisionTimestamp();
+    this.startTimestamp = DateUtils.dateToSeconds(span.getStartTimestamp());
     this.data = data;
   }
 
@@ -49,11 +49,11 @@ public final class SentrySpan {
     return this.timestamp != null;
   }
 
-  public @NotNull Date getStartTimestamp() {
+  public @NotNull Double getStartTimestamp() {
     return startTimestamp;
   }
 
-  public @Nullable Date getTimestamp() {
+  public @Nullable Double getTimestamp() {
     return timestamp;
   }
 

@@ -552,8 +552,8 @@ class GsonSerializerTest {
         val json = """{
                           "transaction": "a-transaction",
                           "type": "transaction",
-                          "start_timestamp": "2020-10-23T10:24:01.791Z",
-                          "timestamp": "2020-10-23T10:24:02.791Z",
+                          "start_timestamp": 1632395079.503000,
+                          "timestamp": 1632395079.807321,
                           "event_id": "3367f5196c494acaae85bbbd535379ac",
                           "contexts": {
                             "trace": {
@@ -571,8 +571,8 @@ class GsonSerializerTest {
                           },
                           "spans": [
                             {
-                              "start_timestamp": "2021-03-05T08:51:12.838Z",
-                              "timestamp": "2021-03-05T08:51:12.949Z",
+                              "start_timestamp": 1632395079.840000,
+                              "timestamp": 1632395079.884043,
                               "trace_id": "2b099185293344a5bfdd7ad89ebf9416",
                               "span_id": "5b95c29a5ded4281",
                               "parent_span_id": "a3b2d1d58b344b07",

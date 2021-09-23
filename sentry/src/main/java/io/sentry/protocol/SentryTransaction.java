@@ -1,5 +1,6 @@
 package io.sentry.protocol;
 
+import io.sentry.DateUtils;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryTracer;
 import io.sentry.Span;
@@ -7,7 +8,6 @@ import io.sentry.SpanContext;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +22,10 @@ public final class SentryTransaction extends SentryBaseEvent {
   private @Nullable String transaction;
 
   /** The moment in time when span was started. */
-  private final @NotNull Date startTimestamp;
+  private final @NotNull Double startTimestamp;
 
   /** The moment in time when span has ended. */
-  private @Nullable Date timestamp;
+  private @Nullable Double timestamp;
 
   /** A list of spans within this transaction. Can be empty. */
   private final @NotNull List<SentrySpan> spans = new ArrayList<>();
@@ -40,8 +40,8 @@ public final class SentryTransaction extends SentryBaseEvent {
   public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
     super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
-    this.startTimestamp = sentryTracer.getStartTimestamp();
-    this.timestamp = sentryTracer.getTimestamp();
+    this.startTimestamp = DateUtils.dateToSeconds(sentryTracer.getStartTimestamp());
+    this.timestamp = sentryTracer.getHighPrecisionTimestamp();
     this.transaction = sentryTracer.getName();
     for (final Span span : sentryTracer.getChildren()) {
       if (Boolean.TRUE.equals(span.isSampled())) {
@@ -88,11 +88,11 @@ public final class SentryTransaction extends SentryBaseEvent {
     return transaction;
   }
 
-  public @NotNull Date getStartTimestamp() {
+  public @NotNull Double getStartTimestamp() {
     return startTimestamp;
   }
 
-  public @Nullable Date getTimestamp() {
+  public @Nullable Double getTimestamp() {
     return timestamp;
   }
 

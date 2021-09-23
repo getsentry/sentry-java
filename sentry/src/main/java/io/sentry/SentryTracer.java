@@ -89,7 +89,7 @@ public final class SentryTracer implements ITransaction {
     return this.root.getStartTimestamp();
   }
 
-  public @Nullable Date getTimestamp() {
+  public @Nullable Double getTimestamp() {
     return this.root.getTimestamp();
   }
 
@@ -210,7 +210,7 @@ public final class SentryTracer implements ITransaction {
       root.finish(finishStatus.spanStatus);
 
       // finish unfinished children
-      Date finishTimestamp = root.getTimestamp();
+      Double finishTimestamp = root.getHighPrecisionTimestamp();
       if (finishTimestamp == null) {
         hub.getOptions()
             .getLogger()
@@ -219,7 +219,7 @@ public final class SentryTracer implements ITransaction {
                 "Root span - op: %s, description: %s - has no timestamp set, when finishing unfinished spans.",
                 root.getOperation(),
                 root.getDescription());
-        finishTimestamp = DateUtils.getCurrentDateTime();
+        finishTimestamp = DateUtils.dateToSeconds(DateUtils.getCurrentDateTime());
       }
       for (final Span child : children) {
         if (!child.isFinished()) {
@@ -417,6 +417,10 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @NotNull SentryId getEventId() {
     return eventId;
+  }
+
+  public @Nullable Double getHighPrecisionTimestamp() {
+    return root.getHighPrecisionTimestamp();
   }
 
   @NotNull

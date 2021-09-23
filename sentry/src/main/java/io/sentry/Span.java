@@ -16,8 +16,18 @@ public final class Span implements ISpan {
 
   /** The moment in time when span was started. */
   private final @NotNull Date startTimestamp;
+
+  /**
+   * The moment in time when span has started, read from {@link System#nanoTime()}. Can be {@code
+   * null} when {@link #startTimestamp} was provided to span constructor.
+   */
+  private final @Nullable Long startNanos;
+
+  /** The moment in time when span has finished, read from {@link System#nanoTime()}. */
+  private @Nullable Long endNanos;
+
   /** The moment in time when span has ended. */
-  private @Nullable Date timestamp;
+  private @Nullable Double timestamp;
 
   private final @NotNull SpanContext context;
 
@@ -58,9 +68,15 @@ public final class Span implements ISpan {
     this.context =
         new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
-    this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.spanFinishedCallback = spanFinishedCallback;
+    if (startTimestamp != null) {
+      this.startTimestamp = startTimestamp;
+      this.startNanos = null;
+    } else {
+      this.startTimestamp = DateUtils.getCurrentDateTime();
+      this.startNanos = System.nanoTime();
+    }
   }
 
   @VisibleForTesting
@@ -73,6 +89,7 @@ public final class Span implements ISpan {
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.startTimestamp = startTimestamp != null ? startTimestamp : DateUtils.getCurrentDateTime();
+    this.startNanos = System.nanoTime();
     this.spanFinishedCallback = null;
   }
 
@@ -80,7 +97,7 @@ public final class Span implements ISpan {
     return startTimestamp;
   }
 
-  public @Nullable Date getTimestamp() {
+  public @Nullable Double getTimestamp() {
     return timestamp;
   }
 
@@ -125,7 +142,8 @@ public final class Span implements ISpan {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    finish(status, DateUtils.getCurrentDateTime());
+    finish(status, DateUtils.dateToSeconds(DateUtils.getCurrentDateTime()));
+    this.endNanos = System.nanoTime();
   }
 
   /**
@@ -134,7 +152,7 @@ public final class Span implements ISpan {
    * @param status - status to finish span with
    * @param timestamp - the root span timestamp.
    */
-  void finish(@Nullable SpanStatus status, Date timestamp) {
+  void finish(@Nullable SpanStatus status, @NotNull Double timestamp) {
     // the span can be finished only once
     if (!finished.compareAndSet(false, true)) {
       return;
@@ -243,5 +261,35 @@ public final class Span implements ISpan {
   @Override
   public @Nullable Object getData(@NotNull String key) {
     return data.get(key);
+  }
+
+  /**
+   * Returns high precision span finish time represented as {@link Double}.
+   *
+   * @return high precision span finish time
+   */
+  @SuppressWarnings("JavaUtilDate")
+  public @Nullable Double getHighPrecisionTimestamp() {
+    final Double duration = getDurationInMillis();
+    if (duration != null) {
+      return DateUtils.millisToSeconds(startTimestamp.getTime() + duration);
+    } else if (timestamp != null) {
+      return timestamp;
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Returns span duration in milliseconds or {@code null} when {@link #startNanos} is not set.
+   *
+   * @return span duration in milliseconds
+   */
+  private @Nullable Double getDurationInMillis() {
+    if (startNanos != null && endNanos != null) {
+      return DateUtils.nanosToMillis(endNanos - startNanos);
+    } else {
+      return null;
+    }
   }
 }

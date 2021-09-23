@@ -117,4 +117,35 @@ public final class DateUtils {
     calendar.setTimeInMillis(millis);
     return calendar.getTime();
   }
+
+  /**
+   * Converts milliseconds to seconds.
+   *
+   * @param millis - milliseconds
+   * @return seconds
+   */
+  public static double millisToSeconds(final double millis) {
+    return millis / 1000;
+  }
+
+  /**
+   * Converts nanoseconds to milliseconds
+   *
+   * @param nanos - nanoseconds
+   * @return milliseconds
+   */
+  public static double nanosToMillis(final double nanos) {
+    return nanos / 1000000;
+  }
+
+  /**
+   * Convert {@link Date} to epoch time in seconds represented as {@link Double}.
+   *
+   * @param date - date
+   * @return seconds
+   */
+  @SuppressWarnings("JavaUtilDate")
+  public static double dateToSeconds(final @NotNull Date date) {
+    return millisToSeconds(date.getTime());
+  }
 }
