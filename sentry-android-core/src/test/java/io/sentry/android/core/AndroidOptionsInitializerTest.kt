@@ -16,6 +16,7 @@ import io.sentry.MainEventProcessor
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME
 import java.io.File
 import java.lang.RuntimeException
 import kotlin.test.BeforeTest
@@ -157,6 +158,16 @@ class AndroidOptionsInitializerTest {
 
         val installation = File(context.filesDir, Installation.INSTALLATION)
         installation.deleteOnExit()
+    }
+
+    @Test
+    fun `init should set proguard uuid id on start`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithProguardUuid())
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+
+        assertEquals("proguard-uuid", sentryOptions.proguardUuid)
     }
 
     @Test
@@ -326,21 +337,27 @@ class AndroidOptionsInitializerTest {
         }
     }
 
+    private fun createBundleWithProguardUuid(): Bundle {
+        return Bundle().apply {
+            putString(ManifestMetadataReader.PROGUARD_UUID, "proguard-uuid")
+        }
+    }
+
     private fun createBuildInfo(minApi: Int = 16): IBuildInfoProvider {
         val buildInfo = mock<IBuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(minApi)
         return buildInfo
     }
 
-    private fun createClassMock(clazz: Class<*> = SentryNdk::class.java): ILoadClass {
-        val loadClassMock = mock<ILoadClass>()
+    private fun createClassMock(clazz: Class<*> = SentryNdk::class.java): LoadClass {
+        val loadClassMock = mock<LoadClass>()
         whenever(loadClassMock.loadClass(any())).thenReturn(clazz)
         return loadClassMock
     }
 
-    private fun createClassMockThrows(ex: Throwable): ILoadClass {
-        val loadClassMock = mock<ILoadClass>()
-        whenever(loadClassMock.loadClass(any())).thenThrow(ex)
+    private fun createClassMockThrows(ex: Throwable): LoadClass {
+        val loadClassMock = mock<LoadClass>()
+        whenever(loadClassMock.loadClass(eq(SENTRY_NDK_CLASS_NAME))).thenThrow(ex)
         return loadClassMock
     }
 }

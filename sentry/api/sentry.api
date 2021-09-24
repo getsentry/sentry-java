@@ -24,6 +24,8 @@ public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer {
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/util/Date;)V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
+	public static fun debug (Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun error (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public fun getCategory ()Ljava/lang/String;
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
@@ -33,12 +35,18 @@ public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer {
 	public fun getType ()Ljava/lang/String;
 	public static fun http (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun http (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)Lio/sentry/Breadcrumb;
+	public static fun info (Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun navigation (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun query (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public fun removeData (Ljava/lang/String;)V
 	public fun setCategory (Ljava/lang/String;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setMessage (Ljava/lang/String;)V
 	public fun setType (Ljava/lang/String;)V
+	public static fun transaction (Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun ui (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun user (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 }
 
 public final class io/sentry/BuildConfig {
@@ -296,6 +304,7 @@ public abstract interface class io/sentry/ISerializer {
 public abstract interface class io/sentry/ISpan {
 	public abstract fun finish ()V
 	public abstract fun finish (Lio/sentry/SpanStatus;)V
+	public abstract fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun getDescription ()Ljava/lang/String;
 	public abstract fun getOperation ()Ljava/lang/String;
 	public abstract fun getSpanContext ()Lio/sentry/SpanContext;
@@ -303,6 +312,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public abstract fun getThrowable ()Ljava/lang/Throwable;
 	public abstract fun isFinished ()Z
+	public abstract fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public abstract fun setDescription (Ljava/lang/String;)V
 	public abstract fun setOperation (Ljava/lang/String;)V
 	public abstract fun setStatus (Lio/sentry/SpanStatus;)V
@@ -406,6 +416,7 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
 	public fun getOperation ()Ljava/lang/String;
@@ -414,6 +425,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun isFinished ()Z
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
@@ -431,6 +443,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public static fun getInstance ()Lio/sentry/NoOpTransaction;
@@ -445,6 +458,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
@@ -825,6 +839,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getMaxSpans ()I
 	public fun getOutboxPath ()Ljava/lang/String;
+	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getReadTimeoutMillis ()I
 	public fun getRelease ()Ljava/lang/String;
@@ -890,6 +905,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxQueueSize (I)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
+	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
 	public fun setRelease (Ljava/lang/String;)V
@@ -963,6 +979,8 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getChildren ()Ljava/util/List;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getData ()Ljava/util/Map;
+	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
@@ -978,6 +996,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
@@ -1045,6 +1064,8 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IHub;Ljava/util/Date;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun getData ()Ljava/util/Map;
+	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
@@ -1059,6 +1080,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
@@ -1093,6 +1115,7 @@ public class io/sentry/SpanContext {
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
+	public fun setSampled (Ljava/lang/Boolean;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 }
@@ -1444,6 +1467,7 @@ public final class io/sentry/protocol/Contexts : java/util/concurrent/Concurrent
 }
 
 public final class io/sentry/protocol/DebugImage : io/sentry/IUnknownPropertiesConsumer {
+	public static final field PROGUARD Ljava/lang/String;
 	public fun <init> ()V
 	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getArch ()Ljava/lang/String;

@@ -202,6 +202,7 @@ class SentryOkHttpInterceptorTest {
         assertEquals(1, fixture.sentryTracer.children.size)
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertEquals("overwritten description", httpClientSpan.description)
+        assertTrue(httpClientSpan.isFinished)
     }
 
     @Test
@@ -227,6 +228,8 @@ class SentryOkHttpInterceptorTest {
         } })
         sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()
-        assertFalse(httpClientSpan.isFinished)
+        assertNotNull(httpClientSpan.spanContext.sampled) {
+            assertFalse(it)
+        }
     }
 }

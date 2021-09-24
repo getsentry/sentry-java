@@ -288,6 +288,9 @@ public class SentryOptions {
    */
   private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
 
+  /** Proguard UUID. */
+  private @Nullable String proguardUuid;
+
   /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
@@ -336,6 +339,8 @@ public class SentryOptions {
     for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
       options.addTracingOrigin(tracingOrigin);
     }
+    options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
+
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
       try {
@@ -1483,6 +1488,24 @@ public class SentryOptions {
     this.tracingOrigins.add(tracingOrigin);
   }
 
+  /**
+   * Returns a Proguard UUID.
+   *
+   * @return the Proguard UUIDs.
+   */
+  public @Nullable String getProguardUuid() {
+    return proguardUuid;
+  }
+
+  /**
+   * Sets a Proguard UUID.
+   *
+   * @param proguardUuid - the Proguard UUID
+   */
+  public void setProguardUuid(final @Nullable String proguardUuid) {
+    this.proguardUuid = proguardUuid;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1623,6 +1646,9 @@ public class SentryOptions {
     final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
     for (final String tracingOrigin : tracingOrigins) {
       addTracingOrigin(tracingOrigin);
+    }
+    if (options.getProguardUuid() != null) {
+      setProguardUuid(options.getProguardUuid());
     }
   }
 

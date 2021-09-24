@@ -20,6 +20,7 @@ class ActivityFramesTrackerTest {
         val aggregator = mock<FrameMetricsAggregator>()
         val activity = mock<Activity>()
         val sentryId = SentryId()
+        val loadClass = mock<LoadClass>()
 
         fun getSut(): ActivityFramesTracker {
             return ActivityFramesTracker(aggregator)
@@ -111,6 +112,38 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
 
         assertNull(metrics)
+    }
+
+    @Test
+    fun `addActivity does not throw if no AndroidX`() {
+        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
+        val sut = ActivityFramesTracker(fixture.loadClass)
+
+        sut.addActivity(fixture.activity)
+    }
+
+    @Test
+    fun `setMetrics does not throw if no AndroidX`() {
+        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
+        val sut = ActivityFramesTracker(fixture.loadClass)
+
+        sut.setMetrics(fixture.activity, fixture.sentryId)
+    }
+
+    @Test
+    fun `stop does not throw if no AndroidX`() {
+        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
+        val sut = ActivityFramesTracker(fixture.loadClass)
+
+        sut.stop()
+    }
+
+    @Test
+    fun `takeMetrics returns null if no AndroidX`() {
+        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
+        val sut = ActivityFramesTracker(fixture.loadClass)
+
+        assertNull(sut.takeMetrics(fixture.sentryId))
     }
 
     private fun getArray(frameTime: Int = 1, numFrames: Int = 1): Array<SparseIntArray?> {
