@@ -231,6 +231,6 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @Nullable Boolean isCrashedLastRun() {
-    return Sentry.getCurrentHub().isCrashedLastRun();
+    return Sentry.isCrashedLastRun();
   }
 }

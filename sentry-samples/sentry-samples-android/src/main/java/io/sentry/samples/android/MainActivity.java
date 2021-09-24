@@ -165,21 +165,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
-
-    new Thread(() -> {
-        while(true) {
-            final Boolean crashedLastRun = Sentry.isCrashedLastRun();
-            System.out.println("last run: " + crashedLastRun);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (crashedLastRun != null) {
-                break;
-            }
-        }
-    }).start();
   }
 
   @Override

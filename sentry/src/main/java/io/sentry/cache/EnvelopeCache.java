@@ -189,7 +189,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
     if (crashMarkerFile.exists()) {
       options.getLogger().log(INFO, "Crash marker file exists, last Session is gonna be Crashed.");
 
-      // If CRASH_MARKER_FILE exists, it means that the last run of the app crashed
+      // If crashMarkerFile exists, it means that the last run of the app crashed
       SentryCrashLastRunState.getInstance().setCrashedLastRun(true);
 
       timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
