@@ -485,4 +485,7 @@ public interface IHub {
    */
   @NotNull
   SentryOptions getOptions();
+
+  @Nullable
+  Boolean isCrashedLastRun();
 }

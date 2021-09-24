@@ -699,6 +699,10 @@ public final class Sentry {
     return getCurrentHub().getSpan();
   }
 
+  public static @Nullable Boolean isCrashedLastRun() {
+    return getCurrentHub().isCrashedLastRun();
+  }
+
   /**
    * Configuration options callback
    *

@@ -146,7 +146,7 @@ class EnvelopeCacheTest {
         val cache = fixture.getSUT()
 
         val file = File(fixture.options.cacheDirPath!!)
-        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.CRASH_MARKER_FILE)
+        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
         markerFile.mkdirs()
         assertTrue(markerFile.exists())
 
@@ -165,7 +165,7 @@ class EnvelopeCacheTest {
     fun `when session start, current file already exist and crash marker file exist, end session with given timestamp`() {
         val cache = fixture.getSUT()
         val file = File(fixture.options.cacheDirPath!!)
-        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.CRASH_MARKER_FILE)
+        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
         File(fixture.options.cacheDirPath!!, ".sentry-native").mkdirs()
         markerFile.createNewFile()
         val date = "2020-02-07T14:16:00.000Z"

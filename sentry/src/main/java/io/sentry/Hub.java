@@ -441,6 +441,11 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public @Nullable Boolean isCrashedLastRun() {
+    return SentryCrashLastRunState.getInstance().isCrashedLastRun();
+  }
+
+  @Override
   public void popScope() {
     if (!isEnabled()) {
       options
