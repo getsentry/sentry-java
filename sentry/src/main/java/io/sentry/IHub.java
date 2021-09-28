@@ -487,11 +487,12 @@ public interface IHub {
   SentryOptions getOptions();
 
   /**
-   * Returns if the App has crashed (Process has terminated) during the last run. It only returns true or
-   * false if offline caching {{@link SentryOptions#getCacheDirPath()} } is set with a valid dir.
+   * Returns if the App has crashed (Process has terminated) during the last run. It only returns
+   * true or false if offline caching {{@link SentryOptions#getCacheDirPath()} } is set with a valid
+   * dir.
    *
-   * If the call to this method is early in the App lifecycle and the SDK could not check if the App
-   * has crashed in the background, the check is gonna do IO in the calling thread.
+   * <p>If the call to this method is early in the App lifecycle and the SDK could not check if the
+   * App has crashed in the background, the check is gonna do IO in the calling thread.
    *
    * @return true if App has crashed, false otherwise, and null if not evaluated yet
    */
