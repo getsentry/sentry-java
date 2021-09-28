@@ -90,6 +90,126 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer {
     return breadcrumb;
   }
 
+  /**
+   * Creates navigation breadcrumb - a navigation event can be a URL change in a web application, or
+   * a UI transition in a mobile or desktop application, etc.
+   *
+   * @param from - the original application state / location
+   * @param to - the new application state / location
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb navigation(
+      final @NotNull String from, final @NotNull String to) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setCategory("navigation");
+    breadcrumb.setType("navigation");
+    breadcrumb.setData("from", from);
+    breadcrumb.setData("to", to);
+    return breadcrumb;
+  }
+
+  /**
+   * Creates transaction breadcrumb - describing a tracing event.
+   *
+   * @param message - the message
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb transaction(final @NotNull String message) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setType("default");
+    breadcrumb.setCategory("sentry.transaction");
+    breadcrumb.setMessage(message);
+    return breadcrumb;
+  }
+
+  /**
+   * Creates debug breadcrumb - typically a log message. The data part is entirely undefined and as
+   * such, completely rendered as a key/value table.
+   *
+   * @param message - the message
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb debug(final @NotNull String message) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setType("debug");
+    breadcrumb.setMessage(message);
+    breadcrumb.setLevel(SentryLevel.DEBUG);
+    return breadcrumb;
+  }
+
+  /**
+   * Creates error breadcrumb.
+   *
+   * @param message - the message
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb error(final @NotNull String message) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setType("error");
+    breadcrumb.setMessage(message);
+    breadcrumb.setLevel(SentryLevel.ERROR);
+    return breadcrumb;
+  }
+
+  /**
+   * Creates info breadcrumb - information that helps identify the root cause of the issue or for
+   * whom the error occurred.
+   *
+   * @param message - the message
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb info(final @NotNull String message) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setType("info");
+    breadcrumb.setMessage(message);
+    breadcrumb.setLevel(SentryLevel.INFO);
+    return breadcrumb;
+  }
+
+  /**
+   * Creates query breadcrumb - representing a query that was made in your application.
+   *
+   * @param message - the message
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb query(final @NotNull String message) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setType("query");
+    breadcrumb.setMessage(message);
+    return breadcrumb;
+  }
+
+  /**
+   * Creates ui breadcrumb - a user interaction with your app's UI.
+   *
+   * @param category - the category, for example "click"
+   * @param message - the message
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb ui(
+      final @NotNull String category, final @NotNull String message) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setType("default");
+    breadcrumb.setCategory("ui." + category);
+    breadcrumb.setMessage(message);
+    return breadcrumb;
+  }
+
+  /**
+   * Creates user breadcrumb - a user interaction with your app's UI.
+   *
+   * @param message - the message
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb user(
+      final @NotNull String category, final @NotNull String message) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setType("user");
+    breadcrumb.setCategory(category);
+    breadcrumb.setMessage(message);
+    return breadcrumb;
+  }
+
   /** Breadcrumb ctor */
   public Breadcrumb() {
     this(DateUtils.getCurrentDateTime());

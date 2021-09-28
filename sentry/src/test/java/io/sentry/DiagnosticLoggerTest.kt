@@ -46,7 +46,7 @@ class DiagnosticLoggerTest {
 
     @Test
     fun `when debug is true, a call to log with null level does not throw`() {
-        fixture.getSut().callMethod("log", parameterTypes = arrayOf(SentryLevel::class.java, String::class.java, arrayOf<Object>()::class.java), null, expectedMessage, null)
+        fixture.getSut().callMethod("log", parameterTypes = arrayOf(SentryLevel::class.java, String::class.java, arrayOf<Any>()::class.java), null, expectedMessage, null)
     }
 
     @Test

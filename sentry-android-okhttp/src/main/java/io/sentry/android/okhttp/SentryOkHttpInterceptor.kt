@@ -5,6 +5,7 @@ import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SpanStatus
+import io.sentry.TracingOrigins
 import java.io.IOException
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -25,15 +26,22 @@ class SentryOkHttpInterceptor(
         val method = request.method
 
         // read transaction from the bound scope
-        var span = hub.span?.startChild("http.client", "$method $url")
+        val span = hub.span?.startChild("http.client", "$method $url")
 
         var response: Response? = null
 
         var code: Int? = null
         try {
-            span?.toSentryTrace()?.let {
-                request = request.newBuilder().addHeader(it.name, it.value).build()
+            val requestBuilder = request.newBuilder()
+            if (span != null && TracingOrigins.contain(hub.options.tracingOrigins, request.url.toString())) {
+                span.toSentryTrace().let {
+                    requestBuilder.addHeader(it.name, it.value)
+                }
+                span.toTraceStateHeader()?.let {
+                    requestBuilder.addHeader(it.name, it.value)
+                }
             }
+            request = requestBuilder.build()
             response = chain.proceed(request)
             code = response.code
             span?.status = SpanStatus.fromHttpStatusCode(code)
@@ -45,12 +53,8 @@ class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
-            if (span != null) {
-                if (beforeSpan != null) {
-                    span = beforeSpan.execute(span, request, response)
-                }
-                span?.finish()
-            }
+            finishSpan(span, request, response)
+
             val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
             request.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("request_body_size", it)
@@ -59,6 +63,22 @@ class SentryOkHttpInterceptor(
                 breadcrumb.setData("response_body_size", it)
             }
             hub.addBreadcrumb(breadcrumb)
+        }
+    }
+
+    private fun finishSpan(span: ISpan?, request: Request, response: Response?) {
+        if (span != null) {
+            if (beforeSpan != null) {
+                val result = beforeSpan.execute(span, request, response)
+                if (result == null) {
+                    // span is dropped
+                    span.spanContext.sampled = false
+                } else {
+                    span.finish()
+                }
+            } else {
+                span.finish()
+            }
         }
     }
 

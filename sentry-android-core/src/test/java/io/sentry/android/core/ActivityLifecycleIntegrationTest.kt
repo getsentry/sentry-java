@@ -26,6 +26,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -34,7 +35,9 @@ class ActivityLifecycleIntegrationTest {
     private class Fixture {
         val application = mock<Application>()
         val hub = mock<Hub>()
-        val options = SentryAndroidOptions()
+        val options = SentryAndroidOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+        }
         val bundle = mock<Bundle>()
         val context = TransactionContext("name", "op")
         val activityFramesTracker = mock<ActivityFramesTracker>()
@@ -343,7 +346,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.OK, it.status)
-        })
+        }, anyOrNull())
     }
 
     @Test
@@ -361,7 +364,7 @@ class ActivityLifecycleIntegrationTest {
 
         verify(fixture.hub).captureTransaction(check {
             assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
-        })
+        }, anyOrNull())
     }
 
     @Test
@@ -375,7 +378,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -386,7 +389,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -399,7 +402,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.hub).captureTransaction(any())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -428,6 +431,38 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `When Activity is destroyed, sets appStartSpan status to cancelled and finish it`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityDestroyed(activity)
+
+        val span = fixture.transaction.children.first()
+        assertEquals(span.status, SpanStatus.CANCELLED)
+        assertTrue(span.isFinished)
+    }
+
+    @Test
+    fun `When Activity is destroyed, sets appStartSpan to null`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityDestroyed(activity)
+
+        assertNull(sut.appStartSpan)
+    }
+
+    @Test
     fun `When new Activity and transaction is created, finish previous ones`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
@@ -436,7 +471,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(mock(), mock())
 
         sut.onActivityCreated(mock(), fixture.bundle)
-        verify(fixture.hub).captureTransaction(any())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test
@@ -449,7 +484,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any())
+        verify(fixture.hub, never()).captureTransaction(any(), any())
     }
 
     @Test
@@ -476,7 +511,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub).captureTransaction(any())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull())
     }
 
     @Test

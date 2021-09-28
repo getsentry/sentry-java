@@ -7,6 +7,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.util.Platform;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -280,6 +281,17 @@ public class SentryOptions {
    */
   private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
 
+  /** Controls if the `tracestate` header is attached to envelopes and HTTP client integrations. */
+  private boolean traceSampling;
+
+  /**
+   * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   */
+  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+
+  /** Proguard UUID. */
+  private @Nullable String proguardUuid;
+
   private @NotNull SessionMode sessionMode = SessionMode.CLIENT;
 
   /**
@@ -327,6 +339,11 @@ public class SentryOptions {
     for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
       options.addInAppExclude(inAppExclude);
     }
+    for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
+      options.addTracingOrigin(tracingOrigin);
+    }
+    options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
+
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
       try {
@@ -1440,6 +1457,58 @@ public class SentryOptions {
     this.maxRequestBodySize = maxRequestBodySize;
   }
 
+  /** Note: this is an experimental API and will be removed without notice. */
+  @ApiStatus.Experimental
+  public boolean isTraceSampling() {
+    return traceSampling;
+  }
+
+  /**
+   * Note: this is an experimental API and will be removed without notice.
+   *
+   * @param traceSampling - if trace sampling should be enabled
+   */
+  @ApiStatus.Experimental
+  public void setTraceSampling(boolean traceSampling) {
+    this.traceSampling = traceSampling;
+  }
+
+  /**
+   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @return the list of origins
+   */
+  public @NotNull List<String> getTracingOrigins() {
+    return tracingOrigins;
+  }
+
+  /**
+   * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @param tracingOrigin - the tracing origin
+   */
+  public void addTracingOrigin(final @NotNull String tracingOrigin) {
+    this.tracingOrigins.add(tracingOrigin);
+  }
+
+  /**
+   * Returns a Proguard UUID.
+   *
+   * @return the Proguard UUIDs.
+   */
+  public @Nullable String getProguardUuid() {
+    return proguardUuid;
+  }
+
+  /**
+   * Sets a Proguard UUID.
+   *
+   * @param proguardUuid - the Proguard UUID
+   */
+  public void setProguardUuid(final @Nullable String proguardUuid) {
+    this.proguardUuid = proguardUuid;
+  }
+
   public @NotNull SessionMode getSessionMode() {
     return sessionMode;
   }
@@ -1526,6 +1595,10 @@ public class SentryOptions {
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
 
+      if (Platform.isJvm()) {
+        eventProcessors.add(new SentryRuntimeEventProcessor());
+      }
+
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       setSdkVersion(createSdkVersion());
     }
@@ -1583,6 +1656,13 @@ public class SentryOptions {
     for (final Class<? extends Throwable> exceptionType :
         new HashSet<>(options.getIgnoredExceptionsForType())) {
       addIgnoredExceptionForType(exceptionType);
+    }
+    final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
+    for (final String tracingOrigin : tracingOrigins) {
+      addTracingOrigin(tracingOrigin);
+    }
+    if (options.getProguardUuid() != null) {
+      setProguardUuid(options.getProguardUuid());
     }
   }
 

@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package io.sentry.android.okhttp
 
 import com.nhaarman.mockitokotlin2.any
@@ -12,6 +13,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.TraceStateHeader
 import io.sentry.TransactionContext
 import java.io.IOException
 import kotlin.test.Test
@@ -39,17 +41,25 @@ class SentryOkHttpInterceptorTest {
         val server = MockWebServer()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
-        init {
-            whenever(hub.options).thenReturn(SentryOptions())
-        }
-
+        @SuppressWarnings("LongParameterList")
         fun getSut(
             isSpanActive: Boolean = true,
             httpStatusCode: Int = 201,
             responseBody: String = "success",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null
+            beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null,
+            includeMockServerInTracingOrigins: Boolean = true
         ): OkHttpClient {
+            whenever(hub.options).thenReturn(SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+                isTraceSampling = true
+                if (includeMockServerInTracingOrigins) {
+                    tracingOrigins.add(server.hostName)
+                } else {
+                    tracingOrigins.add("other-api")
+                }
+            })
+
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
@@ -57,7 +67,7 @@ class SentryOkHttpInterceptorTest {
                     .setBody(responseBody)
                     .setSocketPolicy(socketPolicy)
                     .setResponseCode(httpStatusCode))
-            server.start()
+
             if (beforeSpan != null) {
                 interceptor = SentryOkHttpInterceptor(hub, beforeSpan)
             }
@@ -73,11 +83,21 @@ class SentryOkHttpInterceptorTest {
                     .toMediaType())).url(fixture.server.url("/hello")).build() }
 
     @Test
-    fun `when there is an active span, adds sentry trace header to the request`() {
+    fun `when there is an active span and server is listed in tracing origins, adds sentry trace headers to the request`() {
         val sut = fixture.getSut()
         sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[TraceStateHeader.TRACE_STATE_HEADER])
+    }
+
+    @Test
+    fun `when there is an active span and server is not listed in tracing origins, does not add sentry trace headers to the request`() {
+        val sut = fixture.getSut(includeMockServerInTracingOrigins = false)
+        sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
+        val recorderRequest = fixture.server.takeRequest()
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[TraceStateHeader.TRACE_STATE_HEADER])
     }
 
     @Test
@@ -86,6 +106,7 @@ class SentryOkHttpInterceptorTest {
         sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[TraceStateHeader.TRACE_STATE_HEADER])
     }
 
     @Test
@@ -181,6 +202,7 @@ class SentryOkHttpInterceptorTest {
         assertEquals(1, fixture.sentryTracer.children.size)
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertEquals("overwritten description", httpClientSpan.description)
+        assertTrue(httpClientSpan.isFinished)
     }
 
     @Test
@@ -206,6 +228,8 @@ class SentryOkHttpInterceptorTest {
         } })
         sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()
-        assertFalse(httpClientSpan.isFinished)
+        assertNotNull(httpClientSpan.spanContext.sampled) {
+            assertFalse(it)
+        }
     }
 }

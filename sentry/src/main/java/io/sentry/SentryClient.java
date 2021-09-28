@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.Sessions;
 import io.sentry.transport.ITransport;
@@ -130,7 +129,12 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(event, getAttachmentsFromScope(scope), session);
+      final TraceState traceState =
+          scope != null && scope.getTransaction() != null
+              ? scope.getTransaction().traceState()
+              : null;
+      final SentryEnvelope envelope =
+          buildEnvelope(event, getAttachmentsFromScope(scope), session, traceState);
 
       if (envelope != null) {
         transport.send(envelope, hint);
@@ -154,15 +158,10 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
-      final @Nullable SentryBaseEvent event, final @Nullable List<Attachment> attachments)
-      throws IOException {
-    return this.buildEnvelope(event, attachments, null);
-  }
-
-  private @Nullable SentryEnvelope buildEnvelope(
       final @Nullable SentryBaseEvent event,
       final @Nullable List<Attachment> attachments,
-      final @Nullable Session session)
+      final @Nullable Session session,
+      final @Nullable TraceState traceState)
       throws IOException {
     SentryId sentryId = null;
 
@@ -191,7 +190,7 @@ public final class SentryClient implements ISentryClient {
 
     if (!envelopeItems.isEmpty()) {
       final SentryEnvelopeHeader envelopeHeader =
-          new SentryEnvelopeHeader(sentryId, options.getSdkVersion());
+          new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceState);
       return new SentryEnvelope(envelopeHeader, envelopeItems);
     }
 
@@ -345,6 +344,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
+      @Nullable TraceState traceState,
       final @Nullable Scope scope,
       final @Nullable Object hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
@@ -379,11 +379,10 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
-    processTransaction(transaction);
-
     try {
       final SentryEnvelope envelope =
-          buildEnvelope(transaction, filterForTransaction(getAttachmentsFromScope(scope)));
+          buildEnvelope(
+              transaction, filterForTransaction(getAttachmentsFromScope(scope)), null, traceState);
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {
@@ -423,23 +422,6 @@ public final class SentryClient implements ISentryClient {
     }
 
     return attachmentsToSend;
-  }
-
-  private @NotNull SentryTransaction processTransaction(
-      final @NotNull SentryTransaction transaction) {
-    final List<SentrySpan> unfinishedSpans = new ArrayList<>();
-    for (SentrySpan span : transaction.getSpans()) {
-      if (!span.isFinished()) {
-        unfinishedSpans.add(span);
-      }
-    }
-    if (!unfinishedSpans.isEmpty()) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Dropping %d unfinished spans", unfinishedSpans.size());
-    }
-    transaction.getSpans().removeAll(unfinishedSpans);
-    return transaction;
   }
 
   private @Nullable SentryEvent applyScope(

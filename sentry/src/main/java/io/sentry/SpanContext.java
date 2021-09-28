@@ -6,6 +6,7 @@ import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -60,11 +61,25 @@ public class SpanContext {
       final @NotNull String operation,
       final @Nullable SpanId parentSpanId,
       final @Nullable Boolean sampled) {
+    this(traceId, spanId, parentSpanId, operation, null, sampled, null);
+  }
+
+  @ApiStatus.Internal
+  public SpanContext(
+      final @NotNull SentryId traceId,
+      final @NotNull SpanId spanId,
+      final @Nullable SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final @Nullable Boolean sampled,
+      final @Nullable SpanStatus status) {
     this.traceId = Objects.requireNonNull(traceId, "traceId is required");
     this.spanId = Objects.requireNonNull(spanId, "spanId is required");
     this.op = Objects.requireNonNull(operation, "operation is required");
     this.parentSpanId = parentSpanId;
     this.sampled = sampled;
+    this.description = description;
+    this.status = status;
   }
 
   /**
@@ -140,7 +155,8 @@ public class SpanContext {
     return sampled;
   }
 
-  void setSampled(final @Nullable Boolean sampled) {
+  @ApiStatus.Internal
+  public void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
   }
 }

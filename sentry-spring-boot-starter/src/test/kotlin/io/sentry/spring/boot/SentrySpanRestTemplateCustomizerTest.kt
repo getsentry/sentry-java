@@ -6,60 +6,51 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import io.sentry.Scope
 import io.sentry.SentryOptions
+import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 import org.assertj.core.api.Assertions.assertThat
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
-import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.test.web.client.match.MockRestRequestMatchers
-import org.springframework.test.web.client.response.MockRestResponseCreators
 import org.springframework.web.client.RestTemplate
 
 class SentrySpanRestTemplateCustomizerTest {
     class Fixture {
         val sentryOptions = SentryOptions()
         val hub = mock<IHub>()
-        val restTemplate = RestTemplate()
-        var mockServer = MockRestServiceServer.createServer(restTemplate)
+        val restTemplate = RestTemplateBuilder().build()
+        var mockServer = MockWebServer()
         val transaction = SentryTracer(TransactionContext("aTransaction", "op", true), hub)
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
+        val url = mockServer.url("/test/123").toString()
 
         init {
             whenever(hub.options).thenReturn(sentryOptions)
         }
 
-        fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false): RestTemplate {
+        fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN, includeMockServerInTracingOrigins: Boolean = true): RestTemplate {
             customizer.customize(restTemplate)
 
-            if (isTransactionActive) {
-                val scope = Scope(sentryOptions)
-                scope.setTransaction(transaction)
-                whenever(hub.span).thenReturn(transaction)
-
-                val scenario = mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
-                    .andExpect {
-                        // must have trace id from the parent transaction and must not contain spanId from the parent transaction
-                        assertThat(it.headers["sentry-trace"]!!.first()).startsWith(transaction.spanContext.traceId.toString())
-                            .endsWith("-1")
-                            .doesNotContain(transaction.spanContext.spanId.toString())
-                    }
-                if (throwIOException) {
-                    scenario.andRespond {
-                        throw IOException()
-                    }
-                } else {
-                    scenario.andRespond(MockRestResponseCreators.withStatus(status).body("OK").contentType(MediaType.APPLICATION_JSON))
-                }
+            if (includeMockServerInTracingOrigins) {
+                sentryOptions.tracingOrigins.add(mockServer.hostName)
             } else {
-                mockServer.expect(MockRestRequestMatchers.requestTo("/test/123"))
-                    .andRespond(MockRestResponseCreators.withStatus(status).body("OK").contentType(MediaType.APPLICATION_JSON))
+                sentryOptions.tracingOrigins.add("other-api")
+            }
+
+            mockServer.enqueue(MockResponse()
+                .setBody("OK")
+                .setSocketPolicy(socketPolicy)
+                .setResponseCode(status.value()))
+
+            if (isTransactionActive) {
+                whenever(hub.span).thenReturn(transaction)
             }
 
             return restTemplate
@@ -70,52 +61,69 @@ class SentrySpanRestTemplateCustomizerTest {
 
     @Test
     fun `when transaction is active, creates span around RestTemplate HTTP call`() {
-        val result = fixture.getSut(isTransactionActive = true).getForObject("/test/{id}", String::class.java, 123)
+        val result = fixture.getSut(isTransactionActive = true).getForObject(fixture.url, String::class.java)
 
         assertThat(result).isEqualTo("OK")
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
         assertThat(span.operation).isEqualTo("http.client")
-        assertThat(span.description).isEqualTo("GET /test/123")
+        assertThat(span.description).isEqualTo("GET ${fixture.url}")
         assertThat(span.status).isEqualTo(SpanStatus.OK)
-        fixture.mockServer.verify()
+
+        val recordedRequest = fixture.mockServer.takeRequest()
+        assertThat(recordedRequest.headers["sentry-trace"]!!).startsWith(fixture.transaction.spanContext.traceId.toString())
+            .endsWith("-1")
+            .doesNotContain(fixture.transaction.spanContext.spanId.toString())
+    }
+
+    @Test
+    fun `when transaction is active and server is not listed in tracing origins, does not add sentry trace header to the request`() {
+        fixture.getSut(isTransactionActive = true, includeMockServerInTracingOrigins = false)
+            .getForObject(fixture.url, String::class.java)
+        val recordedRequest = fixture.mockServer.takeRequest()
+        assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNull()
+    }
+
+    @Test
+    fun `when transaction is active and server is listed in tracing origins, adds sentry trace header to the request`() {
+        fixture.getSut(isTransactionActive = true, includeMockServerInTracingOrigins = true)
+            .getForObject(fixture.url, String::class.java)
+        val recordedRequest = fixture.mockServer.takeRequest()
+        assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNotNull()
     }
 
     @Test
     fun `when transaction is active and response code is not 2xx, creates span with error status around RestTemplate HTTP call`() {
         try {
-            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject("/test/{id}", String::class.java, 123)
+            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
         assertThat(span.operation).isEqualTo("http.client")
-        assertThat(span.description).isEqualTo("GET /test/123")
+        assertThat(span.description).isEqualTo("GET ${fixture.url}")
         assertThat(span.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        fixture.mockServer.verify()
     }
 
     @Test
     fun `when transaction is active and throws IO exception, creates span with error status around RestTemplate HTTP call`() {
         try {
-            fixture.getSut(isTransactionActive = true, throwIOException = true).getForObject("/test/{id}", String::class.java, 123)
+            fixture.getSut(isTransactionActive = true, socketPolicy = SocketPolicy.DISCONNECT_AT_START).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
         assertThat(span.operation).isEqualTo("http.client")
-        assertThat(span.description).isEqualTo("GET /test/123")
+        assertThat(span.description).isEqualTo("GET ${fixture.url}")
         assertThat(span.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        fixture.mockServer.verify()
     }
 
     @Test
     fun `when transaction is not active, does not create span around RestTemplate HTTP call`() {
-        val result = fixture.getSut(isTransactionActive = false).getForObject("/test/{id}", String::class.java, 123)
+        val result = fixture.getSut(isTransactionActive = false).getForObject(fixture.url, String::class.java)
 
         assertThat(result).isEqualTo("OK")
         assertThat(fixture.transaction.spans).isEmpty()
-        fixture.mockServer.verify()
     }
 
     @Test
@@ -130,10 +138,10 @@ class SentrySpanRestTemplateCustomizerTest {
 
     @Test
     fun `when transaction is active adds breadcrumb when http calls succeeds`() {
-        fixture.getSut(isTransactionActive = true).postForObject("/test/{id}", "content", String::class.java, 123)
+        fixture.getSut(isTransactionActive = true).postForObject(fixture.url, "content", String::class.java)
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
-            assertEquals("/test/123", it.data["url"])
+            assertEquals(fixture.url, it.data["url"])
             assertEquals("POST", it.data["method"])
             assertEquals(7, it.data["request_body_size"])
         })
@@ -143,22 +151,22 @@ class SentrySpanRestTemplateCustomizerTest {
     @Test
     fun `when transaction is active adds breadcrumb when http calls results in exception`() {
         try {
-            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject("/test/{id}", String::class.java, 123)
+            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
-            assertEquals("/test/123", it.data["url"])
+            assertEquals(fixture.url, it.data["url"])
             assertEquals("GET", it.data["method"])
         })
     }
 
     @Test
     fun `when transaction is not active adds breadcrumb when http calls succeeds`() {
-        fixture.getSut(isTransactionActive = false).postForObject("/test/{id}", "content", String::class.java, 123)
+        fixture.getSut(isTransactionActive = false).postForObject(fixture.url, "content", String::class.java)
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
-            assertEquals("/test/123", it.data["url"])
+            assertEquals(fixture.url, it.data["url"])
             assertEquals("POST", it.data["method"])
             assertEquals(7, it.data["request_body_size"])
         })
@@ -168,12 +176,12 @@ class SentrySpanRestTemplateCustomizerTest {
     @Test
     fun `when transaction is not active adds breadcrumb when http calls results in exception`() {
         try {
-            fixture.getSut(isTransactionActive = false, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject("/test/{id}", String::class.java, 123)
+            fixture.getSut(isTransactionActive = false, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
         verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
             assertEquals("http", it.type)
-            assertEquals("/test/123", it.data["url"])
+            assertEquals(fixture.url, it.data["url"])
             assertEquals("GET", it.data["method"])
         })
     }
