@@ -103,7 +103,7 @@ public final class io/sentry/DuplicateEventDetectionEventProcessor : io/sentry/E
 }
 
 public final class io/sentry/EnvelopeReader : io/sentry/IEnvelopeReader {
-	public fun <init> ()V
+	public fun <init> (Lio/sentry/ISerializer;)V
 	public fun read (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 }
 
@@ -413,6 +413,15 @@ public final class io/sentry/JsonObjectWriter : io/sentry/vendor/gson/stream/Jso
 
 public abstract interface class io/sentry/JsonSerializable {
 	public abstract fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/JsonSerializer : io/sentry/ISerializer {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
+	public fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
+	public fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
+	public fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
+	public fun serialize (Ljava/util/Map;)Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/JsonUnknown {
