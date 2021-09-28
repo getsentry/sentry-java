@@ -1987,6 +1987,12 @@ public final class io/sentry/util/Pair {
 	public fun getSecond ()Ljava/lang/Object;
 }
 
+public final class io/sentry/util/Platform {
+	public fun <init> ()V
+	public static fun isAndroid ()Z
+	public static fun isJvm ()Z
+}
+
 public final class io/sentry/util/StringUtils {
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;

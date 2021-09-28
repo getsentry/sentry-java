@@ -7,6 +7,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.util.Platform;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1583,6 +1584,10 @@ public class SentryOptions {
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
+
+      if (Platform.isJvm()) {
+        eventProcessors.add(new SentryRuntimeEventProcessor());
+      }
 
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       setSdkVersion(createSdkVersion());
