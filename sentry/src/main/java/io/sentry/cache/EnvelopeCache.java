@@ -53,8 +53,8 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
 
   public static final String PREFIX_CURRENT_SESSION_FILE = "session";
   static final String SUFFIX_CURRENT_SESSION_FILE = ".json";
-  private static final String CRASH_MARKER_FILE = "last_crash";
-  static final String NATIVE_CRASH_MARKER_FILE = ".sentry-native/" + CRASH_MARKER_FILE;
+  public static final String CRASH_MARKER_FILE = "last_crash";
+  public static final String NATIVE_CRASH_MARKER_FILE = ".sentry-native/" + CRASH_MARKER_FILE;
 
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
@@ -91,6 +91,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
     }
 
     if (hint instanceof SessionStart) {
+      boolean crashedLastRun = false;
 
       // TODO: should we move this to AppLifecycleIntegration? and do on SDK init? but it's too much
       // on main-thread
@@ -110,13 +111,26 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
                     "Stream from path %s resulted in a null envelope.",
                     currentSessionFile.getAbsolutePath());
           } else {
-            final File nativeCrashMarkerFile =
+            final File crashMarkerFile =
                 new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
-            final File crashMarkerFile = new File(options.getCacheDirPath(), CRASH_MARKER_FILE);
-            Date timestamp = checkCrashMarkerFiles(session, nativeCrashMarkerFile);
+            Date timestamp = null;
+            if (crashMarkerFile.exists()) {
+              options
+                  .getLogger()
+                  .log(INFO, "Crash marker file exists, last Session is gonna be Crashed.");
 
-            if (timestamp == null) {
-              timestamp = checkCrashMarkerFiles(session, crashMarkerFile);
+              timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
+
+              crashedLastRun = true;
+              if (!crashMarkerFile.delete()) {
+                options
+                    .getLogger()
+                    .log(
+                        ERROR,
+                        "Failed to delete the crash marker file. %s.",
+                        crashMarkerFile.getAbsolutePath());
+              }
+              session.update(Session.State.Crashed, null, true);
             }
 
             session.end(timestamp);
@@ -140,10 +154,27 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
       }
       updateCurrentSession(currentSessionFile, envelope);
 
-      // if the marker files dont exist, it didnt crash during last run.
-      // if setCrashedLastRun already has been called, it bails out since compareAndSet would
-      // return false.
-      SentryCrashLastRunState.getInstance().setCrashedLastRun(false);
+      // check java marker file if the native marker isnt there
+      if (!crashedLastRun) {
+        final File javaCrashMarkerFile = new File(options.getCacheDirPath(), CRASH_MARKER_FILE);
+        if (javaCrashMarkerFile.exists()) {
+          options
+              .getLogger()
+              .log(INFO, "Crash marker file exists, crashedLastRun will return true.");
+
+          crashedLastRun = true;
+          if (!javaCrashMarkerFile.delete()) {
+            options
+                .getLogger()
+                .log(
+                    ERROR,
+                    "Failed to delete the crash marker file. %s.",
+                    javaCrashMarkerFile.getAbsolutePath());
+          }
+        }
+      }
+
+      SentryCrashLastRunState.getInstance().setCrashedLastRun(crashedLastRun);
     }
 
     // TODO: probably we need to update the current session file for session updates to because of
@@ -181,29 +212,6 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
     } catch (Exception e) {
       options.getLogger().log(ERROR, "Error writing the crash marker file to the disk", e);
     }
-  }
-
-  private @Nullable Date checkCrashMarkerFiles(
-      final @NotNull Session session, final @NotNull File crashMarkerFile) {
-    Date timestamp = null;
-    if (crashMarkerFile.exists()) {
-      options.getLogger().log(INFO, "Crash marker file exists, last Session is gonna be Crashed.");
-
-      // If crashMarkerFile exists, it means that the last run of the app crashed
-      SentryCrashLastRunState.getInstance().setCrashedLastRun(true);
-
-      timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
-      if (!crashMarkerFile.delete()) {
-        options
-            .getLogger()
-            .log(
-                ERROR,
-                "Failed to delete the crash marker file. %s.",
-                crashMarkerFile.getAbsolutePath());
-      }
-      session.update(Session.State.Crashed, null, true);
-    }
-    return timestamp;
   }
 
   /**

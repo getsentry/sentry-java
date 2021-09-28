@@ -1,6 +1,7 @@
 package io.sentry;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import io.sentry.cache.EnvelopeCache;
+import java.io.File;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,8 +11,10 @@ public final class SentryCrashLastRunState {
 
   private static final SentryCrashLastRunState INSTANCE = new SentryCrashLastRunState();
 
-  private final @NotNull AtomicBoolean readCrashedLastRun = new AtomicBoolean(false);
+  private boolean readCrashedLastRun = false;
   private @Nullable Boolean crashedLastRun;
+
+  private final @NotNull Object crashedLastRunLock = new Object();
 
   private SentryCrashLastRunState() {}
 
@@ -19,13 +22,53 @@ public final class SentryCrashLastRunState {
     return INSTANCE;
   }
 
-  public @Nullable Boolean isCrashedLastRun() {
+  public @Nullable Boolean isCrashedLastRun(
+      final @Nullable String cacheDirPath, final boolean deleteFile) {
+    synchronized (crashedLastRunLock) {
+      if (checkReadAndAssign()) {
+        return crashedLastRun;
+      }
+
+      if (cacheDirPath == null) {
+        return null;
+      }
+      final File javaMarker = new File(cacheDirPath, EnvelopeCache.CRASH_MARKER_FILE);
+      final File nativeMarker = new File(cacheDirPath, EnvelopeCache.NATIVE_CRASH_MARKER_FILE);
+      boolean exists = false;
+      try {
+        if (javaMarker.exists()) {
+          exists = true;
+
+          javaMarker.delete();
+        } else if (nativeMarker.exists()) {
+          exists = true;
+          if (deleteFile) {
+            nativeMarker.delete();
+          }
+        }
+      } catch (Exception e) {
+        // ignore
+      }
+
+      crashedLastRun = exists;
+    }
+
     return crashedLastRun;
   }
 
   public void setCrashedLastRun(final boolean crashedLastRun) {
-    if (readCrashedLastRun.compareAndSet(false, true)) {
-      this.crashedLastRun = crashedLastRun;
+    synchronized (crashedLastRunLock) {
+      if (!checkReadAndAssign()) {
+        this.crashedLastRun = crashedLastRun;
+      }
     }
+  }
+
+  private boolean checkReadAndAssign() {
+    if (readCrashedLastRun) {
+      return true;
+    }
+    readCrashedLastRun = true;
+    return false;
   }
 }
