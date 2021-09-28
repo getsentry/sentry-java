@@ -461,7 +461,7 @@ class ScopeTest {
         assertNotNull(sessionPair) {
             val start = it.current
             scope.withSession { session ->
-                session!!.update(null,  true)
+                session!!.update(null, true)
             }
             val end = scope.endSession()!!
 

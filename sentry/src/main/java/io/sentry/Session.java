@@ -225,8 +225,7 @@ public final class Session {
    * @param addErrorsCount true if should increase error count or not
    * @return if the session has been updated
    */
-  public boolean update(
-      final @Nullable State status, boolean addErrorsCount) {
+  public boolean update(final @Nullable State status, boolean addErrorsCount) {
     synchronized (sessionLock) {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {

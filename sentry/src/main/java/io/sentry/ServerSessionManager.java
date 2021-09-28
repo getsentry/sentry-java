@@ -31,8 +31,14 @@ public final class ServerSessionManager implements SessionTracker, SessionUpdate
   @Override
   public @Nullable Session updateSessionData(
       @NotNull SentryEvent event, @Nullable Object hint, @Nullable Scope scope) {
+    // If the status is still just 'null' or 'Exited'
+    // perhaps promote it to errored or crashed:
     if (status != Status.Crashed) {
-      status = event.isCrashed() ? Status.Crashed : Status.Errored;
+      if (event.isCrashed()) {
+        status = Status.Crashed;
+      } else if (event.isErrored()) {
+        status = Status.Errored;
+      }
     }
     return null;
   }

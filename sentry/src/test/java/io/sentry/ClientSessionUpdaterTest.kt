@@ -1,7 +1,6 @@
 package io.sentry
 
 import io.sentry.protocol.Mechanism
-import io.sentry.protocol.Request
 import io.sentry.protocol.SentryException
 import kotlin.test.Test
 import kotlin.test.assertEquals

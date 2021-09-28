@@ -1055,7 +1055,7 @@ public final class io/sentry/Session {
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getUserAgent ()Ljava/lang/String;
 	public fun setInitAsTrue ()V
-	public fun update (Lio/sentry/Session$State;Ljava/lang/String;Z)Z
+	public fun update (Lio/sentry/Session$State;Z)Z
 }
 
 public final class io/sentry/Session$State : java/lang/Enum {
