@@ -1,41 +1,33 @@
-package io.sentry.protocol
+package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
-import io.sentry.FileFromResources
-import io.sentry.ILogger
-import io.sentry.JsonObjectReader
-import io.sentry.JsonObjectWriter
-import io.sentry.JsonSerializable
-import io.sentry.SentryEnvelopeHeader
-import io.sentry.TraceStateSerializationTest
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
 import org.junit.Test
 
-class SentryEnvelopeHeaderSerializationTest {
+class TraceStateUserSerializationTest {
 
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = SentryEnvelopeHeader(
-            SentryIdSerializationTest.Fixture().getSut(),
-            SdkVersionSerializationTest.Fixture().getSut(),
-            TraceStateSerializationTest.Fixture().getSut()
+        fun getSut() = TraceState.TraceStateUser(
+            "c052c566-6619-45f5-a61f-172802afa39a",
+            "f7d8662b-5551-4ef8-b6a8-090f0561a530"
         )
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/sentry_envelope_header.json")
+        val expected = sanitizedFile("gson/trace_state_user.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/sentry_envelope_header.json")
+        val expectedJson = sanitizedFile("gson/trace_state_user.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
@@ -56,8 +48,8 @@ class SentryEnvelopeHeaderSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): SentryEnvelopeHeader {
+    private fun deserialize(json: String): TraceState.TraceStateUser {
         val reader = JsonObjectReader(StringReader(json))
-        return SentryEnvelopeHeader.Deserializer().deserialize(reader, fixture.logger)
+        return TraceState.TraceStateUser.Deserializer().deserialize(reader, fixture.logger)
     }
 }
