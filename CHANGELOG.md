@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Feat: Add isCrashedLastRun support (#)
+* Feat: Add isCrashedLastRun support (#1739)
 
 ## 5.2.0
 
