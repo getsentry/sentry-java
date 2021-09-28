@@ -42,6 +42,8 @@ public final class SentryCrashLastRunState {
           javaMarker.delete();
         } else if (nativeMarker.exists()) {
           exists = true;
+          // only delete if release health is disabled, otherwise the session crashed by the native
+          // side won't be marked as crashed correctly.
           if (deleteFile) {
             nativeMarker.delete();
           }
