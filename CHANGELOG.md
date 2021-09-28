@@ -40,6 +40,7 @@ Breaking changes:
 
 * Fix: Servlet 3.1 compatibility issue (#1681)
 * Fix: Do not drop Contexts key if Collection, Array or Char (#1680)
+>>>>>>>>> Temporary merge branch 2
 
 ## 5.1.1
 
