@@ -123,7 +123,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
                         "Failed to delete the crash marker file. %s.",
                         crashMarkerFile.getAbsolutePath());
               }
-              session.update(Session.State.Crashed, null, true);
+              session.update(Session.State.Crashed, true);
             }
 
             session.end(timestamp);

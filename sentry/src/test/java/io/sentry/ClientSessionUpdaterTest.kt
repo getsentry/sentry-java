@@ -24,40 +24,6 @@ class ClientSessionUpdaterTest {
     private val fixture = Fixture()
 
     @Test
-    fun `When event has userAgent, set it into session`() {
-        val scope = Scope(fixture.sentryOptions)
-        val sessionPair = scope.startSession()
-        assertNotNull(sessionPair) {
-            val event = SentryEvent().apply {
-                request = Request().apply {
-                    headers = mutableMapOf("user-agent" to "jamesBond")
-                }
-            }
-            fixture.getSut().updateSessionData(event, null, scope)
-            scope.withSession {
-                assertEquals("jamesBond", it!!.userAgent)
-            }
-        }
-    }
-
-    @Test
-    fun `When event has no userAgent, keep as it is`() {
-        val scope = Scope(fixture.sentryOptions)
-        val sessionPair = scope.startSession()
-        assertNotNull(sessionPair) {
-            val session = it.current
-            val userAgent = session.userAgent
-            val event = SentryEvent().apply {
-                request = Request().apply {
-                    headers = mutableMapOf()
-                }
-            }
-            fixture.getSut().updateSessionData(event, null, scope)
-            assertEquals(userAgent, session.userAgent)
-        }
-    }
-
-    @Test
     fun `When capture an event and there's no session, do nothing`() {
         val scope = Scope(fixture.sentryOptions)
         val event = SentryEvent()

@@ -35,14 +35,7 @@ final class ClientSessionUpdater implements SessionUpdater {
                       crashedOrErrored = true;
                     }
 
-                    String userAgent = null;
-                    if (event.getRequest() != null && event.getRequest().getHeaders() != null) {
-                      if (event.getRequest().getHeaders().containsKey("user-agent")) {
-                        userAgent = event.getRequest().getHeaders().get("user-agent");
-                      }
-                    }
-
-                    if (session.update(status, userAgent, crashedOrErrored)) {
+                    if (session.update(status, crashedOrErrored)) {
                       // if hint is DiskFlushNotification, it means we have an uncaughtException
                       // and we can end the session.
                       if (hint instanceof DiskFlushNotification) {

@@ -62,7 +62,7 @@ class SessionTest {
             ipAddress = "127.0.0.1"
         }
         val session = createSession(user)
-        session.update(null, null, true)
+        session.update(null, true)
         session.end()
         assertEquals(Session.State.Exited, session.status)
     }
@@ -73,7 +73,7 @@ class SessionTest {
             ipAddress = "127.0.0.1"
         }
         val session = createSession(user)
-        session.update(Session.State.Crashed, null, true)
+        session.update(Session.State.Crashed, true)
         session.end()
         assertEquals(Session.State.Crashed, session.status)
     }
@@ -85,7 +85,7 @@ class SessionTest {
         }
         val session = createSession(user)
         val date = Date()
-        session.update(Session.State.Crashed, null, true)
+        session.update(Session.State.Crashed, true)
         session.end(date)
         assertEquals(date, session.timestamp)
     }
@@ -97,7 +97,7 @@ class SessionTest {
         }
         val session = createSession(user)
         val timestamp = session.started
-        session.update(null, null, true)
+        session.update(null, true)
 
         assertNull(session.init)
         assertTrue(session.timestamp!! >= timestamp)

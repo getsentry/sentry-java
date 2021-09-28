@@ -222,12 +222,11 @@ public final class Session {
    * Updates the current session and set its values
    *
    * @param status the status
-   * @param userAgent the userAgent
    * @param addErrorsCount true if should increase error count or not
    * @return if the session has been updated
    */
   public boolean update(
-      final @Nullable State status, final @Nullable String userAgent, boolean addErrorsCount) {
+      final @Nullable State status, boolean addErrorsCount) {
     synchronized (sessionLock) {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
@@ -235,10 +234,6 @@ public final class Session {
         sessionHasBeenUpdated = true;
       }
 
-      if (userAgent != null) {
-        this.userAgent = userAgent;
-        sessionHasBeenUpdated = true;
-      }
       if (addErrorsCount) {
         errorCount.addAndGet(1);
         sessionHasBeenUpdated = true;

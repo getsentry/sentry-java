@@ -108,7 +108,7 @@ class CacheStrategyTest {
         sut.serializer.serialize(okEnvelope, files[0].outputStream())
 
         val updatedOkSession = okSession.clone()
-        updatedOkSession.update(null, null, true)
+        updatedOkSession.update(null, true)
         val updatedOkEnvelope = SentryEnvelope.from(sut.serializer, updatedOkSession, null)
         sut.serializer.serialize(updatedOkEnvelope, files[1].outputStream())
 

@@ -397,7 +397,7 @@ class ScopeTest {
             val start = it.current
 
             scope.withSession { session ->
-                session!!.update(null, null, false)
+                session!!.update(null, false)
             }
 
             val end = scope.endSession()!!
@@ -419,7 +419,7 @@ class ScopeTest {
             val start = it.current
 
             scope.withSession { session ->
-                session!!.update(null, null, true)
+                session!!.update(null, true)
             }
 
             val end = scope.endSession()!!
@@ -440,34 +440,13 @@ class ScopeTest {
         assertNotNull(sessionPair) {
             val start = it.current
             scope.withSession { session ->
-                session!!.update(Session.State.Crashed, null, true)
+                session!!.update(Session.State.Crashed, true)
             }
 
             val end = scope.endSession()!!
 
             assertEquals(Session.State.Ok, start.status)
             assertEquals(Session.State.Crashed, end.status)
-        }
-    }
-
-    @Test
-    fun `Scope sets user agent when capturing an error`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
-        val scope = Scope(options)
-
-        val sessionPair = scope.startSession()
-        assertNotNull(sessionPair) {
-            val start = it.current
-            scope.withSession { session ->
-                session!!.update(null, "jamesBond", true)
-            }
-
-            val end = scope.endSession()!!
-
-            assertNull(start.userAgent)
-            assertEquals("jamesBond", end.userAgent)
         }
     }
 
@@ -482,7 +461,7 @@ class ScopeTest {
         assertNotNull(sessionPair) {
             val start = it.current
             scope.withSession { session ->
-                session!!.update(null, null, true)
+                session!!.update(null,  true)
             }
             val end = scope.endSession()!!
 
@@ -501,7 +480,7 @@ class ScopeTest {
         assertNotNull(sessionPair) {
             val start = it.current
             scope.withSession { session ->
-                session!!.update(null, null, true)
+                session!!.update(null, true)
             }
 
             val end = scope.endSession()!!
@@ -522,7 +501,7 @@ class ScopeTest {
         assertNotNull(sessionPair) {
             val start = it.current
             scope.withSession { session ->
-                session!!.update(null, null, true)
+                session!!.update(null, true)
             }
 
             val end = scope.endSession()!!
