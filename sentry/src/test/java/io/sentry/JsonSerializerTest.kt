@@ -1,8 +1,6 @@
 package io.sentry
 
-import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import com.google.gson.JsonPrimitive
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
@@ -38,7 +36,7 @@ import net.javacrumbs.jsonunit.JsonMatchers.jsonEquals
 import net.javacrumbs.jsonunit.core.Option
 import org.junit.Assert.assertThat
 
-class GsonSerializerTest {
+class JsonSerializerTest {
 
     private class Fixture {
         val logger: ILogger = mock()
@@ -51,7 +49,7 @@ class GsonSerializerTest {
             options.setLogger(logger)
             options.setDebug(true)
             whenever(hub.options).thenReturn(options)
-            serializer = GsonSerializer(options)
+            serializer = JsonSerializer(options)
             options.setEnvelopeReader(EnvelopeReader(serializer))
         }
     }
@@ -159,9 +157,9 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        assertEquals("test", (actual!!.unknown!!["string"] as JsonPrimitive).asString)
-        assertEquals(1, (actual.unknown!!["int"] as JsonPrimitive).asInt)
-        assertEquals(true, (actual.unknown!!["boolean"] as JsonPrimitive).asBoolean)
+        assertEquals("test", actual!!.unknown!!["string"] as String)
+        assertEquals(1, actual.unknown!!["int"] as Int)
+        assertEquals(true, actual.unknown!!["boolean"] as Boolean)
     }
 
     @Test
@@ -181,14 +179,14 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
-        val hashMapActual = actual!!.unknown!!["object"] as JsonObject // gson creates it as JsonObject
+        val hashMapActual = actual!!.unknown!!["object"] as Map<*, *> // gson creates it as JsonObject
 
-        assertEquals(true, hashMapActual.get("boolean").asBoolean)
-        assertEquals(1, (hashMapActual.get("int")).asInt)
+        assertEquals(true, hashMapActual.get("boolean") as Boolean)
+        assertEquals(1, hashMapActual.get("int") as Int)
     }
 
     @Test
-    fun `when serializing unknown field, it should become unknown as json format`() {
+    fun `when serializing unknown field, its keys should becom part of json`() {
         val sentryEvent = generateEmptySentryEvent()
         sentryEvent.eventId = null
 
@@ -203,7 +201,7 @@ class GsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"unknown\":{\"object\":{\"boolean\":true,\"int\":1}},\"contexts\":{}}"
+        val expected = "{\"contexts\":{},\"object\":{\"boolean\":true,\"int\":1}}"
 
         assertJsonContains(actual, expected)
     }
@@ -308,28 +306,28 @@ class GsonSerializerTest {
 
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
         val obj = actual!!.contexts["object"] as Map<*, *>
-        val number = actual.contexts["number"] as Double
+        val number = actual.contexts["number"] as Int
         val list = actual.contexts["list"] as List<*>
         val listObjects = actual.contexts["list_objects"] as List<*>
 
         assertTrue(obj["boolean"] as Boolean)
         assertEquals("hi", obj["string"] as String)
-        assertEquals(9.0, obj["number"] as Double)
+        assertEquals(9, obj["number"] as Int)
 
-        assertEquals(50.0, number)
+        assertEquals(50, number)
 
-        assertEquals(1.0, list[0])
-        assertEquals(2.0, list[1])
+        assertEquals(1, list[0])
+        assertEquals(2, list[1])
 
         val listObjectsFirst = listObjects[0] as Map<*, *>
         assertTrue(listObjectsFirst["boolean"] as Boolean)
         assertEquals("hi", listObjectsFirst["string"] as String)
-        assertEquals(9.0, listObjectsFirst["number"] as Double)
+        assertEquals(9, listObjectsFirst["number"] as Int)
 
         val listObjectsSecond = listObjects[1] as Map<*, *>
         assertFalse(listObjectsSecond["boolean"] as Boolean)
         assertEquals("ciao", listObjectsSecond["string"] as String)
-        assertEquals(10.0, listObjectsSecond["number"] as Double)
+        assertEquals(10, listObjectsSecond["number"] as Int)
     }
 
     @Test
@@ -409,6 +407,9 @@ class GsonSerializerTest {
 
     @Test
     fun `When serializing an envelope, SdkVersion should be set`() {
+
+        // TODO(denis): Broken envelope header parsing?
+
         val session = createSessionMockData()
         val version = SdkVersion().apply {
             name = "test"
@@ -450,7 +451,7 @@ class GsonSerializerTest {
     @Test
     fun `serializes trace state`() {
         val traceState = SentryEnvelopeHeader(null, null, TraceState(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", TraceState.TraceStateUser("userId", "segment"), "transaction"))
-        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction","user":{"id":"userId","segment":"segment"}}}"""
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user":{"id":"userId","segment":"segment"},"transaction":"transaction"}}"""
         val json = serializeToString(traceState)
         assertEquals(expected, json)
     }
@@ -520,31 +521,34 @@ class GsonSerializerTest {
         val stringWriter = StringWriter()
         fixture.serializer.serialize(SentryTransaction(tracer), stringWriter)
 
-        val element = JsonParser().parse(stringWriter.toString()).asJsonObject
-        assertEquals("transaction-name", element["transaction"].asString)
-        assertEquals("transaction", element["type"].asString)
-        assertNotNull(element["start_timestamp"].asString)
-        assertNotNull(element["event_id"].asString)
-        assertNotNull(element["spans"].asJsonArray)
-        assertEquals("myValue", element["tags"].asJsonObject["myTag"].asString)
+        val reader = StringReader(stringWriter.toString())
+        val objectReader = JsonObjectReader(reader)
+        val element = JsonObjectDeserializer().deserialize(objectReader) as Map<*, *>
 
-        assertEquals("dataValue", element["extra"].asJsonObject["dataKey"].asString)
+        assertEquals("transaction-name", element["transaction"] as String)
+        assertEquals("transaction", element["type"] as String)
+        assertNotNull(element["start_timestamp"] as String)
+        assertNotNull(element["event_id"] as String)
+        assertNotNull(element["spans"] as List<*>)
+        assertEquals("myValue", (element["tags"] as Map<*, *>)["myTag"] as String)
 
-        val jsonSpan = element["spans"].asJsonArray[0].asJsonObject
+        assertEquals("dataValue", (element["extra"] as Map<*, *>)["dataKey"] as String)
+
+        val jsonSpan = (element["spans"] as List<*>)[0] as Map<*, *>
         assertNotNull(jsonSpan["trace_id"])
         assertNotNull(jsonSpan["span_id"])
         assertNotNull(jsonSpan["parent_span_id"])
-        assertEquals("child", jsonSpan["op"].asString)
-        assertNotNull("ok", jsonSpan["status"].asString)
+        assertEquals("child", jsonSpan["op"] as String)
+        assertNotNull("ok", jsonSpan["status"] as String)
         assertNotNull(jsonSpan["timestamp"])
         assertNotNull(jsonSpan["start_timestamp"])
 
-        val jsonTrace = element["contexts"].asJsonObject["trace"].asJsonObject
-        assertNotNull(jsonTrace["trace_id"].asString)
-        assertNotNull(jsonTrace["span_id"].asString)
-        assertEquals("http", jsonTrace["op"].asString)
-        assertEquals("some request", jsonTrace["description"].asString)
-        assertEquals("ok", jsonTrace["status"].asString)
+        val jsonTrace = (element["contexts"] as Map<*, *>)["trace"] as Map<*, *>
+        assertNotNull(jsonTrace["trace_id"] as String)
+        assertNotNull(jsonTrace["span_id"] as String)
+        assertEquals("http", jsonTrace["op"] as String)
+        assertEquals("some request", jsonTrace["description"] as String)
+        assertEquals("ok", jsonTrace["status"] as String)
     }
 
     @Test

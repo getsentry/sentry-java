@@ -393,6 +393,7 @@ public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/Jso
 	public fun nextList (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
 	public fun nextLongOrNull ()Ljava/lang/Long;
 	public fun nextObjectOrNull ()Ljava/lang/Object;
+	public fun nextOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
 	public fun nextStringOrNull ()Ljava/lang/String;
 	public fun nextTimeZoneOrNull (Lio/sentry/ILogger;)Ljava/util/TimeZone;
 	public fun nextUnknown (Lio/sentry/ILogger;Ljava/util/Map;Ljava/lang/String;)V

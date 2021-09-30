@@ -356,7 +356,7 @@ public abstract class SentryBaseEvent {
       if (baseEvent.request != null) {
         writer.name(JsonKeys.REQUEST).value(logger, baseEvent.request);
       }
-      if (baseEvent.tags != null) {
+      if (baseEvent.tags != null && !baseEvent.tags.isEmpty()) {
         writer.name(JsonKeys.TAGS).value(logger, baseEvent.tags);
       }
       if (baseEvent.release != null) {
@@ -377,10 +377,10 @@ public abstract class SentryBaseEvent {
       if (baseEvent.dist != null) {
         writer.name(JsonKeys.DIST).value(baseEvent.dist);
       }
-      if (baseEvent.breadcrumbs != null) {
+      if (baseEvent.breadcrumbs != null && !baseEvent.breadcrumbs.isEmpty()) {
         writer.name(JsonKeys.BREADCRUMBS).value(logger, baseEvent.breadcrumbs);
       }
-      if (baseEvent.extra != null) {
+      if (baseEvent.extra != null && !baseEvent.extra.isEmpty()) {
         writer.name(JsonKeys.EXTRA).value(logger, baseEvent.extra);
       }
     }
@@ -396,17 +396,17 @@ public abstract class SentryBaseEvent {
         throws Exception {
       switch (nextName) {
         case JsonKeys.EVENT_ID:
-          baseEvent.eventId = new SentryId.Deserializer().deserialize(reader, logger);
+          baseEvent.eventId = reader.nextOrNull(logger, new SentryId.Deserializer());
           return true;
         case JsonKeys.CONTEXTS:
           Contexts deserializedContexts = new Contexts.Deserializer().deserialize(reader, logger);
           baseEvent.contexts.putAll(deserializedContexts);
           return true;
         case JsonKeys.SDK:
-          baseEvent.sdk = new SdkVersion.Deserializer().deserialize(reader, logger);
+          baseEvent.sdk = reader.nextOrNull(logger, new SdkVersion.Deserializer());
           return true;
         case JsonKeys.REQUEST:
-          baseEvent.request = new Request.Deserializer().deserialize(reader, logger);
+          baseEvent.request = reader.nextOrNull(logger, new Request.Deserializer());
           return true;
         case JsonKeys.TAGS:
           Map<String, String> deserializedTags = (Map<String, String>) reader.nextObjectOrNull();
@@ -422,7 +422,7 @@ public abstract class SentryBaseEvent {
           baseEvent.platform = reader.nextStringOrNull();
           return true;
         case JsonKeys.USER:
-          baseEvent.user = new User.Deserializer().deserialize(reader, logger);
+          baseEvent.user = reader.nextOrNull(logger, new User.Deserializer());
           return true;
         case JsonKeys.SERVER_NAME:
           baseEvent.serverName = reader.nextStringOrNull();

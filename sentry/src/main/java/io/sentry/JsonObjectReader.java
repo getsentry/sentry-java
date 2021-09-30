@@ -21,15 +21,27 @@ public final class JsonObjectReader extends JsonReader {
   }
 
   public @Nullable String nextStringOrNull() throws IOException {
-    return peek() == JsonToken.NULL ? null : nextString();
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    return nextString();
   }
 
   public @Nullable Double nextDoubleOrNull() throws IOException {
-    return peek() == JsonToken.NULL ? null : nextDouble();
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    return nextDouble();
   }
 
   public @Nullable Float nextFloatOrNull() throws IOException {
-    return peek() == JsonToken.NULL ? null : nextFloat();
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    return nextFloat();
   }
 
   public @NotNull Float nextFloat() throws IOException {
@@ -37,15 +49,27 @@ public final class JsonObjectReader extends JsonReader {
   }
 
   public @Nullable Long nextLongOrNull() throws IOException {
-    return peek() == JsonToken.NULL ? null : nextLong();
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    return nextLong();
   }
 
   public @Nullable Integer nextIntegerOrNull() throws IOException {
-    return peek() == JsonToken.NULL ? null : nextInt();
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    return nextInt();
   }
 
   public @Nullable Boolean nextBooleanOrNull() throws IOException {
-    return peek() == JsonToken.NULL ? null : nextBoolean();
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    return nextBoolean();
   }
 
   public void nextUnknown(ILogger logger, Map<String, Object> unknown, String name) {
@@ -59,6 +83,7 @@ public final class JsonObjectReader extends JsonReader {
   public <T> @Nullable List<T> nextList(
       @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException {
     if (peek() == JsonToken.NULL) {
+      nextNull();
       return null;
     }
     beginArray();
@@ -68,15 +93,24 @@ public final class JsonObjectReader extends JsonReader {
         list.add(deserializer.deserialize(this, logger));
       } catch (Exception e) {
         logger.log(SentryLevel.ERROR, "Failed to deserialize object in list.", e);
-        e.printStackTrace();
       }
     } while (peek() == JsonToken.BEGIN_OBJECT);
     endArray();
     return list;
   }
 
+  public <T> @Nullable T nextOrNull(
+      @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws Exception {
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    return deserializer.deserialize(this, logger);
+  }
+
   public @Nullable Date nextDateOrNull(ILogger logger) throws IOException {
     if (peek() == JsonToken.NULL) {
+      nextNull();
       return null;
     }
     String dateString = nextString();
@@ -98,6 +132,7 @@ public final class JsonObjectReader extends JsonReader {
 
   public @Nullable TimeZone nextTimeZoneOrNull(ILogger logger) throws IOException {
     if (peek() == JsonToken.NULL) {
+      nextNull();
       return null;
     }
     try {

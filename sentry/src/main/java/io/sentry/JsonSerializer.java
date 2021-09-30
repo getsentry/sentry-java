@@ -151,8 +151,7 @@ public final class JsonSerializer implements ISerializer {
         final Writer writer =
             new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8))) {
 
-      JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(writer);
-      envelope.getHeader().serialize(jsonObjectWriter, options.getLogger());
+      envelope.getHeader().serialize(new JsonObjectWriter(writer), options.getLogger());
       writer.write("\n");
 
       for (final SentryEnvelopeItem item : envelope.getItems()) {
@@ -160,7 +159,7 @@ public final class JsonSerializer implements ISerializer {
           // When this throws we don't write anything and continue with the next item.
           final byte[] data = item.getData();
 
-          item.getHeader().serialize(jsonObjectWriter, options.getLogger());
+          item.getHeader().serialize(new JsonObjectWriter(writer), options.getLogger());
           writer.write("\n");
           writer.flush();
 

@@ -243,7 +243,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
             spanId = new SpanId.Deserializer().deserialize(reader, logger);
             break;
           case JsonKeys.PARENT_SPAN_ID:
-            parentSpanId = new SpanId.Deserializer().deserialize(reader, logger);
+            parentSpanId = reader.nextOrNull(logger, new SpanId.Deserializer());
             break;
           case JsonKeys.OP:
             op = reader.nextString();
@@ -252,9 +252,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
             description = reader.nextString();
             break;
           case JsonKeys.STATUS:
-            if (reader.peek() != JsonToken.NULL) {
-              status = new SpanStatus.Deserializer().deserialize(reader, logger);
-            }
+            status = reader.nextOrNull(logger, new SpanStatus.Deserializer());
             break;
           case JsonKeys.TAGS:
             tags =

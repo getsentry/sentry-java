@@ -223,7 +223,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
             spanId = new SpanId.Deserializer().deserialize(reader, logger);
             break;
           case JsonKeys.PARENT_SPAN_ID:
-            parentSpanId = new SpanId.Deserializer().deserialize(reader, logger);
+            parentSpanId = reader.nextOrNull(logger, new SpanId.Deserializer());
             break;
           case JsonKeys.OP:
             op = reader.nextStringOrNull();
@@ -232,7 +232,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
             description = reader.nextStringOrNull();
             break;
           case JsonKeys.STATUS:
-            status = new SpanStatus.Deserializer().deserialize(reader, logger);
+            status = reader.nextOrNull(logger, new SpanStatus.Deserializer());
             break;
           case JsonKeys.TAGS:
             tags = (Map<String, String>) reader.nextObjectOrNull();

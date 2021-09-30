@@ -288,7 +288,7 @@ public final class SentryThread
             break;
           case JsonKeys.STACKTRACE:
             sentryThread.stacktrace =
-                new SentryStackTrace.Deserializer().deserialize(reader, logger);
+                reader.nextOrNull(logger, new SentryStackTrace.Deserializer());
             break;
           default:
             if (unknown == null) {
