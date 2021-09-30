@@ -407,9 +407,6 @@ class JsonSerializerTest {
 
     @Test
     fun `When serializing an envelope, SdkVersion should be set`() {
-
-        // TODO(denis): Broken envelope header parsing?
-
         val session = createSessionMockData()
         val version = SdkVersion().apply {
             name = "test"
