@@ -54,6 +54,9 @@ public final class JsonSerializer implements ISerializer {
 
   private final @NotNull Map<Class<?>, JsonDeserializer<?>> deserializersByClass;
 
+  /**
+   * All our custom deserializers need to be registered to be used with the deserializer instance. *
+   */
   public JsonSerializer(@NotNull SentryOptions options) {
     this.options = options;
 
