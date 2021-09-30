@@ -965,6 +965,13 @@ public final class io/sentry/SentryOptions$RequestSize : java/lang/Enum {
 	public static fun values ()[Lio/sentry/SentryOptions$RequestSize;
 }
 
+public final class io/sentry/SentryOptions$SessionMode : java/lang/Enum {
+	public static final field CLIENT Lio/sentry/SentryOptions$SessionMode;
+	public static final field SERVER Lio/sentry/SentryOptions$SessionMode;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryOptions$SessionMode;
+	public static fun values ()[Lio/sentry/SentryOptions$SessionMode;
+}
+
 public abstract interface class io/sentry/SentryOptions$TracesSamplerCallback {
 	public abstract fun sample (Lio/sentry/SamplingContext;)Ljava/lang/Double;
 }

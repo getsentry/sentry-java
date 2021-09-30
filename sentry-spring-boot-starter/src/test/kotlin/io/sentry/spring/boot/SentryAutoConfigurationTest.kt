@@ -177,6 +177,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
             assertThat(options.tracingOrigins).containsOnly("localhost", "^(http|https)://api\\..*\$")
+            assertThat(options.sessionMode).isEqualTo(SentryOptions.SessionMode.SERVER)
         }
     }
 
@@ -601,6 +602,28 @@ class SentryAutoConfigurationTest {
                     .isNotInstanceOf(ApacheHttpClientTransportFactory::class.java)
                     .isNotInstanceOf(NoOpTransportFactory::class.java)
             }
+    }
+
+    @Test
+    fun `when release is not set, session auto tracking is turned off`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj"
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.isEnableAutoSessionTracking).isFalse()
+        }
+    }
+
+    @Test
+    fun `when release is set, session auto tracking is turned on and session mode is set to server`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+            "sentry.release=1.0.0"
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.isEnableAutoSessionTracking).isTrue()
+            assertThat(options.sessionMode).isEqualTo(SentryOptions.SessionMode.SERVER)
+        }
     }
 
     @Configuration(proxyBeanMethods = false)

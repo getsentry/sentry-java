@@ -115,6 +115,13 @@ public class SentryAutoConfiguration {
       // its technically possible to set non-throwable class to `ignoredExceptionsForType` set
       // here we make sure that only classes that extend throwable are set on this field
       options.getIgnoredExceptionsForType().removeIf(it -> !Throwable.class.isAssignableFrom(it));
+
+      // server session mode requires release to be present.
+      if (options.getRelease() != null) {
+        options.setSessionMode(SentryOptions.SessionMode.SERVER);
+      } else {
+        options.setEnableAutoSessionTracking(false);
+      }
       Sentry.init(options);
       return HubAdapter.getInstance();
     }

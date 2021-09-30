@@ -1741,7 +1741,7 @@ public class SentryOptions {
     ALWAYS,
   }
 
-  static enum SessionMode {
+  public enum SessionMode {
     CLIENT,
     SERVER
   }
