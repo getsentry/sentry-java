@@ -1,4 +1,4 @@
-minVersion: 0.24.4
+minVersion: 0.25.0
 changelogPolicy: auto
 targets:
   - name: symbol-collector
