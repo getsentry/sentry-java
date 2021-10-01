@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Fix: Handle exception if Context.registerReceiver throws (#)
+* Fix: Handle exception if Context.registerReceiver throws (#1747)
 
 ## 5.2.0
 
