@@ -2,7 +2,6 @@ package io.sentry.protocol;
 
 import com.google.gson.annotations.SerializedName;
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -13,7 +12,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,8 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>Each object should contain **at least** a `filename`, `function` or `instruction_addr`
  * attribute. All values are optional, but recommended.
  */
-public final class SentryStackFrame
-    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
   /** Source code leading up to `lineno`. */
   private @Nullable List<String> preContext;
   /** Source code of the lines after `lineno`. */
@@ -263,12 +260,6 @@ public final class SentryStackFrame
 
   public void setNative(final @Nullable Boolean _native) {
     this._native = _native;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   public @Nullable String getRawFunction() {

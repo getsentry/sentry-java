@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -12,7 +11,6 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>```json { "user": { "id": "unique_id", "username": "my_user", "email": "foo@example.com",
  * "ip_address": "127.0.0.1", "subscription": "basic" } } ```
  */
-public final class User implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class User implements JsonUnknown, JsonSerializable {
 
   /** Email address of the user. */
   private @Nullable String email;
@@ -144,17 +142,6 @@ public final class User implements IUnknownPropertiesConsumer, JsonUnknown, Json
    */
   public void setOthers(final @Nullable Map<String, @NotNull String> other) {
     this.other = CollectionUtils.newConcurrentHashMap(other);
-  }
-
-  /**
-   * User's unknown fields, only internal usage
-   *
-   * @param unknown the unknown fields
-   */
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
   // region json

@@ -10,13 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryEvent extends SentryBaseEvent
-    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, JsonSerializable {
   /**
    * Timestamp when the event was created.
    *
@@ -174,12 +172,6 @@ public final class SentryEvent extends SentryBaseEvent
 
   public void setFingerprints(final @Nullable List<String> fingerprint) {
     this.fingerprint = fingerprint != null ? new ArrayList<>(fingerprint) : null;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   @Nullable

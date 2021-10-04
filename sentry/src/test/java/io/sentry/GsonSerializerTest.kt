@@ -152,6 +152,7 @@ class GsonSerializerTest {
 
     @Test
     fun `when deserializing unknown properties, it should be added to unknown field`() {
+        // TODO: Failure irrelevant after JsonSerializer branch is merged.
         val sentryEvent = generateEmptySentryEvent()
         sentryEvent.eventId = null
 
@@ -175,7 +176,7 @@ class GsonSerializerTest {
 
         val unknown = hashMapOf<String, Any>()
         unknown["object"] = objects
-        sentryEvent.acceptUnknownProperties(unknown)
+        sentryEvent.setUnknown(unknown)
 
         val jsonEvent = "{\"object\":{\"int\":1,\"boolean\":true}}"
 
@@ -199,7 +200,7 @@ class GsonSerializerTest {
         val unknown = hashMapOf<String, Any>()
         unknown["object"] = objects
 
-        sentryEvent.acceptUnknownProperties(unknown)
+        sentryEvent.setUnknown(unknown)
 
         val actual = serializeToString(sentryEvent)
 

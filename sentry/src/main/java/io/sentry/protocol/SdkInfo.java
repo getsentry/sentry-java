@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -11,7 +10,6 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>This is relevant for iOS and other platforms that have a system SDK. Not to be confused with
  * the client SDK.
  */
-public final class SdkInfo implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SdkInfo implements JsonUnknown, JsonSerializable {
   /** The internal name of the SDK. */
   private @Nullable String sdkName;
   /** The major version of the SDK as integer or 0. */
@@ -64,12 +62,6 @@ public final class SdkInfo implements IUnknownPropertiesConsumer, JsonUnknown, J
 
   public void setVersionPatchlevel(final @Nullable Integer versionPatchlevel) {
     this.versionPatchlevel = versionPatchlevel;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   // JsonKeys

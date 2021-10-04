@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -12,7 +11,6 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
  * This includes general exception values obtained from the operating system or runtime APIs, as
  * well as mechanism-specific values.
  */
-public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class Mechanism implements JsonUnknown, JsonSerializable {
   private final transient @Nullable Thread thread;
   /**
    * Mechanism type (required).
@@ -140,12 +138,6 @@ public final class Mechanism implements IUnknownPropertiesConsumer, JsonUnknown,
 
   public void setSynthetic(final @Nullable Boolean synthetic) {
     this.synthetic = synthetic;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   // JsonKeys

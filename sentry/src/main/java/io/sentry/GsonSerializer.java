@@ -87,7 +87,6 @@ public final class GsonSerializer implements ISerializer {
         .registerTypeAdapter(SentryLevel.class, new SentryLevelDeserializerAdapter(options))
         .registerTypeAdapter(Contexts.class, new ContextsDeserializerAdapter(options))
         .registerTypeAdapter(Contexts.class, new ContextsSerializerAdapter(options))
-        .registerTypeAdapterFactory(UnknownPropertiesTypeAdapterFactory.get())
         .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
         .registerTypeAdapter(SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
         .registerTypeAdapter(Session.class, new SessionAdapter(options))

@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -13,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>```json { "debug_meta": { "images": [], "sdk_info": { "sdk_name": "iOS", "version_major": 10,
  * "version_minor": 3, "version_patchlevel": 0 } } } ```
  */
-public final class DebugMeta implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class DebugMeta implements JsonUnknown, JsonSerializable {
   /** Information about the system SDK (e.g. iOS SDK). */
   private @Nullable SdkInfo sdkInfo;
   /** List of debug information files (debug images). */
@@ -51,12 +49,6 @@ public final class DebugMeta implements IUnknownPropertiesConsumer, JsonUnknown,
 
   public void setSdkInfo(final @Nullable SdkInfo sdkInfo) {
     this.sdkInfo = sdkInfo;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   // JsonKeys
