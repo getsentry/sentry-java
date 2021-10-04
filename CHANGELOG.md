@@ -3,6 +3,8 @@
 ## Unreleased
 
 * Feat: Add isCrashedLastRun support (#1739)
+* Fix: Handle exception if Context.registerReceiver throws (#1747)
+* Feat: Attach Java vendor and version to events and transactions (#1703)
 
 ## 5.2.0
 
