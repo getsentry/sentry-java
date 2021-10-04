@@ -5,13 +5,14 @@ import java.io.File;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class SentryCrashLastRunState {
 
   private static final SentryCrashLastRunState INSTANCE = new SentryCrashLastRunState();
 
-  private boolean readCrashedLastRun = false;
+  private boolean readCrashedLastRun;
   private @Nullable Boolean crashedLastRun;
 
   private final @NotNull Object crashedLastRunLock = new Object();
@@ -25,13 +26,15 @@ public final class SentryCrashLastRunState {
   public @Nullable Boolean isCrashedLastRun(
       final @Nullable String cacheDirPath, final boolean deleteFile) {
     synchronized (crashedLastRunLock) {
-      if (checkReadAndAssign()) {
+      if (readCrashedLastRun) {
         return crashedLastRun;
       }
 
       if (cacheDirPath == null) {
         return null;
       }
+      readCrashedLastRun = true;
+
       final File javaMarker = new File(cacheDirPath, EnvelopeCache.CRASH_MARKER_FILE);
       final File nativeMarker = new File(cacheDirPath, EnvelopeCache.NATIVE_CRASH_MARKER_FILE);
       boolean exists = false;
@@ -60,17 +63,19 @@ public final class SentryCrashLastRunState {
 
   public void setCrashedLastRun(final boolean crashedLastRun) {
     synchronized (crashedLastRunLock) {
-      if (!checkReadAndAssign()) {
+      if (!readCrashedLastRun) {
         this.crashedLastRun = crashedLastRun;
+        // mark readCrashedLastRun as true since its being set directly
+        readCrashedLastRun = true;
       }
     }
   }
 
-  private boolean checkReadAndAssign() {
-    if (readCrashedLastRun) {
-      return true;
+  @TestOnly
+  public void reset() {
+    synchronized (crashedLastRunLock) {
+      readCrashedLastRun = false;
+      crashedLastRun = null;
     }
-    readCrashedLastRun = true;
-    return false;
   }
 }

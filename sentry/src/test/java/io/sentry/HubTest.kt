@@ -14,6 +14,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
@@ -1187,9 +1188,9 @@ class HubTest {
 
     @Test
     fun `when startTransaction and no tracing sampling is configured, event is not sampled`() {
-        val hub = generateHub(Sentry.OptionsConfiguration {
+        val hub = generateHub {
             it.tracesSampleRate = 0.0
-        })
+        }
 
         val transaction = hub.startTransaction("name", "op")
         assertFalse(transaction.isSampled!!)
@@ -1221,10 +1222,10 @@ class HubTest {
 
     @Test
     fun `when tracesSampleRate and tracesSampler are not set on SentryOptions, startTransaction returns NoOp`() {
-        val hub = generateHub(Sentry.OptionsConfiguration {
+        val hub = generateHub {
             it.tracesSampleRate = null
             it.tracesSampler = null
-        })
+        }
         val transaction = hub.startTransaction(TransactionContext("name", "op", true))
         assertTrue(transaction is NoOpTransaction)
     }
@@ -1296,6 +1297,30 @@ class HubTest {
         assertNull(hub.getSpanContext(RuntimeException()))
     }
     // endregion
+
+    @Test
+    fun `isCrashedLastRun does not delete native marker if auto session is enabled`() {
+        val nativeMarker = File(file.absolutePath, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
+        nativeMarker.mkdirs()
+        nativeMarker.createNewFile()
+        val hub = generateHub() as Hub
+
+        assertTrue(hub.isCrashedLastRun!!)
+        assertTrue(nativeMarker.exists())
+    }
+
+    @Test
+    fun `isCrashedLastRun deletes the native marker if auto session is disabled`() {
+        val nativeMarker = File(file.absolutePath, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
+        nativeMarker.mkdirs()
+        nativeMarker.createNewFile()
+        val hub = generateHub {
+            it.isEnableAutoSessionTracking = false
+        }
+
+        assertTrue(hub.isCrashedLastRun!!)
+        assertFalse(nativeMarker.exists())
+    }
 
     private fun generateHub(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IHub {
         val options = SentryOptions().apply {
