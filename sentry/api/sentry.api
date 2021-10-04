@@ -700,6 +700,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 public final class io/sentry/SentryCrashLastRunState {
 	public static fun getInstance ()Lio/sentry/SentryCrashLastRunState;
 	public fun isCrashedLastRun (Ljava/lang/String;Z)Ljava/lang/Boolean;
+	public fun reset ()V
 	public fun setCrashedLastRun (Z)V
 }
 
