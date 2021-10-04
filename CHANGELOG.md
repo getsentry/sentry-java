@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.2.1
 
 * Feat: Add isCrashedLastRun support (#1739)
