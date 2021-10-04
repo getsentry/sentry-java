@@ -37,3 +37,4 @@ targets:
       maven:io.sentry:sentry-android-fragment:
       maven:io.sentry:sentry-bom:
       maven:io.sentry:sentry-openfeign:
+      maven:io.sentry:sentry-apollo:
