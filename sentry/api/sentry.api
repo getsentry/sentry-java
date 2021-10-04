@@ -128,6 +128,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
@@ -168,6 +169,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
@@ -224,6 +226,7 @@ public abstract interface class io/sentry/IHub {
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
+	public abstract fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public abstract fun isEnabled ()Z
 	public abstract fun popScope ()V
 	public abstract fun pushScope ()V
@@ -384,6 +387,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getSpan ()Lio/sentry/ISpan;
+	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
 	public fun popScope ()V
 	public fun pushScope ()V
@@ -606,6 +610,7 @@ public final class io/sentry/Sentry {
 	public static fun init (Lio/sentry/Sentry$OptionsConfiguration;Z)V
 	public static fun init (Lio/sentry/SentryOptions;)V
 	public static fun init (Ljava/lang/String;)V
+	public static fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public static fun isEnabled ()Z
 	public static fun popScope ()V
 	public static fun pushScope ()V
@@ -690,6 +695,13 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun close ()V
 	public fun flush (J)V
 	public fun isEnabled ()Z
+}
+
+public final class io/sentry/SentryCrashLastRunState {
+	public static fun getInstance ()Lio/sentry/SentryCrashLastRunState;
+	public fun isCrashedLastRun (Ljava/lang/String;Z)Ljava/lang/Boolean;
+	public fun reset ()V
+	public fun setCrashedLastRun (Z)V
 }
 
 public final class io/sentry/SentryEnvelope {
@@ -1327,6 +1339,8 @@ public final class io/sentry/adapters/TimeZoneSerializerAdapter : com/google/gso
 }
 
 public final class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
+	public static final field CRASH_MARKER_FILE Ljava/lang/String;
+	public static final field NATIVE_CRASH_MARKER_FILE Ljava/lang/String;
 	public static final field PREFIX_CURRENT_SESSION_FILE Ljava/lang/String;
 	public static final field SUFFIX_ENVELOPE_FILE Ljava/lang/String;
 	protected static final field UTF_8 Ljava/nio/charset/Charset;

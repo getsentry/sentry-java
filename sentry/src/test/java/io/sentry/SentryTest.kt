@@ -24,6 +24,7 @@ class SentryTest {
     @AfterTest
     fun beforeTest() {
         Sentry.close()
+        SentryCrashLastRunState.getInstance().reset()
     }
 
     @Test
@@ -164,6 +165,17 @@ class SentryTest {
         assertEquals("name", transaction.name)
         assertEquals("op", transaction.operation)
         assertEquals("desc", transaction.description)
+    }
+
+    @Test
+    fun `isCrashedLastRun returns true if crashedLastRun is set`() {
+        Sentry.init {
+            it.dsn = dsn
+        }
+
+        SentryCrashLastRunState.getInstance().setCrashedLastRun(true)
+
+        assertTrue(Sentry.isCrashedLastRun()!!)
     }
 
     private fun getTempPath(): String {
