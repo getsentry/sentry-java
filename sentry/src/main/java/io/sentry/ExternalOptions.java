@@ -11,9 +11,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Externally bindable properties set on {@link SentryOptions}.
- */
+/** Externally bindable properties set on {@link SentryOptions}. */
 public final class ExternalOptions {
 
   /** The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not. */
@@ -110,7 +108,7 @@ public final class ExternalOptions {
     return dsn;
   }
 
-  public void setDsn(@Nullable String dsn) {
+  public void setDsn(final @Nullable String dsn) {
     this.dsn = dsn;
   }
 
@@ -118,7 +116,7 @@ public final class ExternalOptions {
     return environment;
   }
 
-  public void setEnvironment(@Nullable String environment) {
+  public void setEnvironment(final @Nullable String environment) {
     this.environment = environment;
   }
 
@@ -126,7 +124,7 @@ public final class ExternalOptions {
     return release;
   }
 
-  public void setRelease(@Nullable String release) {
+  public void setRelease(final @Nullable String release) {
     this.release = release;
   }
 
@@ -134,7 +132,7 @@ public final class ExternalOptions {
     return dist;
   }
 
-  public void setDist(@Nullable String dist) {
+  public void setDist(final @Nullable String dist) {
     this.dist = dist;
   }
 
@@ -142,7 +140,7 @@ public final class ExternalOptions {
     return serverName;
   }
 
-  public void setServerName(@Nullable String serverName) {
+  public void setServerName(final @Nullable String serverName) {
     this.serverName = serverName;
   }
 
@@ -150,7 +148,8 @@ public final class ExternalOptions {
     return enableUncaughtExceptionHandler;
   }
 
-  public void setEnableUncaughtExceptionHandler(@Nullable Boolean enableUncaughtExceptionHandler) {
+  public void setEnableUncaughtExceptionHandler(
+      final @Nullable Boolean enableUncaughtExceptionHandler) {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
@@ -162,7 +161,7 @@ public final class ExternalOptions {
     return debug;
   }
 
-  public void setDebug(@Nullable Boolean debug) {
+  public void setDebug(final @Nullable Boolean debug) {
     this.debug = debug;
   }
 
@@ -170,7 +169,7 @@ public final class ExternalOptions {
     return enableDeduplication;
   }
 
-  public void setEnableDeduplication(@Nullable Boolean enableDeduplication) {
+  public void setEnableDeduplication(final @Nullable Boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
   }
 
@@ -178,7 +177,7 @@ public final class ExternalOptions {
     return tracesSampleRate;
   }
 
-  public void setTracesSampleRate(@Nullable Double tracesSampleRate) {
+  public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
     this.tracesSampleRate = tracesSampleRate;
   }
 
@@ -186,7 +185,7 @@ public final class ExternalOptions {
     return maxRequestBodySize;
   }
 
-  public void setMaxRequestBodySize(@Nullable SentryOptions.RequestSize maxRequestBodySize) {
+  public void setMaxRequestBodySize(final @Nullable SentryOptions.RequestSize maxRequestBodySize) {
     this.maxRequestBodySize = maxRequestBodySize;
   }
 
@@ -198,7 +197,7 @@ public final class ExternalOptions {
     return proxy;
   }
 
-  public void setProxy(@Nullable SentryOptions.Proxy proxy) {
+  public void setProxy(final @Nullable SentryOptions.Proxy proxy) {
     this.proxy = proxy;
   }
 
@@ -214,7 +213,7 @@ public final class ExternalOptions {
     return proguardUuid;
   }
 
-  public void setProguardUuid(@Nullable String proguardUuid) {
+  public void setProguardUuid(final @Nullable String proguardUuid) {
     this.proguardUuid = proguardUuid;
   }
 
@@ -222,11 +221,11 @@ public final class ExternalOptions {
     return ignoredExceptionsForType;
   }
 
-  public void addInAppInclude(@NotNull String include) {
+  public void addInAppInclude(final @NotNull String include) {
     inAppIncludes.add(include);
   }
 
-  public void addInAppExclude(@NotNull String exclude) {
+  public void addInAppExclude(final @NotNull String exclude) {
     inAppExcludes.add(exclude);
   }
 
