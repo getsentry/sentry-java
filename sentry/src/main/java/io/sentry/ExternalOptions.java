@@ -11,6 +11,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Externally bindable properties set on {@link SentryOptions}.
+ */
 public final class ExternalOptions {
 
   /** The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not. */
