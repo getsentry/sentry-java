@@ -79,13 +79,13 @@ class JsonSerializerTest {
 
     @Test
     fun `when serializing SentryEvent-SentryId object, it should become a event_id json without dashes`() {
-        val sentryEvent = generateEmptySentryEvent()
+        val dateIsoFormat = "2000-12-31T23:59:58.000Z"
+        val sentryEvent = generateEmptySentryEvent(DateUtils.getDateTime(dateIsoFormat))
 
         val actual = serializeToString(sentryEvent)
+        val expected = "{\"timestamp\":\"$dateIsoFormat\",\"event_id\":\"${sentryEvent.eventId}\",\"contexts\":{}}"
 
-        val expected = "{\"event_id\":\"${sentryEvent.eventId}\",\"contexts\":{}}"
-
-        assertJsonContains(actual, expected)
+        assertEquals(actual, expected)
     }
 
     @Test
@@ -186,7 +186,8 @@ class JsonSerializerTest {
 
     @Test
     fun `when serializing unknown field, its keys should becom part of json`() {
-        val sentryEvent = generateEmptySentryEvent()
+        val dateIsoFormat = "2000-12-31T23:59:58.000Z"
+        val sentryEvent = generateEmptySentryEvent(DateUtils.getDateTime(dateIsoFormat))
         sentryEvent.eventId = null
 
         val objects = hashMapOf<String, Any>()
@@ -200,24 +201,24 @@ class JsonSerializerTest {
 
         val actual = serializeToString(sentryEvent)
 
-        val expected = "{\"contexts\":{},\"object\":{\"boolean\":true,\"int\":1}}"
+        val expected = "{\"timestamp\":\"2000-12-31T23:59:58.000Z\",\"contexts\":{},\"object\":{\"boolean\":true,\"int\":1}}"
 
-        assertJsonContains(actual, expected)
+        assertEquals(actual, expected)
     }
 
     @Test
     fun `when serializing a TimeZone, it should become a timezone ID string`() {
-        val sentryEvent = generateEmptySentryEvent()
+        val dateIsoFormat = "2000-12-31T23:59:58.000Z"
+        val sentryEvent = generateEmptySentryEvent(DateUtils.getDateTime(dateIsoFormat))
         sentryEvent.eventId = null
         val device = Device()
         device.timezone = TimeZone.getTimeZone("Europe/Vienna")
         sentryEvent.contexts.setDevice(device)
 
-        val expected = "{\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
-
+        val expected = "{\"timestamp\":\"2000-12-31T23:59:58.000Z\",\"contexts\":{\"device\":{\"timezone\":\"Europe/Vienna\"}}}"
         val actual = serializeToString(sentryEvent)
 
-        assertJsonContains(actual, expected)
+        assertEquals(actual, expected)
     }
 
     @Test
@@ -234,19 +235,16 @@ class JsonSerializerTest {
 
     @Test
     fun `when serializing a DeviceOrientation, it should become an orientation string`() {
-        val sentryEvent = generateEmptySentryEvent()
+        val dateIsoFormat = "2000-12-31T23:59:58.000Z"
+        val sentryEvent = generateEmptySentryEvent(DateUtils.getDateTime(dateIsoFormat))
         sentryEvent.eventId = null
         val device = Device()
         device.orientation = Device.DeviceOrientation.LANDSCAPE
         sentryEvent.contexts.setDevice(device)
 
-        val expected = "{\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
+        val expected = "{\"timestamp\":\"2000-12-31T23:59:58.000Z\",\"contexts\":{\"device\":{\"orientation\":\"landscape\"}}}"
         val actual = serializeToString(sentryEvent)
-        assertJsonContains(actual, expected)
-    }
-
-    private fun assertJsonContains(actual: String, expected: String) {
-        assertThat(actual, jsonEquals<String>(expected).`when`(Option.IGNORING_EXTRA_FIELDS))
+        assertEquals(actual, expected)
     }
 
     @Test
@@ -263,15 +261,15 @@ class JsonSerializerTest {
 
     @Test
     fun `when serializing a SentryLevel, it should become a sentry level string`() {
-        val sentryEvent = generateEmptySentryEvent()
+        val dateIsoFormat = "2000-12-31T23:59:58.000Z"
+        val sentryEvent = generateEmptySentryEvent(DateUtils.getDateTime(dateIsoFormat))
         sentryEvent.eventId = null
         sentryEvent.level = SentryLevel.DEBUG
 
-        val expected = "{\"level\":\"debug\",\"contexts\":{}}"
-
+        val expected = "{\"timestamp\":\"2000-12-31T23:59:58.000Z\",\"level\":\"debug\",\"contexts\":{}}"
         val actual = serializeToString(sentryEvent)
 
-        assertJsonContains(actual, expected)
+        assertEquals(actual, expected)
     }
 
     @Test
@@ -280,7 +278,6 @@ class JsonSerializerTest {
         sentryEvent.eventId = null
 
         val jsonEvent = "{\"level\":\"debug\"}"
-
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals(SentryLevel.DEBUG, actual!!.level)
@@ -701,16 +698,17 @@ class JsonSerializerTest {
 
     @Test
     fun `empty lists are serialized to null`() {
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), fixture.hub))
+        val event = generateEmptySentryEvent()
+        event.threads = listOf()
 
-        val serialized = serializeToString(transaction)
-        val deserialized = fixture.serializer.deserialize(StringReader(serialized), SentryTransaction::class.java)
+        val serialized = serializeToString(event)
+        val deserialized = fixture.serializer.deserialize(StringReader(serialized), SentryEvent::class.java)
 
-        assertNull(deserialized?.spans)
+        assertNull(deserialized?.threads)
     }
 
     @Test
-    fun `gson serializer uses logger set on SentryOptions`() {
+    fun `json serializer uses logger set on SentryOptions`() {
         val logger = mock<ILogger>()
         val options = SentryOptions()
         options.setLogger(logger)
