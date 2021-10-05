@@ -31,9 +31,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import net.javacrumbs.jsonunit.JsonMatchers.jsonEquals
-import net.javacrumbs.jsonunit.core.Option
-import org.junit.Assert.assertThat
 
 class JsonSerializerTest {
 

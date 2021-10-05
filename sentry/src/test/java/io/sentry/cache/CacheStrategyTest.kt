@@ -1,7 +1,6 @@
 package io.sentry.cache
 
 import com.nhaarman.mockitokotlin2.mock
-import io.sentry.*
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
