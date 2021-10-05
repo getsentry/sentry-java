@@ -22,14 +22,14 @@ class MeasurementValueSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/measurement_value.json")
+        val expected = sanitizedFile("json/measurement_value.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/measurement_value.json")
+        val expectedJson = sanitizedFile("json/measurement_value.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

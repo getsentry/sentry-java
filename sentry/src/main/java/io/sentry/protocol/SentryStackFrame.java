@@ -1,6 +1,5 @@
 package io.sentry.protocol;
 
-import com.google.gson.annotations.SerializedName;
 import io.sentry.ILogger;
 import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
@@ -66,10 +65,8 @@ public final class SentryStackFrame
    */
   private @Nullable Boolean inApp;
 
-  @SerializedName(value = "package")
   private @Nullable String _package;
 
-  @SerializedName(value = "native")
   private @Nullable Boolean _native;
 
   /**

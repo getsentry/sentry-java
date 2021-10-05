@@ -33,14 +33,14 @@ class BreadcrumbSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/breadcrumb.json")
+        val expected = sanitizedFile("json/breadcrumb.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/breadcrumb.json")
+        val expectedJson = sanitizedFile("json/breadcrumb.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         print(actualJson)

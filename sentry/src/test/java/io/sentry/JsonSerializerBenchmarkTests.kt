@@ -10,15 +10,9 @@ class JsonSerializerBenchmarkTests {
 
     class Fixture {
         fun getJsonSerializer() = JsonSerializer(SentryOptions())
-        fun getGsonSerializer() = GsonSerializer(SentryOptions())
     }
 
     val fixture = Fixture()
-
-    @Test
-    fun benchmarkGson() {
-        runBenchmark(fixture.getGsonSerializer())
-    }
 
     @Test
     fun benchmarkJson() {
@@ -26,8 +20,8 @@ class JsonSerializerBenchmarkTests {
     }
 
     private fun runBenchmark(serializer: ISerializer) {
-        val sessionJson = sanitizedFile("gson/session.json")
-        val eventJson = sanitizedFile("gson/sentry_event.json")
+        val sessionJson = sanitizedFile("json/session.json")
+        val eventJson = sanitizedFile("json/sentry_event.json")
         val envelopeFileURLs = listOf(
             resourceFileURL("envelope-session-start.txt"),
             resourceFileURL("envelope_session.txt"),

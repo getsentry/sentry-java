@@ -1,6 +1,5 @@
 package io.sentry
 
-import com.google.gson.JsonParser
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
@@ -627,10 +626,12 @@ class JsonSerializerTest {
     fun `serializes span data`() {
         val sentrySpan = SentrySpan(createSpan() as Span, mapOf("data1" to "value1"))
 
-        val element = JsonParser().parse(serializeToString(sentrySpan)).asJsonObject
-        assertNotNull(element["data"]) {
-            assertNotNull(it.asJsonObject["data1"]) {
-                assertEquals("value1", it.asString)
+        val serialized = serializeToString(sentrySpan)
+        val deserialized = fixture.serializer.deserialize(StringReader(serialized), SentrySpan::class.java)
+
+        assertNotNull(deserialized?.data) {
+            assertNotNull(it["data1"]) {
+                assertEquals("value1", it)
             }
         }
     }
@@ -691,17 +692,21 @@ class JsonSerializerTest {
     fun `empty maps are serialized to null`() {
         val event = SentryEvent()
         event.tags = emptyMap()
-        val element = JsonParser().parse(serializeToString(event)).asJsonObject
-        assertNull(element.asJsonObject["tags"])
+
+        val serialized = serializeToString(event)
+        val deserialized = fixture.serializer.deserialize(StringReader(serialized), SentryEvent::class.java)
+
+        assertNull(deserialized?.tags)
     }
 
     @Test
     fun `empty lists are serialized to null`() {
         val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), fixture.hub))
-        val stringWriter = StringWriter()
-        fixture.serializer.serialize(transaction, stringWriter)
-        val element = JsonParser().parse(stringWriter.toString()).asJsonObject
-        assertNull(element.asJsonObject["spans"])
+
+        val serialized = serializeToString(transaction)
+        val deserialized = fixture.serializer.deserialize(StringReader(serialized), SentryTransaction::class.java)
+
+        assertNull(deserialized?.spans)
     }
 
     @Test
@@ -712,7 +717,7 @@ class JsonSerializerTest {
         options.setDebug(true)
         whenever(logger.isEnabled(any())).thenReturn(true)
 
-        (options.serializer as GsonSerializer).serialize(mapOf("key" to "val"), mock())
+        (options.serializer as JsonSerializer).serialize(mapOf("key" to "val"), mock())
         verify(logger).log(any(), check {
             assertTrue(it.startsWith("Serializing object:"))
         }, any<Any>())

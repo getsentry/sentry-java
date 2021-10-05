@@ -15,6 +15,7 @@ import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -261,7 +262,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
         throw missingRequiredFieldException(JsonKeys.OP, logger);
       }
       if (tags == null) {
-        throw missingRequiredFieldException(JsonKeys.TAGS, logger);
+        tags = new HashMap<>();
       }
       SentrySpan sentrySpan =
           new SentrySpan(

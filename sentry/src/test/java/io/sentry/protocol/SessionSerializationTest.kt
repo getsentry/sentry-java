@@ -39,14 +39,14 @@ class SessionSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/session.json")
+        val expected = sanitizedFile("json/session.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/session.json")
+        val expectedJson = sanitizedFile("json/session.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

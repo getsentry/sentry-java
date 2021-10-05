@@ -32,14 +32,14 @@ class SdkVersionSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/sdk_version.json")
+        val expected = sanitizedFile("json/sdk_version.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/sdk_version.json")
+        val expectedJson = sanitizedFile("json/sdk_version.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

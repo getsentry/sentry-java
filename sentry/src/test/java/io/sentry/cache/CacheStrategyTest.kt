@@ -1,11 +1,7 @@
 package io.sentry.cache
 
 import com.nhaarman.mockitokotlin2.mock
-import io.sentry.DateUtils
-import io.sentry.GsonSerializer
-import io.sentry.SentryEnvelope
-import io.sentry.SentryOptions
-import io.sentry.Session
+import io.sentry.*
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
@@ -97,7 +93,7 @@ class CacheStrategyTest {
     @Test
     fun `move init flag if state is ok`() {
         val options = SentryOptions().apply {
-            setSerializer(GsonSerializer(this))
+            setSerializer(JsonSerializer(this))
         }
         val sut = fixture.getSUT(3, options)
 
@@ -177,7 +173,7 @@ class CacheStrategyTest {
 
     private fun getOptionsWithRealSerializer(): SentryOptions {
         return SentryOptions().apply {
-            setSerializer(GsonSerializer(this))
+            setSerializer(JsonSerializer(this))
         }
     }
 }

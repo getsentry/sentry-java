@@ -28,14 +28,14 @@ class OperatingSystemSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/operating_system.json")
+        val expected = sanitizedFile("json/operating_system.json")
         val actual = serializeToString(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/operating_system.json")
+        val expectedJson = sanitizedFile("json/operating_system.json")
         val actual = deserialize(expectedJson)
         val actualJson = serializeToString(actual)
         assertEquals(expectedJson, actualJson)

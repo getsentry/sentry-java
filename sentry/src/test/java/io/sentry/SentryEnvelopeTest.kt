@@ -13,7 +13,7 @@ import kotlin.test.assertNull
 class SentryEnvelopeTest {
 
     class Fixture {
-        fun getEnvelopeReader() = EnvelopeReader(GsonSerializer(SentryOptions()))
+        fun getEnvelopeReader() = EnvelopeReader(JsonSerializer(SentryOptions()))
     }
 
     val fixture = Fixture()

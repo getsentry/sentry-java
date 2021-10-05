@@ -36,14 +36,14 @@ class SentrySpanSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/sentry_span.json")
+        val expected = sanitizedFile("json/sentry_span.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/sentry_span.json")
+        val expectedJson = sanitizedFile("json/sentry_span.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

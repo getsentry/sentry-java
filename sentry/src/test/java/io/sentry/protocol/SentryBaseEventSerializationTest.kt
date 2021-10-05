@@ -79,7 +79,7 @@ class SentryBaseEventSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/sentry_base_event.json")
+        val expected = sanitizedFile("json/sentry_base_event.json")
         val sut = Sut().apply { fixture.update(this) }
         val actual = serialize(sut)
         assertEquals(expected, actual)
@@ -87,7 +87,7 @@ class SentryBaseEventSerializationTest {
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/sentry_base_event.json")
+        val expectedJson = sanitizedFile("json/sentry_base_event.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

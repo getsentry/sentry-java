@@ -118,15 +118,6 @@ public abstract interface class io/sentry/EventProcessor {
 	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 }
 
-public final class io/sentry/GsonSerializer : io/sentry/ISerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
-	public fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
-	public fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
-	public fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
-	public fun serialize (Ljava/util/Map;)Ljava/lang/String;
-}
-
 public final class io/sentry/Hub : io/sentry/IHub {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Ljava/lang/Object;)V
@@ -831,14 +822,6 @@ public final class io/sentry/SentryEnvelopeHeader$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/SentryEnvelopeHeaderAdapter : com/google/gson/TypeAdapter {
-	public fun <init> ()V
-	public fun read (Lcom/google/gson/stream/JsonReader;)Lio/sentry/SentryEnvelopeHeader;
-	public synthetic fun read (Lcom/google/gson/stream/JsonReader;)Ljava/lang/Object;
-	public fun write (Lcom/google/gson/stream/JsonWriter;Lio/sentry/SentryEnvelopeHeader;)V
-	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
-}
-
 public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromAttachment (Lio/sentry/Attachment;J)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
@@ -875,14 +858,6 @@ public final class io/sentry/SentryEnvelopeItemHeader$JsonKeys {
 	public static final field LENGTH Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
-}
-
-public final class io/sentry/SentryEnvelopeItemHeaderAdapter : com/google/gson/TypeAdapter {
-	public fun <init> ()V
-	public fun read (Lcom/google/gson/stream/JsonReader;)Lio/sentry/SentryEnvelopeItemHeader;
-	public synthetic fun read (Lcom/google/gson/stream/JsonReader;)Ljava/lang/Object;
-	public fun write (Lcom/google/gson/stream/JsonWriter;Lio/sentry/SentryEnvelopeItemHeader;)V
-	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
 }
 
 public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -1235,14 +1210,6 @@ public final class io/sentry/Session$State : java/lang/Enum {
 	public static fun values ()[Lio/sentry/Session$State;
 }
 
-public final class io/sentry/SessionAdapter : com/google/gson/TypeAdapter {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun read (Lcom/google/gson/stream/JsonReader;)Lio/sentry/Session;
-	public synthetic fun read (Lcom/google/gson/stream/JsonReader;)Ljava/lang/Object;
-	public fun write (Lcom/google/gson/stream/JsonWriter;Lio/sentry/Session;)V
-	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
-}
-
 public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Runtime;)V
@@ -1497,114 +1464,6 @@ public final class io/sentry/UserFeedback$JsonKeys {
 	public static final field EVENT_ID Ljava/lang/String;
 	public static final field NAME Ljava/lang/String;
 	public fun <init> ()V
-}
-
-public final class io/sentry/adapters/CollectionAdapter : com/google/gson/JsonSerializer {
-	public fun <init> ()V
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public fun serialize (Ljava/util/Collection;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/ContextsDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/protocol/Contexts;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/ContextsSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/protocol/Contexts;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/DateDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/util/Date;
-}
-
-public final class io/sentry/adapters/DateSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public fun serialize (Ljava/util/Date;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/MapAdapter : com/google/gson/JsonSerializer {
-	public fun <init> ()V
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public fun serialize (Ljava/util/Map;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/OrientationDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/protocol/Device$DeviceOrientation;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/OrientationSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/protocol/Device$DeviceOrientation;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/SentryIdDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/protocol/SentryId;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/SentryIdSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/protocol/SentryId;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/SentryLevelDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/SentryLevel;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/SentryLevelSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/SentryLevel;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/SpanIdDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/SpanId;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/SpanIdSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/SpanId;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/SpanStatusDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/SpanStatus;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/SpanStatusSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/SpanStatus;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/TimeZoneDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/util/TimeZone;
-}
-
-public final class io/sentry/adapters/TimeZoneSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public fun serialize (Ljava/util/TimeZone;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
 }
 
 public final class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {

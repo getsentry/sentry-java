@@ -62,7 +62,7 @@ class SentryClientTest {
             sdkVersion = SdkVersion("test", "1.2.3")
             setDebug(true)
             setDiagnosticLevel(SentryLevel.DEBUG)
-            setSerializer(GsonSerializer(this))
+            setSerializer(JsonSerializer(this))
             setLogger(mock())
             maxAttachmentSize = this@Fixture.maxAttachmentSize
             setTransportFactory(factory)
