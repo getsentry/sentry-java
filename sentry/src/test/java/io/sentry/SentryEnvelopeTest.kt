@@ -84,9 +84,9 @@ class SentryEnvelopeTest {
     @Test
     fun `when envelope item length is bigger than the rest of the payload, reader throws illegal argument`() {
         val envelopeReader = fixture.getEnvelopeReader()
-        val stream = "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}\n{\"length\":\"3\"}\n{}".toInputStream()
+        val stream = "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}\n{\"type\":\"envelope\",\"length\":\"3\"}\n{}".toInputStream()
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
-        assertEquals("Invalid length for item at index '0'. Item is '66' bytes. There are '65' in the buffer.", exception.message)
+        assertEquals("Invalid length for item at index '0'. Item is '84' bytes. There are '83' in the buffer.", exception.message)
     }
 
     @Test
