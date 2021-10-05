@@ -137,6 +137,10 @@ public final class JsonSerializer implements ISerializer {
     Objects.requireNonNull(entity, "The entity is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
 
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options.getLogger().log(SentryLevel.DEBUG, "Serializing object: %s", entity);
+    }
+
     if (entity instanceof JsonSerializable) {
       JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(writer);
       ((JsonSerializable) entity).serialize(jsonObjectWriter, options.getLogger());
