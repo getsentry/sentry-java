@@ -2,7 +2,6 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.test.injectForField
-import java.io.IOException
 import java.io.StringReader
 import java.io.StringWriter
 import java.lang.Exception
