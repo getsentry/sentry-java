@@ -410,9 +410,12 @@ public final class Session implements JsonUnknown, JsonSerializable {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.SID:
-            String sidString = reader.nextStringOrNull();
-            if (sidString != null) {
+            String sidString = null;
+            try {
+              sidString = reader.nextStringOrNull();
               sessionId = UUID.fromString(sidString);
+            } catch (IllegalArgumentException e) {
+              logger.log(SentryLevel.ERROR, "%s sid is not valid.", sidString);
             }
             break;
           case JsonKeys.DID:
@@ -459,6 +462,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
                 case JsonKeys.USER_AGENT:
                   userAgent = reader.nextStringOrNull();
                   break;
+                default:
+                  reader.skipValue(); // Ignore unknown properties in attrs, as this is flattend
               }
             }
             reader.endObject();
