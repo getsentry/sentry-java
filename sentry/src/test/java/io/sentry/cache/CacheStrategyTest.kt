@@ -1,6 +1,11 @@
 package io.sentry.cache
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.DateUtils
+import io.sentry.JsonSerializer
+import io.sentry.SentryEnvelope
+import io.sentry.SentryOptions
+import io.sentry.Session
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
