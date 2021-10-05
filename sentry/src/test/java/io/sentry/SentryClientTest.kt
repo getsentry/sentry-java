@@ -856,7 +856,7 @@ class SentryClientTest {
             assertEquals("test", strKey["value"])
 
             val numKey = contexts["number"] as Map<*, *>
-            assertEquals(1.0, numKey["value"])
+            assertEquals(1, numKey["value"])
 
             val listKey = contexts["collection"] as Map<*, *>
             assertEquals("a", (listKey["value"] as List<*>)[0])
