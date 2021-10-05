@@ -115,6 +115,7 @@ public final class JsonSerializer implements ISerializer {
         return null;
       }
     } catch (Exception e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
       return null;
     }
   }
