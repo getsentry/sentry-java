@@ -18,16 +18,12 @@ internal class JsonObjectSerializerTest {
 
     private val fixture = Fixture()
 
+    // region primitives
+
     @Test
     fun `serializing null`() {
         fixture.getSUT().serialize(fixture.writer, fixture.logger, null)
         verify(fixture.writer).nullValue()
-    }
-
-    @Test
-    fun `serializing string`() {
-        fixture.getSUT().serialize(fixture.writer, fixture.logger, "fixture")
-        verify(fixture.writer).value("fixture")
     }
 
     @Test
@@ -52,6 +48,20 @@ internal class JsonObjectSerializerTest {
     fun `serializing double`() {
         fixture.getSUT().serialize(fixture.writer, fixture.logger, 9.9)
         verify(fixture.writer).value(9.9 as Number)
+    }
+
+    @Test
+    fun `serializing char`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, 'c')
+        verify(fixture.writer).value("c")
+    }
+
+    // endregion
+
+    @Test
+    fun `serializing string`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, "fixture")
+        verify(fixture.writer).value("fixture")
     }
 
     @Test
