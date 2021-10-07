@@ -62,6 +62,14 @@ android {
         }
     }
 }
+val list = emptyList<String>()
+androidComponents {
+    onVariants {
+        if (it.name !in list && it.flavorName !in list && it.buildType !in list) {
+
+        }
+    }
+}
 
 tasks.withType<Test> {
     configure<JacocoTaskExtension> {
