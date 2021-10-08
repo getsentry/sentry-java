@@ -86,10 +86,10 @@ public class SentryOptions {
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
   /** Envelope reader interface */
-  private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader();
+  private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader(new JsonSerializer(this));
 
   /** Serializer interface to serialize/deserialize json events */
-  private @NotNull ISerializer serializer = new GsonSerializer(this);
+  private @NotNull ISerializer serializer = new JsonSerializer(this);
 
   /**
    * Sentry client name used for the HTTP authHeader and userAgent eg

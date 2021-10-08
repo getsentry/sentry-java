@@ -325,8 +325,8 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, Gson Serializer is set by default`() {
-        assertTrue(SentryOptions().serializer is GsonSerializer)
+    fun `when options is initialized, json Serializer is set by default`() {
+        assertTrue(SentryOptions().serializer is JsonSerializer)
     }
 
     @Test

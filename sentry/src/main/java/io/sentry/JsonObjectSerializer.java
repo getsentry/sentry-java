@@ -20,6 +20,8 @@ public final class JsonObjectSerializer {
       throws IOException {
     if (object == null) {
       writer.nullValue();
+    } else if (object instanceof Character) {
+      writer.value(Character.toString((Character) object));
     } else if (object instanceof String) {
       writer.value((String) object);
     } else if (object instanceof Boolean) {

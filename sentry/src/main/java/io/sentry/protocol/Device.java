@@ -610,9 +610,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
             device.online = reader.nextBooleanOrNull();
             break;
           case JsonKeys.ORIENTATION:
-            if (reader.peek() != JsonToken.NULL) {
-              device.orientation = new DeviceOrientation.Deserializer().deserialize(reader, logger);
-            }
+            device.orientation = reader.nextOrNull(logger, new DeviceOrientation.Deserializer());
             break;
           case JsonKeys.SIMULATOR:
             device.simulator = reader.nextBooleanOrNull();

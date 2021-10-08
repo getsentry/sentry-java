@@ -5,7 +5,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
-import io.sentry.GsonSerializer
+import io.sentry.JsonSerializer
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.User
@@ -16,7 +16,7 @@ class NdkScopeObserverTest {
     private class Fixture {
         val nativeScope = mock<INativeScope>()
         val options = SentryOptions().apply {
-            setSerializer(GsonSerializer(mock()))
+            setSerializer(JsonSerializer(mock()))
         }
 
         fun getSut(): NdkScopeObserver {

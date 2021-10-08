@@ -440,7 +440,11 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
             category = reader.nextStringOrNull();
             break;
           case JsonKeys.LEVEL:
-            level = new SentryLevel.Deserializer().deserialize(reader, logger);
+            try {
+              level = new SentryLevel.Deserializer().deserialize(reader, logger);
+            } catch (Exception exception) {
+              logger.log(SentryLevel.ERROR, exception, "Error when deserializing SentryLevel");
+            }
             break;
           default:
             if (unknown == null) {

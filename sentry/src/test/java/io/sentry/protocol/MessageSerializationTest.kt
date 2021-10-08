@@ -29,14 +29,14 @@ class MessageSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/message.json")
+        val expected = sanitizedFile("json/message.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/message.json")
+        val expectedJson = sanitizedFile("json/message.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

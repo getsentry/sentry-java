@@ -32,14 +32,14 @@ class GpuSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/gpu.json")
+        val expected = sanitizedFile("json/gpu.json")
         val actual = serializeToString(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/gpu.json")
+        val expectedJson = sanitizedFile("json/gpu.json")
         val actual = deserializeBrowser(expectedJson)
         val actualJson = serializeToString(actual)
         assertEquals(expectedJson, actualJson)

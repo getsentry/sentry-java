@@ -34,14 +34,14 @@ class MechanismSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/mechanism.json")
+        val expected = sanitizedFile("json/mechanism.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/mechanism.json")
+        val expectedJson = sanitizedFile("json/mechanism.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

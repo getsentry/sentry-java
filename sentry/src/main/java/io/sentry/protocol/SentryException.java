@@ -244,10 +244,10 @@ public final class SentryException implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.STACKTRACE:
             sentryException.stacktrace =
-                new SentryStackTrace.Deserializer().deserialize(reader, logger);
+                reader.nextOrNull(logger, new SentryStackTrace.Deserializer());
             break;
           case JsonKeys.MECHANISM:
-            sentryException.mechanism = new Mechanism.Deserializer().deserialize(reader, logger);
+            sentryException.mechanism = reader.nextOrNull(logger, new Mechanism.Deserializer());
             break;
           default:
             if (unknown == null) {

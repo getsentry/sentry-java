@@ -20,14 +20,14 @@ class TraceStateUserSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/trace_state_user.json")
+        val expected = sanitizedFile("json/trace_state_user.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/trace_state_user.json")
+        val expectedJson = sanitizedFile("json/trace_state_user.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
