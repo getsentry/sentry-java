@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -13,7 +12,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>```json { "message": { "message": "My raw message with interpreted strings like {foo}",
  * "params": {"foo": "this"} } } ```
  */
-public final class Message implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class Message implements JsonUnknown, JsonSerializable {
   /**
    * The formatted message. If `message` and `params` are given, Sentry will attempt to backfill
    * `formatted` if empty.
@@ -85,12 +83,6 @@ public final class Message implements IUnknownPropertiesConsumer, JsonUnknown, J
 
   public void setParams(final @Nullable List<String> params) {
     this.params = CollectionUtils.newArrayList(params);
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   // JsonSerializable

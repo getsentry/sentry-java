@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -15,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * The SDK Interface describes the Sentry SDK and its configuration used to capture and transmit an
  * event.
  */
-public final class SdkVersion implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SdkVersion implements JsonUnknown, JsonSerializable {
   /**
    * Unique SDK name. _Required._
    *
@@ -115,12 +113,6 @@ public final class SdkVersion implements IUnknownPropertiesConsumer, JsonUnknown
       integrations = new ArrayList<>();
     }
     integrations.add(integration);
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   public @Nullable List<SentryPackage> getPackages() {

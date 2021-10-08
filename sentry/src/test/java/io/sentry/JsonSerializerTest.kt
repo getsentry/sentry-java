@@ -146,11 +146,7 @@ class JsonSerializerTest {
 
     @Test
     fun `when deserializing unknown properties, it should be added to unknown field`() {
-        val sentryEvent = generateEmptySentryEvent()
-        sentryEvent.eventId = null
-
         val jsonEvent = "{\"string\":\"test\",\"int\":1,\"boolean\":true}"
-
         val actual = fixture.serializer.deserialize(StringReader(jsonEvent), SentryEvent::class.java)
 
         assertEquals("test", actual!!.unknown!!["string"] as String)
@@ -169,7 +165,7 @@ class JsonSerializerTest {
 
         val unknown = hashMapOf<String, Any>()
         unknown["object"] = objects
-        sentryEvent.acceptUnknownProperties(unknown)
+        sentryEvent.setUnknown(unknown)
 
         val jsonEvent = "{\"object\":{\"int\":1,\"boolean\":true}}"
 
@@ -194,7 +190,7 @@ class JsonSerializerTest {
         val unknown = hashMapOf<String, Any>()
         unknown["object"] = objects
 
-        sentryEvent.acceptUnknownProperties(unknown)
+        sentryEvent.setUnknown(unknown)
 
         val actual = serializeToString(sentryEvent)
 

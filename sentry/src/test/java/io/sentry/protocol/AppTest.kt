@@ -19,7 +19,7 @@ class AppTest {
         app.buildType = "build type"
         app.deviceAppHash = "device app hash"
         val unknown = mapOf(Pair("unknown", "unknown"))
-        app.acceptUnknownProperties(unknown)
+        app.setUnknown(unknown)
 
         val clone = App(app)
 
@@ -42,7 +42,7 @@ class AppTest {
         app.buildType = "build type"
         app.deviceAppHash = "device app hash"
         val unknown = mapOf(Pair("unknown", "unknown"))
-        app.acceptUnknownProperties(unknown)
+        app.setUnknown(unknown)
 
         val clone = App(app)
 

@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Series of application events */
-public final class Breadcrumb implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class Breadcrumb implements JsonUnknown, JsonSerializable {
 
   /** A timestamp representing when the breadcrumb occurred. */
   private final @NotNull Date timestamp;
@@ -347,17 +347,6 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer, JsonUnknown
    */
   public void setLevel(@Nullable SentryLevel level) {
     this.level = level;
-  }
-
-  /**
-   * Sets the unknown fields, internal usage only
-   *
-   * @param unknown the unknown's map
-   */
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(@NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
   // region json

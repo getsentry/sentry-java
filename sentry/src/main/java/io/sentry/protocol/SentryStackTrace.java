@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -13,7 +12,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,8 +45,7 @@ import org.jetbrains.annotations.Nullable;
  * "0x7fff5bf346c0"}, ], "registers": { "rip": "0x00007ff6eef54be2", "rsp": "0x0000003b710cd9e0" } }
  * ```
  */
-public final class SentryStackTrace
-    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
   /**
    * Required. A non-empty list of stack frames. The list is ordered from caller to callee, or
    * oldest to youngest. The last frame is the one creating the exception.
@@ -93,12 +90,6 @@ public final class SentryStackTrace
    */
   public void setFrames(final @Nullable List<SentryStackFrame> frames) {
     this.frames = frames;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   public @Nullable Map<String, String> getRegisters() {

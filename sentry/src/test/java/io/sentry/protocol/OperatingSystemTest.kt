@@ -11,7 +11,7 @@ class OperatingSystemTest {
     fun `copying operating system wont have the same references`() {
         val operatingSystem = OperatingSystem()
         val unknown = mapOf(Pair("unknown", "unknown"))
-        operatingSystem.acceptUnknownProperties(unknown)
+        operatingSystem.setUnknown(unknown)
 
         val clone = OperatingSystem(operatingSystem)
 
@@ -31,7 +31,7 @@ class OperatingSystemTest {
         operatingSystem.kernelVersion = "kernel version"
         operatingSystem.isRooted = true
         val unknown = mapOf(Pair("unknown", "unknown"))
-        operatingSystem.acceptUnknownProperties(unknown)
+        operatingSystem.setUnknown(unknown)
 
         val clone = OperatingSystem(operatingSystem)
 

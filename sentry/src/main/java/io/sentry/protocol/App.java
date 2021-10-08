@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -13,11 +12,10 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class App implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class App implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "app";
 
   /** Version-independent application identifier, often a dotted bundle ID. */
@@ -111,12 +109,6 @@ public final class App implements IUnknownPropertiesConsumer, JsonUnknown, JsonS
 
   public void setAppBuild(final @Nullable String appBuild) {
     this.appBuild = appBuild;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(@NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
   // region json
