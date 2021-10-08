@@ -134,6 +134,17 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when client is closed, hostname cache is closed`() {
+        val sut = fixture.getSut()
+        assertTrue(sut.isEnabled)
+        sut.close()
+        val mainEventProcessor = fixture.sentryOptions.eventProcessors
+            .filterIsInstance<MainEventProcessor>()
+            .first()
+        assertTrue(mainEventProcessor.isClosed)
+    }
+
+    @Test
     fun `when beforeSend is set, callback is invoked`() {
         var invoked = false
         fixture.sentryOptions.setBeforeSend { e, _ -> invoked = true; e }

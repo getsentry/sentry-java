@@ -357,7 +357,8 @@ public final class io/sentry/IpAddressUtils {
 	public static fun isDefault (Ljava/lang/String;)Z
 }
 
-public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java/io/Closeable {
+	public fun close ()V
 	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 }

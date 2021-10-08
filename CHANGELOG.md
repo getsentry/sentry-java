@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Close HostnameCache#executorService on SentryClient#close (#1757)
+
 ## 5.2.1
 
 * Feat: Add isCrashedLastRun support (#1739)
