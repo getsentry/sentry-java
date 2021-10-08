@@ -439,6 +439,15 @@ class MainEventProcessorTest {
         }
     }
 
+    @Test
+    fun `when processor is closed, closes hostname cache`() {
+        val sut = fixture.getSut()
+        sut.close()
+        assertNotNull(sut.hostnameCache) {
+            assertTrue(it.isClosed())
+        }
+    }
+
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {
         val mockThrowable = mock<Throwable>()
         val actualThrowable = UncaughtExceptionHandlerIntegration.getUnhandledThrowable(crashedThread, mockThrowable)
