@@ -43,8 +43,6 @@ object Config {
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val okhttpBom = "com.squareup.okhttp3:okhttp-bom:4.9.0"
         val okhttp = "com.squareup.okhttp3:okhttp"
-        // only bump gson if https://github.com/google/gson/issues/1597 is fixed
-        val gson = "com.google.code.gson:gson:2.8.5"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.7"
 
         private val lifecycleVersion = "2.2.0"

@@ -32,14 +32,14 @@ class DebugImageSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/debug_image.json")
+        val expected = sanitizedFile("json/debug_image.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/debug_image.json")
+        val expectedJson = sanitizedFile("json/debug_image.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

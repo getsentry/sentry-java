@@ -344,7 +344,7 @@ public final class SentryEvent extends SentryBaseEvent
             }
             break;
           case JsonKeys.MESSAGE:
-            event.message = new Message.Deserializer().deserialize(reader, logger);
+            event.message = reader.nextOrNull(logger, new Message.Deserializer());
             break;
           case JsonKeys.LOGGER:
             event.logger = reader.nextStringOrNull();
@@ -364,7 +364,7 @@ public final class SentryEvent extends SentryBaseEvent
             reader.endObject();
             break;
           case JsonKeys.LEVEL:
-            event.level = new SentryLevel.Deserializer().deserialize(reader, logger);
+            event.level = reader.nextOrNull(logger, new SentryLevel.Deserializer());
             break;
           case JsonKeys.TRANSACTION:
             event.transaction = reader.nextStringOrNull();
@@ -381,7 +381,7 @@ public final class SentryEvent extends SentryBaseEvent
             event.modules = CollectionUtils.newConcurrentHashMap(deserializedModules);
             break;
           case JsonKeys.DEBUG_META:
-            event.debugMeta = new DebugMeta.Deserializer().deserialize(reader, logger);
+            event.debugMeta = reader.nextOrNull(logger, new DebugMeta.Deserializer());
             break;
           default:
             if (!baseEventDeserializer.deserializeValue(event, nextName, reader, logger)) {

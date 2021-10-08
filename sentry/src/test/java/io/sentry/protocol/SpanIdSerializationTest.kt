@@ -21,14 +21,14 @@ class SpanIdSerializationTest {
 
     @Test
     fun serialize() {
-        val expectedJson = sanitizedFile("gson/span_id.json")
+        val expectedJson = sanitizedFile("json/span_id.json")
         val actualJson = serialize(fixture.getSut())
         assertEquals(expectedJson, actualJson)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/span_id.json")
+        val expectedJson = sanitizedFile("json/span_id.json")
         val actual = deserialize(expectedJson)
         assertEquals(fixture.getSut(), actual)
     }

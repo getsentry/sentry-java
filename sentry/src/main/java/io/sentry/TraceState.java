@@ -223,7 +223,9 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
       writer.name(TraceState.JsonKeys.ENVIRONMENT).value(environment);
     }
     if (user != null) {
-      writer.name(TraceState.JsonKeys.USER).value(logger, user);
+      if (user.id != null || user.segment != null || user.unknown != null) {
+        writer.name(TraceState.JsonKeys.USER).value(logger, user);
+      }
     }
     if (transaction != null) {
       writer.name(TraceState.JsonKeys.TRANSACTION).value(transaction);
@@ -268,7 +270,7 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
             environment = reader.nextStringOrNull();
             break;
           case TraceState.JsonKeys.USER:
-            user = new TraceStateUser.Deserializer().deserialize(reader, logger);
+            user = reader.nextOrNull(logger, new TraceStateUser.Deserializer());
             break;
           case TraceState.JsonKeys.TRANSACTION:
             transaction = reader.nextStringOrNull();

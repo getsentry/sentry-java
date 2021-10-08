@@ -26,14 +26,14 @@ class SentryRuntimeSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/sentry_runtime.json")
+        val expected = sanitizedFile("json/sentry_runtime.json")
         val actual = serializeToString(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/sentry_runtime.json")
+        val expectedJson = sanitizedFile("json/sentry_runtime.json")
         val actual = deserialize(expectedJson)
         val actualJson = serializeToString(actual)
         assertEquals(expectedJson, actualJson)
