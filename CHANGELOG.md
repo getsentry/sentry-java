@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.x.x
+
+* Ref: Bind external properties to a dedicated class. (#1750)
+
+Breaking changes:
+
+- `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
+- Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
+- `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
+
 ## Unreleased
 
 * Fix: Handle exception if Context.registerReceiver throws (#1747)
