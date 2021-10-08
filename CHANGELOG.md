@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+Breaking changes:
+
+* Feat: Vendor JSON (#1554)
+  * Introduce `JsonSerializable` and `JsonDeserializer` interfaces for manual json 
+    serialization/deserialization.
+  * Introduce `JsonUnknwon` interface to preserve unknown properties when deserializing/serializing
+    SDK classes.
+  * When passing custom objects, for example in `Contexts`, these are supported for serialization:
+    * `JsonSerializable`
+    * `Map`, `Collection`, `Array`, `String` and all primitive types.
+  * Serialization of objects with refection is currently not supported.
+  * Remove `gson` dependency.
+  * Remove `IUnknownPropertiesConsumer`
+
 ## 5.2.0
 
 * Feat: Allow setting proguard via Options and/or external resources (#1728)
