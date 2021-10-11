@@ -247,7 +247,7 @@ public final class RateLimiter {
 
     // only overwrite its previous date if the limit is even longer
     if (oldDate == null || date.after(oldDate)) {
-      sentryRetryAfterLimit.put(dataCategory, date);
+      sentryRetryAfterLimit.putIfAbsent(dataCategory, date);
     }
   }
 
