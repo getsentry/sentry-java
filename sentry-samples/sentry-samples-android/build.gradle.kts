@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion(Config.Android.compileSdkVersion)
+    compileSdk = Config.Android.compileSdkVersion
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdkVersion(Config.Android.minSdkVersionOkHttp)
-        targetSdkVersion(Config.Android.targetSdkVersion)
+        minSdk = Config.Android.minSdkVersionOkHttp
+        targetSdk = Config.Android.targetSdkVersion
         versionCode = 2
         versionName = "1.1.0"
 
@@ -88,12 +88,6 @@ android {
         if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
             ignore = true
         }
-    }
-}
-
-androidComponents {
-    onVariants {
-        it.androidTest
     }
 }
 

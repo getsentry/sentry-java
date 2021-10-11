@@ -10,11 +10,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion(Config.Android.compileSdkVersion)
+    compileSdk = Config.Android.compileSdkVersion
 
     defaultConfig {
-        targetSdkVersion(Config.Android.targetSdkVersion)
-        minSdkVersion(Config.Android.minSdkVersion)
+        targetSdk = Config.Android.targetSdkVersion
+        minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -43,7 +43,7 @@ android {
         }
     }
 
-    lintOptions {
+    lint {
         isWarningsAsErrors = true
         isCheckDependencies = true
 
@@ -59,14 +59,6 @@ android {
     variantFilter {
         if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
             ignore = true
-        }
-    }
-}
-val list = emptyList<String>()
-androidComponents {
-    onVariants {
-        if (it.name !in list && it.flavorName !in list && it.buildType !in list) {
-
         }
     }
 }

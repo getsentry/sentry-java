@@ -10,11 +10,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion(Config.Android.compileSdkVersion)
+    compileSdk = Config.Android.compileSdkVersion
 
     defaultConfig {
-        targetSdkVersion(Config.Android.targetSdkVersion)
-        minSdkVersion(Config.Android.minSdkVersion)
+        targetSdk = Config.Android.targetSdkVersion
+        minSdk = Config.Android.minSdkVersion
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
@@ -39,7 +39,7 @@ android {
         }
     }
 
-    lintOptions {
+    lint {
         isWarningsAsErrors = true
         isCheckDependencies = true
 
