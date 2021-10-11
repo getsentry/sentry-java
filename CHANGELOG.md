@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.2.2
 
 * Fix: Close HostnameCache#executorService on SentryClient#close (#1757)
