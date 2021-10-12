@@ -117,6 +117,45 @@ public abstract interface class io/sentry/EventProcessor {
 	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 }
 
+public final class io/sentry/ExternalOptions {
+	public fun <init> ()V
+	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
+	public fun addInAppExclude (Ljava/lang/String;)V
+	public fun addInAppInclude (Ljava/lang/String;)V
+	public fun addTracingOrigin (Ljava/lang/String;)V
+	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/ExternalOptions;
+	public fun getDebug ()Ljava/lang/Boolean;
+	public fun getDist ()Ljava/lang/String;
+	public fun getDsn ()Ljava/lang/String;
+	public fun getEnableDeduplication ()Ljava/lang/Boolean;
+	public fun getEnableUncaughtExceptionHandler ()Ljava/lang/Boolean;
+	public fun getEnvironment ()Ljava/lang/String;
+	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
+	public fun getInAppExcludes ()Ljava/util/List;
+	public fun getInAppIncludes ()Ljava/util/List;
+	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
+	public fun getProguardUuid ()Ljava/lang/String;
+	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
+	public fun getRelease ()Ljava/lang/String;
+	public fun getServerName ()Ljava/lang/String;
+	public fun getTags ()Ljava/util/Map;
+	public fun getTracesSampleRate ()Ljava/lang/Double;
+	public fun getTracingOrigins ()Ljava/util/List;
+	public fun setDebug (Ljava/lang/Boolean;)V
+	public fun setDist (Ljava/lang/String;)V
+	public fun setDsn (Ljava/lang/String;)V
+	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
+	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
+	public fun setEnvironment (Ljava/lang/String;)V
+	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
+	public fun setProguardUuid (Ljava/lang/String;)V
+	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
+	public fun setRelease (Ljava/lang/String;)V
+	public fun setServerName (Ljava/lang/String;)V
+	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTracesSampleRate (Ljava/lang/Double;)V
+}
+
 public final class io/sentry/Hub : io/sentry/IHub {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Ljava/lang/Object;)V
@@ -942,7 +981,6 @@ public class io/sentry/SentryOptions {
 	public fun addIntegration (Lio/sentry/Integration;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
 	public fun addTracingOrigin (Ljava/lang/String;)V
-	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/SentryOptions;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getCacheDirPath ()Ljava/lang/String;
@@ -952,7 +990,6 @@ public class io/sentry/SentryOptions {
 	public fun getDist ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
 	public fun getDsn ()Ljava/lang/String;
-	public fun getEnableUncaughtExceptionHandler ()Ljava/lang/Boolean;
 	public fun getEnvelopeDiskCache ()Lio/sentry/cache/IEnvelopeCache;
 	public fun getEnvelopeReader ()Lio/sentry/IEnvelopeReader;
 	public fun getEnvironment ()Ljava/lang/String;
@@ -1012,19 +1049,19 @@ public class io/sentry/SentryOptions {
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setCacheDirSize (I)V
 	public fun setConnectionTimeoutMillis (I)V
-	public fun setDebug (Ljava/lang/Boolean;)V
+	public fun setDebug (Z)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableAutoSessionTracking (Z)V
-	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
+	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableSessionTracking (Z)V
 	public fun setEnableShutdownHook (Z)V
-	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
+	public fun setEnableUncaughtExceptionHandler (Z)V
 	public fun setEnvelopeDiskCache (Lio/sentry/cache/IEnvelopeCache;)V
 	public fun setEnvelopeReader (Lio/sentry/IEnvelopeReader;)V
 	public fun setEnvironment (Ljava/lang/String;)V
@@ -2557,6 +2594,12 @@ public final class io/sentry/util/Pair {
 	public fun <init> (Ljava/lang/Object;Ljava/lang/Object;)V
 	public fun getFirst ()Ljava/lang/Object;
 	public fun getSecond ()Ljava/lang/Object;
+}
+
+public final class io/sentry/util/Platform {
+	public fun <init> ()V
+	public static fun isAndroid ()Z
+	public static fun isJvm ()Z
 }
 
 public final class io/sentry/util/StringUtils {

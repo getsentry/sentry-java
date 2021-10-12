@@ -1,20 +1,30 @@
 # Changelog
 
-## Unreleased
+## 6.x.x
+
+* Ref: Bind external properties to a dedicated class. (#1750)
 
 Breaking changes:
 
+* `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
+* Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
+* `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
 * Feat: Vendor JSON (#1554)
-  * Introduce `JsonSerializable` and `JsonDeserializer` interfaces for manual json 
-    serialization/deserialization.
-  * Introduce `JsonUnknwon` interface to preserve unknown properties when deserializing/serializing
-    SDK classes.
-  * When passing custom objects, for example in `Contexts`, these are supported for serialization:
-    * `JsonSerializable`
-    * `Map`, `Collection`, `Array`, `String` and all primitive types.
-  * Serialization of objects with refection is currently not supported.
-  * Remove `gson` dependency.
-  * Remove `IUnknownPropertiesConsumer`
+    * Introduce `JsonSerializable` and `JsonDeserializer` interfaces for manual json
+      serialization/deserialization.
+    * Introduce `JsonUnknwon` interface to preserve unknown properties when deserializing/serializing
+      SDK classes.
+    * When passing custom objects, for example in `Contexts`, these are supported for serialization:
+        * `JsonSerializable`
+        * `Map`, `Collection`, `Array`, `String` and all primitive types.
+    * Serialization of objects with refection is currently not supported.
+    * Remove `gson` dependency.
+    * Remove `IUnknownPropertiesConsumer`
+    
+## Unreleased
+
+* Fix: Handle exception if Context.registerReceiver throws (#1747)
+* Feat: Attach Java vendor and version to events and transactions (#1703)
 
 ## 5.2.0
 

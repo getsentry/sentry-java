@@ -1,4 +1,4 @@
-minVersion: 0.24.4
+minVersion: 0.25.3
 changelogPolicy: auto
 targets:
   - name: symbol-collector
@@ -37,3 +37,4 @@ targets:
       maven:io.sentry:sentry-android-fragment:
       maven:io.sentry:sentry-bom:
       maven:io.sentry:sentry-openfeign:
+      maven:io.sentry:sentry-apollo:

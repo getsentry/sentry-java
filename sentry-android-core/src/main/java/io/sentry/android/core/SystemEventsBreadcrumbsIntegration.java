@@ -95,8 +95,18 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       for (String item : actions) {
         filter.addAction(item);
       }
-      context.registerReceiver(receiver, filter);
-      options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
+      try {
+        // registerReceiver can throw SecurityException but it's not documented in the official docs
+        context.registerReceiver(receiver, filter);
+        this.options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
+      } catch (Exception e) {
+        this.options.setEnableSystemEventBreadcrumbs(false);
+        this.options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to initialize SystemEventsBreadcrumbsIntegration.", e);
+      }
     }
   }
 
