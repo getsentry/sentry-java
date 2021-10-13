@@ -111,8 +111,7 @@ public final class JsonSerializer implements ISerializer {
         Object object = deserializer.deserialize(jsonObjectReader, options.getLogger());
         return clazz.cast(object);
       } else {
-        // TODO Handle deserialization with reflection.
-        return null;
+        return null; // No way to deserialize objects we don't know about.
       }
     } catch (Exception e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
