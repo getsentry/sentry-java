@@ -1,7 +1,7 @@
 package io.sentry
 
-import org.junit.Test
 import kotlin.test.assertEquals
+import org.junit.Test
 
 class JsonReflectionObjectSerializerTest {
 
@@ -20,7 +20,7 @@ class JsonReflectionObjectSerializerTest {
             9001,
             0.9f,
             0.99,
-            true,
+            true
         )
         val expected = mapOf(
             "byte" to 17,
@@ -38,10 +38,10 @@ class JsonReflectionObjectSerializerTest {
     @Test
     fun `serialize object with string field`() {
         val objectWithPrivateStringField = ClassWithStringField(
-            "fixture-string",
+            "fixture-string"
         )
         val expected = mapOf(
-            "string" to "fixture-string",
+            "string" to "fixture-string"
         )
         val actual = fixture.getSut().serialize(objectWithPrivateStringField)
         assertEquals(expected, actual)

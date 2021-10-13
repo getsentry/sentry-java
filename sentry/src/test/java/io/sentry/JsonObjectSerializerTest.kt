@@ -123,7 +123,7 @@ internal class JsonObjectSerializerTest {
     fun `serialize unknown object with data`() {
         val objectWithPrimitiveFields = UnknownClassWithData(
             17,
-            "fixtureString",
+            "fixtureString"
         )
         fixture.getSUT().serialize(fixture.writer, fixture.logger, objectWithPrimitiveFields)
         verify(fixture.writer).beginObject()

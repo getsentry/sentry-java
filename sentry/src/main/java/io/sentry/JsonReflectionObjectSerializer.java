@@ -1,21 +1,20 @@
 package io.sentry;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.TreeMap;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /*
  * Transform any class to primitives, collections and maps.
  */
+@ApiStatus.Internal
 public final class JsonReflectionObjectSerializer {
 
   public @Nullable Object serialize(@Nullable Object object) throws Exception {

@@ -437,6 +437,12 @@ public final class io/sentry/JsonObjectWriter : io/sentry/vendor/gson/stream/Jso
 	public fun value (Lio/sentry/ILogger;Ljava/lang/Object;)Lio/sentry/JsonObjectWriter;
 }
 
+public final class io/sentry/JsonReflectionObjectSerializer {
+	public fun <init> ()V
+	public fun serialize (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun serializeObject (Ljava/lang/Object;)Ljava/util/Map;
+}
+
 public abstract interface class io/sentry/JsonSerializable {
 	public abstract fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 }

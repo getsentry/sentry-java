@@ -15,7 +15,8 @@ public final class JsonObjectSerializer {
 
   public static final String OBJECT_PLACEHOLDER = "[OBJECT]";
 
-  private final JsonReflectionObjectSerializer jsonReflectionObjectSerializer = new JsonReflectionObjectSerializer();
+  private final JsonReflectionObjectSerializer jsonReflectionObjectSerializer =
+      new JsonReflectionObjectSerializer();
 
   public void serialize(
       @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable Object object)
