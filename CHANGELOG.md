@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Fix: Make ActivityFramesTracker operations thread-safe
+* Fix: Make ActivityFramesTracker operations thread-safe (#1762)
 
 ## 5.2.2
 
