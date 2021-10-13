@@ -101,7 +101,8 @@ final class ActivityFramesTracker {
   }
 
   @Nullable
-  synchronized Map<String, @NotNull MeasurementValue> takeMetrics(final @NotNull SentryId sentryId) {
+  synchronized Map<String, @NotNull MeasurementValue> takeMetrics(
+      final @NotNull SentryId sentryId) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return null;
     }
