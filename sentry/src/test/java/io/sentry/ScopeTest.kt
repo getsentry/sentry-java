@@ -65,6 +65,9 @@ class ScopeTest {
         val processor = CustomEventProcessor()
         scope.addEventProcessor(processor)
 
+        scope.setContexts("key", "value")
+        scope.addAttachment(Attachment("file name"))
+
         val clone = Scope(scope)
 
         assertNotNull(clone)
@@ -105,10 +108,12 @@ class ScopeTest {
         scope.setExtra("extra", "extra")
 
         val transaction = SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
-        scope.setTransaction(transaction)
+        scope.transaction = transaction
 
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
+
+        scope.setContexts("contexts", "contexts")
 
         val clone = Scope(scope)
 
@@ -125,6 +130,7 @@ class ScopeTest {
 
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
+        assertEquals("contexts", (clone.contexts["contexts"] as HashMap<*, *>)["value"])
         assertEquals(transaction, clone.span)
 
         assertEquals(1, clone.attachments.size)

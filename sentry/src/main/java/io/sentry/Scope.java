@@ -130,7 +130,7 @@ public final class Scope {
 
     this.extra = extraClone;
 
-    this.contexts = new Contexts(contexts);
+    this.contexts = new Contexts(scope.contexts);
 
     this.attachments = new CopyOnWriteArrayList<>(scope.attachments);
   }
