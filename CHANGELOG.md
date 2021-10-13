@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Clone Scope Contexts (#1763)
+
 ## 5.2.2
 
 * Fix: Close HostnameCache#executorService on SentryClient#close (#1757)
