@@ -30,14 +30,14 @@ class SentryEnvelopeItemHeaderSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/sentry_envelope_item_header.json")
+        val expected = sanitizedFile("json/sentry_envelope_item_header.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/sentry_envelope_item_header.json")
+        val expectedJson = sanitizedFile("json/sentry_envelope_item_header.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

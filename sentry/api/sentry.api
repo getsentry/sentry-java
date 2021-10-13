@@ -19,11 +19,10 @@ public final class io/sentry/Attachment {
 	public fun getPathname ()Ljava/lang/String;
 }
 
-public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/util/Date;)V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public static fun debug (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun error (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public fun getCategory ()Ljava/lang/String;
@@ -103,7 +102,7 @@ public final class io/sentry/DuplicateEventDetectionEventProcessor : io/sentry/E
 }
 
 public final class io/sentry/EnvelopeReader : io/sentry/IEnvelopeReader {
-	public fun <init> ()V
+	public fun <init> (Lio/sentry/ISerializer;)V
 	public fun read (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 }
 
@@ -118,13 +117,43 @@ public abstract interface class io/sentry/EventProcessor {
 	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 }
 
-public final class io/sentry/GsonSerializer : io/sentry/ISerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
-	public fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
-	public fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
-	public fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
-	public fun serialize (Ljava/util/Map;)Ljava/lang/String;
+public final class io/sentry/ExternalOptions {
+	public fun <init> ()V
+	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
+	public fun addInAppExclude (Ljava/lang/String;)V
+	public fun addInAppInclude (Ljava/lang/String;)V
+	public fun addTracingOrigin (Ljava/lang/String;)V
+	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/ExternalOptions;
+	public fun getDebug ()Ljava/lang/Boolean;
+	public fun getDist ()Ljava/lang/String;
+	public fun getDsn ()Ljava/lang/String;
+	public fun getEnableDeduplication ()Ljava/lang/Boolean;
+	public fun getEnableUncaughtExceptionHandler ()Ljava/lang/Boolean;
+	public fun getEnvironment ()Ljava/lang/String;
+	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
+	public fun getInAppExcludes ()Ljava/util/List;
+	public fun getInAppIncludes ()Ljava/util/List;
+	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
+	public fun getProguardUuid ()Ljava/lang/String;
+	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
+	public fun getRelease ()Ljava/lang/String;
+	public fun getServerName ()Ljava/lang/String;
+	public fun getTags ()Ljava/util/Map;
+	public fun getTracesSampleRate ()Ljava/lang/Double;
+	public fun getTracingOrigins ()Ljava/util/List;
+	public fun setDebug (Ljava/lang/Boolean;)V
+	public fun setDist (Ljava/lang/String;)V
+	public fun setDsn (Ljava/lang/String;)V
+	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
+	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
+	public fun setEnvironment (Ljava/lang/String;)V
+	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
+	public fun setProguardUuid (Ljava/lang/String;)V
+	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
+	public fun setRelease (Ljava/lang/String;)V
+	public fun setServerName (Ljava/lang/String;)V
+	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTracesSampleRate (Ljava/lang/Double;)V
 }
 
 public final class io/sentry/Hub : io/sentry/IHub {
@@ -361,10 +390,6 @@ public abstract interface class io/sentry/ITransportFactory {
 	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
 }
 
-public abstract interface class io/sentry/IUnknownPropertiesConsumer {
-	public abstract fun acceptUnknownProperties (Ljava/util/Map;)V
-}
-
 public abstract interface class io/sentry/Integration {
 	public abstract fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
@@ -393,6 +418,7 @@ public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/Jso
 	public fun nextList (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
 	public fun nextLongOrNull ()Ljava/lang/Long;
 	public fun nextObjectOrNull ()Ljava/lang/Object;
+	public fun nextOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
 	public fun nextStringOrNull ()Ljava/lang/String;
 	public fun nextTimeZoneOrNull (Lio/sentry/ILogger;)Ljava/util/TimeZone;
 	public fun nextUnknown (Lio/sentry/ILogger;Ljava/util/Map;Ljava/lang/String;)V
@@ -413,6 +439,15 @@ public final class io/sentry/JsonObjectWriter : io/sentry/vendor/gson/stream/Jso
 
 public abstract interface class io/sentry/JsonSerializable {
 	public abstract fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/JsonSerializer : io/sentry/ISerializer {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
+	public fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
+	public fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
+	public fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
+	public fun serialize (Ljava/util/Map;)Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/JsonUnknown {
@@ -821,14 +856,6 @@ public final class io/sentry/SentryEnvelopeHeader$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/SentryEnvelopeHeaderAdapter : com/google/gson/TypeAdapter {
-	public fun <init> ()V
-	public fun read (Lcom/google/gson/stream/JsonReader;)Lio/sentry/SentryEnvelopeHeader;
-	public synthetic fun read (Lcom/google/gson/stream/JsonReader;)Ljava/lang/Object;
-	public fun write (Lcom/google/gson/stream/JsonWriter;Lio/sentry/SentryEnvelopeHeader;)V
-	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
-}
-
 public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromAttachment (Lio/sentry/Attachment;J)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
@@ -867,19 +894,10 @@ public final class io/sentry/SentryEnvelopeItemHeader$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/SentryEnvelopeItemHeaderAdapter : com/google/gson/TypeAdapter {
-	public fun <init> ()V
-	public fun read (Lcom/google/gson/stream/JsonReader;)Lio/sentry/SentryEnvelopeItemHeader;
-	public synthetic fun read (Lcom/google/gson/stream/JsonReader;)Ljava/lang/Object;
-	public fun write (Lcom/google/gson/stream/JsonWriter;Lio/sentry/SentryEnvelopeItemHeader;)V
-	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
-}
-
-public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Throwable;)V
 	public fun <init> (Ljava/util/Date;)V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getExceptions ()Ljava/util/List;
 	public fun getFingerprints ()Ljava/util/List;
@@ -963,7 +981,6 @@ public class io/sentry/SentryOptions {
 	public fun addIntegration (Lio/sentry/Integration;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
 	public fun addTracingOrigin (Ljava/lang/String;)V
-	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/SentryOptions;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getCacheDirPath ()Ljava/lang/String;
@@ -973,7 +990,6 @@ public class io/sentry/SentryOptions {
 	public fun getDist ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
 	public fun getDsn ()Ljava/lang/String;
-	public fun getEnableUncaughtExceptionHandler ()Ljava/lang/Boolean;
 	public fun getEnvelopeDiskCache ()Lio/sentry/cache/IEnvelopeCache;
 	public fun getEnvelopeReader ()Lio/sentry/IEnvelopeReader;
 	public fun getEnvironment ()Ljava/lang/String;
@@ -1033,19 +1049,19 @@ public class io/sentry/SentryOptions {
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setCacheDirSize (I)V
 	public fun setConnectionTimeoutMillis (I)V
-	public fun setDebug (Ljava/lang/Boolean;)V
+	public fun setDebug (Z)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableAutoSessionTracking (Z)V
-	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
+	public fun setEnableDeduplication (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableSessionTracking (Z)V
 	public fun setEnableShutdownHook (Z)V
-	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
+	public fun setEnableUncaughtExceptionHandler (Z)V
 	public fun setEnvelopeDiskCache (Lio/sentry/cache/IEnvelopeCache;)V
 	public fun setEnvelopeReader (Lio/sentry/IEnvelopeReader;)V
 	public fun setEnvironment (Ljava/lang/String;)V
@@ -1223,14 +1239,6 @@ public final class io/sentry/Session$State : java/lang/Enum {
 	public static final field Ok Lio/sentry/Session$State;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/Session$State;
 	public static fun values ()[Lio/sentry/Session$State;
-}
-
-public final class io/sentry/SessionAdapter : com/google/gson/TypeAdapter {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun read (Lcom/google/gson/stream/JsonReader;)Lio/sentry/Session;
-	public synthetic fun read (Lcom/google/gson/stream/JsonReader;)Ljava/lang/Object;
-	public fun write (Lcom/google/gson/stream/JsonWriter;Lio/sentry/Session;)V
-	public synthetic fun write (Lcom/google/gson/stream/JsonWriter;Ljava/lang/Object;)V
 }
 
 public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, java/io/Closeable {
@@ -1489,114 +1497,6 @@ public final class io/sentry/UserFeedback$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/adapters/CollectionAdapter : com/google/gson/JsonSerializer {
-	public fun <init> ()V
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public fun serialize (Ljava/util/Collection;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/ContextsDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/protocol/Contexts;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/ContextsSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/protocol/Contexts;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/DateDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/util/Date;
-}
-
-public final class io/sentry/adapters/DateSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public fun serialize (Ljava/util/Date;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/MapAdapter : com/google/gson/JsonSerializer {
-	public fun <init> ()V
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public fun serialize (Ljava/util/Map;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/OrientationDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/protocol/Device$DeviceOrientation;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/OrientationSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/protocol/Device$DeviceOrientation;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/SentryIdDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/protocol/SentryId;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/SentryIdSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/protocol/SentryId;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/SentryLevelDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/SentryLevel;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/SentryLevelSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/SentryLevel;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/SpanIdDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/SpanId;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/SpanIdSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/SpanId;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/SpanStatusDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lio/sentry/SpanStatus;
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-}
-
-public final class io/sentry/adapters/SpanStatusSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun serialize (Lio/sentry/SpanStatus;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
-public final class io/sentry/adapters/TimeZoneDeserializerAdapter : com/google/gson/JsonDeserializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
-	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/util/TimeZone;
-}
-
-public final class io/sentry/adapters/TimeZoneSerializerAdapter : com/google/gson/JsonSerializer {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-	public fun serialize (Ljava/util/TimeZone;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
-}
-
 public final class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static final field PREFIX_CURRENT_SESSION_FILE Ljava/lang/String;
 	public static final field SUFFIX_ENVELOPE_FILE Ljava/lang/String;
@@ -1688,10 +1588,9 @@ public abstract interface class io/sentry/hints/SubmissionResult {
 	public abstract fun setResult (Z)V
 }
 
-public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getAppBuild ()Ljava/lang/String;
 	public fun getAppIdentifier ()Ljava/lang/String;
 	public fun getAppName ()Ljava/lang/String;
@@ -1728,10 +1627,9 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Browser : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/Browser : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
@@ -1779,10 +1677,9 @@ public final class io/sentry/protocol/Contexts$Deserializer : io/sentry/JsonDese
 	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
-public final class io/sentry/protocol/DebugImage : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/DebugImage : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field PROGUARD Ljava/lang/String;
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getArch ()Ljava/lang/String;
 	public fun getCodeFile ()Ljava/lang/String;
 	public fun getCodeId ()Ljava/lang/String;
@@ -1826,9 +1723,8 @@ public final class io/sentry/protocol/DebugImage$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/DebugMeta : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/DebugMeta : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getImages ()Ljava/util/List;
 	public fun getSdkInfo ()Lio/sentry/protocol/SdkInfo;
 	public fun getUnknown ()Ljava/util/Map;
@@ -1850,10 +1746,9 @@ public final class io/sentry/protocol/DebugMeta$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getArchs ()[Ljava/lang/String;
 	public fun getBatteryLevel ()Ljava/lang/Float;
 	public fun getBatteryTemperature ()Ljava/lang/Float;
@@ -1973,10 +1868,9 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Gpu : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/Gpu : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getApiType ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/Integer;
 	public fun getMemorySize ()Ljava/lang/Integer;
@@ -2036,10 +1930,9 @@ public final class io/sentry/protocol/MeasurementValue$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Mechanism : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/Mechanism : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Thread;)V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getHelpLink ()Ljava/lang/String;
@@ -2076,9 +1969,8 @@ public final class io/sentry/protocol/Mechanism$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Message : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/Message : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getFormatted ()Ljava/lang/String;
 	public fun getMessage ()Ljava/lang/String;
 	public fun getParams ()Ljava/util/List;
@@ -2103,10 +1995,9 @@ public final class io/sentry/protocol/Message$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/OperatingSystem : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/OperatingSystem : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getBuild ()Ljava/lang/String;
 	public fun getKernelVersion ()Ljava/lang/String;
 	public fun getName ()Ljava/lang/String;
@@ -2140,10 +2031,9 @@ public final class io/sentry/protocol/OperatingSystem$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Request : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/Request : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Request;)V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getCookies ()Ljava/lang/String;
 	public fun getData ()Ljava/lang/Object;
 	public fun getEnvs ()Ljava/util/Map;
@@ -2183,9 +2073,8 @@ public final class io/sentry/protocol/Request$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SdkInfo : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/SdkInfo : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getSdkName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersionMajor ()Ljava/lang/Integer;
@@ -2213,10 +2102,9 @@ public final class io/sentry/protocol/SdkInfo$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SdkVersion : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
 	public fun getIntegrations ()Ljava/util/List;
@@ -2245,9 +2133,8 @@ public final class io/sentry/protocol/SdkVersion$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SentryException : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/SentryException : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getMechanism ()Lio/sentry/protocol/Mechanism;
 	public fun getModule ()Ljava/lang/String;
 	public fun getStacktrace ()Lio/sentry/protocol/SentryStackTrace;
@@ -2298,10 +2185,9 @@ public final class io/sentry/protocol/SentryId$Deserializer : io/sentry/JsonDese
 	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
-public final class io/sentry/protocol/SentryPackage : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/SentryPackage : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
@@ -2323,10 +2209,9 @@ public final class io/sentry/protocol/SentryPackage$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SentryRuntime : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/SentryRuntime : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getName ()Ljava/lang/String;
 	public fun getRawDescription ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -2391,9 +2276,8 @@ public final class io/sentry/protocol/SentrySpan$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SentryStackFrame : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/SentryStackFrame : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getAbsPath ()Ljava/lang/String;
 	public fun getColno ()Ljava/lang/Integer;
 	public fun getContextLine ()Ljava/lang/String;
@@ -2462,10 +2346,9 @@ public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SentryStackTrace : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/SentryStackTrace : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/util/List;)V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getFrames ()Ljava/util/List;
 	public fun getRegisters ()Ljava/util/Map;
 	public fun getSnapshot ()Ljava/lang/Boolean;
@@ -2490,9 +2373,8 @@ public final class io/sentry/protocol/SentryStackTrace$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/SentryThread : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/SentryThread : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getId ()Ljava/lang/Long;
 	public fun getName ()Ljava/lang/String;
 	public fun getPriority ()Ljava/lang/Integer;
@@ -2565,10 +2447,9 @@ public final class io/sentry/protocol/SentryTransaction$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/User : io/sentry/IUnknownPropertiesConsumer, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/User;)V
-	public fun acceptUnknownProperties (Ljava/util/Map;)V
 	public fun getEmail ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/String;
 	public fun getIpAddress ()Ljava/lang/String;
@@ -2713,6 +2594,12 @@ public final class io/sentry/util/Pair {
 	public fun <init> (Ljava/lang/Object;Ljava/lang/Object;)V
 	public fun getFirst ()Ljava/lang/Object;
 	public fun getSecond ()Ljava/lang/Object;
+}
+
+public final class io/sentry/util/Platform {
+	public fun <init> ()V
+	public static fun isAndroid ()Z
+	public static fun isJvm ()Z
 }
 
 public final class io/sentry/util/StringUtils {

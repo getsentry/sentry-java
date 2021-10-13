@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -11,7 +10,6 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,8 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>```json { "threads": { "values": [ { "id": "0", "name": "main", "crashed": true, "stacktrace":
  * {} } ] } } ```
  */
-public final class SentryThread
-    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SentryThread implements JsonUnknown, JsonSerializable {
   private @Nullable Long id;
   private @Nullable Integer priority;
   private @Nullable String name;
@@ -187,11 +184,6 @@ public final class SentryThread
     this.state = state;
   }
 
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
-  }
   // region json
 
   @Nullable
@@ -288,7 +280,7 @@ public final class SentryThread
             break;
           case JsonKeys.STACKTRACE:
             sentryThread.stacktrace =
-                new SentryStackTrace.Deserializer().deserialize(reader, logger);
+                reader.nextOrNull(logger, new SentryStackTrace.Deserializer());
             break;
           default:
             if (unknown == null) {

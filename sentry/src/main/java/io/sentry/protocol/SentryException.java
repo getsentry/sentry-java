@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -11,7 +10,6 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,8 +28,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>```json { "exception": { "values": [ {"type": "Exception": "value": "random boring invariant
  * was not met!"}, {"type": "ValueError", "value": "something went wrong, help!"}, ] } } ```
  */
-public final class SentryException
-    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SentryException implements JsonUnknown, JsonSerializable {
   /**
    * Exception type, e.g. `ValueError`.
    *
@@ -164,12 +161,6 @@ public final class SentryException
     this.mechanism = mechanism;
   }
 
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
-  }
-
   // JsonKeys
 
   public static final class JsonKeys {
@@ -253,10 +244,10 @@ public final class SentryException
             break;
           case JsonKeys.STACKTRACE:
             sentryException.stacktrace =
-                new SentryStackTrace.Deserializer().deserialize(reader, logger);
+                reader.nextOrNull(logger, new SentryStackTrace.Deserializer());
             break;
           case JsonKeys.MECHANISM:
-            sentryException.mechanism = new Mechanism.Deserializer().deserialize(reader, logger);
+            sentryException.mechanism = reader.nextOrNull(logger, new Mechanism.Deserializer());
             break;
           default:
             if (unknown == null) {

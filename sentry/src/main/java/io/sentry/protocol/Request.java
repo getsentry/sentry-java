@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -12,7 +11,6 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -52,7 +50,7 @@ import org.jetbrains.annotations.Nullable;
  * csrftoken=u32t4o3tb3gg43; _gat=1;", "headers": { "content-type": "text/html" }, "env": {
  * "REMOTE_ADDR": "192.168.0.1" } } } ```
  */
-public final class Request implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class Request implements JsonUnknown, JsonSerializable {
   /**
    * The URL of the request if available.
    *
@@ -183,12 +181,6 @@ public final class Request implements IUnknownPropertiesConsumer, JsonUnknown, J
 
   public void setOthers(final @Nullable Map<String, String> other) {
     this.other = CollectionUtils.newConcurrentHashMap(other);
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   // region json

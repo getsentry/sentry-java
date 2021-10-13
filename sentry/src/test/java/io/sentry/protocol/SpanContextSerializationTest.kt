@@ -39,14 +39,14 @@ class SpanContextSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/span_context.json")
+        val expected = sanitizedFile("json/span_context.json")
         val actual = serializeToString(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/span_context.json")
+        val expectedJson = sanitizedFile("json/span_context.json")
         val actual = deserialize(expectedJson)
         assertNull(actual.sampled)
         assertNotNull(actual.tags)

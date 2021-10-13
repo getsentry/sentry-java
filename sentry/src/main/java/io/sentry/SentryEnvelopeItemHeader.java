@@ -115,7 +115,7 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     if (attachmentType != null) {
       writer.name(JsonKeys.ATTACHMENT_TYPE).value(attachmentType);
     }
-    writer.name(JsonKeys.LENGTH).value(length);
+    writer.name(JsonKeys.LENGTH).value(getLength());
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -149,7 +149,7 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
             fileName = reader.nextStringOrNull();
             break;
           case JsonKeys.TYPE:
-            type = new SentryItemType.Deserializer().deserialize(reader, logger);
+            type = reader.nextOrNull(logger, new SentryItemType.Deserializer());
             break;
           case JsonKeys.LENGTH:
             length = reader.nextInt();

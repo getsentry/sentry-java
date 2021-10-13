@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -12,12 +11,10 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class OperatingSystem
-    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class OperatingSystem implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "os";
 
   /** Name of the operating system. */
@@ -104,12 +101,6 @@ public final class OperatingSystem
 
   public void setRooted(final @Nullable Boolean rooted) {
     this.rooted = rooted;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
   // JsonSerializable

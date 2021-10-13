@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -12,12 +11,10 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class SentryRuntime
-    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SentryRuntime implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "runtime";
 
   /** Runtime name. */
@@ -67,12 +64,6 @@ public final class SentryRuntime
 
   public void setRawDescription(final @Nullable String rawDescription) {
     this.rawDescription = rawDescription;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
   }
 
   // region JsonSerializable

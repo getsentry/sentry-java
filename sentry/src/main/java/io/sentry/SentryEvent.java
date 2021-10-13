@@ -10,13 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryEvent extends SentryBaseEvent
-    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, JsonSerializable {
   /**
    * Timestamp when the event was created.
    *
@@ -174,12 +172,6 @@ public final class SentryEvent extends SentryBaseEvent
 
   public void setFingerprints(final @Nullable List<String> fingerprint) {
     this.fingerprint = fingerprint != null ? new ArrayList<>(fingerprint) : null;
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   @Nullable
@@ -344,7 +336,7 @@ public final class SentryEvent extends SentryBaseEvent
             }
             break;
           case JsonKeys.MESSAGE:
-            event.message = new Message.Deserializer().deserialize(reader, logger);
+            event.message = reader.nextOrNull(logger, new Message.Deserializer());
             break;
           case JsonKeys.LOGGER:
             event.logger = reader.nextStringOrNull();
@@ -364,7 +356,7 @@ public final class SentryEvent extends SentryBaseEvent
             reader.endObject();
             break;
           case JsonKeys.LEVEL:
-            event.level = new SentryLevel.Deserializer().deserialize(reader, logger);
+            event.level = reader.nextOrNull(logger, new SentryLevel.Deserializer());
             break;
           case JsonKeys.TRANSACTION:
             event.transaction = reader.nextStringOrNull();
@@ -381,7 +373,7 @@ public final class SentryEvent extends SentryBaseEvent
             event.modules = CollectionUtils.newConcurrentHashMap(deserializedModules);
             break;
           case JsonKeys.DEBUG_META:
-            event.debugMeta = new DebugMeta.Deserializer().deserialize(reader, logger);
+            event.debugMeta = reader.nextOrNull(logger, new DebugMeta.Deserializer());
             break;
           default:
             if (!baseEventDeserializer.deserializeValue(event, nextName, reader, logger)) {

@@ -33,7 +33,7 @@ class ContextsSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/contexts.json")
+        val expected = sanitizedFile("json/contexts.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
@@ -54,7 +54,7 @@ class ContextsSerializationTest {
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/contexts.json")
+        val expectedJson = sanitizedFile("json/contexts.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

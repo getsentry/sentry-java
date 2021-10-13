@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -16,11 +15,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Device implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class Device implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "device";
 
   /** Name of the device. */
@@ -393,12 +391,6 @@ public final class Device implements IUnknownPropertiesConsumer, JsonUnknown, Js
     this.batteryTemperature = batteryTemperature;
   }
 
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
-  }
-
   public enum DeviceOrientation implements JsonSerializable {
     PORTRAIT,
     LANDSCAPE;
@@ -618,9 +610,7 @@ public final class Device implements IUnknownPropertiesConsumer, JsonUnknown, Js
             device.online = reader.nextBooleanOrNull();
             break;
           case JsonKeys.ORIENTATION:
-            if (reader.peek() != JsonToken.NULL) {
-              device.orientation = new DeviceOrientation.Deserializer().deserialize(reader, logger);
-            }
+            device.orientation = reader.nextOrNull(logger, new DeviceOrientation.Deserializer());
             break;
           case JsonKeys.SIMULATOR:
             device.simulator = reader.nextBooleanOrNull();

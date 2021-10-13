@@ -42,14 +42,14 @@ class DebugMetaSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("gson/debug_meta.json")
+        val expected = sanitizedFile("json/debug_meta.json")
         val actual = serialize(fixture.getSut())
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("gson/debug_meta.json")
+        val expectedJson = sanitizedFile("json/debug_meta.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)

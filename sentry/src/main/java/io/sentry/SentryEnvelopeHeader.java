@@ -102,13 +102,13 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.EVENT_ID:
-            eventId = new SentryId.Deserializer().deserialize(reader, logger);
+            eventId = reader.nextOrNull(logger, new SentryId.Deserializer());
             break;
           case JsonKeys.SDK:
-            sdkVersion = new SdkVersion.Deserializer().deserialize(reader, logger);
+            sdkVersion = reader.nextOrNull(logger, new SdkVersion.Deserializer());
             break;
           case JsonKeys.TRACE:
-            trace = new TraceState.Deserializer().deserialize(reader, logger);
+            trace = reader.nextOrNull(logger, new TraceState.Deserializer());
             break;
           default:
             if (unknown == null) {

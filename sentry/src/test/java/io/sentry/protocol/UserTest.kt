@@ -47,7 +47,7 @@ class UserTest {
         user.others!!["others"] = "newOthers"
         user.others!!["anotherOne"] = "anotherOne"
         val newUnknown = mapOf(Pair("unknown", "newUnknown"), Pair("otherUnknown", "otherUnknown"))
-        user.acceptUnknownProperties(newUnknown)
+        user.setUnknown(newUnknown)
 
         assertEquals("a@a.com", clone.email)
         assertEquals("123", clone.id)
@@ -87,7 +87,7 @@ class UserTest {
             val others = mutableMapOf(Pair("others", "others"))
             setOthers(others)
             val unknown = mapOf(Pair("unknown", "unknown"))
-            acceptUnknownProperties(unknown)
+            setUnknown(unknown)
         }
     }
 }

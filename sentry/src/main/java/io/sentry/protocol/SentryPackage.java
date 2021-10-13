@@ -1,7 +1,6 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
-import io.sentry.IUnknownPropertiesConsumer;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -13,13 +12,11 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** An installed and loaded package as part of the Sentry SDK. */
-public final class SentryPackage
-    implements IUnknownPropertiesConsumer, JsonUnknown, JsonSerializable {
+public final class SentryPackage implements JsonUnknown, JsonSerializable {
   /** Name of the package. */
   private @NotNull String name;
   /** Version of the package. */
@@ -57,12 +54,6 @@ public final class SentryPackage
 
   public void setVersion(final @NotNull String version) {
     this.version = Objects.requireNonNull(version, "version is required.");
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
   }
 
   // JsonKeys
