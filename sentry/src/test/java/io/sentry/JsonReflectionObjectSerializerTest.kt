@@ -12,7 +12,7 @@ class JsonReflectionObjectSerializerTest {
     val fixture = Fixture()
 
     @Test
-    fun `serializes class with primitive fields to map`() {
+    fun `serialize object with primitive fields`() {
         val objectWithPrimitiveFields = ClassWithPrimitiveFields(
             17,
             3,
@@ -36,7 +36,7 @@ class JsonReflectionObjectSerializerTest {
     }
 
     @Test
-    fun `serializes class with string field to map`() {
+    fun `serialize object with string field`() {
         val objectWithPrivateStringField = ClassWithStringField(
             "fixture-string",
         )
@@ -48,7 +48,7 @@ class JsonReflectionObjectSerializerTest {
     }
 
     @Test
-    fun `serializes class with array field to map`() {
+    fun `serialize object with array field`() {
         val objectWithArrayField = ClassWithArrayField(
             arrayOf("fixture-string")
         )
@@ -60,7 +60,7 @@ class JsonReflectionObjectSerializerTest {
     }
 
     @Test
-    fun `serializes class with collection field to map`() {
+    fun `serialize object with collection field`() {
         val objectWithCollectionField = ClassWithCollectionField(
             listOf("fixture-string")
         )
@@ -72,7 +72,7 @@ class JsonReflectionObjectSerializerTest {
     }
 
     @Test
-    fun `serializes class with map field to map`() {
+    fun `serialize object with map field`() {
         val objectWithMapField = ClassWithMapField(
             mapOf("fixture-key" to "fixture-value")
         )
@@ -80,6 +80,31 @@ class JsonReflectionObjectSerializerTest {
             "map" to mapOf("fixture-key" to "fixture-value")
         )
         val actual = fixture.getSut().serialize(objectWithMapField)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `serialize object without fields`() {
+        val objectWithoutFields = ClassWithoutFields()
+        val expected = mapOf<String, Any>()
+        val actual = fixture.getSut().serialize(objectWithoutFields)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `serialize nested object`() {
+        val objectGraph = ClassWithNesting(
+            "Root",
+            ClassWithNesting("Child", null)
+        )
+        val expected = mapOf<String, Any?>(
+            "title" to "Root",
+            "child" to mapOf<String, Any?>(
+                "title" to "Child",
+                "child" to null
+            )
+        )
+        val actual = fixture.getSut().serialize(objectGraph)
         assertEquals(expected, actual)
     }
 
@@ -109,5 +134,12 @@ class JsonReflectionObjectSerializerTest {
 
     class ClassWithMapField(
         private val map: Map<String, String>
+    )
+
+    class ClassWithoutFields
+
+    class ClassWithNesting(
+        val title: String,
+        val child: ClassWithNesting?
     )
 }

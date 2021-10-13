@@ -113,8 +113,29 @@ internal class JsonObjectSerializerTest {
     }
 
     @Test
-    fun `serialize unknown object`() {
+    fun `serialize unknown object without data`() {
         fixture.getSUT().serialize(fixture.writer, fixture.logger, object {})
-        verify(fixture.writer).value(JsonObjectSerializer.OBJECT_PLACEHOLDER)
+        verify(fixture.writer).beginObject()
+        verify(fixture.writer).endObject()
     }
+
+    @Test
+    fun `serialize unknown object with data`() {
+        val objectWithPrimitiveFields = UnknownClassWithData(
+            17,
+            "fixtureString",
+        )
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, objectWithPrimitiveFields)
+        verify(fixture.writer).beginObject()
+        verify(fixture.writer).name("integer")
+        verify(fixture.writer).value(17 as Number)
+        verify(fixture.writer).name("string")
+        verify(fixture.writer).value("fixtureString")
+        verify(fixture.writer).endObject()
+    }
+
+    class UnknownClassWithData(
+        private val integer: Int,
+        private val string: String
+    )
 }

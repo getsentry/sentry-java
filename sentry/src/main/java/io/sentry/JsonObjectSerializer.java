@@ -15,6 +15,8 @@ public final class JsonObjectSerializer {
 
   public static final String OBJECT_PLACEHOLDER = "[OBJECT]";
 
+  private final JsonReflectionObjectSerializer jsonReflectionObjectSerializer = new JsonReflectionObjectSerializer();
+
   public void serialize(
       @NotNull JsonObjectWriter writer, @NotNull ILogger logger, @Nullable Object object)
       throws IOException {
@@ -41,8 +43,13 @@ public final class JsonObjectSerializer {
     } else if (object instanceof Map) {
       serializeMap(writer, logger, (Map<?, ?>) object);
     } else {
-      // TODO: Use reflection to support object serialization.
-      writer.value(OBJECT_PLACEHOLDER);
+      try {
+        Object serializableObject = jsonReflectionObjectSerializer.serialize(object);
+        serialize(writer, logger, serializableObject);
+      } catch (Exception exception) {
+        logger.log(SentryLevel.ERROR, "Failed serializing unknown object.", exception);
+        writer.value(OBJECT_PLACEHOLDER);
+      }
     }
   }
 

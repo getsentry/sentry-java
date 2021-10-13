@@ -1,5 +1,6 @@
 package io.sentry;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -9,16 +10,49 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /*
- * Serialize any class to a map containing primitives.
+ * Transform any class to primitives, collections and maps.
  */
 public final class JsonReflectionObjectSerializer {
 
-  public Map<String, Object> serialize(Object object) throws Exception {
+  public @Nullable Object serialize(@Nullable Object object) throws Exception {
+    if (object == null) {
+      return null;
+    }
+    if (object instanceof Character) {
+      return object.toString();
+    } else if (object instanceof Byte) {
+      return ((Byte) object).intValue();
+    } else if (object instanceof Short) {
+      return ((Short) object).intValue();
+    } else if (object instanceof Integer) {
+      return object;
+    } else if (object instanceof Float) {
+      return object;
+    } else if (object instanceof Double) {
+      return object;
+    } else if (object instanceof Boolean) {
+      return object;
+    } else if (object.getClass().isArray()) {
+      return list((Object[]) object);
+    } else if (object instanceof String) {
+      return object;
+    } else if (object instanceof Collection) {
+      return list((Collection<?>) object);
+    } else if (object instanceof Map) {
+      return map((Map<?, ?>) object);
+    } else {
+      return serializeObject(object);
+    }
+  }
+
+  public @NotNull Map<String, Object> serializeObject(@NotNull Object object) throws Exception {
     Field[] fields = object.getClass().getDeclaredFields();
 
-    Map<String, Object> map = new HashMap<>();
+    Map<String, Object> map = new TreeMap<>();
 
     for (Field field : fields) {
       if (Modifier.isTransient(field.getModifiers())) {
@@ -26,87 +60,42 @@ public final class JsonReflectionObjectSerializer {
       }
       String fieldName = field.getName();
       field.setAccessible(true);
-      try {
-        Class<?> fieldType = field.getType();
-        Object fieldObject = field.get(object);
-        map.put(fieldName, serialize(fieldType, fieldObject));
-      } catch (IllegalAccessException e) {
-        throw e;
-      }
+
+      Object fieldObject = field.get(object);
+      map.put(fieldName, serialize(fieldObject));
+
+      field.setAccessible(false);
     }
     return map;
   }
 
-  private @Nullable Object serialize(Class<?> fieldType, Object fieldObject) {
-    if (fieldType == null || fieldObject == null) {
-      return null;
-    }
-    if (fieldType.isPrimitive()) {
-      return primitive(fieldObject);
-    } else if (fieldObject instanceof String) {
-      return primitive(fieldObject);
-    } else if (fieldObject instanceof Collection) {
-      return list((Collection<?>) fieldObject);
-    } else if (fieldType.isArray()) {
-      return list((Object[]) fieldObject);
-    } else if (fieldObject instanceof Map) {
-      return map((Map<?, ?>) fieldObject);
-    }
-    throw new IllegalArgumentException("TODO implement possibilities.");
-  }
-
-  // TODO Primitive arrays/collections?
-
-  private List<Object> list(Object[] objectArray) {
+  private @NotNull List<Object> list(@NotNull Object[] objectArray) throws Exception {
     List<Object> list = new ArrayList<>();
     for (Object object : objectArray) {
-      list.add(serialize(object.getClass(), object));
+      list.add(serialize(object));
     }
     return list;
   }
 
-  private List<Object> list(Collection<?> collection) {
+  private @NotNull List<Object> list(@NotNull Collection<?> collection) throws Exception {
     List<Object> list = new ArrayList<>();
     for (Object object : collection) {
-      list.add(serialize(object.getClass(), object));
+      list.add(serialize(object));
     }
     return list;
   }
 
-  // TODO Primitives in map?
-  // TODO Document toString key behaviour
-
-  private Map<String, Object> map(Map<?, ?> map) {
-    HashMap<String, Object> hashMap = new HashMap<>();
+  // Key names taken from toString
+  private @NotNull Map<String, Object> map(@NotNull Map<?, ?> map) throws Exception {
+    Map<String, Object> hashMap = new TreeMap<>();
     for (Object key : map.keySet()) {
       Object object = map.get(key);
       if (object != null) {
-        Class<?> clazz = object.getClass();
-        hashMap.put(key.toString(), serialize(clazz, object));
+        hashMap.put(key.toString(), serialize(object));
       } else {
         hashMap.put(key.toString(), null);
       }
     }
     return hashMap;
-  }
-  private Object primitive(Object fieldObject) {
-    if (fieldObject instanceof String) {
-      return fieldObject;
-    } else if (fieldObject instanceof Character) {
-      return fieldObject.toString();
-    } else if (fieldObject instanceof Byte) {
-      return ((Byte) fieldObject).intValue();
-    } else if (fieldObject instanceof Short) {
-      return ((Short) fieldObject).intValue();
-    } else if (fieldObject instanceof Integer) {
-      return fieldObject;
-    } else if (fieldObject instanceof Float) {
-      return fieldObject;
-    } else if (fieldObject instanceof Double) {
-      return fieldObject;
-    } else if (fieldObject instanceof Boolean) {
-      return fieldObject;
-    }
-    throw new IllegalArgumentException("Not a primitive type.");
   }
 }
