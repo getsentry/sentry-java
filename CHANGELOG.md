@@ -4,7 +4,7 @@
 
 * Fix: Make ActivityFramesTracker operations thread-safe (#1762)
 * Fix: Clone Scope Contexts (#1763)
-* Bump: AGP to 7.0.3 (#)
+* Bump: AGP to 7.0.3 (#1765)
 
 ## 5.2.2
 
