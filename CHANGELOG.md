@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Fix: Make ActivityFramesTracker operations thread-safe (#1762)
 * Fix: Clone Scope Contexts (#1763)
 
 ## 5.2.2

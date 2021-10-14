@@ -47,7 +47,7 @@ final class ActivityFramesTracker {
   }
 
   @SuppressWarnings("NullAway")
-  void addActivity(final @NotNull Activity activity) {
+  synchronized void addActivity(final @NotNull Activity activity) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
@@ -55,7 +55,7 @@ final class ActivityFramesTracker {
   }
 
   @SuppressWarnings("NullAway")
-  void setMetrics(final @NotNull Activity activity, final @NotNull SentryId sentryId) {
+  synchronized void setMetrics(final @NotNull Activity activity, final @NotNull SentryId sentryId) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
@@ -101,7 +101,8 @@ final class ActivityFramesTracker {
   }
 
   @Nullable
-  Map<String, @NotNull MeasurementValue> takeMetrics(final @NotNull SentryId sentryId) {
+  synchronized Map<String, @NotNull MeasurementValue> takeMetrics(
+      final @NotNull SentryId sentryId) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return null;
     }
@@ -113,7 +114,7 @@ final class ActivityFramesTracker {
   }
 
   @SuppressWarnings("NullAway")
-  void stop() {
+  synchronized void stop() {
     if (isFrameMetricsAggregatorAvailable()) {
       frameMetricsAggregator.stop();
     }
