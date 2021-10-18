@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#)
+* Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#1769)
 
 ## 5.2.3
 
