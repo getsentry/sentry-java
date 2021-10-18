@@ -122,4 +122,33 @@ class UncaughtExceptionHandlerIntegrationTest {
         integration.register(hub, options)
         verify(handlerMock).defaultUncaughtExceptionHandler = argWhere { it is UncaughtExceptionHandlerIntegration }
     }
+
+    @Test
+    fun `When defaultUncaughtExceptionHandler is set and integration is closed, default uncaught exception handler is reset to previous handler`() {
+        val handlerMock = mock<UncaughtExceptionHandler>()
+        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
+
+        val defaultExceptionHandler = mock<Thread.UncaughtExceptionHandler>()
+        whenever(handlerMock.defaultUncaughtExceptionHandler)
+            .thenReturn(defaultExceptionHandler)
+        integration.register(mock(), SentryOptions())
+        whenever(handlerMock.defaultUncaughtExceptionHandler)
+            .thenReturn(integration)
+        integration.close()
+        verify(handlerMock).defaultUncaughtExceptionHandler = defaultExceptionHandler
+    }
+
+    @Test
+    fun `When defaultUncaughtExceptionHandler is not set and integration is closed, default uncaught exception handler is reset to null`() {
+        val handlerMock = mock<UncaughtExceptionHandler>()
+        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
+
+        whenever(handlerMock.defaultUncaughtExceptionHandler)
+            .thenReturn(null)
+        integration.register(mock(), SentryOptions())
+        whenever(handlerMock.defaultUncaughtExceptionHandler)
+            .thenReturn(integration)
+        integration.close()
+        verify(handlerMock).defaultUncaughtExceptionHandler = null
+    }
 }
