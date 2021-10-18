@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#)
+
 ## 5.2.3
 
 * Fix: Make ActivityFramesTracker operations thread-safe (#1762)

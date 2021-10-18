@@ -227,7 +227,6 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    activityFramesTracker.addActivity(activity);
     setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
     startTracing(activity);
@@ -237,6 +236,10 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityStarted(final @NonNull Activity activity) {
+    // the screen rendering measurements start for every Activity class when the app calls
+    // onActivityStarted
+    activityFramesTracker.addActivity(activity);
+
     addBreadcrumb(activity, "started");
   }
 
