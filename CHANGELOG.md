@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: unregister UncaughtExceptionHandler on close (#1770)
+
 ## 5.2.3
 
 * Fix: Make ActivityFramesTracker operations thread-safe (#1762)
