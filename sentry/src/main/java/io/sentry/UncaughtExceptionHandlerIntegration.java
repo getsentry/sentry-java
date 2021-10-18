@@ -128,8 +128,7 @@ public final class UncaughtExceptionHandlerIntegration
 
   @Override
   public void close() {
-    if (defaultExceptionHandler != null
-        && this == threadAdapter.getDefaultUncaughtExceptionHandler()) {
+    if (this == threadAdapter.getDefaultUncaughtExceptionHandler()) {
       threadAdapter.setDefaultUncaughtExceptionHandler(defaultExceptionHandler);
 
       if (options != null) {
