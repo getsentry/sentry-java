@@ -273,7 +273,7 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityStarted(activity)
 
         verify(fixture.activityFramesTracker).addActivity(eq(activity))
     }
