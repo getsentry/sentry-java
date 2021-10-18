@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#1769)
+* Fix: unregister UncaughtExceptionHandler on close (#1770)
 
 ## 5.2.3
 
