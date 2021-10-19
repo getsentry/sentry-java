@@ -20,6 +20,7 @@ import io.sentry.spring.SentrySpringFilter
 import io.sentry.spring.SentryTaskDecorator
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
+import io.sentry.spring.tracing.SentrySpanClientWebRequestFilter
 import io.sentry.spring.tracing.SentryTracingConfiguration
 import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.spring.tracing.SentryTransaction
@@ -42,6 +43,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Lazy
 import org.springframework.core.Ordered
+import org.springframework.core.env.Environment
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -62,6 +64,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.reactive.function.client.ExchangeFilterFunctions
+import org.springframework.web.reactive.function.client.WebClient
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -235,6 +239,21 @@ class SentrySpringIntegrationTest {
             }, anyOrNull())
         }
     }
+
+    @Test
+    fun `WebClient http request execution is turned into a span`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+        restTemplate.getForEntity("http://localhost:$port/webClient", String::class.java)
+
+        verify(transport).send(checkTransaction { transaction ->
+            assertThat(transaction.spans).hasSize(1)
+            val span = transaction.spans.first()
+            assertThat(span.op).isEqualTo("http.client")
+            assertThat(span.description).isEqualTo("GET http://localhost:$port/hello")
+            assertThat(span.status).isEqualTo(SpanStatus.OK)
+        }, anyOrNull())
+    }
 }
 
 @SpringBootApplication
@@ -279,6 +298,14 @@ open class App {
 
     @Bean
     open fun sentryTaskDecorator() = SentryTaskDecorator()
+
+    @Bean
+    open fun webClient(hub: IHub): WebClient {
+        return WebClient.builder()
+            .filter(ExchangeFilterFunctions
+                .basicAuthentication("user", "password"))
+            .filter(SentrySpanClientWebRequestFilter(hub)).build()
+    }
 }
 
 @Service
@@ -310,11 +337,12 @@ open class SomeService {
 }
 
 @RestController
-class HelloController {
+class HelloController(private val webClient: WebClient, private val env: Environment) {
 
     @GetMapping("/hello")
-    fun hello() {
+    fun hello(): String {
         Sentry.captureMessage("hello")
+        return "hello"
     }
 
     @PostMapping("/body")
@@ -338,6 +366,11 @@ class HelloController {
             Sentry.captureMessage("this message should be in the scope of the request")
             "from callable"
         }
+    }
+
+    @GetMapping("/webClient")
+    fun webClient(): String? {
+        return webClient.get().uri("http://localhost:${env.getProperty("local.server.port")}/hello").retrieve().bodyToMono(String::class.java).block()
     }
 }
 
