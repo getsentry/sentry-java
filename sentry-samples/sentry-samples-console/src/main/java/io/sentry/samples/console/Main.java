@@ -1,11 +1,11 @@
 package io.sentry.samples.console;
 
-//import io.sentry.Breadcrumb;
-//import io.sentry.EventProcessor;
+// import io.sentry.Breadcrumb;
+// import io.sentry.EventProcessor;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
-//import io.sentry.SentryEvent;
+// import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
@@ -142,7 +142,7 @@ public class Main {
     //
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
-    ITransaction transaction = Sentry.startTransaction("transaction name", "op");
+    ITransaction transaction = Sentry.startTransaction("transaction name 2", "op");
     // Transactions can contain one or more Spans
     ISpan outerSpan = transaction.startChild("child");
 
@@ -158,18 +158,20 @@ public class Main {
     innerSpan.finish();
     // Every SentryEvent reported during the execution of the transaction or a span, will have trace
     // context attached
-//    Sentry.captureMessage("this message is connected to the outerSpan");
+    //    Sentry.captureMessage("this message is connected to the outerSpan");
     outerSpan.finish();
-    // marks transaction as finished and sends it together with all child spans to Sentry
-    transaction.finish();
 
     TransactionContext tc =
-        TransactionContext.fromSentryTrace("continuedTr", "myOp", headerOuterSpan);
+        TransactionContext.fromSentryTrace("continuedTr 2", "myOp", headerOuterSpan);
     ITransaction continuedTr = Sentry.startTransaction(tc);
     ISpan childOfcontinuedTr = continuedTr.startChild("childOfcontinuedTr");
     Thread.sleep(100);
     childOfcontinuedTr.finish();
     continuedTr.finish();
+
+    Thread.sleep(100);
+    // marks transaction as finished and sends it together with all child spans to Sentry
+    transaction.finish();
 
     // All events that have not been sent yet are being flushed on JVM exit. Events can be also
     // flushed manually:
@@ -177,15 +179,15 @@ public class Main {
     Sentry.flush(5000);
   }
 
-//  private static class SomeEventProcessor implements EventProcessor {
-//    @Override
-//    public SentryEvent process(SentryEvent event, Object hint) {
-//      // Here you can modify the event as you need
-//      if (event.getLevel() != null && event.getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
-//        event.addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));
-//      }
-//
-//      return event;
-//    }
-//  }
+  //  private static class SomeEventProcessor implements EventProcessor {
+  //    @Override
+  //    public SentryEvent process(SentryEvent event, Object hint) {
+  //      // Here you can modify the event as you need
+  //      if (event.getLevel() != null && event.getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
+  //        event.addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));
+  //      }
+  //
+  //      return event;
+  //    }
+  //  }
 }
