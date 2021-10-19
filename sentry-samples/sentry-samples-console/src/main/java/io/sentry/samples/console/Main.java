@@ -1,16 +1,15 @@
 package io.sentry.samples.console;
 
-import io.sentry.Breadcrumb;
-import io.sentry.EventProcessor;
+//import io.sentry.Breadcrumb;
+//import io.sentry.EventProcessor;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
-import io.sentry.SentryEvent;
+//import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
-import io.sentry.protocol.Message;
-import io.sentry.protocol.User;
-import java.util.Collections;
+import io.sentry.TransactionContext;
 
 public class Main {
 
@@ -27,25 +26,25 @@ public class Main {
           options.setRelease("io.sentry.samples.console@3.0.0+1");
 
           // Modifications to event before it goes out. Could replace the event altogether
-          options.setBeforeSend(
-              (event, hint) -> {
-                // Drop an event altogether:
-                if (event.getTag("SomeTag") != null) {
-                  return null;
-                }
-                return event;
-              });
+          //          options.setBeforeSend(
+          //              (event, hint) -> {
+          //                // Drop an event altogether:
+          //                if (event.getTag("SomeTag") != null) {
+          //                  return null;
+          //                }
+          //                return event;
+          //              });
 
           // Allows inspecting and modifying, returning a new or simply rejecting (returning null)
-          options.setBeforeBreadcrumb(
-              (breadcrumb, hint) -> {
-                // Don't add breadcrumbs with message containing:
-                if (breadcrumb.getMessage() != null
-                    && breadcrumb.getMessage().contains("bad breadcrumb")) {
-                  return null;
-                }
-                return breadcrumb;
-              });
+          //          options.setBeforeBreadcrumb(
+          //              (breadcrumb, hint) -> {
+          //                // Don't add breadcrumbs with message containing:
+          //                if (breadcrumb.getMessage() != null
+          //                    && breadcrumb.getMessage().contains("bad breadcrumb")) {
+          //                  return null;
+          //                }
+          //                return breadcrumb;
+          //              });
 
           // Configure the background worker which sends events to sentry:
           // Wait up to 5 seconds before shutdown while there are events to send.
@@ -72,70 +71,72 @@ public class Main {
           options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
 
           // Determine traces sample rate based on the sampling context
-          options.setTracesSampler(
-              context -> {
-                // only 10% of transactions with "/product" prefix will be collected
-                if (!context.getTransactionContext().getName().startsWith("/products")) {
-                  return 0.1;
-                } else {
-                  return 0.5;
-                }
-              });
+          //          options.setTracesSampler(
+          //              context -> {
+          //                // only 10% of transactions with "/product" prefix will be collected
+          //                if (!context.getTransactionContext().getName().startsWith("/products"))
+          // {
+          //                  return 0.1;
+          //                } else {
+          //                  return 0.5;
+          //                }
+          //              });
         });
 
-    Sentry.addBreadcrumb(
-        "A 'bad breadcrumb' that will be rejected because of 'BeforeBreadcrumb callback above.'");
+    //    Sentry.addBreadcrumb(
+    //        "A 'bad breadcrumb' that will be rejected because of 'BeforeBreadcrumb callback
+    // above.'");
 
     // Data added to the root scope (no PushScope called up to this point)
     // The modifications done here will affect all events sent and will propagate to child scopes.
-    Sentry.configureScope(
-        scope -> {
-          scope.addEventProcessor(new SomeEventProcessor());
-
-          scope.setExtra("SomeExtraInfo", "Some value for extra info");
-        });
+    //    Sentry.configureScope(
+    //        scope -> {
+    //          scope.addEventProcessor(new SomeEventProcessor());
+    //
+    //          scope.setExtra("SomeExtraInfo", "Some value for extra info");
+    //        });
 
     // Configures a scope which is only valid within the callback
-    Sentry.withScope(
-        scope -> {
-          scope.setLevel(SentryLevel.FATAL);
-          scope.setTransaction("main");
-
-          // This message includes the data set to the scope in this block:
-          Sentry.captureMessage("Fatal message!");
-        });
+    //    Sentry.withScope(
+    //        scope -> {
+    //          scope.setLevel(SentryLevel.FATAL);
+    //          scope.setTransaction("main");
+    //
+    //          // This message includes the data set to the scope in this block:
+    //          Sentry.captureMessage("Fatal message!");
+    //        });
 
     // Only data added to the scope on `configureScope` above is included.
-    Sentry.captureMessage("Some warning!", SentryLevel.WARNING);
+    //    Sentry.captureMessage("Some warning!", SentryLevel.WARNING);
 
     // Sending exception:
-    Exception exception = new RuntimeException("Some error!");
-    Sentry.captureException(exception);
+    //    Exception exception = new RuntimeException("Some error!");
+    //    Sentry.captureException(exception);
 
     // An event with breadcrumb and user data
-    SentryEvent evt = new SentryEvent();
-    Message msg = new Message();
-    msg.setMessage("Detailed event");
-    evt.setMessage(msg);
-    evt.addBreadcrumb("Breadcrumb directly to the event");
-    User user = new User();
-    user.setUsername("some@user");
-    evt.setUser(user);
-    // Group all events with the following fingerprint:
-    evt.setFingerprints(Collections.singletonList("NewClientDebug"));
-    evt.setLevel(SentryLevel.DEBUG);
-    Sentry.captureEvent(evt);
+    //    SentryEvent evt = new SentryEvent();
+    //    Message msg = new Message();
+    //    msg.setMessage("Detailed event");
+    //    evt.setMessage(msg);
+    //    evt.addBreadcrumb("Breadcrumb directly to the event");
+    //    User user = new User();
+    //    user.setUsername("some@user");
+    //    evt.setUser(user);
+    //    // Group all events with the following fingerprint:
+    //    evt.setFingerprints(Collections.singletonList("NewClientDebug"));
+    //    evt.setLevel(SentryLevel.DEBUG);
+    //    Sentry.captureEvent(evt);
 
-    int count = 10;
-    for (int i = 0; i < count; i++) {
-      String messageContent = "%d of %d items we'll wait to flush to Sentry!";
-      Message message = new Message();
-      message.setMessage(messageContent);
-      message.setFormatted(String.format(messageContent, i, count));
-      SentryEvent event = new SentryEvent();
-      event.setMessage(message);
-      Sentry.captureEvent(event, SentryLevel.DEBUG);
-    }
+    //    int count = 10;
+    //    for (int i = 0; i < count; i++) {
+    //      String messageContent = "%d of %d items we'll wait to flush to Sentry!";
+    //      Message message = new Message();
+    //      message.setMessage(messageContent);
+    //      message.setFormatted(String.format(messageContent, i, count));
+    //      SentryEvent event = new SentryEvent();
+    //      event.setMessage(message);
+    //      Sentry.captureEvent(event, SentryLevel.DEBUG);
+    //    }
 
     // Performance feature
     //
@@ -144,6 +145,9 @@ public class Main {
     ITransaction transaction = Sentry.startTransaction("transaction name", "op");
     // Transactions can contain one or more Spans
     ISpan outerSpan = transaction.startChild("child");
+
+    SentryTraceHeader headerOuterSpan = outerSpan.toSentryTrace();
+
     Thread.sleep(100);
     // Spans create a tree structure. Each span can have one ore more spans inside.
     ISpan innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
@@ -154,25 +158,34 @@ public class Main {
     innerSpan.finish();
     // Every SentryEvent reported during the execution of the transaction or a span, will have trace
     // context attached
-    Sentry.captureMessage("this message is connected to the outerSpan");
+//    Sentry.captureMessage("this message is connected to the outerSpan");
     outerSpan.finish();
     // marks transaction as finished and sends it together with all child spans to Sentry
     transaction.finish();
 
+    TransactionContext tc =
+        TransactionContext.fromSentryTrace("continuedTr", "myOp", headerOuterSpan);
+    ITransaction continuedTr = Sentry.startTransaction(tc);
+    ISpan childOfcontinuedTr = continuedTr.startChild("childOfcontinuedTr");
+    Thread.sleep(100);
+    childOfcontinuedTr.finish();
+    continuedTr.finish();
+
     // All events that have not been sent yet are being flushed on JVM exit. Events can be also
     // flushed manually:
     // Sentry.close();
+    Sentry.flush(5000);
   }
 
-  private static class SomeEventProcessor implements EventProcessor {
-    @Override
-    public SentryEvent process(SentryEvent event, Object hint) {
-      // Here you can modify the event as you need
-      if (event.getLevel() != null && event.getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
-        event.addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));
-      }
-
-      return event;
-    }
-  }
+//  private static class SomeEventProcessor implements EventProcessor {
+//    @Override
+//    public SentryEvent process(SentryEvent event, Object hint) {
+//      // Here you can modify the event as you need
+//      if (event.getLevel() != null && event.getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
+//        event.addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));
+//      }
+//
+//      return event;
+//    }
+//  }
 }
