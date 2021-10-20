@@ -9,7 +9,7 @@ class JsonReflectionObjectSerializerTest {
 
     class Fixture {
         val logger = mock<ILogger>()
-        fun getSut() = JsonReflectionObjectSerializer()
+        fun getSut() = JsonReflectionObjectSerializer(5)
     }
 
     val fixture = Fixture()
@@ -225,6 +225,36 @@ class JsonReflectionObjectSerializerTest {
         )
         val actual = fixture.getSut().serialize(listOf(firstAncestorOfLeaf, secondAncestorOfLeaf), fixture.logger)
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `stop serializing when max depth is reached`() {
+        val six = ClassWithNesting("6", null)
+        val five = ClassWithNesting("5", six)
+        val four = ClassWithNesting("4", five)
+        val three = ClassWithNesting("3", four)
+        val two = ClassWithNesting("2", three)
+        val one = ClassWithNesting("1", two)
+
+        val expected = mapOf<String, Any?>(
+            "title" to "1",
+            "child" to mapOf<String, Any?>(
+                "title" to "2",
+                "child" to mapOf<String, Any?>(
+                    "title" to "3",
+                    "child" to mapOf<String, Any?>(
+                        "title" to "4",
+                        "child" to mapOf<String, Any?>(
+                            "title" to "5",
+                            "child" to null
+                        )
+                    )
+                )
+            )
+        )
+        val actual = fixture.getSut().serialize(one, fixture.logger)
+        assertEquals(expected, actual)
+        verify(fixture.logger).log(SentryLevel.ERROR, "Max depth exceeded.")
     }
 
     // Helper

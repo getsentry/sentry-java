@@ -20,6 +20,11 @@ import org.jetbrains.annotations.Nullable;
 public final class JsonReflectionObjectSerializer {
 
   private final Set<Object> visiting = new HashSet<>();
+  private final int maxDepth;
+
+  JsonReflectionObjectSerializer(int maxDepth) {
+    this.maxDepth = maxDepth;
+  }
 
   public @Nullable Object serialize(@Nullable Object object, @NotNull ILogger logger)
       throws Exception {
@@ -50,6 +55,13 @@ public final class JsonReflectionObjectSerializer {
         return null;
       }
       visiting.add(object);
+
+      if (visiting.size() > maxDepth) {
+        visiting.remove(object);
+        logger.log(SentryLevel.ERROR, "Max depth exceeded.");
+        return null;
+      }
+
       Object serializedObject;
       if (object.getClass().isArray()) {
         serializedObject = list((Object[]) object, logger);
