@@ -1,11 +1,14 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import kotlin.test.assertEquals
 import org.junit.Test
 
 class JsonReflectionObjectSerializerTest {
 
     class Fixture {
+        val logger = mock<ILogger>()
         fun getSut() = JsonReflectionObjectSerializer()
     }
 
@@ -31,7 +34,7 @@ class JsonReflectionObjectSerializerTest {
             "double" to 0.99,
             "boolean" to true
         )
-        val actual = fixture.getSut().serialize(objectWithPrimitiveFields)
+        val actual = fixture.getSut().serialize(objectWithPrimitiveFields, fixture.logger)
         assertEquals(expected, actual)
     }
 
@@ -43,7 +46,7 @@ class JsonReflectionObjectSerializerTest {
         val expected = mapOf(
             "string" to "fixture-string"
         )
-        val actual = fixture.getSut().serialize(objectWithPrivateStringField)
+        val actual = fixture.getSut().serialize(objectWithPrivateStringField, fixture.logger)
         assertEquals(expected, actual)
     }
 
@@ -55,7 +58,7 @@ class JsonReflectionObjectSerializerTest {
         val expected = mapOf(
             "array" to listOf("fixture-string")
         )
-        val actual = fixture.getSut().serialize(objectWithArrayField)
+        val actual = fixture.getSut().serialize(objectWithArrayField, fixture.logger)
         assertEquals(expected, actual)
     }
 
@@ -67,7 +70,7 @@ class JsonReflectionObjectSerializerTest {
         val expected = mapOf(
             "array" to listOf("fixture-string")
         )
-        val actual = fixture.getSut().serialize(objectWithCollectionField)
+        val actual = fixture.getSut().serialize(objectWithCollectionField, fixture.logger)
         assertEquals(expected, actual)
     }
 
@@ -79,7 +82,7 @@ class JsonReflectionObjectSerializerTest {
         val expected = mapOf(
             "map" to mapOf("fixture-key" to "fixture-value")
         )
-        val actual = fixture.getSut().serialize(objectWithMapField)
+        val actual = fixture.getSut().serialize(objectWithMapField, fixture.logger)
         assertEquals(expected, actual)
     }
 
@@ -87,7 +90,7 @@ class JsonReflectionObjectSerializerTest {
     fun `serialize object without fields`() {
         val objectWithoutFields = ClassWithoutFields()
         val expected = mapOf<String, Any>()
-        val actual = fixture.getSut().serialize(objectWithoutFields)
+        val actual = fixture.getSut().serialize(objectWithoutFields, fixture.logger)
         assertEquals(expected, actual)
     }
 
@@ -104,7 +107,123 @@ class JsonReflectionObjectSerializerTest {
                 "child" to null
             )
         )
-        val actual = fixture.getSut().serialize(objectGraph)
+        val actual = fixture.getSut().serialize(objectGraph, fixture.logger)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `cycle to object reference is not serialized`() {
+        val secondChild = ClassWithNesting("Second Child", null)
+        val firstChild = ClassWithNesting("First Child", secondChild)
+        val root = ClassWithNesting("Root", firstChild)
+        secondChild.child = root // Cycle to root
+
+        val expected = mapOf<String, Any?>(
+            "title" to "Root",
+            "child" to mapOf<String, Any?>(
+                "title" to "First Child",
+                "child" to mapOf<String, Any?>(
+                    "title" to "Second Child",
+                    "child" to null
+                )
+            )
+        )
+        val actual = fixture.getSut().serialize(root, fixture.logger)
+        assertEquals(expected, actual)
+        verify(fixture.logger).log(SentryLevel.ERROR, "Not serializing object due to cyclic reference to ancestor object.")
+    }
+
+    @Test
+    fun `cycle to array reference is not serialized`() {
+        val firstChild = ClassWithAnyNesting("First Child", null)
+        val secondChild = ClassWithAnyNesting("Second Child", null)
+        val array = arrayOf<Any>(firstChild, secondChild)
+        secondChild.child = array
+
+        val expected = listOf(
+            mapOf<String, Any?>(
+                "title" to "First Child",
+                "child" to null
+            ),
+            mapOf<String, Any?>(
+                "title" to "Second Child",
+                "child" to null
+            )
+        )
+        val actual = fixture.getSut().serialize(array, fixture.logger)
+        assertEquals(expected, actual)
+        verify(fixture.logger).log(SentryLevel.ERROR, "Not serializing object due to cyclic reference to ancestor object.")
+    }
+
+    @Test
+    fun `cycle to collection reference is not serialized`() {
+        val firstChild = ClassWithAnyNesting("First Child", null)
+        val secondChild = ClassWithAnyNesting("Second Child", null)
+        val list = mutableListOf<Any>(firstChild, secondChild)
+        secondChild.child = list
+
+        val expected = listOf(
+            mapOf<String, Any?>(
+                "title" to "First Child",
+                "child" to null
+            ),
+            mapOf<String, Any?>(
+                "title" to "Second Child",
+                "child" to null
+            )
+        )
+        val actual = fixture.getSut().serialize(list, fixture.logger)
+        assertEquals(expected, actual)
+        verify(fixture.logger).log(SentryLevel.ERROR, "Not serializing object due to cyclic reference to ancestor object.")
+    }
+
+    @Test
+    fun `cycle to map reference is not serialized`() {
+        val firstChild = ClassWithAnyNesting("First Child", null)
+        val secondChild = ClassWithAnyNesting("Second Child", null)
+        val map = mapOf(
+            "first" to firstChild,
+            "second" to secondChild
+        )
+        secondChild.child = map
+
+        val expected = mapOf<String, Any?>(
+            "first" to mapOf<String, Any?>(
+                "title" to "First Child",
+                "child" to null
+            ),
+            "second" to mapOf<String, Any?>(
+                "title" to "Second Child",
+                "child" to null
+            )
+        )
+        val actual = fixture.getSut().serialize(map, fixture.logger)
+        assertEquals(expected, actual)
+        verify(fixture.logger).log(SentryLevel.ERROR, "Not serializing object due to cyclic reference to ancestor object.")
+    }
+
+    @Test
+    fun `a-cyclic multiple references are serialized`() {
+        val leaf = ClassWithNesting("Leaf!", null)
+        val firstAncestorOfLeaf = ClassWithNesting("A", leaf)
+        val secondAncestorOfLeaf = ClassWithNesting("B", leaf)
+        val expected = listOf(
+            mapOf<String, Any?>(
+                "title" to "A",
+                "child" to mapOf<String, Any?>(
+                    "title" to "Leaf!",
+                    "child" to null
+                )
+            ),
+            mapOf<String, Any?>(
+                "title" to "B",
+                "child" to mapOf<String, Any?>(
+                    "title" to "Leaf!",
+                    "child" to null
+                )
+            )
+        )
+        val actual = fixture.getSut().serialize(listOf(firstAncestorOfLeaf, secondAncestorOfLeaf), fixture.logger)
         assertEquals(expected, actual)
     }
 
@@ -140,6 +259,11 @@ class JsonReflectionObjectSerializerTest {
 
     class ClassWithNesting(
         val title: String,
-        val child: ClassWithNesting?
+        var child: ClassWithNesting?
+    )
+
+    class ClassWithAnyNesting(
+        val title: String,
+        var child: Any?
     )
 }

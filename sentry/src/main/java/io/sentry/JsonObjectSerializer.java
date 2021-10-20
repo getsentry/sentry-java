@@ -45,7 +45,7 @@ public final class JsonObjectSerializer {
       serializeMap(writer, logger, (Map<?, ?>) object);
     } else {
       try {
-        Object serializableObject = jsonReflectionObjectSerializer.serialize(object);
+        Object serializableObject = jsonReflectionObjectSerializer.serialize(object, logger);
         serialize(writer, logger, serializableObject);
       } catch (Exception exception) {
         logger.log(SentryLevel.ERROR, "Failed serializing unknown object.", exception);
