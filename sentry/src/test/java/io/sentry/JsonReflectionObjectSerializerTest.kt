@@ -130,7 +130,7 @@ class JsonReflectionObjectSerializerTest {
         )
         val actual = fixture.getSut().serialize(root, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.ERROR, "Not serializing object due to cyclic reference to ancestor object.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Not serializing object due to cyclic reference to ancestor object.")
     }
 
     @Test
@@ -152,7 +152,7 @@ class JsonReflectionObjectSerializerTest {
         )
         val actual = fixture.getSut().serialize(array, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.ERROR, "Not serializing object due to cyclic reference to ancestor object.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Not serializing object due to cyclic reference to ancestor object.")
     }
 
     @Test
@@ -174,7 +174,7 @@ class JsonReflectionObjectSerializerTest {
         )
         val actual = fixture.getSut().serialize(list, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.ERROR, "Not serializing object due to cyclic reference to ancestor object.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Not serializing object due to cyclic reference to ancestor object.")
     }
 
     @Test
@@ -199,7 +199,7 @@ class JsonReflectionObjectSerializerTest {
         )
         val actual = fixture.getSut().serialize(map, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.ERROR, "Not serializing object due to cyclic reference to ancestor object.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Not serializing object due to cyclic reference to ancestor object.")
     }
 
     @Test
@@ -254,7 +254,7 @@ class JsonReflectionObjectSerializerTest {
         )
         val actual = fixture.getSut().serialize(one, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.ERROR, "Max depth exceeded.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Max depth exceeded.")
     }
 
     // Helper

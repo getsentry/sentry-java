@@ -50,7 +50,7 @@ public final class JsonReflectionObjectSerializer {
     } else {
       if (visiting.contains(object)) {
         logger.log(
-            SentryLevel.ERROR,
+            SentryLevel.INFO,
             "Not serializing object due to cyclic reference to ancestor object.");
         return null;
       }
@@ -58,7 +58,7 @@ public final class JsonReflectionObjectSerializer {
 
       if (visiting.size() > maxDepth) {
         visiting.remove(object);
-        logger.log(SentryLevel.ERROR, "Max depth exceeded.");
+        logger.log(SentryLevel.INFO, "Max depth exceeded.");
         return null;
       }
 
