@@ -97,6 +97,8 @@ public final class JsonReflectionObjectSerializer {
     return map;
   }
 
+  // Helper
+
   private @NotNull List<Object> list(@NotNull Object[] objectArray, @NotNull ILogger logger)
       throws Exception {
     List<Object> list = new ArrayList<>();

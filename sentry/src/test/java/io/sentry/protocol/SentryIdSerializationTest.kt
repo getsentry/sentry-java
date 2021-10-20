@@ -42,7 +42,7 @@ class SentryIdSerializationTest {
 
     private fun serialize(src: SentryId): String {
         val wrt = StringWriter()
-        val jsonWrt = JsonObjectWriter(wrt)
+        val jsonWrt = JsonObjectWriter(wrt, 100)
         jsonWrt.beginObject()
         jsonWrt.name("sentry_id")
         src.serialize(jsonWrt, fixture.logger)

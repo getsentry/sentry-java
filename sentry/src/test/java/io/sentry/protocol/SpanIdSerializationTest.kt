@@ -43,7 +43,7 @@ class SpanIdSerializationTest {
 
     private fun serialize(src: SpanId): String {
         val wrt = StringWriter()
-        val jsonWrt = JsonObjectWriter(wrt)
+        val jsonWrt = JsonObjectWriter(wrt, 100)
         jsonWrt.beginObject()
         jsonWrt.name("span_id")
         src.serialize(jsonWrt, fixture.logger)

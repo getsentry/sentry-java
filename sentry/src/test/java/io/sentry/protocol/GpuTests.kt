@@ -59,7 +59,7 @@ class GpuSerializationTest {
 
     private fun serializeToString(serialize: (JsonObjectWriter) -> Unit): String {
         val wrt = StringWriter()
-        val jsonWrt = JsonObjectWriter(wrt)
+        val jsonWrt = JsonObjectWriter(wrt, 100)
         serialize(jsonWrt)
         return wrt.toString()
     }

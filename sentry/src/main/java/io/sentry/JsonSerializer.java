@@ -142,7 +142,7 @@ public final class JsonSerializer implements ISerializer {
     }
 
     if (entity instanceof JsonSerializable) {
-      JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(writer);
+      JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(writer, options.getMaxDepth());
       ((JsonSerializable) entity).serialize(jsonObjectWriter, options.getLogger());
     }
     writer.flush();
@@ -158,7 +158,9 @@ public final class JsonSerializer implements ISerializer {
         final Writer writer =
             new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8))) {
 
-      envelope.getHeader().serialize(new JsonObjectWriter(writer), options.getLogger());
+      envelope
+          .getHeader()
+          .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
       writer.write("\n");
 
       for (final SentryEnvelopeItem item : envelope.getItems()) {
@@ -166,7 +168,8 @@ public final class JsonSerializer implements ISerializer {
           // When this throws we don't write anything and continue with the next item.
           final byte[] data = item.getData();
 
-          item.getHeader().serialize(new JsonObjectWriter(writer), options.getLogger());
+          item.getHeader()
+              .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
           writer.write("\n");
           writer.flush();
 
@@ -186,7 +189,7 @@ public final class JsonSerializer implements ISerializer {
   @Override
   public @NotNull String serialize(@NotNull Map<String, Object> data) throws Exception {
     StringWriter stringWriter = new StringWriter();
-    JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(stringWriter);
+    JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(stringWriter, options.getMaxDepth());
     jsonObjectWriter.value(options.getLogger(), data);
     return stringWriter.toString();
   }

@@ -12,7 +12,7 @@ internal class JsonObjectSerializerTest {
         val logger = mock<ILogger>()
 
         fun getSUT(): JsonObjectSerializer {
-            return JsonObjectSerializer()
+            return JsonObjectSerializer(100)
         }
     }
 
