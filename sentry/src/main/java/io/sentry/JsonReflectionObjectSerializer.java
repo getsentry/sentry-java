@@ -4,11 +4,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -81,7 +81,7 @@ public final class JsonReflectionObjectSerializer {
       @NotNull Object object, @NotNull ILogger logger) throws Exception {
     Field[] fields = object.getClass().getDeclaredFields();
 
-    Map<String, Object> map = new TreeMap<>();
+    Map<String, Object> map = new HashMap<>();
 
     for (Field field : fields) {
       if (Modifier.isTransient(field.getModifiers())) {
@@ -119,7 +119,7 @@ public final class JsonReflectionObjectSerializer {
   // Key names taken from toString
   private @NotNull Map<String, Object> map(@NotNull Map<?, ?> map, @NotNull ILogger logger)
       throws Exception {
-    Map<String, Object> hashMap = new TreeMap<>();
+    Map<String, Object> hashMap = new HashMap<>();
     for (Object key : map.keySet()) {
       Object object = map.get(key);
       if (object != null) {
