@@ -27,9 +27,13 @@ import io.sentry.spring.tracing.SentryTransaction
 import io.sentry.transport.ITransport
 import java.time.Duration
 import java.util.concurrent.Callable
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.Awaitility
 import org.awaitility.kotlin.await
+import org.junit.AfterClass
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -73,6 +77,18 @@ import org.springframework.web.reactive.function.client.WebClient
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 class SentrySpringIntegrationTest {
+
+    companion object {
+        @BeforeClass
+        fun `configure awaitlity`() {
+            Awaitility.setDefaultTimeout(500, TimeUnit.MILLISECONDS)
+        }
+
+        @AfterClass
+        fun `reset awaitility`() {
+            Awaitility.reset()
+        }
+    }
 
     @Autowired
     lateinit var transport: ITransport
@@ -219,10 +235,13 @@ class SentrySpringIntegrationTest {
 
         restTemplate.getForEntity("http://localhost:$port/hello", String::class.java)
 
-        verify(transport).send(checkTransaction { transaction ->
-            assertThat(transaction.user).isNotNull()
-            assertThat(transaction.user!!.username).isEqualTo("user")
-        }, anyOrNull())
+        // transactions are sent after response is returned
+        await.untilAsserted {
+            verify(transport).send(checkTransaction { transaction ->
+                assertThat(transaction.user).isNotNull()
+                assertThat(transaction.user!!.username).isEqualTo("user")
+            }, anyOrNull())
+        }
     }
 
     @Test
@@ -246,13 +265,16 @@ class SentrySpringIntegrationTest {
 
         restTemplate.getForEntity("http://localhost:$port/webClient", String::class.java)
 
-        verify(transport).send(checkTransaction { transaction ->
-            assertThat(transaction.spans).hasSize(1)
-            val span = transaction.spans.first()
-            assertThat(span.op).isEqualTo("http.client")
-            assertThat(span.description).isEqualTo("GET http://localhost:$port/hello")
-            assertThat(span.status).isEqualTo(SpanStatus.OK)
-        }, anyOrNull())
+        // transactions are sent after response is returned
+        await.untilAsserted {
+            verify(transport).send(checkTransaction { transaction ->
+                assertThat(transaction.spans).hasSize(1)
+                val span = transaction.spans.first()
+                assertThat(span.op).isEqualTo("http.client")
+                assertThat(span.description).isEqualTo("GET http://localhost:$port/hello")
+                assertThat(span.status).isEqualTo(SpanStatus.OK)
+            }, anyOrNull())
+        }
     }
 }
 
@@ -261,17 +283,15 @@ class SentrySpringIntegrationTest {
 @Import(SentryTracingConfiguration::class)
 open class App {
 
-    private val transport = mock<ITransport>()
-
     @Bean
-    open fun mockTransportFactory(): ITransportFactory {
+    open fun mockTransportFactory(transport: ITransport): ITransportFactory {
         val factory = mock<ITransportFactory>()
         whenever(factory.create(any(), any())).thenReturn(transport)
         return factory
     }
 
     @Bean
-    open fun mockTransport() = transport
+    open fun mockTransport() = mock<ITransport>()
 
     @Bean
     open fun tracesSamplerCallback() = SentryOptions.TracesSamplerCallback {
