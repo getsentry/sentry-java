@@ -50,8 +50,7 @@ public final class JsonReflectionObjectSerializer {
     } else {
       if (visiting.contains(object)) {
         logger.log(
-            SentryLevel.INFO,
-            "Not serializing object due to cyclic reference to ancestor object.");
+            SentryLevel.INFO, "Not serializing object due to cyclic reference to ancestor object.");
         return null;
       }
       visiting.add(object);
