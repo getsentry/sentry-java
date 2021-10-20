@@ -87,12 +87,14 @@ public final class JsonReflectionObjectSerializer {
         continue;
       }
       String fieldName = field.getName();
-      field.setAccessible(true);
-
-      Object fieldObject = field.get(object);
-      map.put(fieldName, serialize(fieldObject, logger));
-
-      field.setAccessible(false);
+      try {
+        field.setAccessible(true);
+        Object fieldObject = field.get(object);
+        map.put(fieldName, serialize(fieldObject, logger));
+        field.setAccessible(false);
+      } catch (Exception exception) {
+        logger.log(SentryLevel.INFO, "Cannot access field " + fieldName + ".");
+      }
     }
     return map;
   }
