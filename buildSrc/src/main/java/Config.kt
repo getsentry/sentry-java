@@ -23,7 +23,7 @@ object Config {
     }
 
     object Android {
-        private val sdkVersion = 30
+        private val sdkVersion = 31
 
         val minSdkVersion = 14
         val minSdkVersionOkHttp = 21
