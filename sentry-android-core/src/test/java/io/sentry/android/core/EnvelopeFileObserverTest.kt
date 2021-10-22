@@ -48,7 +48,7 @@ class EnvelopeFileObserverTest {
     fun `when event type is not close write, envelope sender is not called`() {
         triggerEvent(eventType = FileObserver.CLOSE_WRITE.inv())
 
-        verify(fixture.envelopeSender, never())
+        verify(fixture.envelopeSender, never()).processEnvelopeFile(any(), anyOrNull())
     }
 
     @Test
