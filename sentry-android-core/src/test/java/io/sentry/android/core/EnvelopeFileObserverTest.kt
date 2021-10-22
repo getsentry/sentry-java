@@ -61,8 +61,10 @@ class EnvelopeFileObserverTest {
     @Test
     fun `when null is passed as a path, ctor throws`() {
         fixture.path = null
-        assertFailsWith<Exception> { fixture.getSut(0) }
-//        assertEquals("File path is required.", exception.message)
+
+        // since EnvelopeFileObserver extends FileObserver and FileObserver requires a File(path),
+        // it throws NullPointerException instead of our own IllegalArgumentException
+        assertFailsWith<NullPointerException> { fixture.getSut(0) }
     }
 
     @Test

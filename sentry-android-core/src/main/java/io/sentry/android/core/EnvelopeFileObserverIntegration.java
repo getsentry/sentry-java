@@ -51,7 +51,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
         observer.startWatching();
         logger.log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
       } catch (Exception e) {
-        // it could throw eg FileNotFoundException
+        // it could throw eg NoSuchFileException or NullPointerException
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Failed to initialize EnvelopeFileObserverIntegration.", e);
