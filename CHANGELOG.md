@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Add `graphql-java` instrumentation (#1777)
+
 ## 5.2.4
 
 * Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#1769)
