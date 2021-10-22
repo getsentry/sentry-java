@@ -23,7 +23,7 @@ object Config {
     }
 
     object Android {
-        private val sdkVersion = 30
+        private val sdkVersion = 31
 
         val minSdkVersion = 14
         val minSdkVersionOkHttp = 21
@@ -39,12 +39,15 @@ object Config {
     }
 
     object Libs {
+        val okHttpVersion = "4.9.2"
         val appCompat = "androidx.appcompat:appcompat:1.2.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
-        val okhttpBom = "com.squareup.okhttp3:okhttp-bom:4.9.0"
+        val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
         val okhttp = "com.squareup.okhttp3:okhttp"
         // only bump gson if https://github.com/google/gson/issues/1597 is fixed
-        val gson = "com.google.code.gson:gson:2.8.5"
+        private val gsonVersion = "2.8.5"
+        val gsonDep = "com.google.code.gson:gson"
+        val gson = "$gsonDep:$gsonVersion"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.7"
 
         private val lifecycleVersion = "2.2.0"
@@ -103,22 +106,20 @@ object Config {
     }
 
     object TestLibs {
-        private val androidxTestVersion = "1.3.0"
+        private val androidxTestVersion = "1.4.0-rc01"
 
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
         val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxJunit = "androidx.test.ext:junit:1.1.2"
-        val androidxCoreKtx = "androidx.core:core-ktx:1.3.2"
-        // bump to 4.6.1 breaks a few tests due to ShadowFileObserver
-        val robolectric = "org.robolectric:robolectric:4.5.1"
+        val androidxJunit = "androidx.test.ext:junit:1.1.3-rc01"
+        val androidxCoreKtx = "androidx.core:core-ktx:1.7.0-rc01"
+        val robolectric = "org.robolectric:robolectric:4.6.1"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val mockitoInline = "org.mockito:mockito-inline:3.12.4"
+        val mockitoInline = "org.mockito:mockito-inline:4.0.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
-        val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
+        val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
-        // bumping to 2.26.0 breaks tests
-        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.11.1"
+        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.28.0"
     }
 
     object QualityPlugins {
@@ -162,7 +163,6 @@ object Config {
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.9.0"
-        val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
         val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.2"
     }
 

@@ -5,7 +5,6 @@ import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.SentryId
@@ -36,7 +35,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     fun `when UncaughtExceptionHandlerIntegration is initialized, uncaught handler is unchanged`() {
         val handlerMock = mock<UncaughtExceptionHandler>()
         UncaughtExceptionHandlerIntegration(handlerMock)
-        verifyZeroInteractions(handlerMock)
+        verify(handlerMock, never()).defaultUncaughtExceptionHandler = any()
     }
 
     @Test
