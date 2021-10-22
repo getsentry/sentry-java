@@ -36,6 +36,9 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.jsonUnit)
+    // jsonUnit uses newer Gson features (JsonParser.parseReader)
+    // so we have to use latest in tests too
+    testImplementation("${Config.Libs.gsonDep}:2.8.8")
     testImplementation(projects.sentryTestSupport)
 }
 

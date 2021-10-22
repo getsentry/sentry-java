@@ -39,12 +39,15 @@ object Config {
     }
 
     object Libs {
+        val okHttpVersion = "4.9.2"
         val appCompat = "androidx.appcompat:appcompat:1.2.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
-        val okhttpBom = "com.squareup.okhttp3:okhttp-bom:4.9.0"
+        val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
         val okhttp = "com.squareup.okhttp3:okhttp"
         // only bump gson if https://github.com/google/gson/issues/1597 is fixed
-        val gson = "com.google.code.gson:gson:2.8.5"
+        private val gsonVersion = "2.8.5"
+        val gsonDep = "com.google.code.gson:gson"
+        val gson = "$gsonDep:$gsonVersion"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.7"
 
         private val lifecycleVersion = "2.2.0"
@@ -114,11 +117,9 @@ object Config {
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
         val mockitoInline = "org.mockito:mockito-inline:4.0.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
-        val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.2"
+        val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
-        // bumping from 2.16.0 to 2.28.0 breaks tests with java.lang.NoSuchMethodError
-        // com.google.gson.JsonElement com.google.gson.JsonParser.parseReader(java.io.Reader)
-        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.15.0"
+        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.28.0"
     }
 
     object QualityPlugins {
