@@ -116,7 +116,8 @@ object Config {
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.2"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
-        // bumping to 2.28.0 breaks tests
+        // bumping from 2.16.0 to 2.28.0 breaks tests with java.lang.NoSuchMethodError
+        // com.google.gson.JsonElement com.google.gson.JsonParser.parseReader(java.io.Reader)
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.15.0"
     }
 
