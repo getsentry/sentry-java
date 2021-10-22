@@ -10,7 +10,6 @@ import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
@@ -643,19 +642,19 @@ class SentryClientTest {
     @Test
     fun `when captureSession and no release is set, do nothing`() {
         fixture.getSut().captureSession(createSession(""))
-        verify(fixture.transport, never()).send(any<SentryEnvelope>())
+        verify(fixture.transport, never()).send(any())
     }
 
     @Test
     fun `when captureSession and release is set, send an envelope`() {
         fixture.getSut().captureSession(createSession())
-        verify(fixture.transport).send(any<SentryEnvelope>(), anyOrNull())
+        verify(fixture.transport).send(any(), anyOrNull())
     }
 
     @Test
     fun `when captureSession, sdkInfo should be in the envelope header`() {
         fixture.getSut().captureSession(createSession())
-        verify(fixture.transport).send(check<SentryEnvelope> {
+        verify(fixture.transport).send(check {
             assertNotNull(it.header.sdkVersion)
         }, anyOrNull())
     }
@@ -1124,7 +1123,7 @@ class SentryClientTest {
         fixture.sentryOptions.addIgnoredExceptionForType(IllegalStateException::class.java)
         val sut = fixture.getSut()
         sut.captureException(IllegalStateException())
-        verifyZeroInteractions(fixture.transport)
+        verify(fixture.transport, never()).send(any())
     }
 
     private fun createScope(): Scope {

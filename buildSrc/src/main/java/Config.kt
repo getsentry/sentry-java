@@ -103,19 +103,18 @@ object Config {
     }
 
     object TestLibs {
-        private val androidxTestVersion = "1.3.0"
+        private val androidxTestVersion = "1.4.0-rc01"
 
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
         val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxJunit = "androidx.test.ext:junit:1.1.2"
-        val androidxCoreKtx = "androidx.core:core-ktx:1.3.2"
-        // bump to 4.6.1 breaks a few tests due to ShadowFileObserver
-        val robolectric = "org.robolectric:robolectric:4.5.1"
+        val androidxJunit = "androidx.test.ext:junit:1.1.3-rc01"
+        val androidxCoreKtx = "androidx.core:core-ktx:1.7.0-rc01"
+        val robolectric = "org.robolectric:robolectric:4.6.1"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val mockitoInline = "org.mockito:mockito-inline:3.12.4"
+        val mockitoInline = "org.mockito:mockito-inline:4.0.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
-        val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
+        val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.2"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
         // bumping to 2.26.0 breaks tests
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.11.1"
