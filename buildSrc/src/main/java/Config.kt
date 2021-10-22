@@ -134,7 +134,6 @@ object Config {
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.39.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        // use RC2 to drop jcenter because of kotlinx-html
         val detektVersion = "1.18.1"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
         val binaryCompatibilityValidatorVersion = "0.7.1"
