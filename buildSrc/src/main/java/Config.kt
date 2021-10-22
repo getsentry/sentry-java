@@ -95,6 +95,8 @@ object Config {
         private val apolloVersion = "2.5.9"
         val apolloAndroid = "com.apollographql.apollo:apollo-runtime:$apolloVersion"
         val apolloCoroutines = "com.apollographql.apollo:apollo-coroutines-support:$apolloVersion"
+
+        val graphQlJava = "com.graphql-java:graphql-java:17.3"
     }
 
     object AnnotationProcessors {

@@ -1,0 +1,9 @@
+public final class io/sentry/graphql/java/SentryInstrumentation : graphql/execution/instrumentation/SimpleInstrumentation {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun beginExecution (Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;)Lgraphql/execution/instrumentation/InstrumentationContext;
+	public fun createState ()Lgraphql/execution/instrumentation/InstrumentationState;
+	public fun instrumentDataFetcher (Lgraphql/schema/DataFetcher;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Lgraphql/schema/DataFetcher;
+	public fun instrumentExecutionResult (Lgraphql/ExecutionResult;Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;)Ljava/util/concurrent/CompletableFuture;
+}
+
