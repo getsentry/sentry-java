@@ -133,7 +133,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).isEnabled
         verifyNoMoreInteractions(fixture.hub)
-        verify(fixture.transactionNameProvider, never())
+        verify(fixture.transactionNameProvider, never()).provideTransactionName(any())
     }
 
     @Test

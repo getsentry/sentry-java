@@ -158,7 +158,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val event = SentryEvent()
         sut.captureEvent(event)
-        verify(fixture.transport, never()).send(any())
+        verify(fixture.transport, never()).send(any(), anyOrNull())
     }
 
     @Test
@@ -447,7 +447,7 @@ class SentryClientTest {
 
         sut.captureUserFeedback(UserFeedback(SentryId.EMPTY_ID))
 
-        verify(fixture.transport, never()).send(any())
+        verify(fixture.transport, never()).send(any(), anyOrNull())
     }
 
     @Test
@@ -642,7 +642,7 @@ class SentryClientTest {
     @Test
     fun `when captureSession and no release is set, do nothing`() {
         fixture.getSut().captureSession(createSession(""))
-        verify(fixture.transport, never()).send(any())
+        verify(fixture.transport, never()).send(any(), anyOrNull())
     }
 
     @Test
@@ -1123,7 +1123,7 @@ class SentryClientTest {
         fixture.sentryOptions.addIgnoredExceptionForType(IllegalStateException::class.java)
         val sut = fixture.getSut()
         sut.captureException(IllegalStateException())
-        verify(fixture.transport, never()).send(any())
+        verify(fixture.transport, never()).send(any(), anyOrNull())
     }
 
     private fun createScope(): Scope {
