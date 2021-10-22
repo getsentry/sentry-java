@@ -116,7 +116,7 @@ object Config {
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.2"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
-        // bumping to 2.26.0 breaks tests
+        // bumping to 2.28.0 breaks tests
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.11.1"
     }
 
@@ -161,7 +161,6 @@ object Config {
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.9.0"
-        val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
         val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.2"
     }
 
