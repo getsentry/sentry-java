@@ -149,9 +149,11 @@ class SentryStackTraceFactoryTest {
         val sentryElement = StackTraceElement("io.sentry.element", "test", "test.java", 1)
         stacktrace = stacktrace.plusElement(sentryElement)
 
-        assertNull(sut.getStackFrames(stacktrace)!!.find {
-            it.module != null && it.module!!.startsWith("io.sentry")
-        })
+        assertNull(
+            sut.getStackFrames(stacktrace)!!.find {
+                it.module != null && it.module!!.startsWith("io.sentry")
+            }
+        )
     }
 
     @Test
@@ -160,9 +162,11 @@ class SentryStackTraceFactoryTest {
         val sentryElement = StackTraceElement("io.sentry.samples.element", "test", "test.java", 1)
         stacktrace = stacktrace.plusElement(sentryElement)
 
-        assertNotNull(sut.getStackFrames(stacktrace)!!.find {
-            it.module != null && it.module!!.startsWith("io.sentry")
-        })
+        assertNotNull(
+            sut.getStackFrames(stacktrace)!!.find {
+                it.module != null && it.module!!.startsWith("io.sentry")
+            }
+        )
     }
 
     @Test
@@ -171,9 +175,11 @@ class SentryStackTraceFactoryTest {
         val sentryElement = StackTraceElement("io.sentry.mobile.element", "test", "test.java", 1)
         stacktrace = stacktrace.plusElement(sentryElement)
 
-        assertNotNull(sut.getStackFrames(stacktrace)!!.find {
-            it.module != null && it.module!!.startsWith("io.sentry")
-        })
+        assertNotNull(
+            sut.getStackFrames(stacktrace)!!.find {
+                it.module != null && it.module!!.startsWith("io.sentry")
+            }
+        )
     }
 
     private fun generateStackTrace(className: String?) =

@@ -13,9 +13,6 @@ import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.protocol.User
 import io.sentry.transport.ITransport
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
@@ -23,6 +20,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SentryUserProviderEventProcessorIntegrationTest {
 
@@ -36,10 +36,13 @@ class SentryUserProviderEventProcessorIntegrationTest {
 
                 Sentry.captureMessage("test message")
 
-                verify(transport).send(checkEvent { event: SentryEvent ->
-                    assertThat(event.user).isNotNull
-                    assertThat(event.user!!.username).isEqualTo("john.smith")
-                }, anyOrNull())
+                verify(transport).send(
+                    checkEvent { event: SentryEvent ->
+                        assertThat(event.user).isNotNull
+                        assertThat(event.user!!.username).isEqualTo("john.smith")
+                    },
+                    anyOrNull()
+                )
             }
     }
 
@@ -52,9 +55,12 @@ class SentryUserProviderEventProcessorIntegrationTest {
                 reset(transport)
 
                 Sentry.captureMessage("test message")
-                verify(transport).send(checkEvent { event: SentryEvent ->
-                    assertThat(event.user).isNull()
-                }, anyOrNull())
+                verify(transport).send(
+                    checkEvent { event: SentryEvent ->
+                        assertThat(event.user).isNull()
+                    },
+                    anyOrNull()
+                )
             }
     }
 

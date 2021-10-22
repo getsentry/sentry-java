@@ -16,6 +16,8 @@ import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -23,8 +25,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
 
 class SentryFeignClientTest {
 
@@ -47,9 +47,11 @@ class SentryFeignClientTest {
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
-            server.enqueue(MockResponse()
-                .setBody(responseBody)
-                .setResponseCode(httpStatusCode))
+            server.enqueue(
+                MockResponse()
+                    .setBody(responseBody)
+                    .setResponseCode(httpStatusCode)
+            )
             server.start()
 
             return if (!networkError) {
@@ -127,11 +129,13 @@ class SentryFeignClientTest {
     fun `adds breadcrumb when http calls succeeds`() {
         val sut = fixture.getSut(responseBody = "response body")
         sut.postWithBody("request-body")
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(13, it.data["response_body_size"])
-            assertEquals(12, it.data["request_body_size"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(13, it.data["response_body_size"])
+                assertEquals(12, it.data["request_body_size"])
+            }
+        )
     }
 
     @SuppressWarnings("SwallowedException")
@@ -145,9 +149,11 @@ class SentryFeignClientTest {
         } catch (e: Exception) {
             // ignore me
         }
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+            }
+        )
     }
 
     @SuppressWarnings("SwallowedException")

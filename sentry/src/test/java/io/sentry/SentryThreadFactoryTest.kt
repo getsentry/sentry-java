@@ -11,10 +11,13 @@ import kotlin.test.assertTrue
 class SentryThreadFactoryTest {
 
     class Fixture {
-        internal fun getSut(attachStacktrace: Boolean = true) = SentryThreadFactory(SentryStackTraceFactory(listOf("io.sentry"), listOf()), with(SentryOptions()) {
-            isAttachStacktrace = attachStacktrace
-            this
-        })
+        internal fun getSut(attachStacktrace: Boolean = true) = SentryThreadFactory(
+            SentryStackTraceFactory(listOf("io.sentry"), listOf()),
+            with(SentryOptions()) {
+                isAttachStacktrace = attachStacktrace
+                this
+            }
+        )
     }
 
     private val fixture = Fixture()

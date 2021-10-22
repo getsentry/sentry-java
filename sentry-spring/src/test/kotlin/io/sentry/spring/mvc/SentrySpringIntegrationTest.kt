@@ -25,9 +25,6 @@ import io.sentry.spring.tracing.SentryTracingConfiguration
 import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.spring.tracing.SentryTransaction
 import io.sentry.transport.ITransport
-import java.time.Duration
-import java.util.concurrent.Callable
-import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
 import org.awaitility.kotlin.await
@@ -70,6 +67,9 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.function.client.ExchangeFilterFunctions
 import org.springframework.web.reactive.function.client.WebClient
+import java.time.Duration
+import java.util.concurrent.Callable
+import java.util.concurrent.TimeUnit
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -116,13 +116,16 @@ class SentrySpringIntegrationTest {
 
         restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
 
-        verify(transport).send(checkEvent { event ->
-            assertThat(event.request).isNotNull()
-            assertThat(event.request!!.url).isEqualTo("http://localhost:$port/hello")
-            assertThat(event.user).isNotNull()
-            assertThat(event.user!!.username).isEqualTo("user")
-            assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
-        }, anyOrNull())
+        verify(transport).send(
+            checkEvent { event ->
+                assertThat(event.request).isNotNull()
+                assertThat(event.request!!.url).isEqualTo("http://localhost:$port/hello")
+                assertThat(event.user).isNotNull()
+                assertThat(event.user!!.username).isEqualTo("user")
+                assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -134,10 +137,13 @@ class SentrySpringIntegrationTest {
         val httpEntity = HttpEntity("""{"body":"content"}""", headers)
         restTemplate.exchange("http://localhost:$port/body", HttpMethod.POST, httpEntity, Void::class.java)
 
-        verify(transport).send(checkEvent { event ->
-            assertThat(event.request).isNotNull()
-            assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
-        }, anyOrNull())
+        verify(transport).send(
+            checkEvent { event ->
+                assertThat(event.request).isNotNull()
+                assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -149,10 +155,13 @@ class SentrySpringIntegrationTest {
 
         restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
 
-        verify(transport).send(checkEvent { event ->
-            assertThat(event.user).isNotNull()
-            assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
-        }, anyOrNull())
+        verify(transport).send(
+            checkEvent { event ->
+                assertThat(event.user).isNotNull()
+                assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -161,14 +170,17 @@ class SentrySpringIntegrationTest {
 
         restTemplate.getForEntity("http://localhost:$port/throws", String::class.java)
 
-        verify(transport).send(checkEvent { event ->
-            assertThat(event.exceptions).isNotNull().isNotEmpty
-            val ex = event.exceptions!!.first()
-            assertThat(ex.value).isEqualTo("something went wrong")
-            assertThat(ex.mechanism).isNotNull()
-            assertThat(ex.mechanism!!.isHandled).isFalse()
-            assertThat(ex.mechanism!!.type).isEqualTo(SentryExceptionResolver.MECHANISM_TYPE)
-        }, anyOrNull())
+        verify(transport).send(
+            checkEvent { event ->
+                assertThat(event.exceptions).isNotNull().isNotEmpty
+                val ex = event.exceptions!!.first()
+                assertThat(ex.value).isEqualTo("something went wrong")
+                assertThat(ex.mechanism).isNotNull()
+                assertThat(ex.mechanism!!.isHandled).isFalse()
+                assertThat(ex.mechanism!!.type).isEqualTo(SentryExceptionResolver.MECHANISM_TYPE)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -177,9 +189,12 @@ class SentrySpringIntegrationTest {
 
         restTemplate.getForEntity("http://localhost:$port/throws", String::class.java)
 
-        verify(transport).send(checkEvent { event ->
-            assertThat(event.transaction).isEqualTo("GET /throws")
-        }, anyOrNull())
+        verify(transport).send(
+            checkEvent { event ->
+                assertThat(event.transaction).isEqualTo("GET /throws")
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -189,18 +204,24 @@ class SentrySpringIntegrationTest {
         restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
         await.during(Duration.ofSeconds(2)).untilAsserted {
-            verify(transport, never()).send(checkEvent { event ->
-                assertThat(event).isNotNull()
-            }, anyOrNull())
+            verify(transport, never()).send(
+                checkEvent { event ->
+                    assertThat(event).isNotNull()
+                },
+                anyOrNull()
+            )
         }
     }
 
     @Test
     fun `calling a method annotated with @SentryTransaction creates transaction`() {
         someService.aMethod()
-        verify(transport).send(checkTransaction {
-            assertThat(it.status).isEqualTo(SpanStatus.OK)
-        }, anyOrNull())
+        verify(transport).send(
+            checkTransaction {
+                assertThat(it.status).isEqualTo(SpanStatus.OK)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -210,10 +231,13 @@ class SentrySpringIntegrationTest {
         } catch (e: Exception) {
             hub.captureException(e)
         }
-        verify(transport).send(checkEvent {
-            assertThat(it.contexts.trace).isNotNull
-            assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
-        }, anyOrNull())
+        verify(transport).send(
+            checkEvent {
+                assertThat(it.contexts.trace).isNotNull
+                assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -223,10 +247,13 @@ class SentrySpringIntegrationTest {
         } catch (e: Exception) {
             hub.captureException(e)
         }
-        verify(transport).send(checkEvent {
-            assertThat(it.contexts.trace).isNotNull
-            assertThat(it.contexts.trace!!.operation).isEqualTo("child-op")
-        }, anyOrNull())
+        verify(transport).send(
+            checkEvent {
+                assertThat(it.contexts.trace).isNotNull
+                assertThat(it.contexts.trace!!.operation).isEqualTo("child-op")
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -237,10 +264,13 @@ class SentrySpringIntegrationTest {
 
         // transactions are sent after response is returned
         await.untilAsserted {
-            verify(transport).send(checkTransaction { transaction ->
-                assertThat(transaction.user).isNotNull()
-                assertThat(transaction.user!!.username).isEqualTo("user")
-            }, anyOrNull())
+            verify(transport).send(
+                checkTransaction { transaction ->
+                    assertThat(transaction.user).isNotNull()
+                    assertThat(transaction.user!!.username).isEqualTo("user")
+                },
+                anyOrNull()
+            )
         }
     }
 
@@ -251,11 +281,14 @@ class SentrySpringIntegrationTest {
         restTemplate.getForEntity("http://localhost:$port/callable", String::class.java)
 
         await.untilAsserted {
-            verify(transport).send(checkEvent { event ->
-                assertThat(event.message!!.formatted).isEqualTo("this message should be in the scope of the request")
-                assertThat(event.request).isNotNull()
-                assertThat(event.request!!.url).isEqualTo("http://localhost:$port/callable")
-            }, anyOrNull())
+            verify(transport).send(
+                checkEvent { event ->
+                    assertThat(event.message!!.formatted).isEqualTo("this message should be in the scope of the request")
+                    assertThat(event.request).isNotNull()
+                    assertThat(event.request!!.url).isEqualTo("http://localhost:$port/callable")
+                },
+                anyOrNull()
+            )
         }
     }
 
@@ -267,13 +300,16 @@ class SentrySpringIntegrationTest {
 
         // transactions are sent after response is returned
         await.untilAsserted {
-            verify(transport).send(checkTransaction { transaction ->
-                assertThat(transaction.spans).hasSize(1)
-                val span = transaction.spans.first()
-                assertThat(span.op).isEqualTo("http.client")
-                assertThat(span.description).isEqualTo("GET http://localhost:$port/hello")
-                assertThat(span.status).isEqualTo(SpanStatus.OK)
-            }, anyOrNull())
+            verify(transport).send(
+                checkTransaction { transaction ->
+                    assertThat(transaction.spans).hasSize(1)
+                    val span = transaction.spans.first()
+                    assertThat(span.op).isEqualTo("http.client")
+                    assertThat(span.description).isEqualTo("GET http://localhost:$port/hello")
+                    assertThat(span.status).isEqualTo(SpanStatus.OK)
+                },
+                anyOrNull()
+            )
         }
     }
 }
@@ -322,8 +358,10 @@ open class App {
     @Bean
     open fun webClient(hub: IHub): WebClient {
         return WebClient.builder()
-            .filter(ExchangeFilterFunctions
-                .basicAuthentication("user", "password"))
+            .filter(
+                ExchangeFilterFunctions
+                    .basicAuthentication("user", "password")
+            )
             .filter(SentrySpanClientWebRequestFilter(hub)).build()
     }
 }

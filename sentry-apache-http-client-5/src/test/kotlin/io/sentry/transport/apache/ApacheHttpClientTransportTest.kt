@@ -17,15 +17,15 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.transport.RateLimiter
 import io.sentry.transport.ReusableCountLatch
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient
+import org.apache.hc.core5.concurrent.FutureCallback
+import org.apache.hc.core5.io.CloseMode
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
-import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient
-import org.apache.hc.core5.concurrent.FutureCallback
-import org.apache.hc.core5.io.CloseMode
 
 class ApacheHttpClientTransportTest {
 
@@ -90,10 +90,13 @@ class ApacheHttpClientTransportTest {
 
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
 
-        verify(fixture.client).execute(check {
-            assertEquals("http://localhost/proj", it.uri.toString())
-            assertEquals("header-value", it.getFirstHeader("header-name").value)
-        }, any())
+        verify(fixture.client).execute(
+            check {
+                assertEquals("http://localhost/proj", it.uri.toString())
+                assertEquals("header-value", it.getFirstHeader("header-name").value)
+            },
+            any()
+        )
     }
 
     @Test

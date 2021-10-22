@@ -5,11 +5,11 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.IHub
+import org.junit.runner.RunWith
 import java.util.concurrent.CountDownLatch
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AppLifecycleIntegrationTest {

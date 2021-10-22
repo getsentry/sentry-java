@@ -204,10 +204,12 @@ class HttpConnectionTest {
 
         transport.send(createEnvelope())
 
-        verify(fixture.authenticatorWrapper).setDefault(check<ProxyAuthenticator> {
-            assertEquals("some-user", it.user)
-            assertEquals("some-password", it.password)
-        })
+        verify(fixture.authenticatorWrapper).setDefault(
+            check<ProxyAuthenticator> {
+                assertEquals("some-user", it.user)
+                assertEquals("some-password", it.password)
+            }
+        )
     }
 
     @Test

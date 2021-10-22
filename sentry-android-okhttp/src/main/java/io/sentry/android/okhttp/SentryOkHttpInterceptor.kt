@@ -6,10 +6,10 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SpanStatus
 import io.sentry.TracingOrigins
-import java.io.IOException
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
+import java.io.IOException
 
 class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
