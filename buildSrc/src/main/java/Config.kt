@@ -117,7 +117,7 @@ object Config {
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.2"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
         // bumping to 2.28.0 breaks tests
-        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.11.1"
+        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.15.0"
     }
 
     object QualityPlugins {
