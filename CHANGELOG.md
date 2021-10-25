@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Fix: ActivityFramesTracker does not throw if Activity has not been added (#)
+* Fix: ActivityFramesTracker does not throw if Activity has not been added (#1782)
 
 ## 5.2.4
 
