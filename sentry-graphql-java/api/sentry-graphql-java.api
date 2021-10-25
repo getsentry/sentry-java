@@ -1,3 +1,9 @@
+public final class io/sentry/graphql/java/SentryDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
+	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun <init> (Lio/sentry/IHub;Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
+}
+
 public final class io/sentry/graphql/java/SentryInstrumentation : graphql/execution/instrumentation/SimpleInstrumentation {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
