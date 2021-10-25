@@ -7,11 +7,11 @@ import io.sentry.ITransportFactory
 import io.sentry.Integration
 import io.sentry.Sentry
 import io.sentry.SentryOptions
-import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
+import kotlin.test.Test
 
 class EnableSentryTest {
     private val contextRunner = ApplicationContextRunner()

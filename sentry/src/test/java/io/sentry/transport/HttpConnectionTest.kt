@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ISerializer
 import io.sentry.RequestDetails
@@ -205,10 +204,12 @@ class HttpConnectionTest {
 
         transport.send(createEnvelope())
 
-        verify(fixture.authenticatorWrapper).setDefault(check<ProxyAuthenticator> {
-            assertEquals("some-user", it.user)
-            assertEquals("some-password", it.password)
-        })
+        verify(fixture.authenticatorWrapper).setDefault(
+            check<ProxyAuthenticator> {
+                assertEquals("some-user", it.user)
+                assertEquals("some-password", it.password)
+            }
+        )
     }
 
     @Test
@@ -219,7 +220,7 @@ class HttpConnectionTest {
         transport.send(createEnvelope())
 
         assertNull(transport.proxy)
-        verifyZeroInteractions(fixture.authenticatorWrapper)
+        verify(fixture.authenticatorWrapper, never()).setDefault(any())
     }
 
     @Test
@@ -236,13 +237,8 @@ class HttpConnectionTest {
         return Session("123", User(), "env", "release")
     }
 
-    // TODO: make inline fun <reified T : Any>, so we can throwOnSerialize<SentryEvent>()
-    private fun throwOnEventSerialize() {
-        whenever(fixture.serializer.serialize(any<SentryEvent>(), any())).thenThrow(IOException())
-    }
-
     private fun throwOnEnvelopeSerialize() {
-        whenever(fixture.serializer.serialize(any<SentryEnvelope>(), any())).thenThrow(IOException())
+        whenever(fixture.serializer.serialize(any(), any())).thenThrow(IOException())
     }
 
     private fun createEnvelope(event: SentryEvent = SentryEvent()): SentryEnvelope {

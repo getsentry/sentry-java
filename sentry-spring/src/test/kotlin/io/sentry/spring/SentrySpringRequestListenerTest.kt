@@ -11,6 +11,11 @@ import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
+import org.assertj.core.api.Assertions
+import org.springframework.http.MediaType
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockServletContext
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import java.net.URI
 import javax.servlet.ServletRequestEvent
 import javax.servlet.http.HttpServletRequest
@@ -20,11 +25,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.assertj.core.api.Assertions
-import org.springframework.http.MediaType
-import org.springframework.mock.web.MockHttpServletRequest
-import org.springframework.mock.web.MockServletContext
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
 class SentrySpringRequestListenerTest {
     private class Fixture {
@@ -62,11 +62,13 @@ class SentrySpringRequestListenerTest {
         val listener = fixture.getSut()
         listener.requestInitialized(fixture.event)
 
-        verify(fixture.hub).addBreadcrumb(check { it: Breadcrumb ->
-            Assertions.assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
-            Assertions.assertThat(it.getData("method")).isEqualTo("POST")
-            Assertions.assertThat(it.type).isEqualTo("http")
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check { it: Breadcrumb ->
+                Assertions.assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
+                Assertions.assertThat(it.getData("method")).isEqualTo("POST")
+                Assertions.assertThat(it.type).isEqualTo("http")
+            }
+        )
     }
 
     @Test
@@ -79,20 +81,25 @@ class SentrySpringRequestListenerTest {
 
     @Test
     fun `attaches basic information from HTTP request to Scope request`() {
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("some-header", "some-header value")
-            .accept(MediaType.APPLICATION_JSON)
-            .buildRequest(MockServletContext()))
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("some-header", "some-header value")
+                .accept(MediaType.APPLICATION_JSON)
+                .buildRequest(MockServletContext())
+        )
 
         listener.requestInitialized(fixture.event)
 
         assertNotNull(fixture.scope.request) {
             assertEquals("GET", it.method)
-            assertEquals(mapOf(
-                "some-header" to "some-header value",
-                "Accept" to "application/json"
-            ), it.headers)
+            assertEquals(
+                mapOf(
+                    "some-header" to "some-header value",
+                    "Accept" to "application/json"
+                ),
+                it.headers
+            )
             assertEquals("http://example.com", it.url)
             assertEquals("param1=xyz", it.queryString)
         }
@@ -100,18 +107,23 @@ class SentrySpringRequestListenerTest {
 
     @Test
     fun `attaches header with multiple values to Scope request`() {
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("another-header", "another value")
-            .header("another-header", "another value2")
-            .buildRequest(MockServletContext()))
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("another-header", "another value")
+                .header("another-header", "another value2")
+                .buildRequest(MockServletContext())
+        )
 
         listener.requestInitialized(fixture.event)
 
         assertNotNull(fixture.scope.request) {
-            assertEquals(mapOf(
-                "another-header" to "another value,another value2"
-            ), it.headers)
+            assertEquals(
+                mapOf(
+                    "another-header" to "another value,another value2"
+                ),
+                it.headers
+            )
         }
     }
 
@@ -121,11 +133,14 @@ class SentrySpringRequestListenerTest {
             isSendDefaultPii = true
         }
 
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("Cookie", "name=value")
-            .header("Cookie", "name2=value2")
-            .buildRequest(MockServletContext()), options = sentryOptions)
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("Cookie", "name=value")
+                .header("Cookie", "name2=value2")
+                .buildRequest(MockServletContext()),
+            options = sentryOptions
+        )
 
         listener.requestInitialized(fixture.event)
 
@@ -140,10 +155,13 @@ class SentrySpringRequestListenerTest {
             isSendDefaultPii = false
         }
 
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("Cookie", "name=value")
-            .buildRequest(MockServletContext()), options = sentryOptions)
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("Cookie", "name=value")
+                .buildRequest(MockServletContext()),
+            options = sentryOptions
+        )
 
         listener.requestInitialized(fixture.event)
 
@@ -158,14 +176,17 @@ class SentrySpringRequestListenerTest {
             isSendDefaultPii = false
         }
 
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("some-header", "some-header value")
-            .header("X-FORWARDED-FOR", "192.168.0.1")
-            .header("authorization", "Token")
-            .header("Authorization", "Token")
-            .header("Cookie", "some cookies")
-            .buildRequest(MockServletContext()), options = sentryOptions)
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("some-header", "some-header value")
+                .header("X-FORWARDED-FOR", "192.168.0.1")
+                .header("authorization", "Token")
+                .header("Authorization", "Token")
+                .header("Cookie", "some cookies")
+                .buildRequest(MockServletContext()),
+            options = sentryOptions
+        )
 
         listener.requestInitialized(fixture.event)
 

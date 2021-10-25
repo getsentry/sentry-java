@@ -17,15 +17,15 @@ import kotlin.test.assertTrue
 class SentryEventTest {
     @Test
     fun `constructor creates a non empty event id`() =
-            assertNotEquals(SentryId.EMPTY_ID, SentryEvent().eventId)
+        assertNotEquals(SentryId.EMPTY_ID, SentryEvent().eventId)
 
     @Test
     fun `constructor defines timestamp after now`() =
-            assertTrue(Instant.now().plus(1, ChronoUnit.HOURS).isAfter(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp))))
+        assertTrue(Instant.now().plus(1, ChronoUnit.HOURS).isAfter(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp))))
 
     @Test
     fun `constructor defines timestamp before hour ago`() =
-            assertTrue(Instant.now().minus(1, ChronoUnit.HOURS).isBefore(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp))))
+        assertTrue(Instant.now().minus(1, ChronoUnit.HOURS).isBefore(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp))))
 
     @Test
     fun `if mechanism is not handled, it should return isCrashed=true`() {

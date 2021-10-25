@@ -1,13 +1,13 @@
 package io.sentry.config
 
 import io.sentry.NoOpLogger
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
 
 class FilesystemPropertiesLoaderTest {
 

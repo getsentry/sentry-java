@@ -9,20 +9,17 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import io.sentry.IEnvelopeSender
 import io.sentry.ILogger
-import io.sentry.SentryOptions
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Resettable
 import io.sentry.hints.Retryable
 import io.sentry.hints.SubmissionResult
+import org.junit.runner.RunWith
 import java.io.File
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EnvelopeFileObserverTest {
@@ -32,10 +29,6 @@ class EnvelopeFileObserverTest {
         var path: String? = "."
         val envelopeSender = mock<IEnvelopeSender>()
         val logger = mock<ILogger>()
-        val options = SentryOptions().apply {
-            setDebug(true)
-            setLogger(logger)
-        }
 
         fun getSut(flushTimeoutMillis: Long): EnvelopeFileObserver {
             return EnvelopeFileObserver(path, envelopeSender, logger, flushTimeoutMillis)
@@ -55,7 +48,7 @@ class EnvelopeFileObserverTest {
     fun `when event type is not close write, envelope sender is not called`() {
         triggerEvent(eventType = FileObserver.CLOSE_WRITE.inv())
 
-        verifyZeroInteractions(fixture.envelopeSender)
+        verify(fixture.envelopeSender, never()).processEnvelopeFile(any(), anyOrNull())
     }
 
     @Test
@@ -68,8 +61,10 @@ class EnvelopeFileObserverTest {
     @Test
     fun `when null is passed as a path, ctor throws`() {
         fixture.path = null
-        val exception = assertFailsWith<Exception> { fixture.getSut(0) }
-        assertEquals("File path is required.", exception.message)
+
+        // since EnvelopeFileObserver extends FileObserver and FileObserver requires a File(path),
+        // it throws NullPointerException instead of our own IllegalArgumentException
+        assertFailsWith<NullPointerException> { fixture.getSut(0) }
     }
 
     @Test
@@ -77,8 +72,9 @@ class EnvelopeFileObserverTest {
         triggerEvent()
 
         verify(fixture.envelopeSender).processEnvelopeFile(
-                eq(fixture.path + File.separator + fixture.fileName),
-                check { it is ApplyScopeData })
+            eq(fixture.path + File.separator + fixture.fileName),
+            check { it is ApplyScopeData }
+        )
     }
 
     @Test
@@ -86,8 +82,9 @@ class EnvelopeFileObserverTest {
         triggerEvent()
 
         verify(fixture.envelopeSender).processEnvelopeFile(
-                eq(fixture.path + File.separator + fixture.fileName),
-                check { it is Resettable })
+            eq(fixture.path + File.separator + fixture.fileName),
+            check { it is Resettable }
+        )
     }
 
     @Test
@@ -95,16 +92,17 @@ class EnvelopeFileObserverTest {
         triggerEvent(flushTimeoutMillis = 0)
 
         verify(fixture.envelopeSender).processEnvelopeFile(
-                eq(fixture.path + File.separator + fixture.fileName),
-                check {
-                    (it as SubmissionResult).setResult(true)
-                    (it as Retryable).isRetry = true
+            eq(fixture.path + File.separator + fixture.fileName),
+            check {
+                (it as SubmissionResult).setResult(true)
+                (it as Retryable).isRetry = true
 
-                    (it as Resettable).reset()
+                (it as Resettable).reset()
 
-                    assertFalse(it.isRetry)
-                    assertFalse(it.isSuccess)
-                })
+                assertFalse(it.isRetry)
+                assertFalse(it.isSuccess)
+            }
+        )
     }
 
     private fun triggerEvent(

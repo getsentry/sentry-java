@@ -78,11 +78,13 @@ class TempSensorBreadcrumbsIntegrationTest {
         sut.register(hub, options)
         sut.onSensorChanged(mock())
 
-        verify(hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("device.event", it.category)
-            assertEquals("system", it.type)
-            assertEquals(SentryLevel.INFO, it.level)
-        })
+        verify(hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("device.event", it.category)
+                assertEquals("system", it.type)
+                assertEquals(SentryLevel.INFO, it.level)
+            }
+        )
     }
 
     @Test

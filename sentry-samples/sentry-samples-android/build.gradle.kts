@@ -62,10 +62,12 @@ android {
 
     buildTypes {
         getByName("debug") {
-            addManifestPlaceholders(mapOf(
-                "sentryDebug" to true,
-                "sentryEnvironment" to "debug"
-            ))
+            addManifestPlaceholders(
+                mapOf(
+                    "sentryDebug" to true,
+                    "sentryEnvironment" to "debug"
+                )
+            )
         }
         getByName("release") {
             isMinifyEnabled = true
@@ -73,10 +75,12 @@ android {
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             isShrinkResources = true
 
-            addManifestPlaceholders(mapOf(
-                "sentryDebug" to false,
-                "sentryEnvironment" to "release"
-            ))
+            addManifestPlaceholders(
+                mapOf(
+                    "sentryDebug" to false,
+                    "sentryEnvironment" to "release"
+                )
+            )
         }
     }
 

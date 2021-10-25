@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.Request
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
+import org.junit.Assert.assertArrayEquals
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,7 +16,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.Assert.assertArrayEquals
 
 class ScopeTest {
 
@@ -766,8 +766,10 @@ class ScopeTest {
         val scope = Scope(SentryOptions())
         scope.addAttachment(Attachment(""))
 
-        assertNotSame(scope.attachments, scope.attachments,
-                "Scope.attachments must return a new instance on each call.")
+        assertNotSame(
+            scope.attachments, scope.attachments,
+            "Scope.attachments must return a new instance on each call."
+        )
     }
 
     @Test
