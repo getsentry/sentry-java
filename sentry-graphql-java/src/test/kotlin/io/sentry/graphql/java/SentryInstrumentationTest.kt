@@ -30,7 +30,7 @@ class SentryInstrumentationTest {
             type Show {
                 id: Int
             }
-        """.trimIndent()
+            """.trimIndent()
             val hub = mock<IHub>()
 
             val graphQLSchema = SchemaGenerator().makeExecutableSchema(SchemaParser().parse(schema), buildRuntimeWiring())
