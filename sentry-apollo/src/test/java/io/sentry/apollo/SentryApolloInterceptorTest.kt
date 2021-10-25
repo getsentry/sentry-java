@@ -20,15 +20,15 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryTransaction
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class SentryApolloInterceptorTest {
 
@@ -59,10 +59,12 @@ class SentryApolloInterceptorTest {
         ): ApolloClient {
             whenever(hub.options).thenReturn(SentryOptions())
 
-            server.enqueue(MockResponse()
-                .setBody(responseBody)
-                .setSocketPolicy(socketPolicy)
-                .setResponseCode(httpStatusCode))
+            server.enqueue(
+                MockResponse()
+                    .setBody(responseBody)
+                    .setSocketPolicy(socketPolicy)
+                    .setResponseCode(httpStatusCode)
+            )
 
             if (beforeSpan != null) {
                 interceptor = SentryApolloInterceptor(hub, beforeSpan)
@@ -80,30 +82,39 @@ class SentryApolloInterceptorTest {
     fun `creates a span around the successful request`() {
         executeQuery()
 
-        verify(fixture.hub).captureTransaction(check {
-            assertTransactionDetails(it)
-            assertEquals(SpanStatus.OK, it.spans.first().status)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertTransactionDetails(it)
+                assertEquals(SpanStatus.OK, it.spans.first().status)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
     fun `creates a span around the failed request`() {
         executeQuery(fixture.getSut(httpStatusCode = 403))
 
-        verify(fixture.hub).captureTransaction(check {
-            assertTransactionDetails(it)
-            assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertTransactionDetails(it)
+                assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
     fun `creates a span around the request failing with network error`() {
         executeQuery(fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_DURING_REQUEST_BODY))
 
-        verify(fixture.hub).captureTransaction(check {
-            assertTransactionDetails(it)
-            assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertTransactionDetails(it)
+                assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -123,41 +134,57 @@ class SentryApolloInterceptorTest {
 
     @Test
     fun `customizer modifies span`() {
-        executeQuery(fixture.getSut(beforeSpan = object : SentryApolloInterceptor.BeforeSpanCallback {
-            override fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan {
-                span.description = "overwritten description"
-                return span
-            }
-        }))
+        executeQuery(
+            fixture.getSut(
+                beforeSpan = object : SentryApolloInterceptor.BeforeSpanCallback {
+                    override fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan {
+                        span.description = "overwritten description"
+                        return span
+                    }
+                }
+            )
+        )
 
-        verify(fixture.hub).captureTransaction(check {
-            assertEquals(1, it.spans.size)
-            val httpClientSpan = it.spans.first()
-            assertEquals("overwritten description", httpClientSpan.description)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(1, it.spans.size)
+                val httpClientSpan = it.spans.first()
+                assertEquals("overwritten description", httpClientSpan.description)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
     fun `when customizer throws, exception is handled`() {
-        executeQuery(fixture.getSut(beforeSpan = object : SentryApolloInterceptor.BeforeSpanCallback {
-            override fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan {
-                throw RuntimeException()
-            }
-        }))
+        executeQuery(
+            fixture.getSut(
+                beforeSpan = object : SentryApolloInterceptor.BeforeSpanCallback {
+                    override fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan {
+                        throw RuntimeException()
+                    }
+                }
+            )
+        )
 
-        verify(fixture.hub).captureTransaction(check {
-            assertEquals(1, it.spans.size)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(1, it.spans.size)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
     fun `adds breadcrumb when http calls succeeds`() {
         executeQuery()
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(280L, it.data["response_body_size"])
-            assertEquals(193L, it.data["request_body_size"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(280L, it.data["response_body_size"])
+                assertEquals(193L, it.data["request_body_size"])
+            }
+        )
     }
 
     private fun assertTransactionDetails(it: SentryTransaction) {

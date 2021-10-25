@@ -486,10 +486,13 @@ class HubTest {
         sut.setSpanContext(throwable, span, "tx-name")
 
         sut.captureException(throwable)
-        verify(mockClient).captureEvent(check {
-            assertEquals(span.spanContext, it.contexts.trace)
-            assertEquals("tx-name", it.transaction)
-        }, any(), anyOrNull())
+        verify(mockClient).captureEvent(
+            check {
+                assertEquals(span.spanContext, it.contexts.trace)
+                assertEquals("tx-name", it.transaction)
+            },
+            any(), anyOrNull()
+        )
     }
 
     @Test
@@ -500,9 +503,12 @@ class HubTest {
         sut.setSpanContext(Throwable(), span, "tx-name")
 
         sut.captureException(Throwable())
-        verify(mockClient).captureEvent(check {
-            assertNull(it.contexts.trace)
-        }, any(), anyOrNull())
+        verify(mockClient).captureEvent(
+            check {
+                assertNull(it.contexts.trace)
+            },
+            any(), anyOrNull()
+        )
     }
     //endregion
 
@@ -513,12 +519,14 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         sut.captureUserFeedback(userFeedback)
 
-        verify(mockClient).captureUserFeedback(check {
-            assertEquals(userFeedback.eventId, it.eventId)
-            assertEquals(userFeedback.email, it.email)
-            assertEquals(userFeedback.name, it.name)
-            assertEquals(userFeedback.comments, it.comments)
-        })
+        verify(mockClient).captureUserFeedback(
+            check {
+                assertEquals(userFeedback.eventId, it.eventId)
+                assertEquals(userFeedback.email, it.email)
+                assertEquals(userFeedback.name, it.name)
+                assertEquals(userFeedback.comments, it.comments)
+            }
+        )
     }
 
     @Test
@@ -1286,9 +1294,12 @@ class HubTest {
         hub.setSpanContext(exception, span, "tx-name")
         hub.captureEvent(SentryEvent(exception))
 
-        verify(mockClient).captureEvent(check {
-            assertEquals(span.spanContext, it.contexts.trace)
-        }, anyOrNull(), anyOrNull())
+        verify(mockClient).captureEvent(
+            check {
+                assertEquals(span.spanContext, it.contexts.trace)
+            },
+            anyOrNull(), anyOrNull()
+        )
     }
 
     @Test

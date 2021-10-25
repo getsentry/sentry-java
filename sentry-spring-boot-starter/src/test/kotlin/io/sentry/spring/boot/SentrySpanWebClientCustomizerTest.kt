@@ -12,10 +12,6 @@ import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -27,6 +23,10 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class SentrySpanWebClientCustomizerTest {
     class Fixture {
@@ -196,11 +196,13 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(uri.toString(), it.data["url"])
-            assertEquals("POST", it.data["method"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(uri.toString(), it.data["url"])
+                assertEquals("POST", it.data["method"])
+            }
+        )
     }
 
     @SuppressWarnings("SwallowedException")
@@ -216,11 +218,13 @@ class SentrySpanWebClientCustomizerTest {
                 .block()
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(uri.toString(), it.data["url"])
-            assertEquals("GET", it.data["method"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(uri.toString(), it.data["url"])
+                assertEquals("GET", it.data["method"])
+            }
+        )
     }
 
     @Test
@@ -233,11 +237,13 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(uri.toString(), it.data["url"])
-            assertEquals("POST", it.data["method"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(uri.toString(), it.data["url"])
+                assertEquals("POST", it.data["method"])
+            }
+        )
     }
 
     @SuppressWarnings("SwallowedException")
@@ -253,10 +259,12 @@ class SentrySpanWebClientCustomizerTest {
                 .block()
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(uri.toString(), it.data["url"])
-            assertEquals("GET", it.data["method"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(uri.toString(), it.data["url"])
+                assertEquals("GET", it.data["method"])
+            }
+        )
     }
 }

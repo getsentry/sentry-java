@@ -8,10 +8,10 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
+import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ActivityFramesTrackerTest {

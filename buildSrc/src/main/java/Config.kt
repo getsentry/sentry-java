@@ -17,7 +17,7 @@ object Config {
         val springDependencyManagement = "io.spring.dependency-management"
         val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
-        val grettyVersion = "3.0.5"
+        val grettyVersion = "4.0.0"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.18.0"
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
     }
@@ -128,16 +128,15 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "5.12.5"
+        val spotlessVersion = "5.17.0"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:2.0.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.39.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        // use RC2 to drop jcenter because of kotlinx-html
-        val detektVersion = "1.17.1"
+        val detektVersion = "1.18.1"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorVersion = "0.6.0"
+        val binaryCompatibilityValidatorVersion = "0.7.1"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
         val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
     }

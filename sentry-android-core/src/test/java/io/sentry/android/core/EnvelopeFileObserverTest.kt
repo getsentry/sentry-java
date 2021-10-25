@@ -15,11 +15,11 @@ import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Resettable
 import io.sentry.hints.Retryable
 import io.sentry.hints.SubmissionResult
+import org.junit.runner.RunWith
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EnvelopeFileObserverTest {
@@ -72,8 +72,9 @@ class EnvelopeFileObserverTest {
         triggerEvent()
 
         verify(fixture.envelopeSender).processEnvelopeFile(
-                eq(fixture.path + File.separator + fixture.fileName),
-                check { it is ApplyScopeData })
+            eq(fixture.path + File.separator + fixture.fileName),
+            check { it is ApplyScopeData }
+        )
     }
 
     @Test
@@ -81,8 +82,9 @@ class EnvelopeFileObserverTest {
         triggerEvent()
 
         verify(fixture.envelopeSender).processEnvelopeFile(
-                eq(fixture.path + File.separator + fixture.fileName),
-                check { it is Resettable })
+            eq(fixture.path + File.separator + fixture.fileName),
+            check { it is Resettable }
+        )
     }
 
     @Test
@@ -90,16 +92,17 @@ class EnvelopeFileObserverTest {
         triggerEvent(flushTimeoutMillis = 0)
 
         verify(fixture.envelopeSender).processEnvelopeFile(
-                eq(fixture.path + File.separator + fixture.fileName),
-                check {
-                    (it as SubmissionResult).setResult(true)
-                    (it as Retryable).isRetry = true
+            eq(fixture.path + File.separator + fixture.fileName),
+            check {
+                (it as SubmissionResult).setResult(true)
+                (it as Retryable).isRetry = true
 
-                    (it as Resettable).reset()
+                (it as Resettable).reset()
 
-                    assertFalse(it.isRetry)
-                    assertFalse(it.isSuccess)
-                })
+                assertFalse(it.isRetry)
+                assertFalse(it.isSuccess)
+            }
+        )
     }
 
     private fun triggerEvent(

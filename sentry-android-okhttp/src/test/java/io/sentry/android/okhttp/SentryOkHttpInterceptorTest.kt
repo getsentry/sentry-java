@@ -15,14 +15,6 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TraceStateHeader
 import io.sentry.TransactionContext
-import java.io.IOException
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
-import kotlin.test.fail
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -32,6 +24,14 @@ import okhttp3.Response
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import java.io.IOException
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
 class SentryOkHttpInterceptorTest {
 
@@ -50,23 +50,27 @@ class SentryOkHttpInterceptorTest {
             beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null,
             includeMockServerInTracingOrigins: Boolean = true
         ): OkHttpClient {
-            whenever(hub.options).thenReturn(SentryOptions().apply {
-                dsn = "https://key@sentry.io/proj"
-                isTraceSampling = true
-                if (includeMockServerInTracingOrigins) {
-                    tracingOrigins.add(server.hostName)
-                } else {
-                    tracingOrigins.add("other-api")
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                    isTraceSampling = true
+                    if (includeMockServerInTracingOrigins) {
+                        tracingOrigins.add(server.hostName)
+                    } else {
+                        tracingOrigins.add("other-api")
+                    }
                 }
-            })
+            )
 
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
-            server.enqueue(MockResponse()
+            server.enqueue(
+                MockResponse()
                     .setBody(responseBody)
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(httpStatusCode))
+                    .setResponseCode(httpStatusCode)
+            )
 
             if (beforeSpan != null) {
                 interceptor = SentryOkHttpInterceptor(hub, beforeSpan)
@@ -78,9 +82,15 @@ class SentryOkHttpInterceptorTest {
     private val fixture = Fixture()
 
     private val getRequest = { Request.Builder().get().url(fixture.server.url("/hello")).build() }
-    private val postRequest = { Request.Builder().post("request-body"
-            .toRequestBody("text/plain"
-                    .toMediaType())).url(fixture.server.url("/hello")).build() }
+    private val postRequest = {
+        Request.Builder().post(
+            "request-body"
+                .toRequestBody(
+                    "text/plain"
+                        .toMediaType()
+                )
+        ).url(fixture.server.url("/hello")).build()
+    }
 
     @Test
     fun `when there is an active span and server is listed in tracing origins, adds sentry trace headers to the request`() {
@@ -149,11 +159,13 @@ class SentryOkHttpInterceptorTest {
     fun `adds breadcrumb when http calls succeeds`() {
         val sut = fixture.getSut(responseBody = "response body")
         sut.newCall(postRequest()).execute()
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(13L, it.data["response_body_size"])
-            assertEquals(12L, it.data["request_body_size"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(13L, it.data["response_body_size"])
+                assertEquals(12L, it.data["request_body_size"])
+            }
+        )
     }
 
     @SuppressWarnings("SwallowedException")
@@ -169,9 +181,11 @@ class SentryOkHttpInterceptorTest {
         } catch (e: IOException) {
             // ignore me
         }
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+            }
+        )
     }
 
     @SuppressWarnings("SwallowedException")
@@ -191,12 +205,14 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `customizer modifies span`() {
-        val sut = fixture.getSut(beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
-            override fun execute(span: ISpan, request: Request, response: Response?): ISpan {
-                span.description = "overwritten description"
-                return span
+        val sut = fixture.getSut(
+            beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
+                override fun execute(span: ISpan, request: Request, response: Response?): ISpan {
+                    span.description = "overwritten description"
+                    return span
+                }
             }
-        })
+        )
         val request = getRequest()
         sut.newCall(request).execute()
         assertEquals(1, fixture.sentryTracer.children.size)
@@ -207,25 +223,31 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `customizer receives request and response`() {
-        val sut = fixture.getSut(beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
-            override fun execute(span: ISpan, request: Request, response: Response?): ISpan {
-            assertEquals(request.url, request.url)
-            assertEquals(request.method, request.method)
-            assertNotNull(response) {
-                assertEquals(201, it.code)
+        val sut = fixture.getSut(
+            beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
+                override fun execute(span: ISpan, request: Request, response: Response?): ISpan {
+                    assertEquals(request.url, request.url)
+                    assertEquals(request.method, request.method)
+                    assertNotNull(response) {
+                        assertEquals(201, it.code)
+                    }
+                    return span
+                }
             }
-            return span
-        } })
+        )
         val request = getRequest()
         sut.newCall(request).execute()
     }
 
     @Test
     fun `customizer can drop the span`() {
-        val sut = fixture.getSut(beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
-            override fun execute(span: ISpan, request: Request, response: Response?): ISpan? {
-            return null
-        } })
+        val sut = fixture.getSut(
+            beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
+                override fun execute(span: ISpan, request: Request, response: Response?): ISpan? {
+                    return null
+                }
+            }
+        )
         sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertNotNull(httpClientSpan.spanContext.sampled) {

@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.mock
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.User
 import io.sentry.test.injectForField
+import org.junit.Assert.assertArrayEquals
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -11,7 +12,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import org.junit.Assert.assertArrayEquals
 
 class SentryEnvelopeItemTest {
 
@@ -91,8 +91,10 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
 
-        assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed, because the file located at " +
-                "the path is not a file.") {
+        assertFailsWith<SentryEnvelopeException>(
+            "Reading the attachment ${attachment.pathname} failed, because the file located at " +
+                "the path is not a file."
+        ) {
             item.data
         }
     }
@@ -109,8 +111,10 @@ class SentryEnvelopeItemTest {
 
             val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
 
-            assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed, " +
-                    "because can't read the file.") {
+            assertFailsWith<SentryEnvelopeException>(
+                "Reading the attachment ${attachment.pathname} failed, " +
+                    "because can't read the file."
+            ) {
                 item.data
             }
         } else {
@@ -149,8 +153,10 @@ class SentryEnvelopeItemTest {
 
         val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
 
-        assertFailsWith<SentryEnvelopeException>("Couldn't attach the attachment ${attachment.filename}.\n" +
-                "Please check that either bytes or a path is set.") {
+        assertFailsWith<SentryEnvelopeException>(
+            "Couldn't attach the attachment ${attachment.filename}.\n" +
+                "Please check that either bytes or a path is set."
+        ) {
             item.data
         }
     }
@@ -171,10 +177,13 @@ class SentryEnvelopeItemTest {
             SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize).data
         }
 
-        assertEquals("Dropping attachment with filename '${fixture.filename}', because the " +
+        assertEquals(
+            "Dropping attachment with filename '${fixture.filename}', because the " +
                 "size of the passed bytes with ${fixture.bytesTooBig.size} bytes is bigger " +
                 "than the maximum allowed attachment size of " +
-                "${fixture.maxAttachmentSize} bytes.", exception.message)
+                "${fixture.maxAttachmentSize} bytes.",
+            exception.message
+        )
     }
 
     @Test
@@ -187,9 +196,12 @@ class SentryEnvelopeItemTest {
             SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize).data
         }
 
-        assertEquals("Dropping attachment, because the size of the it located at " +
+        assertEquals(
+            "Dropping attachment, because the size of the it located at " +
                 "'${fixture.pathname}' with ${file.length()} bytes is bigger than the maximum " +
-                "allowed attachment size of ${fixture.maxAttachmentSize} bytes.", exception.message)
+                "allowed attachment size of ${fixture.maxAttachmentSize} bytes.",
+            exception.message
+        )
     }
 
     private fun createSession(): Session {

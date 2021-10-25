@@ -6,13 +6,13 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
 import io.sentry.logback.SentryAppender
-import kotlin.test.BeforeTest
-import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 class SentryLogbackAppenderAutoConfigurationTest {
 
