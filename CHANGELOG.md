@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Add datasource tracing with P6Spy (#1784)
+
 ## 5.2.4
 
 * Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#1769)
