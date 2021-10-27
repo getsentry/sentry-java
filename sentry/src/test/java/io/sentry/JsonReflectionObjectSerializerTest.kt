@@ -124,13 +124,13 @@ class JsonReflectionObjectSerializerTest {
                 "title" to "First Child",
                 "child" to mapOf<String, Any?>(
                     "title" to "Second Child",
-                    "child" to null
+                    "child" to "fixture-toString"
                 )
             )
         )
         val actual = fixture.getSut().serialize(root, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.INFO, "Not serializing object due to cyclic reference to ancestor object.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Cyclic reference detected. Calling toString() on object.")
     }
 
     @Test
@@ -147,12 +147,12 @@ class JsonReflectionObjectSerializerTest {
             ),
             mapOf<String, Any?>(
                 "title" to "Second Child",
-                "child" to null
+                "child" to array.toString()
             )
         )
         val actual = fixture.getSut().serialize(array, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.INFO, "Not serializing object due to cyclic reference to ancestor object.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Cyclic reference detected. Calling toString() on object.")
     }
 
     @Test
@@ -169,12 +169,12 @@ class JsonReflectionObjectSerializerTest {
             ),
             mapOf<String, Any?>(
                 "title" to "Second Child",
-                "child" to null
+                "child" to list.toString()
             )
         )
         val actual = fixture.getSut().serialize(list, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.INFO, "Not serializing object due to cyclic reference to ancestor object.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Cyclic reference detected. Calling toString() on object.")
     }
 
     @Test
@@ -194,12 +194,12 @@ class JsonReflectionObjectSerializerTest {
             ),
             "second" to mapOf<String, Any?>(
                 "title" to "Second Child",
-                "child" to null
+                "child" to map.toString()
             )
         )
         val actual = fixture.getSut().serialize(map, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.INFO, "Not serializing object due to cyclic reference to ancestor object.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Cyclic reference detected. Calling toString() on object.")
     }
 
     @Test
@@ -246,7 +246,7 @@ class JsonReflectionObjectSerializerTest {
                         "title" to "4",
                         "child" to mapOf<String, Any?>(
                             "title" to "5",
-                            "child" to null
+                            "child" to "fixture-toString"
                         )
                     )
                 )
@@ -254,7 +254,7 @@ class JsonReflectionObjectSerializerTest {
         )
         val actual = fixture.getSut().serialize(one, fixture.logger)
         assertEquals(expected, actual)
-        verify(fixture.logger).log(SentryLevel.INFO, "Max depth exceeded.")
+        verify(fixture.logger).log(SentryLevel.INFO, "Max depth exceeded. Calling toString() on object.")
     }
 
     // Helper
@@ -290,10 +290,18 @@ class JsonReflectionObjectSerializerTest {
     class ClassWithNesting(
         val title: String,
         var child: ClassWithNesting?
-    )
+    ) {
+        override fun toString(): String {
+            return "fixture-toString"
+        }
+    }
 
     class ClassWithAnyNesting(
         val title: String,
         var child: Any?
-    )
+    ) {
+        override fun toString(): String {
+            return "fixture-toString"
+        }
+    }
 }
