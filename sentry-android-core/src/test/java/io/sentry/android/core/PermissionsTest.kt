@@ -5,10 +5,10 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.util.Permissions
+import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PermissionsTest {

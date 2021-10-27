@@ -98,7 +98,7 @@ class DateUtilsTest {
 
     private fun convertDate(date: Date): LocalDateTime {
         return Instant.ofEpochMilli(date.time)
-                .atZone(utcTimeZone)
-                .toLocalDateTime()
+            .atZone(utcTimeZone)
+            .toLocalDateTime()
     }
 }

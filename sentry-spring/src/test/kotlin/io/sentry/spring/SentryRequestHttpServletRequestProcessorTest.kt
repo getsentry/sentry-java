@@ -5,14 +5,14 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import org.springframework.mock.web.MockServletContext
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.web.servlet.HandlerMapping
 import java.net.URI
 import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import org.springframework.mock.web.MockServletContext
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-import org.springframework.web.servlet.HandlerMapping
 
 class SentryRequestHttpServletRequestProcessorTest {
 

@@ -145,21 +145,21 @@ class CacheStrategyTest {
     }
 
     private fun createSessionMockData(state: Session.State = Session.State.Ok, init: Boolean? = true): Session =
-            Session(
-                    state,
-                    DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-                    DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-                    2,
-                    "123",
-                    UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-                    init,
-                    123456.toLong(),
-                    6000.toDouble(),
-                    "127.0.0.1",
-                    "jamesBond",
-                    "debug",
-                    "io.sentry@1.0+123"
-            )
+        Session(
+            state,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            init,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123"
+        )
 
     private fun getSessionFromFile(file: File, sut: CacheStrategy): Session {
         val envelope = sut.serializer.deserializeEnvelope(file.inputStream())

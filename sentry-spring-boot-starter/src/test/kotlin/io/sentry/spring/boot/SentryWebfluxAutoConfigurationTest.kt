@@ -2,13 +2,13 @@ package io.sentry.spring.boot
 
 import io.sentry.spring.webflux.SentryWebExceptionHandler
 import io.sentry.spring.webflux.SentryWebFilter
-import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration
 import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner
 import reactor.core.scheduler.Schedulers
+import kotlin.test.Test
 
 class SentryWebfluxAutoConfigurationTest {
 
@@ -19,8 +19,8 @@ class SentryWebfluxAutoConfigurationTest {
     fun `configures sentryWebFilter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-            assertThat(it).hasSingleBean(SentryWebFilter::class.java)
-        }
+                assertThat(it).hasSingleBean(SentryWebFilter::class.java)
+            }
     }
 
     @Test

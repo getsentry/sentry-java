@@ -7,18 +7,22 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.ISerializer
+import io.sentry.SentryCrashLastRunState
 import io.sentry.SentryEnvelope
+import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.Session
 import io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE
 import io.sentry.cache.EnvelopeCache.SUFFIX_CURRENT_SESSION_FILE
+import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.User
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -27,7 +31,6 @@ import kotlin.test.assertTrue
 
 class EnvelopeCacheTest {
     private class Fixture {
-        val maxSize = 5
         val dir: Path = Files.createTempDirectory("sentry-session-cache-test")
         val serializer = mock<ISerializer>()
         val options = SentryOptions()
@@ -49,6 +52,11 @@ class EnvelopeCacheTest {
     }
 
     private val fixture = Fixture()
+
+    @BeforeTest
+    fun `set up`() {
+        SentryCrashLastRunState.getInstance().reset()
+    }
 
     @Test
     fun `stores envelopes`() {
@@ -146,7 +154,7 @@ class EnvelopeCacheTest {
         val cache = fixture.getSUT()
 
         val file = File(fixture.options.cacheDirPath!!)
-        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.CRASH_MARKER_FILE)
+        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
         markerFile.mkdirs()
         assertTrue(markerFile.exists())
 
@@ -165,7 +173,7 @@ class EnvelopeCacheTest {
     fun `when session start, current file already exist and crash marker file exist, end session with given timestamp`() {
         val cache = fixture.getSUT()
         val file = File(fixture.options.cacheDirPath!!)
-        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.CRASH_MARKER_FILE)
+        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
         File(fixture.options.cacheDirPath!!, ".sentry-native").mkdirs()
         markerFile.createNewFile()
         val date = "2020-02-07T14:16:00.000Z"
@@ -179,6 +187,65 @@ class EnvelopeCacheTest {
         assertFalse(markerFile.exists())
         file.deleteRecursively()
         File(fixture.options.cacheDirPath!!).deleteRecursively()
+    }
+
+    @Test
+    fun `when native crash marker file exist, mark isCrashedLastRun`() {
+        val cache = fixture.getSUT()
+
+        val file = File(fixture.options.cacheDirPath!!)
+        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
+        markerFile.mkdirs()
+        assertTrue(markerFile.exists())
+
+        val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
+        cache.store(envelope, SessionStartHint())
+
+        val newEnvelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
+
+        // since the first store call would set as readCrashedLastRun=true
+        SentryCrashLastRunState.getInstance().reset()
+
+        cache.store(newEnvelope, SessionStartHint())
+        verify(fixture.logger).log(eq(SentryLevel.INFO), eq("Crash marker file exists, last Session is gonna be Crashed."))
+        assertFalse(markerFile.exists())
+        file.deleteRecursively()
+
+        // passing empty string since readCrashedLastRun is already set
+        assertTrue(SentryCrashLastRunState.getInstance().isCrashedLastRun("", false)!!)
+    }
+
+    @Test
+    fun `when java crash marker file exist, mark isCrashedLastRun`() {
+        val cache = fixture.getSUT()
+
+        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.CRASH_MARKER_FILE)
+        markerFile.mkdirs()
+        assertTrue(markerFile.exists())
+
+        val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
+        cache.store(envelope, SessionStartHint())
+
+        // passing empty string since readCrashedLastRun is already set
+        assertTrue(SentryCrashLastRunState.getInstance().isCrashedLastRun("", false)!!)
+        assertFalse(markerFile.exists())
+    }
+
+    @Test
+    fun `write java marker file to disk when disk flush hint`() {
+        val cache = fixture.getSUT()
+
+        val markerFile = File(fixture.options.cacheDirPath!!, EnvelopeCache.CRASH_MARKER_FILE)
+        assertFalse(markerFile.exists())
+
+        val envelope = SentryEnvelope.from(fixture.serializer, SentryEvent(), null)
+        cache.store(envelope, DiskFlushHint())
+
+        assertTrue(markerFile.exists())
+    }
+
+    internal class DiskFlushHint : DiskFlushNotification {
+        override fun markFlushed() {}
     }
 
     private fun createSession(): Session {

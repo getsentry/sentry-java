@@ -10,7 +10,7 @@ plugins {
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
 }
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
@@ -26,7 +26,6 @@ dependencies {
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
-    errorproneJavac(Config.CompileOnly.errorProneJavac8)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
     errorprone(Config.CompileOnly.errorProneNullAway)
 
@@ -37,6 +36,9 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.jsonUnit)
+    // jsonUnit uses newer Gson features (JsonParser.parseReader)
+    // so we have to use latest in tests too
+    testImplementation("${Config.Libs.gsonDep}:2.8.8")
     testImplementation(projects.sentryTestSupport)
 }
 
@@ -52,8 +54,8 @@ jacoco {
 
 tasks.jacocoTestReport {
     reports {
-        xml.isEnabled = true
-        html.isEnabled = false
+        xml.required.set(true)
+        html.required.set(false)
     }
 }
 

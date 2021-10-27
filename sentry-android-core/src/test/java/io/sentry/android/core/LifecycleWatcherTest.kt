@@ -12,11 +12,11 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel
 import io.sentry.transport.ICurrentDateProvider
+import org.awaitility.kotlin.await
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import org.awaitility.kotlin.await
 
 class LifecycleWatcherTest {
 
@@ -99,12 +99,14 @@ class LifecycleWatcherTest {
     fun `When session tracking is enabled, add breadcrumb on start`() {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("app.lifecycle", it.category)
-            assertEquals("session", it.type)
-            assertEquals(SentryLevel.INFO, it.level)
-            // cant assert data, its not a public API
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("app.lifecycle", it.category)
+                assertEquals("session", it.type)
+                assertEquals(SentryLevel.INFO, it.level)
+                // cant assert data, its not a public API
+            }
+        )
     }
 
     @Test
@@ -113,12 +115,14 @@ class LifecycleWatcherTest {
         watcher.isRunningSession.set(true)
         watcher.onStop(fixture.ownerMock)
         await.untilFalse(watcher.isRunningSession)
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("app.lifecycle", it.category)
-            assertEquals("session", it.type)
-            assertEquals(SentryLevel.INFO, it.level)
-            // cant assert data, its not a public API
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("app.lifecycle", it.category)
+                assertEquals("session", it.type)
+                assertEquals(SentryLevel.INFO, it.level)
+                // cant assert data, its not a public API
+            }
+        )
     }
 
     @Test
@@ -140,12 +144,14 @@ class LifecycleWatcherTest {
     fun `When app lifecycle breadcrumbs is enabled, add breadcrumb on start`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false)
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("app.lifecycle", it.category)
-            assertEquals("navigation", it.type)
-            assertEquals(SentryLevel.INFO, it.level)
-            // cant assert data, its not a public API
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("app.lifecycle", it.category)
+                assertEquals("navigation", it.type)
+                assertEquals(SentryLevel.INFO, it.level)
+                // cant assert data, its not a public API
+            }
+        )
     }
 
     @Test
@@ -159,12 +165,14 @@ class LifecycleWatcherTest {
     fun `When app lifecycle breadcrumbs is enabled, add breadcrumb on stop`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false)
         watcher.onStop(fixture.ownerMock)
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("app.lifecycle", it.category)
-            assertEquals("navigation", it.type)
-            assertEquals(SentryLevel.INFO, it.level)
-            // cant assert data, its not a public API
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("app.lifecycle", it.category)
+                assertEquals("navigation", it.type)
+                assertEquals(SentryLevel.INFO, it.level)
+                // cant assert data, its not a public API
+            }
+        )
     }
 
     @Test

@@ -13,11 +13,11 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel
+import org.junit.runner.RunWith
 import java.lang.NullPointerException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AppComponentsBreadcrumbsIntegrationTest {
@@ -91,11 +91,13 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val hub = mock<IHub>()
         sut.register(hub, options)
         sut.onLowMemory()
-        verify(hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("device.event", it.category)
-            assertEquals("system", it.type)
-            assertEquals(SentryLevel.WARNING, it.level)
-        })
+        verify(hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("device.event", it.category)
+                assertEquals("system", it.type)
+                assertEquals(SentryLevel.WARNING, it.level)
+            }
+        )
     }
 
     @Test
@@ -105,11 +107,13 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val hub = mock<IHub>()
         sut.register(hub, options)
         sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
-        verify(hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("device.event", it.category)
-            assertEquals("system", it.type)
-            assertEquals(SentryLevel.WARNING, it.level)
-        })
+        verify(hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("device.event", it.category)
+                assertEquals("system", it.type)
+                assertEquals(SentryLevel.WARNING, it.level)
+            }
+        )
     }
 
     @Test
@@ -129,11 +133,13 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val hub = mock<IHub>()
         sut.register(hub, options)
         sut.onConfigurationChanged(mock())
-        verify(hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("device.orientation", it.category)
-            assertEquals("navigation", it.type)
-            assertEquals(SentryLevel.INFO, it.level)
-            // cant assert data, its not a public API
-        })
+        verify(hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("device.orientation", it.category)
+                assertEquals("navigation", it.type)
+                assertEquals(SentryLevel.INFO, it.level)
+                // cant assert data, its not a public API
+            }
+        )
     }
 }

@@ -16,18 +16,18 @@ class ThirdFragment : Fragment(R.layout.third_fragment) {
         val child = span?.startChild("calc")
 
         GithubAPI.service.listRepos("getsentry").enqueue(object :
-            Callback<List<Repo>> {
-            override fun onFailure(call: Call<List<Repo>>?, t: Throwable) {
-                child?.finish(SpanStatus.UNKNOWN_ERROR)
-            }
-
-            override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
-                val someInt = response.body()?.size ?: requireArguments().getInt("some_int")
-                for (i in 0..someInt) {
-                    println(i)
+                Callback<List<Repo>> {
+                override fun onFailure(call: Call<List<Repo>>?, t: Throwable) {
+                    child?.finish(SpanStatus.UNKNOWN_ERROR)
                 }
-                child?.finish(SpanStatus.OK)
-            }
-        })
+
+                override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
+                    val someInt = response.body()?.size ?: requireArguments().getInt("some_int")
+                    for (i in 0..someInt) {
+                        println(i)
+                    }
+                    child?.finish(SpanStatus.OK)
+                }
+            })
     }
 }

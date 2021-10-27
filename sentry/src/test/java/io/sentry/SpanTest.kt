@@ -17,15 +17,19 @@ class SpanTest {
         val hub = mock<IHub>()
 
         init {
-            whenever(hub.options).thenReturn(SentryOptions().apply {
-                dsn = "https://key@sentry.io/proj"
-                isTraceSampling = true
-            })
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                    isTraceSampling = true
+                }
+            )
         }
 
         fun getSut(): Span {
-            return Span(SentryId(), SpanId(),
-                SentryTracer(TransactionContext("name", "op"), hub), "op", hub)
+            return Span(
+                SentryId(), SpanId(),
+                SentryTracer(TransactionContext("name", "op"), hub), "op", hub
+            )
         }
     }
 
@@ -80,10 +84,13 @@ class SpanTest {
     fun `converts to Sentry trace header`() {
         val traceId = SentryId()
         val parentSpanId = SpanId()
-        val span = Span(traceId, parentSpanId,
+        val span = Span(
+            traceId, parentSpanId,
             SentryTracer(
-                TransactionContext("name", "op", true), fixture.hub),
-            "op", fixture.hub)
+                TransactionContext("name", "op", true), fixture.hub
+            ),
+            "op", fixture.hub
+        )
         val sentryTrace = span.toSentryTrace()
 
         assertEquals(traceId, sentryTrace.traceId)
@@ -120,7 +127,8 @@ class SpanTest {
     @Test
     fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
         val transaction = SentryTracer(
-            TransactionContext("name", "op"), fixture.hub)
+            TransactionContext("name", "op"), fixture.hub
+        )
         val span = transaction.startChild("op")
         val ex = RuntimeException()
         span.throwable = ex

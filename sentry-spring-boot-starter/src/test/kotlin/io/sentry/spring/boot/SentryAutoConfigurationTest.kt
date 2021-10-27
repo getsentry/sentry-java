@@ -28,12 +28,6 @@ import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
-import java.lang.RuntimeException
-import javax.servlet.Filter
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.aop.support.NameMatchMethodPointcut
@@ -53,6 +47,12 @@ import org.springframework.core.annotation.Order
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
+import java.lang.RuntimeException
+import javax.servlet.Filter
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class SentryAutoConfigurationTest {
 
@@ -221,15 +221,18 @@ class SentryAutoConfigurationTest {
             .run {
                 Sentry.captureMessage("Some message")
                 val transport = it.getBean(ITransport::class.java)
-                verify(transport).send(checkEvent { event ->
-                    assertThat(event.sdk).isNotNull()
-                    val sdk = event.sdk!!
-                    assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
-                    assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
-                    assertThat(sdk.packages).anyMatch { pkg ->
-                        pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
-                    }
-                }, anyOrNull())
+                verify(transport).send(
+                    checkEvent { event ->
+                        assertThat(event.sdk).isNotNull()
+                        val sdk = event.sdk!!
+                        assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
+                        assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
+                        assertThat(sdk.packages).anyMatch { pkg ->
+                            pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
+                        }
+                    },
+                    anyOrNull()
+                )
             }
     }
 
@@ -285,9 +288,12 @@ class SentryAutoConfigurationTest {
             .run {
                 Sentry.captureMessage("Some message")
                 val transport = it.getBean(ITransport::class.java)
-                verify(transport).send(checkEvent { event ->
-                    assertThat(event.release).isEqualTo("git-commit-id")
-                }, anyOrNull())
+                verify(transport).send(
+                    checkEvent { event ->
+                        assertThat(event.release).isEqualTo("git-commit-id")
+                    },
+                    anyOrNull()
+                )
             }
     }
 
@@ -299,9 +305,12 @@ class SentryAutoConfigurationTest {
                 Sentry.captureMessage("Some message")
                 val transport = it.getBean(ITransport::class.java)
 
-                verify(transport).send(checkEvent { event ->
-                    assertThat(event.release).isEqualTo("my-release")
-                }, anyOrNull())
+                verify(transport).send(
+                    checkEvent { event ->
+                        assertThat(event.release).isEqualTo("my-release")
+                    },
+                    anyOrNull()
+                )
             }
     }
 

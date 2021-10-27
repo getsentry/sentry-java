@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.config.PropertiesProviderFactory
+import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.lang.RuntimeException
 import kotlin.test.Test
@@ -14,7 +15,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.rules.TemporaryFolder
 
 class SentryOptionsTest {
     @Test
@@ -146,10 +146,12 @@ class SentryOptionsTest {
         assertEquals(BuildConfig.SENTRY_JAVA_SDK_NAME, sdkVersion.name)
         assertEquals(BuildConfig.VERSION_NAME, sdkVersion.version)
 
-        assertTrue(sdkVersion.packages!!.any {
-            it.name == "maven:io.sentry:sentry" &&
-            it.version == BuildConfig.VERSION_NAME
-        })
+        assertTrue(
+            sdkVersion.packages!!.any {
+                it.name == "maven:io.sentry:sentry" &&
+                    it.version == BuildConfig.VERSION_NAME
+            }
+        )
     }
 
     @Test

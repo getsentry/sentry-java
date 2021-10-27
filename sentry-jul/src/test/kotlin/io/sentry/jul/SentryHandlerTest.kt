@@ -8,6 +8,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.transport.ITransport
+import org.slf4j.MDC
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -21,7 +22,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.slf4j.MDC
 
 class SentryHandlerTest {
     private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, val configureWithLogManager: Boolean = false, val transport: ITransport = mock()) {
@@ -66,9 +66,12 @@ class SentryHandlerTest {
         fixture = Fixture(transport = transport)
         fixture.logger.severe("testing environment field")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertEquals("manual-environment", event.environment)
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals("manual-environment", event.environment)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -76,14 +79,17 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.SEVERE)
         fixture.logger.log(Level.SEVERE, "testing message conversion {0}, {1}", arrayOf(1, 2))
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertNotNull(event.message) { message ->
-                assertEquals("testing message conversion 1, 2", message.formatted)
-                assertEquals("testing message conversion {0}, {1}", message.message)
-                assertEquals(listOf("1", "2"), message.params)
-            }
-            assertEquals("jul.SentryHandlerTest", event.logger)
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.message) { message ->
+                    assertEquals("testing message conversion 1, 2", message.formatted)
+                    assertEquals("testing message conversion {0}, {1}", message.message)
+                    assertEquals(listOf("1", "2"), message.params)
+                }
+                assertEquals("jul.SentryHandlerTest", event.logger)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -91,14 +97,17 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.SEVERE)
         fixture.logger.log(Level.SEVERE, "testing message conversion {0}, {1}", arrayOf(1, 2))
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertNotNull(event.message) { message ->
-                assertEquals("testing message conversion 1, 2", message.formatted)
-                assertEquals("testing message conversion {0}, {1}", message.message)
-                assertEquals(listOf("1", "2"), message.params)
-            }
-            assertEquals("jul.SentryHandlerTest", event.logger)
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.message) { message ->
+                    assertEquals("testing message conversion 1, 2", message.formatted)
+                    assertEquals("testing message conversion {0}, {1}", message.message)
+                    assertEquals(listOf("1", "2"), message.params)
+                }
+                assertEquals("jul.SentryHandlerTest", event.logger)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -108,14 +117,17 @@ class SentryHandlerTest {
 
         fixture.logger.config("testing event date")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            val eventTime = Instant.ofEpochMilli(event.timestamp.time)
-                .atZone(ZoneId.of("UTC"))
-                .toLocalDateTime()
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                val eventTime = Instant.ofEpochMilli(event.timestamp.time)
+                    .atZone(ZoneId.of("UTC"))
+                    .toLocalDateTime()
 
-            assertTrue { eventTime.plusSeconds(1).isAfter(utcTime) }
-            assertTrue { eventTime.minusSeconds(1).isBefore(utcTime) }
-        }, anyOrNull())
+                assertTrue { eventTime.plusSeconds(1).isAfter(utcTime) }
+                assertTrue { eventTime.minusSeconds(1).isBefore(utcTime) }
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -123,9 +135,12 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.FINE)
         fixture.logger.fine("testing trace level")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertEquals(SentryLevel.DEBUG, event.level)
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.DEBUG, event.level)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -133,9 +148,12 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.CONFIG)
         fixture.logger.config("testing debug level")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertEquals(SentryLevel.DEBUG, event.level)
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.DEBUG, event.level)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -143,9 +161,12 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.INFO)
         fixture.logger.info("testing info level")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertEquals(SentryLevel.INFO, event.level)
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.INFO, event.level)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -153,9 +174,12 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.WARNING)
         fixture.logger.warning("testing warn level")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertEquals(SentryLevel.WARNING, event.level)
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.WARNING, event.level)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -163,9 +187,12 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.SEVERE)
         fixture.logger.severe("testing error level")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertEquals(SentryLevel.ERROR, event.level)
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.ERROR, event.level)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -173,9 +200,12 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.WARNING)
         fixture.logger.warning("testing thread information")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertNotNull(event.getExtra("thread_id"))
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.getExtra("thread_id"))
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -187,20 +217,23 @@ class SentryHandlerTest {
         fixture.logger.info("this should be a breadcrumb #2")
         fixture.logger.warning("testing message with breadcrumbs")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertNotNull(event.breadcrumbs) { breadcrumbs ->
-                assertEquals(2, breadcrumbs.size)
-                val breadcrumb = breadcrumbs[0]
-                val breadcrumbTime = Instant.ofEpochMilli(event.timestamp.time)
-                    .atZone(ZoneId.of("UTC"))
-                    .toLocalDateTime()
-                assertTrue { breadcrumbTime.plusSeconds(1).isAfter(utcTime) }
-                assertTrue { breadcrumbTime.minusSeconds(1).isBefore(utcTime) }
-                assertEquals("this should be a breadcrumb #1", breadcrumb.message)
-                assertEquals("jul.SentryHandlerTest", breadcrumb.category)
-                assertEquals(SentryLevel.DEBUG, breadcrumb.level)
-            }
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.breadcrumbs) { breadcrumbs ->
+                    assertEquals(2, breadcrumbs.size)
+                    val breadcrumb = breadcrumbs[0]
+                    val breadcrumbTime = Instant.ofEpochMilli(event.timestamp.time)
+                        .atZone(ZoneId.of("UTC"))
+                        .toLocalDateTime()
+                    assertTrue { breadcrumbTime.plusSeconds(1).isAfter(utcTime) }
+                    assertTrue { breadcrumbTime.minusSeconds(1).isBefore(utcTime) }
+                    assertEquals("this should be a breadcrumb #1", breadcrumb.message)
+                    assertEquals("jul.SentryHandlerTest", breadcrumb.category)
+                    assertEquals(SentryLevel.DEBUG, breadcrumb.level)
+                }
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -211,12 +244,15 @@ class SentryHandlerTest {
         fixture.logger.info("this should be a breadcrumb")
         fixture.logger.warning("testing message with breadcrumbs")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertNotNull(event.breadcrumbs) { breadcrumbs ->
-                assertEquals(1, breadcrumbs.size)
-                assertEquals("this should be a breadcrumb", breadcrumbs[0].message)
-            }
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.breadcrumbs) { breadcrumbs ->
+                    assertEquals(1, breadcrumbs.size)
+                    assertEquals("this should be a breadcrumb", breadcrumbs[0].message)
+                }
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -228,13 +264,16 @@ class SentryHandlerTest {
         fixture.logger.warning("this should not be sent as the event but be a breadcrumb")
         fixture.logger.severe("this should be sent as the event")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertNotNull(event.breadcrumbs) { breadcrumbs ->
-                assertEquals(2, breadcrumbs.size)
-                assertEquals("this should be a breadcrumb", breadcrumbs[0].message)
-                assertEquals("this should not be sent as the event but be a breadcrumb", breadcrumbs[1].message)
-            }
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.breadcrumbs) { breadcrumbs ->
+                    assertEquals(2, breadcrumbs.size)
+                    assertEquals("this should be a breadcrumb", breadcrumbs[0].message)
+                    assertEquals("this should not be sent as the event but be a breadcrumb", breadcrumbs[1].message)
+                }
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -242,9 +281,12 @@ class SentryHandlerTest {
         fixture = Fixture()
         fixture.logger.severe("some event")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertEquals("release from sentry.properties", event.release)
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals("release from sentry.properties", event.release)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -262,9 +304,12 @@ class SentryHandlerTest {
         MDC.put("key", "value")
         fixture.logger.warning("testing MDC tags")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -274,13 +319,16 @@ class SentryHandlerTest {
         MDC.put("key2", "value")
         fixture.logger.warning("testing MDC tags")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertNotNull(event.contexts["MDC"]) {
-                val contextData = it as Map<*, *>
-                assertNull(contextData["key1"])
-                assertEquals("value", contextData["key2"])
-            }
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.contexts["MDC"]) {
+                    val contextData = it as Map<*, *>
+                    assertNull(contextData["key1"])
+                    assertEquals("value", contextData["key2"])
+                }
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -290,9 +338,12 @@ class SentryHandlerTest {
         MDC.put("key2", null)
         fixture.logger.warning("testing MDC tags")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertNull(event.contexts["MDC"])
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNull(event.contexts["MDC"])
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -300,9 +351,12 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.WARNING)
         fixture.logger.warning("testing without MDC tags")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertFalse(event.contexts.containsKey("MDC"))
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertFalse(event.contexts.containsKey("MDC"))
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -310,16 +364,21 @@ class SentryHandlerTest {
         fixture = Fixture(minimumEventLevel = Level.INFO)
         fixture.logger.info("testing sdk version")
 
-        verify(fixture.transport).send(checkEvent { event ->
-            assertNotNull(event.sdk) {
-                assertEquals(BuildConfig.SENTRY_JUL_SDK_NAME, it.name)
-                assertEquals(BuildConfig.VERSION_NAME, it.version)
-                assertNotNull(it.packages)
-                assertTrue(it.packages!!.any { pkg ->
-                    "maven:io.sentry:sentry-jul" == pkg.name &&
-                        BuildConfig.VERSION_NAME == pkg.version
-                })
-            }
-        }, anyOrNull())
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.sdk) {
+                    assertEquals(BuildConfig.SENTRY_JUL_SDK_NAME, it.name)
+                    assertEquals(BuildConfig.VERSION_NAME, it.version)
+                    assertNotNull(it.packages)
+                    assertTrue(
+                        it.packages!!.any { pkg ->
+                            "maven:io.sentry:sentry-jul" == pkg.name &&
+                                BuildConfig.VERSION_NAME == pkg.version
+                        }
+                    )
+                }
+            },
+            anyOrNull()
+        )
     }
 }

@@ -7,6 +7,7 @@ import io.sentry.protocol.Sessions;
 import io.sentry.transport.ITransport;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -540,6 +541,21 @@ public final class SentryClient implements ISentryClient {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Failed to close the connection to the Sentry Server.", e);
+    }
+    for (EventProcessor eventProcessor : options.getEventProcessors()) {
+      if (eventProcessor instanceof Closeable) {
+        try {
+          ((Closeable) eventProcessor).close();
+        } catch (IOException e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Failed to close the event processor {}.",
+                  eventProcessor,
+                  e);
+        }
+      }
     }
     enabled = false;
   }

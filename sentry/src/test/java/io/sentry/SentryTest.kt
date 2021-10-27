@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.SentryId
+import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
@@ -14,7 +15,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.rules.TemporaryFolder
 
 class SentryTest {
 
@@ -24,6 +24,7 @@ class SentryTest {
     @AfterTest
     fun beforeTest() {
         Sentry.close()
+        SentryCrashLastRunState.getInstance().reset()
     }
 
     @Test
@@ -148,9 +149,11 @@ class SentryTest {
         val userFeedback = UserFeedback(SentryId.EMPTY_ID)
         Sentry.captureUserFeedback(userFeedback)
 
-        verify(client).captureUserFeedback(argThat {
-            eventId == userFeedback.eventId
-        })
+        verify(client).captureUserFeedback(
+            argThat {
+                eventId == userFeedback.eventId
+            }
+        )
     }
 
     @Test
@@ -164,6 +167,17 @@ class SentryTest {
         assertEquals("name", transaction.name)
         assertEquals("op", transaction.operation)
         assertEquals("desc", transaction.description)
+    }
+
+    @Test
+    fun `isCrashedLastRun returns true if crashedLastRun is set`() {
+        Sentry.init {
+            it.dsn = dsn
+        }
+
+        SentryCrashLastRunState.getInstance().setCrashedLastRun(true)
+
+        assertTrue(Sentry.isCrashedLastRun()!!)
     }
 
     private fun getTempPath(): String {
