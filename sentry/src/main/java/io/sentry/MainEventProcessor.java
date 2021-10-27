@@ -8,6 +8,8 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,9 +17,10 @@ import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
-public final class MainEventProcessor implements EventProcessor {
+public final class MainEventProcessor implements EventProcessor, Closeable {
 
   /**
    * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
@@ -250,5 +253,26 @@ public final class MainEventProcessor implements EventProcessor {
    */
   private boolean isCachedHint(final @Nullable Object hint) {
     return (hint instanceof Cached);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (hostnameCache != null) {
+      hostnameCache.close();
+    }
+  }
+
+  boolean isClosed() {
+    if (hostnameCache != null) {
+      return hostnameCache.isClosed();
+    } else {
+      return true;
+    }
+  }
+
+  @VisibleForTesting
+  @Nullable
+  HostnameCache getHostnameCache() {
+    return hostnameCache;
   }
 }

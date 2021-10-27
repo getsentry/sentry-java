@@ -20,7 +20,7 @@ the<DependencyManagementExtension>().apply {
     }
 }
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
@@ -44,7 +44,6 @@ dependencies {
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
     errorprone(Config.CompileOnly.errorProneNullAway)
-    errorproneJavac(Config.CompileOnly.errorProneJavac8)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
@@ -72,8 +71,8 @@ jacoco {
 
 tasks.jacocoTestReport {
     reports {
-        xml.isEnabled = true
-        html.isEnabled = false
+        xml.required.set(true)
+        html.required.set(false)
     }
 }
 

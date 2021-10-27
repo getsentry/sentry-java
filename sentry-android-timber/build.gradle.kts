@@ -12,11 +12,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion(Config.Android.compileSdkVersion)
+    compileSdk = Config.Android.compileSdkVersion
 
     defaultConfig {
-        targetSdkVersion(Config.Android.targetSdkVersion)
-        minSdkVersion(Config.Android.minSdkVersion)
+        targetSdk = Config.Android.targetSdkVersion
+        minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -44,7 +44,7 @@ android {
         }
     }
 
-    lintOptions {
+    lint {
         isWarningsAsErrors = true
         isCheckDependencies = true
 

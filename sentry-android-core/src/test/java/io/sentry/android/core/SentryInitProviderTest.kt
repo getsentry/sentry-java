@@ -8,12 +8,12 @@ import com.nhaarman.mockitokotlin2.mock
 import io.sentry.ILogger
 import io.sentry.Sentry
 import io.sentry.test.callMethod
+import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SentryInitProviderTest {

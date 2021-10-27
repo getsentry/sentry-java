@@ -2,11 +2,11 @@ package io.sentry.android.core
 
 import android.content.pm.ProviderInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.runner.RunWith
 import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SentryPerformanceProviderTest {

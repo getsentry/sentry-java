@@ -13,9 +13,6 @@ import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.checkEvent
 import io.sentry.transport.ITransport
-import java.time.Duration
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.junit.Before
@@ -38,6 +35,9 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import java.time.Duration
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -68,13 +68,16 @@ class SentryWebfluxIntegrationTest {
             .expectStatus()
             .isOk
 
-        verify(transport).send(checkEvent { event ->
-            assertNotNull(event.request) {
-                assertEquals("http://localhost:$port/hello?param=value", it.url)
-                assertEquals("GET", it.method)
-                assertEquals("param=value", it.queryString)
-            }
-        }, anyOrNull())
+        verify(transport).send(
+            checkEvent { event ->
+                assertNotNull(event.request) {
+                    assertEquals("http://localhost:$port/hello?param=value", it.url)
+                    assertEquals("GET", it.method)
+                    assertEquals("param=value", it.queryString)
+                }
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -85,16 +88,19 @@ class SentryWebfluxIntegrationTest {
             .expectStatus()
             .is5xxServerError
 
-        verify(transport).send(checkEvent { event ->
-            assertEquals("GET /throws", event.transaction)
-            assertNotNull(event.exceptions) {
-                val ex = it.first()
-                assertEquals("something went wrong", ex.value)
-                assertNotNull(ex.mechanism) {
-                    assertThat(it.isHandled).isFalse()
+        verify(transport).send(
+            checkEvent { event ->
+                assertEquals("GET /throws", event.transaction)
+                assertNotNull(event.exceptions) {
+                    val ex = it.first()
+                    assertEquals("something went wrong", ex.value)
+                    assertNotNull(ex.mechanism) {
+                        assertThat(it.isHandled).isFalse()
+                    }
                 }
-            }
-        }, anyOrNull())
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -106,9 +112,12 @@ class SentryWebfluxIntegrationTest {
             .isBadRequest
 
         await.during(Duration.ofSeconds(2)).untilAsserted {
-            verify(transport, never()).send(checkEvent { event ->
-                assertNotNull(event)
-            }, anyOrNull())
+            verify(transport, never()).send(
+                checkEvent { event ->
+                    assertNotNull(event)
+                },
+                anyOrNull()
+            )
         }
     }
 }

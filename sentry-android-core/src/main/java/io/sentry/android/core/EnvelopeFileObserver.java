@@ -34,7 +34,7 @@ final class EnvelopeFileObserver extends FileObserver {
       @NotNull ILogger logger,
       final long flushTimeoutMillis) {
     super(path);
-    this.rootPath = Objects.requireNonNull(path, "File path is required.");
+    this.rootPath = path;
     this.envelopeSender = Objects.requireNonNull(envelopeSender, "Envelope sender is required.");
     this.logger = Objects.requireNonNull(logger, "Logger is required.");
     this.flushTimeoutMillis = flushTimeoutMillis;
