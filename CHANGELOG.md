@@ -17,7 +17,10 @@ Breaking changes:
     * When passing custom objects, for example in `Contexts`, these are supported for serialization:
         * `JsonSerializable`
         * `Map`, `Collection`, `Array`, `String` and all primitive types.
-    * Serialization of objects with refection is currently not supported.
+        * Objects with the help of refection.
+            * `Map`, `Collection`, `Array`, `String` and all primitive types.
+            * Call `toString()` on objects that have a cyclic reference to a ancestor object.
+            * Call `toString()` where object graphs exceed max depth.
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
     
