@@ -79,7 +79,7 @@ class ContextsSerializationTest {
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()
-        val jsonWrt = JsonObjectWriter(wrt)
+        val jsonWrt = JsonObjectWriter(wrt, 100)
         jsonSerializable.serialize(jsonWrt, fixture.logger)
         return wrt.toString()
     }

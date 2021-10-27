@@ -8,10 +8,11 @@ import org.jetbrains.annotations.Nullable;
 
 public final class JsonObjectWriter extends JsonWriter {
 
-  private final JsonObjectSerializer jsonObjectSerializer = new JsonObjectSerializer();
+  private final JsonObjectSerializer jsonObjectSerializer;
 
-  public JsonObjectWriter(Writer out) {
+  public JsonObjectWriter(Writer out, int maxDepth) {
     super(out);
+    jsonObjectSerializer = new JsonObjectSerializer(maxDepth);
   }
 
   @Override

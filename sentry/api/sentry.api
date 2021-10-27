@@ -426,15 +426,21 @@ public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/Jso
 
 public final class io/sentry/JsonObjectSerializer {
 	public static final field OBJECT_PLACEHOLDER Ljava/lang/String;
-	public fun <init> ()V
+	public final field jsonReflectionObjectSerializer Lio/sentry/JsonReflectionObjectSerializer;
+	public fun <init> (I)V
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;Ljava/lang/Object;)V
 }
 
 public final class io/sentry/JsonObjectWriter : io/sentry/vendor/gson/stream/JsonWriter {
-	public fun <init> (Ljava/io/Writer;)V
+	public fun <init> (Ljava/io/Writer;I)V
 	public fun name (Ljava/lang/String;)Lio/sentry/JsonObjectWriter;
 	public synthetic fun name (Ljava/lang/String;)Lio/sentry/vendor/gson/stream/JsonWriter;
 	public fun value (Lio/sentry/ILogger;Ljava/lang/Object;)Lio/sentry/JsonObjectWriter;
+}
+
+public final class io/sentry/JsonReflectionObjectSerializer {
+	public fun serialize (Ljava/lang/Object;Lio/sentry/ILogger;)Ljava/lang/Object;
+	public fun serializeObject (Ljava/lang/Object;Lio/sentry/ILogger;)Ljava/util/Map;
 }
 
 public abstract interface class io/sentry/JsonSerializable {
@@ -1004,6 +1010,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxCacheItems ()I
+	public fun getMaxDepth ()I
 	public fun getMaxQueueSize ()I
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getMaxSpans ()I
@@ -1071,6 +1078,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxCacheItems (I)V
+	public fun setMaxDepth (I)V
 	public fun setMaxQueueSize (I)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
