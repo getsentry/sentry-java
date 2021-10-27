@@ -2,7 +2,6 @@ package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.cache.IEnvelopeCache;
-import io.sentry.config.PropertiesProvider;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -13,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,9 +29,6 @@ public class SentryOptions {
 
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
-
-  /** The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not. */
-  private static final String PROXY_PORT_DEFAULT = "80";
 
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
@@ -75,7 +70,7 @@ public class SentryOptions {
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
    * information if something goes wrong. Default is disabled.
    */
-  private @Nullable Boolean debug;
+  private boolean debug;
 
   /** Turns NDK on or off. Default is enabled. */
   private boolean enableNdk = true;
@@ -218,7 +213,7 @@ public class SentryOptions {
   /*
   When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
    */
-  private @Nullable Boolean enableUncaughtExceptionHandler = true;
+  private boolean enableUncaughtExceptionHandler = true;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
@@ -267,7 +262,7 @@ public class SentryOptions {
    * deduplication prevents from receiving the same exception multiple times when there is more than
    * one framework active that captures errors, for example Logback and Spring Boot.
    */
-  private @Nullable Boolean enableDeduplication = true;
+  private boolean enableDeduplication = true;
 
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
@@ -293,80 +288,6 @@ public class SentryOptions {
   private @Nullable String proguardUuid;
 
   private @NotNull SessionMode sessionMode = SessionMode.CLIENT;
-
-  /**
-   * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
-   *
-   * @param propertiesProvider the properties provider
-   * @return the sentry options
-   */
-  @SuppressWarnings("unchecked")
-  public static @NotNull SentryOptions from(
-      final @NotNull PropertiesProvider propertiesProvider, final @NotNull ILogger logger) {
-    final SentryOptions options = new SentryOptions();
-    options.setDsn(propertiesProvider.getProperty("dsn"));
-    options.setEnvironment(propertiesProvider.getProperty("environment"));
-    options.setRelease(propertiesProvider.getProperty("release"));
-    options.setDist(propertiesProvider.getProperty("dist"));
-    options.setServerName(propertiesProvider.getProperty("servername"));
-    options.setEnableUncaughtExceptionHandler(
-        propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
-    options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
-    options.setDebug(propertiesProvider.getBooleanProperty("debug"));
-    options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
-    final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
-    if (maxRequestBodySize != null) {
-      options.setMaxRequestBodySize(
-          RequestSize.valueOf(maxRequestBodySize.toUpperCase(Locale.ROOT)));
-    }
-    final Map<String, String> tags = propertiesProvider.getMap("tags");
-    for (final Map.Entry<String, String> tag : tags.entrySet()) {
-      options.setTag(tag.getKey(), tag.getValue());
-    }
-
-    final String proxyHost = propertiesProvider.getProperty("proxy.host");
-    final String proxyUser = propertiesProvider.getProperty("proxy.user");
-    final String proxyPass = propertiesProvider.getProperty("proxy.pass");
-    final String proxyPort = propertiesProvider.getProperty("proxy.port", PROXY_PORT_DEFAULT);
-
-    if (proxyHost != null) {
-      options.setProxy(new Proxy(proxyHost, proxyPort, proxyUser, proxyPass));
-    }
-
-    for (final String inAppInclude : propertiesProvider.getList("in-app-includes")) {
-      options.addInAppInclude(inAppInclude);
-    }
-    for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
-      options.addInAppExclude(inAppExclude);
-    }
-    for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
-      options.addTracingOrigin(tracingOrigin);
-    }
-    options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
-
-    for (final String ignoredExceptionType :
-        propertiesProvider.getList("ignored-exceptions-for-type")) {
-      try {
-        Class<?> clazz = Class.forName(ignoredExceptionType);
-        if (Throwable.class.isAssignableFrom(clazz)) {
-          options.addIgnoredExceptionForType((Class<? extends Throwable>) clazz);
-        } else {
-          logger.log(
-              SentryLevel.WARNING,
-              "Skipping setting %s as ignored-exception-for-type. Reason: %s does not extend Throwable",
-              ignoredExceptionType,
-              ignoredExceptionType);
-        }
-      } catch (ClassNotFoundException e) {
-        logger.log(
-            SentryLevel.WARNING,
-            "Skipping setting %s as ignored-exception-for-type. Reason: %s class is not found",
-            ignoredExceptionType,
-            ignoredExceptionType);
-      }
-    }
-    return options;
-  }
 
   /**
    * Adds an event processor
@@ -428,7 +349,7 @@ public class SentryOptions {
    * @return true if ON or false otherwise
    */
   public boolean isDebug() {
-    return Boolean.TRUE.equals(debug);
+    return debug;
   }
 
   /**
@@ -436,17 +357,8 @@ public class SentryOptions {
    *
    * @param debug true if ON or false otherwise
    */
-  public void setDebug(final @Nullable Boolean debug) {
+  public void setDebug(final boolean debug) {
     this.debug = debug;
-  }
-
-  /**
-   * Check if debug mode is ON, OFF or not set.
-   *
-   * @return true if ON or false otherwise
-   */
-  private @Nullable Boolean getDebug() {
-    return debug;
   }
 
   /**
@@ -1050,15 +962,6 @@ public class SentryOptions {
    * @return true if enabled or false otherwise.
    */
   public boolean isEnableUncaughtExceptionHandler() {
-    return Boolean.TRUE.equals(enableUncaughtExceptionHandler);
-  }
-
-  /**
-   * Checks if the default UncaughtExceptionHandlerIntegration is enabled or disabled or not set.
-   *
-   * @return true if enabled, false otherwise or null if not set.
-   */
-  public @Nullable Boolean getEnableUncaughtExceptionHandler() {
     return enableUncaughtExceptionHandler;
   }
 
@@ -1067,8 +970,7 @@ public class SentryOptions {
    *
    * @param enableUncaughtExceptionHandler true if enabled or false otherwise.
    */
-  public void setEnableUncaughtExceptionHandler(
-      final @Nullable Boolean enableUncaughtExceptionHandler) {
+  public void setEnableUncaughtExceptionHandler(final boolean enableUncaughtExceptionHandler) {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
@@ -1332,15 +1234,6 @@ public class SentryOptions {
    * @return if event deduplication is turned on.
    */
   public boolean isEnableDeduplication() {
-    return Boolean.TRUE.equals(enableDeduplication);
-  }
-
-  /**
-   * Returns if event deduplication is turned on or of or {@code null} if not specified.
-   *
-   * @return if event deduplication is turned on or of or {@code null} if not specified.
-   */
-  private @Nullable Boolean getEnableDeduplication() {
     return enableDeduplication;
   }
 
@@ -1349,7 +1242,7 @@ public class SentryOptions {
    *
    * @param enableDeduplication true if enabled false otherwise
    */
-  public void setEnableDeduplication(final @Nullable Boolean enableDeduplication) {
+  public void setEnableDeduplication(final boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
   }
 
@@ -1610,7 +1503,7 @@ public class SentryOptions {
    *
    * @param options options loaded from external locations
    */
-  void merge(final @NotNull SentryOptions options) {
+  void merge(final @NotNull ExternalOptions options) {
     if (options.getDsn() != null) {
       setDsn(options.getDsn());
     }

@@ -108,7 +108,9 @@ public class SentryAppender extends AbstractAppender {
             options -> {
               options.setEnableExternalConfiguration(true);
               options.setDsn(dsn);
-              options.setDebug(debug);
+              if (debug != null) {
+                options.setDebug(debug);
+              }
               options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
               options.setSdkVersion(createSdkVersion(options));
               Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
