@@ -48,17 +48,21 @@ class ServerSessionManagerTest {
 
     private fun erroredEvent() =
         SentryEvent().apply {
-            exceptions = listOf(SentryException().apply {
-                this.value = "val"
-            })
+            exceptions = listOf(
+                SentryException().apply {
+                    this.value = "val"
+                }
+            )
         }
 
     private fun crashedEvent() = SentryEvent().apply {
-        this.exceptions = mutableListOf(SentryException().apply {
-            mechanism = Mechanism().apply {
-                this.isHandled = false
+        this.exceptions = mutableListOf(
+            SentryException().apply {
+                mechanism = Mechanism().apply {
+                    this.isHandled = false
+                }
             }
-        })
+        )
     }
 
     private fun executeSession(sessionManager: ServerSessionManager, event: SentryEvent? = null) {

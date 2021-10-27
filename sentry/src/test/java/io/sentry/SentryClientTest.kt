@@ -1047,9 +1047,11 @@ class SentryClientTest {
     @Test
     fun `when captureSessions, sdkInfo should be in the envelope header`() {
         fixture.getSut().captureSessions(mock())
-        verify(fixture.transport).send(check {
-            assertNotNull(it.header.sdkVersion)
-        })
+        verify(fixture.transport).send(
+            check {
+                assertNotNull(it.header.sdkVersion)
+            }
+        )
     }
 
     private fun createScope(): Scope {
