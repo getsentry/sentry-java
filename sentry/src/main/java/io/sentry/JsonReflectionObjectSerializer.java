@@ -61,17 +61,22 @@ public final class JsonReflectionObjectSerializer {
         return null;
       }
 
-      Object serializedObject;
-      if (object.getClass().isArray()) {
-        serializedObject = list((Object[]) object, logger);
-      } else if (object instanceof Collection) {
-        serializedObject = list((Collection<?>) object, logger);
-      } else if (object instanceof Map) {
-        serializedObject = map((Map<?, ?>) object, logger);
-      } else {
-        serializedObject = serializeObject(object, logger);
+      Object serializedObject = null;
+      try {
+        if (object.getClass().isArray()) {
+          serializedObject = list((Object[]) object, logger);
+        } else if (object instanceof Collection) {
+          serializedObject = list((Collection<?>) object, logger);
+        } else if (object instanceof Map) {
+          serializedObject = map((Map<?, ?>) object, logger);
+        } else {
+          serializedObject = serializeObject(object, logger);
+        }
+      } catch (Exception exception) {
+        logger.log(SentryLevel.INFO, "Not serializing object due to throwing sub-path.", exception);
+      } finally {
+        visiting.remove(object);
       }
-      visiting.remove(object);
       return serializedObject;
     }
   }
