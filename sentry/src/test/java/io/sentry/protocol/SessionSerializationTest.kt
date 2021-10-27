@@ -8,11 +8,11 @@ import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import io.sentry.Session
+import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
 import java.util.UUID
 import kotlin.test.assertEquals
-import org.junit.Test
 
 class SessionSerializationTest {
 

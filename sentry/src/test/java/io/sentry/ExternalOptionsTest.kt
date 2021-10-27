@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.config.PropertiesProviderFactory
+import org.junit.rules.TemporaryFolder
 import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,7 +13,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.rules.TemporaryFolder
 
 class ExternalOptionsTest {
 

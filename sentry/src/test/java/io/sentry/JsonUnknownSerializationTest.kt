@@ -31,12 +31,12 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.SentryTransactionSerializationTest
 import io.sentry.protocol.SessionSerializationTest
 import io.sentry.protocol.User
-import java.io.StringReader
-import java.io.StringWriter
-import kotlin.test.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.io.StringReader
+import java.io.StringWriter
+import kotlin.test.assertEquals
 
 /**
  * Test serialization/deserialization for all classes implementing JsonUnknown

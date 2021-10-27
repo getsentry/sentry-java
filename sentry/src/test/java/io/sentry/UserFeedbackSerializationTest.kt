@@ -5,13 +5,13 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.SentryId
+import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
 import java.lang.Exception
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.fail
-import org.junit.Test
 
 class UserFeedbackSerializationTest {
 

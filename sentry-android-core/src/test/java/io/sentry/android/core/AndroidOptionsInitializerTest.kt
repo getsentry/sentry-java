@@ -17,6 +17,7 @@ import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME
+import org.junit.runner.RunWith
 import java.io.File
 import java.lang.RuntimeException
 import kotlin.test.BeforeTest
@@ -26,7 +27,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AndroidOptionsInitializerTest {

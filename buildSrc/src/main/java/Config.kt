@@ -9,7 +9,7 @@ object Config {
     val springKotlinCompatibleLanguageVersion = "1.3"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.0.2"
+        val androidGradle = "com.android.tools.build:gradle:7.0.3"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -17,13 +17,13 @@ object Config {
         val springDependencyManagement = "io.spring.dependency-management"
         val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
-        val grettyVersion = "3.0.5"
+        val grettyVersion = "4.0.0"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.18.0"
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
     }
 
     object Android {
-        private val sdkVersion = 30
+        private val sdkVersion = 31
 
         val minSdkVersion = 14
         val minSdkVersionOkHttp = 21
@@ -39,9 +39,10 @@ object Config {
     }
 
     object Libs {
+        val okHttpVersion = "4.9.2"
         val appCompat = "androidx.appcompat:appcompat:1.2.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
-        val okhttpBom = "com.squareup.okhttp3:okhttp-bom:4.9.0"
+        val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
         val okhttp = "com.squareup.okhttp3:okhttp"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.7"
 
@@ -101,22 +102,19 @@ object Config {
     }
 
     object TestLibs {
-        private val androidxTestVersion = "1.3.0"
+        private val androidxTestVersion = "1.4.0-rc01"
 
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
         val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxJunit = "androidx.test.ext:junit:1.1.2"
-        val androidxCoreKtx = "androidx.core:core-ktx:1.3.2"
-        // bump to 4.6.1 breaks a few tests due to ShadowFileObserver
-        val robolectric = "org.robolectric:robolectric:4.5.1"
+        val androidxJunit = "androidx.test.ext:junit:1.1.3-rc01"
+        val androidxCoreKtx = "androidx.core:core-ktx:1.7.0-rc01"
+        val robolectric = "org.robolectric:robolectric:4.6.1"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val mockitoInline = "org.mockito:mockito-inline:3.12.4"
+        val mockitoInline = "org.mockito:mockito-inline:4.0.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
-        val mockWebserver = "com.squareup.okhttp3:mockwebserver:4.9.0"
+        val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
-        // bumping to 2.26.0 breaks tests
-        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.11.1"
     }
 
     object QualityPlugins {
@@ -125,16 +123,15 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "5.12.5"
+        val spotlessVersion = "5.17.0"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:2.0.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.39.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        // use RC2 to drop jcenter because of kotlinx-html
-        val detektVersion = "1.17.1"
+        val detektVersion = "1.18.1"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorVersion = "0.6.0"
+        val binaryCompatibilityValidatorVersion = "0.7.1"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
         val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
     }
@@ -160,7 +157,6 @@ object Config {
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.9.0"
-        val errorProneJavac8 = "com.google.errorprone:javac:9+181-r4173-1"
         val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.2"
     }
 

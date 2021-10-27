@@ -14,8 +14,6 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import kotlin.test.BeforeTest
-import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
@@ -26,6 +24,8 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 @RunWith(SpringRunner::class)
 @SpringJUnitConfig(SentryTransactionAdviceTest.Config::class)
@@ -47,36 +47,47 @@ class SentryTransactionAdviceTest {
     fun setup() {
         reset(hub)
         whenever(hub.startTransaction(any<String>(), any(), eq(true))).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
-        whenever(hub.options).thenReturn(SentryOptions().apply {
-            dsn = "https://key@sentry.io/proj"
-        })
+        whenever(hub.options).thenReturn(
+            SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            }
+        )
     }
 
     @Test
     fun `creates transaction around method annotated with @SentryTransaction`() {
         sampleService.methodWithTransactionNameSet()
-        verify(hub).captureTransaction(check {
-            assertThat(it.transaction).isEqualTo("customName")
-            assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
-            assertThat(it.status).isEqualTo(SpanStatus.OK)
-        }, anyOrNull())
+        verify(hub).captureTransaction(
+            check {
+                assertThat(it.transaction).isEqualTo("customName")
+                assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
+                assertThat(it.status).isEqualTo(SpanStatus.OK)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
     fun `when method annotated with @SentryTransaction throws exception, sets error status on transaction`() {
         assertThrows<RuntimeException> { sampleService.methodThrowingException() }
-        verify(hub).captureTransaction(check {
-            assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        }, anyOrNull())
+        verify(hub).captureTransaction(
+            check {
+                assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
     fun `when @SentryTransaction has no name set, sets transaction name as className dot methodName`() {
         sampleService.methodWithoutTransactionNameSet()
-        verify(hub).captureTransaction(check {
-            assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
-            assertThat(it.contexts.trace!!.operation).isEqualTo("op")
-        }, anyOrNull())
+        verify(hub).captureTransaction(
+            check {
+                assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
+                assertThat(it.contexts.trace!!.operation).isEqualTo("op")
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -91,19 +102,25 @@ class SentryTransactionAdviceTest {
     @Test
     fun `creates transaction around method in class annotated with @SentryTransaction`() {
         classAnnotatedSampleService.hello()
-        verify(hub).captureTransaction(check {
-            assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
-            assertThat(it.contexts.trace!!.operation).isEqualTo("op")
-        }, anyOrNull())
+        verify(hub).captureTransaction(
+            check {
+                assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
+                assertThat(it.contexts.trace!!.operation).isEqualTo("op")
+            },
+            anyOrNull()
+        )
     }
 
     @Test
     fun `creates transaction with operation set around method in class annotated with @SentryTransaction`() {
         classAnnotatedWithOperationSampleService.hello()
-        verify(hub).captureTransaction(check {
-            assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
-            assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
-        }, anyOrNull())
+        verify(hub).captureTransaction(
+            check {
+                assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
+                assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
+            },
+            anyOrNull()
+        )
     }
 
     @Test

@@ -47,9 +47,15 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
 
       observer =
           new EnvelopeFileObserver(path, outboxSender, logger, options.getFlushTimeoutMillis());
-      observer.startWatching();
-
-      logger.log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
+      try {
+        observer.startWatching();
+        logger.log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
+      } catch (Exception e) {
+        // it could throw eg NoSuchFileException or NullPointerException
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to initialize EnvelopeFileObserverIntegration.", e);
+      }
     }
   }
 

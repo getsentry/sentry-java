@@ -12,9 +12,9 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
+import org.junit.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.Test
 
 class FragmentLifecycleIntegrationTest {
 
@@ -35,7 +35,8 @@ class FragmentLifecycleIntegrationTest {
             return FragmentLifecycleIntegration(
                 application = application,
                 enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
-                enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing)
+                enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+            )
         }
     }
 
@@ -71,9 +72,12 @@ class FragmentLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(fragmentActivity, savedInstanceState = null)
 
-        verify(fragmentManager).registerFragmentLifecycleCallbacks(check { fragmentCallbacks ->
-            fragmentCallbacks is SentryFragmentLifecycleCallbacks
-        }, eq(true))
+        verify(fragmentManager).registerFragmentLifecycleCallbacks(
+            check { fragmentCallbacks ->
+                fragmentCallbacks is SentryFragmentLifecycleCallbacks
+            },
+            eq(true)
+        )
     }
 
     @Test
@@ -83,11 +87,14 @@ class FragmentLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
         sut.onActivityCreated(fixture.fragmentActivity, savedInstanceState = null)
 
-        verify(fixture.fragmentManager).registerFragmentLifecycleCallbacks(check { fragmentCallbacks ->
-            val callback = (fragmentCallbacks as SentryFragmentLifecycleCallbacks)
-            assertTrue(callback.enableAutoFragmentLifecycleTracing)
-            assertFalse(callback.enableFragmentLifecycleBreadcrumbs)
-        }, eq(true))
+        verify(fixture.fragmentManager).registerFragmentLifecycleCallbacks(
+            check { fragmentCallbacks ->
+                val callback = (fragmentCallbacks as SentryFragmentLifecycleCallbacks)
+                assertTrue(callback.enableAutoFragmentLifecycleTracing)
+                assertFalse(callback.enableFragmentLifecycleBreadcrumbs)
+            },
+            eq(true)
+        )
     }
 
     @Test

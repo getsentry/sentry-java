@@ -102,7 +102,9 @@ class NdkScopeObserverTest {
 
         sut.addBreadcrumb(breadcrumb)
 
-        verify(fixture.nativeScope).addBreadcrumb(eq("debug"), eq(breadcrumb.message),
-                eq(breadcrumb.category), eq(breadcrumb.type), eq(timestamp), eq(data))
+        verify(fixture.nativeScope).addBreadcrumb(
+            eq("debug"), eq(breadcrumb.message),
+            eq(breadcrumb.category), eq(breadcrumb.type), eq(timestamp), eq(data)
+        )
     }
 }

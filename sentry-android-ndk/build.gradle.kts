@@ -11,7 +11,7 @@ plugins {
 var sentryNativeSrc: String = "sentry-native"
 
 android {
-    compileSdkVersion(Config.Android.compileSdkVersion)
+    compileSdk = Config.Android.compileSdkVersion
 
     sentryNativeSrc = if (File("${project.projectDir}/sentry-native-local").exists()) {
         "sentry-native-local"
@@ -21,8 +21,8 @@ android {
     println("sentry-android-ndk: $sentryNativeSrc")
 
     defaultConfig {
-        targetSdkVersion(Config.Android.targetSdkVersion)
-        minSdkVersion(Config.Android.minSdkVersionNdk) // NDK requires a higher API level than core.
+        targetSdk = Config.Android.targetSdkVersion
+        minSdk = Config.Android.minSdkVersionNdk // NDK requires a higher API level than core.
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -69,7 +69,7 @@ android {
         }
     }
 
-    lintOptions {
+    lint {
         isWarningsAsErrors = true
         isCheckDependencies = true
 

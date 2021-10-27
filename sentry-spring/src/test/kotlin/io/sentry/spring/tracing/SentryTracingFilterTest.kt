@@ -5,10 +5,10 @@ import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.CustomSamplingContext
 import io.sentry.IHub
@@ -18,16 +18,16 @@ import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryId
+import org.assertj.core.api.Assertions.assertThat
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockHttpServletResponse
+import org.springframework.web.servlet.HandlerMapping
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
-import org.assertj.core.api.Assertions.assertThat
-import org.springframework.mock.web.MockHttpServletRequest
-import org.springframework.mock.web.MockHttpServletResponse
-import org.springframework.web.servlet.HandlerMapping
 
 class SentryTracingFilterTest {
     private class Fixture {
@@ -38,9 +38,11 @@ class SentryTracingFilterTest {
         val transactionNameProvider = spy(TransactionNameProvider())
 
         init {
-            whenever(hub.options).thenReturn(SentryOptions().apply {
-                dsn = "https://key@sentry.io/proj"
-            })
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                }
+            )
         }
 
         fun getSut(isEnabled: Boolean = true, status: Int = 200, sentryTraceHeader: String? = null): SentryTracingFilter {
@@ -66,16 +68,23 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).startTransaction(eq("POST /product/12"), eq("http.server"), check<CustomSamplingContext>() {
-            assertNotNull(it["request"])
-            assertTrue(it["request"] is HttpServletRequest)
-        }, eq(true))
+        verify(fixture.hub).startTransaction(
+            eq("POST /product/12"), eq("http.server"),
+            check<CustomSamplingContext>() {
+                assertNotNull(it["request"])
+                assertTrue(it["request"] is HttpServletRequest)
+            },
+            eq(true)
+        )
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
-        verify(fixture.hub).captureTransaction(check {
-            assertThat(it.transaction).isEqualTo("POST /product/{id}")
-            assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
-            assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertThat(it.transaction).isEqualTo("POST /product/{id}")
+                assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+                assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -84,9 +93,12 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).captureTransaction(check {
-            assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -95,9 +107,12 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).captureTransaction(check {
-            assertThat(it.contexts.trace!!.status).isNull()
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertThat(it.contexts.trace!!.status).isNull()
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -106,9 +121,12 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).captureTransaction(check {
-            assertThat(it.contexts.trace!!.parentSpanId).isNull()
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertThat(it.contexts.trace!!.parentSpanId).isNull()
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -118,9 +136,12 @@ class SentryTracingFilterTest {
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).captureTransaction(check {
-            assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -133,7 +154,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.hub).isEnabled
         verifyNoMoreInteractions(fixture.hub)
-        verifyZeroInteractions(fixture.transactionNameProvider)
+        verify(fixture.transactionNameProvider, never()).provideTransactionName(any())
     }
 
     @Test
@@ -146,8 +167,11 @@ class SentryTracingFilterTest {
             fail("filter is expected to rethrow exception")
         } catch (_: Exception) {
         }
-        verify(fixture.hub).captureTransaction(check {
-            assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+            },
+            anyOrNull()
+        )
     }
 }

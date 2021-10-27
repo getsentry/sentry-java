@@ -75,12 +75,14 @@ class SystemEventsBreadcrumbsIntegrationTest {
         }
         sut.receiver!!.onReceive(any(), intent)
 
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("device.event", it.category)
-            assertEquals("system", it.type)
-            assertEquals(SentryLevel.INFO, it.level)
-            // cant assert data, its not a public API
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("device.event", it.category)
+                assertEquals("system", it.type)
+                assertEquals(SentryLevel.INFO, it.level)
+                // cant assert data, its not a public API
+            }
+        )
     }
 
     @Test

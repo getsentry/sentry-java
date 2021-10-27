@@ -9,10 +9,10 @@ import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import io.sentry.SentryBaseEvent
 import io.sentry.vendor.gson.stream.JsonToken
+import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
-import org.junit.Test
 
 class SentryBaseEventSerializationTest {
 

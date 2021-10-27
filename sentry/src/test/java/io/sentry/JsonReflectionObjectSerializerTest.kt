@@ -2,8 +2,8 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import kotlin.test.assertEquals
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class JsonReflectionObjectSerializerTest {
 

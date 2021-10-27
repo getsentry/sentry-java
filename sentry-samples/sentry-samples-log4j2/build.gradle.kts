@@ -8,7 +8,7 @@ application {
     mainClass.set("io.sentry.samples.log4j2.Main")
 }
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }

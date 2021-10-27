@@ -47,7 +47,8 @@ class FragmentLifecycleIntegration(
                 SentryFragmentLifecycleCallbacks(
                     hub = hub,
                     enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
-                    enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing),
+                    enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+                ),
                 true
             )
     }

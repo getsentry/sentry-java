@@ -9,10 +9,10 @@ import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import io.sentry.SentryLevel
+import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
-import org.junit.Test
 
 class BreadcrumbSerializationTest {
 

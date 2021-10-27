@@ -23,6 +23,24 @@ Breaking changes:
     
 ## Unreleased
 
+## 5.2.4
+
+* Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#1769)
+* Fix: unregister UncaughtExceptionHandler on close (#1770)
+
+## 5.2.3
+
+* Fix: Make ActivityFramesTracker operations thread-safe (#1762)
+* Fix: Clone Scope Contexts (#1763)
+* Bump: AGP to 7.0.3 (#1765)
+
+## 5.2.2
+
+* Fix: Close HostnameCache#executorService on SentryClient#close (#1757)
+
+## 5.2.1
+
+* Feat: Add isCrashedLastRun support (#1739)
 * Fix: Handle exception if Context.registerReceiver throws (#1747)
 * Feat: Attach Java vendor and version to events and transactions (#1703)
 

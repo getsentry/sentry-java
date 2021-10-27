@@ -19,8 +19,8 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
-import kotlin.test.assertEquals
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class SentryFragmentLifecycleCallbacksTest {
 
@@ -38,9 +38,11 @@ class SentryFragmentLifecycleCallbacksTest {
             enableAutoFragmentLifecycleTracing: Boolean = false,
             tracesSampleRate: Double? = 1.0
         ): SentryFragmentLifecycleCallbacks {
-            whenever(hub.options).thenReturn(SentryOptions().apply {
-                setTracesSampleRate(tracesSampleRate)
-            })
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    setTracesSampleRate(tracesSampleRate)
+                }
+            )
             whenever(transaction.startChild(any(), any())).thenReturn(span)
             whenever(scope.transaction).thenReturn(transaction)
             whenever(hub.configureScope(any())).thenAnswer {
@@ -184,11 +186,14 @@ class SentryFragmentLifecycleCallbacksTest {
 
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction).startChild(check {
-            assertEquals(SentryFragmentLifecycleCallbacks.FRAGMENT_LOAD_OP, it)
-        }, check {
-            assertEquals("Fragment", it)
-        })
+        verify(fixture.transaction).startChild(
+            check {
+                assertEquals(SentryFragmentLifecycleCallbacks.FRAGMENT_LOAD_OP, it)
+            },
+            check {
+                assertEquals("Fragment", it)
+            }
+        )
     }
 
     @Test
@@ -208,9 +213,11 @@ class SentryFragmentLifecycleCallbacksTest {
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
         sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
 
-        verify(fixture.span).finish(check {
-            assertEquals(SpanStatus.OK, it)
-        })
+        verify(fixture.span).finish(
+            check {
+                assertEquals(SpanStatus.OK, it)
+            }
+        )
     }
 
     @Test
@@ -221,9 +228,11 @@ class SentryFragmentLifecycleCallbacksTest {
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
         sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
 
-        verify(fixture.span).finish(check {
-            assertEquals(SpanStatus.ABORTED, it)
-        })
+        verify(fixture.span).finish(
+            check {
+                assertEquals(SpanStatus.ABORTED, it)
+            }
+        )
     }
 
     @Test
@@ -233,9 +242,11 @@ class SentryFragmentLifecycleCallbacksTest {
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
         sut.onFragmentDestroyed(fixture.fragmentManager, fixture.fragment)
 
-        verify(fixture.span).finish(check {
-            assertEquals(SpanStatus.OK, it)
-        })
+        verify(fixture.span).finish(
+            check {
+                assertEquals(SpanStatus.OK, it)
+            }
+        )
     }
 
     private fun verifyBreadcrumbAdded(expectedState: String) {

@@ -1,10 +1,10 @@
 package io.sentry
 
+import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.StringReader
 import java.io.StringWriter
 import java.net.URL
-import org.junit.Test
 
 class JsonSerializerBenchmarkTests {
 

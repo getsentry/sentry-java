@@ -7,11 +7,11 @@ import io.sentry.IHub
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.SdkVersion
+import timber.log.Timber
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import timber.log.Timber
 
 class SentryTimberIntegrationTest {
 
@@ -25,8 +25,10 @@ class SentryTimberIntegrationTest {
             minEventLevel: SentryLevel = SentryLevel.ERROR,
             minBreadcrumbLevel: SentryLevel = SentryLevel.INFO
         ): SentryTimberIntegration {
-            return SentryTimberIntegration(minEventLevel = minEventLevel,
-                    minBreadcrumbLevel = minBreadcrumbLevel)
+            return SentryTimberIntegration(
+                minEventLevel = minEventLevel,
+                minBreadcrumbLevel = minBreadcrumbLevel
+            )
         }
     }
     private val fixture = Fixture()
@@ -78,8 +80,10 @@ class SentryTimberIntegrationTest {
 
     @Test
     fun `Integrations pass the right min levels`() {
-        val sut = fixture.getSut(minEventLevel = SentryLevel.INFO,
-                minBreadcrumbLevel = SentryLevel.DEBUG)
+        val sut = fixture.getSut(
+            minEventLevel = SentryLevel.INFO,
+            minBreadcrumbLevel = SentryLevel.DEBUG
+        )
         sut.register(fixture.hub, fixture.options)
 
         assertEquals(sut.minEventLevel, SentryLevel.INFO)
@@ -91,10 +95,12 @@ class SentryTimberIntegrationTest {
         val sut = fixture.getSut()
         sut.register(fixture.hub, fixture.options)
 
-        assertTrue(fixture.options.sdkVersion!!.packages!!.any {
-            it.name == "maven:io.sentry:sentry-android-timber"
-            it.version == BuildConfig.VERSION_NAME
-        })
+        assertTrue(
+            fixture.options.sdkVersion!!.packages!!.any {
+                it.name == "maven:io.sentry:sentry-android-timber"
+                it.version == BuildConfig.VERSION_NAME
+            }
+        )
     }
 
     @Test

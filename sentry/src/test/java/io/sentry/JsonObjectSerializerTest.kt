@@ -2,8 +2,8 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import java.util.TimeZone
 import org.junit.Test
+import java.util.TimeZone
 
 internal class JsonObjectSerializerTest {
 

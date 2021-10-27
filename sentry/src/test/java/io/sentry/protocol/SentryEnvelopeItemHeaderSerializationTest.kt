@@ -8,10 +8,10 @@ import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import io.sentry.SentryEnvelopeItemHeader
 import io.sentry.SentryItemType
+import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
-import org.junit.Test
 
 class SentryEnvelopeItemHeaderSerializationTest {
 

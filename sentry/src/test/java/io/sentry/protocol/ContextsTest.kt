@@ -1,10 +1,10 @@
 package io.sentry.protocol
 
 import io.sentry.SpanContext
+import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
-import org.junit.Test
 
 class ContextsTest {
 

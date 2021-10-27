@@ -26,15 +26,19 @@ class SentryAndroidOptionsTest {
         assertEquals(BuildConfig.SENTRY_ANDROID_SDK_NAME, sdkVersion.name)
         assertEquals(BuildConfig.VERSION_NAME, sdkVersion.version)
 
-        assertTrue(sdkVersion.packages!!.any {
-            it.name == "maven:io.sentry:sentry-android-core" &&
-            it.version == BuildConfig.VERSION_NAME
-        })
+        assertTrue(
+            sdkVersion.packages!!.any {
+                it.name == "maven:io.sentry:sentry-android-core" &&
+                    it.version == BuildConfig.VERSION_NAME
+            }
+        )
 
-        assertTrue(sdkVersion.packages!!.any {
-            it.name == "maven:io.sentry:sentry" &&
-            it.version == BuildConfig.VERSION_NAME
-        })
+        assertTrue(
+            sdkVersion.packages!!.any {
+                it.name == "maven:io.sentry:sentry" &&
+                    it.version == BuildConfig.VERSION_NAME
+            }
+        )
     }
 
     @Test

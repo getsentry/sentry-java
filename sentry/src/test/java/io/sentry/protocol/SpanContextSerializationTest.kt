@@ -9,12 +9,12 @@ import io.sentry.JsonSerializable
 import io.sentry.SpanContext
 import io.sentry.SpanId
 import io.sentry.SpanStatus
+import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import org.junit.Test
 
 class SpanContextSerializationTest {
 

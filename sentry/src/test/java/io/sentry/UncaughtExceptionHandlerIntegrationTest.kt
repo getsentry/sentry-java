@@ -5,7 +5,6 @@ import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.SentryId
@@ -36,7 +35,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     fun `when UncaughtExceptionHandlerIntegration is initialized, uncaught handler is unchanged`() {
         val handlerMock = mock<UncaughtExceptionHandler>()
         UncaughtExceptionHandlerIntegration(handlerMock)
-        verifyZeroInteractions(handlerMock)
+        verify(handlerMock, never()).defaultUncaughtExceptionHandler = any()
     }
 
     @Test
@@ -121,5 +120,34 @@ class UncaughtExceptionHandlerIntegrationTest {
         val integration = UncaughtExceptionHandlerIntegration(handlerMock)
         integration.register(hub, options)
         verify(handlerMock).defaultUncaughtExceptionHandler = argWhere { it is UncaughtExceptionHandlerIntegration }
+    }
+
+    @Test
+    fun `When defaultUncaughtExceptionHandler is set and integration is closed, default uncaught exception handler is reset to previous handler`() {
+        val handlerMock = mock<UncaughtExceptionHandler>()
+        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
+
+        val defaultExceptionHandler = mock<Thread.UncaughtExceptionHandler>()
+        whenever(handlerMock.defaultUncaughtExceptionHandler)
+            .thenReturn(defaultExceptionHandler)
+        integration.register(mock(), SentryOptions())
+        whenever(handlerMock.defaultUncaughtExceptionHandler)
+            .thenReturn(integration)
+        integration.close()
+        verify(handlerMock).defaultUncaughtExceptionHandler = defaultExceptionHandler
+    }
+
+    @Test
+    fun `When defaultUncaughtExceptionHandler is not set and integration is closed, default uncaught exception handler is reset to null`() {
+        val handlerMock = mock<UncaughtExceptionHandler>()
+        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
+
+        whenever(handlerMock.defaultUncaughtExceptionHandler)
+            .thenReturn(null)
+        integration.register(mock(), SentryOptions())
+        whenever(handlerMock.defaultUncaughtExceptionHandler)
+            .thenReturn(integration)
+        integration.close()
+        verify(handlerMock).defaultUncaughtExceptionHandler = null
     }
 }

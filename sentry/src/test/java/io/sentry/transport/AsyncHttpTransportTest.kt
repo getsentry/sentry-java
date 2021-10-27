@@ -221,9 +221,11 @@ class AsyncHttpTransportTest {
         whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.connection.send(any<SentryEnvelope>())).thenReturn(TransportResult.success())
         fixture.getSUT().send(envelope)
-        verify(fixture.connection).send(check<SentryEnvelope> {
-            assertEquals(1, it.items.count())
-        })
+        verify(fixture.connection).send(
+            check<SentryEnvelope> {
+                assertEquals(1, it.items.count())
+            }
+        )
     }
 
     @Test

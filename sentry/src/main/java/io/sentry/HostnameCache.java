@@ -62,6 +62,14 @@ final class HostnameCache {
     updateCache();
   }
 
+  void close() {
+    this.executorService.shutdown();
+  }
+
+  boolean isClosed() {
+    return this.executorService.isShutdown();
+  }
+
   /**
    * Gets the hostname of the current machine.
    *

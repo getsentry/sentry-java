@@ -15,6 +15,12 @@ import io.sentry.SentryOptions.RequestSize.ALWAYS
 import io.sentry.SentryOptions.RequestSize.MEDIUM
 import io.sentry.SentryOptions.RequestSize.NONE
 import io.sentry.SentryOptions.RequestSize.SMALL
+import org.assertj.core.api.Assertions
+import org.springframework.http.MediaType
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockHttpServletResponse
+import org.springframework.mock.web.MockServletContext
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import java.net.URI
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
@@ -25,12 +31,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
-import org.assertj.core.api.Assertions
-import org.springframework.http.MediaType
-import org.springframework.mock.web.MockHttpServletRequest
-import org.springframework.mock.web.MockHttpServletResponse
-import org.springframework.mock.web.MockServletContext
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
 class SentrySpringFilterTest {
     private class Fixture {
@@ -46,10 +46,10 @@ class SentrySpringFilterTest {
             whenever(hub.isEnabled).thenReturn(true)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
             this.request = request
-                    ?: MockHttpServletRequest().apply {
-                        this.requestURI = "http://localhost:8080/some-uri"
-                        this.method = "post"
-                    }
+                ?: MockHttpServletRequest().apply {
+                    this.requestURI = "http://localhost:8080/some-uri"
+                    this.method = "post"
+                }
             return SentrySpringFilter(hub)
         }
     }
@@ -69,11 +69,13 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).addBreadcrumb(check { it: Breadcrumb ->
-            Assertions.assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
-            Assertions.assertThat(it.getData("method")).isEqualTo("POST")
-            Assertions.assertThat(it.type).isEqualTo("http")
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check { it: Breadcrumb ->
+                Assertions.assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
+                Assertions.assertThat(it.getData("method")).isEqualTo("POST")
+                Assertions.assertThat(it.type).isEqualTo("http")
+            }
+        )
     }
 
     @Test
@@ -99,20 +101,25 @@ class SentrySpringFilterTest {
 
     @Test
     fun `attaches basic information from HTTP request to Scope request`() {
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("some-header", "some-header value")
-            .accept(MediaType.APPLICATION_JSON)
-            .buildRequest(MockServletContext()))
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("some-header", "some-header value")
+                .accept(MediaType.APPLICATION_JSON)
+                .buildRequest(MockServletContext())
+        )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
         assertNotNull(fixture.scope.request) {
             assertEquals("GET", it.method)
-            assertEquals(mapOf(
-                "some-header" to "some-header value",
-                "Accept" to "application/json"
-            ), it.headers)
+            assertEquals(
+                mapOf(
+                    "some-header" to "some-header value",
+                    "Accept" to "application/json"
+                ),
+                it.headers
+            )
             assertEquals("http://example.com", it.url)
             assertEquals("param1=xyz", it.queryString)
         }
@@ -120,18 +127,23 @@ class SentrySpringFilterTest {
 
     @Test
     fun `attaches header with multiple values to Scope request`() {
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("another-header", "another value")
-            .header("another-header", "another value2")
-            .buildRequest(MockServletContext()))
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("another-header", "another value")
+                .header("another-header", "another value2")
+                .buildRequest(MockServletContext())
+        )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
         assertNotNull(fixture.scope.request) {
-            assertEquals(mapOf(
-                "another-header" to "another value,another value2"
-            ), it.headers)
+            assertEquals(
+                mapOf(
+                    "another-header" to "another value,another value2"
+                ),
+                it.headers
+            )
         }
     }
 
@@ -141,11 +153,14 @@ class SentrySpringFilterTest {
             isSendDefaultPii = true
         }
 
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("Cookie", "name=value")
-            .header("Cookie", "name2=value2")
-            .buildRequest(MockServletContext()), options = sentryOptions)
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("Cookie", "name=value")
+                .header("Cookie", "name2=value2")
+                .buildRequest(MockServletContext()),
+            options = sentryOptions
+        )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
@@ -160,10 +175,13 @@ class SentrySpringFilterTest {
             isSendDefaultPii = false
         }
 
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("Cookie", "name=value")
-            .buildRequest(MockServletContext()), options = sentryOptions)
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("Cookie", "name=value")
+                .buildRequest(MockServletContext()),
+            options = sentryOptions
+        )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
@@ -178,14 +196,17 @@ class SentrySpringFilterTest {
             isSendDefaultPii = false
         }
 
-        val listener = fixture.getSut(request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("some-header", "some-header value")
-            .header("X-FORWARDED-FOR", "192.168.0.1")
-            .header("authorization", "Token")
-            .header("Authorization", "Token")
-            .header("Cookie", "some cookies")
-            .buildRequest(MockServletContext()), options = sentryOptions)
+        val listener = fixture.getSut(
+            request = MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("some-header", "some-header value")
+                .header("X-FORWARDED-FOR", "192.168.0.1")
+                .header("authorization", "Token")
+                .header("Authorization", "Token")
+                .header("Cookie", "some cookies")
+                .buildRequest(MockServletContext()),
+            options = sentryOptions
+        )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
@@ -223,17 +244,23 @@ class SentrySpringFilterTest {
                     isSendDefaultPii = param.sendDefaultPii
                 }
 
-                val listener = fixture.getSut(request = MockMvcRequestBuilders
-                    .post(URI.create("http://example.com?param1=xyz"))
-                    .content(param.body)
-                    .contentType(param.contentType)
-                    .buildRequest(MockServletContext()), options = sentryOptions)
+                val listener = fixture.getSut(
+                    request = MockMvcRequestBuilders
+                        .post(URI.create("http://example.com?param1=xyz"))
+                        .content(param.body)
+                        .contentType(param.contentType)
+                        .buildRequest(MockServletContext()),
+                    options = sentryOptions
+                )
 
                 listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-                verify(fixture.chain).doFilter(check {
-                    assertEquals(param.expectedToBeCached, it is CachedBodyHttpServletRequest)
-                }, any())
+                verify(fixture.chain).doFilter(
+                    check {
+                        assertEquals(param.expectedToBeCached, it is CachedBodyHttpServletRequest)
+                    },
+                    any()
+                )
             } catch (e: AssertionError) {
                 System.err.println("Failed to run test with params: $param")
                 throw e

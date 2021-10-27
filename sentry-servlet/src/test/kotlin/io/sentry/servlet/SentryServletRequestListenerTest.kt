@@ -6,10 +6,10 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import javax.servlet.ServletRequestEvent
-import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.mock.web.MockHttpServletRequest
+import javax.servlet.ServletRequestEvent
+import kotlin.test.Test
 
 class SentryServletRequestListenerTest {
     private class Fixture {
@@ -38,11 +38,13 @@ class SentryServletRequestListenerTest {
     fun `adds breadcrumb when request gets initialized`() {
         fixture.listener.requestInitialized(fixture.event)
 
-        verify(fixture.hub).addBreadcrumb(check { it: Breadcrumb ->
-            assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
-            assertThat(it.getData("method")).isEqualTo("POST")
-            assertThat(it.type).isEqualTo("http")
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check { it: Breadcrumb ->
+                assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
+                assertThat(it.getData("method")).isEqualTo("POST")
+                assertThat(it.type).isEqualTo("http")
+            }
+        )
     }
 
     @Test

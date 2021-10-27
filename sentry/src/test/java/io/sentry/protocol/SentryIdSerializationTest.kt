@@ -5,10 +5,10 @@ import io.sentry.FileFromResources
 import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
+import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
-import org.junit.Test
 
 class SentryIdSerializationTest {
 

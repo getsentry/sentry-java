@@ -61,28 +61,36 @@ class ConnectivityCheckerTest {
     fun `When network is active but not connected with permission, return NOT_CONNECTED for isConnected`() {
         whenever(networkInfo.isConnected).thenReturn(false)
 
-        assertEquals(ConnectivityChecker.Status.NOT_CONNECTED,
-            ConnectivityChecker.getConnectionStatus(contextMock, mock()))
+        assertEquals(
+            ConnectivityChecker.Status.NOT_CONNECTED,
+            ConnectivityChecker.getConnectionStatus(contextMock, mock())
+        )
     }
 
     @Test
     fun `When there's no permission, return NO_PERMISSION for isConnected`() {
         whenever(contextMock.checkPermission(any(), any(), any())).thenReturn(PERMISSION_DENIED)
 
-        assertEquals(ConnectivityChecker.Status.NO_PERMISSION,
-            ConnectivityChecker.getConnectionStatus(contextMock, mock()))
+        assertEquals(
+            ConnectivityChecker.Status.NO_PERMISSION,
+            ConnectivityChecker.getConnectionStatus(contextMock, mock())
+        )
     }
 
     @Test
     fun `When network is not active, return NOT_CONNECTED for isConnected`() {
-        assertEquals(ConnectivityChecker.Status.NOT_CONNECTED,
-            ConnectivityChecker.getConnectionStatus(contextMock, mock()))
+        assertEquals(
+            ConnectivityChecker.Status.NOT_CONNECTED,
+            ConnectivityChecker.getConnectionStatus(contextMock, mock())
+        )
     }
 
     @Test
     fun `When ConnectivityManager is not available, return UNKNOWN for isConnected`() {
-        assertEquals(ConnectivityChecker.Status.UNKNOWN,
-            ConnectivityChecker.getConnectionStatus(mock(), mock()))
+        assertEquals(
+            ConnectivityChecker.Status.UNKNOWN,
+            ConnectivityChecker.getConnectionStatus(mock(), mock())
+        )
     }
 
     @Test

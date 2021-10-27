@@ -2,6 +2,8 @@ package io.sentry.servlet
 
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import org.springframework.mock.web.MockServletContext
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,8 +11,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.springframework.mock.web.MockServletContext
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
 class SentryRequestHttpServletRequestProcessorTest {
 
@@ -29,10 +29,13 @@ class SentryRequestHttpServletRequestProcessorTest {
         assertNotNull(event.request)
         val eventRequest = event.request!!
         assertEquals("GET", eventRequest.method)
-        assertEquals(mapOf(
-            "some-header" to "some-header value",
-            "Accept" to "application/json"
-        ), eventRequest.headers)
+        assertEquals(
+            mapOf(
+                "some-header" to "some-header value",
+                "Accept" to "application/json"
+            ),
+            eventRequest.headers
+        )
         assertEquals("http://example.com", eventRequest.url)
         assertEquals("param1=xyz", eventRequest.queryString)
     }
@@ -50,9 +53,12 @@ class SentryRequestHttpServletRequestProcessorTest {
         eventProcessor.process(event, null)
 
         assertNotNull(event.request) {
-            assertEquals(mapOf(
-                "another-header" to "another value,another value2"
-            ), it.headers)
+            assertEquals(
+                mapOf(
+                    "another-header" to "another value,another value2"
+                ),
+                it.headers
+            )
         }
     }
 

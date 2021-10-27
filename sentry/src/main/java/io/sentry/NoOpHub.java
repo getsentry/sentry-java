@@ -177,4 +177,9 @@ public final class NoOpHub implements IHub {
   public @NotNull SentryOptions getOptions() {
     return emptyOptions;
   }
+
+  @Override
+  public @Nullable Boolean isCrashedLastRun() {
+    return null;
+  }
 }

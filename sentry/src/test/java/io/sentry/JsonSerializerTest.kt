@@ -377,10 +377,12 @@ class JsonSerializerTest {
 
         assertNotNull(sdkInfo.packages)
 
-        assertTrue(sdkInfo.packages!!.any {
-            it.name == "maven:io.sentry:sentry-android-core"
-            it.version == "4.5.6"
-        })
+        assertTrue(
+            sdkInfo.packages!!.any {
+                it.name == "maven:io.sentry:sentry-android-core"
+                it.version == "4.5.6"
+            }
+        )
     }
 
     @Test
@@ -418,10 +420,12 @@ class JsonSerializerTest {
         assertTrue(sdkVersion.integrations!!.any { it == "TestIntegration" })
 
         assertNotNull(sdkVersion.packages)
-        assertTrue(sdkVersion.packages!!.any {
-            it.name == "abc"
-            it.version == "4.5.6"
-        })
+        assertTrue(
+            sdkVersion.packages!!.any {
+                it.name == "abc"
+                it.version == "4.5.6"
+            }
+        )
     }
 
     @Test
@@ -663,19 +667,21 @@ class JsonSerializerTest {
         val actualJson = serializeToString(envelope)
 
         val expectedJson = "{\"event_id\":\"${eventID}\"}\n" +
-                "{\"content_type\":\"${attachment.contentType}\"," +
-                "\"filename\":\"${attachment.filename}\"," +
-                "\"type\":\"attachment\"," +
-                "\"attachment_type\":\"event.attachment\"," +
-                "\"length\":${attachment.bytes?.size}}\n" +
-                "$message\n"
+            "{\"content_type\":\"${attachment.contentType}\"," +
+            "\"filename\":\"${attachment.filename}\"," +
+            "\"type\":\"attachment\"," +
+            "\"attachment_type\":\"event.attachment\"," +
+            "\"length\":${attachment.bytes?.size}}\n" +
+            "$message\n"
 
         assertEquals(expectedJson, actualJson)
 
         verify(fixture.logger)
-                .log(eq(SentryLevel.ERROR),
-                    eq("Failed to create envelope item. Dropping it."),
-                    any<SentryEnvelopeException>())
+            .log(
+                eq(SentryLevel.ERROR),
+                eq("Failed to create envelope item. Dropping it."),
+                any<SentryEnvelopeException>()
+            )
     }
 
     @Test
@@ -709,9 +715,13 @@ class JsonSerializerTest {
         whenever(logger.isEnabled(any())).thenReturn(true)
 
         (options.serializer as JsonSerializer).serialize(mapOf("key" to "val"), mock())
-        verify(logger).log(any(), check {
-            assertTrue(it.startsWith("Serializing object:"))
-        }, any<Any>())
+        verify(logger).log(
+            any(),
+            check {
+                assertTrue(it.startsWith("Serializing object:"))
+            },
+            any<Any>()
+        )
     }
 
     private fun assertSessionData(expectedSession: Session?) {

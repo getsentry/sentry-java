@@ -74,12 +74,14 @@ class PhoneStateBreadcrumbsIntegrationTest {
         sut.register(hub, options)
         sut.listener!!.onCallStateChanged(TelephonyManager.CALL_STATE_RINGING, null)
 
-        verify(hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("device.event", it.category)
-            assertEquals("system", it.type)
-            assertEquals(SentryLevel.INFO, it.level)
-            // cant assert data, its not a public API
-        })
+        verify(hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("device.event", it.category)
+                assertEquals("system", it.type)
+                assertEquals(SentryLevel.INFO, it.level)
+                // cant assert data, its not a public API
+            }
+        )
     }
 
     @Test

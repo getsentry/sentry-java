@@ -8,8 +8,8 @@ import io.sentry.SentryOptions
 import io.sentry.android.timber.BuildConfig.SENTRY_TIMBER_SDK_NAME
 import io.sentry.android.timber.BuildConfig.VERSION_NAME
 import io.sentry.protocol.SdkVersion
-import java.io.Closeable
 import timber.log.Timber
+import java.io.Closeable
 
 /**
  * Sentry integration for Timber.

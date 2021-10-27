@@ -38,18 +38,20 @@ buildscript {
 }
 
 apiValidation {
-    ignoredProjects.addAll(listOf(
-        "sentry-samples-android",
-        "sentry-samples-console",
-        "sentry-samples-jul",
-        "sentry-samples-log4j2",
-        "sentry-samples-logback",
-        "sentry-samples-openfeign",
-        "sentry-samples-servlet",
-        "sentry-samples-spring",
-        "sentry-samples-spring-boot",
-        "sentry-samples-spring-boot-webflux"
-    ))
+    ignoredProjects.addAll(
+        listOf(
+            "sentry-samples-android",
+            "sentry-samples-console",
+            "sentry-samples-jul",
+            "sentry-samples-log4j2",
+            "sentry-samples-logback",
+            "sentry-samples-openfeign",
+            "sentry-samples-servlet",
+            "sentry-samples-spring",
+            "sentry-samples-spring-boot",
+            "sentry-samples-spring-boot-webflux"
+        )
+    )
 }
 
 allprojects {
@@ -65,9 +67,10 @@ allprojects {
             testLogging.showStandardStreams = true
             testLogging.exceptionFormat = TestExceptionFormat.FULL
             testLogging.events = setOf(
-                    TestLogEvent.SKIPPED,
-                    TestLogEvent.PASSED,
-                    TestLogEvent.FAILED)
+                TestLogEvent.SKIPPED,
+                TestLogEvent.PASSED,
+                TestLogEvent.FAILED
+            )
             dependsOn("cleanTest")
         }
         withType<JavaCompile> {
