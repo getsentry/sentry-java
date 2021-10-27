@@ -10,9 +10,6 @@ import io.sentry.Span;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,8 +17,7 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   private final @NotNull IHub hub;
-  private final @NotNull Map<Integer, ISpan> spans =
-      Collections.synchronizedMap(new WeakHashMap<>());
+  private static final @NotNull ThreadLocal<ISpan> CURRENT_SPAN = new ThreadLocal<>();
 
   public SentryJdbcEventListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
@@ -36,7 +32,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
     final ISpan parent = hub.getSpan();
     if (parent != null) {
       final ISpan span = parent.startChild("db.query", statementInformation.getSql());
-      spans.put(statementInformation.getConnectionInformation().getConnectionId(), span);
+      CURRENT_SPAN.set(span);
     }
   }
 
@@ -45,7 +41,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
       final @NotNull StatementInformation statementInformation,
       long timeElapsedNanos,
       final @Nullable SQLException e) {
-    final ISpan span = spans.get(statementInformation.getConnectionInformation().getConnectionId());
+    final ISpan span = CURRENT_SPAN.get();
     if (span != null) {
       if (e != null) {
         span.setThrowable(e);
@@ -54,6 +50,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
         span.setStatus(SpanStatus.OK);
       }
       span.finish();
+      CURRENT_SPAN.set(null);
     }
   }
 }
