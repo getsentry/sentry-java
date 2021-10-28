@@ -1,4 +1,4 @@
-package io.sentry.p6spy
+package io.sentry.jdbc
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever

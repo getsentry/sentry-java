@@ -1,4 +1,4 @@
-package io.sentry.p6spy;
+package io.sentry.jdbc;
 
 import com.jakewharton.nopen.annotation.Open;
 import com.p6spy.engine.common.StatementInformation;

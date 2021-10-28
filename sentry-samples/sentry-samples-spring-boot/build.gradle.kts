@@ -31,7 +31,7 @@ dependencies {
     implementation(projects.sentryLogback)
 
     // database query tracing
-    implementation(projects.sentryP6spy)
+    implementation(projects.sentryJdbc)
     runtimeOnly(Config.TestLibs.hsqldb)
     testImplementation(Config.Libs.springBootStarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

@@ -23,7 +23,7 @@ include(
     "sentry-spring-boot-starter",
     "sentry-bom",
     "sentry-openfeign",
-    "sentry-p6spy",
+    "sentry-jdbc",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-jul",
