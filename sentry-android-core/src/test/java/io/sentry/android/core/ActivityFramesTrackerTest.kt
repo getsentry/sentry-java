@@ -131,6 +131,14 @@ class ActivityFramesTrackerTest {
     }
 
     @Test
+    fun `setMetrics does not throw if Activity is not added`() {
+        whenever(fixture.aggregator.remove(any())).thenThrow(IllegalArgumentException())
+        val sut = ActivityFramesTracker(fixture.loadClass)
+
+        sut.setMetrics(fixture.activity, fixture.sentryId)
+    }
+
+    @Test
     fun `stop does not throw if no AndroidX`() {
         whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
         val sut = ActivityFramesTracker(fixture.loadClass)

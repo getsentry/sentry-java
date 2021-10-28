@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: ActivityFramesTracker does not throw if Activity has not been added (#1782)
+
 ## 5.2.4
 
 * Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#1769)
