@@ -17,7 +17,7 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   private final DataFetcherExceptionHandler delegate;
 
   public SentryDataFetcherExceptionHandler(
-      final @NotNull IHub hub, DataFetcherExceptionHandler delegate) {
+      final @NotNull IHub hub, final @NotNull DataFetcherExceptionHandler delegate) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.delegate = Objects.requireNonNull(delegate, "delegate is required");
   }
@@ -29,7 +29,7 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   @Override
   @SuppressWarnings("deprecation")
   public DataFetcherExceptionHandlerResult onException(
-      DataFetcherExceptionHandlerParameters handlerParameters) {
+      final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
     hub.captureException(handlerParameters.getException());
     return delegate.onException(handlerParameters);
   }

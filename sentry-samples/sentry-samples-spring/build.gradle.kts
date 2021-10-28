@@ -33,7 +33,7 @@ dependencies {
     implementation(Config.Libs.springSecurityWeb)
     implementation(Config.Libs.springSecurityConfig)
     implementation(Config.Libs.logbackClassic)
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpring)
     implementation(projects.sentryLogback)

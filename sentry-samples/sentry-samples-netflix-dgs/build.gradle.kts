@@ -20,12 +20,12 @@ repositories {
 
 dependencies {
     implementation(Config.Libs.springBootStarterWeb)
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarter)
     implementation(projects.sentryGraphqlJava)
     implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.9.2"))
-    implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter:4.9.2")
+    implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
     testImplementation(Config.Libs.springBootStarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }

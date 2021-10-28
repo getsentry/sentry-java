@@ -3,7 +3,7 @@ package io.sentry.graphql.java
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import graphql.GraphQL
 import graphql.schema.idl.RuntimeWiring
@@ -77,8 +77,8 @@ class SentryInstrumentationTest {
         val result = sut.execute("{ shows { id } }")
 
         assertTrue(result.errors.isEmpty())
-        verifyZeroInteractions(fixture.transaction)
-        verifyZeroInteractions(fixture.innerSpan)
+        verifyNoMoreInteractions(fixture.transaction)
+        verifyNoMoreInteractions(fixture.innerSpan)
     }
 
     data class Show(val id: Int)

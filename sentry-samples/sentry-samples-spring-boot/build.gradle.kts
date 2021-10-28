@@ -24,7 +24,7 @@ dependencies {
     implementation(Config.Libs.springBootStarterAop)
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBootStarter)
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarter)
     implementation(projects.sentryLogback)
