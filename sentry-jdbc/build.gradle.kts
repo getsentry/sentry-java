@@ -1,3 +1,4 @@
+import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -8,7 +9,7 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
@@ -25,6 +26,7 @@ dependencies {
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(Config.CompileOnly.errorProneNullAway)
 
     // tests
     testImplementation(projects.sentryTestSupport)
@@ -61,5 +63,12 @@ tasks {
     check {
         dependsOn(jacocoTestCoverageVerification)
         dependsOn(jacocoTestReport)
+    }
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.errorprone {
+        check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+        option("NullAway:AnnotatedPackages", "io.sentry")
     }
 }
