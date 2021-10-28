@@ -22,7 +22,7 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
     this.delegate = Objects.requireNonNull(delegate, "delegate is required");
   }
 
-  public SentryDataFetcherExceptionHandler(DataFetcherExceptionHandler delegate) {
+  public SentryDataFetcherExceptionHandler(final @NotNull DataFetcherExceptionHandler delegate) {
     this(HubAdapter.getInstance(), delegate);
   }
 
