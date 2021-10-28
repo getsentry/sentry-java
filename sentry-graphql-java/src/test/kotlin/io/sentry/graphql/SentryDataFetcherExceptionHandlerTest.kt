@@ -1,4 +1,4 @@
-package io.sentry.graphql.java
+package io.sentry.graphql
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify

@@ -1,8 +1,8 @@
 package io.sentry.samples.netflix.dgs;
 
 import com.netflix.graphql.dgs.exceptions.DefaultDataFetcherExceptionHandler;
-import io.sentry.graphql.java.SentryDataFetcherExceptionHandler;
-import io.sentry.graphql.java.SentryInstrumentation;
+import io.sentry.graphql.SentryDataFetcherExceptionHandler;
+import io.sentry.graphql.SentryInstrumentation;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;

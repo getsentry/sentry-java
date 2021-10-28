@@ -1,4 +1,4 @@
-package io.sentry.graphql.java;
+package io.sentry.graphql;
 
 import graphql.ExecutionResult;
 import graphql.execution.instrumentation.InstrumentationContext;
