@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.3.0
 
 * Feat: Add datasource tracing with P6Spy (#1784)
 * Fix: ActivityFramesTracker does not throw if Activity has not been added (#1782)
