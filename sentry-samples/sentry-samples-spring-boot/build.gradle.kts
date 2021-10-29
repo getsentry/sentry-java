@@ -25,9 +25,14 @@ dependencies {
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBootStarter)
     implementation(Config.Libs.kotlinReflect)
+    implementation(Config.Libs.springBootStarterJdbc)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarter)
     implementation(projects.sentryLogback)
+
+    // database query tracing
+    implementation(projects.sentryJdbc)
+    runtimeOnly(Config.TestLibs.hsqldb)
     testImplementation(Config.Libs.springBootStarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }

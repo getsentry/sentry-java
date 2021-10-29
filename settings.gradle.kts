@@ -24,6 +24,7 @@ include(
     "sentry-bom",
     "sentry-openfeign",
     "sentry-graphql-java",
+    "sentry-jdbc",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-jul",

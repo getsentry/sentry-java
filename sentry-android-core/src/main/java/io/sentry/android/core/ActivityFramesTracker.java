@@ -64,7 +64,13 @@ final class ActivityFramesTracker {
     int slowFrames = 0;
     int frozenFrames = 0;
 
-    final SparseIntArray[] framesRates = frameMetricsAggregator.remove(activity);
+    SparseIntArray[] framesRates = null;
+    try {
+      framesRates = frameMetricsAggregator.remove(activity);
+    } catch (IllegalArgumentException ignored) {
+      // it throws when attempt to remove OnFrameMetricsAvailableListener that was never added.
+      // there's no contains method
+    }
 
     if (framesRates != null) {
       final SparseIntArray totalIndexArray = framesRates[FrameMetricsAggregator.TOTAL_INDEX];
