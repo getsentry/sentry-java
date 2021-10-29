@@ -38,4 +38,4 @@ targets:
       maven:io.sentry:sentry-bom:
       maven:io.sentry:sentry-openfeign:
       maven:io.sentry:sentry-apollo:
-      maven:io.sentry:sentry-jdbc:
+#      maven:io.sentry:sentry-jdbc:
