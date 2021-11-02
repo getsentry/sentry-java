@@ -26,6 +26,12 @@ Breaking changes:
     
 ## Unreleased
 
+## 5.3.0
+
+* Feat: Add datasource tracing with P6Spy (#1784)
+* Fix: ActivityFramesTracker does not throw if Activity has not been added (#1782)
+* Fix: PerformanceAndroidEventProcessor uses up to date isTracingEnabled set on Configuration callback (#1786)
+
 ## 5.2.4
 
 * Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#1769)

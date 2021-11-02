@@ -65,6 +65,7 @@ object Config {
         val springBootStarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
         val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
+        val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
@@ -94,6 +95,8 @@ object Config {
         private val apolloVersion = "2.5.9"
         val apolloAndroid = "com.apollographql.apollo:apollo-runtime:$apolloVersion"
         val apolloCoroutines = "com.apollographql.apollo:apollo-coroutines-support:$apolloVersion"
+
+        val p6spy = "p6spy:p6spy:3.9.1"
     }
 
     object AnnotationProcessors {
@@ -115,6 +118,8 @@ object Config {
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
+        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.28.0"
+        val hsqldb = "org.hsqldb:hsqldb:2.6.1"
     }
 
     object QualityPlugins {
