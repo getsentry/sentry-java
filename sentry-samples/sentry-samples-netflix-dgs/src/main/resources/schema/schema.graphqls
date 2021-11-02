@@ -1,5 +1,6 @@
 type Query {
     shows: [Show]
+    newShows: [Show]
 }
 
 type Show {

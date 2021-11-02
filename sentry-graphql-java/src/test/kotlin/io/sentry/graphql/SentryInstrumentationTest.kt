@@ -11,6 +11,8 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import io.sentry.IHub
 import io.sentry.ISpan
+import io.sentry.SpanStatus
+import java.lang.RuntimeException
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -18,10 +20,10 @@ import kotlin.test.assertTrue
 class SentryInstrumentationTest {
 
     class Fixture {
-        val transaction = mock<ISpan>()
+        val activeSpan = mock<ISpan>()
         val innerSpan = mock<ISpan>()
 
-        fun getSut(isTransactionActive: Boolean = true): GraphQL {
+        fun getSut(isTransactionActive: Boolean = true, dataFetcherThrows: Boolean = false): GraphQL {
             val schema = """
             type Query {
                 shows: [Show]
@@ -33,25 +35,29 @@ class SentryInstrumentationTest {
             """.trimIndent()
             val hub = mock<IHub>()
 
-            val graphQLSchema = SchemaGenerator().makeExecutableSchema(SchemaParser().parse(schema), buildRuntimeWiring())
+            val graphQLSchema = SchemaGenerator().makeExecutableSchema(SchemaParser().parse(schema), buildRuntimeWiring(dataFetcherThrows))
             val graphQL = GraphQL.newGraphQL(graphQLSchema)
                 .instrumentation(SentryInstrumentation(hub))
                 .build()
 
             if (isTransactionActive) {
-                whenever(hub.span).thenReturn(transaction)
+                whenever(hub.span).thenReturn(activeSpan)
             } else {
                 whenever(hub.span).thenReturn(null)
             }
-            whenever(transaction.startChild(any())).thenReturn(innerSpan)
+            whenever(activeSpan.startChild(any())).thenReturn(innerSpan)
 
             return graphQL
         }
 
-        private fun buildRuntimeWiring() = RuntimeWiring.newRuntimeWiring()
+        private fun buildRuntimeWiring(dataFetcherThrows: Boolean) = RuntimeWiring.newRuntimeWiring()
             .type("Query") {
                 it.dataFetcher("shows") {
-                    listOf(Show(Random.nextInt()), Show(Random.nextInt()))
+                    if (dataFetcherThrows) {
+                        throw RuntimeException("error")
+                    } else {
+                        listOf(Show(Random.nextInt()), Show(Random.nextInt()))
+                    }
                 }
             }.build()
     }
@@ -65,19 +71,32 @@ class SentryInstrumentationTest {
         val result = sut.execute("{ shows { id } }")
 
         assertTrue(result.errors.isEmpty())
-        verify(fixture.transaction).startChild("Query.shows")
+        verify(fixture.activeSpan).startChild("Query.shows")
         verify(fixture.innerSpan).finish()
-        verify(fixture.transaction).finish()
+        verifyNoMoreInteractions(fixture.activeSpan)
     }
 
     @Test
-    fun `when transaction is not , does not create spans`() {
+    fun `when transaction is active, and data fetcher throws, creates inner spans`() {
+        val sut = fixture.getSut(dataFetcherThrows = true)
+
+        val result = sut.execute("{ shows { id } }")
+
+        assertTrue(result.errors.isNotEmpty())
+        verify(fixture.activeSpan).startChild("Query.shows")
+        verify(fixture.innerSpan).finish(SpanStatus.INTERNAL_ERROR)
+        verify(fixture.activeSpan).status = SpanStatus.INTERNAL_ERROR
+        verifyNoMoreInteractions(fixture.activeSpan)
+    }
+
+    @Test
+    fun `when transaction is not active, does not create spans`() {
         val sut = fixture.getSut(isTransactionActive = false)
 
         val result = sut.execute("{ shows { id } }")
 
         assertTrue(result.errors.isEmpty())
-        verifyNoMoreInteractions(fixture.transaction)
+        verifyNoMoreInteractions(fixture.activeSpan)
         verifyNoMoreInteractions(fixture.innerSpan)
     }
 

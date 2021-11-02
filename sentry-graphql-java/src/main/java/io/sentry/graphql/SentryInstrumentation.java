@@ -1,6 +1,7 @@
 package io.sentry.graphql;
 
 import graphql.ExecutionResult;
+import graphql.GraphQLError;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
@@ -13,7 +14,9 @@ import graphql.schema.GraphQLOutputType;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,17 +60,28 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
       final ISpan transaction = tracingState.getTransaction();
       if (transaction != null) {
         final ISpan span = transaction.startChild(findDataFetcherTag(parameters));
-        final Object result = dataFetcher.get(environment);
-        if (result instanceof CompletableFuture) {
-          ((CompletableFuture<?>) result)
-              .whenComplete(
-                  (r, ex) -> {
-                    span.finish();
-                  });
-        } else {
-          span.finish();
+        try {
+          final Object result = dataFetcher.get(environment);
+          if (result instanceof CompletableFuture) {
+            ((CompletableFuture<?>) result)
+                .whenComplete(
+                    (r, ex) -> {
+                      if (ex != null) {
+                        span.setThrowable(ex);
+                        span.finish(SpanStatus.INTERNAL_ERROR);
+                      } else {
+                        span.finish();
+                      }
+                    });
+          } else {
+            span.finish();
+          }
+          return result;
+        } catch (Exception e) {
+          span.setThrowable(e);
+          span.finish(SpanStatus.INTERNAL_ERROR);
+          throw e;
         }
-        return result;
       } else {
         return dataFetcher.get(environment);
       }
@@ -81,8 +95,9 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     TracingState tracingState = parameters.getInstrumentationState();
     final ISpan transaction = tracingState.getTransaction();
 
-    if (transaction != null) {
-      transaction.finish();
+    final List<GraphQLError> errors = executionResult.getErrors();
+    if (transaction != null && errors != null && !errors.isEmpty()) {
+      transaction.setStatus(SpanStatus.INTERNAL_ERROR);
     }
 
     return super.instrumentExecutionResult(executionResult, parameters);

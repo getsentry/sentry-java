@@ -7,6 +7,8 @@ public class DgsConstants {
     public static final String TYPE_NAME = "Query";
 
     public static final String Shows = "shows";
+
+    public static final String NewShows = "newShows";
   }
 
   public static class SHOW {
