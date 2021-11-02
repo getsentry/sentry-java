@@ -1,9 +1,11 @@
 package io.sentry;
 
+import java.io.IOException;
+import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public enum SpanStatus {
+public enum SpanStatus implements JsonSerializable {
   /** Not an error, returned on success. */
   OK(200, 299),
   /** The operation was cancelled, typically by the caller. */
@@ -99,5 +101,22 @@ public enum SpanStatus {
 
   private boolean matches(int httpStatusCode) {
     return httpStatusCode >= minHttpStatusCode && httpStatusCode <= maxHttpStatusCode;
+  }
+
+  // JsonSerializable
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.value(name().toLowerCase(Locale.ROOT));
+  }
+
+  public static final class Deserializer implements JsonDeserializer<SpanStatus> {
+
+    @Override
+    public @NotNull SpanStatus deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      return SpanStatus.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
+    }
   }
 }

@@ -82,10 +82,13 @@ public class SentryOptions {
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
   /** Envelope reader interface */
-  private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader();
+  private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader(new JsonSerializer(this));
 
   /** Serializer interface to serialize/deserialize json events */
-  private @NotNull ISerializer serializer = new GsonSerializer(this);
+  private @NotNull ISerializer serializer = new JsonSerializer(this);
+
+  /** Max depth when serializing object graphs with reflection. * */
+  private int maxDepth = 100;
 
   /**
    * Sentry client name used for the HTTP authHeader and userAgent eg
@@ -411,6 +414,24 @@ public class SentryOptions {
    */
   public void setSerializer(@Nullable ISerializer serializer) {
     this.serializer = serializer != null ? serializer : NoOpSerializer.getInstance();
+  }
+
+  /**
+   * Returns the max depth for when serializing object graphs using reflection.
+   *
+   * @return the max depth
+   */
+  public int getMaxDepth() {
+    return maxDepth;
+  }
+
+  /**
+   * Set the max depth for when serializing object graphs using reflection.
+   *
+   * @param maxDepth the max depth
+   */
+  public void setMaxDepth(int maxDepth) {
+    this.maxDepth = maxDepth;
   }
 
   public @NotNull IEnvelopeReader getEnvelopeReader() {

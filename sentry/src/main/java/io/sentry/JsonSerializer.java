@@ -1,0 +1,196 @@
+package io.sentry;
+
+import io.sentry.protocol.App;
+import io.sentry.protocol.Browser;
+import io.sentry.protocol.Contexts;
+import io.sentry.protocol.DebugImage;
+import io.sentry.protocol.DebugMeta;
+import io.sentry.protocol.Device;
+import io.sentry.protocol.Gpu;
+import io.sentry.protocol.MeasurementValue;
+import io.sentry.protocol.Mechanism;
+import io.sentry.protocol.Message;
+import io.sentry.protocol.OperatingSystem;
+import io.sentry.protocol.Request;
+import io.sentry.protocol.SdkInfo;
+import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryException;
+import io.sentry.protocol.SentryPackage;
+import io.sentry.protocol.SentryRuntime;
+import io.sentry.protocol.SentrySpan;
+import io.sentry.protocol.SentryStackFrame;
+import io.sentry.protocol.SentryStackTrace;
+import io.sentry.protocol.SentryThread;
+import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.User;
+import io.sentry.util.Objects;
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * The serializer class that uses manual JSON parsing with the help of vendored GSON reader/writer
+ * classes.
+ */
+public final class JsonSerializer implements ISerializer {
+
+  /** the UTF-8 Charset */
+  @SuppressWarnings("CharsetObjectCanBeUsed")
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
+
+  /** the SentryOptions */
+  private final @NotNull SentryOptions options;
+
+  private final @NotNull Map<Class<?>, JsonDeserializer<?>> deserializersByClass;
+
+  /**
+   * All our custom deserializers need to be registered to be used with the deserializer instance. *
+   */
+  public JsonSerializer(@NotNull SentryOptions options) {
+    this.options = options;
+
+    deserializersByClass = new HashMap<>();
+    deserializersByClass.put(App.class, new App.Deserializer());
+    deserializersByClass.put(Breadcrumb.class, new Breadcrumb.Deserializer());
+    deserializersByClass.put(Browser.class, new Browser.Deserializer());
+    deserializersByClass.put(Contexts.class, new Contexts.Deserializer());
+    deserializersByClass.put(DebugImage.class, new DebugImage.Deserializer());
+    deserializersByClass.put(DebugMeta.class, new DebugMeta.Deserializer());
+    deserializersByClass.put(Device.class, new Device.Deserializer());
+    deserializersByClass.put(
+        Device.DeviceOrientation.class, new Device.DeviceOrientation.Deserializer());
+    deserializersByClass.put(Gpu.class, new Gpu.Deserializer());
+    deserializersByClass.put(MeasurementValue.class, new MeasurementValue.Deserializer());
+    deserializersByClass.put(Mechanism.class, new Mechanism.Deserializer());
+    deserializersByClass.put(Message.class, new Message.Deserializer());
+    deserializersByClass.put(OperatingSystem.class, new OperatingSystem.Deserializer());
+    deserializersByClass.put(Request.class, new Request.Deserializer());
+    deserializersByClass.put(SdkInfo.class, new SdkInfo.Deserializer());
+    deserializersByClass.put(SdkVersion.class, new SdkVersion.Deserializer());
+    deserializersByClass.put(SentryEnvelopeHeader.class, new SentryEnvelopeHeader.Deserializer());
+    deserializersByClass.put(
+        SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeader.Deserializer());
+    deserializersByClass.put(SentryEvent.class, new SentryEvent.Deserializer());
+    deserializersByClass.put(SentryException.class, new SentryException.Deserializer());
+    deserializersByClass.put(SentryItemType.class, new SentryItemType.Deserializer());
+    deserializersByClass.put(SentryLevel.class, new SentryLevel.Deserializer());
+    deserializersByClass.put(SentryPackage.class, new SentryPackage.Deserializer());
+    deserializersByClass.put(SentryRuntime.class, new SentryRuntime.Deserializer());
+    deserializersByClass.put(SentrySpan.class, new SentrySpan.Deserializer());
+    deserializersByClass.put(SentryStackFrame.class, new SentryStackFrame.Deserializer());
+    deserializersByClass.put(SentryStackTrace.class, new SentryStackTrace.Deserializer());
+    deserializersByClass.put(SentryThread.class, new SentryThread.Deserializer());
+    deserializersByClass.put(SentryTransaction.class, new SentryTransaction.Deserializer());
+    deserializersByClass.put(Session.class, new Session.Deserializer());
+    deserializersByClass.put(SpanContext.class, new SpanContext.Deserializer());
+    deserializersByClass.put(SpanId.class, new SpanId.Deserializer());
+    deserializersByClass.put(SpanStatus.class, new SpanStatus.Deserializer());
+    deserializersByClass.put(User.class, new User.Deserializer());
+    deserializersByClass.put(UserFeedback.class, new UserFeedback.Deserializer());
+  }
+
+  // Deserialize
+
+  @Override
+  public <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz) {
+    try {
+      JsonObjectReader jsonObjectReader = new JsonObjectReader(reader);
+      JsonDeserializer<?> deserializer = deserializersByClass.get(clazz);
+      if (deserializer != null) {
+        Object object = deserializer.deserialize(jsonObjectReader, options.getLogger());
+        return clazz.cast(object);
+      } else {
+        return null; // No way to deserialize objects we don't know about.
+      }
+    } catch (Exception e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
+      return null;
+    }
+  }
+
+  @Override
+  public @Nullable SentryEnvelope deserializeEnvelope(@NotNull InputStream inputStream) {
+    Objects.requireNonNull(inputStream, "The InputStream object is required.");
+    try {
+      return options.getEnvelopeReader().read(inputStream);
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error deserializing envelope.", e);
+      return null;
+    }
+  }
+
+  // Serialize
+
+  @Override
+  public <T> void serialize(@NotNull T entity, @NotNull Writer writer) throws IOException {
+    Objects.requireNonNull(entity, "The entity is required.");
+    Objects.requireNonNull(writer, "The Writer object is required.");
+
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options.getLogger().log(SentryLevel.DEBUG, "Serializing object: %s", entity);
+    }
+
+    if (entity instanceof JsonSerializable) {
+      JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(writer, options.getMaxDepth());
+      ((JsonSerializable) entity).serialize(jsonObjectWriter, options.getLogger());
+    }
+    writer.flush();
+  }
+
+  @Override
+  public void serialize(@NotNull SentryEnvelope envelope, @NotNull OutputStream outputStream)
+      throws Exception {
+    Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
+    Objects.requireNonNull(outputStream, "The Stream object is required.");
+
+    try (final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+        final Writer writer =
+            new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8))) {
+
+      envelope
+          .getHeader()
+          .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
+      writer.write("\n");
+
+      for (final SentryEnvelopeItem item : envelope.getItems()) {
+        try {
+          // When this throws we don't write anything and continue with the next item.
+          final byte[] data = item.getData();
+
+          item.getHeader()
+              .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
+          writer.write("\n");
+          writer.flush();
+
+          outputStream.write(data);
+
+          writer.write("\n");
+        } catch (Exception exception) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
+        }
+      }
+      writer.flush();
+    }
+  }
+
+  @Override
+  public @NotNull String serialize(@NotNull Map<String, Object> data) throws Exception {
+    StringWriter stringWriter = new StringWriter();
+    JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(stringWriter, options.getMaxDepth());
+    jsonObjectWriter.value(options.getLogger(), data);
+    return stringWriter.toString();
+  }
+}

@@ -11,7 +11,7 @@ class GpuTest {
     fun `copying gpu wont have the same references`() {
         val gpu = Gpu()
         val unknown = mapOf(Pair("unknown", "unknown"))
-        gpu.acceptUnknownProperties(unknown)
+        gpu.setUnknown(unknown)
 
         val clone = Gpu(gpu)
 
@@ -34,7 +34,7 @@ class GpuTest {
         gpu.version = "version"
         gpu.npotSupport = "npot support"
         val unknown = mapOf(Pair("unknown", "unknown"))
-        gpu.acceptUnknownProperties(unknown)
+        gpu.setUnknown(unknown)
 
         val clone = Gpu(gpu)
 
