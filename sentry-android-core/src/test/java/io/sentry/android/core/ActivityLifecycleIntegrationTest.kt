@@ -141,12 +141,14 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("ui.lifecycle", it.category)
-            assertEquals("navigation", it.type)
-            assertEquals(SentryLevel.INFO, it.level)
-            // cant assert data, its not a public API
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("ui.lifecycle", it.category)
+                assertEquals("navigation", it.type)
+                assertEquals(SentryLevel.INFO, it.level)
+                // cant assert data, its not a public API
+            }
+        )
     }
 
     @Test
@@ -261,9 +263,13 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), check {
-            assertEquals("ui.load", it)
-        }, anyOrNull(), any(), any())
+        verify(fixture.hub).startTransaction(
+            any(),
+            check {
+                assertEquals("ui.load", it)
+            },
+            anyOrNull(), any(), any()
+        )
     }
 
     @Test
@@ -273,7 +279,7 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
-        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityStarted(activity)
 
         verify(fixture.activityFramesTracker).addActivity(eq(activity))
     }
@@ -289,9 +295,12 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(check {
-            assertEquals("Activity", it)
-        }, any(), anyOrNull(), any(), any())
+        verify(fixture.hub).startTransaction(
+            check {
+                assertEquals("Activity", it)
+            },
+            any(), anyOrNull(), any(), any()
+        )
     }
 
     @Test
@@ -344,9 +353,12 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub).captureTransaction(check {
-            assertEquals(SpanStatus.OK, it.status)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(SpanStatus.OK, it.status)
+            },
+            anyOrNull()
+        )
     }
 
     @Test
@@ -362,9 +374,12 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub).captureTransaction(check {
-            assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
-        }, anyOrNull())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
+            },
+            anyOrNull()
+        )
     }
 
     @Test

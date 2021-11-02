@@ -5,6 +5,7 @@ import io.sentry.SentryEvent;
 import io.sentry.protocol.SentryRuntime;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.boot.SpringBootVersion;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,23 +14,21 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class CustomEventProcessor implements EventProcessor {
-  private final String javaVersion;
-  private final String javaVendor;
+  private final String springBootVersion;
 
-  public CustomEventProcessor(String javaVersion, String javaVendor) {
-    this.javaVersion = javaVersion;
-    this.javaVendor = javaVendor;
+  public CustomEventProcessor(String springBootVersion) {
+    this.springBootVersion = springBootVersion;
   }
 
   public CustomEventProcessor() {
-    this(System.getProperty("java.version"), System.getProperty("java.vendor"));
+    this(SpringBootVersion.getVersion());
   }
 
   @Override
   public @NotNull SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
     final SentryRuntime runtime = new SentryRuntime();
-    runtime.setVersion(javaVersion);
-    runtime.setName(javaVendor);
+    runtime.setVersion(springBootVersion);
+    runtime.setName("Spring Boot");
     event.getContexts().setRuntime(runtime);
     return event;
   }

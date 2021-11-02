@@ -191,7 +191,7 @@ public final class Sentry {
 
   private static boolean initConfigurations(final @NotNull SentryOptions options) {
     if (options.isEnableExternalConfiguration()) {
-      options.merge(SentryOptions.from(PropertiesProviderFactory.create(), options.getLogger()));
+      options.merge(ExternalOptions.from(PropertiesProviderFactory.create(), options.getLogger()));
     }
 
     final String dsn = options.getDsn();
@@ -697,6 +697,20 @@ public final class Sentry {
    */
   public static @Nullable ISpan getSpan() {
     return getCurrentHub().getSpan();
+  }
+
+  /**
+   * Returns if the App has crashed (Process has terminated) during the last run. It only returns
+   * true or false if offline caching {{@link SentryOptions#getCacheDirPath()} } is set with a valid
+   * dir.
+   *
+   * <p>If the call to this method is early in the App lifecycle and the SDK could not check if the
+   * App has crashed in the background, the check is gonna do IO in the calling thread.
+   *
+   * @return true if App has crashed, false otherwise, and null if not evaluated yet
+   */
+  public static @Nullable Boolean isCrashedLastRun() {
+    return getCurrentHub().isCrashedLastRun();
   }
 
   /**

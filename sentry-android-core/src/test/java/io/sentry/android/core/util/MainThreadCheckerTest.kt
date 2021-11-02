@@ -2,10 +2,10 @@ package io.sentry.android.core.util
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.protocol.SentryThread
+import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MainThreadCheckerTest {

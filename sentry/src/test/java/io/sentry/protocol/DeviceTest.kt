@@ -16,7 +16,7 @@ class DeviceTest {
         device.bootTime = Date()
         device.timezone = TimeZone.getDefault()
         val unknown = mapOf(Pair("unknown", "unknown"))
-        device.acceptUnknownProperties(unknown)
+        device.setUnknown(unknown)
 
         val clone = Device(device)
 
@@ -62,7 +62,7 @@ class DeviceTest {
         device.connectionType = "connection type"
         device.batteryTemperature = 30f
         val unknown = mapOf(Pair("unknown", "unknown"))
-        device.acceptUnknownProperties(unknown)
+        device.setUnknown(unknown)
 
         val clone = Device(device)
 

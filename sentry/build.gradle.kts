@@ -10,7 +10,7 @@ plugins {
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
 }
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
@@ -20,23 +20,17 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    // Envelopes require JSON. Until a parse is done without GSON, we'll depend on it explicitly here
-    implementation(Config.Libs.gson)
-
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
-    errorproneJavac(Config.CompileOnly.errorProneJavac8)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
     errorprone(Config.CompileOnly.errorProneNullAway)
-
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.TestLibs.jsonUnit)
     testImplementation(projects.sentryTestSupport)
 }
 
@@ -52,8 +46,8 @@ jacoco {
 
 tasks.jacocoTestReport {
     reports {
-        xml.isEnabled = true
-        html.isEnabled = false
+        xml.required.set(true)
+        html.required.set(false)
     }
 }
 

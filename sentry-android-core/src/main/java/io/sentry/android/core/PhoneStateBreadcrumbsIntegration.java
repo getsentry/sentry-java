@@ -1,11 +1,8 @@
 package io.sentry.android.core;
 
 import static android.Manifest.permission.READ_PHONE_STATE;
-import static android.telephony.PhoneStateListener.LISTEN_CALL_STATE;
-import static android.telephony.PhoneStateListener.LISTEN_NONE;
 
 import android.content.Context;
-import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
@@ -31,6 +28,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
     this.context = Objects.requireNonNull(context, "Context is required");
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
     Objects.requireNonNull(hub, "Hub is required");
@@ -52,7 +50,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
       if (telephonyManager != null) {
         try {
           listener = new PhoneStateChangeListener(hub);
-          telephonyManager.listen(listener, LISTEN_CALL_STATE);
+          telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
 
           options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
         } catch (Exception e) {
@@ -66,10 +64,11 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
     }
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void close() throws IOException {
     if (telephonyManager != null && listener != null) {
-      telephonyManager.listen(listener, LISTEN_NONE);
+      telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_NONE);
       listener = null;
 
       if (options != null) {
@@ -78,7 +77,8 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
     }
   }
 
-  static final class PhoneStateChangeListener extends PhoneStateListener {
+  @SuppressWarnings("deprecation")
+  static final class PhoneStateChangeListener extends android.telephony.PhoneStateListener {
 
     private final @NotNull IHub hub;
 
@@ -86,6 +86,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
       this.hub = hub;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void onCallStateChanged(int state, String incomingNumber) {
       // incomingNumber is never used and it's always empty if you don't have permission:

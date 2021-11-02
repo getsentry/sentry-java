@@ -68,7 +68,7 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer returns SentryEvent, event captured, file is deleted `() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         val expected = SentryEvent(SentryId(UUID.fromString("9ec79c33-ec99-42ab-8353-589fcb2e04dc")), Date())
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(expected)
         val sut = fixture.getSut()
@@ -85,7 +85,7 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer return SentryTransaction, transaction captured, transactions sampled, file is deleted`() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         whenever(fixture.options.maxSpans).thenReturn(1000)
         whenever(fixture.hub.options).thenReturn(fixture.options)
 
@@ -110,10 +110,13 @@ class OutboxSenderTest {
         assertTrue(File(path).exists())
         sut.processEnvelopeFile(path, mock<Retryable>())
 
-        verify(fixture.hub).captureTransaction(check {
-            assertEquals(expected, it)
-            assertTrue(it.isSampled)
-        }, any(), any())
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(expected, it)
+                assertTrue(it.isSampled)
+            },
+            any(), any()
+        )
         assertFalse(File(path).exists())
 
         // Additionally make sure we have no errors logged
@@ -123,7 +126,7 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer returns SentryEnvelope, event captured, file is deleted `() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
 
         val event = SentryEvent(SentryId("9ec79c33ec9942ab8353589fcb2e04dc"), Date())
         val expected = SentryEnvelope(SentryId("9ec79c33ec9942ab8353589fcb2e04dc"), null, setOf())
@@ -143,7 +146,7 @@ class OutboxSenderTest {
 
     @Test
     fun `when envelope has unknown item type, create and capture an envelope`() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
 
         val sut = fixture.getSut()
         val path = getTempEnvelope(fileName = "envelope_attachment.txt")
@@ -159,7 +162,7 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer returns a null event, file error logged, no event captured `() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(null)
         val sut = fixture.getSut()
         val path = getTempEnvelope()
@@ -174,7 +177,7 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer returns a null envelope, file error logged, no event captured `() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         whenever(fixture.serializer.deserializeEnvelope(any())).thenReturn(null)
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(null)
         val sut = fixture.getSut()

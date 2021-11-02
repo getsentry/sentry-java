@@ -1,8 +1,50 @@
 # Changelog
 
-## Unreleased
+## 6.x.x
 
 * Feat: Use float instead of Date for protocol types for higher precision (#1737)
+* Ref: Bind external properties to a dedicated class. (#1750)
+
+Breaking changes:
+
+* `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
+* Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
+* `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
+* Feat: Vendor JSON (#1554)
+    * Introduce `JsonSerializable` and `JsonDeserializer` interfaces for manual json
+      serialization/deserialization.
+    * Introduce `JsonUnknwon` interface to preserve unknown properties when deserializing/serializing
+      SDK classes.
+    * When passing custom objects, for example in `Contexts`, these are supported for serialization:
+        * `JsonSerializable`
+        * `Map`, `Collection`, `Array`, `String` and all primitive types.
+        * Objects with the help of refection.
+            * `Map`, `Collection`, `Array`, `String` and all primitive types.
+            * Call `toString()` on objects that have a cyclic reference to a ancestor object.
+            * Call `toString()` where object graphs exceed max depth.
+    * Remove `gson` dependency.
+    * Remove `IUnknownPropertiesConsumer`
+
+## 5.2.4
+
+* Fix: Window.FEATURE_NO_TITLE does not work when using activity traces (#1769)
+* Fix: unregister UncaughtExceptionHandler on close (#1770)
+
+## 5.2.3
+
+* Fix: Make ActivityFramesTracker operations thread-safe (#1762)
+* Fix: Clone Scope Contexts (#1763)
+* Bump: AGP to 7.0.3 (#1765)
+
+## 5.2.2
+
+* Fix: Close HostnameCache#executorService on SentryClient#close (#1757)
+
+## 5.2.1
+
+* Feat: Add isCrashedLastRun support (#1739)
+* Fix: Handle exception if Context.registerReceiver throws (#1747)
+* Feat: Attach Java vendor and version to events and transactions (#1703)
 
 ## 5.2.0
 

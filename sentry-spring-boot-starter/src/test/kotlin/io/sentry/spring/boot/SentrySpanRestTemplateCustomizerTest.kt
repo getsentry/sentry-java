@@ -11,8 +11,6 @@ import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import kotlin.test.Test
-import kotlin.test.assertEquals
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -20,6 +18,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.RestTemplate
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class SentrySpanRestTemplateCustomizerTest {
     class Fixture {
@@ -44,10 +44,12 @@ class SentrySpanRestTemplateCustomizerTest {
                 sentryOptions.tracingOrigins.add("other-api")
             }
 
-            mockServer.enqueue(MockResponse()
-                .setBody("OK")
-                .setSocketPolicy(socketPolicy)
-                .setResponseCode(status.value()))
+            mockServer.enqueue(
+                MockResponse()
+                    .setBody("OK")
+                    .setSocketPolicy(socketPolicy)
+                    .setResponseCode(status.value())
+            )
 
             if (isTransactionActive) {
                 whenever(hub.span).thenReturn(transaction)
@@ -139,12 +141,14 @@ class SentrySpanRestTemplateCustomizerTest {
     @Test
     fun `when transaction is active adds breadcrumb when http calls succeeds`() {
         fixture.getSut(isTransactionActive = true).postForObject(fixture.url, "content", String::class.java)
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(fixture.url, it.data["url"])
-            assertEquals("POST", it.data["method"])
-            assertEquals(7, it.data["request_body_size"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(fixture.url, it.data["url"])
+                assertEquals("POST", it.data["method"])
+                assertEquals(7, it.data["request_body_size"])
+            }
+        )
     }
 
     @SuppressWarnings("SwallowedException")
@@ -154,22 +158,26 @@ class SentrySpanRestTemplateCustomizerTest {
             fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(fixture.url, it.data["url"])
-            assertEquals("GET", it.data["method"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(fixture.url, it.data["url"])
+                assertEquals("GET", it.data["method"])
+            }
+        )
     }
 
     @Test
     fun `when transaction is not active adds breadcrumb when http calls succeeds`() {
         fixture.getSut(isTransactionActive = false).postForObject(fixture.url, "content", String::class.java)
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(fixture.url, it.data["url"])
-            assertEquals("POST", it.data["method"])
-            assertEquals(7, it.data["request_body_size"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(fixture.url, it.data["url"])
+                assertEquals("POST", it.data["method"])
+                assertEquals(7, it.data["request_body_size"])
+            }
+        )
     }
 
     @SuppressWarnings("SwallowedException")
@@ -179,10 +187,12 @@ class SentrySpanRestTemplateCustomizerTest {
             fixture.getSut(isTransactionActive = false, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(check<Breadcrumb> {
-            assertEquals("http", it.type)
-            assertEquals(fixture.url, it.data["url"])
-            assertEquals("GET", it.data["method"])
-        })
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(fixture.url, it.data["url"])
+                assertEquals("GET", it.data["method"])
+            }
+        )
     }
 }

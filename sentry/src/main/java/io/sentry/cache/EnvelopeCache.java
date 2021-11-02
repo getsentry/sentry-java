@@ -7,12 +7,14 @@ import static io.sentry.SentryLevel.WARNING;
 import static java.lang.String.format;
 
 import io.sentry.DateUtils;
+import io.sentry.SentryCrashLastRunState;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
+import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -51,7 +53,8 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
 
   public static final String PREFIX_CURRENT_SESSION_FILE = "session";
   static final String SUFFIX_CURRENT_SESSION_FILE = ".json";
-  static final String CRASH_MARKER_FILE = ".sentry-native/last_crash";
+  public static final String CRASH_MARKER_FILE = "last_crash";
+  public static final String NATIVE_CRASH_MARKER_FILE = ".sentry-native/" + CRASH_MARKER_FILE;
 
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
@@ -88,6 +91,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
     }
 
     if (hint instanceof SessionStart) {
+      boolean crashedLastRun = false;
 
       // TODO: should we move this to AppLifecycleIntegration? and do on SDK init? but it's too much
       // on main-thread
@@ -107,7 +111,8 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
                     "Stream from path %s resulted in a null envelope.",
                     currentSessionFile.getAbsolutePath());
           } else {
-            final File crashMarkerFile = new File(options.getCacheDirPath(), CRASH_MARKER_FILE);
+            final File crashMarkerFile =
+                new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
             Date timestamp = null;
             if (crashMarkerFile.exists()) {
               options
@@ -115,6 +120,8 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
                   .log(INFO, "Crash marker file exists, last Session is gonna be Crashed.");
 
               timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
+
+              crashedLastRun = true;
               if (!crashMarkerFile.delete()) {
                 options
                     .getLogger()
@@ -146,6 +153,28 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
         }
       }
       updateCurrentSession(currentSessionFile, envelope);
+
+      // check java marker file if the native marker isnt there
+      if (!crashedLastRun) {
+        final File javaCrashMarkerFile = new File(options.getCacheDirPath(), CRASH_MARKER_FILE);
+        if (javaCrashMarkerFile.exists()) {
+          options
+              .getLogger()
+              .log(INFO, "Crash marker file exists, crashedLastRun will return true.");
+
+          crashedLastRun = true;
+          if (!javaCrashMarkerFile.delete()) {
+            options
+                .getLogger()
+                .log(
+                    ERROR,
+                    "Failed to delete the crash marker file. %s.",
+                    javaCrashMarkerFile.getAbsolutePath());
+          }
+        }
+      }
+
+      SentryCrashLastRunState.getInstance().setCrashedLastRun(crashedLastRun);
     }
 
     // TODO: probably we need to update the current session file for session updates to because of
@@ -167,6 +196,22 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
     }
 
     writeEnvelopeToDisk(envelopeFile, envelope);
+
+    // write file to the disk when its about to crash so crashedLastRun can be marked on restart
+    if (hint instanceof DiskFlushNotification) {
+      writeCrashMarkerFile();
+    }
+  }
+
+  private void writeCrashMarkerFile() {
+    final File crashMarkerFile = new File(options.getCacheDirPath(), CRASH_MARKER_FILE);
+    try (final OutputStream outputStream = new FileOutputStream(crashMarkerFile)) {
+      final String timestamp = DateUtils.getTimestamp(DateUtils.getCurrentDateTime());
+      outputStream.write(timestamp.getBytes(UTF_8));
+      outputStream.flush();
+    } catch (Exception e) {
+      options.getLogger().log(ERROR, "Error writing the crash marker file to the disk", e);
+    }
   }
 
   /**

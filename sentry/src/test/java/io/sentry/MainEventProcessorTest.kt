@@ -11,6 +11,7 @@ import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import org.awaitility.kotlin.await
 import java.lang.RuntimeException
 import java.net.InetAddress
 import kotlin.test.Test
@@ -20,7 +21,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import org.awaitility.kotlin.await
 
 class MainEventProcessorTest {
     class Fixture {
@@ -436,6 +436,15 @@ class MainEventProcessorTest {
                 assertEquals("id1", images[0].uuid)
                 assertEquals("proguard", images[0].type)
             }
+        }
+    }
+
+    @Test
+    fun `when processor is closed, closes hostname cache`() {
+        val sut = fixture.getSut()
+        sut.close()
+        assertNotNull(sut.hostnameCache) {
+            assertTrue(it.isClosed())
         }
     }
 

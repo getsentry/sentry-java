@@ -13,7 +13,7 @@ class BrowserTest {
         browser.name = "browser name"
         browser.version = "browser version"
         val unknown = mapOf(Pair("unknown", "unknown"))
-        browser.acceptUnknownProperties(unknown)
+        browser.setUnknown(unknown)
 
         val clone = Browser(browser)
 
@@ -28,7 +28,7 @@ class BrowserTest {
         browser.name = "browser name"
         browser.version = "browser version"
         val unknown = mapOf(Pair("unknown", "unknown"))
-        browser.acceptUnknownProperties(unknown)
+        browser.setUnknown(unknown)
 
         val clone = Browser(browser)
 

@@ -3,11 +3,11 @@ package io.sentry.transport.apache
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.SentryOptions
 import io.sentry.test.getProperty
+import org.apache.hc.client5.http.config.RequestConfig
+import org.apache.hc.client5.http.impl.async.InternalHttpAsyncClient
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import org.apache.hc.client5.http.config.RequestConfig
-import org.apache.hc.client5.http.impl.async.InternalHttpAsyncClient
 
 class ApacheHttpClientTransportFactoryTest {
 
@@ -25,10 +25,12 @@ class ApacheHttpClientTransportFactoryTest {
 
     @Test
     fun `options timeouts are applied to http client`() {
-        val transport = fixture.getSut(SentryOptions().apply {
-            this.connectionTimeoutMillis = 1500
-            this.readTimeoutMillis = 2500
-        })
+        val transport = fixture.getSut(
+            SentryOptions().apply {
+                this.connectionTimeoutMillis = 1500
+                this.readTimeoutMillis = 2500
+            }
+        )
         val requestConfig = transport.getClient().getRequestConfig()
         assertEquals(1500, requestConfig.connectTimeout.toMilliseconds())
         assertEquals(1500, requestConfig.connectionRequestTimeout.toMilliseconds())

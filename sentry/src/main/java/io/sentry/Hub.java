@@ -441,6 +441,12 @@ public final class Hub implements IHub {
   }
 
   @Override
+  public @Nullable Boolean isCrashedLastRun() {
+    return SentryCrashLastRunState.getInstance()
+        .isCrashedLastRun(options.getCacheDirPath(), !options.isEnableAutoSessionTracking());
+  }
+
+  @Override
   public void popScope() {
     if (!isEnabled()) {
       options

@@ -41,33 +41,36 @@ class SentryApolloInterceptor(
             span.setData("operationId", requestWithHeader.operation.operationId())
             span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
 
-            chain.proceedAsync(requestWithHeader, dispatcher, object : CallBack {
-                override fun onResponse(response: InterceptorResponse) {
-                    // onResponse is called only for statuses 2xx
-                    span.status = response.httpResponse.map { SpanStatus.fromHttpStatusCode(it.code(), SpanStatus.UNKNOWN) }
-                        .or(SpanStatus.UNKNOWN)
+            chain.proceedAsync(
+                requestWithHeader, dispatcher,
+                object : CallBack {
+                    override fun onResponse(response: InterceptorResponse) {
+                        // onResponse is called only for statuses 2xx
+                        span.status = response.httpResponse.map { SpanStatus.fromHttpStatusCode(it.code(), SpanStatus.UNKNOWN) }
+                            .or(SpanStatus.UNKNOWN)
 
-                    finish(span, requestWithHeader, response)
-                    callBack.onResponse(response)
-                }
-
-                override fun onFetch(sourceType: FetchSourceType) {
-                    callBack.onFetch(sourceType)
-                }
-
-                override fun onFailure(e: ApolloException) {
-                    span.apply {
-                        status = if (e is ApolloHttpException) SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR) else SpanStatus.INTERNAL_ERROR
-                        throwable = e
+                        finish(span, requestWithHeader, response)
+                        callBack.onResponse(response)
                     }
-                    finish(span, requestWithHeader)
-                    callBack.onFailure(e)
-                }
 
-                override fun onCompleted() {
-                    callBack.onCompleted()
+                    override fun onFetch(sourceType: FetchSourceType) {
+                        callBack.onFetch(sourceType)
+                    }
+
+                    override fun onFailure(e: ApolloException) {
+                        span.apply {
+                            status = if (e is ApolloHttpException) SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR) else SpanStatus.INTERNAL_ERROR
+                            throwable = e
+                        }
+                        finish(span, requestWithHeader)
+                        callBack.onFailure(e)
+                    }
+
+                    override fun onCompleted() {
+                        callBack.onCompleted()
+                    }
                 }
-            })
+            )
         }
     }
 

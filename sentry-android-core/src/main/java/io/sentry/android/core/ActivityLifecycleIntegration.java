@@ -227,7 +227,6 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    activityFramesTracker.addActivity(activity);
     setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
     startTracing(activity);
@@ -237,6 +236,13 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityStarted(final @NonNull Activity activity) {
+    // The docs on the screen rendering performance tracing
+    // (https://firebase.google.com/docs/perf-mon/screen-traces?platform=android#definition),
+    // state that the tracing starts for every Activity class when the app calls .onActivityStarted.
+    // Adding an Activity in onActivityCreated leads to Window.FEATURE_NO_TITLE not
+    // working. Moving this to onActivityStarted fixes the problem.
+    activityFramesTracker.addActivity(activity);
+
     addBreadcrumb(activity, "started");
   }
 

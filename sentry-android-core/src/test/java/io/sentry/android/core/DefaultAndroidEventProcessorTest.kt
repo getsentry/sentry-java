@@ -26,6 +26,7 @@ import io.sentry.protocol.SentryThread
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.getCtor
+import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,7 +36,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class DefaultAndroidEventProcessorTest {
@@ -139,9 +139,11 @@ class DefaultAndroidEventProcessorTest {
         val sut = fixture.getSut(context)
 
         val event = SentryEvent().apply {
-            threads = mutableListOf(SentryThread().apply {
-                id = 10L
-            })
+            threads = mutableListOf(
+                SentryThread().apply {
+                    id = 10L
+                }
+            )
         }
 
         assertNotNull(sut.process(event, null)) {

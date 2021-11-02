@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.Request
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
+import org.junit.Assert.assertArrayEquals
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,7 +16,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.Assert.assertArrayEquals
 
 class ScopeTest {
 
@@ -65,6 +65,9 @@ class ScopeTest {
         val processor = CustomEventProcessor()
         scope.addEventProcessor(processor)
 
+        scope.setContexts("key", "value")
+        scope.addAttachment(Attachment("file name"))
+
         val clone = Scope(scope)
 
         assertNotNull(clone)
@@ -105,10 +108,12 @@ class ScopeTest {
         scope.setExtra("extra", "extra")
 
         val transaction = SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
-        scope.setTransaction(transaction)
+        scope.transaction = transaction
 
         val attachment = Attachment("path/log.txt")
         scope.addAttachment(attachment)
+
+        scope.setContexts("contexts", "contexts")
 
         val clone = Scope(scope)
 
@@ -125,6 +130,7 @@ class ScopeTest {
 
         assertEquals("tag", clone.tags["tag"])
         assertEquals("extra", clone.extras["extra"])
+        assertEquals("contexts", (clone.contexts["contexts"] as HashMap<*, *>)["value"])
         assertEquals(transaction, clone.span)
 
         assertEquals(1, clone.attachments.size)
@@ -760,8 +766,10 @@ class ScopeTest {
         val scope = Scope(SentryOptions())
         scope.addAttachment(Attachment(""))
 
-        assertNotSame(scope.attachments, scope.attachments,
-                "Scope.attachments must return a new instance on each call.")
+        assertNotSame(
+            scope.attachments, scope.attachments,
+            "Scope.attachments must return a new instance on each call."
+        )
     }
 
     @Test

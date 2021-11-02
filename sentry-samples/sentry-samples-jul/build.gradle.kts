@@ -11,7 +11,7 @@ application {
     applicationDefaultJvmArgs = mutableListOf("-Djava.util.logging.config.file=${project.projectDir}/src/main/resources/logging.properties")
 }
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }

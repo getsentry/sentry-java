@@ -82,10 +82,12 @@ class AnrIntegrationTest {
 
         sut.reportANR(fixture.hub, mock(), getApplicationNotResponding())
 
-        verify(fixture.hub).captureException(check {
-            val ex = it as ExceptionMechanismException
-            assertTrue(ex.isSnapshot)
-        })
+        verify(fixture.hub).captureException(
+            check {
+                val ex = it as ExceptionMechanismException
+                assertTrue(ex.isSnapshot)
+            }
+        )
     }
 
     private fun getApplicationNotResponding(): ApplicationNotResponding {

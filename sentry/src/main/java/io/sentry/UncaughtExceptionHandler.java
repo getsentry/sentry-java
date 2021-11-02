@@ -1,10 +1,12 @@
 package io.sentry;
 
+import org.jetbrains.annotations.Nullable;
+
 /** An adapter to make UncaughtExceptionHandler testable */
 interface UncaughtExceptionHandler {
   Thread.UncaughtExceptionHandler getDefaultUncaughtExceptionHandler();
 
-  void setDefaultUncaughtExceptionHandler(Thread.UncaughtExceptionHandler handler);
+  void setDefaultUncaughtExceptionHandler(@Nullable Thread.UncaughtExceptionHandler handler);
 
   final class Adapter implements UncaughtExceptionHandler {
 
@@ -22,7 +24,8 @@ interface UncaughtExceptionHandler {
     }
 
     @Override
-    public void setDefaultUncaughtExceptionHandler(Thread.UncaughtExceptionHandler handler) {
+    public void setDefaultUncaughtExceptionHandler(
+        final @Nullable Thread.UncaughtExceptionHandler handler) {
       Thread.setDefaultUncaughtExceptionHandler(handler);
     }
   }

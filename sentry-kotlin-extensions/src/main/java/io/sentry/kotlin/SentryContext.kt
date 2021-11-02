@@ -2,9 +2,9 @@ package io.sentry.kotlin
 
 import io.sentry.IHub
 import io.sentry.Sentry
+import kotlinx.coroutines.ThreadContextElement
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.ThreadContextElement
 
 /**
  * Sentry context element for [CoroutineContext].
