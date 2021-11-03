@@ -92,7 +92,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(
       final @NotNull ExecutionResult executionResult,
       final @NotNull InstrumentationExecutionParameters parameters) {
-    TracingState tracingState = parameters.getInstrumentationState();
+    final TracingState tracingState = parameters.getInstrumentationState();
     final ISpan transaction = tracingState.getTransaction();
 
     final List<GraphQLError> errors = executionResult.getErrors();
