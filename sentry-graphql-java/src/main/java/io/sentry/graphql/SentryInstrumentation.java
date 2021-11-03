@@ -40,7 +40,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   @Override
   public @NotNull InstrumentationContext<ExecutionResult> beginExecution(
       final @NotNull InstrumentationExecutionParameters parameters) {
-    TracingState tracingState = parameters.getInstrumentationState();
+    final TracingState tracingState = parameters.getInstrumentationState();
     tracingState.setTransaction(hub.getSpan());
     return super.beginExecution(parameters);
   }
