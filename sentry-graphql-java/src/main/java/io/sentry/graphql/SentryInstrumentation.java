@@ -8,6 +8,7 @@ import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
@@ -23,9 +24,16 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentryInstrumentation extends SimpleInstrumentation {
   private final @NotNull IHub hub;
+  private final @Nullable BeforeSpanCallback beforeSpan;
+
+  public SentryInstrumentation(
+      final @NotNull IHub hub, final @Nullable BeforeSpanCallback beforeSpan) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.beforeSpan = beforeSpan;
+  }
 
   public SentryInstrumentation(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+    this(hub, null);
   }
 
   public SentryInstrumentation() {
@@ -68,24 +76,46 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
                     (r, ex) -> {
                       if (ex != null) {
                         span.setThrowable(ex);
-                        span.finish(SpanStatus.INTERNAL_ERROR);
-                      } else {
-                        span.finish();
+                        span.setStatus(SpanStatus.INTERNAL_ERROR);
                       }
+                      finish(span, environment, r);
                     });
           } else {
-            span.finish();
+            finish(span, environment, result);
           }
           return result;
         } catch (Exception e) {
           span.setThrowable(e);
-          span.finish(SpanStatus.INTERNAL_ERROR);
+          span.setStatus(SpanStatus.INTERNAL_ERROR);
+          finish(span, environment);
           throw e;
         }
       } else {
         return dataFetcher.get(environment);
       }
     };
+  }
+
+  private void finish(
+      final @NotNull ISpan span,
+      final @NotNull DataFetchingEnvironment environment,
+      final @Nullable Object result) {
+    if (beforeSpan != null) {
+      final ISpan newSpan = beforeSpan.execute(span, environment, result);
+      if (newSpan == null) {
+        // span is dropped
+        span.getSpanContext().setSampled(false);
+      } else {
+        newSpan.finish();
+      }
+    } else {
+      span.finish();
+    }
+  }
+
+  private void finish(
+      final @NotNull ISpan span, final @NotNull DataFetchingEnvironment environment) {
+    finish(span, environment, null);
   }
 
   @Override
@@ -126,5 +156,12 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     public void setTransaction(final @Nullable ISpan transaction) {
       this.transaction = transaction;
     }
+  }
+
+  @FunctionalInterface
+  public interface BeforeSpanCallback {
+    @Nullable
+    ISpan execute(
+        @NotNull ISpan span, @NotNull DataFetchingEnvironment environment, @Nullable Object result);
   }
 }
