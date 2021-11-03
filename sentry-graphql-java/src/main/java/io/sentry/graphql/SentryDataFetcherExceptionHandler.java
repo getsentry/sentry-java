@@ -30,7 +30,7 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   @SuppressWarnings("deprecation")
   public DataFetcherExceptionHandlerResult onException(
       final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
-    hub.captureException(handlerParameters.getException());
+    hub.captureException(handlerParameters.getException(), handlerParameters);
     return delegate.onException(handlerParameters);
   }
 }

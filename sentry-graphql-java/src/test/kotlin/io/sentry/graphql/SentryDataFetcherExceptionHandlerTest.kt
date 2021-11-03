@@ -19,7 +19,7 @@ class SentryDataFetcherExceptionHandlerTest {
         val parameters = DataFetcherExceptionHandlerParameters.newExceptionParameters().exception(exception).build()
         handler.onException(parameters)
 
-        verify(hub).captureException(exception)
+        verify(hub).captureException(exception, parameters)
         verify(delegate).onException(parameters)
     }
 }
