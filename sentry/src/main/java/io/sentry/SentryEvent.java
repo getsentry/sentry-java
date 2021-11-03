@@ -2,17 +2,19 @@ package io.sentry;
 
 import io.sentry.protocol.*;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryEvent extends SentryBaseEvent implements IUnknownPropertiesConsumer {
+public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, JsonSerializable {
   /**
    * Timestamp when the event was created.
    *
@@ -29,7 +31,7 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    *
    * <p>```json { "timestamp": "2011-05-02T17:41:36Z" } { "timestamp": 1304358096.0 } ```
    */
-  private final @NotNull Date timestamp;
+  private @NotNull Date timestamp;
 
   private @Nullable Message message;
 
@@ -172,17 +174,6 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
     this.fingerprint = fingerprint != null ? new ArrayList<>(fingerprint) : null;
   }
 
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = unknown;
-  }
-
-  @TestOnly
-  public @Nullable Map<String, Object> getUnknown() {
-    return unknown;
-  }
-
   @Nullable
   Map<String, String> getModules() {
     return modules;
@@ -246,5 +237,157 @@ public final class SentryEvent extends SentryBaseEvent implements IUnknownProper
    */
   public boolean isErrored() {
     return exception != null && !exception.getValues().isEmpty();
+  }
+
+  // JsonSerializable
+
+  public static final class JsonKeys {
+    public static final String TIMESTAMP = "timestamp";
+    public static final String MESSAGE = "message";
+    public static final String LOGGER = "logger";
+    public static final String THREADS = "threads";
+    public static final String EXCEPTION = "exception";
+    public static final String LEVEL = "level";
+    public static final String TRANSACTION = "transaction";
+    public static final String FINGERPRINT = "fingerprint";
+    public static final String MODULES = "modules";
+    public static final String DEBUG_META = "debug_meta";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+    if (message != null) {
+      writer.name(JsonKeys.MESSAGE).value(logger, message);
+    }
+    if (this.logger != null) {
+      writer.name(JsonKeys.LOGGER).value(this.logger);
+    }
+    if (threads != null && !threads.getValues().isEmpty()) {
+      writer.name(JsonKeys.THREADS);
+      writer.beginObject();
+      writer.name(SentryValues.JsonKeys.VALUES).value(logger, threads.getValues());
+      writer.endObject();
+    }
+    if (exception != null && !exception.getValues().isEmpty()) {
+      writer.name(JsonKeys.EXCEPTION);
+      writer.beginObject();
+      writer.name(SentryValues.JsonKeys.VALUES).value(logger, exception.getValues());
+      writer.endObject();
+    }
+    if (level != null) {
+      writer.name(JsonKeys.LEVEL).value(logger, level);
+    }
+    if (transaction != null) {
+      writer.name(JsonKeys.TRANSACTION).value(transaction);
+    }
+    if (fingerprint != null) {
+      writer.name(JsonKeys.FINGERPRINT).value(logger, fingerprint);
+    }
+    if (modules != null) {
+      writer.name(JsonKeys.MODULES).value(logger, modules);
+    }
+    if (debugMeta != null) {
+      writer.name(JsonKeys.DEBUG_META).value(logger, debugMeta);
+    }
+    new SentryBaseEvent.Serializer().serialize(this, writer, logger);
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class Deserializer implements JsonDeserializer<SentryEvent> {
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull SentryEvent deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      reader.beginObject();
+      SentryEvent event = new SentryEvent();
+      Map<String, Object> unknown = null;
+
+      SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();
+
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.TIMESTAMP:
+            Date deserializedTimestamp = reader.nextDateOrNull(logger);
+            if (deserializedTimestamp != null) {
+              event.timestamp = deserializedTimestamp;
+            }
+            break;
+          case JsonKeys.MESSAGE:
+            event.message = reader.nextOrNull(logger, new Message.Deserializer());
+            break;
+          case JsonKeys.LOGGER:
+            event.logger = reader.nextStringOrNull();
+            break;
+          case JsonKeys.THREADS:
+            reader.beginObject();
+            reader.nextName(); // SentryValues.JsonKeys.VALUES
+            event.threads =
+                new SentryValues<>(reader.nextList(logger, new SentryThread.Deserializer()));
+            reader.endObject();
+            break;
+          case JsonKeys.EXCEPTION:
+            reader.beginObject();
+            reader.nextName(); // SentryValues.JsonKeys.VALUES
+            event.exception =
+                new SentryValues<>(reader.nextList(logger, new SentryException.Deserializer()));
+            reader.endObject();
+            break;
+          case JsonKeys.LEVEL:
+            event.level = reader.nextOrNull(logger, new SentryLevel.Deserializer());
+            break;
+          case JsonKeys.TRANSACTION:
+            event.transaction = reader.nextStringOrNull();
+            break;
+          case JsonKeys.FINGERPRINT:
+            List<String> deserializedFingerprint = (List<String>) reader.nextObjectOrNull();
+            if (deserializedFingerprint != null) {
+              event.fingerprint = deserializedFingerprint;
+            }
+            break;
+          case JsonKeys.MODULES:
+            Map<String, String> deserializedModules =
+                (Map<String, String>) reader.nextObjectOrNull();
+            event.modules = CollectionUtils.newConcurrentHashMap(deserializedModules);
+            break;
+          case JsonKeys.DEBUG_META:
+            event.debugMeta = reader.nextOrNull(logger, new DebugMeta.Deserializer());
+            break;
+          default:
+            if (!baseEventDeserializer.deserializeValue(event, nextName, reader, logger)) {
+              if (unknown == null) {
+                unknown = new ConcurrentHashMap<>();
+              }
+              reader.nextUnknown(logger, unknown, nextName);
+            }
+            break;
+        }
+      }
+      event.setUnknown(unknown);
+      reader.endObject();
+      return event;
+    }
   }
 }

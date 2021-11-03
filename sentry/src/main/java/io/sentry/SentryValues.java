@@ -18,4 +18,8 @@ final class SentryValues<T> {
   public @NotNull List<T> getValues() {
     return values;
   }
+
+  public static final class JsonKeys {
+    public static final String VALUES = "values";
+  }
 }

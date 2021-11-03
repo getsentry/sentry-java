@@ -1,15 +1,20 @@
 package io.sentry.protocol;
 
-import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.ILogger;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
-public final class SentryRuntime implements IUnknownPropertiesConsumer {
+public final class SentryRuntime implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "runtime";
 
   /** Runtime name. */
@@ -61,15 +66,80 @@ public final class SentryRuntime implements IUnknownPropertiesConsumer {
     this.rawDescription = rawDescription;
   }
 
-  @TestOnly
+  // region JsonSerializable
+
+  public static final class JsonKeys {
+    public static final String NAME = "name";
+    public static final String VERSION = "version";
+    public static final String RAW_DESCRIPTION = "raw_description";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (name != null) {
+      writer.name(JsonKeys.NAME).value(name);
+    }
+    if (version != null) {
+      writer.name(JsonKeys.VERSION).value(version);
+    }
+    if (rawDescription != null) {
+      writer.name(JsonKeys.RAW_DESCRIPTION).value(rawDescription);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
   @Nullable
-  Map<String, Object> getUnknown() {
+  @Override
+  public Map<String, Object> getUnknown() {
     return unknown;
   }
 
-  @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
   }
+
+  public static final class Deserializer implements JsonDeserializer<SentryRuntime> {
+    @Override
+    public @NotNull SentryRuntime deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      reader.beginObject();
+      SentryRuntime runtime = new SentryRuntime();
+      Map<String, Object> unknown = null;
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.NAME:
+            runtime.name = reader.nextStringOrNull();
+            break;
+          case JsonKeys.VERSION:
+            runtime.version = reader.nextStringOrNull();
+            break;
+          case JsonKeys.RAW_DESCRIPTION:
+            runtime.rawDescription = reader.nextStringOrNull();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      runtime.setUnknown(unknown);
+      reader.endObject();
+      return runtime;
+    }
+  }
+
+  // endregion
 }

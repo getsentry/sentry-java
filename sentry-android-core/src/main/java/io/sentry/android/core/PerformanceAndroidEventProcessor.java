@@ -19,16 +19,15 @@ import org.jetbrains.annotations.Nullable;
 /** Event Processor responsible for adding Android metrics to transactions */
 final class PerformanceAndroidEventProcessor implements EventProcessor {
 
-  private final boolean tracingEnabled;
-
   private boolean sentStartMeasurement = false;
 
   private final @NotNull ActivityFramesTracker activityFramesTracker;
+  private final @NotNull SentryAndroidOptions options;
 
   PerformanceAndroidEventProcessor(
       final @NotNull SentryAndroidOptions options,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
-    tracingEnabled = options.isTracingEnabled();
+    this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.activityFramesTracker =
         Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
   }
@@ -37,7 +36,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   public synchronized @NotNull SentryTransaction process(
       @NotNull SentryTransaction transaction, @Nullable Object hint) {
 
-    if (!tracingEnabled) {
+    if (!options.isTracingEnabled()) {
       return transaction;
     }
 

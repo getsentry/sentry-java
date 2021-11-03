@@ -1,15 +1,22 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Adds additional information about what happened to an event. */
-public final class UserFeedback {
+public final class UserFeedback implements JsonUnknown, JsonSerializable {
 
   private final SentryId eventId;
   private @Nullable String name;
   private @Nullable String email;
   private @Nullable String comments;
+
+  private @Nullable Map<String, Object> unknown;
 
   /**
    * Initializes SentryUserFeedback and sets the required eventId.
@@ -114,5 +121,103 @@ public final class UserFeedback {
         + comments
         + '\''
         + '}';
+  }
+
+  // JsonKeys
+
+  public static final class JsonKeys {
+    public static final String EVENT_ID = "event_id";
+    public static final String NAME = "name";
+    public static final String EMAIL = "email";
+    public static final String COMMENTS = "comments";
+  }
+
+  // JsonUnknown
+
+  @Override
+  public @Nullable Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  // JsonSerializable
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    writer.name(JsonKeys.EVENT_ID);
+    eventId.serialize(writer, logger);
+    if (name != null) {
+      writer.name(JsonKeys.NAME).value(name);
+    }
+    if (email != null) {
+      writer.name(JsonKeys.EMAIL).value(email);
+    }
+    if (comments != null) {
+      writer.name(JsonKeys.COMMENTS).value(comments);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  // JsonDeserializer
+
+  public static final class Deserializer implements JsonDeserializer<UserFeedback> {
+    @Override
+    public @NotNull UserFeedback deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      SentryId sentryId = null;
+      String name = null;
+      String email = null;
+      String comments = null;
+      Map<String, Object> unknown = null;
+
+      reader.beginObject();
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.EVENT_ID:
+            sentryId = new SentryId.Deserializer().deserialize(reader, logger);
+            break;
+          case JsonKeys.NAME:
+            name = reader.nextStringOrNull();
+            break;
+          case JsonKeys.EMAIL:
+            email = reader.nextStringOrNull();
+            break;
+          case JsonKeys.COMMENTS:
+            comments = reader.nextStringOrNull();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      reader.endObject();
+
+      if (sentryId == null) {
+        String message = "Missing required field \"" + JsonKeys.EVENT_ID + "\"";
+        Exception exception = new IllegalStateException(message);
+        logger.log(SentryLevel.ERROR, message, exception);
+        throw exception;
+      }
+
+      UserFeedback userFeedback = new UserFeedback(sentryId, name, email, comments);
+      userFeedback.setUnknown(unknown);
+      return userFeedback;
+    }
   }
 }

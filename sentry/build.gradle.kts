@@ -20,25 +20,17 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    // Envelopes require JSON. Until a parse is done without GSON, we'll depend on it explicitly here
-    implementation(Config.Libs.gson)
-
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
     errorprone(Config.CompileOnly.errorProneNullAway)
-
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.TestLibs.jsonUnit)
-    // jsonUnit uses newer Gson features (JsonParser.parseReader)
-    // so we have to use latest in tests too
-    testImplementation("${Config.Libs.gsonDep}:2.8.8")
     testImplementation(projects.sentryTestSupport)
 }
 

@@ -1,10 +1,13 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryTransaction;
+import java.io.IOException;
+import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public enum SentryItemType {
+public enum SentryItemType implements JsonSerializable {
   Session("session"),
   Sessions("sessions"),
   Event("event"), // DataCategory.Error
@@ -33,5 +36,29 @@ public enum SentryItemType {
 
   public String getItemType() {
     return itemType;
+  }
+
+  public static @NotNull SentryItemType valueOfLabel(String itemType) {
+    for (SentryItemType sentryItemType : values()) {
+      if (sentryItemType.itemType.equals(itemType)) {
+        return sentryItemType;
+      }
+    }
+    return Unknown;
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.value(itemType);
+  }
+
+  static final class Deserializer implements JsonDeserializer<SentryItemType> {
+
+    @Override
+    public @NotNull SentryItemType deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      return SentryItemType.valueOfLabel(reader.nextString().toLowerCase(Locale.ROOT));
+    }
   }
 }

@@ -1,15 +1,20 @@
 package io.sentry.protocol;
 
-import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.ILogger;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
-public final class Gpu implements IUnknownPropertiesConsumer {
+public final class Gpu implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "gpu";
 
   /** The name of the graphics device. */
@@ -125,15 +130,120 @@ public final class Gpu implements IUnknownPropertiesConsumer {
     this.npotSupport = npotSupport;
   }
 
-  @TestOnly
+  // region JsonSerializable
+
+  public static final class JsonKeys {
+    public static final String NAME = "name";
+    public static final String ID = "id";
+    public static final String VENDOR_ID = "vendor_id";
+    public static final String VENDOR_NAME = "vendor_name";
+    public static final String MEMORY_SIZE = "memory_size";
+    public static final String API_TYPE = "api_type";
+    public static final String MULTI_THREADED_RENDERING = "multi_threaded_rendering";
+    public static final String VERSION = "version";
+    public static final String NPOT_SUPPORT = "npot_support";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (name != null) {
+      writer.name(JsonKeys.NAME).value(name);
+    }
+    if (id != null) {
+      writer.name(JsonKeys.ID).value(id);
+    }
+    if (vendorId != null) {
+      writer.name(JsonKeys.VENDOR_ID).value(vendorId);
+    }
+    if (vendorName != null) {
+      writer.name(JsonKeys.VENDOR_NAME).value(vendorName);
+    }
+    if (memorySize != null) {
+      writer.name(JsonKeys.MEMORY_SIZE).value(memorySize);
+    }
+    if (apiType != null) {
+      writer.name(JsonKeys.API_TYPE).value(apiType);
+    }
+    if (multiThreadedRendering != null) {
+      writer.name(JsonKeys.MULTI_THREADED_RENDERING).value(multiThreadedRendering);
+    }
+    if (version != null) {
+      writer.name(JsonKeys.VERSION).value(version);
+    }
+    if (npotSupport != null) {
+      writer.name(JsonKeys.NPOT_SUPPORT).value(npotSupport);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
   @Nullable
-  Map<String, Object> getUnknown() {
+  @Override
+  public Map<String, Object> getUnknown() {
     return unknown;
   }
 
-  @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class Deserializer implements JsonDeserializer<Gpu> {
+    @Override
+    public @NotNull Gpu deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      reader.beginObject();
+      Gpu gpu = new Gpu();
+      Map<String, Object> unknown = null;
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.NAME:
+            gpu.name = reader.nextStringOrNull();
+            break;
+          case JsonKeys.ID:
+            gpu.id = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.VENDOR_ID:
+            gpu.vendorId = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.VENDOR_NAME:
+            gpu.vendorName = reader.nextStringOrNull();
+            break;
+          case JsonKeys.MEMORY_SIZE:
+            gpu.memorySize = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.API_TYPE:
+            gpu.apiType = reader.nextStringOrNull();
+            break;
+          case JsonKeys.MULTI_THREADED_RENDERING:
+            gpu.multiThreadedRendering = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.VERSION:
+            gpu.version = reader.nextStringOrNull();
+            break;
+          case JsonKeys.NPOT_SUPPORT:
+            gpu.npotSupport = reader.nextStringOrNull();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      gpu.setUnknown(unknown);
+      reader.endObject();
+      return gpu;
+    }
   }
 }

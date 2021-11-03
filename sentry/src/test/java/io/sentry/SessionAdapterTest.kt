@@ -4,14 +4,16 @@ import com.nhaarman.mockitokotlin2.mock
 import io.sentry.test.injectForField
 import java.io.StringReader
 import java.io.StringWriter
+import java.lang.Exception
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class SessionAdapterTest {
 
-    private val serializer = GsonSerializer(SentryOptions().apply { setLogger(mock()) })
+    private val serializer = JsonSerializer(SentryOptions().apply { setLogger(mock()) })
 
     @Test
     fun `null timestamp does not serialize `() {
@@ -261,9 +263,7 @@ class SessionAdapterTest {
             "io.sentry@1.0+123"
         )
         expected.injectForField("status", null)
-        val actual = getActual(expected)
-
-        assertNull(actual)
+        assertFailsWith<Exception> { getActual(expected) }
     }
 
     @Test

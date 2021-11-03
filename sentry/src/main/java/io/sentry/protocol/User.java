@@ -1,13 +1,18 @@
 package io.sentry.protocol;
 
-import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.ILogger;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 /**
  * Information about the user who triggered an event.
@@ -15,7 +20,7 @@ import org.jetbrains.annotations.TestOnly;
  * <p>```json { "user": { "id": "unique_id", "username": "my_user", "email": "foo@example.com",
  * "ip_address": "127.0.0.1", "subscription": "basic" } } ```
  */
-public final class User implements IUnknownPropertiesConsumer {
+public final class User implements JsonUnknown, JsonSerializable {
 
   /** Email address of the user. */
   private @Nullable String email;
@@ -139,25 +144,97 @@ public final class User implements IUnknownPropertiesConsumer {
     this.other = CollectionUtils.newConcurrentHashMap(other);
   }
 
-  /**
-   * User's unknown fields, only internal usage
-   *
-   * @param unknown the unknown fields
-   */
-  @ApiStatus.Internal
-  @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
-  }
+  // region json
 
-  /**
-   * the User's unknown fields
-   *
-   * @return the unknown map
-   */
-  @TestOnly
   @Nullable
-  Map<String, @NotNull Object> getUnknown() {
+  @Override
+  public Map<String, Object> getUnknown() {
     return unknown;
   }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class JsonKeys {
+    public static final String EMAIL = "email";
+    public static final String ID = "id";
+    public static final String USERNAME = "username";
+    public static final String IP_ADDRESS = "ip_address";
+    public static final String OTHER = "other";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (email != null) {
+      writer.name(JsonKeys.EMAIL).value(email);
+    }
+    if (id != null) {
+      writer.name(JsonKeys.ID).value(id);
+    }
+    if (username != null) {
+      writer.name(JsonKeys.USERNAME).value(username);
+    }
+    if (ipAddress != null) {
+      writer.name(JsonKeys.IP_ADDRESS).value(ipAddress);
+    }
+    if (other != null) {
+      writer.name(JsonKeys.OTHER).value(logger, other);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  public static final class Deserializer implements JsonDeserializer<User> {
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull User deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      reader.beginObject();
+      User user = new User();
+      Map<String, Object> unknown = null;
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.EMAIL:
+            user.email = reader.nextStringOrNull();
+            break;
+          case JsonKeys.ID:
+            user.id = reader.nextStringOrNull();
+            break;
+          case JsonKeys.USERNAME:
+            user.username = reader.nextStringOrNull();
+            break;
+          case JsonKeys.IP_ADDRESS:
+            user.ipAddress = reader.nextStringOrNull();
+            break;
+          case JsonKeys.OTHER:
+            user.other =
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, String>) reader.nextObjectOrNull());
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      user.setUnknown(unknown);
+      reader.endObject();
+      return user;
+    }
+  }
+
+  // endregion
 }

@@ -6,11 +6,31 @@
 
 Breaking changes:
 
-- `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
-- Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
-- `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
-
+* `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
+* Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
+* `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
+* Feat: Vendor JSON (#1554)
+    * Introduce `JsonSerializable` and `JsonDeserializer` interfaces for manual json
+      serialization/deserialization.
+    * Introduce `JsonUnknwon` interface to preserve unknown properties when deserializing/serializing
+      SDK classes.
+    * When passing custom objects, for example in `Contexts`, these are supported for serialization:
+        * `JsonSerializable`
+        * `Map`, `Collection`, `Array`, `String` and all primitive types.
+        * Objects with the help of refection.
+            * `Map`, `Collection`, `Array`, `String` and all primitive types.
+            * Call `toString()` on objects that have a cyclic reference to a ancestor object.
+            * Call `toString()` where object graphs exceed max depth.
+    * Remove `gson` dependency.
+    * Remove `IUnknownPropertiesConsumer`
+    
 ## Unreleased
+
+## 5.3.0
+
+* Feat: Add datasource tracing with P6Spy (#1784)
+* Fix: ActivityFramesTracker does not throw if Activity has not been added (#1782)
+* Fix: PerformanceAndroidEventProcessor uses up to date isTracingEnabled set on Configuration callback (#1786)
 
 ## 5.2.4
 

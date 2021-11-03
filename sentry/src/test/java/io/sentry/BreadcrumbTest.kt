@@ -14,7 +14,7 @@ class BreadcrumbTest {
         breadcrumb.message = "message"
         breadcrumb.setData("data", "data")
         val unknown = mapOf(Pair("unknown", "unknown"))
-        breadcrumb.acceptUnknownProperties(unknown)
+        breadcrumb.setUnknown(unknown)
 
         breadcrumb.type = "type"
         val level = SentryLevel.DEBUG
@@ -37,7 +37,7 @@ class BreadcrumbTest {
         breadcrumb.message = "message"
         breadcrumb.setData("data", "data")
         val unknown = mapOf(Pair("unknown", "unknown"))
-        breadcrumb.acceptUnknownProperties(unknown)
+        breadcrumb.setUnknown(unknown)
 
         breadcrumb.type = "type"
         val level = SentryLevel.DEBUG
@@ -60,7 +60,7 @@ class BreadcrumbTest {
         breadcrumb.message = "message"
         breadcrumb.setData("data", "data")
         val unknown = mapOf(Pair("unknown", "unknown"))
-        breadcrumb.acceptUnknownProperties(unknown)
+        breadcrumb.setUnknown(unknown)
 
         breadcrumb.type = "type"
         val level = SentryLevel.DEBUG
@@ -73,7 +73,6 @@ class BreadcrumbTest {
         breadcrumb.data["data"] = "newData"
         breadcrumb.data["otherData"] = "otherData"
         val newUnknown = mapOf(Pair("unknown", "newUnknown"), Pair("otherUnknown", "otherUnknown"))
-        breadcrumb.acceptUnknownProperties(newUnknown)
 
         breadcrumb.type = "newType"
         breadcrumb.level = SentryLevel.FATAL

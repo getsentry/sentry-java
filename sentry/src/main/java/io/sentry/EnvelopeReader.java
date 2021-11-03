@@ -1,10 +1,9 @@
 package io.sentry;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,13 +18,11 @@ public final class EnvelopeReader implements IEnvelopeReader {
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  private final Gson gson =
-      new GsonBuilder()
-          .registerTypeAdapter(SentryEnvelopeHeader.class, new SentryEnvelopeHeaderAdapter())
-          .registerTypeAdapter(
-              SentryEnvelopeItemHeader.class, new SentryEnvelopeItemHeaderAdapter())
-          .disableHtmlEscaping()
-          .create();
+  private final @NotNull ISerializer serializer;
+
+  public EnvelopeReader(@NotNull ISerializer serializer) {
+    this.serializer = serializer;
+  }
 
   public @Override @Nullable SentryEnvelope read(final @NotNull InputStream stream)
       throws IOException {
@@ -136,12 +133,14 @@ public final class EnvelopeReader implements IEnvelopeReader {
   private @Nullable SentryEnvelopeHeader deserializeEnvelopeHeader(
       final @NotNull byte[] buffer, int offset, int length) {
     String json = new String(buffer, offset, length, UTF_8);
-    return gson.fromJson(json, SentryEnvelopeHeader.class);
+    StringReader reader = new StringReader(json);
+    return serializer.deserialize(reader, SentryEnvelopeHeader.class);
   }
 
   private @Nullable SentryEnvelopeItemHeader deserializeEnvelopeItemHeader(
       final @NotNull byte[] buffer, int offset, int length) {
     String json = new String(buffer, offset, length, UTF_8);
-    return gson.fromJson(json, SentryEnvelopeItemHeader.class);
+    StringReader reader = new StringReader(json);
+    return serializer.deserialize(reader, SentryEnvelopeItemHeader.class);
   }
 }

@@ -62,7 +62,7 @@ class SentryClientTest {
             sdkVersion = SdkVersion("test", "1.2.3")
             setDebug(true)
             setDiagnosticLevel(SentryLevel.DEBUG)
-            setSerializer(GsonSerializer(this))
+            setSerializer(JsonSerializer(this))
             setLogger(mock())
             maxAttachmentSize = this@Fixture.maxAttachmentSize
             setTransportFactory(factory)
@@ -750,7 +750,7 @@ class SentryClientTest {
         val scope = Scope(fixture.sentryOptions)
         scope.setContexts("boolean", true)
         scope.setContexts("string", "test")
-        scope.setContexts("number", 1.0)
+        scope.setContexts("number", 1)
         scope.setContexts("collection", listOf("a", "b"))
         scope.setContexts("array", arrayOf("a", "b"))
         scope.setContexts("char", 'a')
@@ -767,7 +767,7 @@ class SentryClientTest {
                 assertEquals("test", strKey["value"])
 
                 val numKey = contexts["number"] as Map<*, *>
-                assertEquals(1.0, numKey["value"])
+                assertEquals(1, numKey["value"])
 
                 val listKey = contexts["collection"] as Map<*, *>
                 assertEquals("a", (listKey["value"] as List<*>)[0])
