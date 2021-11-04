@@ -191,7 +191,7 @@ public final class JsonSerializer implements ISerializer {
 
   // Helper
 
-  private @NotNull String serializeToString(Object object, Boolean pretty) throws IOException {
+  private @NotNull String serializeToString(Object object, boolean pretty) throws IOException {
     StringWriter stringWriter = new StringWriter();
     JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(stringWriter, options.getMaxDepth());
     if (pretty) {
