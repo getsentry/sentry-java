@@ -2519,24 +2519,66 @@ public final class io/sentry/protocol/SentryTransaction$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/Sessions {
+public final class io/sentry/protocol/Sessions : io/sentry/JsonSerializable {
 	public fun <init> (Lio/sentry/SessionAggregates;)V
+	public fun <init> (Ljava/util/List;Lio/sentry/protocol/Sessions$Attributes;)V
 	public fun getAggregates ()Ljava/util/List;
 	public fun getAttrs ()Lio/sentry/protocol/Sessions$Attributes;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 }
 
-public final class io/sentry/protocol/Sessions$Aggregate {
+public final class io/sentry/protocol/Sessions$Aggregate : io/sentry/JsonSerializable {
 	public fun <init> (Ljava/lang/String;JJJ)V
 	public fun getCrashed ()J
 	public fun getErrored ()J
 	public fun getExited ()J
 	public fun getStarted ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 }
 
-public final class io/sentry/protocol/Sessions$Attributes {
+public final class io/sentry/protocol/Sessions$Aggregate$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Sessions$Aggregate;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Sessions$Aggregate$JsonKeys {
+	public static final field CRASHED Ljava/lang/String;
+	public static final field ERRORED Ljava/lang/String;
+	public static final field EXITED Ljava/lang/String;
+	public static final field STARTED Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/Sessions$Attributes : io/sentry/JsonSerializable {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/protocol/Sessions$Attributes$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Sessions$Attributes;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Sessions$Attributes$JsonKeys {
+	public static final field ENVIRONMENT Ljava/lang/String;
+	public static final field RELEASE Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/Sessions$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Sessions;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Sessions$JsonKeys {
+	public static final field AGGREGATES Ljava/lang/String;
+	public static final field ATTRS Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sentry/JsonUnknown {

@@ -22,6 +22,7 @@ import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.Sessions;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.io.BufferedOutputStream;
@@ -98,6 +99,9 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SpanStatus.class, new SpanStatus.Deserializer());
     deserializersByClass.put(User.class, new User.Deserializer());
     deserializersByClass.put(UserFeedback.class, new UserFeedback.Deserializer());
+    deserializersByClass.put(Sessions.Aggregate.class, new Sessions.Aggregate.Deserializer());
+    deserializersByClass.put(Sessions.Attributes.class, new Sessions.Attributes.Deserializer());
+    deserializersByClass.put(Sessions.class, new Sessions.Deserializer());
   }
 
   // Deserialize
