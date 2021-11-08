@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Add `graphql-java` instrumentation (#1777)
+
 ## 5.3.0
 
 * Feat: Add datasource tracing with P6Spy (#1784)
