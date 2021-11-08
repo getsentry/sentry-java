@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
+
 ## 5.3.0
 
 * Feat: Add datasource tracing with P6Spy (#1784)
