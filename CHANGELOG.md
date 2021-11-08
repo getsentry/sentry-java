@@ -3,6 +3,7 @@
 ## 6.x.x
 
 * Ref: Bind external properties to a dedicated class. (#1750)
+* Ref: Debug log serializable objects (#1795)
 
 Breaking changes:
 
