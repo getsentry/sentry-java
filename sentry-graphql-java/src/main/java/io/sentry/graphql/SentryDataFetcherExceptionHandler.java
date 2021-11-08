@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class SentryDataFetcherExceptionHandler implements DataFetcherExceptionHandler {
   private final @NotNull IHub hub;
-  private final DataFetcherExceptionHandler delegate;
+  private final @NotNull DataFetcherExceptionHandler delegate;
 
   public SentryDataFetcherExceptionHandler(
       final @NotNull IHub hub, final @NotNull DataFetcherExceptionHandler delegate) {
