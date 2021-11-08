@@ -90,7 +90,6 @@ class SentryInstrumentationTest {
         assertEquals("Query.shows", span.operation)
         assertTrue(span.isFinished)
         assertEquals(SpanStatus.INTERNAL_ERROR, span.status)
-        assertEquals(SpanStatus.INTERNAL_ERROR, fixture.activeSpan.status)
     }
 
     @Test

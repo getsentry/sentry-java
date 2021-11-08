@@ -1,7 +1,6 @@
 package io.sentry.graphql;
 
 import graphql.ExecutionResult;
-import graphql.GraphQLError;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
@@ -17,7 +16,6 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -116,21 +114,6 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   private void finish(
       final @NotNull ISpan span, final @NotNull DataFetchingEnvironment environment) {
     finish(span, environment, null);
-  }
-
-  @Override
-  public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(
-      final @NotNull ExecutionResult executionResult,
-      final @NotNull InstrumentationExecutionParameters parameters) {
-    final TracingState tracingState = parameters.getInstrumentationState();
-    final ISpan transaction = tracingState.getTransaction();
-
-    final List<GraphQLError> errors = executionResult.getErrors();
-    if (transaction != null && errors != null && !errors.isEmpty()) {
-      transaction.setStatus(SpanStatus.INTERNAL_ERROR);
-    }
-
-    return super.instrumentExecutionResult(executionResult, parameters);
   }
 
   private @NotNull String findDataFetcherTag(
