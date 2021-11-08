@@ -47,6 +47,7 @@ final class SessionsFlusher implements Closeable {
   }
 
   void flush() {
+    // atomic reference swap
     if (!aggregates.getAggregates().isEmpty()) {
       sentryClient.captureSessions(new Sessions(aggregates));
       aggregates.getAggregates().clear();

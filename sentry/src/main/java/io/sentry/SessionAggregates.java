@@ -31,6 +31,7 @@ public final class SessionAggregates {
       final @NotNull Date startedAt, final @NotNull ServerSessionManager.Status state) {
     final String roundedDate = DateUtils.getTimestampMinutesPrecision(startedAt);
     SessionStats stats;
+    // thread-safety
     if (this.aggregates.containsKey(roundedDate)) {
       stats = this.aggregates.get(roundedDate);
     } else {
