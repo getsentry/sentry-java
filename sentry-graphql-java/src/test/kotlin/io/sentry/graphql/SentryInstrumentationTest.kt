@@ -76,6 +76,7 @@ class SentryInstrumentationTest {
         val span = fixture.activeSpan.children.first()
         assertEquals("Query.shows", span.operation)
         assertTrue(span.isFinished)
+        assertEquals(SpanStatus.OK, span.status)
     }
 
     @Test

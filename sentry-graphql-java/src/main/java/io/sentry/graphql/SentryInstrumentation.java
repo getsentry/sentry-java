@@ -75,10 +75,13 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
                       if (ex != null) {
                         span.setThrowable(ex);
                         span.setStatus(SpanStatus.INTERNAL_ERROR);
+                      } else {
+                        span.setStatus(SpanStatus.OK);
                       }
                       finish(span, environment, r);
                     });
           } else {
+            span.setStatus(SpanStatus.OK);
             finish(span, environment, result);
           }
           return result;

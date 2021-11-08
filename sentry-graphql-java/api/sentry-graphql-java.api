@@ -11,7 +11,6 @@ public final class io/sentry/graphql/SentryInstrumentation : graphql/execution/i
 	public fun beginExecution (Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;)Lgraphql/execution/instrumentation/InstrumentationContext;
 	public fun createState ()Lgraphql/execution/instrumentation/InstrumentationState;
 	public fun instrumentDataFetcher (Lgraphql/schema/DataFetcher;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Lgraphql/schema/DataFetcher;
-	public fun instrumentExecutionResult (Lgraphql/ExecutionResult;Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;)Ljava/util/concurrent/CompletableFuture;
 }
 
 public abstract interface class io/sentry/graphql/SentryInstrumentation$BeforeSpanCallback {
