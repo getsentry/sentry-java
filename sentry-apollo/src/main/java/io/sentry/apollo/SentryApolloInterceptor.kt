@@ -126,7 +126,7 @@ class SentryApolloInterceptor(
     /**
      * The BeforeSpan callback
      */
-    interface BeforeSpanCallback {
+    fun interface BeforeSpanCallback {
         /**
          * Mutates span before being added.
          *
