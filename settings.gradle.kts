@@ -23,6 +23,7 @@ include(
     "sentry-spring-boot-starter",
     "sentry-bom",
     "sentry-openfeign",
+    "sentry-graphql-java",
     "sentry-jdbc",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
@@ -33,7 +34,8 @@ include(
     "sentry-samples:sentry-samples-servlet",
     "sentry-samples:sentry-samples-spring",
     "sentry-samples:sentry-samples-spring-boot",
-    "sentry-samples:sentry-samples-spring-boot-webflux"
+    "sentry-samples:sentry-samples-spring-boot-webflux",
+    "sentry-samples:sentry-samples-netflix-dgs"
 )
 
 gradle.beforeProject {

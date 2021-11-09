@@ -49,7 +49,8 @@ apiValidation {
             "sentry-samples-servlet",
             "sentry-samples-spring",
             "sentry-samples-spring-boot",
-            "sentry-samples-spring-boot-webflux"
+            "sentry-samples-spring-boot-webflux",
+            "sentry-samples-netflix-dgs",
         )
     )
 }

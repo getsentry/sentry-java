@@ -1,3 +1,4 @@
+import org.gradle.internal.impldep.org.junit.experimental.categories.Categories.CategoryFilter.exclude
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -18,11 +19,13 @@ repositories {
 }
 
 dependencies {
-    implementation(Config.Libs.springBootStarterWebflux)
+    implementation(Config.Libs.springBootStarterWeb)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarter)
-    implementation(projects.sentryLogback)
+    implementation(projects.sentryGraphqlJava)
+    implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.9.2"))
+    implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
     testImplementation(Config.Libs.springBootStarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
