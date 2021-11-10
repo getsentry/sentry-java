@@ -67,9 +67,11 @@ final class ActivityFramesTracker {
     SparseIntArray[] framesRates = null;
     try {
       framesRates = frameMetricsAggregator.remove(activity);
-    } catch (IllegalArgumentException ignored) {
-      // it throws when attempt to remove OnFrameMetricsAvailableListener that was never added.
-      // there's no contains method
+    } catch (Exception ignored) {
+      // throws IllegalArgumentException when attempting to remove OnFrameMetricsAvailableListener that was never added.
+      // there's no contains method.
+      // throws NullPointerException when attempting to remove OnFrameMetricsAvailableListener and there was no
+      // Observers, See https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
     }
 
     if (framesRates != null) {
