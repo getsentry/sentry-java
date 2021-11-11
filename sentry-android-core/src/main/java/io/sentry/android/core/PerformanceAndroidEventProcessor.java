@@ -5,6 +5,7 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
 import io.sentry.EventProcessor;
+import io.sentry.SentryEvent;
 import io.sentry.SpanContext;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
@@ -30,6 +31,22 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.activityFramesTracker =
         Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
+  }
+
+  /**
+   * Returns the event itself
+   *
+   * @param event the SentryEvent the SentryEvent
+   * @param hint the Hint the Hint
+   * @return returns the event itself
+   */
+  @Override
+  @Nullable
+  public SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
+    // that's only necessary because on newer versions of Unity, if not overriding this method, it's
+    // throwing 'java.lang.AbstractMethodError: abstract method' and the reason is probably
+    // compilation mismatch.
+    return event;
   }
 
   @Override
