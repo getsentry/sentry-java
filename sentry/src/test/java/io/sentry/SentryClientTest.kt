@@ -32,7 +32,6 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
-import java.lang.RuntimeException
 import java.nio.charset.Charset
 import java.util.Arrays
 import java.util.UUID
