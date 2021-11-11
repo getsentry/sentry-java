@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.4.0
 
 * Feat: Add `graphql-java` instrumentation (#1777)
