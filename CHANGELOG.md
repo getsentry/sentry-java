@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.4.0
 
 * Feat: Add `graphql-java` instrumentation (#1777)
 * Fix: Do not crash when event processors throw a lower level Throwable class (#1800)
