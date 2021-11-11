@@ -3,6 +3,7 @@ io.sentry.adapters
 io.sentry.cache
 io.sentry.config
 io.sentry.exception
+io.sentry.graphql
 io.sentry.hints
 io.sentry.jdbc
 io.sentry.jul
