@@ -2,6 +2,7 @@
 
 ## 6.x.x
 
+* Feat: Use float instead of Date for protocol types for higher precision (#1737)
 * Ref: Bind external properties to a dedicated class. (#1750)
 * Ref: Debug log serializable objects (#1795)
 
@@ -24,8 +25,6 @@ Breaking changes:
             * Call `toString()` where object graphs exceed max depth.
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
-    
-## Unreleased
 
 ## 5.3.0
 

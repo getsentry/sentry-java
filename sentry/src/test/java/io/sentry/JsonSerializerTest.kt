@@ -517,7 +517,7 @@ class JsonSerializerTest {
 
         assertEquals("transaction-name", element["transaction"] as String)
         assertEquals("transaction", element["type"] as String)
-        assertNotNull(element["start_timestamp"] as String)
+        assertNotNull(element["start_timestamp"] as Double)
         assertNotNull(element["event_id"] as String)
         assertNotNull(element["spans"] as List<*>)
         assertEquals("myValue", (element["tags"] as Map<*, *>)["myTag"] as String)
@@ -546,8 +546,8 @@ class JsonSerializerTest {
         val json = """{
                           "transaction": "a-transaction",
                           "type": "transaction",
-                          "start_timestamp": "2020-10-23T10:24:01.791Z",
-                          "timestamp": "2020-10-23T10:24:02.791Z",
+                          "start_timestamp": 1632395079.503000,
+                          "timestamp": 1632395079.807321,
                           "event_id": "3367f5196c494acaae85bbbd535379ac",
                           "contexts": {
                             "trace": {
@@ -565,8 +565,8 @@ class JsonSerializerTest {
                           },
                           "spans": [
                             {
-                              "start_timestamp": "2021-03-05T08:51:12.838Z",
-                              "timestamp": "2021-03-05T08:51:12.949Z",
+                              "start_timestamp": 1632395079.840000,
+                              "timestamp": 1632395079.884043,
                               "trace_id": "2b099185293344a5bfdd7ad89ebf9416",
                               "span_id": "5b95c29a5ded4281",
                               "parent_span_id": "a3b2d1d58b344b07",
@@ -614,6 +614,42 @@ class JsonSerializerTest {
         assertEquals(SpanStatus.ABORTED, span.status)
         assertEquals("desc", span.description)
         assertEquals(mapOf("name" to "value"), span.tags)
+    }
+
+    @Test
+    fun `deserializes legacy timestamp format in spans and transactions`() {
+        val json = """{
+                          "transaction": "a-transaction",
+                          "type": "transaction",
+                          "start_timestamp": "2020-10-23T10:24:01.791Z",
+                          "timestamp": "2020-10-23T10:24:02.791Z",
+                          "event_id": "3367f5196c494acaae85bbbd535379ac",
+                          "contexts": {
+                            "trace": {
+                              "trace_id": "b156a475de54423d9c1571df97ec7eb6",
+                              "span_id": "0a53026963414893",
+                              "op": "http",
+                              "status": "ok"
+                            }
+                          },
+                          "spans": [
+                            {
+                              "start_timestamp": "2021-03-05T08:51:12.838Z",
+                              "timestamp": "2021-03-05T08:51:12.949Z",
+                              "trace_id": "2b099185293344a5bfdd7ad89ebf9416",
+                              "span_id": "5b95c29a5ded4281",
+                              "parent_span_id": "a3b2d1d58b344b07",
+                              "op": "PersonService.create",
+                              "description": "desc",
+                              "status": "aborted"
+                            }
+                          ]
+                        }"""
+        val transaction = fixture.serializer.deserialize(StringReader(json), SentryTransaction::class.java)
+        assertNotNull(transaction) {
+            assertNotNull(it.startTimestamp)
+            assertNotNull(it.timestamp)
+        }
     }
 
     @Test

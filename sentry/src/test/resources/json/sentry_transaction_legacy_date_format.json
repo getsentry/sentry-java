@@ -1,12 +1,12 @@
 {
     "transaction": "e54578ec-c9a8-4bce-8e3c-839e6c058fed",
-    "start_timestamp": 916613796.000000,
-    "timestamp": 919990124.000000,
+    "start_timestamp": "1999-01-17T22:56:36.000Z",
+    "timestamp": "1999-02-26T00:48:44.000Z",
     "spans":
     [
         {
-            "start_timestamp": 943149968.000000,
-            "timestamp": 923768643.000000,
+            "start_timestamp": "1999-11-21T02:06:08.000Z",
+            "timestamp": "1999-04-10T18:24:03.000Z",
             "trace_id": "5b1f73d39486827b9e60ceb1fc23277a",
             "span_id": "4584593a-5d9b-4a55-931f-cfe89c93907d",
             "parent_span_id": "57518091-aed1-47a6-badf-11696035b5f4",

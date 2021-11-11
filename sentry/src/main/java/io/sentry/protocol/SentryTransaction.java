@@ -1,5 +1,6 @@
 package io.sentry.protocol;
 
+import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
@@ -14,6 +15,8 @@ import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -32,10 +35,10 @@ public final class SentryTransaction extends SentryBaseEvent
   private @Nullable String transaction;
 
   /** The moment in time when span was started. */
-  private @NotNull Date startTimestamp;
+  private @NotNull Double startTimestamp;
 
   /** The moment in time when span has ended. */
-  private @Nullable Date timestamp;
+  private @Nullable Double timestamp;
 
   /** A list of spans within this transaction. Can be empty. */
   private final @NotNull List<SentrySpan> spans = new ArrayList<>();
@@ -52,8 +55,8 @@ public final class SentryTransaction extends SentryBaseEvent
   public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
     super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
-    this.startTimestamp = sentryTracer.getStartTimestamp();
-    this.timestamp = sentryTracer.getTimestamp();
+    this.startTimestamp = DateUtils.dateToSeconds(sentryTracer.getStartTimestamp());
+    this.timestamp = sentryTracer.getHighPrecisionTimestamp();
     this.transaction = sentryTracer.getName();
     for (final Span span : sentryTracer.getChildren()) {
       if (Boolean.TRUE.equals(span.isSampled())) {
@@ -91,8 +94,8 @@ public final class SentryTransaction extends SentryBaseEvent
   @ApiStatus.Internal
   public SentryTransaction(
       @Nullable String transaction,
-      @NotNull Date startTimestamp,
-      @Nullable Date timestamp,
+      @NotNull Double startTimestamp,
+      @Nullable Double timestamp,
       @NotNull List<SentrySpan> spans,
       @NotNull final Map<String, @NotNull MeasurementValue> measurements) {
     this.transaction = transaction;
@@ -114,11 +117,11 @@ public final class SentryTransaction extends SentryBaseEvent
     return transaction;
   }
 
-  public @NotNull Date getStartTimestamp() {
+  public @NotNull Double getStartTimestamp() {
     return startTimestamp;
   }
 
-  public @Nullable Date getTimestamp() {
+  public @Nullable Double getTimestamp() {
     return timestamp;
   }
 
@@ -158,9 +161,9 @@ public final class SentryTransaction extends SentryBaseEvent
     if (transaction != null) {
       writer.name(JsonKeys.TRANSACTION).value(transaction);
     }
-    writer.name(JsonKeys.START_TIMESTAMP).value(logger, startTimestamp);
+    writer.name(JsonKeys.START_TIMESTAMP).value(logger, doubleToBigDecimal(startTimestamp));
     if (timestamp != null) {
-      writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+      writer.name(JsonKeys.TIMESTAMP).value(logger, doubleToBigDecimal(timestamp));
     }
     if (!spans.isEmpty()) {
       writer.name(JsonKeys.SPANS).value(logger, spans);
@@ -178,6 +181,10 @@ public final class SentryTransaction extends SentryBaseEvent
       }
     }
     writer.endObject();
+  }
+
+  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
+    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Nullable
@@ -201,7 +208,7 @@ public final class SentryTransaction extends SentryBaseEvent
 
       // Init with placeholders.
       SentryTransaction transaction =
-          new SentryTransaction("", new Date(), new Date(), new ArrayList<>(), new HashMap<>());
+          new SentryTransaction("", 0d, null, new ArrayList<>(), new HashMap<>());
       Map<String, Object> unknown = null;
 
       SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();
@@ -213,15 +220,29 @@ public final class SentryTransaction extends SentryBaseEvent
             transaction.transaction = reader.nextStringOrNull();
             break;
           case JsonKeys.START_TIMESTAMP:
-            Date deserializedStartTimestamp = reader.nextDateOrNull(logger);
-            if (deserializedStartTimestamp != null) {
-              transaction.startTimestamp = deserializedStartTimestamp;
+            try {
+              final Double deserializedStartTimestamp = reader.nextDoubleOrNull();
+              if (deserializedStartTimestamp != null) {
+                transaction.startTimestamp = deserializedStartTimestamp;
+              }
+            } catch (NumberFormatException e) {
+              final Date date = reader.nextDateOrNull(logger);
+              if (date != null) {
+                transaction.startTimestamp = DateUtils.dateToSeconds(date);
+              }
             }
             break;
           case JsonKeys.TIMESTAMP:
-            Date deserializedTimestamp = reader.nextDateOrNull(logger);
-            if (deserializedTimestamp != null) {
-              transaction.timestamp = deserializedTimestamp;
+            try {
+              final Double deserializedTimestamp = reader.nextDoubleOrNull();
+              if (deserializedTimestamp != null) {
+                transaction.timestamp = deserializedTimestamp;
+              }
+            } catch (NumberFormatException e) {
+              final Date date = reader.nextDateOrNull(logger);
+              if (date != null) {
+                transaction.timestamp = DateUtils.dateToSeconds(date);
+              }
             }
             break;
           case JsonKeys.SPANS:

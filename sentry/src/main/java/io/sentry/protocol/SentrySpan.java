@@ -1,5 +1,6 @@
 package io.sentry.protocol;
 
+import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
@@ -14,6 +15,8 @@ import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,8 +27,8 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentrySpan implements JsonUnknown, JsonSerializable {
-  private final @NotNull Date startTimestamp;
-  private final @Nullable Date timestamp;
+  private final @NotNull Double startTimestamp;
+  private final @Nullable Double timestamp;
   private final @NotNull SentryId traceId;
   private final @NotNull SpanId spanId;
   private final @Nullable SpanId parentSpanId;
@@ -53,15 +56,15 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     this.status = span.getStatus();
     final Map<String, String> tagsCopy = CollectionUtils.newConcurrentHashMap(span.getTags());
     this.tags = tagsCopy != null ? tagsCopy : new ConcurrentHashMap<>();
-    this.timestamp = span.getTimestamp();
-    this.startTimestamp = span.getStartTimestamp();
+    this.timestamp = span.getHighPrecisionTimestamp();
+    this.startTimestamp = DateUtils.dateToSeconds(span.getStartTimestamp());
     this.data = data;
   }
 
   @ApiStatus.Internal
   public SentrySpan(
-      @NotNull Date startTimestamp,
-      @Nullable Date timestamp,
+      @NotNull Double startTimestamp,
+      @Nullable Double timestamp,
       @NotNull SentryId traceId,
       @NotNull SpanId spanId,
       @Nullable SpanId parentSpanId,
@@ -86,11 +89,11 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     return this.timestamp != null;
   }
 
-  public @NotNull Date getStartTimestamp() {
+  public @NotNull Double getStartTimestamp() {
     return startTimestamp;
   }
 
-  public @Nullable Date getTimestamp() {
+  public @Nullable Double getTimestamp() {
     return timestamp;
   }
 
@@ -145,9 +148,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.START_TIMESTAMP).value(logger, startTimestamp);
+    writer.name(JsonKeys.START_TIMESTAMP).value(logger, doubleToBigDecimal(startTimestamp));
     if (timestamp != null) {
-      writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+      writer.name(JsonKeys.TIMESTAMP).value(logger, doubleToBigDecimal(timestamp));
     }
     writer.name(JsonKeys.TRACE_ID).value(logger, traceId);
     writer.name(JsonKeys.SPAN_ID).value(logger, spanId);
@@ -177,6 +180,10 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     writer.endObject();
   }
 
+  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
+    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
+  }
+
   @Nullable
   @Override
   public Map<String, Object> getUnknown() {
@@ -196,8 +203,8 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
         @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
 
-      Date startTimestamp = null;
-      Date timestamp = null;
+      Double startTimestamp = null;
+      Double timestamp = null;
       SentryId traceId = null;
       SpanId spanId = null;
       SpanId parentSpanId = null;
@@ -212,10 +219,20 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.START_TIMESTAMP:
-            startTimestamp = reader.nextDateOrNull(logger);
+            try {
+              startTimestamp = reader.nextDoubleOrNull();
+            } catch (NumberFormatException e) {
+              final Date date = reader.nextDateOrNull(logger);
+              startTimestamp = date != null ? DateUtils.dateToSeconds(date) : null;
+            }
             break;
           case JsonKeys.TIMESTAMP:
-            timestamp = reader.nextDateOrNull(logger);
+            try {
+              timestamp = reader.nextDoubleOrNull();
+            } catch (NumberFormatException e) {
+              final Date date = reader.nextDateOrNull(logger);
+              timestamp = date != null ? DateUtils.dateToSeconds(date) : null;
+            }
             break;
           case JsonKeys.TRACE_ID:
             traceId = new SentryId.Deserializer().deserialize(reader, logger);
