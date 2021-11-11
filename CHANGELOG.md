@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Feat: Add `graphql-java` instrumentation (#1777)
+* Fix: ActivityFramesTracker does not throw if Activity has no observers (#1799)
 
 ## 5.3.0
 
