@@ -1299,7 +1299,7 @@ class SentryClientTest {
     private fun eventProcessorThrows(): EventProcessor {
         return object : EventProcessor {
             override fun process(event: SentryEvent, hint: Any?): SentryEvent? {
-                throw RuntimeException()
+                throw Throwable()
             }
         }
     }
