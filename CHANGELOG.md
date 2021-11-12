@@ -3,7 +3,12 @@
 ## Unreleased
 
 * Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
+
+## 5.4.0
+
 * Feat: Add `graphql-java` instrumentation (#1777)
+* Fix: Do not crash when event processors throw a lower level Throwable class (#1800)
+* Fix: ActivityFramesTracker does not throw if Activity has no observers (#1799)
 
 ## 5.3.0
 
