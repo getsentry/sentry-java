@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
+
 ## 5.4.0
 
 * Feat: Add `graphql-java` instrumentation (#1777)
