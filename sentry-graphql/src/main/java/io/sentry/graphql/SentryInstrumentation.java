@@ -30,6 +30,10 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     this.beforeSpan = beforeSpan;
   }
 
+  public SentryInstrumentation(final @Nullable BeforeSpanCallback beforeSpan) {
+    this(HubAdapter.getInstance(), beforeSpan);
+  }
+
   public SentryInstrumentation(final @NotNull IHub hub) {
     this(hub, null);
   }
