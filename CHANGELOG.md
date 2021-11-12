@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
+* Feat: Add secondary constructor to SentryInstrumentation (#1804)
 
 ## 5.4.0
 
