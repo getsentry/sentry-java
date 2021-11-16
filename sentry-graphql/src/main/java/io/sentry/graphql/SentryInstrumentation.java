@@ -24,6 +24,8 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   private final @NotNull IHub hub;
   private final @Nullable BeforeSpanCallback beforeSpan;
 
+  private static final String CONTEXT_VIEW_KEY = ReactorContextManager.class.getName() + ".CONTEXT_VIEW";
+
   public SentryInstrumentation(
       final @NotNull IHub hub, final @Nullable BeforeSpanCallback beforeSpan) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
@@ -50,6 +52,10 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
   @Override
   public @NotNull InstrumentationContext<ExecutionResult> beginExecution(
       final @NotNull InstrumentationExecutionParameters parameters) {
+
+    ContextView contextView = getReactorContext(parameters);
+    ITransaction sentryTransaction = contextView.get("sentryTransaction");
+
     final TracingState tracingState = parameters.getInstrumentationState();
     tracingState.setTransaction(hub.getSpan());
     return super.beginExecution(parameters);
@@ -134,6 +140,10 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
     }
 
     return parent.getName() + "." + parameters.getExecutionStepInfo().getPath().getSegmentName();
+  }
+
+  private ContextView getReactorContext(InstrumentationExecutionParameters parameters) {
+    return parameters.getGraphQLContext().get(CONTEXT_VIEW_KEY);
   }
 
   static final class TracingState implements InstrumentationState {
