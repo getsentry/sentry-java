@@ -66,7 +66,9 @@ public final class AppComponentsBreadcrumbsIntegration
     } catch (Throwable ignored) {
       // fine, might throw on older versions
       if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, ignored, "It was not possible to unregisterComponentCallbacks");
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, ignored, "It was not possible to unregisterComponentCallbacks");
       }
     }
 
