@@ -223,7 +223,7 @@ final class ManifestMetadataReader {
       options
           .getLogger()
           .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(
@@ -298,7 +298,7 @@ final class ManifestMetadataReader {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
       logger.log(SentryLevel.INFO, "Retrieving auto-init from AndroidManifest.xml");
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Failed to read auto-init from android manifest metadata.", e);
     }
     return autoInit;

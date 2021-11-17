@@ -83,7 +83,7 @@ final class Dsn {
               path + "api/" + projectId,
               null,
               null);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       throw new IllegalArgumentException(e);
     }
   }

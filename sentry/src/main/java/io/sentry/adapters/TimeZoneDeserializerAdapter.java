@@ -29,7 +29,7 @@ public final class TimeZoneDeserializerAdapter implements JsonDeserializer<TimeZ
       throws JsonParseException {
     try {
       return json == null ? null : TimeZone.getTimeZone(json.getAsString());
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing TimeZone", e);
     }
     return null;

@@ -28,7 +28,7 @@ public final class SentryIdSerializerAdapter implements JsonSerializer<SentryId>
       final @NotNull JsonSerializationContext context) {
     try {
       return src == null ? null : new JsonPrimitive(src.toString());
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when serializing SentryId", e);
     }
     return null;

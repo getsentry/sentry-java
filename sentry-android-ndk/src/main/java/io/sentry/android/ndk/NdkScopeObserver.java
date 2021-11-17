@@ -57,7 +57,7 @@ public final class NdkScopeObserver implements IScopeObserver {
         if (!dataRef.isEmpty()) {
           data = options.getSerializer().serialize(dataRef);
         }
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, e, "Breadcrumb data is not serializable.");
       }
 

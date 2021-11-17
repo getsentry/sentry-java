@@ -30,7 +30,7 @@ public final class SpanStatusDeserializerAdapter implements JsonDeserializer<Spa
       throws JsonParseException {
     try {
       return json == null ? null : SpanStatus.valueOf(json.getAsString().toUpperCase(Locale.ROOT));
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing SpanStatus", e);
     }
     return null;

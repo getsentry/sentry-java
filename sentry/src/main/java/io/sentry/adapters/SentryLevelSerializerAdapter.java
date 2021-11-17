@@ -28,7 +28,7 @@ public final class SentryLevelSerializerAdapter implements JsonSerializer<Sentry
       final @NotNull JsonSerializationContext context) {
     try {
       return src == null ? null : new JsonPrimitive(src.name().toLowerCase(Locale.ROOT));
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when serializing SentryLevel", e);
     }
     return null;

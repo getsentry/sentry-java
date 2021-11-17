@@ -29,7 +29,7 @@ public final class SpanStatusSerializerAdapter implements JsonSerializer<SpanSta
       final @NotNull JsonSerializationContext context) {
     try {
       return src == null ? null : new JsonPrimitive(src.name().toLowerCase(Locale.ROOT));
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when serializing SpanStatus", e);
     }
     return null;

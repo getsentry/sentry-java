@@ -88,7 +88,7 @@ public final class Hub implements IHub {
         final StackItem item = stack.peek();
         sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
         this.lastEventId = sentryId;
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options
             .getLogger()
             .log(
@@ -114,7 +114,7 @@ public final class Hub implements IHub {
       try {
         final StackItem item = stack.peek();
         sentryId = item.getClient().captureMessage(message, level, item.getScope());
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
       }
     }
@@ -142,7 +142,7 @@ public final class Hub implements IHub {
         if (capturedEnvelopeId != null) {
           sentryId = capturedEnvelopeId;
         }
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
       }
     }
@@ -167,7 +167,7 @@ public final class Hub implements IHub {
         final SentryEvent event = new SentryEvent(throwable);
         assignTraceContext(event);
         sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options
             .getLogger()
             .log(
@@ -207,7 +207,7 @@ public final class Hub implements IHub {
       try {
         final StackItem item = stack.peek();
         item.getClient().captureUserFeedback(userFeedback);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options
             .getLogger()
             .log(
@@ -277,7 +277,7 @@ public final class Hub implements IHub {
         final StackItem item = stack.peek();
         // TODO: should we end session before closing client?
         item.getClient().close();
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while closing the Hub.", e);
       }
       isEnabled = false;
@@ -467,7 +467,7 @@ public final class Hub implements IHub {
       pushScope();
       try {
         callback.run(stack.peek().getScope());
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
       popScope();
@@ -485,7 +485,7 @@ public final class Hub implements IHub {
     } else {
       try {
         callback.run(stack.peek().getScope());
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
       }
     }
@@ -518,7 +518,7 @@ public final class Hub implements IHub {
     } else {
       try {
         stack.peek().getClient().flush(timeoutMillis);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
       }
     }
@@ -570,7 +570,7 @@ public final class Hub implements IHub {
             item = stack.peek();
             sentryId =
                 item.getClient().captureTransaction(transaction, traceState, item.getScope(), hint);
-          } catch (Exception e) {
+          } catch (Throwable e) {
             options
                 .getLogger()
                 .log(

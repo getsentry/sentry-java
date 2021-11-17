@@ -48,7 +48,7 @@ final class DebugImagesLoader implements IDebugImagesLoader {
                 .getLogger()
                 .log(SentryLevel.DEBUG, "Debug images loaded: %d", debugImages.size());
           }
-        } catch (Exception e) {
+        } catch (Throwable e) {
           options.getLogger().log(SentryLevel.ERROR, e, "Failed to load debug images.");
         }
       }
@@ -64,7 +64,7 @@ final class DebugImagesLoader implements IDebugImagesLoader {
         moduleListLoader.clearModuleList();
 
         options.getLogger().log(SentryLevel.INFO, "Debug images cleared.");
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, e, "Failed to clear debug images.");
       }
       debugImages = null;

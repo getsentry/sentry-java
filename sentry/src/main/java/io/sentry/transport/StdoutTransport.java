@@ -22,7 +22,8 @@ public final class StdoutTransport implements ITransport {
 
     try {
       serializer.serialize(envelope, System.out);
-    } catch (Exception e) {
+    } catch (Throwable e) {
+      // TODO: debug log so we be aware serialization failed here
       // do nothing
     }
   }

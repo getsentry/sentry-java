@@ -80,7 +80,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
                   new RequestBodyExtractingEventProcessor(request, hub.getOptions()));
             }
           });
-    } catch (Exception e) {
+    } catch (Throwable e) {
       hub.getOptions()
           .getLogger()
           .log(SentryLevel.ERROR, "Failed to set scope for HTTP request", e);

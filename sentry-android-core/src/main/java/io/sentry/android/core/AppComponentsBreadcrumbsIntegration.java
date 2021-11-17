@@ -51,7 +51,7 @@ public final class AppComponentsBreadcrumbsIntegration
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
-      } catch (Exception e) {
+      } catch (Throwable e) {
         this.options.setEnableAppComponentBreadcrumbs(false);
         options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");
       }
@@ -63,8 +63,11 @@ public final class AppComponentsBreadcrumbsIntegration
     try {
       // if its a ContextImpl, unregisterComponentCallbacks can't be used
       context.unregisterComponentCallbacks(this);
-    } catch (Exception ignored) {
+    } catch (Throwable ignored) {
       // fine, might throw on older versions
+      if (options != null) {
+        options.getLogger().log(SentryLevel.DEBUG, ignored, "It was not possible to unregisterComponentCallbacks");
+      }
     }
 
     if (options != null) {

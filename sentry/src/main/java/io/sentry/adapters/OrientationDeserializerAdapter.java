@@ -33,7 +33,7 @@ public final class OrientationDeserializerAdapter
       return json == null
           ? null
           : Device.DeviceOrientation.valueOf(json.getAsString().toUpperCase(Locale.ROOT));
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing DeviceOrientation", e);
     }
     return null;

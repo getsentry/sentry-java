@@ -65,7 +65,7 @@ abstract class DirectoryProcessor {
         final SendCachedEnvelopeHint hint = new SendCachedEnvelopeHint(flushTimeoutMillis, logger);
         processFile(file, hint);
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
     }
   }

@@ -23,7 +23,7 @@ public class Main {
 
     try {
       throw new RuntimeException("Invalid productId=445");
-    } catch (Exception e) {
+    } catch (Throwable e) {
       LOGGER.error("Something went wrong", e);
     }
   }

@@ -551,7 +551,7 @@ public final class SentryClient implements ISentryClient {
     if (beforeSend != null) {
       try {
         event = beforeSend.execute(event, hint);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options
             .getLogger()
             .log(

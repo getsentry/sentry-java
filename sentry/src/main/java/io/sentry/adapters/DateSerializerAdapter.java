@@ -29,7 +29,7 @@ public final class DateSerializerAdapter implements JsonSerializer<Date> {
       final @NotNull JsonSerializationContext context) {
     try {
       return src == null ? null : new JsonPrimitive(DateUtils.getTimestamp(src));
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when serializing Date", e);
     }
     return null;
