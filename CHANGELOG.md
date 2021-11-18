@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
+
+## 5.4.1
+
 * Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
 * Feat: Add secondary constructor to SentryInstrumentation (#1804)
-* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
+* Fix: Do not start fragment span if not added to the Activity (#1813)
 
 ## 5.4.0
 

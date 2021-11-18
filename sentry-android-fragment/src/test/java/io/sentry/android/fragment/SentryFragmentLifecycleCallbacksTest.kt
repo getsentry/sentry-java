@@ -36,7 +36,8 @@ class SentryFragmentLifecycleCallbacksTest {
         fun getSut(
             enableFragmentLifecycleBreadcrumbs: Boolean = true,
             enableAutoFragmentLifecycleTracing: Boolean = false,
-            tracesSampleRate: Double? = 1.0
+            tracesSampleRate: Double? = 1.0,
+            isAdded: Boolean = true
         ): SentryFragmentLifecycleCallbacks {
             whenever(hub.options).thenReturn(
                 SentryOptions().apply {
@@ -48,6 +49,7 @@ class SentryFragmentLifecycleCallbacksTest {
             whenever(hub.configureScope(any())).thenAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }
+            whenever(fragment.isAdded).thenReturn(isAdded)
             return SentryFragmentLifecycleCallbacks(
                 hub = hub,
                 enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
@@ -194,6 +196,15 @@ class SentryFragmentLifecycleCallbacksTest {
                 assertEquals("Fragment", it)
             }
         )
+    }
+
+    @Test
+    fun `When fragment is created but not added to activity, it should not start tracing`() {
+        val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true, isAdded = false)
+
+        sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
+
+        verify(fixture.transaction, never()).startChild(any(), any())
     }
 
     @Test

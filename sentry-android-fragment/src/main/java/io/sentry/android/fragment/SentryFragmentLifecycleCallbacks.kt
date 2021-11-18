@@ -57,7 +57,11 @@ class SentryFragmentLifecycleCallbacks(
     ) {
         addBreadcrumb(fragment, "created")
 
-        startTracing(fragment)
+        // we only start the tracing for the fragment if the fragment has been added to its activity
+        // and not only to the backstack
+        if (fragment.isAdded) {
+            startTracing(fragment)
+        }
     }
 
     override fun onFragmentViewCreated(
