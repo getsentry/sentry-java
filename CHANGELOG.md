@@ -4,6 +4,7 @@
 
 * Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
 * Feat: Add secondary constructor to SentryInstrumentation (#1804)
+* Fix: Do not start fragment span if not added to the Activity (#1813)
 
 ## 5.4.0
 
