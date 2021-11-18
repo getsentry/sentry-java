@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.4.1
 
 * Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
