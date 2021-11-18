@@ -4,6 +4,7 @@
 
 * Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
 * Feat: Add secondary constructor to SentryInstrumentation (#1804)
+* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
 
 ## 5.4.0
 
