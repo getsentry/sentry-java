@@ -29,7 +29,7 @@ public final class SentryLevelDeserializerAdapter implements JsonDeserializer<Se
       throws JsonParseException {
     try {
       return json == null ? null : SentryLevel.valueOf(json.getAsString().toUpperCase(Locale.ROOT));
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing SentryLevel", e);
     }
     return null;

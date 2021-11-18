@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
+
 ## 5.4.1
 
 * Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)

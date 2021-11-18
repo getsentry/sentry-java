@@ -63,7 +63,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
         final Object result = invocation.proceed();
         transaction.setStatus(SpanStatus.OK);
         return result;
-      } catch (Exception e) {
+      } catch (Throwable e) {
         transaction.setStatus(SpanStatus.INTERNAL_ERROR);
         transaction.setThrowable(e);
         throw e;

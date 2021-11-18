@@ -103,7 +103,7 @@ public final class ContextsDeserializerAdapter implements JsonDeserializer<Conte
         }
         return contexts;
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing Contexts", e);
     }
     return null;

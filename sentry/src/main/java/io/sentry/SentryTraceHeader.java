@@ -34,7 +34,7 @@ public final class SentryTraceHeader {
     try {
       this.traceId = new SentryId(parts[0]);
       this.spanId = new SpanId(parts[1]);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       throw new InvalidSentryTraceHeaderException(value, e);
     }
   }

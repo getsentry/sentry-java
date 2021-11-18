@@ -52,7 +52,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
         span.setStatus(SpanStatus.fromHttpStatusCode(response.getRawStatusCode()));
         responseStatusCode = response.getRawStatusCode();
         return response;
-      } catch (Exception e) {
+      } catch (Throwable e) {
         // handles cases like connection errors
         span.setThrowable(e);
         span.setStatus(SpanStatus.INTERNAL_ERROR);

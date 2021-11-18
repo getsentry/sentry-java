@@ -30,7 +30,7 @@ public final class OrientationSerializerAdapter
       final @NotNull JsonSerializationContext context) {
     try {
       return src == null ? null : new JsonPrimitive(src.name().toLowerCase(Locale.ROOT));
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when serializing DeviceOrientation", e);
     }
     return null;

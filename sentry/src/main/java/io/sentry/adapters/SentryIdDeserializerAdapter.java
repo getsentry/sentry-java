@@ -29,7 +29,7 @@ public final class SentryIdDeserializerAdapter implements JsonDeserializer<Sentr
       throws JsonParseException {
     try {
       return json == null ? null : new SentryId(json.getAsString());
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing SentryId", e);
     }
     return null;

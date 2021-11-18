@@ -30,7 +30,7 @@ public final class DateDeserializerAdapter implements JsonDeserializer<Date> {
       throws JsonParseException {
     try {
       return json == null ? null : DateUtils.getDateTime(json.getAsString());
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(
@@ -40,7 +40,7 @@ public final class DateDeserializerAdapter implements JsonDeserializer<Date> {
     }
     try {
       return DateUtils.getDateTimeWithMillisPrecision(json.getAsString());
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(SentryLevel.ERROR, "Error when deserializing millis timestamp format.", e);

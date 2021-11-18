@@ -28,7 +28,7 @@ public final class TimeZoneSerializerAdapter implements JsonSerializer<TimeZone>
       final @NotNull JsonSerializationContext context) {
     try {
       return src == null ? null : new JsonPrimitive(src.getID());
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when serializing TimeZone", e);
     }
     return null;

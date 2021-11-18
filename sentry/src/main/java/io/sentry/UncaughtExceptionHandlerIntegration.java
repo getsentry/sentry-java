@@ -103,7 +103,7 @@ public final class UncaughtExceptionHandlerIntegration
                   "Timed out waiting to flush event to disk before crashing. Event: %s",
                   event.getEventId());
         }
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);

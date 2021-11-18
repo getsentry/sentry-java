@@ -182,7 +182,7 @@ public final class AsyncHttpTransport implements ITransport {
       try {
         result = flush();
         options.getLogger().log(SentryLevel.DEBUG, "Envelope flushed");
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, e, "Envelope submission failed");
         throw e;
       } finally {
