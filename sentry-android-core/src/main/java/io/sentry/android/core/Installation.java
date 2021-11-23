@@ -38,7 +38,7 @@ final class Installation {
           return deviceId;
         }
         deviceId = readInstallationFile(installation);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         throw new RuntimeException(e);
       }
     }

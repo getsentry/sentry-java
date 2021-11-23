@@ -292,7 +292,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       if (emulator != null) {
         device.setSimulator((Boolean) emulator);
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting emulator.", e);
     }
 
@@ -419,7 +419,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       }
       logger.log(SentryLevel.INFO, "Error getting MemoryInfo.");
       return null;
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
       return null;
     }
@@ -438,7 +438,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private @Nullable String getFamily() {
     try {
       return Build.MODEL.split(" ", -1)[0];
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting device family.", e);
       return null;
     }
@@ -461,7 +461,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       float percentMultiplier = 100.0f;
 
       return ((float) level / (float) scale) * percentMultiplier;
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting device battery level.", e);
       return null;
     }
@@ -477,7 +477,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       int plugged = batteryIntent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
       return plugged == BatteryManager.BATTERY_PLUGGED_AC
           || plugged == BatteryManager.BATTERY_PLUGGED_USB;
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting device charging state.", e);
       return null;
     }
@@ -489,7 +489,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       if (temperature != -1) {
         return ((float) temperature) / 10; // celsius
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting battery temperature.", e);
     }
     return null;
@@ -512,7 +512,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
             "No device orientation available (ORIENTATION_SQUARE|ORIENTATION_UNDEFINED)");
         return null;
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting device orientation.", e);
     }
     return deviceOrientation;
@@ -542,7 +542,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           || Build.PRODUCT.contains("vbox86p")
           || Build.PRODUCT.contains("emulator")
           || Build.PRODUCT.contains("simulator");
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(
           SentryLevel.ERROR, "Error checking whether application is running in an emulator.", e);
       return null;
@@ -559,7 +559,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       long blockSize = getBlockSizeLong(stat);
       long totalBlocks = getBlockCountLong(stat);
       return totalBlocks * blockSize;
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting total internal storage amount.", e);
       return null;
     }
@@ -614,7 +614,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       long blockSize = getBlockSizeLong(stat);
       long availableBlocks = getAvailableBlocksLong(stat);
       return availableBlocks * blockSize;
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting unused internal storage amount.", e);
       return null;
     }
@@ -686,7 +686,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       long blockSize = getBlockSizeLong(stat);
       long totalBlocks = getBlockCountLong(stat);
       return totalBlocks * blockSize;
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting total external storage amount.", e);
       return null;
     }
@@ -710,7 +710,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       long blockSize = getBlockSizeLong(stat);
       long availableBlocks = getAvailableBlocksLong(stat);
       return availableBlocks * blockSize;
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting unused external storage amount.", e);
       return null;
     }
@@ -724,7 +724,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private @Nullable DisplayMetrics getDisplayMetrics() {
     try {
       return context.getResources().getDisplayMetrics();
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting DisplayMetrics.", e);
       return null;
     }
@@ -746,7 +746,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       if (rooted != null) {
         os.setRooted((Boolean) rooted);
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting OperatingSystem.", e);
     }
 
@@ -802,7 +802,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       } else {
         return context.getString(stringId);
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting application name.", e);
     }
 
@@ -824,7 +824,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private @Nullable String getDeviceId() {
     try {
       return Installation.id(context);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting installationId.", e);
     }
     return null;
@@ -876,7 +876,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           event.setTag(entry.getKey(), entry.getValue());
         }
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting side loaded info.", e);
     }
   }

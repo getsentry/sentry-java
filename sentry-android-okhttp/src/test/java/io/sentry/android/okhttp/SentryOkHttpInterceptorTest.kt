@@ -8,7 +8,6 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import io.sentry.ISpan
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -20,7 +19,6 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -206,11 +204,9 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `customizer modifies span`() {
         val sut = fixture.getSut(
-            beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
-                override fun execute(span: ISpan, request: Request, response: Response?): ISpan {
-                    span.description = "overwritten description"
-                    return span
-                }
+            beforeSpan = { span, _, _ ->
+                span.description = "overwritten description"
+                span
             }
         )
         val request = getRequest()
@@ -224,15 +220,13 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `customizer receives request and response`() {
         val sut = fixture.getSut(
-            beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
-                override fun execute(span: ISpan, request: Request, response: Response?): ISpan {
-                    assertEquals(request.url, request.url)
-                    assertEquals(request.method, request.method)
-                    assertNotNull(response) {
-                        assertEquals(201, it.code)
-                    }
-                    return span
+            beforeSpan = { span, request, response ->
+                assertEquals(request.url, request.url)
+                assertEquals(request.method, request.method)
+                assertNotNull(response) {
+                    assertEquals(201, it.code)
                 }
+                span
             }
         )
         val request = getRequest()
@@ -242,11 +236,7 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `customizer can drop the span`() {
         val sut = fixture.getSut(
-            beforeSpan = object : SentryOkHttpInterceptor.BeforeSpanCallback {
-                override fun execute(span: ISpan, request: Request, response: Response?): ISpan? {
-                    return null
-                }
-            }
+            beforeSpan = { _, _, _ -> null }
         )
         sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()

@@ -139,7 +139,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               break;
             }
           }
-        } catch (Exception e) {
+        } catch (Throwable e) {
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else if (SentryItemType.Transaction.equals(item.getHeader().getType())) {
@@ -171,7 +171,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               break;
             }
           }
-        } catch (Exception e) {
+        } catch (Throwable e) {
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else {

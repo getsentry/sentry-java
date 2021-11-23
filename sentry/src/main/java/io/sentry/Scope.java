@@ -297,7 +297,7 @@ public final class Scope {
       final @Nullable Object hint) {
     try {
       breadcrumb = callback.execute(breadcrumb, hint);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(

@@ -3,8 +3,6 @@ package io.sentry.apollo
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.coroutines.await
 import com.apollographql.apollo.exception.ApolloException
-import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
-import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
@@ -12,7 +10,6 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -135,14 +132,10 @@ class SentryApolloInterceptorTest {
     @Test
     fun `customizer modifies span`() {
         executeQuery(
-            fixture.getSut(
-                beforeSpan = object : SentryApolloInterceptor.BeforeSpanCallback {
-                    override fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan {
-                        span.description = "overwritten description"
-                        return span
-                    }
-                }
-            )
+            fixture.getSut { span, _, _ ->
+                span.description = "overwritten description"
+                span
+            }
         )
 
         verify(fixture.hub).captureTransaction(
@@ -158,13 +151,7 @@ class SentryApolloInterceptorTest {
     @Test
     fun `when customizer throws, exception is handled`() {
         executeQuery(
-            fixture.getSut(
-                beforeSpan = object : SentryApolloInterceptor.BeforeSpanCallback {
-                    override fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan {
-                        throw RuntimeException()
-                    }
-                }
-            )
+            fixture.getSut { _, _, _ -> throw RuntimeException() }
         )
 
         verify(fixture.hub).captureTransaction(

@@ -26,6 +26,20 @@ Breaking changes:
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
 
+* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
+
+## 5.4.1
+
+* Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
+* Feat: Add secondary constructor to SentryInstrumentation (#1804)
+* Fix: Do not start fragment span if not added to the Activity (#1813)
+
+## 5.4.0
+
+* Feat: Add `graphql-java` instrumentation (#1777)
+* Fix: Do not crash when event processors throw a lower level Throwable class (#1800)
+* Fix: ActivityFramesTracker does not throw if Activity has no observers (#1799)
+
 ## 5.3.0
 
 * Feat: Add datasource tracing with P6Spy (#1784)

@@ -101,7 +101,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         this.options
             .getLogger()
             .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
-      } catch (Exception e) {
+      } catch (Throwable e) {
         this.options.setEnableSystemEventBreadcrumbs(false);
         this.options
             .getLogger()
@@ -201,7 +201,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
             if (value != null) {
               newExtras.put(item, value.toString());
             }
-          } catch (Exception exception) {
+          } catch (Throwable exception) {
             logger.log(
                 SentryLevel.ERROR,
                 exception,

@@ -97,6 +97,10 @@ object Config {
         val apolloCoroutines = "com.apollographql.apollo:apollo-coroutines-support:$apolloVersion"
 
         val p6spy = "p6spy:p6spy:3.9.1"
+
+        val graphQlJava = "com.graphql-java:graphql-java:17.3"
+
+        val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
     }
 
     object AnnotationProcessors {

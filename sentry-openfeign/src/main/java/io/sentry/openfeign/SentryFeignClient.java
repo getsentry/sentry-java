@@ -53,7 +53,7 @@ public final class SentryFeignClient implements Client {
         // handles both success and error responses
         span.setStatus(SpanStatus.fromHttpStatusCode(response.status()));
         return response;
-      } catch (Exception e) {
+      } catch (Throwable e) {
         // handles cases like connection errors
         span.setThrowable(e);
         span.setStatus(SpanStatus.INTERNAL_ERROR);

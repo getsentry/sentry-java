@@ -67,7 +67,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final ITransaction transaction = startTransaction(httpRequest, sentryTraceHeader);
       try {
         filterChain.doFilter(httpRequest, httpResponse);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         // exceptions that are not handled by Spring
         transaction.setStatus(SpanStatus.INTERNAL_ERROR);
         throw e;

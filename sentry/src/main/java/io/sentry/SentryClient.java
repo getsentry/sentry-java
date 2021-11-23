@@ -204,7 +204,7 @@ public final class SentryClient implements ISentryClient {
     for (final EventProcessor processor : eventProcessors) {
       try {
         event = processor.process(event, hint);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options
             .getLogger()
             .log(
@@ -235,7 +235,7 @@ public final class SentryClient implements ISentryClient {
     for (final EventProcessor processor : eventProcessors) {
       try {
         transaction = processor.process(transaction, hint);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options
             .getLogger()
             .log(
@@ -551,7 +551,7 @@ public final class SentryClient implements ISentryClient {
     if (beforeSend != null) {
       try {
         event = beforeSend.execute(event, hint);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         options
             .getLogger()
             .log(

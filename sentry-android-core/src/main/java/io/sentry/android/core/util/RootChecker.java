@@ -140,7 +140,7 @@ public final class RootChecker {
       }
     } catch (IOException e) {
       logger.log(SentryLevel.DEBUG, "SU isn't found on this Device.");
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.DEBUG, "Error when trying to check if SU exists.", e);
     } finally {
       if (process != null) {
