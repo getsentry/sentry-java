@@ -1,10 +1,17 @@
 package io.sentry.protocol;
 
-import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.ILogger;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>```json { "message": { "message": "My raw message with interpreted strings like {foo}",
  * "params": {"foo": "this"} } } ```
  */
-public final class Message implements IUnknownPropertiesConsumer {
+public final class Message implements JsonUnknown, JsonSerializable {
   /**
    * The formatted message. If `message` and `params` are given, Sentry will attempt to backfill
    * `formatted` if empty.
@@ -78,9 +85,83 @@ public final class Message implements IUnknownPropertiesConsumer {
     this.params = CollectionUtils.newArrayList(params);
   }
 
-  @ApiStatus.Internal
+  // JsonSerializable
+
+  public static final class JsonKeys {
+    public static final String FORMATTED = "formatted";
+    public static final String MESSAGE = "message";
+    public static final String PARAMS = "params";
+  }
+
   @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (formatted != null) {
+      writer.name(JsonKeys.FORMATTED).value(formatted);
+    }
+    if (message != null) {
+      writer.name(JsonKeys.MESSAGE).value(message);
+    }
+    if (params != null && !params.isEmpty()) {
+      writer.name(JsonKeys.PARAMS).value(logger, params);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  public static final class Deserializer implements JsonDeserializer<Message> {
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull Message deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      reader.beginObject();
+      Message message = new Message();
+      Map<String, Object> unknown = null;
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.FORMATTED:
+            message.formatted = reader.nextStringOrNull();
+            break;
+          case JsonKeys.MESSAGE:
+            message.message = reader.nextStringOrNull();
+            break;
+          case JsonKeys.PARAMS:
+            List<String> deserializedParams = (List<String>) reader.nextObjectOrNull();
+            if (deserializedParams != null) {
+              message.params = deserializedParams;
+            }
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      message.setUnknown(unknown);
+      reader.endObject();
+      return message;
+    }
   }
 }

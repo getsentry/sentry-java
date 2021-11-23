@@ -153,7 +153,7 @@ final class HttpConnection {
     try (final OutputStream outputStream = connection.getOutputStream();
         final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
       options.getSerializer().serialize(envelope, gzip);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(

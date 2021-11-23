@@ -125,7 +125,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                   currentlyRunning.decrement();
                 }
               });
-        } catch (Exception e) {
+        } catch (Throwable e) {
           options.getLogger().log(ERROR, "Error when sending envelope", e);
         }
       }

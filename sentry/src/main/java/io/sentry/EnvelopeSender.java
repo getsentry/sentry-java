@@ -74,7 +74,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       logger.log(SentryLevel.ERROR, e, "File '%s' cannot be found.", file.getAbsolutePath());
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, e, "I/O on file '%s' failed.", file.getAbsolutePath());
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(
           SentryLevel.ERROR, e, "Failed to capture cached envelope %s", file.getAbsolutePath());
       if (hint instanceof Retryable) {
@@ -122,7 +122,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
             file.getAbsolutePath(),
             errorMessageSuffix);
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(
           SentryLevel.ERROR,
           e,

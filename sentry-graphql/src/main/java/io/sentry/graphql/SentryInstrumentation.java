@@ -89,7 +89,7 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
             finish(span, environment, result);
           }
           return result;
-        } catch (Exception e) {
+        } catch (Throwable e) {
           span.setThrowable(e);
           span.setStatus(SpanStatus.INTERNAL_ERROR);
           finish(span, environment);
