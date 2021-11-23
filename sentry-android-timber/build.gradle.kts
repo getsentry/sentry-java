@@ -1,7 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("com.android.library")
@@ -34,6 +33,7 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
+        kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
     }
 
     testOptions {
@@ -67,11 +67,6 @@ tasks.withType<Test> {
 
 kotlin {
     explicitApi()
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    // Timber uses Kotlin 1.2
-    kotlinOptions.languageVersion = "1.2"
 }
 
 dependencies {

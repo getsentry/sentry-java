@@ -5,6 +5,7 @@
 * Feat: Use float instead of Date for protocol types for higher precision (#1737)
 * Ref: Bind external properties to a dedicated class. (#1750)
 * Ref: Debug log serializable objects (#1795)
+* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
 
 Breaking changes:
 
@@ -25,8 +26,7 @@ Breaking changes:
             * Call `toString()` where object graphs exceed max depth.
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
-
-* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
+* Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
 
 ## 5.4.1
 
