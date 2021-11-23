@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# ./scripts/bump-version.sh <old version> <new version>
+# eg ./scripts/bump-version.sh "6.0.0-alpha.1" "6.0.0-alpha.2"
+
 set -eux
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
