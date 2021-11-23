@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Breaking changes:
+
+* Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
 ## 5.4.1
 
 * Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
