@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-alpha.1
 
 * Feat: Use float instead of Date for protocol types for higher precision (#1737)
 * Ref: Bind external properties to a dedicated class. (#1750)
