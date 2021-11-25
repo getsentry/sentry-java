@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.4.2
 
 * Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
 
