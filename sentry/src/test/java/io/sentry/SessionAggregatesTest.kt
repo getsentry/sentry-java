@@ -25,7 +25,7 @@ class SessionAggregatesTest {
         val session = createSession("2021-12-01T13:11:09Z", Session.State.Crashed)
         session.end()
         sut.addSession(session.started!!, ServerSessionManager.Status.Crashed)
-        assertNotNull(sut.aggregates["2021-12-01T13:11:00Z"]) {
+        assertNotNull(sut.resetAggregates()["2021-12-01T13:11:00Z"]) {
             assertEquals(1, it.crashed.get())
             assertEquals(0, it.errored.get())
             assertEquals(0, it.exited.get())
@@ -38,7 +38,7 @@ class SessionAggregatesTest {
         val session = createSession("2021-12-01T13:11:09Z", Session.State.Exited)
         session.end()
         sut.addSession(session.started!!, ServerSessionManager.Status.Exited)
-        assertNotNull(sut.aggregates["2021-12-01T13:11:00Z"]) {
+        assertNotNull(sut.resetAggregates()["2021-12-01T13:11:00Z"]) {
             assertEquals(0, it.errored.get())
             assertEquals(1, it.exited.get())
         }

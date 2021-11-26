@@ -48,7 +48,7 @@ class SessionsFlusherTest {
                 assertTrue(it.aggregates.isNotEmpty())
             }
         )
-        assertTrue(fixture.aggregates.aggregates.isEmpty())
+        assertTrue(fixture.aggregates.resetAggregates().isEmpty())
     }
 
     @Test

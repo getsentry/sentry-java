@@ -1298,8 +1298,8 @@ public final class io/sentry/Session$State : java/lang/Enum {
 public final class io/sentry/SessionAggregates {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun addSession (Ljava/util/Date;Lio/sentry/ServerSessionManager$Status;)V
-	public fun getAggregates ()Ljava/util/Map;
 	public fun getAttributes ()Lio/sentry/SessionAggregates$Attributes;
+	public fun resetAggregates ()Ljava/util/Map;
 }
 
 public final class io/sentry/SessionAggregates$Attributes {
@@ -2525,7 +2525,7 @@ public final class io/sentry/protocol/SentryTransaction$JsonKeys {
 }
 
 public final class io/sentry/protocol/Sessions : io/sentry/JsonSerializable {
-	public fun <init> (Lio/sentry/SessionAggregates;)V
+	public fun <init> (Lio/sentry/SessionAggregates$Attributes;Ljava/util/Map;)V
 	public fun getAggregates ()Ljava/util/List;
 	public fun getAttrs ()Lio/sentry/protocol/Sessions$Attributes;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V

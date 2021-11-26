@@ -21,14 +21,13 @@ public final class Sessions implements JsonSerializable {
   private final @NotNull List<Aggregate> aggregates = new ArrayList<>();
   private final @NotNull Attributes attrs;
 
-  public Sessions(final @NotNull SessionAggregates sessionAggregates) {
-    Objects.requireNonNull(sessionAggregates, "sessionAggregates is required");
-    this.attrs =
-        new Attributes(
-            sessionAggregates.getAttributes().getRelease(),
-            sessionAggregates.getAttributes().getEnvironment());
-    for (final Map.Entry<String, SessionAggregates.SessionStats> entry :
-        sessionAggregates.getAggregates().entrySet()) {
+  public Sessions(
+      final @NotNull SessionAggregates.Attributes attributes,
+      final @NotNull Map<String, SessionAggregates.SessionStats> stats) {
+    Objects.requireNonNull(attributes, "sessionAggregates is required");
+    Objects.requireNonNull(stats, "sessionAggregates is required");
+    this.attrs = new Attributes(attributes.getRelease(), attributes.getEnvironment());
+    for (final Map.Entry<String, SessionAggregates.SessionStats> entry : stats.entrySet()) {
       aggregates.add(
           new Aggregate(
               entry.getKey(),
@@ -38,7 +37,11 @@ public final class Sessions implements JsonSerializable {
     }
   }
 
-  Sessions(final @NotNull List<Aggregate> aggregates, final @NotNull Attributes attrs) {
+  Sessions(final @NotNull SessionAggregates aggregates) {
+    this(aggregates.getAttributes(), aggregates.resetAggregates());
+  }
+
+  private Sessions(final @NotNull List<Aggregate> aggregates, final @NotNull Attributes attrs) {
     this.aggregates.addAll(aggregates);
     this.attrs = attrs;
   }
@@ -237,8 +240,8 @@ public final class Sessions implements JsonSerializable {
 
   private static Exception missingRequiredFieldException(
       final @NotNull String field, final @NotNull ILogger logger) {
-    String message = "Missing required field \"" + field + "\"";
-    Exception exception = new IllegalStateException(message);
+    final String message = "Missing required field \"" + field + "\"";
+    final Exception exception = new IllegalStateException(message);
     logger.log(SentryLevel.ERROR, message, exception);
     return exception;
   }
