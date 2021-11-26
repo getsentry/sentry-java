@@ -13,7 +13,7 @@ public final class Platform {
       // All system properties on Android:
       // https://developer.android.com/reference/java/lang/System#getProperties()
       isAndroid = "The Android Project".equals(System.getProperty("java.vendor"));
-    } catch (Exception e) {
+    } catch (Throwable e) {
       isAndroid = false;
     }
   }

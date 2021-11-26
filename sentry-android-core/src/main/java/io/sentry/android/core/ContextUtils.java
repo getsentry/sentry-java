@@ -21,7 +21,7 @@ final class ContextUtils {
   static PackageInfo getPackageInfo(final @NotNull Context context, final @NotNull ILogger logger) {
     try {
       return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting package info.", e);
       return null;
     }

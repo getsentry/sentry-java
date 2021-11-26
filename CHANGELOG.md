@@ -1,8 +1,13 @@
 # Changelog
 
-## 6.x.x
+## Unreleased
 
+## 6.0.0-alpha.1
+
+* Feat: Use float instead of Date for protocol types for higher precision (#1737)
 * Ref: Bind external properties to a dedicated class. (#1750)
+* Ref: Debug log serializable objects (#1795)
+* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
 
 Breaking changes:
 
@@ -23,8 +28,19 @@ Breaking changes:
             * Call `toString()` where object graphs exceed max depth.
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
-    
-## Unreleased
+* Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
+## 5.4.1
+
+* Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)
+* Feat: Add secondary constructor to SentryInstrumentation (#1804)
+* Fix: Do not start fragment span if not added to the Activity (#1813)
+
+## 5.4.0
+
+* Feat: Add `graphql-java` instrumentation (#1777)
+* Fix: Do not crash when event processors throw a lower level Throwable class (#1800)
+* Fix: ActivityFramesTracker does not throw if Activity has no observers (#1799)
 
 ## 5.3.0
 

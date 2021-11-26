@@ -77,7 +77,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
               () -> {
                 try {
                   sender.send();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                   options
                       .getLogger()
                       .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
@@ -87,7 +87,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(SentryLevel.ERROR, "Failed to call the executor. Cached events will not be sent", e);

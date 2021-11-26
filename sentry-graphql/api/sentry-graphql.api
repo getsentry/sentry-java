@@ -1,0 +1,20 @@
+public final class io/sentry/graphql/SentryDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
+	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun <init> (Lio/sentry/IHub;Lgraphql/execution/DataFetcherExceptionHandler;)V
+	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
+}
+
+public final class io/sentry/graphql/SentryInstrumentation : graphql/execution/instrumentation/SimpleInstrumentation {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;)V
+	public fun <init> (Lio/sentry/graphql/SentryInstrumentation$BeforeSpanCallback;)V
+	public fun beginExecution (Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;)Lgraphql/execution/instrumentation/InstrumentationContext;
+	public fun createState ()Lgraphql/execution/instrumentation/InstrumentationState;
+	public fun instrumentDataFetcher (Lgraphql/schema/DataFetcher;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Lgraphql/schema/DataFetcher;
+}
+
+public abstract interface class io/sentry/graphql/SentryInstrumentation$BeforeSpanCallback {
+	public abstract fun execute (Lio/sentry/ISpan;Lgraphql/schema/DataFetchingEnvironment;Ljava/lang/Object;)Lio/sentry/ISpan;
+}
+

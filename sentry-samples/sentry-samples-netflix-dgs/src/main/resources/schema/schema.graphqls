@@ -1,0 +1,10 @@
+type Query {
+    shows: [Show]
+    newShows: [Show]
+}
+
+type Show {
+    id: Int
+    title: String
+    releaseYear: Int
+}

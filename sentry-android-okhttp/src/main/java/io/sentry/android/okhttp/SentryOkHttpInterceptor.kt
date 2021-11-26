@@ -91,7 +91,7 @@ class SentryOkHttpInterceptor(
     /**
      * The BeforeSpan callback
      */
-    interface BeforeSpanCallback {
+    fun interface BeforeSpanCallback {
         /**
          * Mutates or drops span before being added
          *

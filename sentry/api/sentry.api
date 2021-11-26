@@ -80,12 +80,15 @@ public final class io/sentry/CustomSamplingContext {
 }
 
 public final class io/sentry/DateUtils {
+	public static fun dateToSeconds (Ljava/util/Date;)D
 	public static fun getCurrentDateTime ()Ljava/util/Date;
 	public static fun getDateTime (J)Ljava/util/Date;
 	public static fun getDateTime (Ljava/lang/String;)Ljava/util/Date;
 	public static fun getDateTimeWithMillisPrecision (Ljava/lang/String;)Ljava/util/Date;
 	public static fun getTimestamp (Ljava/util/Date;)Ljava/lang/String;
 	public static fun getTimestampMinutesPrecision (Ljava/util/Date;)Ljava/lang/String;
+	public static fun millisToSeconds (D)D
+	public static fun nanosToMillis (D)D
 }
 
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
@@ -1188,6 +1191,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
+	public fun getHighPrecisionTimestamp ()Ljava/lang/Double;
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
@@ -1198,7 +1202,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
-	public fun getTimestamp ()Ljava/util/Date;
+	public fun getTimestamp ()Ljava/lang/Double;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
@@ -1325,6 +1329,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
+	public fun getHighPrecisionTimestamp ()Ljava/lang/Double;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
@@ -1334,7 +1339,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
 	public fun getThrowable ()Ljava/lang/Throwable;
-	public fun getTimestamp ()Ljava/util/Date;
+	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
@@ -2311,16 +2316,16 @@ public final class io/sentry/protocol/SentryRuntime$JsonKeys {
 public final class io/sentry/protocol/SentrySpan : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/Span;)V
 	public fun <init> (Lio/sentry/Span;Ljava/util/Map;)V
-	public fun <init> (Ljava/util/Date;Ljava/util/Date;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanStatus;Ljava/util/Map;Ljava/util/Map;)V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanStatus;Ljava/util/Map;Ljava/util/Map;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOp ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSpanId ()Lio/sentry/SpanId;
-	public fun getStartTimestamp ()Ljava/util/Date;
+	public fun getStartTimestamp ()Ljava/lang/Double;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTags ()Ljava/util/Map;
-	public fun getTimestamp ()Ljava/util/Date;
+	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isFinished ()Z
@@ -2488,12 +2493,12 @@ public final class io/sentry/protocol/SentryThread$JsonKeys {
 
 public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/SentryTracer;)V
-	public fun <init> (Ljava/lang/String;Ljava/util/Date;Ljava/util/Date;Ljava/util/List;Ljava/util/Map;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;Ljava/util/List;Ljava/util/Map;)V
 	public fun getMeasurements ()Ljava/util/Map;
 	public fun getSpans ()Ljava/util/List;
-	public fun getStartTimestamp ()Ljava/util/Date;
+	public fun getStartTimestamp ()Ljava/lang/Double;
 	public fun getStatus ()Lio/sentry/SpanStatus;
-	public fun getTimestamp ()Ljava/util/Date;
+	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -2521,7 +2526,6 @@ public final class io/sentry/protocol/SentryTransaction$JsonKeys {
 
 public final class io/sentry/protocol/Sessions : io/sentry/JsonSerializable {
 	public fun <init> (Lio/sentry/SessionAggregates;)V
-	public fun <init> (Ljava/util/List;Lio/sentry/protocol/Sessions$Attributes;)V
 	public fun getAggregates ()Ljava/util/List;
 	public fun getAttrs ()Lio/sentry/protocol/Sessions$Attributes;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V

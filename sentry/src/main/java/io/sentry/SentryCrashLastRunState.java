@@ -51,8 +51,9 @@ public final class SentryCrashLastRunState {
             nativeMarker.delete();
           }
         }
-      } catch (Exception e) {
+      } catch (Throwable e) {
         // ignore
+        // TODO: Take ILogger via ctor and log here
       }
 
       crashedLastRun = exists;

@@ -142,13 +142,11 @@ public final class JsonSerializer implements ISerializer {
     Objects.requireNonNull(writer, "The Writer object is required.");
 
     if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
-      options.getLogger().log(SentryLevel.DEBUG, "Serializing object: %s", entity);
+      String serialized = serializeToString(entity, true);
+      options.getLogger().log(SentryLevel.DEBUG, "Serializing object: %s", serialized);
     }
-
-    if (entity instanceof JsonSerializable) {
-      JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(writer, options.getMaxDepth());
-      ((JsonSerializable) entity).serialize(jsonObjectWriter, options.getLogger());
-    }
+    JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(writer, options.getMaxDepth());
+    jsonObjectWriter.value(options.getLogger(), entity);
     writer.flush();
   }
 
@@ -192,9 +190,18 @@ public final class JsonSerializer implements ISerializer {
 
   @Override
   public @NotNull String serialize(@NotNull Map<String, Object> data) throws Exception {
+    return serializeToString(data, false);
+  }
+
+  // Helper
+
+  private @NotNull String serializeToString(Object object, boolean pretty) throws IOException {
     StringWriter stringWriter = new StringWriter();
     JsonObjectWriter jsonObjectWriter = new JsonObjectWriter(stringWriter, options.getMaxDepth());
-    jsonObjectWriter.value(options.getLogger(), data);
+    if (pretty) {
+      jsonObjectWriter.setIndent("\t");
+    }
+    jsonObjectWriter.value(options.getLogger(), object);
     return stringWriter.toString();
   }
 }

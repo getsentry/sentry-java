@@ -20,8 +20,8 @@ class SentrySpanSerializationTest {
         val logger = mock<ILogger>()
 
         fun getSut() = SentrySpan(
-            DateUtils.getDateTime("1953-11-21T02:06:08.000Z"),
-            DateUtils.getDateTime("1937-04-10T18:24:03.000Z"),
+            DateUtils.dateToSeconds(DateUtils.getDateTime("1999-11-21T02:06:08.000Z")),
+            DateUtils.dateToSeconds(DateUtils.getDateTime("1999-04-10T18:24:03.000Z")),
             SentryId("5b1f73d39486827b9e60ceb1fc23277a"),
             SpanId("4584593a-5d9b-4a55-931f-cfe89c93907d"),
             SpanId("57518091-aed1-47a6-badf-11696035b5f4"),
@@ -47,6 +47,14 @@ class SentrySpanSerializationTest {
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
+    }
+
+    @Test
+    fun `deserialize legacy date format`() {
+        val expectedJson = sanitizedFile("json/sentry_span_legacy_date_format.json")
+        val actual = deserialize(expectedJson)
+        val actualJson = serialize(actual)
+        assertEquals(sanitizedFile("json/sentry_span.json"), actualJson)
     }
 
     // Helper

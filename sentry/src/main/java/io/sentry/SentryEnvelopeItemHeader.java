@@ -30,7 +30,8 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     if (getLength != null) {
       try {
         return getLength.call();
-      } catch (Exception ignored) {
+      } catch (Throwable ignored) {
+        // TODO: Take ILogger via ctor or hook into internal static logger
         return -1;
       }
     }

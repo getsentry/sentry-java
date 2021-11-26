@@ -254,7 +254,7 @@ abstract class CacheStrategy {
         new BufferedReader(
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
       return serializer.deserialize(reader, Session.class);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(ERROR, "Failed to deserialize the session.", e);
     }
     return null;
@@ -266,7 +266,7 @@ abstract class CacheStrategy {
       serializer.serialize(envelope, outputStream);
       // we need to set the same timestamp so the sorting from oldest to newest wont break.
       file.setLastModified(timestamp);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(ERROR, "Failed to serialize the new envelope to the disk.", e);
     }
   }

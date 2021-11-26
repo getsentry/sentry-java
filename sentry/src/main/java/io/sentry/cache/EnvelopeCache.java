@@ -141,7 +141,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
             final File fileFromSession = getEnvelopeFile(fromSession);
             writeEnvelopeToDisk(fileFromSession, fromSession);
           }
-        } catch (Exception e) {
+        } catch (Throwable e) {
           options.getLogger().log(SentryLevel.ERROR, "Error processing session.", e);
         }
 
@@ -209,7 +209,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
       final String timestamp = DateUtils.getTimestamp(DateUtils.getCurrentDateTime());
       outputStream.write(timestamp.getBytes(UTF_8));
       outputStream.flush();
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options.getLogger().log(ERROR, "Error writing the crash marker file to the disk", e);
     }
   }
@@ -257,7 +257,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
           } else {
             writeSessionToDisk(currentSessionFile, session);
           }
-        } catch (Exception e) {
+        } catch (Throwable e) {
           options.getLogger().log(ERROR, "Item failed to process.", e);
         }
       } else {
@@ -288,7 +288,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
 
     try (final OutputStream outputStream = new FileOutputStream(file)) {
       serializer.serialize(envelope, outputStream);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(ERROR, e, "Error writing Envelope %s to offline storage", file.getAbsolutePath());
@@ -308,7 +308,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
     try (final OutputStream outputStream = new FileOutputStream(file);
         final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       serializer.serialize(session, writer);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       options
           .getLogger()
           .log(ERROR, e, "Error writing Session to offline storage: %s", session.getSessionId());

@@ -19,8 +19,8 @@ class SentryTransactionSerializationTest {
 
         fun getSut() = SentryTransaction(
             "e54578ec-c9a8-4bce-8e3c-839e6c058fed",
-            DateUtils.getDateTime("1968-01-17T22:56:36.000Z"),
-            DateUtils.getDateTime("1911-02-26T00:48:44.000Z"),
+            DateUtils.dateToSeconds(DateUtils.getDateTime("1999-01-17T22:56:36.000Z")),
+            DateUtils.dateToSeconds(DateUtils.getDateTime("1999-02-26T00:48:44.000Z")),
             listOf(
                 SentrySpanSerializationTest.Fixture().getSut()
             ),
@@ -46,6 +46,14 @@ class SentryTransactionSerializationTest {
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
+    }
+
+    @Test
+    fun `deserialize legacy date format`() {
+        val expectedJson = sanitizedFile("json/sentry_transaction_legacy_date_format.json")
+        val actual = deserialize(expectedJson)
+        val actualJson = serialize(actual)
+        assertEquals(sanitizedFile("json/sentry_transaction.json"), actualJson)
     }
 
     // Helper
