@@ -1,9 +1,14 @@
 package io.sentry.android.core;
 
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Application;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Process;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
@@ -19,6 +24,7 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +48,7 @@ public final class ActivityLifecycleIntegration
 
   private boolean firstActivityCreated = false;
   private boolean firstActivityResumed = false;
+  private boolean foregroundImportance = false;
 
   private @Nullable ISpan appStartSpan;
 
@@ -138,7 +145,8 @@ public final class ActivityLifecycleIntegration
       ITransaction transaction;
       final String activityName = getActivityName(activity);
 
-      final Date appStartTime = AppStartState.getInstance().getAppStartTime();
+      final Date appStartTime =
+          foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (firstActivityCreated || appStartTime == null) {
@@ -227,6 +235,12 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    if (!firstActivityCreated) {
+      // we only track app start for processes that will show an Activity (full launch).
+      // Here we check the process importance which will tell us that.
+      foregroundImportance = isForegroundImportance(activity);
+    }
+
     setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
     startTracing(activity);
@@ -352,5 +366,43 @@ public final class ActivityLifecycleIntegration
     } else {
       return APP_START_WARM;
     }
+  }
+
+  /**
+   * Check if the Started process has IMPORTANCE_FOREGROUND importance which means that the process
+   * will start an Activity.
+   *
+   * @param context the Context
+   * @return true if IMPORTANCE_FOREGROUND and false otherwise
+   */
+  private boolean isForegroundImportance(final @NotNull Context context) {
+    try {
+      final Object service = context.getSystemService(Context.ACTIVITY_SERVICE);
+      if (service instanceof ActivityManager) {
+        final ActivityManager activityManager =
+            (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        if (activityManager != null) {
+          final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
+              activityManager.getRunningAppProcesses();
+
+          if (runningAppProcesses != null) {
+            final int myPid = Process.myPid();
+            for (final ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
+              if (processInfo.pid == myPid) {
+                if (processInfo.importance == IMPORTANCE_FOREGROUND) {
+                  return true;
+                }
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch (SecurityException ignored) {
+      // happens for isolated processes
+    } catch (Throwable ignored) {
+      // should never happen
+    }
+    return false;
   }
 }

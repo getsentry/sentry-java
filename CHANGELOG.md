@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Only report App start measurement for full launch on Android (#)
+
 ## 5.4.2
 
 * Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
