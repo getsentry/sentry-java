@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Fix: Only report App start measurement for full launch on Android (#)
+* Fix: Only report App start measurement for full launch on Android (#1821)
 
 ## 5.4.2
 
