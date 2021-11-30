@@ -238,7 +238,7 @@ public final class ActivityLifecycleIntegration
     if (!firstActivityCreated) {
       // we only track app start for processes that will show an Activity (full launch).
       // Here we check the process importance which will tell us that.
-      foregroundImportance = isForegroundImportance(activity);
+      foregroundImportance = isForegroundImportance();
     }
 
     setColdStart(savedInstanceState);
@@ -263,8 +263,12 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityResumed(final @NonNull Activity activity) {
     if (!firstActivityResumed && performanceEnabled) {
-      // sets App start as finished when the very first activity calls onResume
-      AppStartState.getInstance().setAppStartEnd();
+
+      // we only finish the app start if the process is of foregroundImportance
+      if (foregroundImportance) {
+        // sets App start as finished when the very first activity calls onResume
+        AppStartState.getInstance().setAppStartEnd();
+      }
 
       // finishes app start span
       if (appStartSpan != null) {
@@ -372,28 +376,24 @@ public final class ActivityLifecycleIntegration
    * Check if the Started process has IMPORTANCE_FOREGROUND importance which means that the process
    * will start an Activity.
    *
-   * @param context the Context
    * @return true if IMPORTANCE_FOREGROUND and false otherwise
    */
-  private boolean isForegroundImportance(final @NotNull Context context) {
+  private boolean isForegroundImportance() {
     try {
-      final Object service = context.getSystemService(Context.ACTIVITY_SERVICE);
+      final Object service = application.getSystemService(Context.ACTIVITY_SERVICE);
       if (service instanceof ActivityManager) {
-        final ActivityManager activityManager =
-            (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        if (activityManager != null) {
-          final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
-              activityManager.getRunningAppProcesses();
+        final ActivityManager activityManager = (ActivityManager) service;
+        final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
+            activityManager.getRunningAppProcesses();
 
-          if (runningAppProcesses != null) {
-            final int myPid = Process.myPid();
-            for (final ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
-              if (processInfo.pid == myPid) {
-                if (processInfo.importance == IMPORTANCE_FOREGROUND) {
-                  return true;
-                }
-                break;
+        if (runningAppProcesses != null) {
+          final int myPid = Process.myPid();
+          for (final ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
+            if (processInfo.pid == myPid) {
+              if (processInfo.importance == IMPORTANCE_FOREGROUND) {
+                return true;
               }
+              break;
             }
           }
         }
