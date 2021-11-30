@@ -1656,7 +1656,18 @@ public class SentryOptions {
   }
 
   public enum SessionMode {
+    /**
+     * In the client mode, each session is sent to Sentry individually.
+     *
+     * <p>See {@link ClientSessionTracker} and {@link ClientSessionUpdater}.
+     */
     CLIENT,
+
+    /**
+     * In the server mode, sessions are aggregated and sent to Sentry in intervals.
+     *
+     * <p>See {@link ServerSessionManager}.
+     */
     SERVER
   }
 }
