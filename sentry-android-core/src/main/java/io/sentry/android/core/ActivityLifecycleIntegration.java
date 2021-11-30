@@ -71,6 +71,10 @@ public final class ActivityLifecycleIntegration
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
     }
+
+    // we only track app start for processes that will show an Activity (full launch).
+    // Here we check the process importance which will tell us that.
+    foregroundImportance = isForegroundImportance(this.application);
   }
 
   @Override
@@ -235,12 +239,6 @@ public final class ActivityLifecycleIntegration
   @Override
   public synchronized void onActivityCreated(
       final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    if (!firstActivityCreated) {
-      // we only track app start for processes that will show an Activity (full launch).
-      // Here we check the process importance which will tell us that.
-      foregroundImportance = isForegroundImportance();
-    }
-
     setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
     startTracing(activity);
@@ -268,6 +266,14 @@ public final class ActivityLifecycleIntegration
       if (foregroundImportance) {
         // sets App start as finished when the very first activity calls onResume
         AppStartState.getInstance().setAppStartEnd();
+      } else {
+        if (options != null) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "App Start won't be reported because Process wasn't of foregroundImportance.");
+        }
       }
 
       // finishes app start span
@@ -378,9 +384,9 @@ public final class ActivityLifecycleIntegration
    *
    * @return true if IMPORTANCE_FOREGROUND and false otherwise
    */
-  private boolean isForegroundImportance() {
+  private boolean isForegroundImportance(final @NotNull Context context) {
     try {
-      final Object service = application.getSystemService(Context.ACTIVITY_SERVICE);
+      final Object service = context.getSystemService(Context.ACTIVITY_SERVICE);
       if (service instanceof ActivityManager) {
         final ActivityManager activityManager = (ActivityManager) service;
         final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
