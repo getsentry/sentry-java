@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.4.3
 
 * Fix: Only report App start measurement for full launch on Android (#1821)
 
