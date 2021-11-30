@@ -30,6 +30,14 @@ Breaking changes:
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
 
+## 5.4.3
+
+* Fix: Only report App start measurement for full launch on Android (#1821)
+
+## 5.4.2
+
+* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
+
 ## 5.4.1
 
 * Feat: Refactor OkHttp and Apollo to Kotlin functional interfaces (#1797)

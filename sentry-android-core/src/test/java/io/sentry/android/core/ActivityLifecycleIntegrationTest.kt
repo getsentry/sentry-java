@@ -1,6 +1,8 @@
 package io.sentry.android.core
 
 import android.app.Activity
+import android.app.ActivityManager
+import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
 import android.os.Bundle
 import com.nhaarman.mockitokotlin2.any
@@ -34,6 +36,7 @@ class ActivityLifecycleIntegrationTest {
 
     private class Fixture {
         val application = mock<Application>()
+        val am = mock<ActivityManager>()
         val hub = mock<Hub>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
@@ -45,10 +48,20 @@ class ActivityLifecycleIntegrationTest {
         val transaction = SentryTracer(context, hub, true, transactionFinishedCallback)
         val buildInfo = mock<IBuildInfoProvider>()
 
-        fun getSut(apiVersion: Int = 29): ActivityLifecycleIntegration {
+        fun getSut(apiVersion: Int = 29, importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND): ActivityLifecycleIntegration {
             whenever(hub.options).thenReturn(options)
             whenever(hub.startTransaction(any(), any(), anyOrNull(), any(), any())).thenReturn(transaction)
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
+
+            whenever(application.getSystemService(any())).thenReturn(am)
+
+            val process = RunningAppProcessInfo().apply {
+                this.importance = importance
+            }
+            val processes = mutableListOf(process)
+
+            whenever(am.runningAppProcesses).thenReturn(processes)
+
             return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker)
         }
     }
@@ -585,6 +598,21 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `App start end time isnt set if not foregroundImportance`() {
+        val sut = fixture.getSut(14, importance = RunningAppProcessInfo.IMPORTANCE_BACKGROUND)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, null)
+        sut.onActivityResumed(activity)
+
+        assertNull(AppStartState.getInstance().appStartInterval)
+    }
+
+    @Test
     fun `When firstActivityCreated is true, start transaction with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
@@ -598,6 +626,22 @@ class ActivityLifecycleIntegrationTest {
 
         // call only once
         verify(fixture.hub).startTransaction(any(), any(), eq(date), any(), any())
+    }
+
+    @Test
+    fun `When firstActivityCreated is true, do not use appStartTime if not foregroundImportance`() {
+        val sut = fixture.getSut(importance = RunningAppProcessInfo.IMPORTANCE_BACKGROUND)
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val date = Date(0)
+        setAppStartTime(date)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        // call only once
+        verify(fixture.hub).startTransaction(any(), any(), eq(null), any(), any())
     }
 
     @Test
