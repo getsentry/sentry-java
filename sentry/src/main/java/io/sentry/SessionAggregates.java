@@ -35,11 +35,14 @@ public final class SessionAggregates {
     SessionStats stats;
     final Map<String, SessionStats> statsMap = this.aggregates.get();
     if (statsMap != null) {
-      synchronized (this) {
-        stats = statsMap.get(roundedDate);
-        if (stats == null) {
-          stats = new SessionStats();
-          statsMap.put(roundedDate, stats);
+      stats = statsMap.get(roundedDate);
+      if (stats == null) {
+        synchronized (this) {
+          stats = statsMap.get(roundedDate);
+          if (stats == null) {
+            stats = new SessionStats();
+            statsMap.put(roundedDate, stats);
+          }
         }
       }
 
