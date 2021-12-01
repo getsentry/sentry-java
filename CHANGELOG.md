@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Ref: Rename Fragment span operation from `ui.fragment.load` to `ui.load` (#)
+* Ref: Rename Fragment span operation from `ui.fragment.load` to `ui.load` (#1824)
 
 ## 5.4.3
 
