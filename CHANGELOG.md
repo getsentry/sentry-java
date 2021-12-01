@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Ref: Rename Fragment span operation from `ui.fragment.load` to `ui.load` (#1824)
+
 ## 5.4.3
 
 * Fix: Only report App start measurement for full launch on Android (#1821)
