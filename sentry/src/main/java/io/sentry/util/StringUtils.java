@@ -4,6 +4,7 @@ import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
@@ -60,7 +61,7 @@ public final class StringUtils {
    * @param bytes the number of bytes
    * @return a string representing the human-readable byte count (e.g. 1kB, 20 MB, etc.)
    */
-  public static String byteCountToString(long bytes) {
+  public static @NotNull String byteCountToString(long bytes) {
     if (-1000 < bytes && bytes < 1000) {
       return bytes + " B";
     }
