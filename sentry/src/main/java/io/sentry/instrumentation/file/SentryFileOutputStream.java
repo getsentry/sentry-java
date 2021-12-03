@@ -31,23 +31,24 @@ public class SentryFileOutputStream extends FileOutputStream {
   private @NotNull SpanStatus spanStatus = SpanStatus.OK;
   private long byteCount;
 
-  public SentryFileOutputStream(String name) throws FileNotFoundException {
+  public SentryFileOutputStream(@Nullable String name) throws FileNotFoundException {
     this(init(name != null ? new File(name) : null, false, null));
   }
 
-  public SentryFileOutputStream(String name, boolean append) throws FileNotFoundException {
+  public SentryFileOutputStream(@Nullable String name, boolean append)
+    throws FileNotFoundException {
     this(init(name != null ? new File(name) : null, append, null));
   }
 
-  public SentryFileOutputStream(File file) throws FileNotFoundException {
+  public SentryFileOutputStream(@Nullable File file) throws FileNotFoundException {
     this(init(file, false, null));
   }
 
-  public SentryFileOutputStream(File file, boolean append) throws FileNotFoundException {
+  public SentryFileOutputStream(@Nullable File file, boolean append) throws FileNotFoundException {
     this(init(file, append, null));
   }
 
-  public SentryFileOutputStream(FileDescriptor fdObj) {
+  public SentryFileOutputStream(@NotNull FileDescriptor fdObj) {
     this(init(fdObj, null), fdObj);
   }
 
@@ -91,7 +92,7 @@ public class SentryFileOutputStream extends FileOutputStream {
       delegate = new FileOutputStream(fd);
     }
     // TODO: it's only possible to get filename from FileDescriptor via reflection AND when it's
-    // TODO: running on Android, should we do that?
+    // running on Android, should we do that?
     return new FileOutputStreamInitData(null, false, span, delegate);
   }
 
@@ -110,7 +111,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     }
   }
 
-  @Override public void write(byte[] b) throws IOException {
+  @Override public void write(byte @NotNull [] b) throws IOException {
     try {
       delegate.write(b);
       byteCount += b.length;
@@ -120,7 +121,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     }
   }
 
-  @Override public void write(byte[] b, int off, int len) throws IOException {
+  @Override public void write(byte @NotNull [] b, int off, int len) throws IOException {
     try {
       delegate.write(b, off, len);
       byteCount += len;
@@ -158,7 +159,7 @@ public class SentryFileOutputStream extends FileOutputStream {
   public final static class Factory {
     public static FileOutputStream create(
       @NotNull FileOutputStream delegate,
-      String name
+      @Nullable String name
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(
         init(name != null ? new File(name) : null, false, delegate));
@@ -166,7 +167,7 @@ public class SentryFileOutputStream extends FileOutputStream {
 
     public static FileOutputStream create(
       @NotNull FileOutputStream delegate,
-      String name,
+      @Nullable String name,
       boolean append
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(
@@ -175,21 +176,21 @@ public class SentryFileOutputStream extends FileOutputStream {
 
     public static FileOutputStream create(
       @NotNull FileOutputStream delegate,
-      File file
+      @Nullable File file
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(init(file, false, delegate));
     }
 
     public static FileOutputStream create(
       @NotNull FileOutputStream delegate,
-      File file,
+      @Nullable File file,
       boolean append
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(init(file, append, delegate));
     }
 
     public static FileOutputStream create(@NotNull FileOutputStream delegate,
-      FileDescriptor fdObj) {
+      @NotNull FileDescriptor fdObj) {
       return new SentryFileOutputStream(init(fdObj, delegate), fdObj);
     }
   }

@@ -39,7 +39,7 @@ public class SentryFileInputStream extends FileInputStream {
     this(init(file, null));
   }
 
-  public SentryFileInputStream(FileDescriptor fdObj) {
+  public SentryFileInputStream(@NotNull FileDescriptor fdObj) {
     this(init(fdObj, null), fdObj);
   }
 
@@ -82,12 +82,11 @@ public class SentryFileInputStream extends FileInputStream {
       delegate = new FileInputStream(fd);
     }
     // TODO: it's only possible to get filename from FileDescriptor via reflection AND when it's
-    // TODO: running on Android, should we do that?
+    // running on Android, should we do that?
     return new FileInputStreamInitData(null, span, delegate);
   }
 
-  private static @Nullable
-  ISpan startSpan() {
+  private static @Nullable ISpan startSpan() {
     final ISpan parent = Sentry.getSpan();
     return parent != null ? parent.startChild("file.read") : null;
   }
@@ -175,21 +174,21 @@ public class SentryFileInputStream extends FileInputStream {
   public final static class Factory {
     public static FileInputStream create(
       @NotNull FileInputStream delegate,
-      String name
+      @Nullable String name
     ) throws FileNotFoundException {
       return new SentryFileInputStream(init(name != null ? new File(name) : null, delegate));
     }
 
     public static FileInputStream create(
       @NotNull FileInputStream delegate,
-      File file
+      @Nullable File file
     ) throws FileNotFoundException {
       return new SentryFileInputStream(init(file, delegate));
     }
 
     public static FileInputStream create(
       @NotNull FileInputStream delegate,
-      FileDescriptor descriptor
+      @NotNull FileDescriptor descriptor
     ) {
       return new SentryFileInputStream(init(descriptor, delegate), descriptor);
     }
