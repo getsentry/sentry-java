@@ -2,9 +2,6 @@ package io.sentry.instrumentation.file;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ISpan;
-import io.sentry.Sentry;
-import io.sentry.SpanStatus;
-import io.sentry.util.StringUtils;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -24,12 +21,8 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class SentryFileOutputStream extends FileOutputStream {
 
-  private final @Nullable ISpan currentSpan;
-  private final @Nullable File file;
   private final @NotNull FileOutputStream delegate;
-
-  private @NotNull SpanStatus spanStatus = SpanStatus.OK;
-  private long byteCount;
+  private final @NotNull FileIOSpanManager spanManager;
 
   public SentryFileOutputStream(final @Nullable String name) throws FileNotFoundException {
     this(init(name != null ? new File(name) : null, false, null));
@@ -58,8 +51,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     final @NotNull FileDescriptor fd
   ) {
     super(fd);
-    file = null;
-    currentSpan = data.span;
+    spanManager = new FileIOSpanManager(data.span, data.file);
     delegate = data.delegate;
   }
 
@@ -67,8 +59,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     final @NotNull FileOutputStreamInitData data
   ) throws FileNotFoundException {
     super(data.file, data.append);
-    currentSpan = data.span;
-    file = data.file;
+    spanManager = new FileIOSpanManager(data.span, data.file);
     delegate = data.delegate;
   }
 
@@ -77,7 +68,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     final boolean append,
     @Nullable FileOutputStream delegate
   ) throws FileNotFoundException {
-    final ISpan span = startSpan();
+    final ISpan span = FileIOSpanManager.startSpan("file.write");
     if (delegate == null) {
       delegate = new FileOutputStream(file);
     }
@@ -88,7 +79,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     final @NotNull FileDescriptor fd,
     @Nullable FileOutputStream delegate
   ) {
-    final ISpan span = startSpan();
+    final ISpan span = FileIOSpanManager.startSpan("file.write");
     if (delegate == null) {
       delegate = new FileOutputStream(fd);
     }
@@ -97,65 +88,30 @@ public class SentryFileOutputStream extends FileOutputStream {
     return new FileOutputStreamInitData(null, false, span, delegate);
   }
 
-  private static @Nullable ISpan startSpan() {
-    final ISpan parent = Sentry.getSpan();
-    return parent != null ? parent.startChild("file.write") : null;
-  }
-
   @Override public void write(final int b) throws IOException {
-    try {
+    spanManager.performIO(() -> {
       delegate.write(b);
-      byteCount++;
-    } catch (IOException exception) {
-      spanStatus = SpanStatus.INTERNAL_ERROR;
-      throw exception;
-    }
+      return 1;
+    });
   }
 
   @Override public void write(final byte @NotNull [] b) throws IOException {
-    try {
+    spanManager.performIO(() -> {
       delegate.write(b);
-      byteCount += b.length;
-    } catch (IOException exception) {
-      spanStatus = SpanStatus.INTERNAL_ERROR;
-      throw exception;
-    }
+      return b.length;
+    });
   }
 
   @Override public void write(final byte @NotNull [] b, final int off, final int len)
     throws IOException {
-    try {
+    spanManager.performIO(() -> {
       delegate.write(b, off, len);
-      byteCount += len;
-    } catch (IOException exception) {
-      spanStatus = SpanStatus.INTERNAL_ERROR;
-      throw exception;
-    }
+      return len;
+    });
   }
 
   @Override public void close() throws IOException {
-    try {
-      delegate.close();
-    } catch (IOException exception) {
-      spanStatus = SpanStatus.INTERNAL_ERROR;
-      throw exception;
-    }
-    finishSpan();
-  }
-
-  private void finishSpan() {
-    if (currentSpan != null) {
-      if (file != null) {
-        String description = file.getName()
-          + " "
-          + "("
-          + StringUtils.byteCountToString(byteCount)
-          + ")";
-        currentSpan.setDescription(description);
-        currentSpan.setData("filepath", file.getAbsolutePath());
-      }
-      currentSpan.finish(spanStatus);
-    }
+    spanManager.finish(delegate);
   }
 
   public final static class Factory {
