@@ -8,12 +8,15 @@ import org.jetbrains.annotations.Nullable;
 
 final class FileInputStreamInitData {
 
-  @Nullable File file;
-  @Nullable ISpan span;
-  @NotNull FileInputStream delegate;
+  final @Nullable File file;
+  final @Nullable ISpan span;
+  final @NotNull FileInputStream delegate;
 
-  public FileInputStreamInitData(@Nullable File file, @Nullable ISpan span,
-    @NotNull FileInputStream delegate) {
+  public FileInputStreamInitData(
+    final @Nullable File file,
+    final @Nullable ISpan span,
+    final @NotNull FileInputStream delegate
+  ) {
     this.file = file;
     this.span = span;
     this.delegate = delegate;

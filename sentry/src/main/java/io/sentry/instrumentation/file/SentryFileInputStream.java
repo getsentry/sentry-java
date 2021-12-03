@@ -31,21 +31,21 @@ public class SentryFileInputStream extends FileInputStream {
   private @NotNull SpanStatus spanStatus = SpanStatus.OK;
   private long byteCount;
 
-  public SentryFileInputStream(@Nullable String name) throws FileNotFoundException {
+  public SentryFileInputStream(final @Nullable String name) throws FileNotFoundException {
     this(init(name != null ? new File(name) : null, null));
   }
 
-  public SentryFileInputStream(@Nullable File file) throws FileNotFoundException {
+  public SentryFileInputStream(final @Nullable File file) throws FileNotFoundException {
     this(init(file, null));
   }
 
-  public SentryFileInputStream(@NotNull FileDescriptor fdObj) {
+  public SentryFileInputStream(final @NotNull FileDescriptor fdObj) {
     this(init(fdObj, null), fdObj);
   }
 
   private SentryFileInputStream(
-    @NotNull FileInputStreamInitData data,
-    @NotNull FileDescriptor fd
+    final @NotNull FileInputStreamInitData data,
+    final @NotNull FileDescriptor fd
   ) {
     super(fd);
     file = null;
@@ -54,7 +54,7 @@ public class SentryFileInputStream extends FileInputStream {
   }
 
   private SentryFileInputStream(
-    @NotNull FileInputStreamInitData data
+    final @NotNull FileInputStreamInitData data
   ) throws FileNotFoundException {
     super(data.file);
     currentSpan = data.span;
@@ -63,7 +63,7 @@ public class SentryFileInputStream extends FileInputStream {
   }
 
   private static FileInputStreamInitData init(
-    @Nullable File file,
+    final @Nullable File file,
     @Nullable FileInputStream delegate
   ) throws FileNotFoundException {
     final ISpan span = startSpan();
@@ -74,7 +74,7 @@ public class SentryFileInputStream extends FileInputStream {
   }
 
   private static FileInputStreamInitData init(
-    @NotNull FileDescriptor fd,
+    final @NotNull FileDescriptor fd,
     @Nullable FileInputStream delegate
   ) {
     final ISpan span = startSpan();
@@ -106,7 +106,7 @@ public class SentryFileInputStream extends FileInputStream {
   }
 
   @Override
-  public int read(byte @NotNull [] b) throws IOException {
+  public int read(final byte @NotNull [] b) throws IOException {
     try {
       int result = delegate.read(b);
       if (result != -1) {
@@ -120,7 +120,7 @@ public class SentryFileInputStream extends FileInputStream {
   }
 
   @Override
-  public int read(byte @NotNull [] b, int off, int len) throws IOException {
+  public int read(final byte @NotNull [] b, final int off, final int len) throws IOException {
     try {
       int result = delegate.read(b, off, len);
       if (result != -1) {
@@ -134,7 +134,7 @@ public class SentryFileInputStream extends FileInputStream {
   }
 
   @Override
-  public long skip(long n) throws IOException {
+  public long skip(final long n) throws IOException {
     try {
       long result = delegate.skip(n);
       byteCount += result;
@@ -173,22 +173,22 @@ public class SentryFileInputStream extends FileInputStream {
 
   public final static class Factory {
     public static FileInputStream create(
-      @NotNull FileInputStream delegate,
-      @Nullable String name
+      final @NotNull FileInputStream delegate,
+      final @Nullable String name
     ) throws FileNotFoundException {
       return new SentryFileInputStream(init(name != null ? new File(name) : null, delegate));
     }
 
     public static FileInputStream create(
-      @NotNull FileInputStream delegate,
-      @Nullable File file
+      final @NotNull FileInputStream delegate,
+      final @Nullable File file
     ) throws FileNotFoundException {
       return new SentryFileInputStream(init(file, delegate));
     }
 
     public static FileInputStream create(
-      @NotNull FileInputStream delegate,
-      @NotNull FileDescriptor descriptor
+      final @NotNull FileInputStream delegate,
+      final @NotNull FileDescriptor descriptor
     ) {
       return new SentryFileInputStream(init(descriptor, delegate), descriptor);
     }

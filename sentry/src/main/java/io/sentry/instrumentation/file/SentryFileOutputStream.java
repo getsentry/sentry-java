@@ -31,30 +31,31 @@ public class SentryFileOutputStream extends FileOutputStream {
   private @NotNull SpanStatus spanStatus = SpanStatus.OK;
   private long byteCount;
 
-  public SentryFileOutputStream(@Nullable String name) throws FileNotFoundException {
+  public SentryFileOutputStream(final @Nullable String name) throws FileNotFoundException {
     this(init(name != null ? new File(name) : null, false, null));
   }
 
-  public SentryFileOutputStream(@Nullable String name, boolean append)
+  public SentryFileOutputStream(final @Nullable String name, final boolean append)
     throws FileNotFoundException {
     this(init(name != null ? new File(name) : null, append, null));
   }
 
-  public SentryFileOutputStream(@Nullable File file) throws FileNotFoundException {
+  public SentryFileOutputStream(final @Nullable File file) throws FileNotFoundException {
     this(init(file, false, null));
   }
 
-  public SentryFileOutputStream(@Nullable File file, boolean append) throws FileNotFoundException {
+  public SentryFileOutputStream(final @Nullable File file, final boolean append)
+    throws FileNotFoundException {
     this(init(file, append, null));
   }
 
-  public SentryFileOutputStream(@NotNull FileDescriptor fdObj) {
+  public SentryFileOutputStream(final @NotNull FileDescriptor fdObj) {
     this(init(fdObj, null), fdObj);
   }
 
   private SentryFileOutputStream(
-    @NotNull FileOutputStreamInitData data,
-    @NotNull FileDescriptor fd
+    final @NotNull FileOutputStreamInitData data,
+    final @NotNull FileDescriptor fd
   ) {
     super(fd);
     file = null;
@@ -63,7 +64,7 @@ public class SentryFileOutputStream extends FileOutputStream {
   }
 
   private SentryFileOutputStream(
-    @NotNull FileOutputStreamInitData data
+    final @NotNull FileOutputStreamInitData data
   ) throws FileNotFoundException {
     super(data.file, data.append);
     currentSpan = data.span;
@@ -72,8 +73,8 @@ public class SentryFileOutputStream extends FileOutputStream {
   }
 
   private static FileOutputStreamInitData init(
-    @Nullable File file,
-    boolean append,
+    final @Nullable File file,
+    final boolean append,
     @Nullable FileOutputStream delegate
   ) throws FileNotFoundException {
     final ISpan span = startSpan();
@@ -84,7 +85,7 @@ public class SentryFileOutputStream extends FileOutputStream {
   }
 
   private static FileOutputStreamInitData init(
-    @NotNull FileDescriptor fd,
+    final @NotNull FileDescriptor fd,
     @Nullable FileOutputStream delegate
   ) {
     final ISpan span = startSpan();
@@ -101,7 +102,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     return parent != null ? parent.startChild("file.write") : null;
   }
 
-  @Override public void write(int b) throws IOException {
+  @Override public void write(final int b) throws IOException {
     try {
       delegate.write(b);
       byteCount++;
@@ -111,7 +112,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     }
   }
 
-  @Override public void write(byte @NotNull [] b) throws IOException {
+  @Override public void write(final byte @NotNull [] b) throws IOException {
     try {
       delegate.write(b);
       byteCount += b.length;
@@ -121,7 +122,8 @@ public class SentryFileOutputStream extends FileOutputStream {
     }
   }
 
-  @Override public void write(byte @NotNull [] b, int off, int len) throws IOException {
+  @Override public void write(final byte @NotNull [] b, final int off, final int len)
+    throws IOException {
     try {
       delegate.write(b, off, len);
       byteCount += len;
@@ -158,39 +160,41 @@ public class SentryFileOutputStream extends FileOutputStream {
 
   public final static class Factory {
     public static FileOutputStream create(
-      @NotNull FileOutputStream delegate,
-      @Nullable String name
+      final @NotNull FileOutputStream delegate,
+      final @Nullable String name
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(
         init(name != null ? new File(name) : null, false, delegate));
     }
 
     public static FileOutputStream create(
-      @NotNull FileOutputStream delegate,
-      @Nullable String name,
-      boolean append
+      final @NotNull FileOutputStream delegate,
+      final @Nullable String name,
+      final boolean append
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(
         init(name != null ? new File(name) : null, append, delegate));
     }
 
     public static FileOutputStream create(
-      @NotNull FileOutputStream delegate,
-      @Nullable File file
+      final @NotNull FileOutputStream delegate,
+      final @Nullable File file
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(init(file, false, delegate));
     }
 
     public static FileOutputStream create(
-      @NotNull FileOutputStream delegate,
-      @Nullable File file,
-      boolean append
+      final @NotNull FileOutputStream delegate,
+      final @Nullable File file,
+      final boolean append
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(init(file, append, delegate));
     }
 
-    public static FileOutputStream create(@NotNull FileOutputStream delegate,
-      @NotNull FileDescriptor fdObj) {
+    public static FileOutputStream create(
+      final @NotNull FileOutputStream delegate,
+      final @NotNull FileDescriptor fdObj
+    ) {
       return new SentryFileOutputStream(init(fdObj, delegate), fdObj);
     }
   }
