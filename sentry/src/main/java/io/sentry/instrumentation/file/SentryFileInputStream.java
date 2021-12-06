@@ -74,8 +74,6 @@ public class SentryFileInputStream extends FileInputStream {
     if (delegate == null) {
       delegate = new FileInputStream(fd);
     }
-    // TODO: it's only possible to get filename from FileDescriptor via reflection AND when it's
-    // running on Android, should we do that?
     return new FileInputStreamInitData(null, span, delegate);
   }
 
