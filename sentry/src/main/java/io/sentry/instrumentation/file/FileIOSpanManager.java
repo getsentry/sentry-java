@@ -64,18 +64,17 @@ class FileIOSpanManager {
 
   private void finishSpan() {
     if (currentSpan != null) {
-      String description;
+      final String byteCountToString = StringUtils.byteCountToString(byteCount);
       if (file != null) {
-        description = file.getName()
+        final String description = file.getName()
           + " "
           + "("
-          + StringUtils.byteCountToString(byteCount)
+          + byteCountToString
           + ")";
         currentSpan.setDescription(description);
         currentSpan.setData("file.path", file.getAbsolutePath());
       } else {
-        description = StringUtils.byteCountToString(byteCount);
-        currentSpan.setDescription(description);
+        currentSpan.setDescription(byteCountToString);
       }
       currentSpan.setData("file.size", byteCount);
       currentSpan.finish(spanStatus);
