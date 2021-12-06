@@ -46,7 +46,7 @@ class FileIOSpanManager {
         }
       }
       return result;
-    } catch (Exception exception) {
+    } catch (IOException exception) {
       spanStatus = SpanStatus.INTERNAL_ERROR;
       throw exception;
     }
