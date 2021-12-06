@@ -17,7 +17,6 @@ import org.jetbrains.annotations.Nullable;
  * Note, that span is started when this OutputStream is instantiated via constructor and finishes
  * when the {@link java.io.FileOutputStream#close()} is called.
  */
-@SuppressWarnings("unused") // used via bytecode manipulation (SAGP)
 @Open
 public class SentryFileOutputStream extends FileOutputStream {
 

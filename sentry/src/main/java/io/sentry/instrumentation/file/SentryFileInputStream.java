@@ -2,13 +2,11 @@ package io.sentry.instrumentation.file;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ISpan;
-import io.sentry.SpanStatus;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,7 +17,6 @@ import org.jetbrains.annotations.Nullable;
  * Note, that span is started when this InputStream is instantiated via constructor and finishes
  * when the {@link java.io.FileInputStream#close()} is called.
  */
-@SuppressWarnings("unused") // used via bytecode manipulation (SAGP)
 @Open
 public class SentryFileInputStream extends FileInputStream {
 

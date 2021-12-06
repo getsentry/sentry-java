@@ -10,11 +10,12 @@ import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-class FileIOSpanManager {
+final class FileIOSpanManager {
 
   private final @Nullable ISpan currentSpan;
   private final @Nullable File file;
 
+  private @Nullable Throwable throwable = null;
   private @NotNull SpanStatus spanStatus = SpanStatus.OK;
   private long byteCount;
 
@@ -48,6 +49,7 @@ class FileIOSpanManager {
       return result;
     } catch (IOException exception) {
       spanStatus = SpanStatus.INTERNAL_ERROR;
+      throwable = exception;
       throw exception;
     }
   }
@@ -57,6 +59,7 @@ class FileIOSpanManager {
       delegate.close();
     } catch (IOException exception) {
       spanStatus = SpanStatus.INTERNAL_ERROR;
+      throwable = exception;
       throw exception;
     }
     finishSpan();
@@ -77,6 +80,7 @@ class FileIOSpanManager {
         currentSpan.setDescription(byteCountToString);
       }
       currentSpan.setData("file.size", byteCount);
+      currentSpan.setThrowable(throwable);
       currentSpan.finish(spanStatus);
     }
   }
