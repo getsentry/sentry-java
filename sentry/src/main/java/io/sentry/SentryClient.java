@@ -16,7 +16,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.security.SecureRandom;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +29,7 @@ public final class SentryClient implements ISentryClient {
 
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
-  private final @Nullable Random random;
+  private final @Nullable SecureRandom random;
 
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
 
@@ -51,7 +51,7 @@ public final class SentryClient implements ISentryClient {
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
 
-    this.random = options.getSampleRate() == null ? null : new Random();
+    this.random = options.getSampleRate() == null ? null : new SecureRandom();
   }
 
   private boolean shouldApplyScopeData(
