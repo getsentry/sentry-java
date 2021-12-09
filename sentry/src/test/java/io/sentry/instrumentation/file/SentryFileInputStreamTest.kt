@@ -107,8 +107,8 @@ class SentryFileInputStreamTest {
         fixture.getSut(tmpFile).use { it.read(ByteArray(10)) }
 
         val fileIOSpan = fixture.sentryTracer.children.first()
-        assertEquals(fileIOSpan.spanContext.description, "test.txt (10 B)")
-        assertEquals(fileIOSpan.data["file.size"], 10L)
+        assertEquals(fileIOSpan.spanContext.description, "test.txt (4 B)")
+        assertEquals(fileIOSpan.data["file.size"], 4L)
     }
 
     @Test
@@ -131,11 +131,11 @@ class SentryFileInputStreamTest {
 
     @Test
     fun `read all bytes`() {
-        fixture.getSut(tmpFile).use { it.readAllBytes() }
+        fixture.getSut(tmpFile).use { it.reader().readText() }
 
         val fileIOSpan = fixture.sentryTracer.children.first()
-        assertEquals(fileIOSpan.spanContext.description, "test.txt (8.2 kB)")
-        assertEquals(fileIOSpan.data["file.size"], 8192L)
+        assertEquals(fileIOSpan.spanContext.description, "test.txt (4 B)")
+        assertEquals(fileIOSpan.data["file.size"], 4L)
     }
 
     @Test
@@ -185,11 +185,6 @@ class SentryFileInputStreamTest {
         fixture.getSut(file, sendDefaultPii = true).use { it.readAllBytes() }
         val fileIOSpan = fixture.sentryTracer.children.first()
         assertEquals(fileIOSpan.data["file.path"], file.absolutePath)
-    }
-
-    @After
-    fun tearDown() {
-        System.clearProperty("java.vendor")
     }
 }
 

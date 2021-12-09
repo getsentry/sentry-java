@@ -100,7 +100,7 @@ public class SentryFileInputStream extends FileInputStream {
   public int read(final byte @NotNull [] b) throws IOException {
     return spanManager.performIO(() -> {
       int result = delegate.read(b);
-      return new Pair<>(result, b.length);
+      return new Pair<>(result, result);
     });
   }
 
@@ -108,7 +108,7 @@ public class SentryFileInputStream extends FileInputStream {
   public int read(final byte @NotNull [] b, final int off, final int len) throws IOException {
     return spanManager.performIO(() -> {
       int result = delegate.read(b, off, len);
-      return new Pair<>(result, len);
+      return new Pair<>(result, result);
     });
   }
 
