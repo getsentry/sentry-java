@@ -1434,7 +1434,9 @@ public abstract interface class io/sentry/hints/SubmissionResult {
 
 public class io/sentry/instrumentation/file/SentryFileInputStream : java/io/FileInputStream {
 	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/File;Lio/sentry/IHub;)V
 	public fun <init> (Ljava/io/FileDescriptor;)V
+	public fun <init> (Ljava/io/FileDescriptor;Lio/sentry/IHub;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun close ()V
 	public fun read ()I
@@ -1446,12 +1448,14 @@ public class io/sentry/instrumentation/file/SentryFileInputStream : java/io/File
 public final class io/sentry/instrumentation/file/SentryFileInputStream$Factory {
 	public fun <init> ()V
 	public static fun create (Ljava/io/FileInputStream;Ljava/io/File;)Ljava/io/FileInputStream;
+	public static fun create (Ljava/io/FileInputStream;Ljava/io/File;Lio/sentry/IHub;)Ljava/io/FileInputStream;
 	public static fun create (Ljava/io/FileInputStream;Ljava/io/FileDescriptor;)Ljava/io/FileInputStream;
 	public static fun create (Ljava/io/FileInputStream;Ljava/lang/String;)Ljava/io/FileInputStream;
 }
 
 public class io/sentry/instrumentation/file/SentryFileOutputStream : java/io/FileOutputStream {
 	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/File;Lio/sentry/IHub;)V
 	public fun <init> (Ljava/io/File;Z)V
 	public fun <init> (Ljava/io/FileDescriptor;)V
 	public fun <init> (Ljava/lang/String;)V
