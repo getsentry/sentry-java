@@ -47,25 +47,22 @@ final class FileIOSpanManager {
    * The operation is of a type {@link Pair}, where the first element is the result of the IO operation,
    * and the second element is the number of bytes read/written/skipped/etc.
    */
-  <T> T performIO(final @NotNull FileIOCallable<Pair<T, T>> operation)
+  <T> T performIO(final @NotNull FileIOCallable<T> operation)
     throws IOException {
     try {
-      final Pair<T, T> result = operation.call();
-      final T res = result.getFirst();
-      if (res instanceof Integer) {
-        final int resUnboxed = (int) result.getFirst();
-        final int count = (int) result.getSecond();
+      final T result = operation.call();
+      if (result instanceof Integer) {
+        final int resUnboxed = (int) result;
         if (resUnboxed != -1) {
-          byteCount += count;
+          byteCount += resUnboxed;
         }
-      } else if (res instanceof Long) {
-        final long resUnboxed = (long) result.getFirst();
-        final long count = (long) result.getSecond();
+      } else if (result instanceof Long) {
+        final long resUnboxed = (long) result;
         if (resUnboxed != -1L) {
-          byteCount += count;
+          byteCount += resUnboxed;
         }
       }
-      return Objects.requireNonNull(res, "Result of File IO is required");
+      return result;
     } catch (IOException exception) {
       spanStatus = SpanStatus.INTERNAL_ERROR;
       throwable = exception;

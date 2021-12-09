@@ -4,12 +4,12 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.util.Pair;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -90,34 +90,29 @@ public class SentryFileInputStream extends FileInputStream {
 
   @Override
   public int read() throws IOException {
-    return spanManager.performIO(() -> {
-      int result = delegate.read();
-      return new Pair<>(result, 1);
+    // this is the only case, when the read() operation returns the byte value, and not the count
+    // hence we need this special handling
+    AtomicInteger result = new AtomicInteger(0);
+    spanManager.performIO(() -> {
+      result.set(delegate.read());
+      return result.get() != -1 ? 1 : 0;
     });
+    return result.get();
   }
 
   @Override
   public int read(final byte @NotNull [] b) throws IOException {
-    return spanManager.performIO(() -> {
-      int result = delegate.read(b);
-      return new Pair<>(result, result);
-    });
+    return spanManager.performIO(() -> delegate.read(b));
   }
 
   @Override
   public int read(final byte @NotNull [] b, final int off, final int len) throws IOException {
-    return spanManager.performIO(() -> {
-      int result = delegate.read(b, off, len);
-      return new Pair<>(result, result);
-    });
+    return spanManager.performIO(() -> delegate.read(b, off, len));
   }
 
   @Override
   public long skip(final long n) throws IOException {
-    return spanManager.performIO(() -> {
-      long result = delegate.skip(n);
-      return new Pair<>(result, result);
-    });
+    return spanManager.performIO(() -> delegate.skip(n));
   }
 
   @Override
