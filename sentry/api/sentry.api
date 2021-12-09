@@ -1532,6 +1532,7 @@ public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsu
 	public fun getFreeStorage ()Ljava/lang/Long;
 	public fun getId ()Ljava/lang/String;
 	public fun getLanguage ()Ljava/lang/String;
+	public fun getLocale ()Ljava/lang/String;
 	public fun getManufacturer ()Ljava/lang/String;
 	public fun getMemorySize ()Ljava/lang/Long;
 	public fun getModel ()Ljava/lang/String;
@@ -1563,6 +1564,7 @@ public final class io/sentry/protocol/Device : io/sentry/IUnknownPropertiesConsu
 	public fun setFreeStorage (Ljava/lang/Long;)V
 	public fun setId (Ljava/lang/String;)V
 	public fun setLanguage (Ljava/lang/String;)V
+	public fun setLocale (Ljava/lang/String;)V
 	public fun setLowMemory (Ljava/lang/Boolean;)V
 	public fun setManufacturer (Ljava/lang/String;)V
 	public fun setMemorySize (Ljava/lang/Long;)V
