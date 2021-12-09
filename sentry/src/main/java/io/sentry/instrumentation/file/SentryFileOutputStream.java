@@ -1,7 +1,9 @@
 package io.sentry.instrumentation.file;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.HubAdapter;
 import io.sentry.ISpan;
+import io.sentry.util.Pair;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -50,7 +52,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     final @NotNull FileDescriptor fd
   ) {
     super(fd);
-    spanManager = new FileIOSpanManager(data.span, data.file);
+    spanManager = new FileIOSpanManager(data.span, data.file, HubAdapter.getInstance());
     delegate = data.delegate;
   }
 
@@ -58,7 +60,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     final @NotNull FileOutputStreamInitData data
   ) throws FileNotFoundException {
     super(data.file, data.append);
-    spanManager = new FileIOSpanManager(data.span, data.file);
+    spanManager = new FileIOSpanManager(data.span, data.file, HubAdapter.getInstance());
     delegate = data.delegate;
   }
 
@@ -67,7 +69,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     final boolean append,
     @Nullable FileOutputStream delegate
   ) throws FileNotFoundException {
-    final ISpan span = FileIOSpanManager.startSpan("file.write");
+    final ISpan span = FileIOSpanManager.startSpan(HubAdapter.getInstance(), "file.write");
     if (delegate == null) {
       delegate = new FileOutputStream(file);
     }
@@ -78,7 +80,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     final @NotNull FileDescriptor fd,
     @Nullable FileOutputStream delegate
   ) {
-    final ISpan span = FileIOSpanManager.startSpan("file.write");
+    final ISpan span = FileIOSpanManager.startSpan(HubAdapter.getInstance(), "file.write");
     if (delegate == null) {
       delegate = new FileOutputStream(fd);
     }
@@ -88,14 +90,14 @@ public class SentryFileOutputStream extends FileOutputStream {
   @Override public void write(final int b) throws IOException {
     spanManager.performIO(() -> {
       delegate.write(b);
-      return 1;
+      return new Pair<>(0, 1);
     });
   }
 
   @Override public void write(final byte @NotNull [] b) throws IOException {
     spanManager.performIO(() -> {
       delegate.write(b);
-      return b.length;
+      return new Pair<>(0, b.length);
     });
   }
 
@@ -103,7 +105,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     throws IOException {
     spanManager.performIO(() -> {
       delegate.write(b, off, len);
-      return len;
+      return new Pair<>(0, len);
     });
   }
 
