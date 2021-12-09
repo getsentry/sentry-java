@@ -45,6 +45,10 @@ class DefaultAndroidEventProcessorTest {
     private val className = "io.sentry.android.core.DefaultAndroidEventProcessor"
     private val ctorTypes = arrayOf(Context::class.java, ILogger::class.java, IBuildInfoProvider::class.java)
 
+    init {
+        Locale.setDefault(Locale.US)
+    }
+
     private class Fixture {
         val buildInfo = mock<IBuildInfoProvider>()
         val options = SentryOptions().apply {
@@ -381,12 +385,11 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `Event sets language and locale`() {
         val sut = fixture.getSut(context)
-        val locale = Locale.getDefault()
 
         assertNotNull(sut.process(SentryEvent(), null)) {
             val device = it.contexts.device!!
-            assertEquals(device.language, locale.language)
-            assertEquals(device.locale, locale.toString())
+            assertEquals("en", device.language)
+            assertEquals("en_US", device.locale)
         }
     }
 }
