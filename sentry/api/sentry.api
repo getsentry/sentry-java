@@ -2652,6 +2652,14 @@ public class io/sentry/vendor/Base64 {
 	public static fun encodeToString ([BIII)Ljava/lang/String;
 }
 
+public class io/sentry/vendor/gson/internal/bind/util/ISO8601Utils {
+	public fun <init> ()V
+	public static fun format (Ljava/util/Date;)Ljava/lang/String;
+	public static fun format (Ljava/util/Date;Z)Ljava/lang/String;
+	public static fun format (Ljava/util/Date;ZLjava/util/TimeZone;)Ljava/lang/String;
+	public static fun parse (Ljava/lang/String;Ljava/text/ParsePosition;)Ljava/util/Date;
+}
+
 public class io/sentry/vendor/gson/stream/JsonReader : java/io/Closeable {
 	public fun <init> (Ljava/io/Reader;)V
 	public fun beginArray ()V
