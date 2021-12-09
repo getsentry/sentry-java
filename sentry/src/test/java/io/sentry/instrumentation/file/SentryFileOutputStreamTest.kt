@@ -37,7 +37,6 @@ class SentryFileOutputStreamTest {
 
     private val tmpFile: File get() = tmpDir.newFile("test.txt")
 
-
     @Test
     fun `when no active transaction does not capture a span`() {
         fixture.getSut(tmpFile, activeTransaction = false)

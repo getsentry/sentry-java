@@ -16,11 +16,11 @@ final class FileOutputStreamInitData {
   final @NotNull IHub hub;
 
   public FileOutputStreamInitData(
-    final @Nullable File file,
-    final boolean append,
-    final @Nullable ISpan span,
-    final @NotNull FileOutputStream delegate,
-    @NotNull IHub hub) {
+      final @Nullable File file,
+      final boolean append,
+      final @Nullable ISpan span,
+      final @NotNull FileOutputStream delegate,
+      @NotNull IHub hub) {
     this.file = file;
     this.append = append;
     this.span = span;

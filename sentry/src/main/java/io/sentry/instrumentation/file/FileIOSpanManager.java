@@ -3,7 +3,6 @@ package io.sentry.instrumentation.file;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SpanStatus;
-import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import io.sentry.util.Platform;
 import io.sentry.util.StringUtils;
@@ -31,10 +30,7 @@ final class FileIOSpanManager {
   }
 
   FileIOSpanManager(
-    final @Nullable ISpan currentSpan,
-    final @Nullable File file,
-    final @NotNull IHub hub
-  ) {
+      final @Nullable ISpan currentSpan, final @Nullable File file, final @NotNull IHub hub) {
     this.currentSpan = currentSpan;
     this.file = file;
     this.hub = hub;
@@ -43,12 +39,12 @@ final class FileIOSpanManager {
   /**
    * Performs file IO, counts the read/written bytes and handles exceptions in case of occurence
    *
-   * @param operation An IO operation to execute (e.g. {@link FileInputStream#read()} or {@link FileOutputStream#write(int)}
-   * The operation is of a type {@link Pair}, where the first element is the result of the IO operation,
-   * and the second element is the number of bytes read/written/skipped/etc.
+   * @param operation An IO operation to execute (e.g. {@link FileInputStream#read()} or {@link
+   *     FileOutputStream#write(int)} The operation is of a type {@link Pair}, where the first
+   *     element is the result of the IO operation, and the second element is the number of bytes
+   *     read/written/skipped/etc.
    */
-  <T> T performIO(final @NotNull FileIOCallable<T> operation)
-    throws IOException {
+  <T> T performIO(final @NotNull FileIOCallable<T> operation) throws IOException {
     try {
       final T result = operation.call();
       if (result instanceof Integer) {
@@ -86,11 +82,7 @@ final class FileIOSpanManager {
     if (currentSpan != null) {
       final String byteCountToString = StringUtils.byteCountToString(byteCount);
       if (file != null) {
-        final String description = file.getName()
-          + " "
-          + "("
-          + byteCountToString
-          + ")";
+        final String description = file.getName() + " " + "(" + byteCountToString + ")";
         currentSpan.setDescription(description);
         if (Platform.isAndroid() || hub.getOptions().isSendDefaultPii()) {
           currentSpan.setData("file.path", file.getAbsolutePath());
@@ -105,11 +97,10 @@ final class FileIOSpanManager {
   }
 
   /**
-   * A task that returns a result and may throw an IOException.
-   * Implementors define a single method with no arguments called
-   * {@code call}.
+   * A task that returns a result and may throw an IOException. Implementors define a single method
+   * with no arguments called {@code call}.
    *
-   * Derived from {@link java.util.concurrent.Callable}
+   * <p>Derived from {@link java.util.concurrent.Callable}
    */
   @FunctionalInterface
   interface FileIOCallable<V> {

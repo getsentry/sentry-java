@@ -8,8 +8,6 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.SpanStatus.INTERNAL_ERROR
 import io.sentry.TransactionContext
-import io.sentry.util.Platform
-import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -33,9 +31,11 @@ class SentryFileInputStreamTest {
             sendDefaultPii: Boolean = false
         ): SentryFileInputStream {
             tmpFile?.writeText("Text")
-            whenever(hub.options).thenReturn(SentryOptions().apply {
-                isSendDefaultPii = sendDefaultPii
-            })
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    isSendDefaultPii = sendDefaultPii
+                }
+            )
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }

@@ -15,10 +15,10 @@ final class FileInputStreamInitData {
   final @NotNull IHub hub;
 
   public FileInputStreamInitData(
-    final @Nullable File file,
-    final @Nullable ISpan span,
-    final @NotNull FileInputStream delegate,
-    final @NotNull IHub hub) {
+      final @Nullable File file,
+      final @Nullable ISpan span,
+      final @NotNull FileInputStream delegate,
+      final @NotNull IHub hub) {
     this.file = file;
     this.span = span;
     this.delegate = delegate;

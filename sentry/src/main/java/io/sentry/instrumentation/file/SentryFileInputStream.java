@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * An implementation of {@link java.io.FileInputStream} that creates a {@link io.sentry.ISpan} for
  * reading operation with filename and byte count set as description
  *
- * Note, that span is started when this InputStream is instantiated via constructor and finishes
+ * <p>Note, that span is started when this InputStream is instantiated via constructor and finishes
  * when the {@link java.io.FileInputStream#close()} is called.
  */
 @Open
@@ -39,7 +39,7 @@ public class SentryFileInputStream extends FileInputStream {
   }
 
   public SentryFileInputStream(final @Nullable File file, final @NotNull IHub hub)
-    throws FileNotFoundException {
+      throws FileNotFoundException {
     this(init(file, null, hub));
   }
 
@@ -48,27 +48,22 @@ public class SentryFileInputStream extends FileInputStream {
   }
 
   private SentryFileInputStream(
-    final @NotNull FileInputStreamInitData data,
-    final @NotNull FileDescriptor fd
-  ) {
+      final @NotNull FileInputStreamInitData data, final @NotNull FileDescriptor fd) {
     super(fd);
     spanManager = new FileIOSpanManager(data.span, data.file, data.hub);
     delegate = data.delegate;
   }
 
-  private SentryFileInputStream(
-    final @NotNull FileInputStreamInitData data
-  ) throws FileNotFoundException {
+  private SentryFileInputStream(final @NotNull FileInputStreamInitData data)
+      throws FileNotFoundException {
     super(data.file);
     spanManager = new FileIOSpanManager(data.span, data.file, data.hub);
     delegate = data.delegate;
   }
 
   private static FileInputStreamInitData init(
-    final @Nullable File file,
-    @Nullable FileInputStream delegate,
-    final @NotNull IHub hub
-  ) throws FileNotFoundException {
+      final @Nullable File file, @Nullable FileInputStream delegate, final @NotNull IHub hub)
+      throws FileNotFoundException {
     final ISpan span = FileIOSpanManager.startSpan(hub, "file.read");
     if (delegate == null) {
       delegate = new FileInputStream(file);
@@ -77,10 +72,9 @@ public class SentryFileInputStream extends FileInputStream {
   }
 
   private static FileInputStreamInitData init(
-    final @NotNull FileDescriptor fd,
-    @Nullable FileInputStream delegate,
-    final @NotNull IHub hub
-  ) {
+      final @NotNull FileDescriptor fd,
+      @Nullable FileInputStream delegate,
+      final @NotNull IHub hub) {
     final ISpan span = FileIOSpanManager.startSpan(hub, "file.read");
     if (delegate == null) {
       delegate = new FileInputStream(fd);
@@ -93,10 +87,11 @@ public class SentryFileInputStream extends FileInputStream {
     // this is the only case, when the read() operation returns the byte value, and not the count
     // hence we need this special handling
     AtomicInteger result = new AtomicInteger(0);
-    spanManager.performIO(() -> {
-      result.set(delegate.read());
-      return result.get() != -1 ? 1 : 0;
-    });
+    spanManager.performIO(
+        () -> {
+          result.set(delegate.read());
+          return result.get() != -1 ? 1 : 0;
+        });
     return result.get();
   }
 
@@ -120,35 +115,29 @@ public class SentryFileInputStream extends FileInputStream {
     spanManager.finish(delegate);
   }
 
-  public final static class Factory {
+  public static final class Factory {
     public static FileInputStream create(
-      final @NotNull FileInputStream delegate,
-      final @Nullable String name
-    ) throws FileNotFoundException {
+        final @NotNull FileInputStream delegate, final @Nullable String name)
+        throws FileNotFoundException {
       return new SentryFileInputStream(
-        init(name != null ? new File(name) : null, delegate, HubAdapter.getInstance()));
+          init(name != null ? new File(name) : null, delegate, HubAdapter.getInstance()));
     }
 
     public static FileInputStream create(
-      final @NotNull FileInputStream delegate,
-      final @Nullable File file
-    ) throws FileNotFoundException {
+        final @NotNull FileInputStream delegate, final @Nullable File file)
+        throws FileNotFoundException {
       return new SentryFileInputStream(init(file, delegate, HubAdapter.getInstance()));
     }
 
     public static FileInputStream create(
-      final @NotNull FileInputStream delegate,
-      final @NotNull FileDescriptor descriptor
-    ) {
-      return new SentryFileInputStream(init(descriptor, delegate, HubAdapter.getInstance()),
-        descriptor);
+        final @NotNull FileInputStream delegate, final @NotNull FileDescriptor descriptor) {
+      return new SentryFileInputStream(
+          init(descriptor, delegate, HubAdapter.getInstance()), descriptor);
     }
 
     public static FileInputStream create(
-      final @NotNull FileInputStream delegate,
-      final @Nullable File file,
-      final @NotNull IHub hub
-    ) throws FileNotFoundException {
+        final @NotNull FileInputStream delegate, final @Nullable File file, final @NotNull IHub hub)
+        throws FileNotFoundException {
       return new SentryFileInputStream(init(file, delegate, hub));
     }
   }

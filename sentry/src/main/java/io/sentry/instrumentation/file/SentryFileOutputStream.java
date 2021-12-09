@@ -4,7 +4,6 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.util.Pair;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -17,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * An implementation of {@link java.io.FileOutputStream} that creates a {@link io.sentry.ISpan} for
  * writing operation with filename and byte count set as description
  *
- * Note, that span is started when this OutputStream is instantiated via constructor and finishes
+ * <p>Note, that span is started when this OutputStream is instantiated via constructor and finishes
  * when the {@link java.io.FileOutputStream#close()} is called.
  */
 @Open
@@ -31,7 +30,7 @@ public class SentryFileOutputStream extends FileOutputStream {
   }
 
   public SentryFileOutputStream(final @Nullable String name, final boolean append)
-    throws FileNotFoundException {
+      throws FileNotFoundException {
     this(init(name != null ? new File(name) : null, append, null, HubAdapter.getInstance()));
   }
 
@@ -40,7 +39,7 @@ public class SentryFileOutputStream extends FileOutputStream {
   }
 
   public SentryFileOutputStream(final @Nullable File file, final boolean append)
-    throws FileNotFoundException {
+      throws FileNotFoundException {
     this(init(file, append, null, HubAdapter.getInstance()));
   }
 
@@ -49,33 +48,30 @@ public class SentryFileOutputStream extends FileOutputStream {
   }
 
   public SentryFileOutputStream(final @Nullable File file, final @NotNull IHub hub)
-    throws FileNotFoundException {
+      throws FileNotFoundException {
     this(init(file, false, null, hub));
   }
 
   private SentryFileOutputStream(
-    final @NotNull FileOutputStreamInitData data,
-    final @NotNull FileDescriptor fd
-  ) {
+      final @NotNull FileOutputStreamInitData data, final @NotNull FileDescriptor fd) {
     super(fd);
     spanManager = new FileIOSpanManager(data.span, data.file, data.hub);
     delegate = data.delegate;
   }
 
-  private SentryFileOutputStream(
-    final @NotNull FileOutputStreamInitData data
-  ) throws FileNotFoundException {
+  private SentryFileOutputStream(final @NotNull FileOutputStreamInitData data)
+      throws FileNotFoundException {
     super(data.file, data.append);
     spanManager = new FileIOSpanManager(data.span, data.file, data.hub);
     delegate = data.delegate;
   }
 
   private static FileOutputStreamInitData init(
-    final @Nullable File file,
-    final boolean append,
-    @Nullable FileOutputStream delegate,
-    @NotNull IHub hub
-  ) throws FileNotFoundException {
+      final @Nullable File file,
+      final boolean append,
+      @Nullable FileOutputStream delegate,
+      @NotNull IHub hub)
+      throws FileNotFoundException {
     final ISpan span = FileIOSpanManager.startSpan(hub, "file.write");
     if (delegate == null) {
       delegate = new FileOutputStream(file);
@@ -84,10 +80,7 @@ public class SentryFileOutputStream extends FileOutputStream {
   }
 
   private static FileOutputStreamInitData init(
-    final @NotNull FileDescriptor fd,
-    @Nullable FileOutputStream delegate,
-    @NotNull IHub hub
-  ) {
+      final @NotNull FileDescriptor fd, @Nullable FileOutputStream delegate, @NotNull IHub hub) {
     final ISpan span = FileIOSpanManager.startSpan(hub, "file.write");
     if (delegate == null) {
       delegate = new FileOutputStream(fd);
@@ -95,69 +88,67 @@ public class SentryFileOutputStream extends FileOutputStream {
     return new FileOutputStreamInitData(null, false, span, delegate, hub);
   }
 
-  @Override public void write(final int b) throws IOException {
-    spanManager.performIO(() -> {
-      delegate.write(b);
-      return 1;
-    });
+  @Override
+  public void write(final int b) throws IOException {
+    spanManager.performIO(
+        () -> {
+          delegate.write(b);
+          return 1;
+        });
   }
 
-  @Override public void write(final byte @NotNull [] b) throws IOException {
-    spanManager.performIO(() -> {
-      delegate.write(b);
-      return b.length;
-    });
+  @Override
+  public void write(final byte @NotNull [] b) throws IOException {
+    spanManager.performIO(
+        () -> {
+          delegate.write(b);
+          return b.length;
+        });
   }
 
-  @Override public void write(final byte @NotNull [] b, final int off, final int len)
-    throws IOException {
-    spanManager.performIO(() -> {
-      delegate.write(b, off, len);
-      return len;
-    });
+  @Override
+  public void write(final byte @NotNull [] b, final int off, final int len) throws IOException {
+    spanManager.performIO(
+        () -> {
+          delegate.write(b, off, len);
+          return len;
+        });
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     spanManager.finish(delegate);
   }
 
-  public final static class Factory {
+  public static final class Factory {
     public static FileOutputStream create(
-      final @NotNull FileOutputStream delegate,
-      final @Nullable String name
-    ) throws FileNotFoundException {
+        final @NotNull FileOutputStream delegate, final @Nullable String name)
+        throws FileNotFoundException {
       return new SentryFileOutputStream(
-        init(name != null ? new File(name) : null, false, delegate, HubAdapter.getInstance()));
+          init(name != null ? new File(name) : null, false, delegate, HubAdapter.getInstance()));
     }
 
     public static FileOutputStream create(
-      final @NotNull FileOutputStream delegate,
-      final @Nullable String name,
-      final boolean append
-    ) throws FileNotFoundException {
+        final @NotNull FileOutputStream delegate, final @Nullable String name, final boolean append)
+        throws FileNotFoundException {
       return new SentryFileOutputStream(
-        init(name != null ? new File(name) : null, append, delegate, HubAdapter.getInstance()));
+          init(name != null ? new File(name) : null, append, delegate, HubAdapter.getInstance()));
     }
 
     public static FileOutputStream create(
-      final @NotNull FileOutputStream delegate,
-      final @Nullable File file
-    ) throws FileNotFoundException {
+        final @NotNull FileOutputStream delegate, final @Nullable File file)
+        throws FileNotFoundException {
       return new SentryFileOutputStream(init(file, false, delegate, HubAdapter.getInstance()));
     }
 
     public static FileOutputStream create(
-      final @NotNull FileOutputStream delegate,
-      final @Nullable File file,
-      final boolean append
-    ) throws FileNotFoundException {
+        final @NotNull FileOutputStream delegate, final @Nullable File file, final boolean append)
+        throws FileNotFoundException {
       return new SentryFileOutputStream(init(file, append, delegate, HubAdapter.getInstance()));
     }
 
     public static FileOutputStream create(
-      final @NotNull FileOutputStream delegate,
-      final @NotNull FileDescriptor fdObj
-    ) {
+        final @NotNull FileOutputStream delegate, final @NotNull FileDescriptor fdObj) {
       return new SentryFileOutputStream(init(fdObj, delegate, HubAdapter.getInstance()), fdObj);
     }
   }
