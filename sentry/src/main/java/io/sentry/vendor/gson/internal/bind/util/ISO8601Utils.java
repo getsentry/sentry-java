@@ -5,7 +5,7 @@ import org.jetbrains.annotations.ApiStatus;
 // Source: https://github.com/google/gson
 // Tag: gson-parent-2.8.9
 // Commit Hash: 6a368d89da37917be7714c3072b8378f4120110a
-// Changes: @ApiStatus.Internal, SuppressWarnings, Disable `JsonReaderInternalAccess.INSTANCE` & Imports
+// Changes: @ApiStatus.Internal, SuppressWarnings
 
 import java.text.ParseException;
 import java.text.ParsePosition;
