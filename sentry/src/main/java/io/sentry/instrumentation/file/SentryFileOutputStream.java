@@ -2,6 +2,7 @@ package io.sentry.instrumentation.file;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.util.Pair;
 import java.io.File;
@@ -26,25 +27,30 @@ public class SentryFileOutputStream extends FileOutputStream {
   private final @NotNull FileIOSpanManager spanManager;
 
   public SentryFileOutputStream(final @Nullable String name) throws FileNotFoundException {
-    this(init(name != null ? new File(name) : null, false, null));
+    this(name != null ? new File(name) : null, HubAdapter.getInstance());
   }
 
   public SentryFileOutputStream(final @Nullable String name, final boolean append)
     throws FileNotFoundException {
-    this(init(name != null ? new File(name) : null, append, null));
+    this(init(name != null ? new File(name) : null, append, null, HubAdapter.getInstance()));
   }
 
   public SentryFileOutputStream(final @Nullable File file) throws FileNotFoundException {
-    this(init(file, false, null));
+    this(file, HubAdapter.getInstance());
   }
 
   public SentryFileOutputStream(final @Nullable File file, final boolean append)
     throws FileNotFoundException {
-    this(init(file, append, null));
+    this(init(file, append, null, HubAdapter.getInstance()));
   }
 
   public SentryFileOutputStream(final @NotNull FileDescriptor fdObj) {
-    this(init(fdObj, null), fdObj);
+    this(init(fdObj, null, HubAdapter.getInstance()), fdObj);
+  }
+
+  public SentryFileOutputStream(final @Nullable File file, final @NotNull IHub hub)
+    throws FileNotFoundException {
+    this(init(file, false, null, hub));
   }
 
   private SentryFileOutputStream(
@@ -52,7 +58,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     final @NotNull FileDescriptor fd
   ) {
     super(fd);
-    spanManager = new FileIOSpanManager(data.span, data.file, HubAdapter.getInstance());
+    spanManager = new FileIOSpanManager(data.span, data.file, data.hub);
     delegate = data.delegate;
   }
 
@@ -60,44 +66,46 @@ public class SentryFileOutputStream extends FileOutputStream {
     final @NotNull FileOutputStreamInitData data
   ) throws FileNotFoundException {
     super(data.file, data.append);
-    spanManager = new FileIOSpanManager(data.span, data.file, HubAdapter.getInstance());
+    spanManager = new FileIOSpanManager(data.span, data.file, data.hub);
     delegate = data.delegate;
   }
 
   private static FileOutputStreamInitData init(
     final @Nullable File file,
     final boolean append,
-    @Nullable FileOutputStream delegate
+    @Nullable FileOutputStream delegate,
+    @NotNull IHub hub
   ) throws FileNotFoundException {
-    final ISpan span = FileIOSpanManager.startSpan(HubAdapter.getInstance(), "file.write");
+    final ISpan span = FileIOSpanManager.startSpan(hub, "file.write");
     if (delegate == null) {
       delegate = new FileOutputStream(file);
     }
-    return new FileOutputStreamInitData(file, append, span, delegate);
+    return new FileOutputStreamInitData(file, append, span, delegate, hub);
   }
 
   private static FileOutputStreamInitData init(
     final @NotNull FileDescriptor fd,
-    @Nullable FileOutputStream delegate
+    @Nullable FileOutputStream delegate,
+    @NotNull IHub hub
   ) {
-    final ISpan span = FileIOSpanManager.startSpan(HubAdapter.getInstance(), "file.write");
+    final ISpan span = FileIOSpanManager.startSpan(hub, "file.write");
     if (delegate == null) {
       delegate = new FileOutputStream(fd);
     }
-    return new FileOutputStreamInitData(null, false, span, delegate);
+    return new FileOutputStreamInitData(null, false, span, delegate, hub);
   }
 
   @Override public void write(final int b) throws IOException {
     spanManager.performIO(() -> {
       delegate.write(b);
-      return new Pair<>(0, 1);
+      return 1;
     });
   }
 
   @Override public void write(final byte @NotNull [] b) throws IOException {
     spanManager.performIO(() -> {
       delegate.write(b);
-      return new Pair<>(0, b.length);
+      return b.length;
     });
   }
 
@@ -105,7 +113,7 @@ public class SentryFileOutputStream extends FileOutputStream {
     throws IOException {
     spanManager.performIO(() -> {
       delegate.write(b, off, len);
-      return new Pair<>(0, len);
+      return len;
     });
   }
 
@@ -119,7 +127,7 @@ public class SentryFileOutputStream extends FileOutputStream {
       final @Nullable String name
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(
-        init(name != null ? new File(name) : null, false, delegate));
+        init(name != null ? new File(name) : null, false, delegate, HubAdapter.getInstance()));
     }
 
     public static FileOutputStream create(
@@ -128,14 +136,14 @@ public class SentryFileOutputStream extends FileOutputStream {
       final boolean append
     ) throws FileNotFoundException {
       return new SentryFileOutputStream(
-        init(name != null ? new File(name) : null, append, delegate));
+        init(name != null ? new File(name) : null, append, delegate, HubAdapter.getInstance()));
     }
 
     public static FileOutputStream create(
       final @NotNull FileOutputStream delegate,
       final @Nullable File file
     ) throws FileNotFoundException {
-      return new SentryFileOutputStream(init(file, false, delegate));
+      return new SentryFileOutputStream(init(file, false, delegate, HubAdapter.getInstance()));
     }
 
     public static FileOutputStream create(
@@ -143,14 +151,14 @@ public class SentryFileOutputStream extends FileOutputStream {
       final @Nullable File file,
       final boolean append
     ) throws FileNotFoundException {
-      return new SentryFileOutputStream(init(file, append, delegate));
+      return new SentryFileOutputStream(init(file, append, delegate, HubAdapter.getInstance()));
     }
 
     public static FileOutputStream create(
       final @NotNull FileOutputStream delegate,
       final @NotNull FileDescriptor fdObj
     ) {
-      return new SentryFileOutputStream(init(fdObj, delegate), fdObj);
+      return new SentryFileOutputStream(init(fdObj, delegate, HubAdapter.getInstance()), fdObj);
     }
   }
 }

@@ -1,5 +1,6 @@
 package io.sentry.instrumentation.file;
 
+import io.sentry.IHub;
 import io.sentry.ISpan;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,16 +13,18 @@ final class FileOutputStreamInitData {
   final @Nullable ISpan span;
   final boolean append;
   final @NotNull FileOutputStream delegate;
+  final @NotNull IHub hub;
 
   public FileOutputStreamInitData(
     final @Nullable File file,
     final boolean append,
     final @Nullable ISpan span,
-    final @NotNull FileOutputStream delegate
-  ) {
+    final @NotNull FileOutputStream delegate,
+    @NotNull IHub hub) {
     this.file = file;
     this.append = append;
     this.span = span;
     this.delegate = delegate;
+    this.hub = hub;
   }
 }
