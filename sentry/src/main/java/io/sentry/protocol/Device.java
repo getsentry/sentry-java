@@ -146,7 +146,7 @@ public final class Device implements IUnknownPropertiesConsumer {
     this.batteryLevel = device.batteryLevel;
     final String[] archsRef = device.archs;
     this.archs = archsRef != null ? archsRef.clone() : null;
-    this.setLocale(device.getLocale());
+    this.locale = device.locale;
 
     final TimeZone timezoneRef = device.timezone;
     this.timezone = timezoneRef != null ? (TimeZone) timezoneRef.clone() : null;

@@ -27,7 +27,7 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.getCtor
 import org.junit.runner.RunWith
-import java.util.*
+import java.util.Locale
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
