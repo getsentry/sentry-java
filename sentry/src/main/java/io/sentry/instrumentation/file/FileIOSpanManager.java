@@ -3,7 +3,6 @@ package io.sentry.instrumentation.file;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SpanStatus;
-import io.sentry.util.Pair;
 import io.sentry.util.Platform;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -29,7 +28,9 @@ final class FileIOSpanManager {
   }
 
   FileIOSpanManager(
-      final @Nullable ISpan currentSpan, final @Nullable File file, final boolean isSendDefaultPii) {
+      final @Nullable ISpan currentSpan,
+      final @Nullable File file,
+      final boolean isSendDefaultPii) {
     this.currentSpan = currentSpan;
     this.file = file;
     this.isSendDefaultPii = isSendDefaultPii;

@@ -1,6 +1,5 @@
 package io.sentry.instrumentation.file;
 
-import com.jakewharton.nopen.annotation.Open;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
@@ -75,8 +74,8 @@ final class SentryFileOutputStream extends FileOutputStream {
     if (delegate == null) {
       delegate = new FileOutputStream(file);
     }
-    return new FileOutputStreamInitData(file, append, span, delegate,
-      hub.getOptions().isSendDefaultPii());
+    return new FileOutputStreamInitData(
+        file, append, span, delegate, hub.getOptions().isSendDefaultPii());
   }
 
   private static FileOutputStreamInitData init(
@@ -85,8 +84,8 @@ final class SentryFileOutputStream extends FileOutputStream {
     if (delegate == null) {
       delegate = new FileOutputStream(fd);
     }
-    return new FileOutputStreamInitData(null, false, span, delegate,
-      hub.getOptions().isSendDefaultPii());
+    return new FileOutputStreamInitData(
+        null, false, span, delegate, hub.getOptions().isSendDefaultPii());
   }
 
   @Override

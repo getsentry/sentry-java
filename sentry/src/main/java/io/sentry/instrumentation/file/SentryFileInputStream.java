@@ -1,6 +1,5 @@
 package io.sentry.instrumentation.file;
 
-import com.jakewharton.nopen.annotation.Open;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
@@ -49,16 +48,14 @@ final class SentryFileInputStream extends FileInputStream {
   private SentryFileInputStream(
       final @NotNull FileInputStreamInitData data, final @NotNull FileDescriptor fd) {
     super(fd);
-    spanManager =
-      new FileIOSpanManager(data.span, data.file, data.isSendDefaultPii);
+    spanManager = new FileIOSpanManager(data.span, data.file, data.isSendDefaultPii);
     delegate = data.delegate;
   }
 
   private SentryFileInputStream(final @NotNull FileInputStreamInitData data)
       throws FileNotFoundException {
     super(data.file);
-    spanManager =
-      new FileIOSpanManager(data.span, data.file, data.isSendDefaultPii);
+    spanManager = new FileIOSpanManager(data.span, data.file, data.isSendDefaultPii);
     delegate = data.delegate;
   }
 
@@ -80,8 +77,7 @@ final class SentryFileInputStream extends FileInputStream {
     if (delegate == null) {
       delegate = new FileInputStream(fd);
     }
-    return new FileInputStreamInitData(null, span, delegate,
-      hub.getOptions().isSendDefaultPii());
+    return new FileInputStreamInitData(null, span, delegate, hub.getOptions().isSendDefaultPii());
   }
 
   @Override
