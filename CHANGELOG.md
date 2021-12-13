@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Bump: log4j to 2.15.0 (#1839)
 * Ref: Rename Fragment span operation from `ui.fragment.load` to `ui.load` (#1824)
 * Feat: Add locale to device context and deprecate language (#1832)
 * Ref: change `java.util.Random` to `java.security.SecureRandom` for possible security reasons (#1831)
