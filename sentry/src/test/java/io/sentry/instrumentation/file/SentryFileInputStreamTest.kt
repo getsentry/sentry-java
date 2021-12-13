@@ -27,7 +27,6 @@ class SentryFileInputStreamTest {
         internal fun getSut(
             tmpFile: File? = null,
             activeTransaction: Boolean = true,
-            delegate: FileInputStream? = null,
             fileDescriptor: FileDescriptor? = null,
             sendDefaultPii: Boolean = false
         ): SentryFileInputStream {
@@ -38,19 +37,24 @@ class SentryFileInputStreamTest {
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
-            return if (delegate == null) {
-                if (fileDescriptor == null) {
-                    SentryFileInputStream(tmpFile, hub)
-                } else {
-                    SentryFileInputStream(fileDescriptor, hub)
-                }
+            return if (fileDescriptor == null) {
+                SentryFileInputStream(tmpFile, hub)
             } else {
-                SentryFileInputStream.Factory.create(
-                    delegate,
-                    tmpFile,
-                    hub
-                ) as SentryFileInputStream
+                SentryFileInputStream(fileDescriptor, hub)
             }
+        }
+
+        internal fun getSut(
+            tmpFile: File? = null,
+            delegate: FileInputStream
+        ): SentryFileInputStream {
+            whenever(hub.options).thenReturn(options)
+            whenever(hub.span).thenReturn(sentryTracer)
+            return SentryFileInputStream.Factory.create(
+                delegate,
+                tmpFile,
+                hub
+            ) as SentryFileInputStream
         }
     }
 
