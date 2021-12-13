@@ -39,9 +39,8 @@ final class FileIOSpanManager {
    * Performs file IO, counts the read/written bytes and handles exceptions in case of occurence
    *
    * @param operation An IO operation to execute (e.g. {@link FileInputStream#read()} or {@link
-   *     FileOutputStream#write(int)} The operation is of a type {@link Pair}, where the first
-   *     element is the result of the IO operation, and the second element is the number of bytes
-   *     read/written/skipped/etc.
+   *     FileOutputStream#write(int)} The operation is of a type {@link Integer} or {@link Long},
+   *     where the output is the result of the IO operation (byte count read/written)
    */
   <T> T performIO(final @NotNull FileIOCallable<T> operation) throws IOException {
     try {
