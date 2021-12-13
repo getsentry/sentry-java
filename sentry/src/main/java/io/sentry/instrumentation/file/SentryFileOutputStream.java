@@ -19,8 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>Note, that span is started when this OutputStream is instantiated via constructor and finishes
  * when the {@link java.io.FileOutputStream#close()} is called.
  */
-@Open
-public class SentryFileOutputStream extends FileOutputStream {
+final class SentryFileOutputStream extends FileOutputStream {
 
   private final @NotNull FileOutputStream delegate;
   private final @NotNull FileIOSpanManager spanManager;
