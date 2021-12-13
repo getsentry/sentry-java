@@ -22,6 +22,7 @@ class SentryFileInputStreamTest {
     class Fixture {
         val hub = mock<IHub>()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        private val options = SentryOptions()
 
         internal fun getSut(
             tmpFile: File? = null,
@@ -32,9 +33,7 @@ class SentryFileInputStreamTest {
         ): SentryFileInputStream {
             tmpFile?.writeText("Text")
             whenever(hub.options).thenReturn(
-                SentryOptions().apply {
-                    isSendDefaultPii = sendDefaultPii
-                }
+                options.apply { isSendDefaultPii = sendDefaultPii }
             )
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
