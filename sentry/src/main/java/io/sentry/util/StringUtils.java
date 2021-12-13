@@ -70,6 +70,6 @@ public final class StringUtils {
       bytes /= 1000;
       ci.next();
     }
-    return String.format(Locale.US, "%.1f %cB", bytes / 1000.0, ci.current());
+    return String.format(Locale.ROOT, "%.1f %cB", bytes / 1000.0, ci.current());
   }
 }
