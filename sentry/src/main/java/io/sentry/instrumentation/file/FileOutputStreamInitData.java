@@ -1,6 +1,5 @@
 package io.sentry.instrumentation.file;
 
-import io.sentry.IHub;
 import io.sentry.ISpan;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -15,7 +14,7 @@ final class FileOutputStreamInitData {
   final @NotNull FileOutputStream delegate;
   final boolean isSendDefaultPii;
 
-  public FileOutputStreamInitData(
+  FileOutputStreamInitData(
       final @Nullable File file,
       final boolean append,
       final @Nullable ISpan span,
