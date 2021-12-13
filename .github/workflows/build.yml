@@ -53,6 +53,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}
+          if-no-files-found: error
           path: |
             ./*/build/distributions/*.zip
             ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*
