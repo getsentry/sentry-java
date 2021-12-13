@@ -20,7 +20,6 @@ final class FileIOSpanManager {
   private final @Nullable File file;
   private final @NotNull IHub hub;
 
-  private @Nullable Throwable throwable = null;
   private @NotNull SpanStatus spanStatus = SpanStatus.OK;
   private long byteCount;
 
@@ -61,7 +60,9 @@ final class FileIOSpanManager {
       return result;
     } catch (IOException exception) {
       spanStatus = SpanStatus.INTERNAL_ERROR;
-      throwable = exception;
+      if (currentSpan != null) {
+        currentSpan.setThrowable(exception);
+      }
       throw exception;
     }
   }
@@ -71,7 +72,9 @@ final class FileIOSpanManager {
       delegate.close();
     } catch (IOException exception) {
       spanStatus = SpanStatus.INTERNAL_ERROR;
-      throwable = exception;
+      if (currentSpan != null) {
+        currentSpan.setThrowable(exception);
+      }
       throw exception;
     } finally {
       finishSpan();
