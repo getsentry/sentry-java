@@ -74,4 +74,26 @@ class StringUtilsTest {
     fun `removeSurrounding returns trimmed string if first char is the same as the last char and equal to delimiter`() {
         assertEquals("test", StringUtils.removeSurrounding("\"test\"", "\""))
     }
+
+    @Test
+    fun `byteCountToString appends B when byte count is in +-1000 range`() {
+        assertEquals("500 B", StringUtils.byteCountToString(500))
+        assertEquals("-500 B", StringUtils.byteCountToString(-500))
+    }
+
+    @Test
+    fun `byteCountToString appends kB when byte count is in kilobyte range`() {
+        assertEquals("100.5 kB", StringUtils.byteCountToString(100_500))
+        assertEquals("-100.5 kB", StringUtils.byteCountToString(-100_500))
+
+        assertEquals("999.0 kB", StringUtils.byteCountToString(999_000))
+    }
+
+    @Test
+    fun `byteCountToString appends MB when byte count is in megabyte range`() {
+        assertEquals("100.1 MB", StringUtils.byteCountToString(100_124_500))
+        assertEquals("-100.1 MB", StringUtils.byteCountToString(-100_124_500))
+
+        assertEquals("999.9 MB", StringUtils.byteCountToString(999_945_018))
+    }
 }

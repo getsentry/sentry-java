@@ -1432,6 +1432,45 @@ public abstract interface class io/sentry/hints/SubmissionResult {
 	public abstract fun setResult (Z)V
 }
 
+public final class io/sentry/instrumentation/file/SentryFileInputStream : java/io/FileInputStream {
+	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/FileDescriptor;)V
+	public fun <init> (Ljava/lang/String;)V
+	public fun close ()V
+	public fun read ()I
+	public fun read ([B)I
+	public fun read ([BII)I
+	public fun skip (J)J
+}
+
+public final class io/sentry/instrumentation/file/SentryFileInputStream$Factory {
+	public fun <init> ()V
+	public static fun create (Ljava/io/FileInputStream;Ljava/io/File;)Ljava/io/FileInputStream;
+	public static fun create (Ljava/io/FileInputStream;Ljava/io/FileDescriptor;)Ljava/io/FileInputStream;
+	public static fun create (Ljava/io/FileInputStream;Ljava/lang/String;)Ljava/io/FileInputStream;
+}
+
+public final class io/sentry/instrumentation/file/SentryFileOutputStream : java/io/FileOutputStream {
+	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/File;Z)V
+	public fun <init> (Ljava/io/FileDescriptor;)V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Z)V
+	public fun close ()V
+	public fun write (I)V
+	public fun write ([B)V
+	public fun write ([BII)V
+}
+
+public final class io/sentry/instrumentation/file/SentryFileOutputStream$Factory {
+	public fun <init> ()V
+	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;Z)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/io/FileDescriptor;)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/lang/String;)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/lang/String;Z)Ljava/io/FileOutputStream;
+}
+
 public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
@@ -2011,6 +2050,7 @@ public final class io/sentry/util/Platform {
 }
 
 public final class io/sentry/util/StringUtils {
+	public static fun byteCountToString (J)Ljava/lang/String;
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
