@@ -105,8 +105,8 @@ final class FileIOSpanManager {
    * <p>Derived from {@link java.util.concurrent.Callable}
    */
   @FunctionalInterface
-  interface FileIOCallable<V> {
+  interface FileIOCallable<T> {
 
-    V call() throws IOException;
+    T call() throws IOException;
   }
 }
