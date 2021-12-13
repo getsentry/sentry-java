@@ -46,7 +46,7 @@ final class SentryFileOutputStream extends FileOutputStream {
     this(init(fdObj, null, HubAdapter.getInstance()), fdObj);
   }
 
-  public SentryFileOutputStream(final @Nullable File file, final @NotNull IHub hub)
+  SentryFileOutputStream(final @Nullable File file, final @NotNull IHub hub)
       throws FileNotFoundException {
     this(init(file, false, null, hub));
   }

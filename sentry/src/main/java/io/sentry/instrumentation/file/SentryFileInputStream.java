@@ -37,12 +37,12 @@ final class SentryFileInputStream extends FileInputStream {
     this(fdObj, HubAdapter.getInstance());
   }
 
-  public SentryFileInputStream(final @Nullable File file, final @NotNull IHub hub)
+  SentryFileInputStream(final @Nullable File file, final @NotNull IHub hub)
       throws FileNotFoundException {
     this(init(file, null, hub));
   }
 
-  public SentryFileInputStream(final @NotNull FileDescriptor fdObj, final @NotNull IHub hub) {
+  SentryFileInputStream(final @NotNull FileDescriptor fdObj, final @NotNull IHub hub) {
     this(init(fdObj, null, hub), fdObj);
   }
 
@@ -137,7 +137,7 @@ final class SentryFileInputStream extends FileInputStream {
           init(descriptor, delegate, HubAdapter.getInstance()), descriptor);
     }
 
-    public static FileInputStream create(
+    static FileInputStream create(
         final @NotNull FileInputStream delegate, final @Nullable File file, final @NotNull IHub hub)
         throws FileNotFoundException {
       return new SentryFileInputStream(init(file, delegate, hub));

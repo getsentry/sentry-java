@@ -23,7 +23,7 @@ class SentryFileInputStreamTest {
         val hub = mock<IHub>()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
-        fun getSut(
+        internal fun getSut(
             tmpFile: File? = null,
             activeTransaction: Boolean = true,
             delegate: FileInputStream? = null,
