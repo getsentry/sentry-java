@@ -55,14 +55,14 @@ public class SentryFileOutputStream extends FileOutputStream {
   private SentryFileOutputStream(
       final @NotNull FileOutputStreamInitData data, final @NotNull FileDescriptor fd) {
     super(fd);
-    spanManager = new FileIOSpanManager(data.span, data.file, data.hub);
+    spanManager = new FileIOSpanManager(data.span, data.file, data.isSendDefaultPii);
     delegate = data.delegate;
   }
 
   private SentryFileOutputStream(final @NotNull FileOutputStreamInitData data)
       throws FileNotFoundException {
     super(data.file, data.append);
-    spanManager = new FileIOSpanManager(data.span, data.file, data.hub);
+    spanManager = new FileIOSpanManager(data.span, data.file, data.isSendDefaultPii);
     delegate = data.delegate;
   }
 
@@ -76,7 +76,8 @@ public class SentryFileOutputStream extends FileOutputStream {
     if (delegate == null) {
       delegate = new FileOutputStream(file);
     }
-    return new FileOutputStreamInitData(file, append, span, delegate, hub);
+    return new FileOutputStreamInitData(file, append, span, delegate,
+      hub.getOptions().isSendDefaultPii());
   }
 
   private static FileOutputStreamInitData init(
@@ -85,7 +86,8 @@ public class SentryFileOutputStream extends FileOutputStream {
     if (delegate == null) {
       delegate = new FileOutputStream(fd);
     }
-    return new FileOutputStreamInitData(null, false, span, delegate, hub);
+    return new FileOutputStreamInitData(null, false, span, delegate,
+      hub.getOptions().isSendDefaultPii());
   }
 
   @Override

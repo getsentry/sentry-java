@@ -12,16 +12,16 @@ final class FileInputStreamInitData {
   final @Nullable File file;
   final @Nullable ISpan span;
   final @NotNull FileInputStream delegate;
-  final @NotNull IHub hub;
+  final boolean isSendDefaultPii;
 
   public FileInputStreamInitData(
       final @Nullable File file,
       final @Nullable ISpan span,
       final @NotNull FileInputStream delegate,
-      final @NotNull IHub hub) {
+      final boolean isSendDefaultPii) {
     this.file = file;
     this.span = span;
     this.delegate = delegate;
-    this.hub = hub;
+    this.isSendDefaultPii = isSendDefaultPii;
   }
 }

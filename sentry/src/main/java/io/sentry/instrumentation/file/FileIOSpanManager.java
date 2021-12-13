@@ -18,7 +18,7 @@ final class FileIOSpanManager {
 
   private final @Nullable ISpan currentSpan;
   private final @Nullable File file;
-  private final @NotNull IHub hub;
+  private final boolean isSendDefaultPii;
 
   private @NotNull SpanStatus spanStatus = SpanStatus.OK;
   private long byteCount;
@@ -29,10 +29,10 @@ final class FileIOSpanManager {
   }
 
   FileIOSpanManager(
-      final @Nullable ISpan currentSpan, final @Nullable File file, final @NotNull IHub hub) {
+      final @Nullable ISpan currentSpan, final @Nullable File file, final boolean isSendDefaultPii) {
     this.currentSpan = currentSpan;
     this.file = file;
-    this.hub = hub;
+    this.isSendDefaultPii = isSendDefaultPii;
   }
 
   /**
@@ -87,14 +87,13 @@ final class FileIOSpanManager {
       if (file != null) {
         final String description = file.getName() + " " + "(" + byteCountToString + ")";
         currentSpan.setDescription(description);
-        if (Platform.isAndroid() || hub.getOptions().isSendDefaultPii()) {
+        if (Platform.isAndroid() || isSendDefaultPii) {
           currentSpan.setData("file.path", file.getAbsolutePath());
         }
       } else {
         currentSpan.setDescription(byteCountToString);
       }
       currentSpan.setData("file.size", byteCount);
-      currentSpan.setThrowable(throwable);
       currentSpan.finish(spanStatus);
     }
   }

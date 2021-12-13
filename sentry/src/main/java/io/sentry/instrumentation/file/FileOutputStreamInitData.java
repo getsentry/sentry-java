@@ -13,18 +13,18 @@ final class FileOutputStreamInitData {
   final @Nullable ISpan span;
   final boolean append;
   final @NotNull FileOutputStream delegate;
-  final @NotNull IHub hub;
+  final boolean isSendDefaultPii;
 
   public FileOutputStreamInitData(
       final @Nullable File file,
       final boolean append,
       final @Nullable ISpan span,
       final @NotNull FileOutputStream delegate,
-      @NotNull IHub hub) {
+      final boolean isSendDefaultPii) {
     this.file = file;
     this.append = append;
     this.span = span;
     this.delegate = delegate;
-    this.hub = hub;
+    this.isSendDefaultPii = isSendDefaultPii;
   }
 }
