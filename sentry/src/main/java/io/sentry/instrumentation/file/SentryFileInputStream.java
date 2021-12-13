@@ -91,8 +91,9 @@ final class SentryFileInputStream extends FileInputStream {
     AtomicInteger result = new AtomicInteger(0);
     spanManager.performIO(
         () -> {
-          result.set(delegate.read());
-          return result.get() != -1 ? 1 : 0;
+          final int res = delegate.read();
+          result.set(res);
+          return res != -1 ? 1 : 0;
         });
     return result.get();
   }
