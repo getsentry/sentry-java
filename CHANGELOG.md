@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.5.0
 
 * Bump: log4j to 2.15.0 (#1839)
