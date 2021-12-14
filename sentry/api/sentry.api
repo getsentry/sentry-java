@@ -1471,6 +1471,20 @@ public final class io/sentry/instrumentation/file/SentryFileOutputStream$Factory
 	public static fun create (Ljava/io/FileOutputStream;Ljava/lang/String;Z)Ljava/io/FileOutputStream;
 }
 
+public final class io/sentry/instrumentation/file/SentryFileReader : java/io/InputStreamReader {
+	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/FileDescriptor;)V
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/OutputStreamWriter {
+	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/File;Z)V
+	public fun <init> (Ljava/io/FileDescriptor;)V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Z)V
+}
+
 public final class io/sentry/protocol/App : io/sentry/IUnknownPropertiesConsumer {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
