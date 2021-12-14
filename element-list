@@ -5,6 +5,7 @@ io.sentry.config
 io.sentry.exception
 io.sentry.graphql
 io.sentry.hints
+io.sentry.instrumentation.file
 io.sentry.jdbc
 io.sentry.jul
 io.sentry.log4j2
