@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Ref: Simplify DateUtils with ISO8601Utils (#1837)
+
 ## 6.0.0-alpha.1
 
 * Feat: Use float instead of Date for protocol types for higher precision (#1737)
