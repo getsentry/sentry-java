@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Bump: log4j to 2.16.0 (#1845)
+* Fix: Make App start cold/warm visible to Hybrid SDKs (#)
 
 ## 5.5.0
 

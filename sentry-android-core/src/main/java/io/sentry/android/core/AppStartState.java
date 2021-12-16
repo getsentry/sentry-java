@@ -44,7 +44,7 @@ public final class AppStartState {
   }
 
   @Nullable
-  synchronized Long getAppStartInterval() {
+  public synchronized Long getAppStartInterval() {
     if (appStartMillis == null || appStartEndMillis == null) {
       return null;
     }

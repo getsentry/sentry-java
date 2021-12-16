@@ -260,7 +260,7 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityResumed(final @NonNull Activity activity) {
-    if (!firstActivityResumed && performanceEnabled) {
+    if (!firstActivityResumed) {
 
       // we only finish the app start if the process is of foregroundImportance
       if (foregroundImportance) {
@@ -277,7 +277,7 @@ public final class ActivityLifecycleIntegration
       }
 
       // finishes app start span
-      if (appStartSpan != null) {
+      if (performanceEnabled && appStartSpan != null) {
         appStartSpan.finish();
       }
       firstActivityResumed = true;
@@ -355,7 +355,7 @@ public final class ActivityLifecycleIntegration
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {
-    if (!firstActivityCreated && performanceEnabled) {
+    if (!firstActivityCreated) {
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
       AppStartState.getInstance().setColdStart(savedInstanceState == null);
