@@ -56,7 +56,7 @@ object Config {
         val androidxCore = "androidx.core:core:1.3.2"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
-        val logbackVersion = "1.2.8"
+        val logbackVersion = "1.2.9"
         val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
 
         val log4j2Version = "2.16.0"
