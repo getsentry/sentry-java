@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Bump: log4j to 2.17.0 (#1852)
+
 ## 5.5.1
 
 * Bump: log4j to 2.16.0 (#1845)
