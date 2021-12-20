@@ -37,6 +37,7 @@ class SentryPerformanceProviderTest {
         // done by ActivityLifecycleIntegration so forcing it here
         val lifecycleAppEndMillis = 20L
         AppStartState.getInstance().setAppStartEnd(lifecycleAppEndMillis)
+        AppStartState.getInstance().setColdStart(true)
 
         assertEquals(10L, AppStartState.getInstance().appStartInterval)
     }
