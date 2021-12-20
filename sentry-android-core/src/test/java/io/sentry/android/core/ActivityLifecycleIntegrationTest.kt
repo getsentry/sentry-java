@@ -551,7 +551,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, null)
 
-        assertTrue(AppStartState.getInstance().isColdStart)
+        assertTrue(AppStartState.getInstance().isColdStart!!)
     }
 
     @Test
@@ -564,7 +564,7 @@ class ActivityLifecycleIntegrationTest {
         val bundle = Bundle()
         sut.onActivityCreated(activity, bundle)
 
-        assertFalse(AppStartState.getInstance().isColdStart)
+        assertFalse(AppStartState.getInstance().isColdStart!!)
     }
 
     @Test
@@ -578,7 +578,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, bundle)
         sut.onActivityCreated(activity, null)
 
-        assertFalse(AppStartState.getInstance().isColdStart)
+        assertFalse(AppStartState.getInstance().isColdStart!!)
     }
 
     @Test
