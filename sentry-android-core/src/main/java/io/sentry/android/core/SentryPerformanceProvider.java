@@ -115,6 +115,10 @@ public final class SentryPerformanceProvider extends ContentProvider
 
   @Override
   public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle savedInstanceState) {
+    // Hybrid Apps like RN or Flutter init the Android SDK after the MainActivity of the App
+    // has been created, and some frameworks overwrites the behaviour of activity lifecycle
+    // or it's already too late to get the callback for the very first Activity, hence we
+    // register the ActivityLifecycleCallbacks here, since this Provider is always run first.
     if (!firstActivityCreated) {
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
