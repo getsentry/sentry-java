@@ -18,7 +18,7 @@ public final class AppStartState {
   private @Nullable Long appStartEndMillis;
 
   /** The type of App start coldStart=true -> Cold start, coldStart=false -> Warm start */
-  private boolean coldStart;
+  private @Nullable Boolean coldStart = null;
 
   /** appStart as a Date used in the App's Context */
   private @Nullable Date appStartTime;
@@ -45,17 +45,20 @@ public final class AppStartState {
 
   @Nullable
   public synchronized Long getAppStartInterval() {
-    if (appStartMillis == null || appStartEndMillis == null) {
+    if (appStartMillis == null || appStartEndMillis == null || coldStart == null) {
       return null;
     }
     return appStartEndMillis - appStartMillis;
   }
 
-  public boolean isColdStart() {
+  public @Nullable Boolean isColdStart() {
     return coldStart;
   }
 
   synchronized void setColdStart(final boolean coldStart) {
+    if (this.coldStart != null) {
+      return;
+    }
     this.coldStart = coldStart;
   }
 

@@ -1,18 +1,20 @@
 package io.sentry.android.core;
 
+import android.app.Activity;
+import android.app.Application;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.SystemClock;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import io.sentry.DateUtils;
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
@@ -21,12 +23,16 @@ import org.jetbrains.annotations.TestOnly;
  * SDK versions. When minSDK is >= 24, we could use Process.getStartUptimeMillis()
  */
 @ApiStatus.Internal
-public final class SentryPerformanceProvider extends ContentProvider {
+public final class SentryPerformanceProvider extends ContentProvider
+    implements Application.ActivityLifecycleCallbacks {
 
   // static to rely on Class load
   private static @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static long appStartMillis = SystemClock.uptimeMillis();
+
+  private boolean firstActivityCreated = false;
+  private @Nullable Application application;
 
   public SentryPerformanceProvider() {
     AppStartState.getInstance().setAppStartTime(appStartMillis, appStartTime);
@@ -34,6 +40,22 @@ public final class SentryPerformanceProvider extends ContentProvider {
 
   @Override
   public boolean onCreate() {
+    Context context = getContext();
+
+    if (context == null) {
+      return false;
+    }
+
+    // it returns null if ContextImpl, so let's check for nullability
+    if (context.getApplicationContext() != null) {
+      context = context.getApplicationContext();
+    }
+
+    if (context instanceof Application) {
+      application = ((Application) context);
+      application.registerActivityLifecycleCallbacks(this);
+    }
+
     return true;
   }
 
@@ -50,7 +72,7 @@ public final class SentryPerformanceProvider extends ContentProvider {
   @Nullable
   @Override
   public Cursor query(
-      @NonNull Uri uri,
+      @NotNull Uri uri,
       @Nullable String[] projection,
       @Nullable String selection,
       @Nullable String[] selectionArgs,
@@ -60,25 +82,25 @@ public final class SentryPerformanceProvider extends ContentProvider {
 
   @Nullable
   @Override
-  public String getType(@NonNull Uri uri) {
+  public String getType(@NotNull Uri uri) {
     return null;
   }
 
   @Nullable
   @Override
-  public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+  public Uri insert(@NotNull Uri uri, @Nullable ContentValues values) {
     return null;
   }
 
   @Override
   public int delete(
-      @NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+      @NotNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
     return 0;
   }
 
   @Override
   public int update(
-      @NonNull Uri uri,
+      @NotNull Uri uri,
       @Nullable ContentValues values,
       @Nullable String selection,
       @Nullable String[] selectionArgs) {
@@ -90,4 +112,37 @@ public final class SentryPerformanceProvider extends ContentProvider {
     appStartMillis = appStartMillisLong;
     appStartTime = appStartTimeDate;
   }
+
+  @Override
+  public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle savedInstanceState) {
+    if (!firstActivityCreated) {
+      // if Activity has savedInstanceState then its a warm start
+      // https://developer.android.com/topic/performance/vitals/launch-time#warm
+      final boolean coldStart = savedInstanceState == null;
+      AppStartState.getInstance().setColdStart(coldStart);
+
+      if (application != null) {
+        application.unregisterActivityLifecycleCallbacks(this);
+      }
+      firstActivityCreated = true;
+    }
+  }
+
+  @Override
+  public void onActivityStarted(@NotNull Activity activity) {}
+
+  @Override
+  public void onActivityResumed(@NotNull Activity activity) {}
+
+  @Override
+  public void onActivityPaused(@NotNull Activity activity) {}
+
+  @Override
+  public void onActivityStopped(@NotNull Activity activity) {}
+
+  @Override
+  public void onActivitySaveInstanceState(@NotNull Activity activity, @NotNull Bundle outState) {}
+
+  @Override
+  public void onActivityDestroyed(@NotNull Activity activity) {}
 }
