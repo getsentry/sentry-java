@@ -151,9 +151,10 @@ public final class ActivityLifecycleIntegration
 
       final Date appStartTime =
           foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
+      final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
       // in case appStartTime isn't available, we don't create a span for it.
-      if (firstActivityCreated || appStartTime == null) {
+      if (firstActivityCreated || appStartTime == null || coldStart == null) {
         transaction =
             hub.startTransaction(
                 activityName,
@@ -176,7 +177,9 @@ public final class ActivityLifecycleIntegration
                 });
         // start specific span for app start
 
-        appStartSpan = transaction.startChild(getAppStartOp(), getAppStartDesc(), appStartTime);
+        appStartSpan =
+            transaction.startChild(
+                getAppStartOp(coldStart), getAppStartDesc(coldStart), appStartTime);
       }
 
       // lets bind to the scope so other integrations can pick it up
@@ -362,16 +365,16 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private @NotNull String getAppStartDesc() {
-    if (AppStartState.getInstance().isColdStart()) {
+  private @NotNull String getAppStartDesc(final boolean coldStart) {
+    if (coldStart) {
       return "Cold Start";
     } else {
       return "Warm Start";
     }
   }
 
-  private @NotNull String getAppStartOp() {
-    if (AppStartState.getInstance().isColdStart()) {
+  private @NotNull String getAppStartOp(final boolean coldStart) {
+    if (coldStart) {
       return APP_START_COLD;
     } else {
       return APP_START_WARM;
