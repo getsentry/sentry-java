@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.5.2
 
 * Fix: Detect App Cold start correctly for Hybrid SDKs (#1855)
