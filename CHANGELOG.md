@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.5.2
 
 * Fix: Detect App Cold start correctly for Hybrid SDKs (#1855)
 * Bump: log4j to 2.17.0 (#1852)
