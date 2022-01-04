@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Relax TransactionNameProvider (#1861)
+
 ## 6.0.0-alpha.1
 
 * Feat: Use float instead of Date for protocol types for higher precision (#1737)
