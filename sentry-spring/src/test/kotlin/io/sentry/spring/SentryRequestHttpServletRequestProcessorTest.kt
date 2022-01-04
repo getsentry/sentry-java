@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.spring.tracing.SpringMvcTransactionNameProvider
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.web.servlet.HandlerMapping
@@ -21,7 +22,7 @@ class SentryRequestHttpServletRequestProcessorTest {
 
         fun getSut(request: HttpServletRequest, options: SentryOptions = SentryOptions()): SentryRequestHttpServletRequestProcessor {
             whenever(hub.options).thenReturn(options)
-            return SentryRequestHttpServletRequestProcessor(request)
+            return SentryRequestHttpServletRequestProcessor(SpringMvcTransactionNameProvider(), request)
         }
     }
 

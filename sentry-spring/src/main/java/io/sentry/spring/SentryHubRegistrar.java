@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.HubAdapter;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.spring.tracing.SpringMvcTransactionNameProvider;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -69,6 +70,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     final BeanDefinitionBuilder builder =
         BeanDefinitionBuilder.genericBeanDefinition(SentryExceptionResolver.class);
     builder.addConstructorArgReference("sentryHub");
+    builder.addConstructorArgValue(new SpringMvcTransactionNameProvider());
     int order = annotationAttributes.getNumber("exceptionResolverOrder");
     builder.addConstructorArgValue(order);
 
