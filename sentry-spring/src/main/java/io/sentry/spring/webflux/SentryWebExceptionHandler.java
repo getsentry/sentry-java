@@ -5,7 +5,6 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
-import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.annotation.Order;
@@ -20,11 +19,6 @@ import reactor.core.publisher.Mono;
 // at -1
 @ApiStatus.Experimental
 public final class SentryWebExceptionHandler implements WebExceptionHandler {
-  private final @NotNull IHub hub;
-
-  public SentryWebExceptionHandler(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
-  }
 
   @Override
   public @NotNull Mono<Void> handle(
@@ -38,7 +32,12 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
       final SentryEvent event = new SentryEvent(throwable);
       event.setLevel(SentryLevel.FATAL);
       event.setTransaction(TransactionNameProvider.provideTransactionName(serverWebExchange));
-      hub.captureEvent(event);
+      final IHub hub =
+          (IHub)
+              serverWebExchange.getAttributes().get(SentryWebFilter.HUB_EXCHANGE_CONTEXT_ATTRIBUTE);
+      if (hub != null) {
+        hub.captureEvent(event);
+      }
     }
     return Mono.error(ex);
   }

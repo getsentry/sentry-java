@@ -1,5 +1,7 @@
 package io.sentry.samples.spring.boot;
 
+import static io.sentry.spring.webflux.SentryReactor.withSentry;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,9 +23,13 @@ public class PersonController {
   }
 
   @GetMapping("{id}")
-  Person person(@PathVariable Long id) {
-    LOGGER.info("Loading person with id={}", id);
-    throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
+  Mono<Long> person(@PathVariable Long id) {
+    return Mono.just(id)
+        .doOnEach(withSentry(it -> LOGGER.info("Loading person with id={}", id)))
+        .doOnNext(
+            it -> {
+              throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
+            });
   }
 
   @PostMapping

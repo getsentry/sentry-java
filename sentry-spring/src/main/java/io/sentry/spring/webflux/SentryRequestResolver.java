@@ -1,9 +1,8 @@
 package io.sentry.spring.webflux;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.Request;
-import io.sentry.util.Objects;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -21,31 +20,27 @@ public class SentryRequestResolver {
   private static final List<String> SENSITIVE_HEADERS =
       Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
 
-  private final @NotNull IHub hub;
-
-  public SentryRequestResolver(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "options is required");
-  }
-
-  public @NotNull Request resolveSentryRequest(final @NotNull ServerHttpRequest httpRequest) {
+  public @NotNull Request resolveSentryRequest(
+      final @NotNull SentryOptions options, final @NotNull ServerHttpRequest httpRequest) {
     final Request sentryRequest = new Request();
     sentryRequest.setMethod(httpRequest.getMethodValue());
     sentryRequest.setQueryString(httpRequest.getURI().getQuery());
     sentryRequest.setUrl(httpRequest.getURI().toString());
-    sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
+    sentryRequest.setHeaders(resolveHeadersMap(options, httpRequest.getHeaders()));
 
-    if (hub.getOptions().isSendDefaultPii()) {
+    if (options.isSendDefaultPii()) {
       sentryRequest.setCookies(toString(httpRequest.getHeaders().get("Cookies")));
     }
     return sentryRequest;
   }
 
   @NotNull
-  Map<String, String> resolveHeadersMap(final HttpHeaders request) {
+  Map<String, String> resolveHeadersMap(
+      final @NotNull SentryOptions options, final HttpHeaders request) {
     final Map<String, String> headersMap = new HashMap<>();
     for (Map.Entry<String, List<String>> entry : request.entrySet()) {
       // do not copy personal information identifiable headers
-      if (hub.getOptions().isSendDefaultPii()
+      if (options.isSendDefaultPii()
           || !SENSITIVE_HEADERS.contains(entry.getKey().toUpperCase(Locale.ROOT))) {
         headersMap.put(entry.getKey(), toString(entry.getValue()));
       }

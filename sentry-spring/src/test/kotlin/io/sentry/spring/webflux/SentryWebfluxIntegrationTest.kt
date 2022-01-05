@@ -7,8 +7,6 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.HubAdapter
-import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.checkEvent
@@ -34,10 +32,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import java.time.Duration
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -75,6 +73,22 @@ class SentryWebfluxIntegrationTest {
                     assertEquals("GET", it.method)
                     assertEquals("param=value", it.queryString)
                 }
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `does not attache request information to SentryEvents when events are captured outside of withSentry`() {
+        testClient.get()
+            .uri("http://localhost:$port/without-context?param=value")
+            .exchange()
+            .expectStatus()
+            .isOk
+
+        verify(transport).send(
+            checkEvent { event ->
+                assertNull(event.request)
             },
             anyOrNull()
         )
@@ -138,18 +152,10 @@ open class App {
     open fun mockTransport() = transport
 
     @Bean
-    open fun hub() = HubAdapter.getInstance()
+    open fun sentryFilter() = SentryWebFilter()
 
     @Bean
-    open fun sentryFilter(hub: IHub) = SentryWebFilter(hub)
-
-    @Bean
-    open fun sentryWebExceptionHandler(hub: IHub) = SentryWebExceptionHandler(hub)
-
-    @Bean
-    open fun sentryScheduleHookRegistrar() = ApplicationRunner {
-        Schedulers.onScheduleHook("sentry", SentryScheduleHook())
-    }
+    open fun sentryWebExceptionHandler() = SentryWebExceptionHandler()
 
     @Bean
     open fun sentryInitializer(transportFactory: ITransportFactory) = ApplicationRunner {
@@ -165,9 +171,15 @@ open class App {
 class HelloController {
 
     @GetMapping("/hello")
-    fun hello(): Mono<Void> {
+    fun hello(): Mono<String> {
+        return Mono.just("hello")
+            .doOnEach(SentryReactor.withSentry { Sentry.captureMessage(it) })
+    }
+
+    @GetMapping("/without-context")
+    fun withoutContext(): Mono<String> {
         Sentry.captureMessage("hello")
-        return Mono.empty<Void>()
+        return Mono.just("hello")
     }
 
     @GetMapping("/throws")
