@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Sending errors in Spring WebFlux integration (#1819)
+
 ## 5.5.2
 
 * Fix: Detect App Cold start correctly for Hybrid SDKs (#1855)
