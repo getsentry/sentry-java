@@ -21,6 +21,7 @@ import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
+import io.sentry.spring.SentryExceptionResolver
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
 import io.sentry.spring.SpringSecuritySentryUserProvider
@@ -47,6 +48,7 @@ import org.springframework.core.annotation.Order
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.servlet.HandlerExceptionResolver
 import java.lang.RuntimeException
 import javax.servlet.Filter
 import kotlin.test.Test
@@ -359,6 +361,15 @@ class SentryAutoConfigurationTest {
                 userProviders.forEach {
                     assertFalse(it is SpringSecuritySentryUserProvider)
                 }
+            }
+    }
+
+    @Test
+    fun `when Spring MVC is not on the classpath, SentryExceptionResolver is not configured`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+            .withClassLoader(FilteredClassLoader(HandlerExceptionResolver::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(SentryExceptionResolver::class.java)
             }
     }
 
