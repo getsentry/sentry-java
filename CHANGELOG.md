@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Do not add breadcrumbs on the root scope (#1864)
+
 ## 5.5.2
 
 * Fix: Detect App Cold start correctly for Hybrid SDKs (#1855)
