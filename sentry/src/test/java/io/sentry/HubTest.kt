@@ -117,6 +117,7 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = Hub(options)
+        sut.pushScope()
         (1..10).forEach { _ -> sut.addBreadcrumb(Breadcrumb(), null) }
         var actual = 0
         sut.configureScope {
@@ -148,6 +149,7 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = Hub(options)
+        sut.pushScope()
         val crumb = Breadcrumb()
         crumb.message = "original"
         sut.addBreadcrumb(crumb)
@@ -164,6 +166,7 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = Hub(options)
+        sut.pushScope()
         val expected = Breadcrumb()
         sut.addBreadcrumb(expected)
         var breadcrumbs: Queue<Breadcrumb>? = null
@@ -181,6 +184,7 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = Hub(options)
+        sut.pushScope()
 
         val actual = Breadcrumb()
         sut.addBreadcrumb(actual)
@@ -219,6 +223,7 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = Hub(options)
+        sut.pushScope()
         var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
         sut.addBreadcrumb("message", "category")
@@ -233,6 +238,7 @@ class HubTest {
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         val sut = Hub(options)
+        sut.pushScope()
         var breadcrumbs: Queue<Breadcrumb>? = null
         sut.configureScope { breadcrumbs = it.breadcrumbs }
         sut.addBreadcrumb("message", "category")
@@ -785,6 +791,7 @@ class HubTest {
     @Test
     fun `when clearBreadcrumbs is called on disabled client, do nothing`() {
         val hub = generateHub()
+        hub.pushScope()
         var scope: Scope? = null
         hub.configureScope {
             scope = it
@@ -801,6 +808,7 @@ class HubTest {
     @Test
     fun `when clearBreadcrumbs is called, clear breadcrumbs`() {
         val hub = generateHub()
+        hub.pushScope()
         var scope: Scope? = null
         hub.configureScope {
             scope = it

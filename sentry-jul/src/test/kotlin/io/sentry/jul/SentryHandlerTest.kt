@@ -211,6 +211,7 @@ class SentryHandlerTest {
     @Test
     fun `attaches breadcrumbs with level higher than minimumBreadcrumbLevel`() {
         fixture = Fixture(minimumBreadcrumbLevel = Level.CONFIG, minimumEventLevel = Level.WARNING)
+        Sentry.pushScope() // breadcrumbs don't get added to the root scope
         val utcTime = LocalDateTime.now(ZoneId.of("UTC"))
 
         fixture.logger.config("this should be a breadcrumb #1")
@@ -239,6 +240,7 @@ class SentryHandlerTest {
     @Test
     fun `does not attach breadcrumbs with level lower than minimumBreadcrumbLevel`() {
         fixture = Fixture(minimumBreadcrumbLevel = Level.INFO, minimumEventLevel = Level.WARNING)
+        Sentry.pushScope() // breadcrumbs don't get added to the root scope
 
         fixture.logger.config("this should NOT be a breadcrumb")
         fixture.logger.info("this should be a breadcrumb")
@@ -258,6 +260,7 @@ class SentryHandlerTest {
     @Test
     fun `attaches breadcrumbs for default appender configuration`() {
         fixture = Fixture()
+        Sentry.pushScope() // breadcrumbs don't get added to the root scope
 
         fixture.logger.config("this should not be a breadcrumb as the level is lower than the minimum INFO")
         fixture.logger.info("this should be a breadcrumb")

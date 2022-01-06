@@ -5,6 +5,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 final class Stack {
 
@@ -70,6 +71,17 @@ final class Stack {
     // peek can never return null since Stack can be created only with an item and pop does not drop
     // the last item.
     return items.peek();
+  }
+
+  @Nullable
+  StackItem peekNonRoot() {
+    synchronized (items) {
+      if (items.size() != 1) {
+        return items.peek();
+      } else {
+        return null;
+      }
+    }
   }
 
   void pop() {

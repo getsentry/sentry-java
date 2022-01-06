@@ -295,7 +295,12 @@ public final class Hub implements IHub {
     } else if (breadcrumb == null) {
       options.getLogger().log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
     } else {
-      stack.peek().getScope().addBreadcrumb(breadcrumb, hint);
+      final StackItem stackItem = stack.peekNonRoot();
+      if (stackItem != null) {
+        stackItem.getScope().addBreadcrumb(breadcrumb, hint);
+      } else {
+        options.getLogger().log(SentryLevel.WARNING, "addBreadcrumb called on root scope.");
+      }
     }
   }
 
