@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
+
 ## 5.5.2
 
 * Fix: Detect App Cold start correctly for Hybrid SDKs (#1855)
