@@ -9,8 +9,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.ISpan;
@@ -28,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -116,7 +115,7 @@ public final class ActivityLifecycleIntegration
     activityFramesTracker.stop();
   }
 
-  private void addBreadcrumb(final @NonNull Activity activity, final @NotNull String state) {
+  private void addBreadcrumb(final @NotNull Activity activity, final @NotNull String state) {
     if (options != null && hub != null && options.isEnableActivityLifecycleBreadcrumbs()) {
       final Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setType("navigation");
@@ -128,7 +127,7 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private @NotNull String getActivityName(final @NonNull Activity activity) {
+  private @NotNull String getActivityName(final @NotNull Activity activity) {
     return activity.getClass().getSimpleName();
   }
 
@@ -140,7 +139,7 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void startTracing(final @NonNull Activity activity) {
+  private void startTracing(final @NotNull Activity activity) {
     if (performanceEnabled && !isRunningTransaction(activity) && hub != null) {
       // as we allow a single transaction running on the bound Scope, we finish the previous ones
       stopPreviousTransactions();
@@ -211,11 +210,11 @@ public final class ActivityLifecycleIntegration
         });
   }
 
-  private boolean isRunningTransaction(final @NonNull Activity activity) {
+  private boolean isRunningTransaction(final @NotNull Activity activity) {
     return activitiesWithOngoingTransactions.containsKey(activity);
   }
 
-  private void stopTracing(final @NonNull Activity activity, final boolean shouldFinishTracing) {
+  private void stopTracing(final @NotNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
       finishTransaction(transaction);
@@ -241,7 +240,7 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityCreated(
-      final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
+      final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
     startTracing(activity);
@@ -250,7 +249,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityStarted(final @NonNull Activity activity) {
+  public synchronized void onActivityStarted(final @NotNull Activity activity) {
     // The docs on the screen rendering performance tracing
     // (https://firebase.google.com/docs/perf-mon/screen-traces?platform=android#definition),
     // state that the tracing starts for every Activity class when the app calls .onActivityStarted.
@@ -262,7 +261,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityResumed(final @NonNull Activity activity) {
+  public synchronized void onActivityResumed(final @NotNull Activity activity) {
     if (!firstActivityResumed) {
 
       // we only finish the app start if the process is of foregroundImportance
@@ -295,7 +294,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityPostResumed(final @NonNull Activity activity) {
+  public synchronized void onActivityPostResumed(final @NotNull Activity activity) {
     // only executed if API >= 29 otherwise it happens on onActivityResumed
     if (isAllActivityCallbacksAvailable && options != null) {
       // this should be called only when onResume has been executed already, which means
@@ -305,23 +304,23 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityPaused(final @NonNull Activity activity) {
+  public synchronized void onActivityPaused(final @NotNull Activity activity) {
     addBreadcrumb(activity, "paused");
   }
 
   @Override
-  public synchronized void onActivityStopped(final @NonNull Activity activity) {
+  public synchronized void onActivityStopped(final @NotNull Activity activity) {
     addBreadcrumb(activity, "stopped");
   }
 
   @Override
   public synchronized void onActivitySaveInstanceState(
-      final @NonNull Activity activity, final @NonNull Bundle outState) {
+      final @NotNull Activity activity, final @NotNull Bundle outState) {
     addBreadcrumb(activity, "saveInstanceState");
   }
 
   @Override
-  public synchronized void onActivityDestroyed(final @NonNull Activity activity) {
+  public synchronized void onActivityDestroyed(final @NotNull Activity activity) {
     addBreadcrumb(activity, "destroyed");
 
     // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
