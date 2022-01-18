@@ -20,6 +20,8 @@ import io.sentry.spring.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
 import io.sentry.spring.tracing.SentryTransactionPointcutConfiguration;
+import io.sentry.spring.tracing.SpringMvcTransactionNameProvider;
+import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
 import java.util.List;
@@ -185,11 +187,20 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
+      @ConditionalOnMissingBean(TransactionNameProvider.class)
+      public @NotNull TransactionNameProvider transactionNameProvider() {
+        return new SpringMvcTransactionNameProvider();
+      }
+
+      @Bean
       @ConditionalOnMissingBean(name = "sentrySpringFilter")
       public @NotNull FilterRegistrationBean<SentrySpringFilter> sentrySpringFilter(
-          final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
+          final @NotNull IHub hub,
+          final @NotNull SentryRequestResolver requestResolver,
+          final @NotNull TransactionNameProvider transactionNameProvider) {
         FilterRegistrationBean<SentrySpringFilter> filter =
-            new FilterRegistrationBean<>(new SentrySpringFilter(hub, requestResolver));
+            new FilterRegistrationBean<>(
+                new SentrySpringFilter(hub, requestResolver, transactionNameProvider));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE);
         return filter;
       }
@@ -198,9 +209,9 @@ public class SentryAutoConfiguration {
       @Conditional(SentryTracingCondition.class)
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
-          final @NotNull IHub hub) {
+          final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
         FilterRegistrationBean<SentryTracingFilter> filter =
-            new FilterRegistrationBean<>(new SentryTracingFilter(hub));
+            new FilterRegistrationBean<>(new SentryTracingFilter(hub, transactionNameProvider));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE + 1); // must run after SentrySpringFilter
         return filter;
       }
@@ -209,8 +220,11 @@ public class SentryAutoConfiguration {
       @ConditionalOnMissingBean
       @ConditionalOnClass(HandlerExceptionResolver.class)
       public @NotNull SentryExceptionResolver sentryExceptionResolver(
-          final @NotNull IHub sentryHub, final @NotNull SentryProperties options) {
-        return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
+          final @NotNull IHub sentryHub,
+          final @NotNull TransactionNameProvider transactionNameProvider,
+          final @NotNull SentryProperties options) {
+        return new SentryExceptionResolver(
+            sentryHub, transactionNameProvider, options.getExceptionResolverOrder());
       }
     }
 

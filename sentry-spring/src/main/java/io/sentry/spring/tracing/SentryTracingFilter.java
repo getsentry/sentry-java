@@ -22,14 +22,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
 
-/**
- * Creates {@link ITransaction} around HTTP request executions.
- *
- * <p>Only requests that have {@link HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE} request
- * attribute set are turned into transactions. This attribute is set in {@link
- * RequestMappingInfoHandlerMapping} on request that have not been dropped with any {@link
- * javax.servlet.Filter}.
- */
+/** Creates {@link ITransaction} around HTTP request executions. */
 @Open
 public class SentryTracingFilter extends OncePerRequestFilter {
   /** Operation used by {@link SentryTransaction} created in {@link SentryTracingFilter}. */
@@ -38,10 +31,25 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IHub hub;
 
+  /**
+   * Creates filter that resolves transaction name using {@link SpringMvcTransactionNameProvider}.
+   *
+   * <p>Only requests that have {@link HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE} request
+   * attribute set are turned into transactions. This attribute is set in {@link
+   * RequestMappingInfoHandlerMapping} on request that have not been dropped with any {@link
+   * javax.servlet.Filter}.
+   */
   public SentryTracingFilter() {
     this(HubAdapter.getInstance());
   }
 
+  /**
+   * Creates filter that resolves transaction name using transaction name provider given by
+   * parameter.
+   *
+   * @param hub - the hub
+   * @param transactionNameProvider - transaction name provider.
+   */
   public SentryTracingFilter(
       final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
@@ -50,7 +58,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   }
 
   public SentryTracingFilter(final @NotNull IHub hub) {
-    this(hub, new TransactionNameProvider());
+    this(hub, new SpringMvcTransactionNameProvider());
   }
 
   @Override

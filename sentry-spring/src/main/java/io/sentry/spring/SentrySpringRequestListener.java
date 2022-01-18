@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.spring.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.util.Objects;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
@@ -22,6 +23,8 @@ import org.springframework.core.Ordered;
 public class SentrySpringRequestListener implements ServletRequestListener, Ordered {
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver requestResolver;
+  private final @NotNull SpringMvcTransactionNameProvider transactionNameProvider =
+      new SpringMvcTransactionNameProvider();
 
   /**
    * Creates a new instance of {@link SentrySpringRequestListener}. Used in traditional servlet
@@ -65,7 +68,8 @@ public class SentrySpringRequestListener implements ServletRequestListener, Orde
       hub.configureScope(
           scope -> {
             scope.setRequest(requestResolver.resolveSentryRequest(request));
-            scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
+            scope.addEventProcessor(
+                new SentryRequestHttpServletRequestProcessor(transactionNameProvider, request));
           });
     }
   }

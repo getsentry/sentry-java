@@ -201,6 +201,7 @@ class SentrySpringIntegrationTest {
 
         verify(transport).send(
             checkTransaction { transaction ->
+                assertThat(transaction.transaction).isEqualTo("GET /performance")
                 assertThat(transaction.user).isNotNull()
                 assertThat(transaction.user!!.username).isEqualTo("user")
             },
