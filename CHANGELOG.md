@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.5.3
 
 * Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
