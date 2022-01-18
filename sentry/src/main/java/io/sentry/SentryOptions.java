@@ -564,28 +564,6 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the cache dir. size Default is 30
-   *
-   * @deprecated use {{@link SentryOptions#getMaxCacheItems()} }
-   * @return the cache dir. size
-   */
-  @Deprecated
-  public int getCacheDirSize() {
-    return maxCacheItems;
-  }
-
-  /**
-   * Sets the cache dir. size Default is 30
-   *
-   * @deprecated use {{@link SentryOptions#setCacheDirSize(int)} }
-   * @param cacheDirSize the cache dir. size
-   */
-  @Deprecated
-  public void setCacheDirSize(int cacheDirSize) {
-    maxCacheItems = cacheDirSize;
-  }
-
-  /**
    * Returns the max Breadcrumbs Default is 100
    *
    * @return the max breadcrumbs
@@ -866,21 +844,6 @@ public class SentryOptions {
    */
   public void setEnableAutoSessionTracking(final boolean enableAutoSessionTracking) {
     this.enableAutoSessionTracking = enableAutoSessionTracking;
-  }
-
-  /** @deprecated use {@link SentryOptions#isEnableAutoSessionTracking()} */
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public boolean isEnableSessionTracking() {
-    return enableAutoSessionTracking;
-  }
-
-  /** @deprecated use {@link SentryOptions#setEnableAutoSessionTracking(boolean)} */
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  @SuppressWarnings("InlineMeSuggester")
-  public void setEnableSessionTracking(final boolean enableSessionTracking) {
-    setEnableAutoSessionTracking(enableSessionTracking);
   }
 
   /**

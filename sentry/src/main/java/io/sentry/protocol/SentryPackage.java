@@ -30,16 +30,6 @@ public final class SentryPackage implements JsonUnknown, JsonSerializable {
     this.version = Objects.requireNonNull(version, "version is required.");
   }
 
-  /**
-   * @deprecated
-   *     <p>Use {@link SentryPackage#SentryPackage(String, String)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public SentryPackage() {
-    this("", "");
-  }
-
   public @NotNull String getName() {
     return name;
   }

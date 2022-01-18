@@ -4,6 +4,7 @@
 
 * Feat: Relax TransactionNameProvider (#1861)
 * Ref: Simplify DateUtils with ISO8601Utils (#1837)
+* Ref: Remove deprecated and scheduled fields (#)
 
 ## 6.0.0-alpha.1
 

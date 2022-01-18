@@ -1,10 +1,7 @@
 package io.sentry;
 
-import io.sentry.protocol.Contexts;
-import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import java.util.List;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -53,36 +50,4 @@ public interface ITransaction extends ISpan {
    */
   @NotNull
   SentryId getEventId();
-
-  /**
-   * Attaches request information to the transaction.
-   *
-   * @param request the request
-   * @deprecated use {@link Scope#setRequest(Request)}
-   */
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  void setRequest(@Nullable Request request);
-
-  /**
-   * Returns the request information from the transaction
-   *
-   * @return the request or {@code null} if not set
-   * @deprecated use {@link Scope#getRequest()}
-   */
-  @Nullable
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  Request getRequest();
-
-  /**
-   * Returns contexts associated with the transaction.
-   *
-   * @return the contexts
-   * @deprecated use {@link Scope#getContexts()}
-   */
-  @NotNull
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  Contexts getContexts();
 }
