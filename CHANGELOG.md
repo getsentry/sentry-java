@@ -3,7 +3,6 @@
 ## Unreleased
 
 * Ref: Simplify DateUtils with ISO8601Utils (#1837)
-* Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
 
 ## 6.0.0-alpha.1
 
@@ -32,6 +31,10 @@ Breaking changes:
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
+## 5.5.3
+
+* Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
 
 ## 5.5.2
 
