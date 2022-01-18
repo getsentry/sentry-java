@@ -577,7 +577,7 @@ public final class SentryClient implements ISentryClient {
     options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
 
     try {
-      flush(options.getShutdownTimeout());
+      flush(options.getShutdownTimeoutMillis());
       transport.close();
     } catch (IOException e) {
       options
