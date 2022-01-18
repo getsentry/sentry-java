@@ -271,7 +271,7 @@ public final class Hub implements IHub {
             ((Closeable) integration).close();
           }
         }
-        options.getExecutorService().close(options.getShutdownTimeout());
+        options.getExecutorService().close(options.getShutdownTimeoutMillis());
 
         // Close the top-most client
         final StackItem item = stack.peek();

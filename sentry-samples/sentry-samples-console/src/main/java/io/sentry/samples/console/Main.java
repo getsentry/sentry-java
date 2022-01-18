@@ -49,7 +49,7 @@ public class Main {
 
           // Configure the background worker which sends events to sentry:
           // Wait up to 5 seconds before shutdown while there are events to send.
-          options.setShutdownTimeout(5000);
+          options.setShutdownTimeoutMillis(5000);
 
           // Enable SDK logging with Debug level
           options.setDebug(true);
