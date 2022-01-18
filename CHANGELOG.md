@@ -55,7 +55,6 @@ Breaking changes:
 * Ref: change `java.util.Random` to `java.security.SecureRandom` for possible security reasons (#1831)
 * Feat: Add `SentryFileInputStream` and `SentryFileOutputStream` for File I/O performance instrumentation (#1826)
 - Feat: Add `SentryFileReader` and `SentryFileWriter` for File I/O instrumentation (#1843)
->>>>>>> main
 
 ## 5.4.3
 
