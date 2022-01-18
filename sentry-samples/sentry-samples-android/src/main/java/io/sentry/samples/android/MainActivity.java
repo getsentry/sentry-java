@@ -160,9 +160,10 @@ public class MainActivity extends AppCompatActivity {
         view -> SampleFragment.newInstance().show(getSupportFragmentManager(), null));
 
     binding.openThirdFragment.setOnClickListener(
-        view -> {
-          startActivity(new Intent(this, ThirdActivityFragment.class));
-        });
+        view -> startActivity(new Intent(this, ThirdActivityFragment.class)));
+
+    binding.openGesturesActivity.setOnClickListener(
+      view -> startActivity(new Intent(this, GesturesActivity.class)));
 
     setContentView(binding.getRoot());
   }

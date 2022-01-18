@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * Android Options initializer, it reads configurations from AndroidManifest and sets to the
  * SentryOptions. It also adds default values for some fields.
  */
+@SuppressWarnings("Convert2MethodRef")
 final class AndroidOptionsInitializer {
 
   /** private ctor */
@@ -153,12 +154,14 @@ final class AndroidOptionsInitializer {
       options.addIntegration(
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
+      options.addIntegration(
+        new UserInteractionIntegration((Application) context, buildInfoProvider, loadClass));
     } else {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "ActivityBreadcrumbsIntegration needs an Application class to be installed.");
+              "ActivityLifecycle and UserInteraction Integrations need an Application class to be installed.");
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));

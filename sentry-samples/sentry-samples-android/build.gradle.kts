@@ -113,6 +113,7 @@ dependencies {
 //    }
 
     implementation(Config.Libs.appCompat)
+    implementation(Config.Libs.androidxRecylerView)
     implementation(Config.Libs.retrofit2)
     implementation(Config.Libs.retrofit2Gson)
 

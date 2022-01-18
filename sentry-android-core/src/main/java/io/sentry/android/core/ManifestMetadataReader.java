@@ -44,6 +44,7 @@ final class ManifestMetadataReader {
   static final String BREADCRUMBS_APP_LIFECYCLE_ENABLE = "io.sentry.breadcrumbs.app-lifecycle";
   static final String BREADCRUMBS_SYSTEM_EVENTS_ENABLE = "io.sentry.breadcrumbs.system-events";
   static final String BREADCRUMBS_APP_COMPONENTS_ENABLE = "io.sentry.breadcrumbs.app-components";
+  static final String BREADCRUMBS_USER_INTERACTION_ENABLE = "io.sentry.breadcrumbs.user-interaction";
 
   static final String UNCAUGHT_EXCEPTION_HANDLER_ENABLE =
       "io.sentry.uncaught-exception-handler.enable";
@@ -174,6 +175,13 @@ final class ManifestMetadataReader {
                 logger,
                 BREADCRUMBS_APP_COMPONENTS_ENABLE,
                 options.isEnableAppComponentBreadcrumbs()));
+
+        options.setEnableAppComponentBreadcrumbs(
+            readBool(
+                metadata,
+                logger,
+                BREADCRUMBS_USER_INTERACTION_ENABLE,
+                options.isEnableUserInteractionBreadcrumbs()));
 
         options.setEnableUncaughtExceptionHandler(
             readBool(
