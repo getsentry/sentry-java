@@ -1042,6 +1042,7 @@ public class io/sentry/SentryOptions {
 	public fun getServerName ()Ljava/lang/String;
 	public fun getSessionTrackingIntervalMillis ()J
 	public fun getShutdownTimeout ()J
+	public fun getShutdownTimeoutMillis ()J
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
@@ -1110,6 +1111,7 @@ public class io/sentry/SentryOptions {
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setSessionTrackingIntervalMillis (J)V
 	public fun setShutdownTimeout (J)V
+	public fun setShutdownTimeoutMillis (J)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTraceSampling (Z)V
