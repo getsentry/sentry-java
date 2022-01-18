@@ -100,7 +100,18 @@ public final class Device implements JsonUnknown, JsonSerializable {
   private @Nullable TimeZone timezone;
 
   private @Nullable String id;
-  private @Nullable String language;
+
+  /**
+   * This method returns the language code for this locale, which will either be the empty string or
+   * a lowercase ISO 639 code.
+   *
+   * @deprecated use {@link Device#getLocale()}
+   */
+  @Deprecated private @Nullable String language;
+
+  /** The locale of the device. For example, en-US. */
+  private @Nullable String locale;
+
   private @Nullable String connectionType;
 
   /** battery's temperature in celsius */
@@ -142,6 +153,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.batteryLevel = device.batteryLevel;
     final String[] archsRef = device.archs;
     this.archs = archsRef != null ? archsRef.clone() : null;
+    this.locale = device.locale;
 
     final TimeZone timezoneRef = device.timezone;
     this.timezone = timezoneRef != null ? (TimeZone) timezoneRef.clone() : null;
@@ -550,6 +562,14 @@ public final class Device implements JsonUnknown, JsonSerializable {
       }
     }
     writer.endObject();
+  }
+
+  public @Nullable String getLocale() {
+    return locale;
+  }
+
+  public void setLocale(final @Nullable String locale) {
+    this.locale = locale;
   }
 
   @Nullable

@@ -49,6 +49,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sentry.dsn")
@@ -206,6 +207,7 @@ public class SentryAutoConfiguration {
 
       @Bean
       @ConditionalOnMissingBean
+      @ConditionalOnClass(HandlerExceptionResolver.class)
       public @NotNull SentryExceptionResolver sentryExceptionResolver(
           final @NotNull IHub sentryHub, final @NotNull SentryProperties options) {
         return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());

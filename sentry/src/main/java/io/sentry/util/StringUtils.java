@@ -1,7 +1,10 @@
 package io.sentry.util;
 
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
@@ -50,5 +53,23 @@ public final class StringUtils {
     } else {
       return str;
     }
+  }
+
+  /**
+   * Converts the given number of bytes to a human-readable string.
+   *
+   * @param bytes the number of bytes
+   * @return a string representing the human-readable byte count (e.g. 1kB, 20 MB, etc.)
+   */
+  public static @NotNull String byteCountToString(long bytes) {
+    if (-1000 < bytes && bytes < 1000) {
+      return bytes + " B";
+    }
+    CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+    while (bytes <= -999_950 || bytes >= 999_950) {
+      bytes /= 1000;
+      ci.next();
+    }
+    return String.format(Locale.ROOT, "%.1f %cB", bytes / 1000.0, ci.current());
   }
 }
