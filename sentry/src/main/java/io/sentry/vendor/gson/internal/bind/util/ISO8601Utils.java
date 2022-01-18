@@ -36,7 +36,7 @@ public class ISO8601Utils
    *
    * @since 2.7
    */
-  private static final TimeZone TIMEZONE_UTC = TimeZone.getTimeZone(UTC_ID);
+  public static final TimeZone TIMEZONE_UTC = TimeZone.getTimeZone(UTC_ID);
 
     /*
     /**********************************************************

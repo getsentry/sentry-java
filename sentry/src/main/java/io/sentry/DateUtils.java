@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.vendor.gson.internal.bind.util.ISO8601Utils.TIMEZONE_UTC;
+
 import io.sentry.vendor.gson.internal.bind.util.ISO8601Utils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -7,17 +9,12 @@ import java.text.ParseException;
 import java.text.ParsePosition;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Utilities to deal with dates */
 @ApiStatus.Internal
 public final class DateUtils {
-  private static final String UTC = "UTC";
-
-  // if UTC is not found, it fallback to "GMT" which is UTC equivalent
-  private static final @NotNull TimeZone UTC_TIMEZONE = TimeZone.getTimeZone(UTC);
 
   private DateUtils() {}
 
@@ -28,7 +25,7 @@ public final class DateUtils {
    */
   @SuppressWarnings("JdkObsolete")
   public static @NotNull Date getCurrentDateTime() {
-    final Calendar calendar = Calendar.getInstance(UTC_TIMEZONE);
+    final Calendar calendar = Calendar.getInstance(TIMEZONE_UTC);
     return calendar.getTime();
   }
 
@@ -81,7 +78,7 @@ public final class DateUtils {
    * @return the UTC Date
    */
   public static @NotNull Date getDateTime(final long millis) {
-    final Calendar calendar = Calendar.getInstance(UTC_TIMEZONE);
+    final Calendar calendar = Calendar.getInstance(TIMEZONE_UTC);
     calendar.setTimeInMillis(millis);
     return calendar.getTime();
   }
