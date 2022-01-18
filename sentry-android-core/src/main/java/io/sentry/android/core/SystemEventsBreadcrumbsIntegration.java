@@ -36,7 +36,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.ILogger;
@@ -52,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class SystemEventsBreadcrumbsIntegration implements Integration, Closeable {

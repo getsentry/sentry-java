@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Feat: Relax TransactionNameProvider (#1861)
+* Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
 
 ## 6.0.0-alpha.1
 
@@ -31,6 +32,27 @@ Breaking changes:
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
+## 5.5.2
+
+* Fix: Detect App Cold start correctly for Hybrid SDKs (#1855)
+* Bump: log4j to 2.17.0 (#1852)
+* Bump: logback to 1.2.9 (#1853)
+
+## 5.5.1
+
+* Bump: log4j to 2.16.0 (#1845)
+* Fix: Make App start cold/warm visible to Hybrid SDKs (#1848)
+
+## 5.5.0
+
+* Bump: log4j to 2.15.0 (#1839)
+* Ref: Rename Fragment span operation from `ui.fragment.load` to `ui.load` (#1824)
+* Feat: Add locale to device context and deprecate language (#1832)
+* Ref: change `java.util.Random` to `java.security.SecureRandom` for possible security reasons (#1831)
+* Feat: Add `SentryFileInputStream` and `SentryFileOutputStream` for File I/O performance instrumentation (#1826)
+- Feat: Add `SentryFileReader` and `SentryFileWriter` for File I/O instrumentation (#1843)
+>>>>>>> main
 
 ## 5.4.3
 
