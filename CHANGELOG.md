@@ -2,8 +2,6 @@
 
 ## Unreleased
 
-* Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
-
 ## 6.0.0-alpha.1
 
 * Feat: Use float instead of Date for protocol types for higher precision (#1737)
@@ -32,6 +30,10 @@ Breaking changes:
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
 
+## 5.5.3
+
+* Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
+
 ## 5.5.2
 
 * Fix: Detect App Cold start correctly for Hybrid SDKs (#1855)
@@ -51,7 +53,6 @@ Breaking changes:
 * Ref: change `java.util.Random` to `java.security.SecureRandom` for possible security reasons (#1831)
 * Feat: Add `SentryFileInputStream` and `SentryFileOutputStream` for File I/O performance instrumentation (#1826)
 - Feat: Add `SentryFileReader` and `SentryFileWriter` for File I/O instrumentation (#1843)
->>>>>>> main
 
 ## 5.4.3
 
