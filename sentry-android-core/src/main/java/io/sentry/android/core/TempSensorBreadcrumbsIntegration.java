@@ -7,7 +7,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.Integration;
@@ -17,6 +16,7 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class TempSensorBreadcrumbsIntegration

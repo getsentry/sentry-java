@@ -2,7 +2,7 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import java.util.Random
+import java.security.SecureRandom
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 class TracesSamplerTest {
     class Fixture {
         internal fun getSut(randomResult: Double? = null, tracesSampleRate: Double? = null, tracesSamplerResult: Double? = Double.MIN_VALUE): TracesSampler {
-            val random = mock<Random>()
+            val random = mock<SecureRandom>()
             if (randomResult != null) {
                 whenever(random.nextDouble()).thenReturn(randomResult)
             }

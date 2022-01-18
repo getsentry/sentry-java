@@ -49,6 +49,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     return event;
   }
 
+  @SuppressWarnings("NullAway")
   @Override
   public synchronized @NotNull SentryTransaction process(
       @NotNull SentryTransaction transaction, @Nullable Object hint) {

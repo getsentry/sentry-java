@@ -147,7 +147,7 @@ class PerformanceAndroidEventProcessorTest {
     }
 
     private fun setAppStart(coldStart: Boolean = true) {
-        AppStartState.getInstance().isColdStart = coldStart
+        AppStartState.getInstance().setColdStart(coldStart)
         AppStartState.getInstance().setAppStartTime(0, Date())
         AppStartState.getInstance().setAppStartEnd()
     }

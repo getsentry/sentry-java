@@ -310,8 +310,13 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (device.getId() == null) {
       device.setId(getDeviceId());
     }
+
+    final Locale locale = Locale.getDefault();
     if (device.getLanguage() == null) {
-      device.setLanguage(Locale.getDefault().toString()); // eg en_US
+      device.setLanguage(locale.getLanguage());
+    }
+    if (device.getLocale() == null) {
+      device.setLocale(locale.toString()); // eg en_US
     }
 
     return device;

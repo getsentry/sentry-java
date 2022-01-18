@@ -10,7 +10,7 @@ object Config {
     val kotlinCompatibleLanguageVersion = "1.4"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.0.3"
+        val androidGradle = "com.android.tools.build:gradle:7.0.4"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -53,10 +53,10 @@ object Config {
         val androidxCore = "androidx.core:core:1.3.2"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
-        val logbackVersion = "1.2.3"
+        val logbackVersion = "1.2.9"
         val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
 
-        val log4j2Version = "2.13.3"
+        val log4j2Version = "2.17.0"
         val log4j2Api = "org.apache.logging.log4j:log4j-api:$log4j2Version"
         val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
 
@@ -116,11 +116,11 @@ object Config {
         val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
         val androidxJunit = "androidx.test.ext:junit:1.1.3-rc01"
-        val androidxCoreKtx = "androidx.core:core-ktx:1.7.0-rc01"
-        val robolectric = "org.robolectric:robolectric:4.6.1"
+        val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
+        val robolectric = "org.robolectric:robolectric:4.7.3"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val mockitoInline = "org.mockito:mockito-inline:4.0.0"
-        val awaitility = "org.awaitility:awaitility-kotlin:4.1.0"
+        val mockitoInline = "org.mockito:mockito-inline:4.1.0"
+        val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.28.0"
@@ -163,10 +163,10 @@ object Config {
     object CompileOnly {
         private val nopenVersion = "1.0.1"
 
-        val jetbrainsAnnotations = "org.jetbrains:annotations:22.0.0"
+        val jetbrainsAnnotations = "org.jetbrains:annotations:23.0.0"
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
-        val errorprone = "com.google.errorprone:error_prone_core:2.9.0"
+        val errorprone = "com.google.errorprone:error_prone_core:2.10.0"
         val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.2"
     }
 
