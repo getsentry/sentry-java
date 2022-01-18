@@ -459,6 +459,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     public static final String LANGUAGE = "language";
     public static final String CONNECTION_TYPE = "connection_type";
     public static final String BATTERY_TEMPERATURE = "battery_temperature";
+    public static final String LOCALE = "locale";
   }
 
   @Override
@@ -554,6 +555,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
     }
     if (batteryTemperature != null) {
       writer.name(JsonKeys.BATTERY_TEMPERATURE).value(batteryTemperature);
+    }
+    if (locale != null) {
+      writer.name(JsonKeys.LOCALE).value(locale);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -690,6 +694,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.BATTERY_TEMPERATURE:
             device.batteryTemperature = reader.nextFloatOrNull();
+            break;
+          case JsonKeys.LOCALE:
+            device.locale = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {
