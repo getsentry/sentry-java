@@ -4,7 +4,7 @@
 
 * Feat: Relax TransactionNameProvider (#1861)
 * Ref: Simplify DateUtils with ISO8601Utils (#1837)
-* Ref: Remove Attachment ContentType since the Server infers it (#)
+* Ref: Remove Attachment ContentType since the Server infers it (#1874)
 
 ## 6.0.0-alpha.1
 
