@@ -213,9 +213,7 @@ public class SentryOptions {
   /** Automatically resolve server name. */
   private boolean attachServerName = true;
 
-  /**
-  When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
-   */
+  /** When enabled, Sentry installs UncaughtExceptionHandlerIntegration. */
   private boolean enableUncaughtExceptionHandler = true;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
