@@ -1932,6 +1932,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field FREE_STORAGE Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
 	public static final field LANGUAGE Ljava/lang/String;
+	public static final field LOCALE Ljava/lang/String;
 	public static final field LOW_MEMORY Ljava/lang/String;
 	public static final field MANUFACTURER Ljava/lang/String;
 	public static final field MEMORY_SIZE Ljava/lang/String;
