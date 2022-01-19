@@ -176,7 +176,7 @@ final class ManifestMetadataReader {
                 BREADCRUMBS_APP_COMPONENTS_ENABLE,
                 options.isEnableAppComponentBreadcrumbs()));
 
-        options.setEnableAppComponentBreadcrumbs(
+        options.setEnableUserInteractionBreadcrumbs(
             readBool(
                 metadata,
                 logger,
