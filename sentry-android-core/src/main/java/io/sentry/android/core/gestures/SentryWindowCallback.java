@@ -17,6 +17,7 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
   private final @NotNull SentryGestureListener gestureListener;
   private final @NotNull GestureDetectorCompat gestureDetector;
   private final @Nullable SentryOptions options;
+  private final @NotNull MotionEventObtainer motionEventObtainer;
 
   public SentryWindowCallback(
     final @NotNull Window.Callback delegate,
@@ -24,19 +25,32 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
     final @NotNull SentryGestureListener gestureListener,
     final @Nullable SentryOptions options
   ) {
+    this(delegate, new GestureDetectorCompat(context, gestureListener), gestureListener, options,
+      new MotionEventObtainer() {
+      });
+  }
+
+  SentryWindowCallback(
+    final @NotNull Window.Callback delegate,
+    final @NotNull GestureDetectorCompat gestureDetector,
+    final @NotNull SentryGestureListener gestureListener,
+    final @Nullable SentryOptions options,
+    final @NotNull MotionEventObtainer motionEventObtainer
+  ) {
     super(delegate);
     this.delegate = delegate;
     this.gestureListener = gestureListener;
     this.options = options;
-    gestureDetector = new GestureDetectorCompat(context, gestureListener);
+    this.gestureDetector = gestureDetector;
+    this.motionEventObtainer = motionEventObtainer;
   }
 
   @Override
   public boolean dispatchTouchEvent(final @Nullable MotionEvent motionEvent) {
     if (motionEvent != null) {
-      final MotionEvent copy = MotionEvent.obtain(motionEvent);
+      final MotionEvent copy = motionEventObtainer.obtain(motionEvent);
       try {
-        handleTouchEvent(motionEvent);
+        handleTouchEvent(copy);
       } catch (Throwable e) {
         if (options != null) {
           options
@@ -60,5 +74,12 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
 
   public @NotNull Window.Callback getDelegate() {
     return delegate;
+  }
+
+  interface MotionEventObtainer {
+    @NotNull
+    default MotionEvent obtain(@NotNull MotionEvent origin) {
+      return MotionEvent.obtain(origin);
+    }
   }
 }
