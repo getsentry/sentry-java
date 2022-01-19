@@ -49,8 +49,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     final String direction = scrollState.calculateDirection(motionEvent);
-    addBreadcrumb(scrollTarget, scrollState.type,
-      Collections.singletonMap("direction", direction));
+    addBreadcrumb(scrollTarget, scrollState.type, Collections.singletonMap("direction", direction));
     scrollState.reset();
   }
 
@@ -80,7 +79,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     if (target == null) {
       options
         .getLogger()
-        .log(SentryLevel.INFO, "Unable to find click target. No breadcrumb captured.");
+        .log(SentryLevel.DEBUG, "Unable to find click target. No breadcrumb captured.");
       return false;
     }
 
@@ -175,7 +174,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     if (window == null) {
       options
         .getLogger()
-        .log(SentryLevel.INFO, "Window is null in " + caller + ". No breadcrumb captured.");
+        .log(SentryLevel.DEBUG, "Window is null in " + caller + ". No breadcrumb captured.");
       return null;
     }
 
@@ -183,7 +182,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     if (decorView == null) {
       options
         .getLogger()
-        .log(SentryLevel.INFO, "DecorView is null in " + caller + ". No breadcrumb captured.");
+        .log(SentryLevel.DEBUG, "DecorView is null in " + caller + ". No breadcrumb captured.");
       return null;
     }
     return decorView;

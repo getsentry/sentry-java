@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * Android Options initializer, it reads configurations from AndroidManifest and sets to the
  * SentryOptions. It also adds default values for some fields.
  */
-@SuppressWarnings("Convert2MethodRef")
+@SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
 
   /** private ctor */
