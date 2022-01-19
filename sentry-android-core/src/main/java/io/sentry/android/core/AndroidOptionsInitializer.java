@@ -155,7 +155,7 @@ final class AndroidOptionsInitializer {
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
       options.addIntegration(
-        new UserInteractionIntegration((Application) context, buildInfoProvider, loadClass));
+        new UserInteractionIntegration((Application) context, loadClass));
     } else {
       options
           .getLogger()

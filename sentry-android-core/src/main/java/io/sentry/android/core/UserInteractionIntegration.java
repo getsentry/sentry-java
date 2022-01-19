@@ -27,20 +27,15 @@ public final class UserInteractionIntegration
   private @Nullable IHub hub;
   private @Nullable SentryAndroidOptions options;
 
-  private final boolean isAllActivityCallbacksAvailable;
   private final boolean isAndroidXAvailable;
 
   public UserInteractionIntegration(
     final @NotNull Application application,
-    final @NotNull IBuildInfoProvider buildInfoProvider,
     final @NotNull LoadClass classLoader
   ) {
     this.application = Objects.requireNonNull(application, "Application is required");
-    Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
 
     isAndroidXAvailable = checkAndroidXAvailability(classLoader);
-    isAllActivityCallbacksAvailable =
-      buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q;
   }
 
   private static boolean checkAndroidXAvailability(final @NotNull LoadClass loadClass) {
@@ -95,14 +90,6 @@ public final class UserInteractionIntegration
   }
 
   @Override
-  public void onActivityPreCreated(@NotNull Activity activity,
-    @Nullable Bundle savedInstanceState) {
-    if (isAllActivityCallbacksAvailable) {
-      startTracking(activity.getWindow(), activity);
-    }
-  }
-
-  @Override
   public void onActivityCreated(@NotNull Activity activity,
     @Nullable Bundle bundle) {
 
@@ -115,16 +102,12 @@ public final class UserInteractionIntegration
 
   @Override
   public void onActivityResumed(@NotNull Activity activity) {
-    if (!isAllActivityCallbacksAvailable) {
       startTracking(activity.getWindow(), activity);
-    }
   }
 
   @Override
   public void onActivityPaused(@NotNull Activity activity) {
-    if (!isAllActivityCallbacksAvailable) {
       stopTracking(activity.getWindow());
-    }
   }
 
   @Override
