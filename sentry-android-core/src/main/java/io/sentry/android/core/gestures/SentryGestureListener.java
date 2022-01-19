@@ -44,7 +44,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     if (scrollState.type == null) {
       options
         .getLogger()
-        .log(SentryLevel.INFO, "Unable to define scroll type. No breadcrumb captured.");
+        .log(SentryLevel.DEBUG, "Unable to define scroll type. No breadcrumb captured.");
       return;
     }
 
