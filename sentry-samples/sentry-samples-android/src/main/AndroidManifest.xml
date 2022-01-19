@@ -43,7 +43,6 @@
 
       <activity
             android:name=".GesturesActivity"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:exported="false" />
 
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
