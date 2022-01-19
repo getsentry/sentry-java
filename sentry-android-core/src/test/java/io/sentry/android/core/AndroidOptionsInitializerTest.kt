@@ -315,13 +315,24 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `When given Context is not an Application class, do not add ActivityBreadcrumbsIntegration`() {
+    fun `When given Context is not an Application class, do not add ActivityLifecycleIntegration`() {
         val sentryOptions = SentryAndroidOptions()
         val mockContext = mock<Context>()
         whenever(mockContext.applicationContext).thenReturn(null)
 
         AndroidOptionsInitializer.init(sentryOptions, mockContext)
         val actual = sentryOptions.integrations.firstOrNull { it is ActivityLifecycleIntegration }
+        assertNull(actual)
+    }
+
+    @Test
+    fun `When given Context is not an Application class, do not add UserInteractionIntegration`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = mock<Context>()
+        whenever(mockContext.applicationContext).thenReturn(null)
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+        val actual = sentryOptions.integrations.firstOrNull { it is UserInteractionIntegration }
         assertNull(actual)
     }
 
