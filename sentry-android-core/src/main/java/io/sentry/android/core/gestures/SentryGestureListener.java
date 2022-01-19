@@ -109,7 +109,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       if (target == null) {
         options
           .getLogger()
-          .log(SentryLevel.INFO, "Unable to find scroll target. No breadcrumb captured.");
+          .log(SentryLevel.DEBUG, "Unable to find scroll target. No breadcrumb captured.");
         return false;
       }
 
