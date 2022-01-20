@@ -85,7 +85,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return false;
     }
 
-    addBreadcrumb(target, "click");
+    addBreadcrumb(target, "click", Collections.emptyMap());
     return false;
   }
 
@@ -139,31 +139,21 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   public void onLongPress(MotionEvent motionEvent) {}
 
   // region utils
-  private void addBreadcrumb(final @NotNull View target, final @NotNull String eventType) {
-    addBreadcrumb(target, eventType, Collections.emptyMap());
-  }
-
   private void addBreadcrumb(
       final @NotNull View target,
       final @NotNull String eventType,
       final @NotNull Map<String, Object> additionalData) {
     @NotNull String className;
-    if (target.getClass().getCanonicalName() != null) {
-      className = target.getClass().getCanonicalName();
+    @Nullable String canonicalName = target.getClass().getCanonicalName();
+    if (canonicalName != null) {
+      className = canonicalName;
     } else {
       className = target.getClass().getSimpleName();
     }
 
-    final Breadcrumb breadcrumb = new Breadcrumb();
-    breadcrumb.setType("user");
-    breadcrumb.setCategory("ui." + eventType);
-    breadcrumb.setData("view.id", ViewUtils.getResourceId(target));
-    breadcrumb.setData("view.class", className);
-    for (final Map.Entry<String, Object> entry : additionalData.entrySet()) {
-      breadcrumb.getData().put(entry.getKey(), entry.getValue());
-    }
-    breadcrumb.setLevel(SentryLevel.INFO);
-    hub.addBreadcrumb(breadcrumb);
+    hub.addBreadcrumb(
+        Breadcrumb.userInteraction(
+            eventType, ViewUtils.getResourceId(target), className, additionalData));
   }
 
   private @Nullable View ensureWindowDecorView(final @NotNull String caller) {
@@ -187,7 +177,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   // endregion
 
   // region scroll logic
-  private static class ScrollState {
+  private static final class ScrollState {
     private @Nullable String type = null;
     private WeakReference<View> targetRef = new WeakReference<>(null);
     private float startX = 0f;
