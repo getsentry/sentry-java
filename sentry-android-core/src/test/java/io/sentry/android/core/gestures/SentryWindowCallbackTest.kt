@@ -36,7 +36,8 @@ class SentryWindowCallbackTest {
                         whenever(motionEventCopy.actionMasked).doReturn(actionMasked)
                         return motionEventCopy
                     }
-                })
+                }
+            )
         }
     }
 

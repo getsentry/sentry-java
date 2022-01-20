@@ -25,10 +25,9 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private final ScrollState scrollState = new ScrollState();
 
   public SentryGestureListener(
-    final @NotNull WeakReference<Window> windowRef,
-    final @NotNull IHub hub,
-    final @NotNull SentryAndroidOptions options
-  ) {
+      final @NotNull WeakReference<Window> windowRef,
+      final @NotNull IHub hub,
+      final @NotNull SentryAndroidOptions options) {
     this.windowRef = windowRef;
     this.hub = hub;
     this.options = options;
@@ -43,8 +42,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     if (scrollState.type == null) {
       options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Unable to define scroll type. No breadcrumb captured.");
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Unable to define scroll type. No breadcrumb captured.");
       return;
     }
 
@@ -73,13 +72,16 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     @SuppressWarnings("Convert2MethodRef")
     final @Nullable View target =
-      ViewUtils.findTarget(decorView, motionEvent.getX(), motionEvent.getY(),
-        view -> ViewUtils.isViewTappable(view));
+        ViewUtils.findTarget(
+            decorView,
+            motionEvent.getX(),
+            motionEvent.getY(),
+            view -> ViewUtils.isViewTappable(view));
 
     if (target == null) {
       options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Unable to find click target. No breadcrumb captured.");
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Unable to find click target. No breadcrumb captured.");
       return false;
     }
 
@@ -89,11 +91,10 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   @Override
   public boolean onScroll(
-    final @Nullable MotionEvent firstEvent,
-    final @Nullable MotionEvent currentEvent,
-    final float distX,
-    final float distY
-  ) {
+      final @Nullable MotionEvent firstEvent,
+      final @Nullable MotionEvent currentEvent,
+      final float distX,
+      final float distY) {
     final View decorView = ensureWindowDecorView("onScroll");
     if (decorView == null || firstEvent == null) {
       return false;
@@ -102,13 +103,16 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     if (scrollState.type == null) {
       @SuppressWarnings("Convert2MethodRef")
       final @Nullable View target =
-        ViewUtils.findTarget(decorView, firstEvent.getX(), firstEvent.getY(),
-          view -> ViewUtils.isViewScrollable(view));
+          ViewUtils.findTarget(
+              decorView,
+              firstEvent.getX(),
+              firstEvent.getY(),
+              view -> ViewUtils.isViewScrollable(view));
 
       if (target == null) {
         options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Unable to find scroll target. No breadcrumb captured.");
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Unable to find scroll target. No breadcrumb captured.");
         return false;
       }
 
@@ -120,36 +124,29 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   @Override
   public boolean onFling(
-    final @Nullable MotionEvent motionEvent,
-    final @Nullable MotionEvent motionEvent1,
-    final float v,
-    final float v1
-  ) {
+      final @Nullable MotionEvent motionEvent,
+      final @Nullable MotionEvent motionEvent1,
+      final float v,
+      final float v1) {
     scrollState.type = "swipe";
     return false;
   }
 
   @Override
-  public void onShowPress(MotionEvent motionEvent) {
-  }
+  public void onShowPress(MotionEvent motionEvent) {}
 
   @Override
-  public void onLongPress(MotionEvent motionEvent) {
-  }
+  public void onLongPress(MotionEvent motionEvent) {}
 
   // region utils
-  private void addBreadcrumb(
-    final @NotNull View target,
-    final @NotNull String eventType
-  ) {
+  private void addBreadcrumb(final @NotNull View target, final @NotNull String eventType) {
     addBreadcrumb(target, eventType, Collections.emptyMap());
   }
 
   private void addBreadcrumb(
-    final @NotNull View target,
-    final @NotNull String eventType,
-    final @NotNull Map<String, Object> additionalData
-  ) {
+      final @NotNull View target,
+      final @NotNull String eventType,
+      final @NotNull Map<String, Object> additionalData) {
     @NotNull String className;
     if (target.getClass().getCanonicalName() != null) {
       className = target.getClass().getCanonicalName();
@@ -173,16 +170,16 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     final Window window = windowRef.get();
     if (window == null) {
       options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Window is null in " + caller + ". No breadcrumb captured.");
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Window is null in " + caller + ". No breadcrumb captured.");
       return null;
     }
 
     final View decorView = window.getDecorView();
     if (decorView == null) {
       options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "DecorView is null in " + caller + ". No breadcrumb captured.");
+          .getLogger()
+          .log(SentryLevel.DEBUG, "DecorView is null in " + caller + ". No breadcrumb captured.");
       return null;
     }
     return decorView;

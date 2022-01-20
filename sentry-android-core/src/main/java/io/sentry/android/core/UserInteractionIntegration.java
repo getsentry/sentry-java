@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Window;
 import io.sentry.IHub;
@@ -21,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class UserInteractionIntegration
-  implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
+    implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   private final @NotNull Application application;
   private @Nullable IHub hub;
@@ -30,9 +29,7 @@ public final class UserInteractionIntegration
   private final boolean isAndroidXAvailable;
 
   public UserInteractionIntegration(
-    final @NotNull Application application,
-    final @NotNull LoadClass classLoader
-  ) {
+      final @NotNull Application application, final @NotNull LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
 
     isAndroidXAvailable = checkAndroidXAvailability(classLoader);
@@ -50,9 +47,7 @@ public final class UserInteractionIntegration
   private void startTracking(final @Nullable Window window, final @NotNull Context context) {
     if (window == null) {
       if (options != null) {
-        options
-          .getLogger()
-          .log(SentryLevel.INFO, "Window was null in startTracking");
+        options.getLogger().log(SentryLevel.INFO, "Window was null in startTracking");
       }
       return;
     }
@@ -64,7 +59,7 @@ public final class UserInteractionIntegration
       }
 
       final SentryGestureListener gestureListener =
-        new SentryGestureListener(new WeakReference<>(window), hub, options);
+          new SentryGestureListener(new WeakReference<>(window), hub, options);
       window.setCallback(new SentryWindowCallback(delegate, context, gestureListener, options));
     }
   }
@@ -72,9 +67,7 @@ public final class UserInteractionIntegration
   private void stopTracking(final @Nullable Window window) {
     if (window == null) {
       if (options != null) {
-        options
-          .getLogger()
-          .log(SentryLevel.INFO, "Window was null in stopTracking");
+        options.getLogger().log(SentryLevel.INFO, "Window was null in stopTracking");
       }
       return;
     }
@@ -90,57 +83,45 @@ public final class UserInteractionIntegration
   }
 
   @Override
-  public void onActivityCreated(@NotNull Activity activity,
-    @Nullable Bundle bundle) {
-
-  }
+  public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle bundle) {}
 
   @Override
-  public void onActivityStarted(@NotNull Activity activity) {
-
-  }
+  public void onActivityStarted(@NotNull Activity activity) {}
 
   @Override
   public void onActivityResumed(@NotNull Activity activity) {
-      startTracking(activity.getWindow(), activity);
+    startTracking(activity.getWindow(), activity);
   }
 
   @Override
   public void onActivityPaused(@NotNull Activity activity) {
-      stopTracking(activity.getWindow());
+    stopTracking(activity.getWindow());
   }
 
   @Override
-  public void onActivityStopped(@NotNull Activity activity) {
-
-  }
+  public void onActivityStopped(@NotNull Activity activity) {}
 
   @Override
-  public void onActivitySaveInstanceState(@NotNull Activity activity,
-    @NotNull Bundle bundle) {
-
-  }
+  public void onActivitySaveInstanceState(@NotNull Activity activity, @NotNull Bundle bundle) {}
 
   @Override
-  public void onActivityDestroyed(@NotNull Activity activity) {
-
-  }
+  public void onActivityDestroyed(@NotNull Activity activity) {}
 
   @Override
   public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
     this.options =
-      Objects.requireNonNull(
-        (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
-        "SentryAndroidOptions is required");
+        Objects.requireNonNull(
+            (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
+            "SentryAndroidOptions is required");
 
     this.hub = Objects.requireNonNull(hub, "Hub is required");
 
     this.options
-      .getLogger()
-      .log(
-        SentryLevel.DEBUG,
-        "UserInteractionIntegration enabled: %s",
-        this.options.isEnableUserInteractionBreadcrumbs());
+        .getLogger()
+        .log(
+            SentryLevel.DEBUG,
+            "UserInteractionIntegration enabled: %s",
+            this.options.isEnableUserInteractionBreadcrumbs());
 
     if (this.options.isEnableUserInteractionBreadcrumbs()) {
       if (isAndroidXAvailable) {
@@ -148,9 +129,10 @@ public final class UserInteractionIntegration
         this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
       } else {
         options
-          .getLogger()
-          .log(SentryLevel.INFO,
-            "androidx.core is not available, UserInteractionIntegration won't be installed");
+            .getLogger()
+            .log(
+                SentryLevel.INFO,
+                "androidx.core is not available, UserInteractionIntegration won't be installed");
       }
     }
   }

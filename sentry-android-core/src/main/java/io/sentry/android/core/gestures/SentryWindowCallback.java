@@ -20,23 +20,24 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
   private final @NotNull MotionEventObtainer motionEventObtainer;
 
   public SentryWindowCallback(
-    final @NotNull Window.Callback delegate,
-    final @NotNull Context context,
-    final @NotNull SentryGestureListener gestureListener,
-    final @Nullable SentryOptions options
-  ) {
-    this(delegate, new GestureDetectorCompat(context, gestureListener), gestureListener, options,
-      new MotionEventObtainer() {
-      });
+      final @NotNull Window.Callback delegate,
+      final @NotNull Context context,
+      final @NotNull SentryGestureListener gestureListener,
+      final @Nullable SentryOptions options) {
+    this(
+        delegate,
+        new GestureDetectorCompat(context, gestureListener),
+        gestureListener,
+        options,
+        new MotionEventObtainer() {});
   }
 
   SentryWindowCallback(
-    final @NotNull Window.Callback delegate,
-    final @NotNull GestureDetectorCompat gestureDetector,
-    final @NotNull SentryGestureListener gestureListener,
-    final @Nullable SentryOptions options,
-    final @NotNull MotionEventObtainer motionEventObtainer
-  ) {
+      final @NotNull Window.Callback delegate,
+      final @NotNull GestureDetectorCompat gestureDetector,
+      final @NotNull SentryGestureListener gestureListener,
+      final @Nullable SentryOptions options,
+      final @NotNull MotionEventObtainer motionEventObtainer) {
     super(delegate);
     this.delegate = delegate;
     this.gestureListener = gestureListener;
@@ -53,9 +54,7 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
         handleTouchEvent(copy);
       } catch (Throwable e) {
         if (options != null) {
-          options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error dispatching touch event", e);
+          options.getLogger().log(SentryLevel.ERROR, "Error dispatching touch event", e);
         }
       } finally {
         copy.recycle();

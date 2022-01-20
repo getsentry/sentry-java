@@ -15,7 +15,7 @@ import androidx.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
-final public class NoOpWindowCallback implements Window.Callback {
+public final class NoOpWindowCallback implements Window.Callback {
   @Override
   public boolean dispatchKeyEvent(KeyEvent keyEvent) {
     return false;
@@ -42,8 +42,7 @@ final public class NoOpWindowCallback implements Window.Callback {
   }
 
   @Override
-  public boolean dispatchPopulateAccessibilityEvent(
-    AccessibilityEvent accessibilityEvent) {
+  public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent accessibilityEvent) {
     return false;
   }
 
@@ -54,64 +53,42 @@ final public class NoOpWindowCallback implements Window.Callback {
   }
 
   @Override
-  public boolean onCreatePanelMenu(int i,
-    @NonNull
-      Menu menu) {
+  public boolean onCreatePanelMenu(int i, @NonNull Menu menu) {
     return false;
   }
 
   @Override
-  public boolean onPreparePanel(int i,
-    @Nullable
-      View view,
-    @NonNull
-      Menu menu) {
+  public boolean onPreparePanel(int i, @Nullable View view, @NonNull Menu menu) {
     return false;
   }
 
   @Override
-  public boolean onMenuOpened(int i,
-    @NonNull
-      Menu menu) {
+  public boolean onMenuOpened(int i, @NonNull Menu menu) {
     return false;
   }
 
   @Override
-  public boolean onMenuItemSelected(int i,
-    @NonNull
-      MenuItem menuItem) {
+  public boolean onMenuItemSelected(int i, @NonNull MenuItem menuItem) {
     return false;
   }
 
   @Override
-  public void onWindowAttributesChanged(WindowManager.LayoutParams layoutParams) {
-
-  }
+  public void onWindowAttributesChanged(WindowManager.LayoutParams layoutParams) {}
 
   @Override
-  public void onContentChanged() {
-
-  }
+  public void onContentChanged() {}
 
   @Override
-  public void onWindowFocusChanged(boolean b) {
-
-  }
+  public void onWindowFocusChanged(boolean b) {}
 
   @Override
-  public void onAttachedToWindow() {
-
-  }
+  public void onAttachedToWindow() {}
 
   @Override
-  public void onDetachedFromWindow() {
-
-  }
+  public void onDetachedFromWindow() {}
 
   @Override
-  public void onPanelClosed(int i, @NonNull Menu menu) {
-
-  }
+  public void onPanelClosed(int i, @NonNull Menu menu) {}
 
   @Override
   public boolean onSearchRequested() {
@@ -136,12 +113,8 @@ final public class NoOpWindowCallback implements Window.Callback {
   }
 
   @Override
-  public void onActionModeStarted(ActionMode actionMode) {
-
-  }
+  public void onActionModeStarted(ActionMode actionMode) {}
 
   @Override
-  public void onActionModeFinished(ActionMode actionMode) {
-
-  }
+  public void onActionModeFinished(ActionMode actionMode) {}
 }

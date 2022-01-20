@@ -50,8 +50,7 @@ class WindowCallbackAdapter implements Window.Callback {
   }
 
   @Override
-  public boolean dispatchPopulateAccessibilityEvent(
-    AccessibilityEvent accessibilityEvent) {
+  public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent accessibilityEvent) {
     return delegate.dispatchPopulateAccessibilityEvent(accessibilityEvent);
   }
 

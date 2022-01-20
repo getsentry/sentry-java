@@ -163,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
         view -> startActivity(new Intent(this, ThirdActivityFragment.class)));
 
     binding.openGesturesActivity.setOnClickListener(
-      view -> startActivity(new Intent(this, GesturesActivity.class)));
+        view -> startActivity(new Intent(this, GesturesActivity.class)));
 
     setContentView(binding.getRoot());
   }
