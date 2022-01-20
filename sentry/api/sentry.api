@@ -47,6 +47,8 @@ public final class io/sentry/Breadcrumb : io/sentry/IUnknownPropertiesConsumer {
 	public static fun transaction (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun ui (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun user (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun userInteraction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun userInteraction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lio/sentry/Breadcrumb;
 }
 
 public final class io/sentry/BuildConfig {
