@@ -71,8 +71,7 @@ public final class UserInteractionIntegration
 
       final SentryGestureListener gestureListener =
           new SentryGestureListener(
-            new WeakReference<>(window), hub, options, isAndroidXScrollViewAvailable
-          );
+              new WeakReference<>(window), hub, options, isAndroidXScrollViewAvailable);
       window.setCallback(new SentryWindowCallback(delegate, context, gestureListener, options));
     }
   }

@@ -87,7 +87,7 @@ final class ViewUtils {
   }
 
   private static boolean isJetpackScrollingView(
-    final @NotNull View view, final boolean isAndroidXAvailable) {
+      final @NotNull View view, final boolean isAndroidXAvailable) {
     if (!isAndroidXAvailable) {
       return false;
     }

@@ -26,10 +26,10 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private final ScrollState scrollState = new ScrollState();
 
   public SentryGestureListener(
-    final @NotNull WeakReference<Window> windowRef,
-    final @NotNull IHub hub,
-    final @NotNull SentryAndroidOptions options,
-    final boolean isAndroidXAvailable) {
+      final @NotNull WeakReference<Window> windowRef,
+      final @NotNull IHub hub,
+      final @NotNull SentryAndroidOptions options,
+      final boolean isAndroidXAvailable) {
     this.windowRef = windowRef;
     this.hub = hub;
     this.options = options;
@@ -106,20 +106,20 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     if (scrollState.type == null) {
       final @Nullable View target =
           ViewUtils.findTarget(
-            decorView,
-            firstEvent.getX(),
-            firstEvent.getY(),
-            new ViewTargetSelector() {
-              @Override
-              public boolean select(@NotNull View view) {
-                return ViewUtils.isViewScrollable(view, isAndroidXAvailable);
-              }
+              decorView,
+              firstEvent.getX(),
+              firstEvent.getY(),
+              new ViewTargetSelector() {
+                @Override
+                public boolean select(@NotNull View view) {
+                  return ViewUtils.isViewScrollable(view, isAndroidXAvailable);
+                }
 
-              @Override
-              public boolean skipChildren() {
-                return true;
-              }
-            });
+                @Override
+                public boolean skipChildren() {
+                  return true;
+                }
+              });
 
       if (target == null) {
         options

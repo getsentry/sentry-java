@@ -17,7 +17,7 @@ interface ViewTargetSelector {
    * it's a ViewGroup.
    *
    * @return true, when the ViewGroup is sufficient to be selected and children traversal is not
-   * necessary.
+   *     necessary.
    */
   default boolean skipChildren() {
     return false;
