@@ -32,11 +32,19 @@ class SentryGestureListenerClickTest {
         }
         val hub: IHub = mock()
 
-        fun getSut(target: View, resourceName: String = "test_button"): SentryGestureListener {
+        fun getSut(
+            target: View,
+            resourceName: String = "test_button",
+        ): SentryGestureListener {
             resources.mockForTarget(target, resourceName)
             whenever(context.resources).thenReturn(resources)
             whenever(target.context).thenReturn(context)
-            return SentryGestureListener(WeakReference(window), hub, options)
+            return SentryGestureListener(
+                WeakReference(window),
+                hub,
+                options,
+                true
+            )
         }
     }
 

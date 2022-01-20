@@ -21,16 +21,19 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private final @NotNull WeakReference<Window> windowRef;
   private final @NotNull IHub hub;
   private final @NotNull SentryAndroidOptions options;
+  private final boolean isAndroidXAvailable;
 
   private final ScrollState scrollState = new ScrollState();
 
   public SentryGestureListener(
-      final @NotNull WeakReference<Window> windowRef,
-      final @NotNull IHub hub,
-      final @NotNull SentryAndroidOptions options) {
+    final @NotNull WeakReference<Window> windowRef,
+    final @NotNull IHub hub,
+    final @NotNull SentryAndroidOptions options,
+    final boolean isAndroidXAvailable) {
     this.windowRef = windowRef;
     this.hub = hub;
     this.options = options;
+    this.isAndroidXAvailable = isAndroidXAvailable;
   }
 
   public void onUp(final @NotNull MotionEvent motionEvent) {
@@ -101,13 +104,22 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     if (scrollState.type == null) {
-      @SuppressWarnings("Convert2MethodRef")
       final @Nullable View target =
           ViewUtils.findTarget(
-              decorView,
-              firstEvent.getX(),
-              firstEvent.getY(),
-              view -> ViewUtils.isViewScrollable(view));
+            decorView,
+            firstEvent.getX(),
+            firstEvent.getY(),
+            new ViewTargetSelector() {
+              @Override
+              public boolean select(@NotNull View view) {
+                return ViewUtils.isViewScrollable(view, isAndroidXAvailable);
+              }
+
+              @Override
+              public boolean skipChildren() {
+                return true;
+              }
+            });
 
       if (target == null) {
         options

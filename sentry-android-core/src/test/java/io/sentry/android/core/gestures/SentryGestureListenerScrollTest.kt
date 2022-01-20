@@ -44,7 +44,8 @@ class SentryGestureListenerScrollTest {
         internal inline fun <reified T : View> getSut(
             resourceName: String = "test_scroll_view",
             touchWithinBounds: Boolean = true,
-            direction: String = ""
+            direction: String = "",
+            isAndroidXAvailable: Boolean = true
         ): SentryGestureListener {
             target = mockView<T>(
                 event = firstEvent,
@@ -62,7 +63,12 @@ class SentryGestureListenerScrollTest {
             if (direction in directions) {
                 endEvent.mockDirection(firstEvent, direction)
             }
-            return SentryGestureListener(WeakReference(window), hub, options)
+            return SentryGestureListener(
+                WeakReference(window),
+                hub,
+                options,
+                isAndroidXAvailable
+            )
         }
     }
 
@@ -151,6 +157,19 @@ class SentryGestureListenerScrollTest {
         val sut = fixture.getSut<ScrollableView>()
         sut.onUp(fixture.firstEvent)
         sut.onDown(fixture.endEvent)
+
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+    }
+
+    @Test
+    fun `if androidX is not available, does not capture a breadcrumb for ScrollingView`() {
+        val sut = fixture.getSut<ScrollableView>(isAndroidXAvailable = false)
+
+        sut.onDown(fixture.firstEvent)
+        fixture.eventsInBetween.forEach {
+            sut.onScroll(fixture.firstEvent, it, 10.0f, 0f)
+        }
+        sut.onUp(fixture.endEvent)
 
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }

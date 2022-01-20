@@ -27,17 +27,28 @@ public final class UserInteractionIntegration
   private @Nullable SentryAndroidOptions options;
 
   private final boolean isAndroidXAvailable;
+  private final boolean isAndroidXScrollViewAvailable;
 
   public UserInteractionIntegration(
       final @NotNull Application application, final @NotNull LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
 
     isAndroidXAvailable = checkAndroidXAvailability(classLoader);
+    isAndroidXScrollViewAvailable = checkAndroidXScrollViewAvailability(classLoader);
   }
 
   private static boolean checkAndroidXAvailability(final @NotNull LoadClass loadClass) {
     try {
       loadClass.loadClass("androidx.core.view.GestureDetectorCompat");
+      return true;
+    } catch (ClassNotFoundException ignored) {
+      return false;
+    }
+  }
+
+  private static boolean checkAndroidXScrollViewAvailability(final @NotNull LoadClass loadClass) {
+    try {
+      loadClass.loadClass("androidx.core.view.ScrollingView");
       return true;
     } catch (ClassNotFoundException ignored) {
       return false;
@@ -59,7 +70,9 @@ public final class UserInteractionIntegration
       }
 
       final SentryGestureListener gestureListener =
-          new SentryGestureListener(new WeakReference<>(window), hub, options);
+          new SentryGestureListener(
+            new WeakReference<>(window), hub, options, isAndroidXScrollViewAvailable
+          );
       window.setCallback(new SentryWindowCallback(delegate, context, gestureListener, options));
     }
   }

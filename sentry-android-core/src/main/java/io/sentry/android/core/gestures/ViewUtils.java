@@ -44,6 +44,9 @@ final class ViewUtils {
 
       if (viewTargetSelector.select(view)) {
         target = view;
+        if (viewTargetSelector.skipChildren()) {
+          return target;
+        }
       }
 
       if (view instanceof ViewGroup) {
@@ -76,20 +79,19 @@ final class ViewUtils {
     return view.isClickable() && view.getVisibility() == View.VISIBLE;
   }
 
-  static boolean isViewScrollable(final @NotNull View view) {
-    return (isJetpackScrollingView(view)
+  static boolean isViewScrollable(final @NotNull View view, final boolean isAndroidXAvailable) {
+    return (isJetpackScrollingView(view, isAndroidXAvailable)
             || AbsListView.class.isAssignableFrom(view.getClass())
             || ScrollView.class.isAssignableFrom(view.getClass()))
         && view.getVisibility() == View.VISIBLE;
   }
 
-  private static boolean isJetpackScrollingView(final @NotNull View view) {
-    try {
-      Class.forName("androidx.core.view.ScrollingView");
-      return ScrollingView.class.isAssignableFrom(view.getClass());
-    } catch (ClassNotFoundException ignored) {
+  private static boolean isJetpackScrollingView(
+    final @NotNull View view, final boolean isAndroidXAvailable) {
+    if (!isAndroidXAvailable) {
       return false;
     }
+    return ScrollingView.class.isAssignableFrom(view.getClass());
   }
 
   /**
