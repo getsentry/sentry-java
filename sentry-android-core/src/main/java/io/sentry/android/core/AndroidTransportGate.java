@@ -2,7 +2,7 @@ package io.sentry.android.core;
 
 import android.content.Context;
 import io.sentry.ILogger;
-import io.sentry.android.core.util.ConnectivityChecker;
+import io.sentry.android.core.internal.util.ConnectivityChecker;
 import io.sentry.transport.ITransportGate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;

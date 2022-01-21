@@ -5,7 +5,7 @@ import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.util.MainThreadChecker;
+import io.sentry.android.core.internal.util.MainThreadChecker;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;

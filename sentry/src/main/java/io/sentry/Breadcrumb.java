@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.CollectionUtils;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
@@ -207,6 +208,55 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer {
     breadcrumb.setType("user");
     breadcrumb.setCategory(category);
     breadcrumb.setMessage(message);
+    return breadcrumb;
+  }
+
+  /**
+   * Creates user breadcrumb - a user interaction with your app's UI. The breadcrumb can contain
+   * additional data like {@code viewId} or {@code viewClass}. By default, the breadcrumb is
+   * captured with {@link SentryLevel.INFO} level.
+   *
+   * @param subCategory - the category, for example "click"
+   * @param viewId - the human-readable view id, for example "button_load"
+   * @param viewClass - the fully qualified class name, for example "android.widget.Button"
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb userInteraction(
+      final @NotNull String subCategory,
+      final @Nullable String viewId,
+      final @Nullable String viewClass) {
+    return userInteraction(subCategory, viewId, viewClass, Collections.emptyMap());
+  }
+
+  /**
+   * Creates user breadcrumb - a user interaction with your app's UI. The breadcrumb can contain
+   * additional data like {@code viewId} or {@code viewClass}. By default, the breadcrumb is
+   * captured with {@link SentryLevel.INFO} level.
+   *
+   * @param subCategory - the category, for example "click"
+   * @param viewId - the human-readable view id, for example "button_load"
+   * @param viewClass - the fully qualified class name, for example "android.widget.Button"
+   * @param additionalData - additional properties to be put into the data bag
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb userInteraction(
+      final @NotNull String subCategory,
+      final @Nullable String viewId,
+      final @Nullable String viewClass,
+      final @NotNull Map<String, Object> additionalData) {
+    final Breadcrumb breadcrumb = new Breadcrumb();
+    breadcrumb.setType("user");
+    breadcrumb.setCategory("ui." + subCategory);
+    if (viewId != null) {
+      breadcrumb.setData("view.id", viewId);
+    }
+    if (viewClass != null) {
+      breadcrumb.setData("view.class", viewClass);
+    }
+    for (final Map.Entry<String, Object> entry : additionalData.entrySet()) {
+      breadcrumb.getData().put(entry.getKey(), entry.getValue());
+    }
+    breadcrumb.setLevel(SentryLevel.INFO);
     return breadcrumb;
   }
 

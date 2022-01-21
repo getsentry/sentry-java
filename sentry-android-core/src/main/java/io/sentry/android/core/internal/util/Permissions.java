@@ -1,4 +1,4 @@
-package io.sentry.android.core.util;
+package io.sentry.android.core.internal.util;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
