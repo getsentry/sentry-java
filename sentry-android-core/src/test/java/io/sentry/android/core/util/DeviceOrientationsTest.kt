@@ -4,7 +4,7 @@ import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.content.res.Configuration.ORIENTATION_PORTRAIT
 import android.content.res.Configuration.ORIENTATION_SQUARE
 import android.content.res.Configuration.ORIENTATION_UNDEFINED
-import io.sentry.android.core.util.DeviceOrientations.getOrientation
+import io.sentry.android.core.internal.util.DeviceOrientations.getOrientation
 import io.sentry.protocol.Device
 import kotlin.test.Test
 import kotlin.test.assertEquals

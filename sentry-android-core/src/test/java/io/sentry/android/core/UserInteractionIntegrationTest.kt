@@ -14,8 +14,8 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hub
-import io.sentry.android.core.gestures.NoOpWindowCallback
-import io.sentry.android.core.gestures.SentryWindowCallback
+import io.sentry.android.core.internal.gestures.NoOpWindowCallback
+import io.sentry.android.core.internal.gestures.SentryWindowCallback
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertTrue
@@ -128,7 +128,12 @@ class UserInteractionIntegrationTest {
         val resources = Fixture.mockResources()
         whenever(context.resources).thenReturn(resources)
         val sut = fixture.getSut(
-            SentryWindowCallback(NoOpWindowCallback(), context, mock(), mock())
+            SentryWindowCallback(
+                NoOpWindowCallback(),
+                context,
+                mock(),
+                mock()
+            )
         )
 
         sut.onActivityPaused(fixture.activity)
@@ -143,7 +148,12 @@ class UserInteractionIntegrationTest {
         val resources = Fixture.mockResources()
         whenever(context.resources).thenReturn(resources)
         val sut = fixture.getSut(
-            SentryWindowCallback(delegate, context, mock(), mock())
+            SentryWindowCallback(
+                delegate,
+                context,
+                mock(),
+                mock()
+            )
         )
 
         sut.onActivityPaused(fixture.activity)

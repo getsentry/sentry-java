@@ -21,6 +21,7 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.android.core.internal.gestures.SentryGestureListener
 import org.junit.Test
 import java.lang.ref.WeakReference
 import kotlin.test.assertEquals

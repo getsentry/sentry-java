@@ -1,4 +1,4 @@
-package io.sentry.android.core.gestures;
+package io.sentry.android.core.internal.gestures;
 
 import android.annotation.SuppressLint;
 import android.view.ActionMode;

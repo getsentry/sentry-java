@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.android.core.IBuildInfoProvider
+import io.sentry.android.core.internal.util.RootChecker
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
@@ -32,7 +33,14 @@ class RootCheckerTest {
             whenever(buildInfoProvider.buildTags).thenReturn(tags)
             whenever(context.packageManager).thenReturn(packageManager)
 
-            return RootChecker(context, buildInfoProvider, logger, rootFiles, rootPackages, runtime)
+            return RootChecker(
+              context,
+              buildInfoProvider,
+              logger,
+              rootFiles,
+              rootPackages,
+              runtime
+            )
         }
     }
     private val fixture = Fixture()
