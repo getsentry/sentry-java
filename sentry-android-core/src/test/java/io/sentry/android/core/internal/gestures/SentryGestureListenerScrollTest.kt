@@ -33,7 +33,7 @@ class SentryGestureListenerScrollTest {
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
-        val hub= mock<IHub>()
+        val hub = mock<IHub>()
 
         val firstEvent = mock<MotionEvent>()
         val eventsInBetween = listOf(mock<MotionEvent>(), mock(), mock())
