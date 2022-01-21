@@ -34,12 +34,12 @@ class RootCheckerTest {
             whenever(context.packageManager).thenReturn(packageManager)
 
             return RootChecker(
-              context,
-              buildInfoProvider,
-              logger,
-              rootFiles,
-              rootPackages,
-              runtime
+                context,
+                buildInfoProvider,
+                logger,
+                rootFiles,
+                rootPackages,
+                runtime
             )
         }
     }
