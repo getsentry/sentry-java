@@ -1,4 +1,4 @@
-package io.sentry.android.core.util
+package io.sentry.android.core.internal.util
 
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.content.res.Configuration.ORIENTATION_PORTRAIT
