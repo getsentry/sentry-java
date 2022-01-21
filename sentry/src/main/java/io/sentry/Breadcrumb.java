@@ -216,16 +216,16 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer {
    * additional data like {@code viewId} or {@code viewClass}. By default, the breadcrumb is
    * captured with {@link SentryLevel.INFO} level.
    *
-   * @param category - the category, for example "click"
+   * @param subCategory - the category, for example "click"
    * @param viewId - the human-readable view id, for example "button_load"
    * @param viewClass - the fully qualified class name, for example "android.widget.Button"
    * @return the breadcrumb
    */
   public static @NotNull Breadcrumb userInteraction(
-      final @NotNull String category,
+      final @NotNull String subCategory,
       final @Nullable String viewId,
       final @Nullable String viewClass) {
-    return userInteraction(category, viewId, viewClass, Collections.emptyMap());
+    return userInteraction(subCategory, viewId, viewClass, Collections.emptyMap());
   }
 
   /**
@@ -233,20 +233,20 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer {
    * additional data like {@code viewId} or {@code viewClass}. By default, the breadcrumb is
    * captured with {@link SentryLevel.INFO} level.
    *
-   * @param category - the category, for example "click"
+   * @param subCategory - the category, for example "click"
    * @param viewId - the human-readable view id, for example "button_load"
    * @param viewClass - the fully qualified class name, for example "android.widget.Button"
    * @param additionalData - additional properties to be put into the data bag
    * @return the breadcrumb
    */
   public static @NotNull Breadcrumb userInteraction(
-      final @NotNull String category,
+      final @NotNull String subCategory,
       final @Nullable String viewId,
       final @Nullable String viewClass,
       final @NotNull Map<String, Object> additionalData) {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setType("user");
-    breadcrumb.setCategory("ui." + category);
+    breadcrumb.setCategory("ui." + subCategory);
     if (viewId != null) {
       breadcrumb.setData("view.id", viewId);
     }
