@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Change scope of servlet-api to compileOnly (#1880)
+
 ## 5.5.3
 
 * Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
