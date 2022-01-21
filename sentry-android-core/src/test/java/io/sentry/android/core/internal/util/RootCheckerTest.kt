@@ -10,7 +10,6 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.android.core.IBuildInfoProvider
-import io.sentry.android.core.internal.util.RootChecker
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException

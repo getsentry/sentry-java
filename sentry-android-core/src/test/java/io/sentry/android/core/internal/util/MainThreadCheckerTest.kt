@@ -1,7 +1,6 @@
 package io.sentry.android.core.internal.util
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.android.core.internal.util.MainThreadChecker
 import io.sentry.protocol.SentryThread
 import org.junit.runner.RunWith
 import kotlin.test.Test
