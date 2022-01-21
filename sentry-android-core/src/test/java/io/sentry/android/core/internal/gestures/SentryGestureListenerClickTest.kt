@@ -31,14 +31,45 @@ class SentryGestureListenerClickTest {
             dsn = "https://key@sentry.io/proj"
         }
         val hub = mock<IHub>()
+        lateinit var target: View
+        lateinit var invalidTarget: View
 
-        fun getSut(
-            target: View,
+        internal inline fun <reified T : View> getSut(
+            event: MotionEvent,
             resourceName: String = "test_button",
+            isInvalidTargetVisible: Boolean = true,
+            isInvalidTargetClickable: Boolean = true,
+            attachViewsToRoot: Boolean = true,
+            targetOverride: View? = null
         ): SentryGestureListener {
-            resources.mockForTarget(target, resourceName)
+            invalidTarget = mockView(
+                event = event,
+                visible = isInvalidTargetVisible,
+                clickable = isInvalidTargetClickable,
+            )
+
+            if (targetOverride == null) {
+                this.target = mockView<T>(
+                    event = event,
+                    clickable = true
+                )
+            } else {
+                this.target = targetOverride
+            }
+
+            if (attachViewsToRoot) {
+                window.mockDecorView<ViewGroup>(
+                    event = event,
+                ) {
+                    whenever(it.childCount).thenReturn(2)
+                    whenever(it.getChildAt(0)).thenReturn(invalidTarget)
+                    whenever(it.getChildAt(1)).thenReturn(target)
+                }
+            }
+
+            resources.mockForTarget(this.target, resourceName)
             whenever(context.resources).thenReturn(resources)
-            whenever(target.context).thenReturn(context)
+            whenever(this.target.context).thenReturn(context)
             return SentryGestureListener(
                 WeakReference(window),
                 hub,
@@ -53,44 +84,25 @@ class SentryGestureListenerClickTest {
     @Test
     fun `when target and its ViewGroup are clickable, captures a breadcrumb for target`() {
         val event = mock<MotionEvent>()
-        val container1 = mockView<ViewGroup>(
-            id = View.generateViewId(),
-            event = event,
-            touchWithinBounds = false,
+        val sut = fixture.getSut<View>(
+            event,
+            isInvalidTargetVisible = false,
+            attachViewsToRoot = false
         )
-        val target = mockView<View>(
-            id = View.generateViewId(),
-            event = event,
-            clickable = true
-        )
-        val notClickableInvalidTarget = mockView<View>(
-            id = View.generateViewId(),
-            event = event,
-        )
-        val notVisibleInvalidTarget = mockView<View>(
-            id = View.generateViewId(),
-            event = event,
-            visible = false,
-        )
-        val container2 = mockView<ViewGroup>(
-            id = View.generateViewId(),
-            event = event,
-            clickable = true
-        ) {
+
+        val container1 = mockView<ViewGroup>(event = event, touchWithinBounds = false)
+        val notClickableInvalidTarget = mockView<View>(event = event)
+        val container2 = mockView<ViewGroup>(event = event, clickable = true) {
             whenever(it.childCount).thenReturn(3)
             whenever(it.getChildAt(0)).thenReturn(notClickableInvalidTarget)
-            whenever(it.getChildAt(1)).thenReturn(notVisibleInvalidTarget)
-            whenever(it.getChildAt(2)).thenReturn(target)
+            whenever(it.getChildAt(1)).thenReturn(fixture.invalidTarget)
+            whenever(it.getChildAt(2)).thenReturn(fixture.target)
         }
-        fixture.window.mockDecorView<ViewGroup>(
-            event = event,
-        ) {
+        fixture.window.mockDecorView<ViewGroup>(event = event) {
             whenever(it.childCount).thenReturn(2)
             whenever(it.getChildAt(0)).thenReturn(container1)
             whenever(it.getChildAt(1)).thenReturn(container2)
         }
-
-        val sut = fixture.getSut(target)
 
         sut.onSingleTapUp(event)
 
@@ -107,26 +119,14 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `ignores invisible or gone views`() {
-        val mockEvent = mock<MotionEvent>()
-        val invalidTarget = mockView<View>(
-            event = mockEvent,
-            visible = false,
-            clickable = true,
+        val event = mock<MotionEvent>()
+        val sut = fixture.getSut<RadioButton>(
+            event,
+            "radio_button",
+            isInvalidTargetVisible = false
         )
-        val validTarget = mockView<RadioButton>(
-            event = mockEvent,
-            clickable = true
-        )
-        fixture.window.mockDecorView<ViewGroup>(
-            event = mockEvent,
-        ) {
-            whenever(it.childCount).thenReturn(2)
-            whenever(it.getChildAt(0)).thenReturn(invalidTarget)
-            whenever(it.getChildAt(1)).thenReturn(validTarget)
-        }
 
-        val sut = fixture.getSut(validTarget, "radio_button")
-        sut.onSingleTapUp(mockEvent)
+        sut.onSingleTapUp(event)
 
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
@@ -138,25 +138,14 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `ignores not clickable targets`() {
-        val mockEvent = mock<MotionEvent>()
-        val invalidTarget = mockView<View>(
-            event = mockEvent,
-            clickable = false,
+        val event = mock<MotionEvent>()
+        val sut = fixture.getSut<CheckBox>(
+            event,
+            "check_box",
+            isInvalidTargetClickable = false
         )
-        val validTarget = mockView<CheckBox>(
-            event = mockEvent,
-            clickable = true
-        )
-        fixture.window.mockDecorView<ViewGroup>(
-            event = mockEvent
-        ) {
-            whenever(it.childCount).thenReturn(2)
-            whenever(it.getChildAt(0)).thenReturn(invalidTarget)
-            whenever(it.getChildAt(1)).thenReturn(validTarget)
-        }
 
-        val sut = fixture.getSut(validTarget, "check_box")
-        sut.onSingleTapUp(mockEvent)
+        sut.onSingleTapUp(event)
 
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
@@ -168,31 +157,26 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `when no children present and decor view not clickable, does not capture a breadcrumb`() {
-        val mockEvent = mock<MotionEvent>()
-        fixture.window.mockDecorView<ViewGroup>(
-            event = mockEvent,
-        ) {
+        val event = mock<MotionEvent>()
+        val sut = fixture.getSut<View>(event, attachViewsToRoot = false)
+        fixture.window.mockDecorView<ViewGroup>(event = event) {
             whenever(it.childCount).thenReturn(0)
         }
 
-        val sut = fixture.getSut(mock())
-        sut.onSingleTapUp(mockEvent)
+        sut.onSingleTapUp(event)
 
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `when target is decorView, captures a breadcrumb for decorView`() {
-        val mockEvent = mock<MotionEvent>()
-        val decorView = fixture.window.mockDecorView<ViewGroup>(
-            event = mockEvent,
-            clickable = true
-        ) {
+        val event = mock<MotionEvent>()
+        val decorView = fixture.window.mockDecorView<ViewGroup>(event = event, clickable = true) {
             whenever(it.childCount).thenReturn(0)
         }
 
-        val sut = fixture.getSut(decorView, "decor_view")
-        sut.onSingleTapUp(mockEvent)
+        val sut = fixture.getSut<ViewGroup>(event, "decor_view", targetOverride = decorView)
+        sut.onSingleTapUp(event)
 
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
@@ -204,38 +188,30 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `does not capture breadcrumbs when view reference is null`() {
-        val mockEvent = mock<MotionEvent>()
+        val event = mock<MotionEvent>()
+        val sut = fixture.getSut<View>(event, attachViewsToRoot = false)
 
-        val sut = fixture.getSut(mock())
-        sut.onSingleTapUp(mockEvent)
+        sut.onSingleTapUp(event)
 
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `uses simple class name if canonical name isn't available`() {
-        val mockEvent = mock<MotionEvent>()
-
         class LocalView(context: Context) : View(context)
 
-        val target = mockView<LocalView>(
-            event = mockEvent,
-            clickable = true
-        )
-        fixture.window.mockDecorView<ViewGroup>(
-            event = mockEvent,
-            touchWithinBounds = false,
-        ) {
+        val event = mock<MotionEvent>()
+        val sut = fixture.getSut<LocalView>(event, attachViewsToRoot = false)
+        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = false) {
             whenever(it.childCount).thenReturn(1)
-            whenever(it.getChildAt(0)).thenReturn(target)
+            whenever(it.getChildAt(0)).thenReturn(fixture.target)
         }
 
-        val sut = fixture.getSut(target)
-        sut.onSingleTapUp(mockEvent)
+        sut.onSingleTapUp(event)
 
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertEquals(target.javaClass.simpleName, it.data["view.class"])
+                assertEquals(fixture.target.javaClass.simpleName, it.data["view.class"])
             }
         )
     }
