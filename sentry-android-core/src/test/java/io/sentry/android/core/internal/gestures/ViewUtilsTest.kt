@@ -13,7 +13,7 @@ class ViewUtilsTest {
 
     @Test
     fun `getResourceId returns resourceId when available`() {
-        val view: View = mock {
+        val view = mock<View> {
             whenever(it.id).doReturn(View.generateViewId())
 
             val context = mock<Context>()
@@ -28,7 +28,7 @@ class ViewUtilsTest {
 
     @Test
     fun `getResourceId falls back to hexadecimal id when resource not found`() {
-        val view: View = mock {
+        val view = mock<View> {
             whenever(it.id).doReturn(1234)
 
             val context = mock<Context>()

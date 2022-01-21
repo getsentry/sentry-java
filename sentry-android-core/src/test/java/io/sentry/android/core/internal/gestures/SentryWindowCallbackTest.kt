@@ -16,13 +16,13 @@ import org.junit.Test
 
 class SentryWindowCallbackTest {
     class Fixture {
-        val delegate: Window.Callback = mock()
+        val delegate = mock<Window.Callback>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
-        val gestureDetector: GestureDetectorCompat = mock()
-        val gestureListener: SentryGestureListener = mock()
-        val motionEventCopy: MotionEvent = mock()
+        val gestureDetector = mock<GestureDetectorCompat>()
+        val gestureListener = mock<SentryGestureListener>()
+        val motionEventCopy = mock<MotionEvent>()
 
         fun getSut(): SentryWindowCallback {
             return SentryWindowCallback(
@@ -45,7 +45,7 @@ class SentryWindowCallbackTest {
 
     @Test
     fun `delegates the events to the gesture detector`() {
-        val event: MotionEvent = mock()
+        val event = mock<MotionEvent>()
         val sut = fixture.getSut()
 
         sut.dispatchTouchEvent(event)
@@ -56,7 +56,7 @@ class SentryWindowCallbackTest {
 
     @Test
     fun `on action up will call the gesture listener after delegating to gesture detector`() {
-        val event: MotionEvent = mock {
+        val event = mock<MotionEvent> {
             whenever(it.actionMasked).thenReturn(MotionEvent.ACTION_UP)
         }
         val sut = fixture.getSut()
@@ -71,7 +71,7 @@ class SentryWindowCallbackTest {
 
     @Test
     fun `other events are ignored for gesture listener`() {
-        val event: MotionEvent = mock {
+        val event = mock<MotionEvent> {
             whenever(it.actionMasked).thenReturn(MotionEvent.ACTION_DOWN)
         }
         val sut = fixture.getSut()

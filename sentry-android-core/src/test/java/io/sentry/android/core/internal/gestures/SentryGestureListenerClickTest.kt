@@ -24,13 +24,13 @@ import kotlin.test.assertEquals
 
 class SentryGestureListenerClickTest {
     class Fixture {
-        val window: Window = mock()
-        val context: Context = mock()
-        val resources: Resources = mock()
+        val window = mock<Window>()
+        val context = mock<Context>()
+        val resources = mock<Resources>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
-        val hub: IHub = mock()
+        val hub = mock<IHub>()
 
         fun getSut(
             target: View,
@@ -52,27 +52,27 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `when target and its ViewGroup are clickable, captures a breadcrumb for target`() {
-        val event: MotionEvent = mock()
-        val container1: ViewGroup = mockView(
+        val event = mock<MotionEvent>()
+        val container1 = mockView<ViewGroup>(
             id = View.generateViewId(),
             event = event,
             touchWithinBounds = false,
         )
-        val target: View = mockView(
+        val target = mockView<View>(
             id = View.generateViewId(),
             event = event,
             clickable = true
         )
-        val notClickableInvalidTarget: View = mockView(
+        val notClickableInvalidTarget = mockView<View>(
             id = View.generateViewId(),
             event = event,
         )
-        val notVisibleInvalidTarget: View = mockView(
+        val notVisibleInvalidTarget = mockView<View>(
             id = View.generateViewId(),
             event = event,
             visible = false,
         )
-        val container2: ViewGroup = mockView(
+        val container2 = mockView<ViewGroup>(
             id = View.generateViewId(),
             event = event,
             clickable = true
@@ -107,13 +107,13 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `ignores invisible or gone views`() {
-        val mockEvent: MotionEvent = mock()
-        val invalidTarget: View = mockView(
+        val mockEvent = mock<MotionEvent>()
+        val invalidTarget = mockView<View>(
             event = mockEvent,
             visible = false,
             clickable = true,
         )
-        val validTarget: RadioButton = mockView(
+        val validTarget = mockView<RadioButton>(
             event = mockEvent,
             clickable = true
         )
@@ -138,12 +138,12 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `ignores not clickable targets`() {
-        val mockEvent: MotionEvent = mock()
-        val invalidTarget: View = mockView(
+        val mockEvent = mock<MotionEvent>()
+        val invalidTarget = mockView<View>(
             event = mockEvent,
             clickable = false,
         )
-        val validTarget: CheckBox = mockView(
+        val validTarget = mockView<CheckBox>(
             event = mockEvent,
             clickable = true
         )
@@ -168,7 +168,7 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `when no children present and decor view not clickable, does not capture a breadcrumb`() {
-        val mockEvent: MotionEvent = mock()
+        val mockEvent = mock<MotionEvent>()
         fixture.window.mockDecorView<ViewGroup>(
             event = mockEvent,
         ) {
@@ -183,7 +183,7 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `when target is decorView, captures a breadcrumb for decorView`() {
-        val mockEvent: MotionEvent = mock()
+        val mockEvent = mock<MotionEvent>()
         val decorView = fixture.window.mockDecorView<ViewGroup>(
             event = mockEvent,
             clickable = true
@@ -204,7 +204,7 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `does not capture breadcrumbs when view reference is null`() {
-        val mockEvent: MotionEvent = mock()
+        val mockEvent = mock<MotionEvent>()
 
         val sut = fixture.getSut(mock())
         sut.onSingleTapUp(mockEvent)
@@ -214,11 +214,11 @@ class SentryGestureListenerClickTest {
 
     @Test
     fun `uses simple class name if canonical name isn't available`() {
-        val mockEvent: MotionEvent = mock()
+        val mockEvent = mock<MotionEvent>()
 
         class LocalView(context: Context) : View(context)
 
-        val target: LocalView = mockView(
+        val target = mockView<LocalView>(
             event = mockEvent,
             clickable = true
         )

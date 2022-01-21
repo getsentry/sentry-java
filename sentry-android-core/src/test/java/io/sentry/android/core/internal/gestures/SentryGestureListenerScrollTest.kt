@@ -27,16 +27,16 @@ import kotlin.test.assertEquals
 
 class SentryGestureListenerScrollTest {
     class Fixture {
-        val window: Window = mock()
-        val context: Context = mock()
-        val resources: Resources = mock()
+        val window = mock<Window>()
+        val context = mock<Context>()
+        val resources = mock<Resources>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
-        val hub: IHub = mock()
+        val hub= mock<IHub>()
 
-        val firstEvent: MotionEvent = mock()
-        val eventsInBetween: List<MotionEvent> = listOf(mock(), mock(), mock())
+        val firstEvent = mock<MotionEvent>()
+        val eventsInBetween = listOf(mock<MotionEvent>(), mock(), mock())
         val endEvent = eventsInBetween.last()
         lateinit var target: View
         val directions = setOf("up", "down", "left", "right")
