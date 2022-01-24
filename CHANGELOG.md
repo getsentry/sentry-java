@@ -3,11 +3,11 @@
 ## Unreleased
 
 * Fix: Change scope of servlet-api to compileOnly (#1880)
+* Feat: Add breadcrumbs support for UI events (automatically captured) (#1876)
 
 ## 5.5.3
 
 * Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
-* Feat: Add breadcrumbs support for UI events (automatically captured) (#1876)
 
 ## 5.5.2
 
