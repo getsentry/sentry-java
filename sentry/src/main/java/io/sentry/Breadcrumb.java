@@ -214,7 +214,7 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer {
   /**
    * Creates user breadcrumb - a user interaction with your app's UI. The breadcrumb can contain
    * additional data like {@code viewId} or {@code viewClass}. By default, the breadcrumb is
-   * captured with {@link SentryLevel.INFO} level.
+   * captured with {@link SentryLevel} INFO level.
    *
    * @param subCategory - the category, for example "click"
    * @param viewId - the human-readable view id, for example "button_load"
@@ -231,7 +231,7 @@ public final class Breadcrumb implements IUnknownPropertiesConsumer {
   /**
    * Creates user breadcrumb - a user interaction with your app's UI. The breadcrumb can contain
    * additional data like {@code viewId} or {@code viewClass}. By default, the breadcrumb is
-   * captured with {@link SentryLevel.INFO} level.
+   * captured with {@link SentryLevel} INFO level.
    *
    * @param subCategory - the category, for example "click"
    * @param viewId - the human-readable view id, for example "button_load"
