@@ -31,7 +31,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    implementation(Config.Libs.servletApi)
+    compileOnly(Config.Libs.servletApi)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

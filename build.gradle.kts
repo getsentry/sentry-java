@@ -38,6 +38,11 @@ buildscript {
 }
 
 apiValidation {
+    ignoredPackages.addAll(
+        setOf(
+            "io.sentry.android.core.internal"
+        )
+    )
     ignoredProjects.addAll(
         listOf(
             "sentry-samples-android",

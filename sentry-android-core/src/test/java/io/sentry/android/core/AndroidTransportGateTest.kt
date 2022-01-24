@@ -1,7 +1,7 @@
 package io.sentry.android.core
 
 import com.nhaarman.mockitokotlin2.mock
-import io.sentry.android.core.util.ConnectivityChecker
+import io.sentry.android.core.internal.util.ConnectivityChecker
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull

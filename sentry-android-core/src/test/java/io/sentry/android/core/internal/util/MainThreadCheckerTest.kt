@@ -1,4 +1,4 @@
-package io.sentry.android.core.util
+package io.sentry.android.core.internal.util
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.protocol.SentryThread

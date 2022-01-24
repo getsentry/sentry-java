@@ -43,8 +43,6 @@ _Proguard/R8:_
 - [ ]  Disabled
 
 _Platform installed with:_
-- [ ] JCenter
-- [ ] Bintray
 - [ ] Maven Central
 - [ ] Manually
 
