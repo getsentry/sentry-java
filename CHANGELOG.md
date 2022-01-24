@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.6.0
 
 * Fix: Change scope of servlet-api to compileOnly (#1880)
 * Feat: Add breadcrumbs support for UI events (automatically captured) (#1876)
