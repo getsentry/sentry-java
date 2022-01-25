@@ -17,7 +17,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.android.core.util.ConnectivityChecker
+import io.sentry.android.core.internal.util.ConnectivityChecker
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

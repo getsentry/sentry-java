@@ -9,7 +9,7 @@ import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.util.Permissions;
+import io.sentry.android.core.internal.util.Permissions;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;

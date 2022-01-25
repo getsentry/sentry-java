@@ -2,9 +2,14 @@
 
 ## Unreleased
 
-* Feat: Relax TransactionNameProvider (#1861)
 * Ref: Simplify DateUtils with ISO8601Utils (#1837)
-* Ref: Remove deprecated and scheduled fields (#)
+
+Breaking changes:
+
+* Ref: Remove deprecated and scheduled fields (#1875)
+* Ref: Add shutdownTimeoutMillis in favor of shutdownTimeout (#1873)
+* Feat: Relax TransactionNameProvider (#1861)
+* Ref: Remove Attachment ContentType since the Server infers it (#1874)
 
 ## 6.0.0-alpha.1
 

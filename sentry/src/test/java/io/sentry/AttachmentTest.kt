@@ -9,7 +9,6 @@ import kotlin.test.assertTrue
 class AttachmentTest {
 
     private class Fixture {
-        val defaultContentType = "application/octet-stream"
         val contentType = "application/json"
         val filename = "logs.txt"
         val bytes = "content".toByteArray()
@@ -25,7 +24,6 @@ class AttachmentTest {
         assertEquals(fixture.bytes, attachment.bytes)
         assertNull(attachment.pathname)
         assertEquals(fixture.filename, attachment.filename)
-        assertEquals(fixture.defaultContentType, attachment.contentType)
     }
 
     @Test
@@ -35,7 +33,6 @@ class AttachmentTest {
         assertEquals(fixture.pathname, attachment.pathname)
         assertNull(attachment.bytes)
         assertEquals(fixture.filename, attachment.filename)
-        assertEquals(fixture.defaultContentType, attachment.contentType)
     }
 
     @Test
@@ -62,7 +59,6 @@ class AttachmentTest {
         assertEquals(fixture.pathname, attachment.pathname)
         assertNull(attachment.bytes)
         assertEquals(otherFileName, attachment.filename)
-        assertEquals(fixture.defaultContentType, attachment.contentType)
     }
 
     @Test

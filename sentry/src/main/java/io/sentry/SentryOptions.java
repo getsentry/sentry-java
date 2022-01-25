@@ -57,7 +57,7 @@ public class SentryOptions {
    * background queue and this queue is given a certain amount to drain pending events Default is
    * 2000 = 2s
    */
-  private long shutdownTimeout = 2000; // 2s
+  private long shutdownTimeoutMillis = 2000; // 2s
 
   /**
    * Controls how many seconds to wait before flushing down. Sentry SDKs cache events from a
@@ -213,9 +213,7 @@ public class SentryOptions {
   /** Automatically resolve server name. */
   private boolean attachServerName = true;
 
-  /*
-  When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
-   */
+  /** When enabled, Sentry installs UncaughtExceptionHandlerIntegration. */
   private boolean enableUncaughtExceptionHandler = true;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
@@ -464,10 +462,34 @@ public class SentryOptions {
   /**
    * Returns the shutdown timeout in Millis
    *
+   * @deprecated use {{@link SentryOptions#getShutdownTimeoutMillis()} }
    * @return the timeout in Millis
    */
+  @ApiStatus.ScheduledForRemoval
+  @Deprecated
   public long getShutdownTimeout() {
-    return shutdownTimeout;
+    return shutdownTimeoutMillis;
+  }
+
+  /**
+   * Returns the shutdown timeout in Millis
+   *
+   * @return the timeout in Millis
+   */
+  public long getShutdownTimeoutMillis() {
+    return shutdownTimeoutMillis;
+  }
+
+  /**
+   * Sets the shutdown timeout in Millis Default is 2000 = 2s
+   *
+   * @deprecated use {{@link SentryOptions#setShutdownTimeoutMillis(long)} }
+   * @param shutdownTimeoutMillis the shutdown timeout in millis
+   */
+  @ApiStatus.ScheduledForRemoval
+  @Deprecated
+  public void setShutdownTimeout(long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**
@@ -475,8 +497,8 @@ public class SentryOptions {
    *
    * @param shutdownTimeoutMillis the shutdown timeout in millis
    */
-  public void setShutdownTimeout(long shutdownTimeoutMillis) {
-    this.shutdownTimeout = shutdownTimeoutMillis;
+  public void setShutdownTimeoutMillis(long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**

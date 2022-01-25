@@ -703,8 +703,7 @@ class JsonSerializerTest {
         val actualJson = serializeToString(envelope)
 
         val expectedJson = "{\"event_id\":\"${eventID}\"}\n" +
-            "{\"content_type\":\"${attachment.contentType}\"," +
-            "\"filename\":\"${attachment.filename}\"," +
+            "{\"filename\":\"${attachment.filename}\"," +
             "\"type\":\"attachment\"," +
             "\"attachment_type\":\"event.attachment\"," +
             "\"length\":${attachment.bytes?.size}}\n" +
