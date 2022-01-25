@@ -51,7 +51,7 @@ class SentryClientTest {
     class Fixture {
         var transport = mock<ITransport>()
         var factory = mock<ITransportFactory>()
-        val maxAttachmentSize: Long = 5 * 1024 * 1024
+        val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
         val hub = mock<IHub>()
         val sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), hub)
 

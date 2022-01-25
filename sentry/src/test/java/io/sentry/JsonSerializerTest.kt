@@ -399,9 +399,7 @@ class JsonSerializerTest {
     @Test
     fun `When serializing an envelope, SdkVersion should be set`() {
         val session = createSessionMockData()
-        val version = SdkVersion().apply {
-            name = "test"
-            version = "1.2.3"
+        val version = SdkVersion("test", "1.2.3").apply {
             addIntegration("TestIntegration")
             addPackage("abc", "4.5.6")
         }

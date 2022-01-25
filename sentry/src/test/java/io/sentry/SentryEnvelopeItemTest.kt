@@ -19,7 +19,7 @@ class SentryEnvelopeItemTest {
         val pathname = "hello.txt"
         val filename = pathname
         val bytes = "hello".toByteArray()
-        val maxAttachmentSize: Long = 5 * 1024 * 1024
+        val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
 
         val bytesAllowed = ByteArray(maxAttachmentSize.toInt()) { 0 }
         val bytesTooBig = ByteArray((maxAttachmentSize + 1).toInt()) { 0 }
