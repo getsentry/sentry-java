@@ -764,7 +764,6 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getExtra (Ljava/lang/String;)Ljava/lang/Object;
-	public fun getOriginThrowable ()Ljava/lang/Throwable;
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getRequest ()Lio/sentry/protocol/Request;
@@ -1002,7 +1001,6 @@ public class io/sentry/SentryOptions {
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getCacheDirPath ()Ljava/lang/String;
-	public fun getCacheDirSize ()I
 	public fun getConnectionTimeoutMillis ()I
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
 	public fun getDist ()Ljava/lang/String;
@@ -1066,7 +1064,6 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
-	public fun setCacheDirSize (I)V
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setDebug (Z)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
@@ -2180,7 +2177,6 @@ public final class io/sentry/protocol/SdkInfo$JsonKeys {
 }
 
 public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
@@ -2263,7 +2259,6 @@ public final class io/sentry/protocol/SentryId$Deserializer : io/sentry/JsonDese
 }
 
 public final class io/sentry/protocol/SentryPackage : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun getName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
