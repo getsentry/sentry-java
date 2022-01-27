@@ -383,15 +383,12 @@ public abstract interface class io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
-	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
 	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLatestActiveSpan ()Lio/sentry/Span;
 	public abstract fun getName ()Ljava/lang/String;
-	public abstract fun getRequest ()Lio/sentry/protocol/Request;
 	public abstract fun getSpans ()Ljava/util/List;
 	public abstract fun isSampled ()Ljava/lang/Boolean;
 	public abstract fun setName (Ljava/lang/String;)V
-	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
 }
 
 public abstract interface class io/sentry/ITransportFactory {
@@ -559,7 +556,6 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
-	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
@@ -567,7 +563,6 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
-	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStatus ()Lio/sentry/SpanStatus;
@@ -579,7 +574,6 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
-	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
@@ -770,7 +764,6 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getExtra (Ljava/lang/String;)Ljava/lang/Object;
-	public fun getOriginThrowable ()Ljava/lang/Throwable;
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getRequest ()Lio/sentry/protocol/Request;
@@ -1008,7 +1001,6 @@ public class io/sentry/SentryOptions {
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getCacheDirPath ()Ljava/lang/String;
-	public fun getCacheDirSize ()I
 	public fun getConnectionTimeoutMillis ()I
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
 	public fun getDist ()Ljava/lang/String;
@@ -1061,7 +1053,6 @@ public class io/sentry/SentryOptions {
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnableNdk ()Z
 	public fun isEnableScopeSync ()Z
-	public fun isEnableSessionTracking ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
 	public fun isSendDefaultPii ()Z
@@ -1073,7 +1064,6 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
-	public fun setCacheDirSize (I)V
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setDebug (Z)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
@@ -1085,7 +1075,6 @@ public class io/sentry/SentryOptions {
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableScopeSync (Z)V
-	public fun setEnableSessionTracking (Z)V
 	public fun setEnableShutdownHook (Z)V
 	public fun setEnableUncaughtExceptionHandler (Z)V
 	public fun setEnvelopeDiskCache (Lio/sentry/cache/IEnvelopeCache;)V
@@ -1175,7 +1164,6 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getChildren ()Ljava/util/List;
-	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
@@ -1184,7 +1172,6 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
-	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStartTimestamp ()Ljava/util/Date;
@@ -1198,7 +1185,6 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
-	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
@@ -2191,7 +2177,6 @@ public final class io/sentry/protocol/SdkInfo$JsonKeys {
 }
 
 public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
@@ -2274,7 +2259,6 @@ public final class io/sentry/protocol/SentryId$Deserializer : io/sentry/JsonDese
 }
 
 public final class io/sentry/protocol/SentryPackage : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun getName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;

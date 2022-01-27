@@ -50,14 +50,6 @@ public class io/sentry/spring/SentrySpringFilter : org/springframework/web/filte
 	protected fun doFilterInternal (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljavax/servlet/FilterChain;)V
 }
 
-public class io/sentry/spring/SentrySpringRequestListener : javax/servlet/ServletRequestListener, org/springframework/core/Ordered {
-	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;)V
-	public fun getOrder ()I
-	public fun requestDestroyed (Ljavax/servlet/ServletRequestEvent;)V
-	public fun requestInitialized (Ljavax/servlet/ServletRequestEvent;)V
-}
-
 public class io/sentry/spring/SentrySpringServletContainerInitializer : javax/servlet/ServletContainerInitializer {
 	public fun <init> ()V
 	public fun onStartup (Ljava/util/Set;Ljavax/servlet/ServletContext;)V
@@ -76,13 +68,6 @@ public class io/sentry/spring/SentryUserFilter : org/springframework/web/filter/
 
 public abstract interface class io/sentry/spring/SentryUserProvider {
 	public abstract fun provideUser ()Lio/sentry/protocol/User;
-}
-
-public final class io/sentry/spring/SentryUserProviderEventProcessor : io/sentry/EventProcessor {
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/spring/SentryUserProvider;)V
-	public fun getSentryUserProvider ()Lio/sentry/spring/SentryUserProvider;
-	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
-	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public class io/sentry/spring/SentryWebConfiguration {

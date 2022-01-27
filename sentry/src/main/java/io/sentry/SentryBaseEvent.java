@@ -165,19 +165,6 @@ public abstract class SentryBaseEvent {
   }
 
   /**
-   * Returns the captured Throwable or null. If a throwable is wrapped in {@link
-   * ExceptionMechanismException}, returns unwrapped throwable.
-   *
-   * @deprecated use {{@link SentryBaseEvent#getThrowable()} }
-   * @return the Throwable or null
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public @Nullable Throwable getOriginThrowable() {
-    return getThrowable();
-  }
-
-  /**
    * Returns the captured Throwable or null. It may be wrapped in a {@link
    * ExceptionMechanismException}.
    *

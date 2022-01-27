@@ -32,7 +32,7 @@ class SentryJdbcEventListenerTest {
             actualDataSource.connection.use {
                 it.prepareStatement("CREATE TABLE foo (id int unique)").execute()
             }
-            existingRow?.let { row ->
+            existingRow?.let { _ ->
                 actualDataSource.connection.use {
                     val statement = it.prepareStatement("INSERT INTO foo VALUES (?)")
                     statement.setInt(1, existingRow)

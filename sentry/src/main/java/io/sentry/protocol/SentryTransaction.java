@@ -64,10 +64,6 @@ public final class SentryTransaction extends SentryBaseEvent
       }
     }
     final Contexts contexts = this.getContexts();
-    for (final Map.Entry<String, Object> entry : sentryTracer.getContexts().entrySet()) {
-      contexts.put(entry.getKey(), entry.getValue());
-    }
-    this.setRequest(sentryTracer.getRequest());
     final SpanContext tracerContext = sentryTracer.getSpanContext();
     // tags must be placed on the root of the transaction instead of contexts.trace.tags
     contexts.setTrace(
