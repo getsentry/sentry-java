@@ -369,7 +369,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled, creates tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasBean("sentryTracingFilter")
             }
@@ -426,7 +426,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and sentryTracingFilter already exists, does not create tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withUserConfiguration(CustomSentryTracingFilter::class.java)
             .run {
                 assertThat(it).hasBean("sentryTracingFilter")
@@ -442,7 +442,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled creates AOP beans to support @SentryTransaction`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasSentryTransactionBeans()
             }
@@ -475,7 +475,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when Spring AOP is not on the classpath, does not create AOP beans to support @SentryTransaction`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
             .run {
                 assertThat(it).doesNotHaveSentryTransactionBeans()
@@ -484,7 +484,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and custom sentryTransactionPointcut is provided, sentryTransactionPointcut bean is not created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withUserConfiguration(CustomSentryPerformancePointcutConfiguration::class.java)
             .run {
                 assertThat(it).hasBean("sentryTransactionPointcut")
@@ -495,7 +495,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled creates AOP beans to support @SentrySpan`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasSentrySpanBeans()
             }
@@ -528,7 +528,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when Spring AOP is not on the classpath, does not create AOP beans to support @SentrySpan`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
             .run {
                 assertThat(it).doesNotHaveSentrySpanBeans()
@@ -537,7 +537,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and custom sentrySpanPointcut is provided, sentrySpanPointcut bean is not created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withUserConfiguration(CustomSentryPerformancePointcutConfiguration::class.java)
             .run {
                 assertThat(it).hasBean("sentrySpanPointcut")
@@ -548,7 +548,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and RestTemplate is on the classpath, SentrySpanRestTemplateCustomizer bean is created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasSingleBean(SentrySpanRestTemplateCustomizer::class.java)
             }
@@ -556,7 +556,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and RestTemplate is not on the classpath, SentrySpanRestTemplateCustomizer bean is not created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withClassLoader(FilteredClassLoader(RestTemplate::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentrySpanRestTemplateCustomizer::class.java)
@@ -565,7 +565,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and WebClient is on the classpath, SentrySpanWebClientCustomizer bean is created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasSingleBean(SentrySpanWebClientCustomizer::class.java)
             }
@@ -573,7 +573,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and WebClient is not on the classpath, SentrySpanWebClientCustomizer bean is not created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withClassLoader(FilteredClassLoader(WebClient::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentrySpanWebClientCustomizer::class.java)

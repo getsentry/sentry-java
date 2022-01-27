@@ -20,6 +20,7 @@ import io.sentry.spring.SentrySpringFilter
 import io.sentry.spring.SentryTaskDecorator
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
+import io.sentry.spring.SpringSecuritySentryUserProvider
 import io.sentry.spring.tracing.SentrySpanClientWebRequestFilter
 import io.sentry.spring.tracing.SentryTracingConfiguration
 import io.sentry.spring.tracing.SentryTracingFilter
@@ -333,6 +334,9 @@ open class App {
     open fun tracesSamplerCallback() = SentryOptions.TracesSamplerCallback {
         1.0
     }
+
+    @Bean
+    open fun springSecuritySentryUserProvider(sentryOptions: SentryOptions) = SpringSecuritySentryUserProvider(sentryOptions)
 
     @Bean
     open fun sentryUserFilter(hub: IHub, @Lazy sentryUserProviders: List<SentryUserProvider>) = FilterRegistrationBean<SentryUserFilter>().apply {
