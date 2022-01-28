@@ -165,6 +165,8 @@ public class MainActivity extends AppCompatActivity {
     binding.openGesturesActivity.setOnClickListener(
         view -> startActivity(new Intent(this, GesturesActivity.class)));
 
+    binding.throwCoroutines.setOnClickListener(view -> CoroutinesUtil.INSTANCE.throwCoroutines());
+
     setContentView(binding.getRoot());
   }
 

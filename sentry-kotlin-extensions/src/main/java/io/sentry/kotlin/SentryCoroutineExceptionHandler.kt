@@ -9,6 +9,9 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
+/**
+ * Sentry exception handler element for [CoroutineExceptionHandler].
+ */
 public class SentryCoroutineExceptionHandler(private val hub: IHub = HubAdapter.getInstance()) : AbstractCoroutineContextElement(CoroutineExceptionHandler), CoroutineExceptionHandler {
     public constructor() : this(HubAdapter.getInstance())
 

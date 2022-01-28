@@ -6,10 +6,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import io.sentry.Sentry
 import io.sentry.SpanStatus
-import io.sentry.kotlin.SentryCoroutineExceptionHandler
 import io.sentry.samples.android.databinding.ActivitySecondBinding
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -29,9 +26,7 @@ class SecondActivity : AppCompatActivity() {
         binding = ActivitySecondBinding.inflate(layoutInflater)
 
         binding.doRequest.setOnClickListener {
-            GlobalScope.launch(SentryCoroutineExceptionHandler()) {
-                throw AssertionError()
-            }
+            updateRepos()
         }
 
         binding.backMain.setOnClickListener {
