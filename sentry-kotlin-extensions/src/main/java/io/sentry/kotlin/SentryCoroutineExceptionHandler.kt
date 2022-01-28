@@ -6,12 +6,14 @@ import io.sentry.SentryEvent
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import kotlinx.coroutines.CoroutineExceptionHandler
+import org.jetbrains.annotations.ApiStatus
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
 /**
  * Sentry exception handler element for [CoroutineExceptionHandler].
  */
+@ApiStatus.Experimental
 public class SentryCoroutineExceptionHandler(private val hub: IHub = HubAdapter.getInstance()) : AbstractCoroutineContextElement(CoroutineExceptionHandler), CoroutineExceptionHandler {
     public constructor() : this(HubAdapter.getInstance())
 
