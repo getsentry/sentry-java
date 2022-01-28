@@ -140,7 +140,7 @@ class SentryFeignClientTest {
 
     @Test
     fun `adds breadcrumb when http calls succeeds even though response body is null`() {
-        val sut = fixture.getSut(responseBody = null)
+        val sut = fixture.getSut(responseBody = "")
         sut.postWithBody("request-body")
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
