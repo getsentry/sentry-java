@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-alpha.2
 
 * Ref: Simplify DateUtils with ISO8601Utils (#1837)
 
