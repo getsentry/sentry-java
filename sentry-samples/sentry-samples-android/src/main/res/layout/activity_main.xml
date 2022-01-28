@@ -104,6 +104,6 @@
             android:id="@+id/throw_coroutines"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/open_gestures_activity" />
+            android:text="@string/throw_coroutines" />
     </LinearLayout>
 </ScrollView>
