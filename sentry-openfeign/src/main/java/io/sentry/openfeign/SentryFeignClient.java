@@ -86,7 +86,7 @@ public final class SentryFeignClient implements Client {
     breadcrumb.setData("request_body_size", request.body() != null ? request.body().length : 0);
     if (response != null) {
       breadcrumb.setData(
-          "response_body_size", response.body() != null ? response.body().length : 0);
+          "response_body_size", response.body() != null ? response.body().length() : 0);
     }
     hub.addBreadcrumb(breadcrumb);
   }
