@@ -103,7 +103,9 @@ dependencies {
     implementation(projects.sentryAndroid)
     implementation(projects.sentryAndroidOkhttp)
     implementation(projects.sentryAndroidFragment)
+    implementation(projects.sentryKotlinExtensions)
     implementation(Config.Libs.fragment)
+    implementation(Config.Libs.kotlinCoroutines)
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(projects.sentryAndroid) {

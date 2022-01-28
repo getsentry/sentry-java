@@ -106,6 +106,7 @@ object Config {
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
 
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
+        val kotlinCoroutines = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9"
     }
 
     object AnnotationProcessors {
