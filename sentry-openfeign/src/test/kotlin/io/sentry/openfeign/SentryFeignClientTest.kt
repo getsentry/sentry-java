@@ -138,6 +138,19 @@ class SentryFeignClientTest {
         )
     }
 
+    @Test
+    fun `adds breadcrumb when http calls succeeds even though response body is null`() {
+        val sut = fixture.getSut(responseBody = "")
+        sut.postWithBody("request-body")
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(0, it.data["response_body_size"])
+                assertEquals(12, it.data["request_body_size"])
+            }
+        )
+    }
+
     @SuppressWarnings("SwallowedException")
     @Test
     fun `adds breadcrumb when http calls results in exception`() {
