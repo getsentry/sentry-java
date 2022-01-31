@@ -221,7 +221,8 @@ public class SentryOptions {
   private @Nullable Boolean enableUncaughtExceptionHandler = true;
 
   /*
-  When enabled, UncaughtExceptionHandler will caught exceptions (same as java would normally do).
+   * When enabled, UncaughtExceptionHandler will print exceptions (same as java would normally do),
+   * if no other UncaughtExceptionHandler was registered in the thread before.
    */
   private @Nullable Boolean printUncaughtStackTrace = false;
 

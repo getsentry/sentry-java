@@ -113,7 +113,7 @@ public final class UncaughtExceptionHandlerIntegration
         options.getLogger().log(SentryLevel.INFO, "Invoking inner uncaught exception handler.");
         defaultExceptionHandler.uncaughtException(thread, thrown);
       } else {
-        if (options.getPrintUncaughtStackTrace() != null && options.getPrintUncaughtStackTrace()) {
+        if (options.isPrintUncaughtStackTrace()) {
           thrown.printStackTrace();
         }
       }
