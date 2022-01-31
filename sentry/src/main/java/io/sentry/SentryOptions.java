@@ -220,6 +220,11 @@ public class SentryOptions {
    */
   private @Nullable Boolean enableUncaughtExceptionHandler = true;
 
+  /*
+  When enabled, UncaughtExceptionHandler will caught exceptions (same as java would normally do).
+   */
+  private @Nullable Boolean printUncaughtStackTrace = false;
+
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
@@ -309,6 +314,8 @@ public class SentryOptions {
     options.setServerName(propertiesProvider.getProperty("servername"));
     options.setEnableUncaughtExceptionHandler(
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
+    options.setPrintUncaughtStackTrace(
+        propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
@@ -1071,6 +1078,33 @@ public class SentryOptions {
   }
 
   /**
+   * Checks if printing exceptions by UncaughtExceptionHandler is enabled or disabled.
+   *
+   * @return true if enabled or false otherwise.
+   */
+  public boolean isPrintUncaughtStackTrace() {
+    return Boolean.TRUE.equals(printUncaughtStackTrace);
+  }
+
+  /**
+   * Checks if printing exceptions by UncaughtExceptionHandler is enabled or disabled.
+   *
+   * @return true if enabled, false otherwise or null if not set.
+   */
+  public @Nullable Boolean getPrintUncaughtStackTrace() {
+    return printUncaughtStackTrace;
+  }
+
+  /**
+   * Enable or disable printing exceptions in UncaughtExceptionHandler
+   *
+   * @param printUncaughtStackTrace true if enabled or false otherwise.
+   */
+  public void setPrintUncaughtStackTrace(final @Nullable Boolean printUncaughtStackTrace) {
+    this.printUncaughtStackTrace = printUncaughtStackTrace;
+  }
+
+  /**
    * Returns the SentryExecutorService
    *
    * @return the SentryExecutorService
@@ -1621,6 +1655,9 @@ public class SentryOptions {
     }
     if (options.getEnableUncaughtExceptionHandler() != null) {
       setEnableUncaughtExceptionHandler(options.getEnableUncaughtExceptionHandler());
+    }
+    if (options.getPrintUncaughtStackTrace() != null) {
+      setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
