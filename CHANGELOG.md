@@ -3,7 +3,7 @@
 ## Unreleased
 
 * Fix: NPE while adding "response_body_size" breadcrumb, when response body is null (#1884)
-* Bump: AGP to 7.1.0 (#)
+* Bump: AGP to 7.1.0 (#1892)
 
 ## 5.6.0
 
