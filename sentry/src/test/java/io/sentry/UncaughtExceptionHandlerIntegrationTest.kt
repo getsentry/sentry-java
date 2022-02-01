@@ -9,7 +9,9 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.SentryId
 import io.sentry.util.noFlushTimeout
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.PrintStream
 import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -150,4 +152,28 @@ class UncaughtExceptionHandlerIntegrationTest {
         integration.close()
         verify(handlerMock).defaultUncaughtExceptionHandler = null
     }
+
+    @Test
+    fun `When printUncaughtStackTrace is true`() {
+        val standardErr = System.err
+        try {
+            val outputStreamCaptor = ByteArrayOutputStream()
+            System.setErr(PrintStream(outputStreamCaptor))
+
+            val handlerMock = mock<UncaughtExceptionHandler>()
+            val options = SentryOptions().noFlushTimeout()
+            options.printUncaughtStackTrace = true
+            val sut = UncaughtExceptionHandlerIntegration(handlerMock)
+            sut.register(mock<IHub>(), options)
+            sut.uncaughtException(mock<Thread>(), RuntimeException("This should be printed!"))
+
+            assertTrue(outputStreamCaptor.toString()
+                .contains("java.lang.RuntimeException: This should be printed!"))
+            assertTrue(outputStreamCaptor.toString()
+                .contains("UncaughtExceptionHandlerIntegrationTest.kt:"))
+        } finally {
+            System.setErr(standardErr);
+        }
+    }
+
 }
