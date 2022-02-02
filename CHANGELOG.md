@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.6.1
 
 * Fix: NPE while adding "response_body_size" breadcrumb, when response body is null (#1884)
