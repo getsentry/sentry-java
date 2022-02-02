@@ -41,6 +41,12 @@ Breaking changes:
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
 
+## 5.6.1
+
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body is null (#1884)
+* Bump: AGP to 7.1.0 (#1892)
+* Feat: Add options.printUncaughtStackTrace to print uncaught exceptions (#1890)
+
 ## 5.6.0
 
 * Fix: Change scope of servlet-api to compileOnly (#1880)
