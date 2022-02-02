@@ -88,6 +88,7 @@ class OutboxSenderTest {
         fixture.envelopeReader = EnvelopeReader()
         whenever(fixture.options.maxSpans).thenReturn(1000)
         whenever(fixture.hub.options).thenReturn(fixture.options)
+        whenever(fixture.options.transactionListener).thenReturn(NoOpTransactionListener.getInstance())
 
         val transactionContext = TransactionContext("fixture-name", "http")
         transactionContext.description = "fixture-request"

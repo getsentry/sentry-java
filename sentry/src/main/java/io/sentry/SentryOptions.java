@@ -284,6 +284,21 @@ public class SentryOptions {
   /** Controls if the `tracestate` header is attached to envelopes and HTTP client integrations. */
   private boolean traceSampling;
 
+  /** The cache dir. path for caching profiling traces */
+  private @Nullable String profilingTracesDirPath;
+
+  /** Control if profiling is enabled or not for transactions */
+  private boolean profilingEnabled = false;
+
+  /** Max trace file size in bytes. */
+  private long maxTraceFileSize = 5 * 1024 * 1024;
+
+  /** Interval for profiling traces in milliseconds. Defaults to 300 times per second */
+  private int profilingTracesIntervalMs = 1_000 / 300;
+
+  /** Listener interface to perform operations when a transaction is started or ended */
+  private @NotNull ITransactionListener transactionListener = NoOpTransactionListener.getInstance();
+
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
@@ -1472,6 +1487,96 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the profiling traces dir. path if set
+   *
+   * @return the profiling traces dir. path or null if not set
+   */
+  public @Nullable String getProfilingTracesDirPath() {
+    return profilingTracesDirPath;
+  }
+
+  /**
+   * Sets the profiling traces dir. path
+   *
+   * @param profilingTracesDirPath the profiling traces dir. path
+   */
+  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
+  }
+
+  /**
+   * Returns the maximum trace file size for each envelope item in bytes.
+   *
+   * @return the maximum attachment size in bytes.
+   */
+  public long getMaxTraceFileSize() {
+    return maxTraceFileSize;
+  }
+
+  /**
+   * Sets the max trace file size for each envelope item in bytes. Default is 5 Mb.
+   *
+   * @param maxTraceFileSize the max trace file size in bytes.
+   */
+  public void setMaxTraceFileSize(long maxTraceFileSize) {
+    this.maxTraceFileSize = maxTraceFileSize;
+  }
+
+  /**
+   * Returns the interval for profiling traces in milliseconds.
+   *
+   * @return the interval for profiling traces in milliseconds.
+   */
+  public int getProfilingTracesIntervalMs() {
+    return profilingTracesIntervalMs;
+  }
+
+  /**
+   * Sets the interval for profiling traces in milliseconds.
+   *
+   * @param profilingTracesIntervalMs - the interval for profiling traces in milliseconds.
+   */
+  public void setProfilingTracesIntervalMs(final int profilingTracesIntervalMs) {
+    this.profilingTracesIntervalMs = profilingTracesIntervalMs;
+  }
+
+  /**
+   * Returns the listener interface to perform operations when a transaction is started or ended.
+   *
+   * @return the listener interface to perform operations when a transaction is started or ended.
+   */
+  public @NotNull ITransactionListener getTransactionListener() {
+    return transactionListener;
+  }
+
+  /**
+   * Sets the listener interface to perform operations when a transaction is started or ended.
+   *
+   * @param transactionListener - the listener for operations when a transaction is started or ended
+   */
+  public void setTransactionListener(final @NotNull ITransactionListener transactionListener) {
+    this.transactionListener = transactionListener;
+  }
+
+  /**
+   * Returns if profiling is enabled for transactions.
+   *
+   * @return if profiling is enabled for transactions.
+   */
+  public boolean isProfilingEnabled() {
+    return profilingEnabled;
+  }
+
+  /**
+   * Sets whether profiling is enabled for transactions.
+   *
+   * @param profilingEnabled - whether profiling is enabled for transactions
+   */
+  public void setProfilingEnabled(boolean profilingEnabled) {
+    this.profilingEnabled = profilingEnabled;
+  }
+
+  /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
    * @return the list of origins
@@ -1631,6 +1736,13 @@ public class SentryOptions {
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
     }
+    if (options.getProfilingTracesDirPath() != null) {
+      setProfilingTracesDirPath(options.getProfilingTracesDirPath());
+    }
+    setTransactionListener(options.getTransactionListener());
+    setProfilingTracesIntervalMs(options.getProfilingTracesIntervalMs());
+    setMaxTraceFileSize(options.getMaxTraceFileSize());
+    setProfilingEnabled(options.isProfilingEnabled());
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       this.tags.put(tag.getKey(), tag.getValue());

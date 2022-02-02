@@ -55,7 +55,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(options, "SentryOptions is required.");
     if (options.getDsn() == null || options.getDsn().isEmpty()) {
       throw new IllegalArgumentException(
-          "Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.");
+          "Hub requires a DSN to be instantiated. Considering using the NoOpHub if no DSN is available.");
     }
   }
 
@@ -658,6 +658,14 @@ public final class Hub implements IHub {
               startTimestamp,
               waitForChildren,
               transactionFinishedCallback);
+
+      // todo Should the listener be called only when a transaction is sampled?
+      // The listener is called only if the transaction exists, as the transaction will needs to
+      // stop it
+      if (options.isProfilingEnabled()) {
+        final ITransactionListener transactionListener = options.getTransactionListener();
+        transactionListener.onTransactionStart(transaction);
+      }
     }
     if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));

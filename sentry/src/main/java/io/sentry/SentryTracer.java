@@ -240,6 +240,8 @@ public final class SentryTracer implements ITransaction {
       if (transactionFinishedCallback != null) {
         transactionFinishedCallback.execute(this);
       }
+      if (hub.getOptions().isProfilingEnabled())
+        hub.getOptions().getTransactionListener().onTransactionEnd(this);
       hub.captureTransaction(transaction, this.traceState());
     }
   }

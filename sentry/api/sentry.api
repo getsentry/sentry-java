@@ -341,6 +341,11 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
 }
 
+public abstract interface class io/sentry/ITransactionListener {
+	public abstract fun onTransactionEnd (Lio/sentry/ITransaction;)V
+	public abstract fun onTransactionStart (Lio/sentry/ITransaction;)V
+}
+
 public abstract interface class io/sentry/ITransportFactory {
 	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
 }
@@ -477,6 +482,12 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun toTraceStateHeader ()Lio/sentry/TraceStateHeader;
 	public fun traceState ()Lio/sentry/TraceState;
+}
+
+public final class io/sentry/NoOpTransactionListener : io/sentry/ITransactionListener {
+	public static fun getInstance ()Lio/sentry/NoOpTransactionListener;
+	public fun onTransactionEnd (Lio/sentry/ITransaction;)V
+	public fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
 
 public final class io/sentry/NoOpTransportFactory : io/sentry/ITransportFactory {
@@ -711,6 +722,7 @@ public final class io/sentry/SentryEnvelope {
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SdkVersion;Ljava/lang/Iterable;)V
 	public static fun from (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;Lio/sentry/protocol/SdkVersion;)Lio/sentry/SentryEnvelope;
 	public static fun from (Lio/sentry/ISerializer;Lio/sentry/Session;Lio/sentry/protocol/SdkVersion;)Lio/sentry/SentryEnvelope;
+	public static fun from (Lio/sentry/protocol/SentryId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/SdkVersion;JZ)Lio/sentry/SentryEnvelope;
 	public fun getHeader ()Lio/sentry/SentryEnvelopeHeader;
 	public fun getItems ()Ljava/lang/Iterable;
 }
@@ -737,6 +749,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromAttachment (Lio/sentry/Attachment;J)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromTraceFile (Ljava/lang/String;Ljava/lang/String;JZ)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
 	public fun getData ()[B
 	public fun getEvent (Lio/sentry/ISerializer;)Lio/sentry/SentryEvent;
@@ -794,7 +807,9 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 public final class io/sentry/SentryItemType : java/lang/Enum {
 	public static final field Attachment Lio/sentry/SentryItemType;
 	public static final field Event Lio/sentry/SentryItemType;
+	public static final field InteractionTrace Lio/sentry/SentryItemType;
 	public static final field Session Lio/sentry/SentryItemType;
+	public static final field SessionTrace Lio/sentry/SentryItemType;
 	public static final field Transaction Lio/sentry/SentryItemType;
 	public static final field Unknown Lio/sentry/SentryItemType;
 	public static final field UserFeedback Lio/sentry/SentryItemType;
@@ -851,7 +866,10 @@ public class io/sentry/SentryOptions {
 	public fun getMaxQueueSize ()I
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getMaxSpans ()I
+	public fun getMaxTraceFileSize ()J
 	public fun getOutboxPath ()Ljava/lang/String;
+	public fun getProfilingTracesDirPath ()Ljava/lang/String;
+	public fun getProfilingTracesIntervalMs ()I
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getReadTimeoutMillis ()I
@@ -868,6 +886,7 @@ public class io/sentry/SentryOptions {
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
 	public fun getTracingOrigins ()Ljava/util/List;
+	public fun getTransactionListener ()Lio/sentry/ITransactionListener;
 	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
 	public fun isAttachServerName ()Z
@@ -882,6 +901,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableSessionTracking ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
+	public fun isProfilingEnabled ()Z
 	public fun isSendDefaultPii ()Z
 	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
@@ -918,6 +938,10 @@ public class io/sentry/SentryOptions {
 	public fun setMaxQueueSize (I)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
+	public fun setMaxTraceFileSize (J)V
+	public fun setProfilingEnabled (Z)V
+	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
+	public fun setProfilingTracesIntervalMs (I)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
@@ -935,6 +959,7 @@ public class io/sentry/SentryOptions {
 	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
+	public fun setTransactionListener (Lio/sentry/ITransactionListener;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
 }
@@ -2061,6 +2086,10 @@ public final class io/sentry/util/Platform {
 	public fun <init> ()V
 	public static fun isAndroid ()Z
 	public static fun isJvm ()Z
+}
+
+public final class io/sentry/util/SentryExecutors {
+	public static final field tracingExecutor Ljava/util/concurrent/ScheduledExecutorService;
 }
 
 public final class io/sentry/util/StringUtils {

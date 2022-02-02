@@ -179,51 +179,8 @@ public final class SentryEnvelopeItem {
                 }
                 return attachment.getBytes();
               } else if (attachment.getPathname() != null) {
-
-                try {
-                  File file = new File(attachment.getPathname());
-
-                  if (!file.isFile()) {
-                    throw new SentryEnvelopeException(
-                        String.format(
-                            "Reading the attachment %s failed, because the file located at the path is not a file.",
-                            attachment.getPathname()));
-                  }
-
-                  if (!file.canRead()) {
-                    throw new SentryEnvelopeException(
-                        String.format(
-                            "Reading the attachment %s failed, because can't read the file.",
-                            attachment.getPathname()));
-                  }
-
-                  if (file.length() > maxAttachmentSize) {
-                    throw new SentryEnvelopeException(
-                        String.format(
-                            "Dropping attachment, because the size of the it located at "
-                                + "'%s' with %d bytes is bigger than the maximum "
-                                + "allowed attachment size of %d bytes.",
-                            attachment.getPathname(), file.length(), maxAttachmentSize));
-                  }
-
-                  try (FileInputStream fileInputStream =
-                          new FileInputStream(attachment.getPathname());
-                      BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
-                      ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-                    byte[] bytes = new byte[1024];
-                    int length;
-                    int offset = 0;
-                    while ((length = inputStream.read(bytes)) != -1) {
-                      outputStream.write(bytes, offset, length);
-                    }
-                    return outputStream.toByteArray();
-                  }
-                } catch (IOException | SecurityException exception) {
-                  throw new SentryEnvelopeException(
-                      String.format("Reading the attachment %s failed.", attachment.getPathname()));
-                }
+                return readEnvelopePayloadFromFile(attachment.getPathname(), maxAttachmentSize);
               }
-
               throw new SentryEnvelopeException(
                   String.format(
                       "Couldn't attach the attachment %s.\n"
@@ -241,6 +198,76 @@ public final class SentryEnvelopeItem {
 
     // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static SentryEnvelopeItem fromTraceFile(
+      final @NotNull String traceFilePath,
+      final @NotNull String traceFileName,
+      final long maxTraceSize,
+      final boolean isStartupTrace) {
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              if (!traceFilePath.isEmpty()) {
+                return readEnvelopePayloadFromFile(traceFilePath, maxTraceSize);
+              }
+              throw new SentryEnvelopeException(
+                  String.format(
+                      "Couldn't attach the trace %s.\nPlease check the trace was written correctly",
+                      traceFilePath));
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            isStartupTrace ? SentryItemType.SessionTrace : SentryItemType.InteractionTrace,
+            () -> cachedItem.getBytes().length,
+            "application/json",
+            traceFileName);
+
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  private static byte[] readEnvelopePayloadFromFile(String pathname, long maxFileLength)
+      throws SentryEnvelopeException {
+    try {
+      File file = new File(pathname);
+
+      if (!file.isFile()) {
+        throw new SentryEnvelopeException(
+            String.format(
+                "Reading the item %s failed, because the file located at the path is not a file.",
+                pathname));
+      }
+
+      if (!file.canRead()) {
+        throw new SentryEnvelopeException(
+            String.format("Reading the item %s failed, because can't read the file.", pathname));
+      }
+
+      if (file.length() > maxFileLength) {
+        throw new SentryEnvelopeException(
+            String.format(
+                "Dropping item, because its size located at '%s' with %d bytes is bigger "
+                    + "than the maximum allowed size of %d bytes.",
+                pathname, file.length(), maxFileLength));
+      }
+
+      try (FileInputStream fileInputStream = new FileInputStream(pathname);
+          BufferedInputStream inputStream = new BufferedInputStream(fileInputStream);
+          ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+        byte[] bytes = new byte[1024];
+        int length;
+        int offset = 0;
+        while ((length = inputStream.read(bytes)) != -1) {
+          outputStream.write(bytes, offset, length);
+        }
+        return outputStream.toByteArray();
+      }
+    } catch (IOException | SecurityException exception) {
+      throw new SentryEnvelopeException(String.format("Reading the item %s failed.", pathname));
+    }
   }
 
   private static class CachedItem {
