@@ -154,7 +154,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     }
 
     @Test
-    fun `When printUncaughtStackTrace is true`() {
+    fun `When printUncaughtStackTrace is enabled, prints the stacktrace to System.out`() {
         val standardErr = System.err
         try {
             val outputStreamCaptor = ByteArrayOutputStream()
