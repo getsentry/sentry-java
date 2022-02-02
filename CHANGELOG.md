@@ -4,6 +4,7 @@
 
 * Fix: NPE while adding "response_body_size" breadcrumb, when response body is null (#1884)
 * Bump: AGP to 7.1.0 (#1892)
+* Feat: Add options.printUncaughtStackTrace to print uncaught exceptions (#1890)
 
 ## 5.6.0
 
