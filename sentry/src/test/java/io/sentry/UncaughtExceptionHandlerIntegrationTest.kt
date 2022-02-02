@@ -167,13 +167,16 @@ class UncaughtExceptionHandlerIntegrationTest {
             sut.register(mock<IHub>(), options)
             sut.uncaughtException(mock<Thread>(), RuntimeException("This should be printed!"))
 
-            assertTrue(outputStreamCaptor.toString()
-                .contains("java.lang.RuntimeException: This should be printed!"))
-            assertTrue(outputStreamCaptor.toString()
-                .contains("UncaughtExceptionHandlerIntegrationTest.kt:"))
+            assertTrue(
+                outputStreamCaptor.toString()
+                    .contains("java.lang.RuntimeException: This should be printed!")
+            )
+            assertTrue(
+                outputStreamCaptor.toString()
+                    .contains("UncaughtExceptionHandlerIntegrationTest.kt:")
+            )
         } finally {
-            System.setErr(standardErr);
+            System.setErr(standardErr)
         }
     }
-
 }
