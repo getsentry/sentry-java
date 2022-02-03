@@ -294,7 +294,7 @@ public class SentryOptions {
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
   /** Interval for profiling traces in milliseconds. Defaults to 300 times per second */
-  private int profilingTracesIntervalMs = 1_000 / 300;
+  private int profilingTracesIntervalMillis = 1_000 / 300;
 
   /** Listener interface to perform operations when a transaction is started or ended */
   private @NotNull ITransactionListener transactionListener = NoOpTransactionListener.getInstance();
@@ -1527,17 +1527,17 @@ public class SentryOptions {
    *
    * @return the interval for profiling traces in milliseconds.
    */
-  public int getProfilingTracesIntervalMs() {
-    return profilingTracesIntervalMs;
+  public int getProfilingTracesIntervalMillis() {
+    return profilingTracesIntervalMillis;
   }
 
   /**
    * Sets the interval for profiling traces in milliseconds.
    *
-   * @param profilingTracesIntervalMs - the interval for profiling traces in milliseconds.
+   * @param profilingTracesIntervalMillis - the interval for profiling traces in milliseconds.
    */
-  public void setProfilingTracesIntervalMs(final int profilingTracesIntervalMs) {
-    this.profilingTracesIntervalMs = profilingTracesIntervalMs;
+  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {
+    this.profilingTracesIntervalMillis = profilingTracesIntervalMillis;
   }
 
   /**
@@ -1740,7 +1740,7 @@ public class SentryOptions {
       setProfilingTracesDirPath(options.getProfilingTracesDirPath());
     }
     setTransactionListener(options.getTransactionListener());
-    setProfilingTracesIntervalMs(options.getProfilingTracesIntervalMs());
+    setProfilingTracesIntervalMillis(options.getProfilingTracesIntervalMillis());
     setMaxTraceFileSize(options.getMaxTraceFileSize());
     setProfilingEnabled(options.isProfilingEnabled());
     final Map<String, String> tags = new HashMap<>(options.getTags());

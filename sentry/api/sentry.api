@@ -869,7 +869,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxTraceFileSize ()J
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
-	public fun getProfilingTracesIntervalMs ()I
+	public fun getProfilingTracesIntervalMillis ()I
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getReadTimeoutMillis ()I
@@ -941,7 +941,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxTraceFileSize (J)V
 	public fun setProfilingEnabled (Z)V
 	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
-	public fun setProfilingTracesIntervalMs (I)V
+	public fun setProfilingTracesIntervalMillis (I)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
@@ -2064,6 +2064,12 @@ public abstract interface class io/sentry/util/CollectionUtils$Predicate {
 public final class io/sentry/util/ExceptionUtils {
 	public fun <init> ()V
 	public static fun findRootCause (Ljava/lang/Throwable;)Ljava/lang/Throwable;
+}
+
+public final class io/sentry/util/FileUtils {
+	public fun <init> ()V
+	public static fun deleteRecursively (Ljava/io/File;)Z
+	public static fun resolve (Ljava/io/File;Ljava/lang/String;)Ljava/io/File;
 }
 
 public final class io/sentry/util/LogUtils {

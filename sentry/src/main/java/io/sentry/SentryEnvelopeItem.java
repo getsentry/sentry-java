@@ -214,7 +214,7 @@ public final class SentryEnvelopeItem {
               }
               throw new SentryEnvelopeException(
                   String.format(
-                      "Couldn't attach the trace %s.\nPlease check the trace was written correctly",
+                      "Couldn't attach the trace %s.\nPlease check if the trace was written correctly",
                       traceFilePath));
             });
 

@@ -1,4 +1,4 @@
-package io.sentry.android.core.util;
+package io.sentry.util;
 
 import java.io.File;
 import org.jetbrains.annotations.ApiStatus;

@@ -4,14 +4,15 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import android.os.Build;
 import android.os.Debug;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionListener;
-import io.sentry.Sentry;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.util.FileUtils;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SentryExecutors;
 import java.io.File;
@@ -33,6 +34,8 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
    */
   private static final int BUFFER_SIZE_BYTES = 3_000_000;
 
+  private final IHub hub;
+
   private @Nullable File traceFile = null;
   private @Nullable File traceFilesDir = null;
   private boolean startedMethodTracing = false;
@@ -40,21 +43,21 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
 
   private @NotNull final SentryOptions options;
 
-  public AndroidTraceTransactionListener(final @NotNull SentryOptions options) {
-    this.options = Objects.requireNonNull(options, "SentryOptions is required");
-    final String tracesFilesDirPath = this.options.getProfilingTracesDirPath();
+  public AndroidTraceTransactionListener() {
+    this(HubAdapter.getInstance());
+  }
+
+  public AndroidTraceTransactionListener(IHub hub) {
+    this.hub = Objects.requireNonNull(hub, "hub is required");
+    options = hub.getOptions();
+    final String tracesFilesDirPath = options.getProfilingTracesDirPath();
     if (tracesFilesDirPath == null || tracesFilesDirPath.isEmpty()) {
-      this.options
+      options
           .getLogger()
           .log(SentryLevel.ERROR, "No profiling traces dir path is defined in options.");
       return;
     }
-
     traceFilesDir = new File(tracesFilesDirPath);
-    // Method trace files are normally deleted at the end of traces, but if that fails
-    // for some reason we try to clear any old files here.
-    FileUtils.deleteRecursively(traceFilesDir);
-    traceFilesDir.mkdirs();
   }
 
   @Override
@@ -81,7 +84,7 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
       return;
     }
 
-    long intervalMs = options.getProfilingTracesIntervalMs();
+    long intervalMs = options.getProfilingTracesIntervalMillis();
     if (intervalMs <= 0) {
       options
           .getLogger()
@@ -107,6 +110,7 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
 
     if (startedMethodTracing) {
       startedMethodTracing = false;
+      activeTransaction = null;
 
       Debug.stopMethodTracing();
 
@@ -133,16 +137,14 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
                 options.getSdkVersion(),
                 options.getMaxTraceFileSize(),
                 true);
-        Sentry.getCurrentHub().captureEnvelope(envelope);
+        hub.captureEnvelope(envelope);
       } catch (IOException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
-        return;
+        options.getLogger().log(SentryLevel.ERROR, "Failed to capture the trace.", e);
+        // We don't return out of this function here, so we can go on and clean the variables
       }
     }
 
     if (traceFile != null) traceFile.delete();
-
-    activeTransaction = null;
     traceFile = null;
   }
 }
