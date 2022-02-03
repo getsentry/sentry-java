@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Do not include stacktrace frames into Timber message (#1898)
+
 ## 5.6.1
 
 * Fix: NPE while adding "response_body_size" breadcrumb, when response body is null (#1884)
