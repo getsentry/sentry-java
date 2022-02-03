@@ -192,7 +192,7 @@ class SentryTimberTree(
         vararg args: Any?
     ) {
         if (message.isNullOrEmpty() && throwable == null) {
-            return  // Swallow message if it's null and there's no throwable
+            return // Swallow message if it's null and there's no throwable
         }
 
         val level = getSentryLevel(priority)

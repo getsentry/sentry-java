@@ -169,12 +169,14 @@ public class MainActivity extends AppCompatActivity {
         view -> startActivity(new Intent(this, GesturesActivity.class)));
 
     binding.testTimberIntegration.setOnClickListener(
-      view -> {
-        crashCount++;
-        Timber.i("Some info here");
-        Timber.e(new RuntimeException("Uncaught Exception from Java."), "Something wrong happened %d times", crashCount);
-      }
-    );
+        view -> {
+          crashCount++;
+          Timber.i("Some info here");
+          Timber.e(
+              new RuntimeException("Uncaught Exception from Java."),
+              "Something wrong happened %d times",
+              crashCount);
+        });
 
     setContentView(binding.getRoot());
   }
