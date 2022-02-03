@@ -21,8 +21,11 @@ import java.io.Writer;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
+import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
+
+  private int crashCount = 0;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -164,6 +167,14 @@ public class MainActivity extends AppCompatActivity {
 
     binding.openGesturesActivity.setOnClickListener(
         view -> startActivity(new Intent(this, GesturesActivity.class)));
+
+    binding.testTimberIntegration.setOnClickListener(
+      view -> {
+        crashCount++;
+        Timber.i("Some info here");
+        Timber.e(new RuntimeException("Uncaught Exception from Java."), "Something wrong happened %d times", crashCount);
+      }
+    );
 
     setContentView(binding.getRoot());
   }

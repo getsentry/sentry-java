@@ -9,6 +9,7 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel
 import io.sentry.getExc
+import org.junit.Ignore
 import timber.log.Timber
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -29,6 +30,7 @@ class SentryTimberTreeTest {
             return SentryTimberTree(hub, minEventLevel, minBreadcrumbLevel)
         }
     }
+
     private val fixture = Fixture()
 
     @BeforeTest
@@ -158,6 +160,9 @@ class SentryTimberTreeTest {
     }
 
     @Test
+    @Ignore(
+        "We have no possibility to get a tag from Timber since it is package-private"
+    )
     fun `Tree captures an event with TimberTag tag`() {
         val sut = fixture.getSut()
         Timber.plant(sut)
@@ -190,7 +195,22 @@ class SentryTimberTreeTest {
         verify(fixture.hub).captureEvent(
             check {
                 assertNotNull(it.message) { message ->
-                    assertEquals("message", message.formatted)
+                    assertEquals("message", message.message)
+                }
+            }
+        )
+    }
+
+    @Test
+    fun `Tree captures an event with formatted message and arguments, when provided`() {
+        val sut = fixture.getSut()
+        sut.e("test count: %d", 32)
+        verify(fixture.hub).captureEvent(
+            check {
+                assertNotNull(it.message) { message ->
+                    assertEquals("test count: %d", message.message)
+                    assertEquals("test count: 32", message.formatted)
+                    assertEquals("32", message.params!!.first())
                 }
             }
         )
@@ -240,6 +260,10 @@ class SentryTimberTreeTest {
     }
 
     @Test
+    @Ignore(
+        "Should we still do it? We do not write stacktrace into a message anymore, " +
+            "but we could do that for the sake of breadcrumb"
+    )
     fun `Tree adds a breadcrumb with exception message`() {
         val sut = fixture.getSut()
         sut.e(Throwable("test"))
