@@ -201,11 +201,11 @@ class SentryTimberTree(
             if (message != null && args.isNotEmpty()) {
                 this.formatted = message.format(*args)
             }
-            this.params = args.mapNotNull { it.toString() }
+            this.params = args.map { it.toString() }
         }
 
-        addBreadcrumb(level, sentryMessage)
         captureEvent(level, sentryMessage, throwable)
+        addBreadcrumb(level, sentryMessage, throwable)
     }
 
     /**
@@ -241,17 +241,23 @@ class SentryTimberTree(
      */
     private fun addBreadcrumb(
         sentryLevel: SentryLevel,
-        msg: Message
+        msg: Message,
+        throwable: Throwable?
     ) {
         // checks the breadcrumb level
         if (isLoggable(sentryLevel, minBreadcrumbLevel)) {
-            val breadCrumb = Breadcrumb().apply {
-                level = sentryLevel
-                category = "Timber"
-                message = msg.message
+            val throwableMsg = throwable?.message
+            val breadCrumb = when {
+                msg.message != null -> Breadcrumb().apply {
+                    level = sentryLevel
+                    category = "Timber"
+                    message = msg.message
+                }
+                throwableMsg != null -> Breadcrumb.error(throwableMsg)
+                else -> null
             }
 
-            hub.addBreadcrumb(breadCrumb)
+            breadCrumb?.let { hub.addBreadcrumb(it) }
         }
     }
 
