@@ -253,7 +253,9 @@ class SentryTimberTree(
                     category = "Timber"
                     message = msg.message
                 }
-                throwableMsg != null -> Breadcrumb.error(throwableMsg)
+                throwableMsg != null -> Breadcrumb.error(throwableMsg).apply {
+                    category = "exception"
+                }
                 else -> null
             }
 

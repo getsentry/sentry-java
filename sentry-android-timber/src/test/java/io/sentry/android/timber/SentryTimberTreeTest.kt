@@ -238,39 +238,35 @@ class SentryTimberTreeTest {
     }
 
     @Test
-    fun `Tree adds a breadcrumb with given level`() {
+    fun `Tree adds an info breadcrumb`() {
         val sut = fixture.getSut()
-        sut.e(Throwable("test"))
-        verify(fixture.hub).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals(SentryLevel.ERROR, it.level)
-            }
-        )
-    }
-
-    @Test
-    fun `Tree adds a breadcrumb with Timber category`() {
-        val sut = fixture.getSut()
-        sut.e(Throwable("test"))
+        sut.i("message")
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("Timber", it.category)
+                assertEquals(SentryLevel.INFO, it.level)
+                assertEquals("message", it.message)
             }
         )
     }
 
     @Test
-    @Ignore(
-        "Should we still do it? We do not write stacktrace into a message anymore, " +
-            "but we could do that for the sake of breadcrumb"
-    )
-    fun `Tree adds a breadcrumb with exception message`() {
+    fun `Tree adds an error breadcrumb`() {
         val sut = fixture.getSut()
         sut.e(Throwable("test"))
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertTrue(it.message!!.contains("test"))
+                assertEquals("exception", it.category)
+                assertEquals(SentryLevel.ERROR, it.level)
+                assertEquals("test", it.message)
             }
         )
+    }
+
+    @Test
+    fun `Tree does not add a breadcrumb, if no message provided`() {
+        val sut = fixture.getSut()
+        sut.e(Throwable())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
 }
