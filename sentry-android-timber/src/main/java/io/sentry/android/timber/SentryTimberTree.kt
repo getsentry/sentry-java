@@ -199,8 +199,8 @@ class SentryTimberTree(
         val level = getSentryLevel(priority)
         val sentryMessage = Message().apply {
             this.message = message
-            if (message != null && args.isNotEmpty()) {
-                this.formatted = message.format(*args)
+            if (!message.isNullOrEmpty() && args.isNotEmpty()) {
+                this.formatted = message?.format(*args)
             }
             this.params = args.map { it.toString() }
         }

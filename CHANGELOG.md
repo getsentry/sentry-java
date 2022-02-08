@@ -4,6 +4,10 @@
 
 * Fix: Do not include stacktrace frames into Timber message (#1898)
 
+Breaking changes:
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
+Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
+
 ## 5.6.1
 
 * Fix: NPE while adding "response_body_size" breadcrumb, when response body is null (#1884)
