@@ -200,33 +200,30 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
-  public static SentryEnvelopeItem fromTraceFile(
-      final @NotNull String traceFilePath,
-      final @NotNull String traceFileName,
-      final long maxTraceSize,
-      final boolean isStartupTrace) {
+  public static @Nullable SentryEnvelopeItem fromProfilingTrace(
+      final @NotNull ProfilingTraceData profilingTraceData, final long maxTraceFileSize)
+      throws SentryEnvelopeException {
 
-    final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              if (!traceFilePath.isEmpty()) {
-                return readEnvelopePayloadFromFile(traceFilePath, maxTraceSize);
-              }
-              throw new SentryEnvelopeException(
-                  String.format(
-                      "Couldn't attach the trace %s.\nPlease check if the trace was written correctly",
-                      traceFilePath));
-            });
+    File traceFile = profilingTraceData.getTraceFile();
+    if (traceFile == null || !traceFile.exists()) return null;
+
+    final byte[] traceBytes = readEnvelopePayloadFromFile(traceFile.getPath(), maxTraceFileSize);
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
-            isStartupTrace ? SentryItemType.SessionTrace : SentryItemType.InteractionTrace,
-            () -> cachedItem.getBytes().length,
-            "application/json",
-            traceFileName);
+            SentryItemType.ProfilingTrace,
+            () -> traceBytes.length,
+            "octet-stream",
+            traceFile.getName());
+
+    // todo can i simply add 2 fields in SentryEnvelopeItemHeader (traceId and spanId)?
+    //            profilingTraceData.getTraceId().toString(),
+    //            profilingTraceData.getSpanId().toString());
+
+    traceFile.delete();
 
     // Don't use method reference. This can cause issues on Android
-    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+    return new SentryEnvelopeItem(itemHeader, traceBytes);
   }
 
   private static byte[] readEnvelopePayloadFromFile(String pathname, long maxFileLength)

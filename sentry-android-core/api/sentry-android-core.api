@@ -15,7 +15,7 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 public final class io/sentry/android/core/AndroidTraceTransactionListener : io/sentry/ITransactionListener {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
-	public fun onTransactionEnd (Lio/sentry/ITransaction;)V
+	public fun onTransactionFinish (Lio/sentry/ITransaction;)Lio/sentry/ProfilingTraceData;
 	public fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
 

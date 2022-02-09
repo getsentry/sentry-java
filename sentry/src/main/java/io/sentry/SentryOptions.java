@@ -288,7 +288,7 @@ public class SentryOptions {
   private @Nullable String profilingTracesDirPath;
 
   /** Control if profiling is enabled or not for transactions */
-  private boolean profilingEnabled = false;
+  private boolean profilingEnabled = true;
 
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
@@ -1090,8 +1090,9 @@ public class SentryOptions {
    *
    * @return the SentryExecutorService
    */
+  @ApiStatus.Internal
   @NotNull
-  ISentryExecutorService getExecutorService() {
+  public ISentryExecutorService getExecutorService() {
     return executorService;
   }
 
@@ -1554,8 +1555,9 @@ public class SentryOptions {
    *
    * @param transactionListener - the listener for operations when a transaction is started or ended
    */
-  public void setTransactionListener(final @NotNull ITransactionListener transactionListener) {
-    this.transactionListener = transactionListener;
+  public void setTransactionListener(final @Nullable ITransactionListener transactionListener) {
+    this.transactionListener =
+        transactionListener != null ? transactionListener : NoOpTransactionListener.getInstance();
   }
 
   /**

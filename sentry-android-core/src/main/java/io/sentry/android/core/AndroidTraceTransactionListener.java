@@ -8,16 +8,12 @@ import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionListener;
-import io.sentry.SentryEnvelope;
+import io.sentry.ProfilingTraceData;
 import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
-import io.sentry.protocol.SentryId;
-import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
-import io.sentry.util.SentryExecutors;
 import java.io.File;
-import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,25 +30,22 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
    */
   private static final int BUFFER_SIZE_BYTES = 3_000_000;
 
-  private final IHub hub;
-
+  private final @NotNull IHub hub;
   private @Nullable File traceFile = null;
   private @Nullable File traceFilesDir = null;
-  private boolean startedMethodTracing = false;
-  private @Nullable ITransaction activeTransaction = null;
-
-  private @NotNull final SentryOptions options;
+  private @Nullable Future<?> scheduledFinish = null;
+  private volatile @Nullable ITransaction activeTransaction = null;
+  private volatile @Nullable ProfilingTraceData lastProfilingData = null;
 
   public AndroidTraceTransactionListener() {
     this(HubAdapter.getInstance());
   }
 
-  public AndroidTraceTransactionListener(IHub hub) {
+  public AndroidTraceTransactionListener(final @NotNull IHub hub) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
-    options = hub.getOptions();
-    final String tracesFilesDirPath = options.getProfilingTracesDirPath();
+    final String tracesFilesDirPath = hub.getOptions().getProfilingTracesDirPath();
     if (tracesFilesDirPath == null || tracesFilesDirPath.isEmpty()) {
-      options
+      hub.getOptions()
           .getLogger()
           .log(SentryLevel.ERROR, "No profiling traces dir path is defined in options.");
       return;
@@ -62,89 +55,95 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public synchronized void onTransactionStart(ITransaction transaction) {
+  public synchronized void onTransactionStart(@NotNull ITransaction transaction) {
 
     // Debug.startMethodTracingSampling() is only available since Lollipop
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return;
 
-    // Let's be sure to end any running trace
-    if (activeTransaction != null) onTransactionEnd(activeTransaction);
+    // If a transaction is currently being profiled, we ignore this call
+    if (activeTransaction != null) {
+      return;
+    }
 
-    traceFile = FileUtils.resolve(traceFilesDir, "sentry-" + UUID.randomUUID() + ".trace");
+    traceFile =
+        traceFilesDir == null ? null : new File(traceFilesDir, UUID.randomUUID() + ".trace");
 
     if (traceFile == null) {
-      options.getLogger().log(SentryLevel.DEBUG, "Could not create a trace file");
+      hub.getOptions().getLogger().log(SentryLevel.DEBUG, "Could not create a trace file");
       return;
     }
 
     if (traceFile.exists()) {
-      options
+      hub.getOptions()
           .getLogger()
           .log(SentryLevel.DEBUG, "Trace file already exists: %s", traceFile.getPath());
       return;
     }
 
-    long intervalMs = options.getProfilingTracesIntervalMillis();
-    if (intervalMs <= 0) {
-      options
+    long intervalMillis = hub.getOptions().getProfilingTracesIntervalMillis();
+    if (intervalMillis <= 0) {
+      hub.getOptions()
           .getLogger()
-          .log(SentryLevel.DEBUG, "Profiling trace interval is set to %d milliseconds", intervalMs);
+          .log(
+              SentryLevel.DEBUG,
+              "Profiling trace interval is set to %d milliseconds",
+              intervalMillis);
       return;
     }
+    activeTransaction = transaction;
 
     // We stop the trace after 30 seconds, since such a long trace is very probably a trace
     // that will never end due to an error
-    SentryExecutors.tracingExecutor.schedule(
-        () -> onTransactionEnd(transaction), 30_000, MILLISECONDS);
+    scheduledFinish =
+        hub.getOptions()
+            .getExecutorService()
+            .schedule(() -> lastProfilingData = onTransactionFinish(transaction), 30_000);
 
-    startedMethodTracing = true;
-    int intervalUs = (int) MILLISECONDS.toMicros(intervalMs);
-    activeTransaction = transaction;
+    int intervalUs = (int) MILLISECONDS.toMicros(intervalMillis);
     Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
   }
 
   @Override
-  public synchronized void onTransactionEnd(ITransaction transaction) {
-    // In case a previous timeout tries to end a newer transaction we simply ignore it
-    if (transaction != activeTransaction) return;
+  public synchronized @Nullable ProfilingTraceData onTransactionFinish(
+      @NotNull ITransaction transaction) {
 
-    if (startedMethodTracing) {
-      startedMethodTracing = false;
-      activeTransaction = null;
-
-      Debug.stopMethodTracing();
-
-      if (traceFile == null || !traceFile.exists()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Trace file %s does not exists",
-                traceFile == null ? "null" : traceFile.getPath());
-        return;
+    // Profiling finished, but we check if we cached last profiling data due to a timeout
+    if (activeTransaction == null) {
+      ProfilingTraceData profilingData = lastProfilingData;
+      // If the cached last profiling data refers to the transaction that started it we return it
+      // back, otherwise we would simply lose it
+      if (profilingData != null
+          && profilingData.getTraceId().equals(transaction.getSpanContext().getTraceId())) {
+        return profilingData;
       }
-
-      // todo should I use transaction.getEventId() instead of new SentryId()?
-      //  Or should I add the transaction id as an header to the envelope?
-      //  Or should I simply ignore the transaction entirely (wouldn't make any sense)?
-      //  And how to check if a trace is from a startup?
-      try {
-        SentryEnvelope envelope =
-            SentryEnvelope.from(
-                new SentryId(),
-                traceFile.getPath(),
-                traceFile.getName(),
-                options.getSdkVersion(),
-                options.getMaxTraceFileSize(),
-                true);
-        hub.captureEnvelope(envelope);
-      } catch (IOException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to capture the trace.", e);
-        // We don't return out of this function here, so we can go on and clean the variables
-      }
+      return null;
     }
 
-    if (traceFile != null) traceFile.delete();
-    traceFile = null;
+    if (activeTransaction != transaction) {
+      return null;
+    }
+
+    Debug.stopMethodTracing();
+
+    lastProfilingData = null;
+
+    if (scheduledFinish != null) {
+      scheduledFinish.cancel(true);
+    }
+
+    if (traceFile == null || !traceFile.exists()) {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Trace file %s does not exists",
+              traceFile == null ? "null" : traceFile.getPath());
+      return null;
+    }
+
+    return new ProfilingTraceData(
+        traceFile,
+        transaction.getSpanContext().getTraceId(),
+        transaction.getSpanContext().getSpanId());
   }
 }

@@ -1099,7 +1099,7 @@ class HubTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
         sentryTracer.finish()
         val traceState = sentryTracer.traceState()
-        verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null))
+        verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null), eq(null))
     }
 
     @Test

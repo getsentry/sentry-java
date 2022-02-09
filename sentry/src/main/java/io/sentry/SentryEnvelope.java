@@ -76,22 +76,4 @@ public final class SentryEnvelope {
     return new SentryEnvelope(
         event.getEventId(), sdkVersion, SentryEnvelopeItem.fromEvent(serializer, event));
   }
-
-  public static @NotNull SentryEnvelope from(
-      final @Nullable SentryId eventId,
-      final @NotNull String traceFilePath,
-      final @NotNull String traceFileName,
-      final @Nullable SdkVersion sdkVersion,
-      final long maxTraceSize,
-      final boolean isStartupTrace)
-      throws IOException {
-    Objects.requireNonNull(traceFilePath, "Trace file path is required.");
-    Objects.requireNonNull(traceFileName, "Trace file name is required.");
-
-    return new SentryEnvelope(
-        eventId,
-        sdkVersion,
-        SentryEnvelopeItem.fromTraceFile(
-            traceFilePath, traceFileName, maxTraceSize, isStartupTrace));
-  }
 }

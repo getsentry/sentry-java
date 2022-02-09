@@ -1,5 +1,8 @@
 package io.sentry;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 public final class NoOpTransactionListener implements ITransactionListener {
 
   private static final NoOpTransactionListener instance = new NoOpTransactionListener();
@@ -11,8 +14,10 @@ public final class NoOpTransactionListener implements ITransactionListener {
   }
 
   @Override
-  public void onTransactionStart(ITransaction transaction) {}
+  public void onTransactionStart(@NotNull ITransaction transaction) {}
 
   @Override
-  public void onTransactionEnd(ITransaction transaction) {}
+  public @Nullable ProfilingTraceData onTransactionFinish(@NotNull ITransaction transaction) {
+    return null;
+  }
 }

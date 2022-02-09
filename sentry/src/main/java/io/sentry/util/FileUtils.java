@@ -29,20 +29,4 @@ public final class FileUtils {
     }
     return true;
   }
-
-  /**
-   * If the relative path denotes an absolute path, it is returned back. Otherwise it is returned
-   * the file relative to f For instance, `File.resolve(new File("/foo/bar"), "gav")` is `new
-   * File("/foo/bar/gav")` While `File.resolve(new File("/foo/bar"), "/gav")` is `new File("/gav")`.
-   *
-   * @return concatenated this and [relative] paths, or just [relative] if it's absolute.
-   */
-  public static @Nullable File resolve(@Nullable File f, @Nullable String relative) {
-    if (f == null || relative == null) return null;
-    File relativeFile = new File(relative);
-    // If relative path is absolute we return the relative file directly
-    if (relative.length() > 0 && relative.charAt(0) == File.separatorChar) return relativeFile;
-    // Otherwise we return the file relative to the parent f
-    return new File(f, relative);
-  }
 }
