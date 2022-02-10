@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.6.2-beta.1
 
 * Fix: Do not include stacktrace frames into Timber message (#1898)
 
