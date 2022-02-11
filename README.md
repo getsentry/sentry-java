@@ -54,6 +54,10 @@ Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/gets
 
 # Blog posts
 
+[UI Breadcrumbs for Android Error Events](https://blog.sentry.io/2022/02/08/ui-breadcrumbs-for-android-error-events)
+
+[Bytecode transformations: The Android Gradle Plugin](https://blog.sentry.io/2021/12/14/bytecode-transformations-the-android-gradle-plugin)
+
 [Sentry's response to Log4j vulnerability CVE-2021-44228](https://blog.sentry.io/2021/12/15/sentrys-response-to-log4j-vulnerability-cve-2021-44228)
 
 [Mobile Vitals - Four Metrics Every Mobile Developer Should Care About](https://blog.sentry.io/2021/08/23/mobile-vitals-four-metrics-every-mobile-developer-should-care-about/).
