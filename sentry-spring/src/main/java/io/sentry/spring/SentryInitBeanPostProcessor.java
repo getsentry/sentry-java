@@ -10,13 +10,18 @@ import io.sentry.SentryOptions.TracesSamplerCallback;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-/** Initializes Sentry after all beans are registered. */
+/**
+ * Initializes Sentry after all beans are registered. Closes Sentry on Spring application context
+ * destroy.
+ */
 @Open
-public class SentryInitBeanPostProcessor implements BeanPostProcessor, ApplicationContextAware {
+public class SentryInitBeanPostProcessor
+    implements BeanPostProcessor, ApplicationContextAware, DisposableBean {
   private @Nullable ApplicationContext applicationContext;
 
   @Override
@@ -67,5 +72,10 @@ public class SentryInitBeanPostProcessor implements BeanPostProcessor, Applicati
   public void setApplicationContext(final @NotNull ApplicationContext applicationContext)
       throws BeansException {
     this.applicationContext = applicationContext;
+  }
+
+  @Override
+  public void destroy() {
+    Sentry.close();
   }
 }
