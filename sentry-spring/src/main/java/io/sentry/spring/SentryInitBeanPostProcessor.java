@@ -2,11 +2,14 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.EventProcessor;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ITransportFactory;
 import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.TracesSamplerCallback;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
@@ -23,6 +26,17 @@ import org.springframework.context.ApplicationContextAware;
 public class SentryInitBeanPostProcessor
     implements BeanPostProcessor, ApplicationContextAware, DisposableBean {
   private @Nullable ApplicationContext applicationContext;
+
+  private final @NotNull IHub hub;
+
+  public SentryInitBeanPostProcessor() {
+    this(HubAdapter.getInstance());
+  }
+
+  SentryInitBeanPostProcessor(final @NotNull IHub hub) {
+    Objects.requireNonNull(hub, "hub is required");
+    this.hub = hub;
+  }
 
   @Override
   @SuppressWarnings({"unchecked", "deprecation"})
@@ -76,6 +90,6 @@ public class SentryInitBeanPostProcessor
 
   @Override
   public void destroy() {
-    Sentry.close();
+    hub.close();
   }
 }
