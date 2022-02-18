@@ -36,6 +36,8 @@ public class SentryProperties extends SentryOptions {
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
 
+  private @NotNull Jdbc jdbc = new Jdbc();
+
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
   }
@@ -90,6 +92,14 @@ public class SentryProperties extends SentryOptions {
     this.logging = logging;
   }
 
+  public @NotNull Jdbc getJdbc() {
+    return jdbc;
+  }
+
+  public void setJdbc(final @NotNull Jdbc jdbc) {
+    this.jdbc = jdbc;
+  }
+
   @Open
   public static class Logging {
     /** Enable/Disable logging auto-configuration. */
@@ -123,6 +133,19 @@ public class SentryProperties extends SentryOptions {
 
     public void setMinimumEventLevel(@Nullable Level minimumEventLevel) {
       this.minimumEventLevel = minimumEventLevel;
+    }
+  }
+
+  @Open
+  public static class Jdbc {
+    private boolean disableLogFile;
+
+    public boolean isDisableLogFile() {
+      return disableLogFile;
+    }
+
+    public void setDisableLogFile(boolean disableLogFile) {
+      this.disableLogFile = disableLogFile;
     }
   }
 }

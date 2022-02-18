@@ -18,18 +18,31 @@ public class io/sentry/spring/boot/SentryLogbackAppenderAutoConfiguration {
 	public fun sentryLogbackInitializer (Lio/sentry/spring/boot/SentryProperties;)Lio/sentry/spring/boot/SentryLogbackInitializer;
 }
 
+public class io/sentry/spring/boot/SentryP6SpyAutoConfiguration {
+	public fun <init> ()V
+	public fun p6SpyLogsDisabler (Lio/sentry/spring/boot/SentryProperties;)Lio/sentry/spring/boot/SentryP6SpyAutoConfiguration$P6SpyLogsDisabler;
+}
+
 public class io/sentry/spring/boot/SentryProperties : io/sentry/SentryOptions {
 	public fun <init> ()V
 	public fun getExceptionResolverOrder ()I
+	public fun getJdbc ()Lio/sentry/spring/boot/SentryProperties$Jdbc;
 	public fun getLogging ()Lio/sentry/spring/boot/SentryProperties$Logging;
 	public fun getUserFilterOrder ()Ljava/lang/Integer;
 	public fun isEnableTracing ()Z
 	public fun isUseGitCommitIdAsRelease ()Z
 	public fun setEnableTracing (Z)V
 	public fun setExceptionResolverOrder (I)V
+	public fun setJdbc (Lio/sentry/spring/boot/SentryProperties$Jdbc;)V
 	public fun setLogging (Lio/sentry/spring/boot/SentryProperties$Logging;)V
 	public fun setUseGitCommitIdAsRelease (Z)V
 	public fun setUserFilterOrder (Ljava/lang/Integer;)V
+}
+
+public class io/sentry/spring/boot/SentryProperties$Jdbc {
+	public fun <init> ()V
+	public fun isDisableLogFile ()Z
+	public fun setDisableLogFile (Z)V
 }
 
 public class io/sentry/spring/boot/SentryProperties$Logging {

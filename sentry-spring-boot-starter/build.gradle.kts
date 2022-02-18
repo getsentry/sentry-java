@@ -34,6 +34,7 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     api(projects.sentry)
     api(projects.sentrySpring)
+    compileOnly(projects.sentryJdbc)
     compileOnly(projects.sentryLogback)
     compileOnly(projects.sentryApacheHttpClient5)
     implementation(Config.Libs.springBootStarter)
@@ -56,6 +57,7 @@ dependencies {
     // tests
     testImplementation(projects.sentryLogback)
     testImplementation(projects.sentryApacheHttpClient5)
+    testImplementation(projects.sentryJdbc)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
