@@ -515,10 +515,28 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 }
 
 public final class io/sentry/ProfilingTraceData {
-	public fun <init> (Ljava/io/File;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;)V
-	public fun getSpanId ()Lio/sentry/SpanId;
+	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun getAndroid_api_level ()I
+	public fun getDevice_locale ()Ljava/lang/String;
+	public fun getDevice_manufacturer ()Ljava/lang/String;
+	public fun getDevice_model ()Ljava/lang/String;
+	public fun getDevice_os_build_number ()Ljava/lang/String;
+	public fun getDevice_os_name ()Ljava/lang/String;
+	public fun getDevice_os_version ()Ljava/lang/String;
+	public fun getEnvironment ()Ljava/lang/String;
+	public fun getError_code ()Ljava/lang/String;
+	public fun getError_description ()Ljava/lang/String;
+	public fun getPlatform ()Ljava/lang/String;
+	public fun getStacktrace ()Ljava/lang/String;
+	public fun getStacktrace_id ()Ljava/lang/String;
 	public fun getTraceFile ()Ljava/io/File;
-	public fun getTraceId ()Lio/sentry/protocol/SentryId;
+	public fun getTraceId ()Ljava/lang/String;
+	public fun getTrace_id ()Ljava/lang/String;
+	public fun getTransaction_id ()Ljava/lang/String;
+	public fun getTransaction_name ()Ljava/lang/String;
+	public fun getVersion_code ()Ljava/lang/String;
+	public fun getVersion_name ()Ljava/lang/String;
+	public fun setStacktrace (Ljava/lang/String;)V
 }
 
 public final class io/sentry/RequestDetails {
@@ -762,7 +780,7 @@ public final class io/sentry/SentryEnvelopeHeaderAdapter : com/google/gson/TypeA
 public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromAttachment (Lio/sentry/Attachment;J)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
-	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;J)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
 	public fun getData ()[B
@@ -821,7 +839,7 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 public final class io/sentry/SentryItemType : java/lang/Enum {
 	public static final field Attachment Lio/sentry/SentryItemType;
 	public static final field Event Lio/sentry/SentryItemType;
-	public static final field ProfilingTrace Lio/sentry/SentryItemType;
+	public static final field Profile Lio/sentry/SentryItemType;
 	public static final field Session Lio/sentry/SentryItemType;
 	public static final field Transaction Lio/sentry/SentryItemType;
 	public static final field Unknown Lio/sentry/SentryItemType;
@@ -882,8 +900,6 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getOutboxPath ()Ljava/lang/String;
-	public fun getProfilingTracesDirPath ()Ljava/lang/String;
-	public fun getProfilingTracesIntervalMillis ()I
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getReadTimeoutMillis ()I
@@ -954,8 +970,6 @@ public class io/sentry/SentryOptions {
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
 	public fun setProfilingEnabled (Z)V
-	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
-	public fun setProfilingTracesIntervalMillis (I)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V

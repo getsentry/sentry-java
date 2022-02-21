@@ -216,7 +216,7 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  @ApiStatus.Experimental
+  @ApiStatus.Internal
   default SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
@@ -236,7 +236,7 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  @ApiStatus.Experimental
+  @ApiStatus.Internal
   SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
@@ -251,7 +251,7 @@ public interface ISentryClient {
    * @param traceState the trace state
    * @return The Id (SentryId object) of the event
    */
-  @ApiStatus.Experimental
+  @ApiStatus.Internal
   default @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction, @Nullable TraceState traceState) {
     return captureTransaction(transaction, traceState, null, null);

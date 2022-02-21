@@ -1,8 +1,12 @@
 package io.sentry;
 
+import static io.sentry.vendor.Base64.NO_PADDING;
+import static io.sentry.vendor.Base64.NO_WRAP;
+
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
+import io.sentry.vendor.Base64;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -179,7 +183,7 @@ public final class SentryEnvelopeItem {
                 }
                 return attachment.getBytes();
               } else if (attachment.getPathname() != null) {
-                return readEnvelopePayloadFromFile(attachment.getPathname(), maxAttachmentSize);
+                return readBytesFromFile(attachment.getPathname(), maxAttachmentSize);
               }
               throw new SentryEnvelopeException(
                   String.format(
@@ -201,32 +205,45 @@ public final class SentryEnvelopeItem {
   }
 
   public static @Nullable SentryEnvelopeItem fromProfilingTrace(
-      final @NotNull ProfilingTraceData profilingTraceData, final long maxTraceFileSize)
+      final @NotNull ProfilingTraceData profilingTraceData,
+      final long maxTraceFileSize,
+      ISerializer serializer)
       throws SentryEnvelopeException {
 
     File traceFile = profilingTraceData.getTraceFile();
-    if (traceFile == null || !traceFile.exists()) return null;
+    if (!traceFile.exists()) {
+      return null;
+    }
 
-    final byte[] traceBytes = readEnvelopePayloadFromFile(traceFile.getPath(), maxTraceFileSize);
+    // The payload of the profiling item is a json that includes the trace file encoded with base64
+    byte[] traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
+    String base64Trace = Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
+    profilingTraceData.setStacktrace(base64Trace);
 
-    SentryEnvelopeItemHeader itemHeader =
-        new SentryEnvelopeItemHeader(
-            SentryItemType.ProfilingTrace,
-            () -> traceBytes.length,
-            "octet-stream",
-            traceFile.getName());
+    try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+      serializer.serialize(profilingTraceData, writer);
+      byte[] payloadBytes = stream.toByteArray();
 
-    // todo can i simply add 2 fields in SentryEnvelopeItemHeader (traceId and spanId)?
-    //            profilingTraceData.getTraceId().toString(),
-    //            profilingTraceData.getSpanId().toString());
+      SentryEnvelopeItemHeader itemHeader =
+          new SentryEnvelopeItemHeader(
+              SentryItemType.Profile,
+              () -> payloadBytes.length,
+              "application-json",
+              traceFile.getName());
 
-    traceFile.delete();
-
-    // Don't use method reference. This can cause issues on Android
-    return new SentryEnvelopeItem(itemHeader, traceBytes);
+      // Don't use method reference. This can cause issues on Android
+      return new SentryEnvelopeItem(itemHeader, payloadBytes);
+    } catch (IOException e) {
+      throw new SentryEnvelopeException(
+          String.format("Failed to serialize profiling trace data\n%s", e.getMessage()));
+    } finally {
+      // In any case we delete the trace file
+      traceFile.delete();
+    }
   }
 
-  private static byte[] readEnvelopePayloadFromFile(String pathname, long maxFileLength)
+  private static byte[] readBytesFromFile(String pathname, long maxFileLength)
       throws SentryEnvelopeException {
     try {
       File file = new File(pathname);
@@ -263,7 +280,8 @@ public final class SentryEnvelopeItem {
         return outputStream.toByteArray();
       }
     } catch (IOException | SecurityException exception) {
-      throw new SentryEnvelopeException(String.format("Reading the item %s failed.", pathname));
+      throw new SentryEnvelopeException(
+          String.format("Reading the item %s failed.\n%s", pathname, exception.getMessage()));
     }
   }
 

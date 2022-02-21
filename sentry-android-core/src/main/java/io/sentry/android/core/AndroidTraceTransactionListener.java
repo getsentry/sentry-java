@@ -4,8 +4,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import android.os.Build;
 import android.os.Debug;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionListener;
 import io.sentry.ProfilingTraceData;
@@ -30,64 +28,68 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
    */
   private static final int BUFFER_SIZE_BYTES = 3_000_000;
 
-  private final @NotNull IHub hub;
+  private int intervalUs;
   private @Nullable File traceFile = null;
   private @Nullable File traceFilesDir = null;
   private @Nullable Future<?> scheduledFinish = null;
   private volatile @Nullable ITransaction activeTransaction = null;
   private volatile @Nullable ProfilingTraceData lastProfilingData = null;
+  private final @NotNull SentryAndroidOptions options;
 
-  public AndroidTraceTransactionListener() {
-    this(HubAdapter.getInstance());
-  }
-
-  public AndroidTraceTransactionListener(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
-    final String tracesFilesDirPath = hub.getOptions().getProfilingTracesDirPath();
+  public AndroidTraceTransactionListener(final @NotNull SentryAndroidOptions sentryAndroidOptions) {
+    this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
+    final String tracesFilesDirPath = options.getProfilingTracesDirPath();
     if (tracesFilesDirPath == null || tracesFilesDirPath.isEmpty()) {
-      hub.getOptions()
+      options
           .getLogger()
-          .log(SentryLevel.ERROR, "No profiling traces dir path is defined in options.");
+          .log(
+              SentryLevel.WARNING,
+              "Disabling profiling because no profiling traces dir path is defined in options.");
       return;
     }
+    long intervalMillis = options.getProfilingTracesIntervalMillis();
+    if (intervalMillis <= 0) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Disabling profiling because trace interval is set to %d milliseconds",
+              intervalMillis);
+      return;
+    }
+    intervalUs = (int) MILLISECONDS.toMicros(intervalMillis);
     traceFilesDir = new File(tracesFilesDirPath);
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public synchronized void onTransactionStart(@NotNull ITransaction transaction) {
 
     // Debug.startMethodTracingSampling() is only available since Lollipop
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return;
 
+    // traceFilesDir is null or intervalUs is 0 only if there was a problem in the constructor, but
+    // we already logged that
+    if (traceFilesDir == null || intervalUs == 0) {
+      return;
+    }
+
     // If a transaction is currently being profiled, we ignore this call
     if (activeTransaction != null) {
-      return;
-    }
-
-    traceFile =
-        traceFilesDir == null ? null : new File(traceFilesDir, UUID.randomUUID() + ".trace");
-
-    if (traceFile == null) {
-      hub.getOptions().getLogger().log(SentryLevel.DEBUG, "Could not create a trace file");
-      return;
-    }
-
-    if (traceFile.exists()) {
-      hub.getOptions()
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Trace file already exists: %s", traceFile.getPath());
-      return;
-    }
-
-    long intervalMillis = hub.getOptions().getProfilingTracesIntervalMillis();
-    if (intervalMillis <= 0) {
-      hub.getOptions()
+      options
           .getLogger()
           .log(
-              SentryLevel.DEBUG,
-              "Profiling trace interval is set to %d milliseconds",
-              intervalMillis);
+              SentryLevel.WARNING,
+              "Profiling is already active and was started by transaction %s",
+              activeTransaction.getSpanContext().getTraceId().toString());
+      return;
+    }
+
+    traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
+
+    if (traceFile.exists()) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Trace file already exists: %s", traceFile.getPath());
       return;
     }
     activeTransaction = transaction;
@@ -95,11 +97,10 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
     // We stop the trace after 30 seconds, since such a long trace is very probably a trace
     // that will never end due to an error
     scheduledFinish =
-        hub.getOptions()
+        options
             .getExecutorService()
             .schedule(() -> lastProfilingData = onTransactionFinish(transaction), 30_000);
 
-    int intervalUs = (int) MILLISECONDS.toMicros(intervalMillis);
     Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
   }
 
@@ -107,32 +108,43 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
   public synchronized @Nullable ProfilingTraceData onTransactionFinish(
       @NotNull ITransaction transaction) {
 
+    final ITransaction finalActiveTransaction = activeTransaction;
     // Profiling finished, but we check if we cached last profiling data due to a timeout
-    if (activeTransaction == null) {
+    if (finalActiveTransaction == null) {
       ProfilingTraceData profilingData = lastProfilingData;
       // If the cached last profiling data refers to the transaction that started it we return it
       // back, otherwise we would simply lose it
       if (profilingData != null
-          && profilingData.getTraceId().equals(transaction.getSpanContext().getTraceId())) {
+          && profilingData
+              .getTraceId()
+              .equals(transaction.getSpanContext().getTraceId().toString())) {
         return profilingData;
       }
       return null;
     }
 
-    if (activeTransaction != transaction) {
+    if (finalActiveTransaction != transaction) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction %s finished, but profiling was started by transaction %s. Skipping",
+              transaction.getSpanContext().getTraceId().toString(),
+              finalActiveTransaction.getSpanContext().getTraceId().toString());
       return null;
     }
 
     Debug.stopMethodTracing();
 
     lastProfilingData = null;
+    activeTransaction = null;
 
     if (scheduledFinish != null) {
       scheduledFinish.cancel(true);
     }
 
     if (traceFile == null || !traceFile.exists()) {
-      hub.getOptions()
+      options
           .getLogger()
           .log(
               SentryLevel.DEBUG,
@@ -141,9 +153,19 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
       return null;
     }
 
+    // todo how to retrieve these fields? (version name and code)
+    //  buildNumber = Build.VERSION.INCREMENTAL? - osName = "android"?
     return new ProfilingTraceData(
         traceFile,
-        transaction.getSpanContext().getTraceId(),
-        transaction.getSpanContext().getSpanId());
+        transaction,
+        Build.VERSION.SDK_INT,
+        Build.MANUFACTURER,
+        Build.MODEL,
+        "buildNumber", // ???
+        "android", // ???
+        Build.VERSION.RELEASE,
+        "versionName", // ???
+        "versionCode", // ???
+        options.getEnvironment());
   }
 }

@@ -13,6 +13,7 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -116,7 +117,7 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
-    options.setTransactionListener(new AndroidTraceTransactionListener());
+    options.setTransactionListener(new AndroidTraceTransactionListener(options));
   }
 
   private static void installDefaultIntegrations(
@@ -248,11 +249,18 @@ final class AndroidOptionsInitializer {
    * @param options the SentryOptions
    */
   private static void initializeCacheDirs(
-      final @NotNull Context context, final @NotNull SentryOptions options) {
+      final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     final File cacheDir = new File(context.getCacheDir(), "sentry");
     final File profilingTracesDir = new File(cacheDir, "profiling_traces");
     options.setCacheDirPath(cacheDir.getAbsolutePath());
     options.setProfilingTracesDirPath(profilingTracesDir.getAbsolutePath());
+
+    if (options.isProfilingEnabled()) {
+      // Method trace files are normally deleted at the end of traces, but if that fails for some
+      // reason we try to clear any old files here.
+      FileUtils.deleteRecursively(profilingTracesDir);
+      profilingTracesDir.mkdirs();
+    }
   }
 
   private static boolean isNdkAvailable(final @NotNull IBuildInfoProvider buildInfoProvider) {

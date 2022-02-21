@@ -13,8 +13,7 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 }
 
 public final class io/sentry/android/core/AndroidTraceTransactionListener : io/sentry/ITransactionListener {
-	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun onTransactionFinish (Lio/sentry/ITransaction;)Lio/sentry/ProfilingTraceData;
 	public fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
@@ -104,6 +103,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun enableAllAutoBreadcrumbs (Z)V
 	public fun getAnrTimeoutIntervalMillis ()J
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
+	public fun getProfilingTracesDirPath ()Ljava/lang/String;
+	public fun getProfilingTracesIntervalMillis ()I
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
 	public fun isEnableActivityLifecycleBreadcrumbs ()Z
@@ -122,6 +123,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
+	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
+	public fun setProfilingTracesIntervalMillis (I)V
 }
 
 public final class io/sentry/android/core/SentryInitProvider : android/content/ContentProvider {

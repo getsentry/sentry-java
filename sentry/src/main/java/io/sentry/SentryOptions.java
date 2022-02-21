@@ -284,17 +284,11 @@ public class SentryOptions {
   /** Controls if the `tracestate` header is attached to envelopes and HTTP client integrations. */
   private boolean traceSampling;
 
-  /** The cache dir. path for caching profiling traces */
-  private @Nullable String profilingTracesDirPath;
-
   /** Control if profiling is enabled or not for transactions */
   private boolean profilingEnabled = true;
 
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
-
-  /** Interval for profiling traces in milliseconds. Defaults to 300 times per second */
-  private int profilingTracesIntervalMillis = 1_000 / 300;
 
   /** Listener interface to perform operations when a transaction is started or ended */
   private @NotNull ITransactionListener transactionListener = NoOpTransactionListener.getInstance();
@@ -1488,24 +1482,6 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the profiling traces dir. path if set
-   *
-   * @return the profiling traces dir. path or null if not set
-   */
-  public @Nullable String getProfilingTracesDirPath() {
-    return profilingTracesDirPath;
-  }
-
-  /**
-   * Sets the profiling traces dir. path
-   *
-   * @param profilingTracesDirPath the profiling traces dir. path
-   */
-  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
-    this.profilingTracesDirPath = profilingTracesDirPath;
-  }
-
-  /**
    * Returns the maximum trace file size for each envelope item in bytes.
    *
    * @return the maximum attachment size in bytes.
@@ -1521,24 +1497,6 @@ public class SentryOptions {
    */
   public void setMaxTraceFileSize(long maxTraceFileSize) {
     this.maxTraceFileSize = maxTraceFileSize;
-  }
-
-  /**
-   * Returns the interval for profiling traces in milliseconds.
-   *
-   * @return the interval for profiling traces in milliseconds.
-   */
-  public int getProfilingTracesIntervalMillis() {
-    return profilingTracesIntervalMillis;
-  }
-
-  /**
-   * Sets the interval for profiling traces in milliseconds.
-   *
-   * @param profilingTracesIntervalMillis - the interval for profiling traces in milliseconds.
-   */
-  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {
-    this.profilingTracesIntervalMillis = profilingTracesIntervalMillis;
   }
 
   /**
@@ -1738,11 +1696,7 @@ public class SentryOptions {
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
     }
-    if (options.getProfilingTracesDirPath() != null) {
-      setProfilingTracesDirPath(options.getProfilingTracesDirPath());
-    }
     setTransactionListener(options.getTransactionListener());
-    setProfilingTracesIntervalMillis(options.getProfilingTracesIntervalMillis());
     setMaxTraceFileSize(options.getMaxTraceFileSize());
     setProfilingEnabled(options.isProfilingEnabled());
     final Map<String, String> tags = new HashMap<>(options.getTags());

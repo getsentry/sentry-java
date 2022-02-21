@@ -183,7 +183,8 @@ public final class SentryClient implements ISentryClient {
 
     if (profilingTraceData != null) {
       final SentryEnvelopeItem profilingTraceItem =
-          SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, options.getMaxTraceFileSize());
+          SentryEnvelopeItem.fromProfilingTrace(
+              profilingTraceData, options.getMaxTraceFileSize(), options.getSerializer());
       envelopeItems.add(profilingTraceItem);
     }
 

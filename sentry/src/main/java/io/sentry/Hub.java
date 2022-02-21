@@ -662,7 +662,7 @@ public final class Hub implements IHub {
               waitForChildren,
               transactionFinishedCallback);
 
-      // The listener is called only if the transaction exists, as the transaction will needs to
+      // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
       if (samplingDecision && options.isProfilingEnabled()) {
         final ITransactionListener transactionListener = options.getTransactionListener();

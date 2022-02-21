@@ -15,9 +15,6 @@ public final class SentryEnvelopeHeader {
 
   private final @Nullable TraceState trace;
 
-  // todo Should I add a TraceProfilingData object here and in SentryEnvelopeHeaderAdapter to allow
-  //  OutboxSender?
-
   public SentryEnvelopeHeader(
       final @Nullable SentryId eventId, final @Nullable SdkVersion sdkVersion) {
     this(eventId, sdkVersion, null);

@@ -4,7 +4,6 @@ import io.sentry.cache.EnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-import io.sentry.util.FileUtils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
@@ -229,16 +228,6 @@ public final class Sentry {
       final File cacheDir = new File(options.getCacheDirPath());
       cacheDir.mkdirs();
       options.setEnvelopeDiskCache(EnvelopeCache.create(options));
-    }
-
-    if (options.isProfilingEnabled()
-        && options.getProfilingTracesDirPath() != null
-        && !options.getProfilingTracesDirPath().isEmpty()) {
-      // Method trace files are normally deleted at the end of traces, but if that fails for some
-      // reason we try to clear any old files here.
-      final File traceFilesDir = new File(options.getProfilingTracesDirPath());
-      FileUtils.deleteRecursively(traceFilesDir);
-      traceFilesDir.mkdirs();
     }
 
     return true;
