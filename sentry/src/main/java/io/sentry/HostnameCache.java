@@ -21,12 +21,18 @@ import org.jetbrains.annotations.Nullable;
  * by keeping track of the hostname for a period defined during the construction. For performance
  * purposes, the operation of retrieving the hostname will automatically fail after a period of time
  * defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
+ *
+ * <p>HostnameCache is a singleton and its instance should be obtained through {@link
+ * HostnameCache#getInstance()}.
  */
 final class HostnameCache {
   private static final long HOSTNAME_CACHE_DURATION = TimeUnit.HOURS.toMillis(5);
 
   /** Time before the get hostname operation times out (in ms). */
   private static final long GET_HOSTNAME_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
+
+  @Nullable private static HostnameCache INSTANCE;
+
   /** Time for which the cache is kept. */
   private final long cacheDuration;
   /** Current value for hostname (might change over time). */
@@ -41,7 +47,14 @@ final class HostnameCache {
   private final @NotNull ExecutorService executorService =
       Executors.newSingleThreadExecutor(new HostnameCacheThreadFactory());
 
-  public HostnameCache() {
+  static @NotNull HostnameCache getInstance() {
+    if (INSTANCE == null) {
+      INSTANCE = new HostnameCache();
+    }
+    return INSTANCE;
+  }
+
+  private HostnameCache() {
     this(HOSTNAME_CACHE_DURATION);
   }
 
