@@ -1,11 +1,3 @@
-public final class io/sentry/jdbc/NoOpLogger : com/p6spy/engine/spy/appender/P6Logger {
-	public fun <init> ()V
-	public fun isCategoryEnabled (Lcom/p6spy/engine/logging/Category;)Z
-	public fun logException (Ljava/lang/Exception;)V
-	public fun logSQL (ILjava/lang/String;JLcom/p6spy/engine/logging/Category;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun logText (Ljava/lang/String;)V
-}
-
 public class io/sentry/jdbc/SentryJdbcEventListener : com/p6spy/engine/event/SimpleJdbcEventListener {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V

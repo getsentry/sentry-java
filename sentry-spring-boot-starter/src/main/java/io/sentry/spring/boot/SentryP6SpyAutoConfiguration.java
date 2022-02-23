@@ -1,7 +1,6 @@
 package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.jdbc.NoOpLogger;
 import io.sentry.jdbc.SentryJdbcEventListener;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
@@ -36,7 +35,7 @@ public class SentryP6SpyAutoConfiguration {
     @Override
     public void afterPropertiesSet() {
       if (properties.getJdbc().isDisableLogFile()) {
-        System.setProperty("p6spy.config.appender", NoOpLogger.class.getCanonicalName());
+        System.setProperty("p6spy.config.modulelist", "com.p6spy.engine.spy.P6SpyFactory");
       }
     }
   }

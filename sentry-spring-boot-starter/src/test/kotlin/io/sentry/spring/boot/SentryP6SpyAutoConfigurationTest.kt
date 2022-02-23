@@ -17,14 +17,14 @@ class SentryP6SpyAutoConfigurationTest {
 
     @BeforeTest
     fun `reset system property`() {
-        System.clearProperty("p6spy.config.appender")
+        System.clearProperty("p6spy.config.modulelist")
     }
 
     @Test
     fun `sets noop appender when logs are disabled`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.jdbc.disable-log-file=true")
             .run {
-                assertThat(System.getProperty("p6spy.config.appender")).isEqualTo("io.sentry.jdbc.NoOpLogger")
+                assertThat(System.getProperty("p6spy.config.modulelist")).isEqualTo("com.p6spy.engine.spy.P6SpyFactory")
             }
     }
 
@@ -32,7 +32,7 @@ class SentryP6SpyAutoConfigurationTest {
     fun `when logs are enabled does not overwrite p6spy system property`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.jdbc.disable-log-file=false")
             .run {
-                assertThat(System.getProperty("p6spy.config.appender")).isNull()
+                assertThat(System.getProperty("p6spy.config.modulelist")).isNull()
             }
     }
 
@@ -40,7 +40,7 @@ class SentryP6SpyAutoConfigurationTest {
     fun `when logs are defined does not overwrite p6spy system property`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.jdbc.disable-log-file=false")
             .run {
-                assertThat(System.getProperty("p6spy.config.appender")).isNull()
+                assertThat(System.getProperty("p6spy.config.modulelist")).isNull()
             }
     }
 
