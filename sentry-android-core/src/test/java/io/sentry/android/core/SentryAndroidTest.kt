@@ -101,6 +101,7 @@ class SentryAndroidTest {
 
         // done by ActivityLifecycleIntegration so forcing it here
         AppStartState.getInstance().setAppStartEnd()
+        AppStartState.getInstance().setColdStart(true)
 
         assertNotNull(AppStartState.getInstance().appStartInterval)
     }

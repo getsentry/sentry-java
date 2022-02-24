@@ -1,11 +1,14 @@
 package io.sentry.android.core;
 
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Application;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.os.Process;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.ISpan;
@@ -19,9 +22,11 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -42,6 +47,7 @@ public final class ActivityLifecycleIntegration
 
   private boolean firstActivityCreated = false;
   private boolean firstActivityResumed = false;
+  private boolean foregroundImportance = false;
 
   private @Nullable ISpan appStartSpan;
 
@@ -64,6 +70,10 @@ public final class ActivityLifecycleIntegration
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
     }
+
+    // we only track app start for processes that will show an Activity (full launch).
+    // Here we check the process importance which will tell us that.
+    foregroundImportance = isForegroundImportance(this.application);
   }
 
   @Override
@@ -105,7 +115,7 @@ public final class ActivityLifecycleIntegration
     activityFramesTracker.stop();
   }
 
-  private void addBreadcrumb(final @NonNull Activity activity, final @NotNull String state) {
+  private void addBreadcrumb(final @NotNull Activity activity, final @NotNull String state) {
     if (options != null && hub != null && options.isEnableActivityLifecycleBreadcrumbs()) {
       final Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setType("navigation");
@@ -117,7 +127,7 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private @NotNull String getActivityName(final @NonNull Activity activity) {
+  private @NotNull String getActivityName(final @NotNull Activity activity) {
     return activity.getClass().getSimpleName();
   }
 
@@ -129,7 +139,7 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void startTracing(final @NonNull Activity activity) {
+  private void startTracing(final @NotNull Activity activity) {
     if (performanceEnabled && !isRunningTransaction(activity) && hub != null) {
       // as we allow a single transaction running on the bound Scope, we finish the previous ones
       stopPreviousTransactions();
@@ -138,10 +148,12 @@ public final class ActivityLifecycleIntegration
       ITransaction transaction;
       final String activityName = getActivityName(activity);
 
-      final Date appStartTime = AppStartState.getInstance().getAppStartTime();
+      final Date appStartTime =
+          foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
+      final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
       // in case appStartTime isn't available, we don't create a span for it.
-      if (firstActivityCreated || appStartTime == null) {
+      if (firstActivityCreated || appStartTime == null || coldStart == null) {
         transaction =
             hub.startTransaction(
                 activityName,
@@ -164,7 +176,9 @@ public final class ActivityLifecycleIntegration
                 });
         // start specific span for app start
 
-        appStartSpan = transaction.startChild(getAppStartOp(), getAppStartDesc(), appStartTime);
+        appStartSpan =
+            transaction.startChild(
+                getAppStartOp(coldStart), getAppStartDesc(coldStart), appStartTime);
       }
 
       // lets bind to the scope so other integrations can pick it up
@@ -196,11 +210,11 @@ public final class ActivityLifecycleIntegration
         });
   }
 
-  private boolean isRunningTransaction(final @NonNull Activity activity) {
+  private boolean isRunningTransaction(final @NotNull Activity activity) {
     return activitiesWithOngoingTransactions.containsKey(activity);
   }
 
-  private void stopTracing(final @NonNull Activity activity, final boolean shouldFinishTracing) {
+  private void stopTracing(final @NotNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
       finishTransaction(transaction);
@@ -226,7 +240,7 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityCreated(
-      final @NonNull Activity activity, final @Nullable Bundle savedInstanceState) {
+      final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     setColdStart(savedInstanceState);
     addBreadcrumb(activity, "created");
     startTracing(activity);
@@ -235,7 +249,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityStarted(final @NonNull Activity activity) {
+  public synchronized void onActivityStarted(final @NotNull Activity activity) {
     // The docs on the screen rendering performance tracing
     // (https://firebase.google.com/docs/perf-mon/screen-traces?platform=android#definition),
     // state that the tracing starts for every Activity class when the app calls .onActivityStarted.
@@ -247,13 +261,25 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityResumed(final @NonNull Activity activity) {
-    if (!firstActivityResumed && performanceEnabled) {
-      // sets App start as finished when the very first activity calls onResume
-      AppStartState.getInstance().setAppStartEnd();
+  public synchronized void onActivityResumed(final @NotNull Activity activity) {
+    if (!firstActivityResumed) {
+
+      // we only finish the app start if the process is of foregroundImportance
+      if (foregroundImportance) {
+        // sets App start as finished when the very first activity calls onResume
+        AppStartState.getInstance().setAppStartEnd();
+      } else {
+        if (options != null) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "App Start won't be reported because Process wasn't of foregroundImportance.");
+        }
+      }
 
       // finishes app start span
-      if (appStartSpan != null) {
+      if (performanceEnabled && appStartSpan != null) {
         appStartSpan.finish();
       }
       firstActivityResumed = true;
@@ -268,7 +294,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityPostResumed(final @NonNull Activity activity) {
+  public synchronized void onActivityPostResumed(final @NotNull Activity activity) {
     // only executed if API >= 29 otherwise it happens on onActivityResumed
     if (isAllActivityCallbacksAvailable && options != null) {
       // this should be called only when onResume has been executed already, which means
@@ -278,23 +304,23 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityPaused(final @NonNull Activity activity) {
+  public synchronized void onActivityPaused(final @NotNull Activity activity) {
     addBreadcrumb(activity, "paused");
   }
 
   @Override
-  public synchronized void onActivityStopped(final @NonNull Activity activity) {
+  public synchronized void onActivityStopped(final @NotNull Activity activity) {
     addBreadcrumb(activity, "stopped");
   }
 
   @Override
   public synchronized void onActivitySaveInstanceState(
-      final @NonNull Activity activity, final @NonNull Bundle outState) {
+      final @NotNull Activity activity, final @NotNull Bundle outState) {
     addBreadcrumb(activity, "saveInstanceState");
   }
 
   @Override
-  public synchronized void onActivityDestroyed(final @NonNull Activity activity) {
+  public synchronized void onActivityDestroyed(final @NotNull Activity activity) {
     addBreadcrumb(activity, "destroyed");
 
     // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
@@ -331,26 +357,60 @@ public final class ActivityLifecycleIntegration
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {
-    if (!firstActivityCreated && performanceEnabled) {
+    if (!firstActivityCreated) {
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
       AppStartState.getInstance().setColdStart(savedInstanceState == null);
     }
   }
 
-  private @NotNull String getAppStartDesc() {
-    if (AppStartState.getInstance().isColdStart()) {
+  private @NotNull String getAppStartDesc(final boolean coldStart) {
+    if (coldStart) {
       return "Cold Start";
     } else {
       return "Warm Start";
     }
   }
 
-  private @NotNull String getAppStartOp() {
-    if (AppStartState.getInstance().isColdStart()) {
+  private @NotNull String getAppStartOp(final boolean coldStart) {
+    if (coldStart) {
       return APP_START_COLD;
     } else {
       return APP_START_WARM;
     }
+  }
+
+  /**
+   * Check if the Started process has IMPORTANCE_FOREGROUND importance which means that the process
+   * will start an Activity.
+   *
+   * @return true if IMPORTANCE_FOREGROUND and false otherwise
+   */
+  private boolean isForegroundImportance(final @NotNull Context context) {
+    try {
+      final Object service = context.getSystemService(Context.ACTIVITY_SERVICE);
+      if (service instanceof ActivityManager) {
+        final ActivityManager activityManager = (ActivityManager) service;
+        final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
+            activityManager.getRunningAppProcesses();
+
+        if (runningAppProcesses != null) {
+          final int myPid = Process.myPid();
+          for (final ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
+            if (processInfo.pid == myPid) {
+              if (processInfo.importance == IMPORTANCE_FOREGROUND) {
+                return true;
+              }
+              break;
+            }
+          }
+        }
+      }
+    } catch (SecurityException ignored) {
+      // happens for isolated processes
+    } catch (Throwable ignored) {
+      // should never happen
+    }
+    return false;
   }
 }

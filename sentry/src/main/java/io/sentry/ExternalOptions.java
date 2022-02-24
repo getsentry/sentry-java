@@ -35,6 +35,7 @@ public final class ExternalOptions {
   private @Nullable String proguardUuid;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
+  private @Nullable Boolean printUncaughtStackTrace;
 
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
@@ -47,6 +48,8 @@ public final class ExternalOptions {
     options.setServerName(propertiesProvider.getProperty("servername"));
     options.setEnableUncaughtExceptionHandler(
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
+    options.setPrintUncaughtStackTrace(
+        propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
@@ -239,5 +242,13 @@ public final class ExternalOptions {
 
   public void setTag(final @NotNull String key, final @NotNull String value) {
     this.tags.put(key, value);
+  }
+
+  public @Nullable Boolean getPrintUncaughtStackTrace() {
+    return printUncaughtStackTrace;
+  }
+
+  public void setPrintUncaughtStackTrace(final @Nullable Boolean printUncaughtStackTrace) {
+    this.printUncaughtStackTrace = printUncaughtStackTrace;
   }
 }

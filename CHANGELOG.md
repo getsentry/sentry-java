@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+* Fix: Do not include stacktrace frames into Timber message (#1898)
+* Fix: Potential memory leaks (#1909)
+
+Breaking changes:
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
+Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
+
+## 6.0.0-alpha.2
+
+* Ref: Simplify DateUtils with ISO8601Utils (#1837)
+
+Breaking changes:
+
+* Ref: Remove deprecated and scheduled fields (#1875)
+* Ref: Add shutdownTimeoutMillis in favor of shutdownTimeout (#1873)
+* Feat: Relax TransactionNameProvider (#1861)
+* Ref: Remove Attachment ContentType since the Server infers it (#1874)
+
 ## 6.0.0-alpha.1
 
 * Feat: Use float instead of Date for protocol types for higher precision (#1737)
@@ -29,6 +47,49 @@ Breaking changes:
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
+## 5.6.1
+
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body is null (#1884)
+* Bump: AGP to 7.1.0 (#1892)
+* Feat: Add options.printUncaughtStackTrace to print uncaught exceptions (#1890)
+
+## 5.6.0
+
+* Fix: Change scope of servlet-api to compileOnly (#1880)
+* Feat: Add breadcrumbs support for UI events (automatically captured) (#1876)
+
+## 5.5.3
+
+* Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
+
+## 5.5.2
+
+* Fix: Detect App Cold start correctly for Hybrid SDKs (#1855)
+* Bump: log4j to 2.17.0 (#1852)
+* Bump: logback to 1.2.9 (#1853)
+
+## 5.5.1
+
+* Bump: log4j to 2.16.0 (#1845)
+* Fix: Make App start cold/warm visible to Hybrid SDKs (#1848)
+
+## 5.5.0
+
+* Bump: log4j to 2.15.0 (#1839)
+* Ref: Rename Fragment span operation from `ui.fragment.load` to `ui.load` (#1824)
+* Feat: Add locale to device context and deprecate language (#1832)
+* Ref: change `java.util.Random` to `java.security.SecureRandom` for possible security reasons (#1831)
+* Feat: Add `SentryFileInputStream` and `SentryFileOutputStream` for File I/O performance instrumentation (#1826)
+* Feat: Add `SentryFileReader` and `SentryFileWriter` for File I/O instrumentation (#1843)
+
+## 5.4.3
+
+* Fix: Only report App start measurement for full launch on Android (#1821)
+
+## 5.4.2
+
+* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
 
 ## 5.4.1
 

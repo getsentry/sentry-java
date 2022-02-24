@@ -69,16 +69,6 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     this.version = Objects.requireNonNull(version, "version is required.");
   }
 
-  /**
-   * @deprecated
-   *     <p>Use {@link SdkVersion#SdkVersion(String, String)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public SdkVersion() {
-    this("", "");
-  }
-
   public @NotNull String getVersion() {
     return version;
   }

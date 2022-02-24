@@ -103,6 +103,7 @@ dependencies {
     implementation(projects.sentryAndroid)
     implementation(projects.sentryAndroidOkhttp)
     implementation(projects.sentryAndroidFragment)
+    implementation(projects.sentryAndroidTimber)
     implementation(Config.Libs.fragment)
 
 //    how to exclude androidx if release health feature is disabled
@@ -113,6 +114,7 @@ dependencies {
 //    }
 
     implementation(Config.Libs.appCompat)
+    implementation(Config.Libs.androidxRecylerView)
     implementation(Config.Libs.retrofit2)
     implementation(Config.Libs.retrofit2Gson)
 

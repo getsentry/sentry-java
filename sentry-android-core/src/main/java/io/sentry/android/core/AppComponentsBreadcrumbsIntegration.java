@@ -3,20 +3,19 @@ package io.sentry.android.core;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.res.Configuration;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.util.DeviceOrientations;
+import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.protocol.Device;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class AppComponentsBreadcrumbsIntegration
     implements Integration, Closeable, ComponentCallbacks2 {
@@ -79,7 +78,7 @@ public final class AppComponentsBreadcrumbsIntegration
 
   @SuppressWarnings("deprecation")
   @Override
-  public void onConfigurationChanged(@NonNull Configuration newConfig) {
+  public void onConfigurationChanged(@NotNull Configuration newConfig) {
     if (hub != null) {
       final Device.DeviceOrientation deviceOrientation =
           DeviceOrientations.getOrientation(context.getResources().getConfiguration().orientation);

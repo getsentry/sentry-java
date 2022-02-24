@@ -57,7 +57,7 @@ public class SentryOptions {
    * background queue and this queue is given a certain amount to drain pending events Default is
    * 2000 = 2s
    */
-  private long shutdownTimeout = 2000; // 2s
+  private long shutdownTimeoutMillis = 2000; // 2s
 
   /**
    * Controls how many seconds to wait before flushing down. Sentry SDKs cache events from a
@@ -213,10 +213,14 @@ public class SentryOptions {
   /** Automatically resolve server name. */
   private boolean attachServerName = true;
 
-  /*
-  When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
-   */
+  /** When enabled, Sentry installs UncaughtExceptionHandlerIntegration. */
   private boolean enableUncaughtExceptionHandler = true;
+
+  /*
+   * When enabled, UncaughtExceptionHandler will print exceptions (same as java would normally do),
+   * if no other UncaughtExceptionHandler was registered before.
+   */
+  private @Nullable Boolean printUncaughtStackTrace = false;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
@@ -466,10 +470,34 @@ public class SentryOptions {
   /**
    * Returns the shutdown timeout in Millis
    *
+   * @deprecated use {{@link SentryOptions#getShutdownTimeoutMillis()} }
    * @return the timeout in Millis
    */
+  @ApiStatus.ScheduledForRemoval
+  @Deprecated
   public long getShutdownTimeout() {
-    return shutdownTimeout;
+    return shutdownTimeoutMillis;
+  }
+
+  /**
+   * Returns the shutdown timeout in Millis
+   *
+   * @return the timeout in Millis
+   */
+  public long getShutdownTimeoutMillis() {
+    return shutdownTimeoutMillis;
+  }
+
+  /**
+   * Sets the shutdown timeout in Millis Default is 2000 = 2s
+   *
+   * @deprecated use {{@link SentryOptions#setShutdownTimeoutMillis(long)} }
+   * @param shutdownTimeoutMillis the shutdown timeout in millis
+   */
+  @ApiStatus.ScheduledForRemoval
+  @Deprecated
+  public void setShutdownTimeout(long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**
@@ -477,8 +505,8 @@ public class SentryOptions {
    *
    * @param shutdownTimeoutMillis the shutdown timeout in millis
    */
-  public void setShutdownTimeout(long shutdownTimeoutMillis) {
-    this.shutdownTimeout = shutdownTimeoutMillis;
+  public void setShutdownTimeoutMillis(long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**
@@ -563,28 +591,6 @@ public class SentryOptions {
    */
   public void setCacheDirPath(@Nullable String cacheDirPath) {
     this.cacheDirPath = cacheDirPath;
-  }
-
-  /**
-   * Returns the cache dir. size Default is 30
-   *
-   * @deprecated use {{@link SentryOptions#getMaxCacheItems()} }
-   * @return the cache dir. size
-   */
-  @Deprecated
-  public int getCacheDirSize() {
-    return maxCacheItems;
-  }
-
-  /**
-   * Sets the cache dir. size Default is 30
-   *
-   * @deprecated use {{@link SentryOptions#setCacheDirSize(int)} }
-   * @param cacheDirSize the cache dir. size
-   */
-  @Deprecated
-  public void setCacheDirSize(int cacheDirSize) {
-    maxCacheItems = cacheDirSize;
   }
 
   /**
@@ -870,21 +876,6 @@ public class SentryOptions {
     this.enableAutoSessionTracking = enableAutoSessionTracking;
   }
 
-  /** @deprecated use {@link SentryOptions#isEnableAutoSessionTracking()} */
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public boolean isEnableSessionTracking() {
-    return enableAutoSessionTracking;
-  }
-
-  /** @deprecated use {@link SentryOptions#setEnableAutoSessionTracking(boolean)} */
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  @SuppressWarnings("InlineMeSuggester")
-  public void setEnableSessionTracking(final boolean enableSessionTracking) {
-    setEnableAutoSessionTracking(enableSessionTracking);
-  }
-
   /**
    * Gets the default server name to be used in Sentry events.
    *
@@ -993,6 +984,33 @@ public class SentryOptions {
    */
   public void setEnableUncaughtExceptionHandler(final boolean enableUncaughtExceptionHandler) {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
+  }
+
+  /**
+   * Checks if printing exceptions by UncaughtExceptionHandler is enabled or disabled.
+   *
+   * @return true if enabled or false otherwise.
+   */
+  public boolean isPrintUncaughtStackTrace() {
+    return Boolean.TRUE.equals(printUncaughtStackTrace);
+  }
+
+  /**
+   * Checks if printing exceptions by UncaughtExceptionHandler is enabled or disabled.
+   *
+   * @return true if enabled, false otherwise or null if not set.
+   */
+  public @Nullable Boolean getPrintUncaughtStackTrace() {
+    return printUncaughtStackTrace;
+  }
+
+  /**
+   * Enable or disable printing exceptions in UncaughtExceptionHandler
+   *
+   * @param printUncaughtStackTrace true if enabled or false otherwise.
+   */
+  public void setPrintUncaughtStackTrace(final @Nullable Boolean printUncaughtStackTrace) {
+    this.printUncaughtStackTrace = printUncaughtStackTrace;
   }
 
   /**
@@ -1545,6 +1563,9 @@ public class SentryOptions {
     }
     if (options.getEnableUncaughtExceptionHandler() != null) {
       setEnableUncaughtExceptionHandler(options.getEnableUncaughtExceptionHandler());
+    }
+    if (options.getPrintUncaughtStackTrace() != null) {
+      setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());

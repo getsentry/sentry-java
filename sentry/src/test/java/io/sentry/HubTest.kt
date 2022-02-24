@@ -27,7 +27,6 @@ import java.util.Queue
 import java.util.UUID
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -56,20 +55,6 @@ class HubTest {
     fun `when no dsn available, ctor throws illegal arg`() {
         val ex = assertFailsWith<IllegalArgumentException> { Hub.create(SentryOptions()) }
         assertEquals("Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.", ex.message)
-    }
-
-    @Ignore("Sentry static class is registering integrations")
-    @Test
-    fun `when a root hub is initialized, integrations are registered`() {
-        val integrationMock = mock<Integration>()
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        options.addIntegration(integrationMock)
-        val expected = HubAdapter.getInstance()
-        Hub.create(options)
-        verify(integrationMock).register(expected, options)
     }
 
     @Test

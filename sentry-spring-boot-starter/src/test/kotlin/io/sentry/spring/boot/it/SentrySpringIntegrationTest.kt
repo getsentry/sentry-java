@@ -54,7 +54,7 @@ import java.lang.RuntimeException
 @SpringBootTest(
     classes = [App::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.enable-tracing=true", "sentry.traces-sample-rate=1.0", "sentry.max-request-body-size=medium"]
+    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.traces-sample-rate=1.0", "sentry.max-request-body-size=medium"]
 )
 class SentrySpringIntegrationTest {
 
@@ -201,6 +201,7 @@ class SentrySpringIntegrationTest {
 
         verify(transport).send(
             checkTransaction { transaction ->
+                assertThat(transaction.transaction).isEqualTo("GET /performance")
                 assertThat(transaction.user).isNotNull()
                 assertThat(transaction.user!!.username).isEqualTo("user")
             },

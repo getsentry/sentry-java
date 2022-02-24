@@ -8,14 +8,11 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.protocol.App
-import io.sentry.protocol.Request
 import io.sentry.protocol.User
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -141,70 +138,6 @@ class SentryTracerTest {
         tracer.throwable = ex
         tracer.finish()
         verify(fixture.hub).setSpanContext(ex, tracer.root, "name")
-    }
-
-    @Test
-    fun `when transaction with request set is finished, request is set on the transaction`() {
-        val tracer = fixture.getSut()
-        val request = Request()
-        tracer.request = request
-        tracer.finish()
-        verify(fixture.hub).captureTransaction(
-            check {
-                assertEquals(request, it.request)
-            },
-            anyOrNull()
-        )
-    }
-
-    @Test
-    fun `when transaction with contexts is finished, contexts are set on the transaction`() {
-        val tracer = fixture.getSut()
-        val contexts = tracer.contexts
-        val app = App()
-        contexts.setApp(app)
-        contexts["custom"] = "value"
-        tracer.finish()
-        verify(fixture.hub).captureTransaction(
-            check {
-                assertEquals(app, it.contexts.app)
-                assertEquals("value", it.contexts["custom"])
-                assertNotNull(it.contexts.trace) {
-                    assertEquals(tracer.spanContext.traceId, it.traceId)
-                    assertEquals(tracer.spanContext.spanId, it.spanId)
-                    assertEquals(tracer.spanContext.parentSpanId, it.parentSpanId)
-                    assertEquals(tracer.spanContext.op, it.op)
-                    assertEquals(tracer.spanContext.description, it.description)
-                    assertEquals(tracer.spanContext.status, it.status)
-                    assertEquals(tracer.spanContext.sampled, it.sampled)
-                }
-            },
-            anyOrNull()
-        )
-    }
-
-    @Test
-    fun `when transaction with contexts has overwritten trace, tracer span context is applied to transaction`() {
-        val tracer = fixture.getSut()
-        val contexts = tracer.contexts
-        val spanContext = SpanContext("op")
-        contexts.trace = spanContext
-        tracer.finish()
-        verify(fixture.hub).captureTransaction(
-            check {
-                assertNotNull(it.contexts.trace) {
-                    assertNotEquals(spanContext, it)
-                    assertEquals(tracer.spanContext.traceId, it.traceId)
-                    assertEquals(tracer.spanContext.spanId, it.spanId)
-                    assertEquals(tracer.spanContext.parentSpanId, it.parentSpanId)
-                    assertEquals(tracer.spanContext.op, it.op)
-                    assertEquals(tracer.spanContext.description, it.description)
-                    assertEquals(tracer.spanContext.status, it.status)
-                    assertEquals(tracer.spanContext.sampled, it.sampled)
-                }
-            },
-            anyOrNull()
-        )
     }
 
     @Test

@@ -34,9 +34,10 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 }
 
 public final class io/sentry/android/core/AppStartState {
+	public fun getAppStartInterval ()Ljava/lang/Long;
 	public fun getAppStartTime ()Ljava/util/Date;
 	public static fun getInstance ()Lio/sentry/android/core/AppStartState;
-	public fun isColdStart ()Z
+	public fun isColdStart ()Ljava/lang/Boolean;
 }
 
 public final class io/sentry/android/core/BuildConfig {
@@ -104,6 +105,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
+	public fun isEnableUserInteractionBreadcrumbs ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
@@ -114,6 +116,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
+	public fun setEnableUserInteractionBreadcrumbs (Z)V
 }
 
 public final class io/sentry/android/core/SentryInitProvider : android/content/ContentProvider {
@@ -128,12 +131,19 @@ public final class io/sentry/android/core/SentryInitProvider : android/content/C
 	public fun update (Landroid/net/Uri;Landroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/String;)I
 }
 
-public final class io/sentry/android/core/SentryPerformanceProvider : android/content/ContentProvider {
+public final class io/sentry/android/core/SentryPerformanceProvider : android/content/ContentProvider, android/app/Application$ActivityLifecycleCallbacks {
 	public fun <init> ()V
 	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
 	public fun delete (Landroid/net/Uri;Ljava/lang/String;[Ljava/lang/String;)I
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
 	public fun insert (Landroid/net/Uri;Landroid/content/ContentValues;)Landroid/net/Uri;
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
+	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
 	public fun onCreate ()Z
 	public fun query (Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor;
 	public fun update (Landroid/net/Uri;Landroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/String;)I
@@ -154,36 +164,16 @@ public final class io/sentry/android/core/TempSensorBreadcrumbsIntegration : and
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/util/ConnectivityChecker {
-	public static fun getConnectionStatus (Landroid/content/Context;Lio/sentry/ILogger;)Lio/sentry/android/core/util/ConnectivityChecker$Status;
-	public static fun getConnectionType (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/android/core/IBuildInfoProvider;)Ljava/lang/String;
-}
-
-public final class io/sentry/android/core/util/ConnectivityChecker$Status : java/lang/Enum {
-	public static final field CONNECTED Lio/sentry/android/core/util/ConnectivityChecker$Status;
-	public static final field NOT_CONNECTED Lio/sentry/android/core/util/ConnectivityChecker$Status;
-	public static final field NO_PERMISSION Lio/sentry/android/core/util/ConnectivityChecker$Status;
-	public static final field UNKNOWN Lio/sentry/android/core/util/ConnectivityChecker$Status;
-	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/core/util/ConnectivityChecker$Status;
-	public static fun values ()[Lio/sentry/android/core/util/ConnectivityChecker$Status;
-}
-
-public final class io/sentry/android/core/util/DeviceOrientations {
-	public static fun getOrientation (I)Lio/sentry/protocol/Device$DeviceOrientation;
-}
-
-public final class io/sentry/android/core/util/MainThreadChecker {
-	public static fun isMainThread ()Z
-	public static fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
-	public static fun isMainThread (Ljava/lang/Thread;)Z
-}
-
-public final class io/sentry/android/core/util/Permissions {
-	public static fun hasPermission (Landroid/content/Context;Ljava/lang/String;)Z
-}
-
-public final class io/sentry/android/core/util/RootChecker {
-	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/IBuildInfoProvider;Lio/sentry/ILogger;)V
-	public fun isDeviceRooted ()Z
+public final class io/sentry/android/core/UserInteractionIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/LoadClass;)V
+	public fun close ()V
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
+	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
+	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 

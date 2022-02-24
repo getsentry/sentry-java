@@ -26,12 +26,16 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
   public static final String MECHANISM_TYPE = "HandlerExceptionResolver";
 
   private final @NotNull IHub hub;
-  private final @NotNull TransactionNameProvider transactionNameProvider =
-      new TransactionNameProvider();
+  private final @NotNull TransactionNameProvider transactionNameProvider;
   private final int order;
 
-  public SentryExceptionResolver(final @NotNull IHub hub, final int order) {
+  public SentryExceptionResolver(
+      final @NotNull IHub hub,
+      final @NotNull TransactionNameProvider transactionNameProvider,
+      final int order) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.transactionNameProvider =
+        Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
     this.order = order;
   }
 

@@ -100,7 +100,18 @@ public final class Device implements JsonUnknown, JsonSerializable {
   private @Nullable TimeZone timezone;
 
   private @Nullable String id;
-  private @Nullable String language;
+
+  /**
+   * This method returns the language code for this locale, which will either be the empty string or
+   * a lowercase ISO 639 code.
+   *
+   * @deprecated use {@link Device#getLocale()}
+   */
+  @Deprecated private @Nullable String language;
+
+  /** The locale of the device. For example, en-US. */
+  private @Nullable String locale;
+
   private @Nullable String connectionType;
 
   /** battery's temperature in celsius */
@@ -142,6 +153,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.batteryLevel = device.batteryLevel;
     final String[] archsRef = device.archs;
     this.archs = archsRef != null ? archsRef.clone() : null;
+    this.locale = device.locale;
 
     final TimeZone timezoneRef = device.timezone;
     this.timezone = timezoneRef != null ? (TimeZone) timezoneRef.clone() : null;
@@ -447,6 +459,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     public static final String LANGUAGE = "language";
     public static final String CONNECTION_TYPE = "connection_type";
     public static final String BATTERY_TEMPERATURE = "battery_temperature";
+    public static final String LOCALE = "locale";
   }
 
   @Override
@@ -543,6 +556,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
     if (batteryTemperature != null) {
       writer.name(JsonKeys.BATTERY_TEMPERATURE).value(batteryTemperature);
     }
+    if (locale != null) {
+      writer.name(JsonKeys.LOCALE).value(locale);
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -550,6 +566,14 @@ public final class Device implements JsonUnknown, JsonSerializable {
       }
     }
     writer.endObject();
+  }
+
+  public @Nullable String getLocale() {
+    return locale;
+  }
+
+  public void setLocale(final @Nullable String locale) {
+    this.locale = locale;
   }
 
   @Nullable
@@ -670,6 +694,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.BATTERY_TEMPERATURE:
             device.batteryTemperature = reader.nextFloatOrNull();
+            break;
+          case JsonKeys.LOCALE:
+            device.locale = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {

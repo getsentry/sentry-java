@@ -237,6 +237,8 @@ public final class Sentry {
   public static synchronized void close() {
     final IHub hub = getCurrentHub();
     mainHub = NoOpHub.getInstance();
+    // remove thread local to avoid memory leak
+    currentHub.remove();
     hub.close();
   }
 

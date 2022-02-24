@@ -1,7 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.Contexts;
-import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -22,8 +20,6 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Span root;
   private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
   private final @NotNull IHub hub;
-  private final @NotNull Contexts contexts = new Contexts();
-  private @Nullable Request request;
   private @NotNull String name;
   /**
    * When `waitForChildren` is set to `true`, tracer will finish only when both conditions are met
@@ -373,27 +369,6 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @NotNull String getName() {
     return this.name;
-  }
-
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public void setRequest(final @Nullable Request request) {
-    this.request = request;
-  }
-
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public @Nullable Request getRequest() {
-    return this.request;
-  }
-
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public @NotNull Contexts getContexts() {
-    return this.contexts;
   }
 
   @Override

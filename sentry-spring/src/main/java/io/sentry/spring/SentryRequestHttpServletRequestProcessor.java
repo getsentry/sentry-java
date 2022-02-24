@@ -12,11 +12,14 @@ import org.jetbrains.annotations.Nullable;
 /** Attaches transaction name from the HTTP request to {@link SentryEvent}. */
 @Open
 public class SentryRequestHttpServletRequestProcessor implements EventProcessor {
+  private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull HttpServletRequest request;
-  private final @NotNull TransactionNameProvider transactionNameProvider =
-      new TransactionNameProvider();
 
-  public SentryRequestHttpServletRequestProcessor(final @NotNull HttpServletRequest request) {
+  public SentryRequestHttpServletRequestProcessor(
+      final @NotNull TransactionNameProvider transactionNameProvider,
+      final @NotNull HttpServletRequest request) {
+    this.transactionNameProvider =
+        Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
     this.request = Objects.requireNonNull(request, "request is required");
   }
 

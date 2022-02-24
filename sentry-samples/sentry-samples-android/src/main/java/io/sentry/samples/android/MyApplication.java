@@ -4,6 +4,7 @@ import android.app.Application;
 import android.os.StrictMode;
 import io.sentry.android.core.SentryAndroid;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
+import io.sentry.android.timber.SentryTimberIntegration;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
@@ -19,6 +20,7 @@ public class MyApplication extends Application {
         this,
         options -> {
           options.addIntegration(new FragmentLifecycleIntegration(MyApplication.this, true, true));
+          options.addIntegration(new SentryTimberIntegration());
         });
   }
 

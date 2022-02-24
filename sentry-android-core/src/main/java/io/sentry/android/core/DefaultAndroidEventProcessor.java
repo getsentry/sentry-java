@@ -24,10 +24,10 @@ import io.sentry.ILogger;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.android.core.util.ConnectivityChecker;
-import io.sentry.android.core.util.DeviceOrientations;
-import io.sentry.android.core.util.MainThreadChecker;
-import io.sentry.android.core.util.RootChecker;
+import io.sentry.android.core.internal.util.ConnectivityChecker;
+import io.sentry.android.core.internal.util.DeviceOrientations;
+import io.sentry.android.core.internal.util.MainThreadChecker;
+import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
@@ -310,8 +310,13 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (device.getId() == null) {
       device.setId(getDeviceId());
     }
+
+    final Locale locale = Locale.getDefault();
     if (device.getLanguage() == null) {
-      device.setLanguage(Locale.getDefault().toString()); // eg en_US
+      device.setLanguage(locale.getLanguage());
+    }
+    if (device.getLocale() == null) {
+      device.setLocale(locale.toString()); // eg en_US
     }
 
     return device;

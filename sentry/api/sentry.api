@@ -49,6 +49,8 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public static fun transaction (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun ui (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun user (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun userInteraction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun userInteraction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lio/sentry/Breadcrumb;
 }
 
 public final class io/sentry/Breadcrumb$Deserializer : io/sentry/JsonDeserializer {
@@ -138,6 +140,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
+	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getRelease ()Ljava/lang/String;
@@ -152,6 +155,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
+	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setRelease (Ljava/lang/String;)V
@@ -383,15 +387,12 @@ public abstract interface class io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
-	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
 	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLatestActiveSpan ()Lio/sentry/Span;
 	public abstract fun getName ()Ljava/lang/String;
-	public abstract fun getRequest ()Lio/sentry/protocol/Request;
 	public abstract fun getSpans ()Ljava/util/List;
 	public abstract fun isSampled ()Ljava/lang/Boolean;
 	public abstract fun setName (Ljava/lang/String;)V
-	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
 }
 
 public abstract interface class io/sentry/ITransportFactory {
@@ -559,7 +560,6 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
-	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
@@ -567,7 +567,6 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
-	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStatus ()Lio/sentry/SpanStatus;
@@ -579,7 +578,6 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
-	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
@@ -770,7 +768,6 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getExtra (Ljava/lang/String;)Ljava/lang/Object;
-	public fun getOriginThrowable ()Ljava/lang/Throwable;
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getRequest ()Lio/sentry/protocol/Request;
@@ -1012,7 +1009,6 @@ public class io/sentry/SentryOptions {
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getCacheDirPath ()Ljava/lang/String;
-	public fun getCacheDirSize ()I
 	public fun getConnectionTimeoutMillis ()I
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
 	public fun getDist ()Ljava/lang/String;
@@ -1037,6 +1033,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getMaxSpans ()I
 	public fun getOutboxPath ()Ljava/lang/String;
+	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getReadTimeoutMillis ()I
@@ -1049,6 +1046,7 @@ public class io/sentry/SentryOptions {
 	public fun getSessionMode ()Lio/sentry/SentryOptions$SessionMode;
 	public fun getSessionTrackingIntervalMillis ()J
 	public fun getShutdownTimeout ()J
+	public fun getShutdownTimeoutMillis ()J
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
@@ -1065,9 +1063,9 @@ public class io/sentry/SentryOptions {
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnableNdk ()Z
 	public fun isEnableScopeSync ()Z
-	public fun isEnableSessionTracking ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
+	public fun isPrintUncaughtStackTrace ()Z
 	public fun isSendDefaultPii ()Z
 	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
@@ -1077,7 +1075,6 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
-	public fun setCacheDirSize (I)V
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setDebug (Z)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
@@ -1089,7 +1086,6 @@ public class io/sentry/SentryOptions {
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableScopeSync (Z)V
-	public fun setEnableSessionTracking (Z)V
 	public fun setEnableShutdownHook (Z)V
 	public fun setEnableUncaughtExceptionHandler (Z)V
 	public fun setEnvelopeDiskCache (Lio/sentry/cache/IEnvelopeCache;)V
@@ -1105,6 +1101,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxQueueSize (I)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
+	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
@@ -1118,6 +1115,7 @@ public class io/sentry/SentryOptions {
 	public fun setSessionMode (Lio/sentry/SentryOptions$SessionMode;)V
 	public fun setSessionTrackingIntervalMillis (J)V
 	public fun setShutdownTimeout (J)V
+	public fun setShutdownTimeoutMillis (J)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTraceSampling (Z)V
@@ -1186,7 +1184,6 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun getChildren ()Ljava/util/List;
-	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
@@ -1195,7 +1192,6 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
-	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStartTimestamp ()Ljava/util/Date;
@@ -1209,7 +1205,6 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
-	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThrowable (Ljava/lang/Throwable;)V
@@ -1665,6 +1660,59 @@ public abstract interface class io/sentry/hints/SubmissionResult {
 	public abstract fun setResult (Z)V
 }
 
+public final class io/sentry/instrumentation/file/SentryFileInputStream : java/io/FileInputStream {
+	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/FileDescriptor;)V
+	public fun <init> (Ljava/lang/String;)V
+	public fun close ()V
+	public fun read ()I
+	public fun read ([B)I
+	public fun read ([BII)I
+	public fun skip (J)J
+}
+
+public final class io/sentry/instrumentation/file/SentryFileInputStream$Factory {
+	public fun <init> ()V
+	public static fun create (Ljava/io/FileInputStream;Ljava/io/File;)Ljava/io/FileInputStream;
+	public static fun create (Ljava/io/FileInputStream;Ljava/io/FileDescriptor;)Ljava/io/FileInputStream;
+	public static fun create (Ljava/io/FileInputStream;Ljava/lang/String;)Ljava/io/FileInputStream;
+}
+
+public final class io/sentry/instrumentation/file/SentryFileOutputStream : java/io/FileOutputStream {
+	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/File;Z)V
+	public fun <init> (Ljava/io/FileDescriptor;)V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Z)V
+	public fun close ()V
+	public fun write (I)V
+	public fun write ([B)V
+	public fun write ([BII)V
+}
+
+public final class io/sentry/instrumentation/file/SentryFileOutputStream$Factory {
+	public fun <init> ()V
+	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;Z)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/io/FileDescriptor;)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/lang/String;)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/lang/String;Z)Ljava/io/FileOutputStream;
+}
+
+public final class io/sentry/instrumentation/file/SentryFileReader : java/io/InputStreamReader {
+	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/FileDescriptor;)V
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/OutputStreamWriter {
+	public fun <init> (Ljava/io/File;)V
+	public fun <init> (Ljava/io/File;Z)V
+	public fun <init> (Ljava/io/FileDescriptor;)V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Z)V
+}
+
 public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
@@ -1839,6 +1887,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun getFreeStorage ()Ljava/lang/Long;
 	public fun getId ()Ljava/lang/String;
 	public fun getLanguage ()Ljava/lang/String;
+	public fun getLocale ()Ljava/lang/String;
 	public fun getManufacturer ()Ljava/lang/String;
 	public fun getMemorySize ()Ljava/lang/Long;
 	public fun getModel ()Ljava/lang/String;
@@ -1872,6 +1921,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun setFreeStorage (Ljava/lang/Long;)V
 	public fun setId (Ljava/lang/String;)V
 	public fun setLanguage (Ljava/lang/String;)V
+	public fun setLocale (Ljava/lang/String;)V
 	public fun setLowMemory (Ljava/lang/Boolean;)V
 	public fun setManufacturer (Ljava/lang/String;)V
 	public fun setMemorySize (Ljava/lang/Long;)V
@@ -1926,6 +1976,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field FREE_STORAGE Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
 	public static final field LANGUAGE Ljava/lang/String;
+	public static final field LOCALE Ljava/lang/String;
 	public static final field LOW_MEMORY Ljava/lang/String;
 	public static final field MANUFACTURER Ljava/lang/String;
 	public static final field MEMORY_SIZE Ljava/lang/String;
@@ -2180,7 +2231,6 @@ public final class io/sentry/protocol/SdkInfo$JsonKeys {
 }
 
 public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
@@ -2263,7 +2313,6 @@ public final class io/sentry/protocol/SentryId$Deserializer : io/sentry/JsonDese
 }
 
 public final class io/sentry/protocol/SentryPackage : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun getName ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -2741,6 +2790,7 @@ public final class io/sentry/util/Platform {
 }
 
 public final class io/sentry/util/StringUtils {
+	public static fun byteCountToString (J)Ljava/lang/String;
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
@@ -2760,6 +2810,15 @@ public class io/sentry/vendor/Base64 {
 	public static fun encode ([BIII)[B
 	public static fun encodeToString ([BI)Ljava/lang/String;
 	public static fun encodeToString ([BIII)Ljava/lang/String;
+}
+
+public class io/sentry/vendor/gson/internal/bind/util/ISO8601Utils {
+	public static final field TIMEZONE_UTC Ljava/util/TimeZone;
+	public fun <init> ()V
+	public static fun format (Ljava/util/Date;)Ljava/lang/String;
+	public static fun format (Ljava/util/Date;Z)Ljava/lang/String;
+	public static fun format (Ljava/util/Date;ZLjava/util/TimeZone;)Ljava/lang/String;
+	public static fun parse (Ljava/lang/String;Ljava/text/ParsePosition;)Ljava/util/Date;
 }
 
 public class io/sentry/vendor/gson/stream/JsonReader : java/io/Closeable {

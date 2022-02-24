@@ -11,6 +11,8 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.RequestSize;
+import io.sentry.spring.tracing.SpringMvcTransactionNameProvider;
+import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import javax.servlet.FilterChain;
@@ -27,14 +29,20 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class SentrySpringFilter extends OncePerRequestFilter {
   private final @NotNull IHub hub;
   private final @NotNull SentryRequestResolver requestResolver;
+  private final @NotNull TransactionNameProvider transactionNameProvider;
 
-  public SentrySpringFilter(@NotNull IHub hub, @NotNull SentryRequestResolver requestResolver) {
+  public SentrySpringFilter(
+      final @NotNull IHub hub,
+      final @NotNull SentryRequestResolver requestResolver,
+      final @NotNull TransactionNameProvider transactionNameProvider) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.requestResolver = Objects.requireNonNull(requestResolver, "requestResolver is required");
+    this.transactionNameProvider =
+        Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
   }
 
   public SentrySpringFilter(final @NotNull IHub hub) {
-    this(hub, new SentryRequestResolver(hub));
+    this(hub, new SentryRequestResolver(hub), new SpringMvcTransactionNameProvider());
   }
 
   public SentrySpringFilter() {
@@ -77,7 +85,8 @@ public class SentrySpringFilter extends OncePerRequestFilter {
             scope.setRequest(requestResolver.resolveSentryRequest(request));
             // transaction name is known at the later stage of request processing, thus it cannot
             // be set on the scope
-            scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(request));
+            scope.addEventProcessor(
+                new SentryRequestHttpServletRequestProcessor(transactionNameProvider, request));
             // only if request caches body, add an event processor that sets body on the event
             // body is not on the scope, to avoid using memory when no event is triggered during
             // request processing

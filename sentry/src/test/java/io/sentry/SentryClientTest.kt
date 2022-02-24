@@ -35,7 +35,6 @@ import java.lang.IllegalStateException
 import java.nio.charset.Charset
 import java.util.Arrays
 import java.util.UUID
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -51,7 +50,7 @@ class SentryClientTest {
     private class Fixture {
         var transport = mock<ITransport>()
         var factory = mock<ITransportFactory>()
-        val maxAttachmentSize: Long = 5 * 1024 * 1024
+        val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
         val hub = mock<IHub>()
         val sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), hub)
         val sessionUpdater = mock<SessionUpdater>()
@@ -88,26 +87,15 @@ class SentryClientTest {
     }
 
     @Test
-    @Ignore("Not implemented")
-    fun `when dsn is an invalid string, client is disabled`() {
-        fixture.sentryOptions.dsn = "invalid-dsn"
-        val sut = fixture.getSut()
-        assertFalse(sut.isEnabled)
-    }
-
-    @Test
     fun `when dsn is an invalid string, client throws`() {
-        fixture.sentryOptions.setTransportFactory(NoOpTransportFactory.getInstance())
         fixture.sentryOptions.dsn = "invalid-dsn"
         assertFailsWith<IllegalArgumentException> { fixture.getSut() }
     }
 
     @Test
-    @Ignore("Not implemented")
-    fun `when dsn is null, client is disabled`() {
+    fun `when dsn is null, client throws`() {
         fixture.sentryOptions.dsn = null
-        val sut = fixture.getSut()
-        assertFalse(sut.isEnabled)
+        assertFailsWith<IllegalArgumentException> { fixture.getSut() }
     }
 
     @Test

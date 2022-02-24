@@ -1,4 +1,4 @@
-package io.sentry.android.core.util
+package io.sentry.android.core.internal.util
 
 import android.content.Context
 import android.content.pm.PackageInfo
@@ -32,7 +32,14 @@ class RootCheckerTest {
             whenever(buildInfoProvider.buildTags).thenReturn(tags)
             whenever(context.packageManager).thenReturn(packageManager)
 
-            return RootChecker(context, buildInfoProvider, logger, rootFiles, rootPackages, runtime)
+            return RootChecker(
+                context,
+                buildInfoProvider,
+                logger,
+                rootFiles,
+                rootPackages,
+                runtime
+            )
         }
     }
     private val fixture = Fixture()

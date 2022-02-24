@@ -399,9 +399,7 @@ class JsonSerializerTest {
     @Test
     fun `When serializing an envelope, SdkVersion should be set`() {
         val session = createSessionMockData()
-        val version = SdkVersion().apply {
-            name = "test"
-            version = "1.2.3"
+        val version = SdkVersion("test", "1.2.3").apply {
             addIntegration("TestIntegration")
             addPackage("abc", "4.5.6")
         }
@@ -703,8 +701,7 @@ class JsonSerializerTest {
         val actualJson = serializeToString(envelope)
 
         val expectedJson = "{\"event_id\":\"${eventID}\"}\n" +
-            "{\"content_type\":\"${attachment.contentType}\"," +
-            "\"filename\":\"${attachment.filename}\"," +
+            "{\"filename\":\"${attachment.filename}\"," +
             "\"type\":\"attachment\"," +
             "\"attachment_type\":\"event.attachment\"," +
             "\"length\":${attachment.bytes?.size}}\n" +

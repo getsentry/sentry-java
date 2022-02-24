@@ -72,7 +72,6 @@ class BreadcrumbTest {
         breadcrumb.message = "newMessage"
         breadcrumb.data["data"] = "newData"
         breadcrumb.data["otherData"] = "otherData"
-        val newUnknown = mapOf(Pair("unknown", "newUnknown"), Pair("otherUnknown", "otherUnknown"))
 
         breadcrumb.type = "newType"
         breadcrumb.level = SentryLevel.FATAL

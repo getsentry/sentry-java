@@ -27,6 +27,7 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.getCtor
 import org.junit.runner.RunWith
+import java.util.Locale
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,6 +44,10 @@ class DefaultAndroidEventProcessorTest {
 
     private val className = "io.sentry.android.core.DefaultAndroidEventProcessor"
     private val ctorTypes = arrayOf(Context::class.java, ILogger::class.java, IBuildInfoProvider::class.java)
+
+    init {
+        Locale.setDefault(Locale.US)
+    }
 
     private class Fixture {
         val buildInfo = mock<IBuildInfoProvider>()
@@ -374,6 +379,17 @@ class DefaultAndroidEventProcessorTest {
 //            assertNotNull(device.externalFreeStorage)
 //            assertNotNull(device.externalStorageSize)
 //            assertNotNull(device.connectionType)
+        }
+    }
+
+    @Test
+    fun `Event sets language and locale`() {
+        val sut = fixture.getSut(context)
+
+        assertNotNull(sut.process(SentryEvent(), null)) {
+            val device = it.contexts.device!!
+            assertEquals("en", device.language)
+            assertEquals("en_US", device.locale)
         }
     }
 }

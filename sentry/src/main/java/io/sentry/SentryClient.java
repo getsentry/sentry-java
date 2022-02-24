@@ -9,6 +9,7 @@ import io.sentry.util.ApplyScopeUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,7 +17,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +28,7 @@ public final class SentryClient implements ISentryClient {
 
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
-  private final @Nullable Random random;
+  private final @Nullable SecureRandom random;
 
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
 
@@ -53,7 +53,7 @@ public final class SentryClient implements ISentryClient {
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
 
-    this.random = options.getSampleRate() == null ? null : new Random();
+    this.random = options.getSampleRate() == null ? null : new SecureRandom();
   }
 
   private boolean shouldApplyScopeData(
@@ -535,7 +535,7 @@ public final class SentryClient implements ISentryClient {
     options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
 
     try {
-      flush(options.getShutdownTimeout());
+      flush(options.getShutdownTimeoutMillis());
       transport.close();
     } catch (IOException e) {
       options

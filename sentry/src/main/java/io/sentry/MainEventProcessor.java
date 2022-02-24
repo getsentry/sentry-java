@@ -34,7 +34,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   private final @Nullable HostnameCache hostnameCache;
 
   MainEventProcessor(final @NotNull SentryOptions options) {
-    this(options, options.isAttachServerName() ? new HostnameCache() : null);
+    this(options, options.isAttachServerName() ? HostnameCache.getInstance() : null);
   }
 
   MainEventProcessor(
