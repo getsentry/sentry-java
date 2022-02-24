@@ -101,7 +101,7 @@ public final class SentryEnvelopeItem {
               }
             });
 
-    SentryEnvelopeItemHeader itemHeader =
+    final SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
             SentryItemType.Sessions, () -> cachedItem.getBytes().length, "application/json", null);
 

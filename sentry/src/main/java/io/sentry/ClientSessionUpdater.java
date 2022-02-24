@@ -49,7 +49,9 @@ final class ClientSessionUpdater implements SessionUpdater {
                   }
                 });
       } else {
-        options.getLogger().log(SentryLevel.INFO, "Scope is null on client.captureEvent");
+        options
+            .getLogger()
+            .log(SentryLevel.INFO, "Scope is null on sessionUpdater.updateSessionData");
       }
     }
     return clonedSession;
