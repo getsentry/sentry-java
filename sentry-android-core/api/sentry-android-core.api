@@ -1,3 +1,7 @@
+public final class io/sentry/android/core/ActivityFramesTracker {
+	public fun <init> (Lio/sentry/android/core/LoadClass;)V
+}
+
 public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/IBuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;)V
 	public fun close ()V
@@ -70,6 +74,11 @@ public abstract interface class io/sentry/android/core/IBuildInfoProvider {
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 	public abstract fun clearDebugImages ()V
 	public abstract fun loadDebugImages ()Ljava/util/List;
+}
+
+public final class io/sentry/android/core/LoadClass {
+	public fun <init> ()V
+	public fun loadClass (Ljava/lang/String;)Ljava/lang/Class;
 }
 
 public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration, java/io/Closeable {
