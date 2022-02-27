@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-final class ActivityFramesTracker {
+public final class ActivityFramesTracker {
 
   private @Nullable FrameMetricsAggregator frameMetricsAggregator = null;
   private boolean androidXAvailable = true;
@@ -20,7 +20,7 @@ final class ActivityFramesTracker {
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
       activityMeasurements = new ConcurrentHashMap<>();
 
-  ActivityFramesTracker(final @NotNull LoadClass loadClass) {
+  public ActivityFramesTracker(final @NotNull LoadClass loadClass) {
     androidXAvailable = checkAndroidXAvailability(loadClass);
     if (androidXAvailable) {
       frameMetricsAggregator = new FrameMetricsAggregator();

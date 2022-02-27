@@ -84,6 +84,20 @@ android {
         }
     }
 
+    flavorDimensions += "init"
+    productFlavors {
+        create("default") {
+            dimension = "init"
+            applicationIdSuffix = ".default"
+            versionNameSuffix = "-default"
+        }
+        create("early") {
+            dimension = "init"
+            applicationIdSuffix = ".early"
+            versionNameSuffix = "-early"
+        }
+    }
+
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
