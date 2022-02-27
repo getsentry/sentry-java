@@ -3,7 +3,6 @@ package io.sentry.samples.android;
 import android.app.Application;
 import android.content.Context;
 import android.os.StrictMode;
-
 import io.sentry.android.core.ActivityFramesTracker;
 import io.sentry.android.core.ActivityLifecycleIntegration;
 import io.sentry.android.core.BuildInfoProvider;
@@ -20,16 +19,16 @@ public class MyApplication extends Application {
     // Example how to initialize the SDK manually which allows access to SentryOptions callbacks.
     // Make sure you disable the auto init via manifest meta-data: io.sentry.auto-init=false
     SentryAndroid.init(
-      base,
-      options -> {
-        options.addIntegration(new ActivityLifecycleIntegration(
-          MyApplication.this,
-          new BuildInfoProvider(),
-          new ActivityFramesTracker(new LoadClass())
-        ));
-        options.addIntegration(new FragmentLifecycleIntegration(MyApplication.this, true, true));
-        options.addIntegration(new SentryTimberIntegration());
-      });
+        base,
+        options -> {
+          options.addIntegration(
+              new ActivityLifecycleIntegration(
+                  MyApplication.this,
+                  new BuildInfoProvider(),
+                  new ActivityFramesTracker(new LoadClass())));
+          options.addIntegration(new FragmentLifecycleIntegration(MyApplication.this, true, true));
+          options.addIntegration(new SentryTimberIntegration());
+        });
 
     super.attachBaseContext(base);
   }
