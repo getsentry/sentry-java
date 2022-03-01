@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Ref: Make hints Map<String, Object> instead of only Object
+* Ref: Make hints Map<String, Object> instead of only Object (#1929)
 
 ## 5.6.2-beta.2
 
