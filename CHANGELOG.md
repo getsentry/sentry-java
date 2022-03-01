@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 5.6.2-beta.2
+
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
+
+## 5.6.2-beta.1
+
 * Fix: Do not include stacktrace frames into Timber message (#1898)
 * Fix: Potential memory leaks (#1909)
 
