@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Feat: Enable enableScopeSync by default for Android (#)
+* Feat: Enable enableScopeSync by default for Android (#1928)
 
 ## 5.6.2-beta.2
 
