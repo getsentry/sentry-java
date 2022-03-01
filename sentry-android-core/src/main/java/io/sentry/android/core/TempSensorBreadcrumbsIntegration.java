@@ -15,6 +15,8 @@ import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -103,7 +105,11 @@ public final class TempSensorBreadcrumbsIntegration
       breadcrumb.setData("timestamp", event.timestamp);
       breadcrumb.setLevel(SentryLevel.INFO);
       breadcrumb.setData("degree", event.values[0]); // Celsius
-      hub.addBreadcrumb(breadcrumb);
+
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put("SensorEvent", event);
+
+      hub.addBreadcrumb(breadcrumb, hintMap);
     }
   }
 

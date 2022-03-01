@@ -12,6 +12,7 @@ import io.sentry.util.CollectionUtils;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.ErrorManager;
@@ -75,10 +76,16 @@ public class SentryHandler extends Handler {
     }
     try {
       if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
-        Sentry.captureEvent(createEvent(record));
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put("syntheticException", record);
+
+        Sentry.captureEvent(createEvent(record), hintMap);
       }
       if (record.getLevel().intValue() >= minimumBreadcrumbLevel.intValue()) {
-        Sentry.addBreadcrumb(createBreadcrumb(record));
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put("LogRecord", record);
+
+        Sentry.addBreadcrumb(createBreadcrumb(record), hintMap);
       }
     } catch (RuntimeException e) {
       reportError(

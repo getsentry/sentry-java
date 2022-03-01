@@ -10,6 +10,7 @@ import io.sentry.hints.SubmissionResult;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -22,6 +23,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,13 +53,15 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   }
 
   @Override
-  protected void processFile(final @NotNull File file, @Nullable Object hint) {
+  protected void processFile(final @NotNull File file, @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(file, "File is required.");
 
     if (!isRelevantFileName(file.getName())) {
       logger.log(SentryLevel.DEBUG, "File '%s' should be ignored.", file.getAbsolutePath());
       return;
     }
+
+    Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
 
     try (final InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
       final SentryEnvelope envelope = envelopeReader.read(stream);
@@ -73,8 +77,8 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
     } finally {
-      if (hint instanceof Retryable) {
-        if (!((Retryable) hint).isRetry()) {
+      if (sentrySdkHint instanceof Retryable) {
+        if (!((Retryable) sentrySdkHint).isRetry()) {
           try {
             if (!file.delete()) {
               logger.log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
@@ -84,7 +88,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
           }
         }
       } else {
-        LogUtils.logIfNotRetryable(logger, hint);
+        LogUtils.logIfNotRetryable(logger, sentrySdkHint);
       }
     }
   }
@@ -97,19 +101,22 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   }
 
   @Override
-  public void processEnvelopeFile(@NotNull String path, @Nullable Object hint) {
+  public void processEnvelopeFile(@NotNull String path, @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(path, "Path is required.");
 
     processFile(new File(path), hint);
   }
 
-  private void processEnvelope(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+  private void processEnvelope(
+      final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint)
       throws IOException {
     logger.log(
         SentryLevel.DEBUG,
         "Processing Envelope with %d item(s)",
         CollectionUtils.size(envelope.getItems()));
     int currentItem = 0;
+
+    Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
 
     for (final SentryEnvelopeItem item : envelope.getItems()) {
       currentItem++;
@@ -134,7 +141,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             hub.captureEvent(event, hint);
             logItemCaptured(currentItem);
 
-            if (!waitFlush(hint)) {
+            if (!waitFlush(sentrySdkHint)) {
               logTimeout(event.getEventId());
               break;
             }
@@ -186,7 +193,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             item.getHeader().getType().getItemType(),
             currentItem);
 
-        if (!waitFlush(hint)) {
+        if (!waitFlush(sentrySdkHint)) {
           logger.log(
               SentryLevel.WARNING,
               "Timed out waiting for item type submission: %s",
@@ -195,8 +202,8 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         }
       }
 
-      if (hint instanceof SubmissionResult) {
-        if (!((SubmissionResult) hint).isSuccess()) {
+      if (sentrySdkHint instanceof SubmissionResult) {
+        if (!((SubmissionResult) sentrySdkHint).isSuccess()) {
           // Failed to send an item of the envelope: Stop attempting to send the rest (an attachment
           // without the event that created it isn't useful)
           logger.log(
@@ -208,8 +215,8 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       }
 
       // reset the Hint to its initial state as we use it multiple times.
-      if (hint instanceof Resettable) {
-        ((Resettable) hint).reset();
+      if (sentrySdkHint instanceof Resettable) {
+        ((Resettable) sentrySdkHint).reset();
       }
     }
   }
@@ -240,11 +247,11 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
     logger.log(SentryLevel.WARNING, "Timed out waiting for event id submission: %s", eventId);
   }
 
-  private boolean waitFlush(final @Nullable Object hint) {
-    if (hint instanceof Flushable) {
-      return ((Flushable) hint).waitFlush();
+  private boolean waitFlush(final @Nullable Object sentrySdkHint) {
+    if (sentrySdkHint instanceof Flushable) {
+      return ((Flushable) sentrySdkHint).waitFlush();
     } else {
-      LogUtils.logIfNotFlushable(logger, hint);
+      LogUtils.logIfNotFlushable(logger, sentrySdkHint);
     }
     return true;
   }

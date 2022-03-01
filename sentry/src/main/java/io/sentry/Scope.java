@@ -294,7 +294,7 @@ public final class Scope {
   private @Nullable Breadcrumb executeBeforeBreadcrumb(
       final @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
       @NotNull Breadcrumb breadcrumb,
-      final @Nullable Object hint) {
+      final @Nullable Map<String, Object> hint) {
     try {
       breadcrumb = callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
@@ -319,7 +319,8 @@ public final class Scope {
    * @param breadcrumb the breadcrumb
    * @param hint the hint
    */
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
+  public void addBreadcrumb(
+      @NotNull Breadcrumb breadcrumb, final @Nullable Map<String, Object> hint) {
     if (breadcrumb == null) {
       return;
     }

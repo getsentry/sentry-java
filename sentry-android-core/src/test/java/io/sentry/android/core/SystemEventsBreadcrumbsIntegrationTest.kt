@@ -3,6 +3,7 @@ package io.sentry.android.core
 import android.content.Context
 import android.content.Intent
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -73,7 +74,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
         val intent = Intent().apply {
             action = Intent.ACTION_TIME_CHANGED
         }
-        sut.receiver!!.onReceive(any(), intent)
+        sut.receiver!!.onReceive(fixture.context, intent)
 
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
@@ -81,7 +82,8 @@ class SystemEventsBreadcrumbsIntegrationTest {
                 assertEquals("system", it.type)
                 assertEquals(SentryLevel.INFO, it.level)
                 // cant assert data, its not a public API
-            }
+            },
+            anyOrNull()
         )
     }
 

@@ -1,5 +1,6 @@
 package io.sentry.spring.boot
 
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -201,7 +202,8 @@ class SentrySpanWebClientCustomizerTest {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
                 assertEquals("POST", it.data["method"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -223,7 +225,8 @@ class SentrySpanWebClientCustomizerTest {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
                 assertEquals("GET", it.data["method"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -242,7 +245,8 @@ class SentrySpanWebClientCustomizerTest {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
                 assertEquals("POST", it.data["method"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -264,7 +268,8 @@ class SentrySpanWebClientCustomizerTest {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
                 assertEquals("GET", it.data["method"])
-            }
+            },
+            anyOrNull()
         )
     }
 }

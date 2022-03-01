@@ -10,9 +10,11 @@ import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -63,18 +65,19 @@ public final class AsyncHttpTransport implements ITransport {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint)
       throws IOException {
     // For now no caching on envelopes
     IEnvelopeCache currentEnvelopeCache = envelopeCache;
     boolean cached = false;
-    if (hint instanceof Cached) {
+    Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+    if (sentrySdkHint instanceof Cached) {
       currentEnvelopeCache = NoOpEnvelopeCache.getInstance();
       cached = true;
       options.getLogger().log(SentryLevel.DEBUG, "Captured Envelope is already cached");
     }
 
-    final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
+    final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, sentrySdkHint);
 
     if (filteredEnvelope == null) {
       if (cached) {
@@ -100,11 +103,12 @@ public final class AsyncHttpTransport implements ITransport {
           if (r instanceof EnvelopeSender) {
             final EnvelopeSender envelopeSender = (EnvelopeSender) r;
 
-            if (!(envelopeSender.hint instanceof Cached)) {
+            Object sentrySdkHint = HintUtils.getSentrySdkHint(envelopeSender.hint);
+            if (!(sentrySdkHint instanceof Cached)) {
               envelopeCache.store(envelopeSender.envelope, envelopeSender.hint);
             }
 
-            markHintWhenSendingFailed(envelopeSender.hint, true);
+            markHintWhenSendingFailed(sentrySdkHint, true);
             logger.log(SentryLevel.WARNING, "Envelope rejected");
           }
         };
@@ -138,15 +142,16 @@ public final class AsyncHttpTransport implements ITransport {
   /**
    * It marks the hints when sending has failed, so it's not necessary to wait the timeout
    *
-   * @param hint the Hint
+   * @param sentrySdkHint the Hint
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(final @Nullable Object hint, final boolean retry) {
-    if (hint instanceof SubmissionResult) {
-      ((SubmissionResult) hint).setResult(false);
+  private static void markHintWhenSendingFailed(
+      final @Nullable Object sentrySdkHint, final boolean retry) {
+    if (sentrySdkHint instanceof SubmissionResult) {
+      ((SubmissionResult) sentrySdkHint).setResult(false);
     }
-    if (hint instanceof Retryable) {
-      ((Retryable) hint).setRetry(retry);
+    if (sentrySdkHint instanceof Retryable) {
+      ((Retryable) sentrySdkHint).setRetry(retry);
     }
   }
 
@@ -163,13 +168,13 @@ public final class AsyncHttpTransport implements ITransport {
 
   private final class EnvelopeSender implements Runnable {
     private final @NotNull SentryEnvelope envelope;
-    private final @Nullable Object hint;
+    private final @Nullable Map<String, Object> hint;
     private final @NotNull IEnvelopeCache envelopeCache;
     private final TransportResult failedResult = TransportResult.error();
 
     EnvelopeSender(
         final @NotNull SentryEnvelope envelope,
-        final @Nullable Object hint,
+        final @Nullable Map<String, Object> hint,
         final @NotNull IEnvelopeCache envelopeCache) {
       this.envelope = Objects.requireNonNull(envelope, "Envelope is required.");
       this.hint = hint;
@@ -186,11 +191,12 @@ public final class AsyncHttpTransport implements ITransport {
         options.getLogger().log(SentryLevel.ERROR, e, "Envelope submission failed");
         throw e;
       } finally {
-        if (hint instanceof SubmissionResult) {
+        Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+        if (sentrySdkHint instanceof SubmissionResult) {
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Marking envelope submission result: %s", result.isSuccess());
-          ((SubmissionResult) hint).setResult(result.isSuccess());
+          ((SubmissionResult) sentrySdkHint).setResult(result.isSuccess());
         }
       }
     }
@@ -200,8 +206,9 @@ public final class AsyncHttpTransport implements ITransport {
 
       envelopeCache.store(envelope, hint);
 
-      if (hint instanceof DiskFlushNotification) {
-        ((DiskFlushNotification) hint).markFlushed();
+      Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+      if (sentrySdkHint instanceof DiskFlushNotification) {
+        ((DiskFlushNotification) sentrySdkHint).markFlushed();
         options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
       }
 
@@ -221,19 +228,19 @@ public final class AsyncHttpTransport implements ITransport {
           }
         } catch (IOException e) {
           // Failure due to IO is allowed to retry the event
-          if (hint instanceof Retryable) {
-            ((Retryable) hint).setRetry(true);
+          if (sentrySdkHint instanceof Retryable) {
+            ((Retryable) sentrySdkHint).setRetry(true);
           } else {
-            LogUtils.logIfNotRetryable(options.getLogger(), hint);
+            LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
           }
           throw new IllegalStateException("Sending the event failed.", e);
         }
       } else {
         // If transportGate is blocking from sending, allowed to retry
-        if (hint instanceof Retryable) {
-          ((Retryable) hint).setRetry(true);
+        if (sentrySdkHint instanceof Retryable) {
+          ((Retryable) sentrySdkHint).setRetry(true);
         } else {
-          LogUtils.logIfNotRetryable(options.getLogger(), hint);
+          LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
         }
       }
       return result;

@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +23,7 @@ final class NoOpSentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureEvent(
-      @NotNull SentryEvent event, @Nullable Scope scope, @Nullable Object hint) {
+      @NotNull SentryEvent event, @Nullable Scope scope, @Nullable Map<String, Object> hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -36,10 +37,11 @@ final class NoOpSentryClient implements ISentryClient {
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 
   @Override
-  public void captureSession(@NotNull Session session, @Nullable Object hint) {}
+  public void captureSession(@NotNull Session session, @Nullable Map<String, Object> hint) {}
 
   @Override
-  public SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Object hint) {
+  public SentryId captureEnvelope(
+      @NotNull SentryEnvelope envelope, @Nullable Map<String, Object> hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -48,7 +50,7 @@ final class NoOpSentryClient implements ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       @Nullable Scope scope,
-      @Nullable Object hint) {
+      @Nullable Map<String, Object> hint) {
     return SentryId.EMPTY_ID;
   }
 }

@@ -10,6 +10,7 @@ import android.widget.AbsListView
 import android.widget.ListAdapter
 import androidx.core.view.ScrollingView
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.inOrder
 import com.nhaarman.mockitokotlin2.mock
@@ -92,7 +93,8 @@ class SentryGestureListenerScrollTest {
                 assertEquals(fixture.target.javaClass.canonicalName, it.data["view.class"])
                 assertEquals("left", it.data["direction"])
                 assertEquals(INFO, it.level)
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -136,7 +138,8 @@ class SentryGestureListenerScrollTest {
                     assertEquals(fixture.target.javaClass.canonicalName, it.data["view.class"])
                     assertEquals("down", it.data["direction"])
                     assertEquals(INFO, it.level)
-                }
+                },
+                anyOrNull()
             )
             verify(fixture.hub).addBreadcrumb(
                 check<Breadcrumb> {
@@ -146,7 +149,8 @@ class SentryGestureListenerScrollTest {
                     assertEquals(fixture.target.javaClass.canonicalName, it.data["view.class"])
                     assertEquals("up", it.data["direction"])
                     assertEquals(INFO, it.level)
-                }
+                },
+                anyOrNull()
             )
         }
         verifyNoMoreInteractions(fixture.hub)

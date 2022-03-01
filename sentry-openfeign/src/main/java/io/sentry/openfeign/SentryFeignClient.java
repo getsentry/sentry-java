@@ -12,6 +12,7 @@ import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -87,7 +88,12 @@ public final class SentryFeignClient implements Client {
     if (response != null && response.body() != null && response.body().length() != null) {
       breadcrumb.setData("response_body_size", response.body().length());
     }
-    hub.addBreadcrumb(breadcrumb);
+
+    final Map<String, Object> hintMap = new HashMap<>();
+    hintMap.put("request", request);
+    hintMap.put("response", response);
+
+    hub.addBreadcrumb(breadcrumb, hintMap);
   }
 
   static final class RequestWrapper {

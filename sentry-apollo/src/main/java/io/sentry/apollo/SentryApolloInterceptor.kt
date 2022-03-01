@@ -112,7 +112,9 @@ class SentryApolloInterceptor(
                 httpResponse.body()?.contentLength().ifHasValidLength { contentLength ->
                     breadcrumb.setData("response_body_size", contentLength)
                 }
-                hub.addBreadcrumb(breadcrumb)
+
+                val hintsMap = mutableMapOf("request" to httpRequest, "response" to httpResponse)
+                hub.addBreadcrumb(breadcrumb, hintsMap)
             }
         }
     }

@@ -116,7 +116,10 @@ class SentryFragmentLifecycleCallbacks(
             category = "ui.fragment.lifecycle"
             level = INFO
         }
-        hub.addBreadcrumb(breadcrumb)
+
+        val hintsMap = mutableMapOf<String, Any>("Fragment" to fragment)
+
+        hub.addBreadcrumb(breadcrumb, hintsMap)
     }
 
     private fun getFragmentName(fragment: Fragment): String {

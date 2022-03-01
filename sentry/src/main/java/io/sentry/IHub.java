@@ -5,6 +5,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +28,7 @@ public interface IHub {
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint);
+  SentryId captureEvent(@NotNull SentryEvent event, @Nullable Map<String, Object> hint);
 
   /**
    * Captures the event.
@@ -67,7 +68,7 @@ public interface IHub {
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Object hint);
+  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Map<String, Object> hint);
 
   /**
    * Captures an envelope.
@@ -87,7 +88,7 @@ public interface IHub {
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint);
+  SentryId captureException(@NotNull Throwable throwable, @Nullable Map<String, Object> hint);
 
   /**
    * Captures the exception.
@@ -121,7 +122,7 @@ public interface IHub {
    * @param breadcrumb the breadcrumb
    * @param hint SDK specific but provides high level information about the origin of the event
    */
-  void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint);
+  void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Map<String, Object> hint);
 
   /**
    * Adds a breadcrumb to the current Scope
@@ -279,12 +280,12 @@ public interface IHub {
   SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
-      @Nullable Object hint);
+      @Nullable Map<String, Object> hint);
 
   @ApiStatus.Internal
   @NotNull
   default SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable Object hint) {
+      @NotNull SentryTransaction transaction, @Nullable Map<String, Object> hint) {
     return captureTransaction(transaction, null, hint);
   }
 

@@ -15,6 +15,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -125,10 +126,16 @@ public class SentryAppender extends AbstractAppender {
   @Override
   public void append(final @NotNull LogEvent eventObject) {
     if (eventObject.getLevel().isMoreSpecificThan(minimumEventLevel)) {
-      hub.captureEvent(createEvent(eventObject));
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put("syntheticException", eventObject);
+
+      hub.captureEvent(createEvent(eventObject), hintMap);
     }
     if (eventObject.getLevel().isMoreSpecificThan(minimumBreadcrumbLevel)) {
-      hub.addBreadcrumb(createBreadcrumb(eventObject));
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put("LogEvent", eventObject);
+
+      hub.addBreadcrumb(createBreadcrumb(eventObject), hintMap);
     }
   }
 

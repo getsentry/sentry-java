@@ -13,6 +13,7 @@ import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.TraceState
 import io.sentry.TransactionContext
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertThrows
@@ -63,7 +64,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
                 assertThat(it.status).isEqualTo(SpanStatus.OK)
             },
-            anyOrNull()
+            anyOrNull<TraceState>()
         )
     }
 
@@ -74,7 +75,7 @@ class SentryTransactionAdviceTest {
             check {
                 assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
-            anyOrNull()
+            anyOrNull<TraceState>()
         )
     }
 
@@ -86,7 +87,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("op")
             },
-            anyOrNull()
+            anyOrNull<TraceState>()
         )
     }
 
@@ -96,7 +97,7 @@ class SentryTransactionAdviceTest {
 
         sampleService.methodWithTransactionNameSet()
 
-        verify(hub, times(0)).captureTransaction(any(), any())
+        verify(hub, times(0)).captureTransaction(any(), any<TraceState>())
     }
 
     @Test
@@ -107,7 +108,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("op")
             },
-            anyOrNull()
+            anyOrNull<TraceState>()
         )
     }
 
@@ -119,7 +120,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
             },
-            anyOrNull()
+            anyOrNull<TraceState>()
         )
     }
 

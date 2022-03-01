@@ -661,7 +661,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
-        override fun execute(event: SentryEvent, hint: Any?): SentryEvent? = null
+        override fun execute(event: SentryEvent, hint: Map<String, Any>?): SentryEvent? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -672,7 +672,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeBreadcrumbCallback : SentryOptions.BeforeBreadcrumbCallback {
-        override fun execute(breadcrumb: Breadcrumb, hint: Any?): Breadcrumb? = null
+        override fun execute(breadcrumb: Breadcrumb, hint: Map<String, Any>?): Breadcrumb? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -683,7 +683,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomEventProcessor : EventProcessor {
-        override fun process(event: SentryEvent, hint: Any?) = null
+        override fun process(event: SentryEvent, hint: Map<String, Any>?) = null
     }
 
     @Configuration(proxyBeanMethods = false)

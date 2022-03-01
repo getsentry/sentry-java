@@ -60,7 +60,7 @@ public final class RateLimiter {
   }
 
   public @Nullable SentryEnvelope filter(
-      final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
+      final @NotNull SentryEnvelope envelope, final @Nullable Object sentrySdkHint) {
     // Optimize for/No allocations if no items are under 429
     List<SentryEnvelopeItem> dropItems = null;
     for (SentryEnvelopeItem item : envelope.getItems()) {
@@ -88,7 +88,7 @@ public final class RateLimiter {
       if (toSend.isEmpty()) {
         logger.log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
 
-        markHintWhenSendingFailed(hint, false);
+        markHintWhenSendingFailed(sentrySdkHint, false);
         return null;
       }
 
@@ -100,15 +100,16 @@ public final class RateLimiter {
   /**
    * It marks the hints when sending has failed, so it's not necessary to wait the timeout
    *
-   * @param hint the Hint
+   * @param sentrySdkHint the Hint
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(final @Nullable Object hint, final boolean retry) {
-    if (hint instanceof SubmissionResult) {
-      ((SubmissionResult) hint).setResult(false);
+  private static void markHintWhenSendingFailed(
+      final @Nullable Object sentrySdkHint, final boolean retry) {
+    if (sentrySdkHint instanceof SubmissionResult) {
+      ((SubmissionResult) sentrySdkHint).setResult(false);
     }
-    if (hint instanceof Retryable) {
-      ((Retryable) hint).setRetry(retry);
+    if (sentrySdkHint instanceof Retryable) {
+      ((Retryable) sentrySdkHint).setRetry(retry);
     }
   }
 

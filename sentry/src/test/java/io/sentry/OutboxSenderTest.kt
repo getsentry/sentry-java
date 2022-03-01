@@ -60,7 +60,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
         assertFalse(File(path).exists())
         // Additionally make sure we have a error logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -74,7 +76,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         verify(fixture.hub).captureEvent(eq(expected), any())
         assertFalse(File(path).exists())
@@ -108,7 +112,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope(fileName = "envelope-transaction.txt")
         assertTrue(File(path).exists())
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         verify(fixture.hub).captureTransaction(
             check {
@@ -135,7 +141,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         verify(fixture.hub).captureEvent(any(), any())
         assertFalse(File(path).exists())
@@ -151,7 +159,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope(fileName = "envelope_attachment.txt")
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         verify(fixture.hub).captureEnvelope(any(), any())
         assertFalse(File(path).exists())
@@ -167,7 +177,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -183,7 +195,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -194,7 +208,9 @@ class OutboxSenderTest {
     @Test
     fun `when processEnvelopeFile is called with a invalid path, logs error`() {
         val sut = fixture.getSut()
-        sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt", mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<Retryable>())
+        sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt", hintsMap)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), argWhere { it is FileNotFoundException })
     }
 

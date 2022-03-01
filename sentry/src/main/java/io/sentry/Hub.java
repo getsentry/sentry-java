@@ -12,6 +12,7 @@ import io.sentry.util.Pair;
 import java.io.Closeable;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -73,7 +74,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -125,7 +126,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(
-      final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
+      final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -151,7 +152,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Object hint) {
+      final @NotNull Throwable throwable, final @Nullable Map<String, Object> hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -233,10 +234,16 @@ public final class Hub implements IHub {
         // single envelope
         // Or create the envelope here with both items and call `captureEnvelope`
         if (pair.getPrevious() != null) {
-          item.getClient().captureSession(pair.getPrevious(), new SessionEndHint());
+          final Map<String, Object> hintMap = new HashMap<>();
+          hintMap.put("sentrySdkHint", new SessionEndHint());
+
+          item.getClient().captureSession(pair.getPrevious(), hintMap);
         }
 
-        item.getClient().captureSession(pair.getCurrent(), new SessionStartHint());
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put("sentrySdkHint", new SessionStartHint());
+
+        item.getClient().captureSession(pair.getCurrent(), hintMap);
       } else {
         options.getLogger().log(SentryLevel.WARNING, "Session could not be started.");
       }
@@ -253,7 +260,10 @@ public final class Hub implements IHub {
       final StackItem item = this.stack.peek();
       final Session previousSession = item.getScope().endSession();
       if (previousSession != null) {
-        item.getClient().captureSession(previousSession, new SessionEndHint());
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put("sentrySdkHint", new SessionEndHint());
+
+        item.getClient().captureSession(previousSession, hintMap);
       }
     }
   }
@@ -285,7 +295,8 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
+  public void addBreadcrumb(
+      final @NotNull Breadcrumb breadcrumb, final @Nullable Map<String, Object> hint) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -538,7 +549,7 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Object hint) {
+      final @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;

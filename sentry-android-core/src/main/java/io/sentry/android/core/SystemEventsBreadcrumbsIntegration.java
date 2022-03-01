@@ -213,7 +213,11 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         breadcrumb.setData("extras", newExtras);
       }
       breadcrumb.setLevel(SentryLevel.INFO);
-      hub.addBreadcrumb(breadcrumb);
+
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put("Intent", intent);
+
+      hub.addBreadcrumb(breadcrumb, hintMap);
     }
   }
 }

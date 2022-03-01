@@ -13,7 +13,9 @@ import io.sentry.protocol.Device;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -95,7 +97,11 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setCategory("device.orientation");
       breadcrumb.setData("position", orientation);
       breadcrumb.setLevel(SentryLevel.INFO);
-      hub.addBreadcrumb(breadcrumb);
+
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put("Configuration", newConfig);
+
+      hub.addBreadcrumb(breadcrumb, hintMap);
     }
   }
 

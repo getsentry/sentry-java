@@ -36,7 +36,7 @@ public class io/sentry/spring/SentryInitBeanPostProcessor : org/springframework/
 
 public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/spring/tracing/TransactionNameProvider;Ljavax/servlet/http/HttpServletRequest;)V
-	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryEvent;Ljava/util/Map;)Lio/sentry/SentryEvent;
 }
 
 public class io/sentry/spring/SentryRequestResolver {

@@ -6,6 +6,8 @@ import io.sentry.SentryLevel;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.annotation.Order;
@@ -38,7 +40,12 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
       final SentryEvent event = new SentryEvent(throwable);
       event.setLevel(SentryLevel.FATAL);
       event.setTransaction(TransactionNameProvider.provideTransactionName(serverWebExchange));
-      hub.captureEvent(event);
+
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put("request", serverWebExchange.getRequest());
+      hintMap.put("response", serverWebExchange.getResponse());
+
+      hub.captureEvent(event, hintMap);
     }
     return Mono.error(ex);
   }

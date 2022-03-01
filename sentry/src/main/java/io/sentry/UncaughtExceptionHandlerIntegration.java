@@ -9,6 +9,8 @@ import io.sentry.hints.SessionEnd;
 import io.sentry.protocol.Mechanism;
 import io.sentry.util.Objects;
 import java.io.Closeable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -93,7 +95,11 @@ public final class UncaughtExceptionHandlerIntegration
         final Throwable throwable = getUnhandledThrowable(thread, thrown);
         final SentryEvent event = new SentryEvent(throwable);
         event.setLevel(SentryLevel.FATAL);
-        hub.captureEvent(event, hint);
+
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put("sentrySdkHint", hint);
+
+        hub.captureEvent(event, hintMap);
         // Block until the event is flushed to disk
         if (!hint.waitFlush()) {
           options

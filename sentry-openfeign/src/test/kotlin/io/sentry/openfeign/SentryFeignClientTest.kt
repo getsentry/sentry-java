@@ -1,6 +1,7 @@
 package io.sentry.openfeign
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -134,7 +135,8 @@ class SentryFeignClientTest {
                 assertEquals("http", it.type)
                 assertEquals(13, it.data["response_body_size"])
                 assertEquals(12, it.data["request_body_size"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -147,7 +149,8 @@ class SentryFeignClientTest {
                 assertEquals("http", it.type)
                 assertEquals(0, it.data["response_body_size"])
                 assertEquals(12, it.data["request_body_size"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -165,7 +168,8 @@ class SentryFeignClientTest {
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
-            }
+            },
+            anyOrNull()
         )
     }
 

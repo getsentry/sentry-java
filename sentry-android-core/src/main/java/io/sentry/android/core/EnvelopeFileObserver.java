@@ -14,6 +14,8 @@ import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.Objects;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +58,11 @@ final class EnvelopeFileObserver extends FileObserver {
     // TODO: Only some event types should be pass through?
 
     final CachedEnvelopeHint hint = new CachedEnvelopeHint(flushTimeoutMillis, logger);
-    envelopeSender.processEnvelopeFile(this.rootPath + File.separator + relativePath, hint);
+
+    final Map<String, Object> hintMap = new HashMap<>();
+    hintMap.put("sentrySdkHint", hint);
+
+    envelopeSender.processEnvelopeFile(this.rootPath + File.separator + relativePath, hintMap);
   }
 
   private static final class CachedEnvelopeHint

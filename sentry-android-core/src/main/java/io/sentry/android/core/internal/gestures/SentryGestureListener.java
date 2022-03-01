@@ -10,6 +10,7 @@ import io.sentry.SentryLevel;
 import io.sentry.android.core.SentryAndroidOptions;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +52,11 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     final String direction = scrollState.calculateDirection(motionEvent);
-    addBreadcrumb(scrollTarget, scrollState.type, Collections.singletonMap("direction", direction));
+    addBreadcrumb(
+        scrollTarget,
+        scrollState.type,
+        Collections.singletonMap("direction", direction),
+        motionEvent);
     scrollState.reset();
   }
 
@@ -88,7 +93,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return false;
     }
 
-    addBreadcrumb(target, "click", Collections.emptyMap());
+    addBreadcrumb(target, "click", Collections.emptyMap(), motionEvent);
     return false;
   }
 
@@ -154,7 +159,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private void addBreadcrumb(
       final @NotNull View target,
       final @NotNull String eventType,
-      final @NotNull Map<String, Object> additionalData) {
+      final @NotNull Map<String, Object> additionalData,
+      final @Nullable MotionEvent motionEvent) {
     @NotNull String className;
     @Nullable String canonicalName = target.getClass().getCanonicalName();
     if (canonicalName != null) {
@@ -163,9 +169,13 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       className = target.getClass().getSimpleName();
     }
 
+    final Map<String, Object> hintMap = new HashMap<>();
+    hintMap.put("MotionEvent", motionEvent);
+
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(
-            eventType, ViewUtils.getResourceId(target), className, additionalData));
+            eventType, ViewUtils.getResourceId(target), className, additionalData),
+        hintMap);
   }
 
   private @Nullable View ensureWindowDecorView(final @NotNull String caller) {

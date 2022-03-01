@@ -20,6 +20,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.TraceState
 import io.sentry.TransactionContext
 import io.sentry.TransactionFinishedCallback
 import java.util.Date
@@ -160,7 +161,8 @@ class ActivityLifecycleIntegrationTest {
                 assertEquals("navigation", it.type)
                 assertEquals(SentryLevel.INFO, it.level)
                 // cant assert data, its not a public API
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -172,7 +174,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -183,7 +185,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityStarted(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -194,7 +196,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -205,7 +207,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityPaused(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -216,7 +218,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityStopped(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -227,7 +229,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivitySaveInstanceState(activity, fixture.bundle)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -238,7 +240,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -370,7 +372,7 @@ class ActivityLifecycleIntegrationTest {
             check {
                 assertEquals(SpanStatus.OK, it.status)
             },
-            anyOrNull()
+            anyOrNull<TraceState>()
         )
     }
 
@@ -391,7 +393,7 @@ class ActivityLifecycleIntegrationTest {
             check {
                 assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
             },
-            anyOrNull()
+            anyOrNull<TraceState>()
         )
     }
 
@@ -406,7 +408,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceState>())
     }
 
     @Test
@@ -417,7 +419,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceState>())
     }
 
     @Test
@@ -430,7 +432,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceState>())
     }
 
     @Test
@@ -499,7 +501,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(mock(), mock())
 
         sut.onActivityCreated(mock(), fixture.bundle)
-        verify(fixture.hub).captureTransaction(any(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceState>())
     }
 
     @Test
@@ -512,7 +514,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), any())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>())
     }
 
     @Test
@@ -539,7 +541,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceState>())
     }
 
     @Test

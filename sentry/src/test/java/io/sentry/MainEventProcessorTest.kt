@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.hints.ApplyScopeData
-import io.sentry.hints.Cached
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
@@ -113,7 +112,8 @@ class MainEventProcessorTest {
         val sut = fixture.getSut()
         val crashedThread = Thread.currentThread()
         var event = generateCrashedEvent(crashedThread)
-        event = sut.process(event, mock<ApplyScopeData>())
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<ApplyScopeData>())
+        event = sut.process(event, hintsMap)
 
         assertEquals("release", event.release)
         assertEquals("environment", event.environment)
@@ -146,7 +146,9 @@ class MainEventProcessorTest {
         val sut = fixture.getSut()
         val crashedThread = Thread.currentThread()
         var event = generateCrashedEvent(crashedThread)
-        event = sut.process(event, CachedEvent())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CachedEvent())
+        event = sut.process(event, hintsMap)
 
         assertNull(event.release)
         assertNull(event.environment)
@@ -160,7 +162,9 @@ class MainEventProcessorTest {
         val sut = fixture.getSut()
         val crashedThread = Thread.currentThread()
         var event = generateCrashedEvent(crashedThread)
-        event = sut.process(event, CustomCachedApplyScopeDataHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CustomCachedApplyScopeDataHint())
+        event = sut.process(event, hintsMap)
 
         assertEquals("release", event.release)
         assertEquals("environment", event.environment)
@@ -403,7 +407,9 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(attachThreads = false)
 
         var event = SentryEvent()
-        event = sut.process(event, CustomCachedApplyScopeDataHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CustomCachedApplyScopeDataHint())
+        event = sut.process(event, hintsMap)
 
         assertNull(event.threads)
     }
@@ -453,6 +459,4 @@ class MainEventProcessorTest {
         val actualThrowable = UncaughtExceptionHandlerIntegration.getUnhandledThrowable(crashedThread, mockThrowable)
         throwable = actualThrowable
     }
-
-    internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData
 }

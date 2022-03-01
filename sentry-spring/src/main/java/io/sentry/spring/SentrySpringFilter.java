@@ -15,6 +15,8 @@ import io.sentry.spring.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -60,7 +62,11 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
       hub.pushScope();
       try {
-        hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()));
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put("request", servletRequest);
+        hintMap.put("response", response);
+
+        hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()), hintMap);
         configureScope(request);
         filterChain.doFilter(request, response);
       } finally {
@@ -142,7 +148,8 @@ public class SentrySpringFilter extends OncePerRequestFilter {
     }
 
     @Override
-    public @NotNull SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
+    public @NotNull SentryEvent process(
+        @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
       if (event.getRequest() != null) {
         event.getRequest().setData(requestPayloadExtractor.extract(request, options));
       }

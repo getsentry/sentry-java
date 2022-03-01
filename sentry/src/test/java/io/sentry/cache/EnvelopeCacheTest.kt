@@ -90,7 +90,9 @@ class EnvelopeCacheTest {
         val file = File(fixture.options.cacheDirPath!!)
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
-        cache.store(envelope, SessionStartHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        cache.store(envelope, hintsMap)
 
         val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
@@ -105,12 +107,15 @@ class EnvelopeCacheTest {
         val file = File(fixture.options.cacheDirPath!!)
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
-        cache.store(envelope, SessionStartHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        cache.store(envelope, hintsMap)
 
         val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
 
-        cache.store(envelope, SessionEndHint())
+        hintsMap["sentrySdkHint"] = SessionEndHint()
+        cache.store(envelope, hintsMap)
         assertFalse(currentFile.exists())
 
         file.deleteRecursively()
@@ -123,7 +128,9 @@ class EnvelopeCacheTest {
         val file = File(fixture.options.cacheDirPath!!)
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
-        cache.store(envelope, SessionStartHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        cache.store(envelope, hintsMap)
 
         val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
@@ -141,11 +148,13 @@ class EnvelopeCacheTest {
         val cache = fixture.getSUT()
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
-        cache.store(envelope, SessionStartHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        cache.store(envelope, hintsMap)
 
         val newEnvelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        cache.store(newEnvelope, SessionStartHint())
+        cache.store(newEnvelope, hintsMap)
         verify(fixture.logger).log(eq(SentryLevel.WARNING), eq("Current session is not ended, we'd need to end it."))
     }
 
@@ -159,11 +168,13 @@ class EnvelopeCacheTest {
         assertTrue(markerFile.exists())
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
-        cache.store(envelope, SessionStartHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        cache.store(envelope, hintsMap)
 
         val newEnvelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        cache.store(newEnvelope, SessionStartHint())
+        cache.store(newEnvelope, hintsMap)
         verify(fixture.logger).log(eq(SentryLevel.INFO), eq("Crash marker file exists, last Session is gonna be Crashed."))
         assertFalse(markerFile.exists())
         file.deleteRecursively()
@@ -179,11 +190,13 @@ class EnvelopeCacheTest {
         val date = "2020-02-07T14:16:00.000Z"
         markerFile.writeText(charset = Charsets.UTF_8, text = date)
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
-        cache.store(envelope, SessionStartHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        cache.store(envelope, hintsMap)
 
         val newEnvelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        cache.store(newEnvelope, SessionStartHint())
+        cache.store(newEnvelope, hintsMap)
         assertFalse(markerFile.exists())
         file.deleteRecursively()
         File(fixture.options.cacheDirPath!!).deleteRecursively()
@@ -199,14 +212,16 @@ class EnvelopeCacheTest {
         assertTrue(markerFile.exists())
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
-        cache.store(envelope, SessionStartHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        cache.store(envelope, hintsMap)
 
         val newEnvelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
         // since the first store call would set as readCrashedLastRun=true
         SentryCrashLastRunState.getInstance().reset()
 
-        cache.store(newEnvelope, SessionStartHint())
+        cache.store(newEnvelope, hintsMap)
         verify(fixture.logger).log(eq(SentryLevel.INFO), eq("Crash marker file exists, last Session is gonna be Crashed."))
         assertFalse(markerFile.exists())
         file.deleteRecursively()
@@ -224,7 +239,9 @@ class EnvelopeCacheTest {
         assertTrue(markerFile.exists())
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
-        cache.store(envelope, SessionStartHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        cache.store(envelope, hintsMap)
 
         // passing empty string since readCrashedLastRun is already set
         assertTrue(SentryCrashLastRunState.getInstance().isCrashedLastRun("", false)!!)
@@ -239,7 +256,9 @@ class EnvelopeCacheTest {
         assertFalse(markerFile.exists())
 
         val envelope = SentryEnvelope.from(fixture.serializer, SentryEvent(), null)
-        cache.store(envelope, DiskFlushHint())
+
+        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to DiskFlushHint())
+        cache.store(envelope, hintsMap)
 
         assertTrue(markerFile.exists())
     }
