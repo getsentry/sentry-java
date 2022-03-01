@@ -33,7 +33,7 @@ public final class SentryNdk {
     SentryNdkUtil.addPackage(options.getSdkVersion());
     initSentryNative(options);
 
-    // only add scope sync if the feature is enabled.
+    // only add scope sync observer if the scope sync is enabled.
     if (options.isEnableScopeSync()) {
       options.addScopeObserver(new NdkScopeObserver(options));
     }
