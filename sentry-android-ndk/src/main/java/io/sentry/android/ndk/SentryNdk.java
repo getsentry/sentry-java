@@ -32,7 +32,11 @@ public final class SentryNdk {
   public static void init(@NotNull final SentryAndroidOptions options) {
     SentryNdkUtil.addPackage(options.getSdkVersion());
     initSentryNative(options);
-    options.addScopeObserver(new NdkScopeObserver(options));
+
+    // only add scope sync if the feature is enabled.
+    if (options.isEnableScopeSync()) {
+      options.addScopeObserver(new NdkScopeObserver(options));
+    }
 
     options.setDebugImagesLoader(new DebugImagesLoader(options, new NativeModuleListLoader()));
   }

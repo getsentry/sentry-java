@@ -249,7 +249,10 @@ public class SentryOptions {
   /** list of scope observers */
   private final @NotNull List<IScopeObserver> observers = new ArrayList<>();
 
-  /** Enable the Java to NDK Scope sync */
+  /**
+   * Enable the Java to NDK Scope sync.
+   * The default value for Java is disabled and enabled for Android.
+   */
   private boolean enableScopeSync;
 
   /**
