@@ -173,7 +173,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             hub.captureTransaction(transaction, envelope.getHeader().getTrace(), hint);
             logItemCaptured(currentItem);
 
-            if (!waitFlush(hint)) {
+            if (!waitFlush(sentrySdkHint)) {
               logTimeout(transaction.getEventId());
               break;
             }

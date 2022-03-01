@@ -80,7 +80,9 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
     final Map<String, Object> hintMap = new HashMap<>();
     hintMap.put("request", request);
     hintMap.put("requestBody", body);
-    hintMap.put("response", response);
+    if (response != null) {
+      hintMap.put("response", response);
+    }
 
     hub.addBreadcrumb(breadcrumb, hintMap);
   }

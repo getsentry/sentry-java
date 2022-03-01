@@ -160,7 +160,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       final @NotNull View target,
       final @NotNull String eventType,
       final @NotNull Map<String, Object> additionalData,
-      final @Nullable MotionEvent motionEvent) {
+      final @NotNull MotionEvent motionEvent) {
     @NotNull String className;
     @Nullable String canonicalName = target.getClass().getCanonicalName();
     if (canonicalName != null) {

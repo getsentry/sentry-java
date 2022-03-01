@@ -191,7 +191,7 @@ class SentryClientTest {
         fixture.sentryOptions.environment = "not to be applied"
         val sut = fixture.getSut()
 
-        val hintsMap = mutableMapOf<String, Any>()
+        val hintsMap = mutableMapOf<String, Any?>("sentrySdkHint" to Object())
         sut.captureEvent(event, hintsMap)
         verify(fixture.transport).send(any(), eq(hintsMap))
     }
@@ -1292,7 +1292,7 @@ class SentryClientTest {
 
     private fun eventProcessorThrows(): EventProcessor {
         return object : EventProcessor {
-            override fun process(event: SentryEvent, hint: Map<String, Any>?): SentryEvent? {
+            override fun process(event: SentryEvent, hint: Map<String, Any?>?): SentryEvent? {
                 throw Throwable()
             }
         }

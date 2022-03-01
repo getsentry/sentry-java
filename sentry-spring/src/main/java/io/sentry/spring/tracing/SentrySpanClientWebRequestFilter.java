@@ -76,7 +76,9 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
     final Map<String, Object> hintMap = new HashMap<>();
     hintMap.put("request", request);
-    hintMap.put("response", response);
+    if (response != null) {
+      hintMap.put("response", response);
+    }
 
     hub.addBreadcrumb(breadcrumb, hintMap);
   }

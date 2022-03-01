@@ -67,7 +67,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
     if (eventObject.getLevel().isGreaterOrEqual(minimumBreadcrumbLevel)) {
       final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put("ILoggingEvent", eventObject);
+      hintMap.put("LoggingEvent", eventObject);
 
       Sentry.addBreadcrumb(createBreadcrumb(eventObject), hintMap);
     }

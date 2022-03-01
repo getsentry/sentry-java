@@ -59,11 +59,15 @@ class SentryOkHttpInterceptor(
             request.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("request_body_size", it)
             }
-            response?.body?.contentLength().ifHasValidLength {
-                breadcrumb.setData("response_body_size", it)
-            }
 
-            val hintsMap = mutableMapOf("request" to request, "response" to response)
+            val hintsMap = mutableMapOf<String, Any?>("request" to request)
+            response?.let {
+                it.body?.contentLength().ifHasValidLength { responseBodySize ->
+                    breadcrumb.setData("response_body_size", responseBodySize)
+                }
+
+                hintsMap["response"] = it
+            }
 
             hub.addBreadcrumb(breadcrumb, hintsMap)
         }

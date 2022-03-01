@@ -91,7 +91,9 @@ public final class SentryFeignClient implements Client {
 
     final Map<String, Object> hintMap = new HashMap<>();
     hintMap.put("request", request);
-    hintMap.put("response", response);
+    if (response != null) {
+      hintMap.put("response", response);
+    }
 
     hub.addBreadcrumb(breadcrumb, hintMap);
   }
