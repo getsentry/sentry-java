@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#)
+
 ## 5.6.2-beta.2
 
 * Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
