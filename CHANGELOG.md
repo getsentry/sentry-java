@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Enable enableScopeSync by default for Android (#1928)
+
 ## 5.6.2-beta.2
 
 * Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)

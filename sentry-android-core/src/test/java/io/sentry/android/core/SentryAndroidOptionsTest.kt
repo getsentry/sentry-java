@@ -55,6 +55,13 @@ class SentryAndroidOptionsTest {
         assertNotNull(sentryOptions.debugImagesLoader)
     }
 
+    @Test
+    fun `enable scope sync by default for Android`() {
+        val sentryOptions = SentryAndroidOptions()
+
+        assertTrue(sentryOptions.isEnableScopeSync)
+    }
+
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
         override fun clearDebugImages() {}

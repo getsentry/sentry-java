@@ -91,6 +91,9 @@ public final class SentryAndroidOptions extends SentryOptions {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
     setAttachServerName(false);
+
+    // enable scope sync for Android by default
+    setEnableScopeSync(true);
   }
 
   private @NotNull SdkVersion createSdkVersion() {
