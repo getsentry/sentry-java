@@ -551,14 +551,14 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads enableScopeSync to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.NDK_SCOPE_SYNC_ENABLE to true)
+        val bundle = bundleOf(ManifestMetadataReader.NDK_SCOPE_SYNC_ENABLE to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(fixture.options.isEnableScopeSync)
+        assertFalse(fixture.options.isEnableScopeSync)
     }
 
     @Test
@@ -570,7 +570,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(fixture.options.isEnableScopeSync)
+        assertTrue(fixture.options.isEnableScopeSync)
     }
 
     @Test
