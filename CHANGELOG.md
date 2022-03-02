@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.6.2-beta.3
 
 * Bump: AGP to 7.1.2 (#1930)
 
