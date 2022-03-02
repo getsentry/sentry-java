@@ -112,7 +112,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut()
         val crashedThread = Thread.currentThread()
         var event = generateCrashedEvent(crashedThread)
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<ApplyScopeData>())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to mock<ApplyScopeData>())
         event = sut.process(event, hintsMap)
 
         assertEquals("release", event.release)
@@ -147,7 +147,7 @@ class MainEventProcessorTest {
         val crashedThread = Thread.currentThread()
         var event = generateCrashedEvent(crashedThread)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CachedEvent())
         event = sut.process(event, hintsMap)
 
         assertNull(event.release)
@@ -163,7 +163,7 @@ class MainEventProcessorTest {
         val crashedThread = Thread.currentThread()
         var event = generateCrashedEvent(crashedThread)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CustomCachedApplyScopeDataHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CustomCachedApplyScopeDataHint())
         event = sut.process(event, hintsMap)
 
         assertEquals("release", event.release)
@@ -408,7 +408,7 @@ class MainEventProcessorTest {
 
         var event = SentryEvent()
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CustomCachedApplyScopeDataHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CustomCachedApplyScopeDataHint())
         event = sut.process(event, hintsMap)
 
         assertNull(event.threads)

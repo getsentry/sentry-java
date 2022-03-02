@@ -235,13 +235,13 @@ public final class Hub implements IHub {
         // Or create the envelope here with both items and call `captureEnvelope`
         if (pair.getPrevious() != null) {
           final Map<String, Object> hintMap = new HashMap<>();
-          hintMap.put("sentrySdkHint", new SessionEndHint());
+          hintMap.put("Sentry:TypeCheckHint", new SessionEndHint());
 
           item.getClient().captureSession(pair.getPrevious(), hintMap);
         }
 
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("sentrySdkHint", new SessionStartHint());
+        hintMap.put("Sentry:TypeCheckHint", new SessionStartHint());
 
         item.getClient().captureSession(pair.getCurrent(), hintMap);
       } else {
@@ -261,7 +261,7 @@ public final class Hub implements IHub {
       final Session previousSession = item.getScope().endSession();
       if (previousSession != null) {
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("sentrySdkHint", new SessionEndHint());
+        hintMap.put("Sentry:TypeCheckHint", new SessionEndHint());
 
         item.getClient().captureSession(previousSession, hintMap);
       }

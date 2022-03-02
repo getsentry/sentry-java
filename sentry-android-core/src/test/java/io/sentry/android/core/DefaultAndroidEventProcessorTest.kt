@@ -162,7 +162,7 @@ class DefaultAndroidEventProcessorTest {
     fun `When Event and hint is Cached, data should not be applied`() {
         val sut = fixture.getSut(context)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CachedEvent())
         assertNotNull(sut.process(SentryEvent(), hintsMap)) {
             assertNull(it.contexts.app)
             assertNull(it.debugMeta)
@@ -174,7 +174,7 @@ class DefaultAndroidEventProcessorTest {
     fun `When Transaction and hint is Cached, data should not be applied`() {
         val sut = fixture.getSut(context)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CachedEvent())
         assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), hintsMap)) {
             assertNull(it.contexts.app)
             assertNull(it.dist)
@@ -185,7 +185,7 @@ class DefaultAndroidEventProcessorTest {
     fun `When Event and hint is Cached, userId is applied anyway`() {
         val sut = fixture.getSut(context)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CachedEvent())
         assertNotNull(sut.process(SentryEvent(), hintsMap)) {
             assertNotNull(it.user)
         }
@@ -195,7 +195,7 @@ class DefaultAndroidEventProcessorTest {
     fun `When Transaction and hint is Cached, userId is applied anyway`() {
         val sut = fixture.getSut(context)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CachedEvent())
         assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), hintsMap)) {
             assertNotNull(it.user)
         }
@@ -258,7 +258,7 @@ class DefaultAndroidEventProcessorTest {
     fun `Processor won't throw exception when theres a hint`() {
         val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CachedEvent())
         processor.process(SentryEvent(), hintsMap)
 
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
@@ -311,7 +311,7 @@ class DefaultAndroidEventProcessorTest {
     fun `When hint is Cached, memory data should not be applied`() {
         val sut = fixture.getSut(context)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CachedEvent())
         assertNotNull(sut.process(SentryEvent(), hintsMap)) {
             assertNull(it.contexts.device!!.freeMemory)
             assertNull(it.contexts.device!!.isLowMemory)

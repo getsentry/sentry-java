@@ -97,7 +97,7 @@ public final class UncaughtExceptionHandlerIntegration
         event.setLevel(SentryLevel.FATAL);
 
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("sentrySdkHint", hint);
+        hintMap.put("Sentry:TypeCheckHint", hint);
 
         hub.captureEvent(event, hintMap);
         // Block until the event is flushed to disk

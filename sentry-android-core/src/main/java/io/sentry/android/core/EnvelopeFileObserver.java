@@ -60,7 +60,7 @@ final class EnvelopeFileObserver extends FileObserver {
     final CachedEnvelopeHint hint = new CachedEnvelopeHint(flushTimeoutMillis, logger);
 
     final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put("sentrySdkHint", hint);
+    hintMap.put("Sentry:TypeCheckHint", hint);
 
     envelopeSender.processEnvelopeFile(this.rootPath + File.separator + relativePath, hintMap);
   }

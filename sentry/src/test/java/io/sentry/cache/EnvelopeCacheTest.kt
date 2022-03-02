@@ -91,7 +91,7 @@ class EnvelopeCacheTest {
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to SessionStartHint())
         cache.store(envelope, hintsMap)
 
         val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
@@ -108,13 +108,13 @@ class EnvelopeCacheTest {
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to SessionStartHint())
         cache.store(envelope, hintsMap)
 
         val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
         assertTrue(currentFile.exists())
 
-        hintsMap["sentrySdkHint"] = SessionEndHint()
+        hintsMap["Sentry:TypeCheckHint"] = SessionEndHint()
         cache.store(envelope, hintsMap)
         assertFalse(currentFile.exists())
 
@@ -129,7 +129,7 @@ class EnvelopeCacheTest {
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to SessionStartHint())
         cache.store(envelope, hintsMap)
 
         val currentFile = File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_CURRENT_SESSION_FILE")
@@ -149,7 +149,7 @@ class EnvelopeCacheTest {
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to SessionStartHint())
         cache.store(envelope, hintsMap)
 
         val newEnvelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
@@ -169,7 +169,7 @@ class EnvelopeCacheTest {
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to SessionStartHint())
         cache.store(envelope, hintsMap)
 
         val newEnvelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
@@ -191,7 +191,7 @@ class EnvelopeCacheTest {
         markerFile.writeText(charset = Charsets.UTF_8, text = date)
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to SessionStartHint())
         cache.store(envelope, hintsMap)
 
         val newEnvelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
@@ -213,7 +213,7 @@ class EnvelopeCacheTest {
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to SessionStartHint())
         cache.store(envelope, hintsMap)
 
         val newEnvelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
@@ -240,7 +240,7 @@ class EnvelopeCacheTest {
 
         val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to SessionStartHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to SessionStartHint())
         cache.store(envelope, hintsMap)
 
         // passing empty string since readCrashedLastRun is already set
@@ -257,7 +257,7 @@ class EnvelopeCacheTest {
 
         val envelope = SentryEnvelope.from(fixture.serializer, SentryEvent(), null)
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to DiskFlushHint())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to DiskFlushHint())
         cache.store(envelope, hintsMap)
 
         assertTrue(markerFile.exists())

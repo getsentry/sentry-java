@@ -28,6 +28,6 @@ public final class HintUtils {
     if (hint == null) {
       return null;
     }
-    return hint.get("sentrySdkHint");
+    return hint.get("Sentry:TypeCheckHint");
   }
 }

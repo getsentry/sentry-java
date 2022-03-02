@@ -67,7 +67,7 @@ abstract class DirectoryProcessor {
         final SendCachedEnvelopeHint hint = new SendCachedEnvelopeHint(flushTimeoutMillis, logger);
 
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("sentrySdkHint", hint);
+        hintMap.put("Sentry:TypeCheckHint", hint);
 
         processFile(file, hintMap);
       }

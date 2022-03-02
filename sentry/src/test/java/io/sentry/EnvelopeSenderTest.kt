@@ -96,7 +96,7 @@ class EnvelopeSenderTest {
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", EnvelopeCache.SUFFIX_ENVELOPE_FILE).toUri())
         testFile.deleteOnExit()
 
-        val hintsMap = mutableMapOf<String, Any>("sentrySdkHint" to mock<Retryable>())
+        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to mock<Retryable>())
         sut.processFile(testFile, hintsMap)
         verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached envelope %s"), eq(testFile.absolutePath))
         verifyNoMoreInteractions(fixture.hub)
