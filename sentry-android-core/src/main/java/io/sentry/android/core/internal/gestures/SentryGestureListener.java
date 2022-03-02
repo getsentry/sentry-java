@@ -171,6 +171,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     final Map<String, Object> hintMap = new HashMap<>();
     hintMap.put("MotionEvent", motionEvent);
+    hintMap.put("View", target);
 
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(
