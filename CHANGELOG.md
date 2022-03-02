@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#)
+* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
 
 ## 5.6.2-beta.2
 
