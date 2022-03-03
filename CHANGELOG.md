@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 5.6.2
+
+### Various fixes & improvements
+
+- Prepare 5.6.2-beta.4 (296085d4)
+- Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931) by @marandaneto
 
 * Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
 * Fix: ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
