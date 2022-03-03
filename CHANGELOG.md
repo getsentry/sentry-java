@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.6.2-beta.3
 
 * Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
 * Bump: AGP to 7.1.2 (#1930)
