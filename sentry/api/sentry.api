@@ -1481,6 +1481,41 @@ public abstract interface class io/sentry/TransactionFinishedCallback {
 	public abstract fun execute (Lio/sentry/ITransaction;)V
 }
 
+public final class io/sentry/TypeCheckHint {
+	public static final field ANDROID_ACTIVITY Ljava/lang/String;
+	public static final field ANDROID_CONFIGURATION Ljava/lang/String;
+	public static final field ANDROID_FRAGMENT Ljava/lang/String;
+	public static final field ANDROID_INTENT Ljava/lang/String;
+	public static final field ANDROID_MOTION_EVENT Ljava/lang/String;
+	public static final field ANDROID_SENSOR_EVENT Ljava/lang/String;
+	public static final field ANDROID_VIEW Ljava/lang/String;
+	public static final field APOLLO_REQUEST Ljava/lang/String;
+	public static final field APOLLO_RESPONSE Ljava/lang/String;
+	public static final field GRAPHQL_HANDLER_PARAMETERS Ljava/lang/String;
+	public static final field JUL_LOG_RECORD Ljava/lang/String;
+	public static final field LOG4J_LOG_EVENT Ljava/lang/String;
+	public static final field LOGBACK_LOGGING_EVENT Ljava/lang/String;
+	public static final field OKHTTP_REQUEST Ljava/lang/String;
+	public static final field OKHTTP_RESPONSE Ljava/lang/String;
+	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
+	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
+	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
+	public static final field SENTRY_TYPE_CHECK_HINT Ljava/lang/String;
+	public static final field SERVLET_REQUEST Ljava/lang/String;
+	public static final field SPRING_REQUEST_FILTER_REQUEST Ljava/lang/String;
+	public static final field SPRING_REQUEST_FILTER_RESPONSE Ljava/lang/String;
+	public static final field SPRING_REQUEST_INTERCEPTOR_REQUEST Ljava/lang/String;
+	public static final field SPRING_REQUEST_INTERCEPTOR_REQUEST_BODY Ljava/lang/String;
+	public static final field SPRING_REQUEST_INTERCEPTOR_RESPONSE Ljava/lang/String;
+	public static final field SPRING_RESOLVER_REQUEST Ljava/lang/String;
+	public static final field SPRING_RESOLVER_RESPONSE Ljava/lang/String;
+	public static final field WEBFLUX_EXCEPTION_HANDLER_REQUEST Ljava/lang/String;
+	public static final field WEBFLUX_EXCEPTION_HANDLER_RESPONSE Ljava/lang/String;
+	public static final field WEBFLUX_FILTER_REQUEST Ljava/lang/String;
+	public static final field WEBFLUX_FILTER_RESPONSE Ljava/lang/String;
+	public fun <init> ()V
+}
+
 public final class io/sentry/UncaughtExceptionHandlerIntegration : io/sentry/Integration, java/io/Closeable, java/lang/Thread$UncaughtExceptionHandler {
 	public fun <init> ()V
 	public fun close ()V

@@ -1,5 +1,7 @@
 package io.sentry.graphql;
 
+import static io.sentry.TypeCheckHint.GRAPHQL_HANDLER_PARAMETERS;
+
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
@@ -33,7 +35,7 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   public DataFetcherExceptionHandlerResult onException(
       final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
     final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put("DataFetcherExceptionHandlerParameters", handlerParameters);
+    hintMap.put(GRAPHQL_HANDLER_PARAMETERS, handlerParameters);
 
     hub.captureException(handlerParameters.getException(), hintMap);
     return delegate.onException(handlerParameters);
