@@ -22,7 +22,7 @@ public final class TypeCheckHint {
   public static final String ANDROID_MOTION_EVENT = "android:motionEvent";
   /** Used for View breadcrumbs. */
   public static final String ANDROID_VIEW = "android:view";
-  /** Used for View breadcrumbs. */
+  /** Used for Fragment breadcrumbs. */
   public static final String ANDROID_FRAGMENT = "android:fragment";
 
   /** Used for OkHttp response breadcrumbs. */
