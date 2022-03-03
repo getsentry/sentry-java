@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 5.6.2
 
 ### Various fixes & improvements
