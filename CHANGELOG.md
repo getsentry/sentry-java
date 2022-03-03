@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 5.6.2
+
+### Various fixes & improvements
+
+- Prepare 5.6.2-beta.4 (296085d4)
+- Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931) by @marandaneto
 
 * Feat: Enable enableScopeSync by default for Android (#1928)
 
