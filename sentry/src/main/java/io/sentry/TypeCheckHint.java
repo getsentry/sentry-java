@@ -8,7 +8,7 @@ public final class TypeCheckHint {
   @ApiStatus.Internal public static final String SENTRY_TYPE_CHECK_HINT = "sentry:typeCheckHint";
 
   /** Used for Synthetic exceptions. */
-  public static final String SENTRY_SYNTHETIC_EXCEPTION = "sentry:syntheticException";
+  public static final String SENTRY_SYNTHETIC_EXCEPTION = "syntheticException";
 
   /** Used for Activity breadcrumbs. */
   public static final String ANDROID_ACTIVITY = "android:activity";
