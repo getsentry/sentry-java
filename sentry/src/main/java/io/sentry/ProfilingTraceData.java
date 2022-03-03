@@ -2,6 +2,7 @@ package io.sentry;
 
 import java.io.File;
 import java.util.Locale;
+import java.util.UUID;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,10 +22,9 @@ public final class ProfilingTraceData {
   private final @NotNull String device_os_name;
   private final @NotNull String device_os_version;
   private final @NotNull String platform;
+  private final @NotNull String build_id;
 
   // Transaction info
-  private final @NotNull String error_code;
-  private final @NotNull String error_description;
   private final @NotNull String transaction_name;
 
   // App info
@@ -45,40 +45,37 @@ public final class ProfilingTraceData {
       @NotNull File traceFile,
       @NotNull ITransaction transaction,
       int sdkInt,
-      @NotNull String deviceManufacturer,
-      @NotNull String deviceModel,
-      @NotNull String deviceOsBuildNumber,
-      @NotNull String deviceOsName,
-      @NotNull String deviceOsVersion,
-      @NotNull String versionName,
-      @NotNull String versionCode,
+      @Nullable String deviceManufacturer,
+      @Nullable String deviceModel,
+      @Nullable String deviceOsVersion,
+      @Nullable String buildId,
+      @Nullable String versionName,
+      @Nullable String versionCode,
       @Nullable String environment) {
     this.traceFile = traceFile;
 
     // Device metadata
     this.android_api_level = sdkInt;
     this.device_locale = Locale.getDefault().toString();
-    this.device_manufacturer = deviceManufacturer;
-    this.device_model = deviceModel;
-    this.device_os_build_number = deviceOsBuildNumber;
-    this.device_os_name = deviceOsName;
-    this.device_os_version = deviceOsVersion;
+    this.device_manufacturer = deviceManufacturer != null ? deviceManufacturer : "";
+    this.device_model = deviceModel != null ? deviceModel : "";
+    this.device_os_build_number = "";
+    this.device_os_name = "android";
+    this.device_os_version = deviceOsVersion != null ? deviceOsVersion : "";
     this.platform = "android";
+    this.build_id = buildId != null ? buildId : "";
 
     // Transaction info
-    this.error_code = transaction.getOperation();
-    this.error_description =
-        transaction.getDescription() != null ? transaction.getDescription() : "";
     this.transaction_name = transaction.getName();
 
     // App info
-    this.version_name = versionName;
-    this.version_code = versionCode;
+    this.version_name = versionName != null ? versionName : "";
+    this.version_code = versionCode != null ? versionCode : "";
 
     // Stacktrace context
     this.transaction_id = transaction.getEventId().toString();
     this.trace_id = transaction.getSpanContext().getTraceId().toString();
-    this.stacktrace_id = transaction.getSpanContext().getSpanId().toString();
+    this.stacktrace_id = UUID.randomUUID().toString();
     this.environment = environment != null ? environment : "";
   }
 
@@ -122,12 +119,8 @@ public final class ProfilingTraceData {
     return platform;
   }
 
-  public @NotNull String getError_code() {
-    return error_code;
-  }
-
-  public @NotNull String getError_description() {
-    return error_description;
+  public @NotNull String getBuild_id() {
+    return build_id;
   }
 
   public @NotNull String getTransaction_name() {

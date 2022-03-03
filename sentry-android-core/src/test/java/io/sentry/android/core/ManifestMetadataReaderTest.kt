@@ -692,14 +692,14 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads enableTracesProfiling to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACES_PROFILING_ENABLE to false)
+        val bundle = bundleOf(ManifestMetadataReader.TRACES_PROFILING_ENABLE to true)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(fixture.options.isProfilingEnabled)
+        assertTrue(fixture.options.isProfilingEnabled)
     }
 
     @Test
@@ -711,7 +711,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(fixture.options.isProfilingEnabled)
+        assertFalse(fixture.options.isProfilingEnabled)
     }
 
     @Test

@@ -12,12 +12,6 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/AndroidTraceTransactionListener : io/sentry/ITransactionListener {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
-	public fun onTransactionFinish (Lio/sentry/ITransaction;)Lio/sentry/ProfilingTraceData;
-	public fun onTransactionStart (Lio/sentry/ITransaction;)V
-}
-
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V

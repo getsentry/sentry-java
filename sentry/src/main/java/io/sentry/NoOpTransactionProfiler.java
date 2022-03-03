@@ -3,13 +3,13 @@ package io.sentry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class NoOpTransactionListener implements ITransactionListener {
+public final class NoOpTransactionProfiler implements ITransactionProfiler {
 
-  private static final NoOpTransactionListener instance = new NoOpTransactionListener();
+  private static final NoOpTransactionProfiler instance = new NoOpTransactionProfiler();
 
-  private NoOpTransactionListener() {}
+  private NoOpTransactionProfiler() {}
 
-  public static NoOpTransactionListener getInstance() {
+  public static NoOpTransactionProfiler getInstance() {
     return instance;
   }
 

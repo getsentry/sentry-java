@@ -207,7 +207,7 @@ public final class SentryEnvelopeItem {
   public static @Nullable SentryEnvelopeItem fromProfilingTrace(
       final @NotNull ProfilingTraceData profilingTraceData,
       final long maxTraceFileSize,
-      ISerializer serializer)
+      final @NotNull ISerializer serializer)
       throws SentryEnvelopeException {
 
     File traceFile = profilingTraceData.getTraceFile();

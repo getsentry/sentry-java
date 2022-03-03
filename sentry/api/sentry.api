@@ -349,7 +349,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
 }
 
-public abstract interface class io/sentry/ITransactionListener {
+public abstract interface class io/sentry/ITransactionProfiler {
 	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;)Lio/sentry/ProfilingTraceData;
 	public abstract fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
@@ -492,8 +492,8 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun traceState ()Lio/sentry/TraceState;
 }
 
-public final class io/sentry/NoOpTransactionListener : io/sentry/ITransactionListener {
-	public static fun getInstance ()Lio/sentry/NoOpTransactionListener;
+public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionProfiler {
+	public static fun getInstance ()Lio/sentry/NoOpTransactionProfiler;
 	public fun onTransactionFinish (Lio/sentry/ITransaction;)Lio/sentry/ProfilingTraceData;
 	public fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
@@ -515,8 +515,9 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 }
 
 public final class io/sentry/ProfilingTraceData {
-	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAndroid_api_level ()I
+	public fun getBuild_id ()Ljava/lang/String;
 	public fun getDevice_locale ()Ljava/lang/String;
 	public fun getDevice_manufacturer ()Ljava/lang/String;
 	public fun getDevice_model ()Ljava/lang/String;
@@ -524,8 +525,6 @@ public final class io/sentry/ProfilingTraceData {
 	public fun getDevice_os_name ()Ljava/lang/String;
 	public fun getDevice_os_version ()Ljava/lang/String;
 	public fun getEnvironment ()Ljava/lang/String;
-	public fun getError_code ()Ljava/lang/String;
-	public fun getError_description ()Ljava/lang/String;
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getStacktrace ()Ljava/lang/String;
 	public fun getStacktrace_id ()Ljava/lang/String;
@@ -916,7 +915,7 @@ public class io/sentry/SentryOptions {
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
 	public fun getTracingOrigins ()Ljava/util/List;
-	public fun getTransactionListener ()Lio/sentry/ITransactionListener;
+	public fun getTransactionListener ()Lio/sentry/ITransactionProfiler;
 	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
 	public fun isAttachServerName ()Z
@@ -987,7 +986,7 @@ public class io/sentry/SentryOptions {
 	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
-	public fun setTransactionListener (Lio/sentry/ITransactionListener;)V
+	public fun setTransactionListener (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
 }

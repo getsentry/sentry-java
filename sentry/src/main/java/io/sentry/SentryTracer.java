@@ -244,7 +244,7 @@ public final class SentryTracer implements ITransaction {
       if (transactionFinishedCallback != null) {
         transactionFinishedCallback.execute(this);
       }
-      hub.captureTransaction(transaction, this.traceState(), profilingTraceData);
+      hub.captureTransaction(transaction, this.traceState(), null, profilingTraceData);
     }
   }
 

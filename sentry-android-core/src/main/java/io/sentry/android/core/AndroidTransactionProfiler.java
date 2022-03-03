@@ -5,7 +5,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import android.os.Build;
 import android.os.Debug;
 import io.sentry.ITransaction;
-import io.sentry.ITransactionListener;
+import io.sentry.ITransactionProfiler;
 import io.sentry.ProfilingTraceData;
 import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class AndroidTraceTransactionListener implements ITransactionListener {
+final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   /**
    * This appears to correspond to the buffer size of the data part of the file, excluding the key
@@ -28,15 +28,17 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
    */
   private static final int BUFFER_SIZE_BYTES = 3_000_000;
 
+  private static final int PROFILING_TIMEOUT_MILLIS = 30_000;
+
   private int intervalUs;
   private @Nullable File traceFile = null;
   private @Nullable File traceFilesDir = null;
   private @Nullable Future<?> scheduledFinish = null;
   private volatile @Nullable ITransaction activeTransaction = null;
-  private volatile @Nullable ProfilingTraceData lastProfilingData = null;
+  private volatile @Nullable ProfilingTraceData timedOutProfilingData = null;
   private final @NotNull SentryAndroidOptions options;
 
-  public AndroidTraceTransactionListener(final @NotNull SentryAndroidOptions sentryAndroidOptions) {
+  public AndroidTransactionProfiler(final @NotNull SentryAndroidOptions sentryAndroidOptions) {
     this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
     final String tracesFilesDirPath = options.getProfilingTracesDirPath();
     if (tracesFilesDirPath == null || tracesFilesDirPath.isEmpty()) {
@@ -99,7 +101,9 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
     scheduledFinish =
         options
             .getExecutorService()
-            .schedule(() -> lastProfilingData = onTransactionFinish(transaction), 30_000);
+            .schedule(
+                () -> timedOutProfilingData = onTransactionFinish(transaction),
+                PROFILING_TIMEOUT_MILLIS);
 
     Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
   }
@@ -109,17 +113,38 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
       @NotNull ITransaction transaction) {
 
     final ITransaction finalActiveTransaction = activeTransaction;
+    final ProfilingTraceData profilingData = timedOutProfilingData;
+
     // Profiling finished, but we check if we cached last profiling data due to a timeout
     if (finalActiveTransaction == null) {
-      ProfilingTraceData profilingData = lastProfilingData;
-      // If the cached last profiling data refers to the transaction that started it we return it
-      // back, otherwise we would simply lose it
-      if (profilingData != null
-          && profilingData
-              .getTraceId()
-              .equals(transaction.getSpanContext().getTraceId().toString())) {
-        return profilingData;
+      // If the cached timed out profiling data refers to the transaction that started it we return
+      // it back, otherwise we would simply lose it
+      if (profilingData != null) {
+        // The timed out transaction is finishing
+        if (profilingData
+            .getTraceId()
+            .equals(transaction.getSpanContext().getTraceId().toString())) {
+          timedOutProfilingData = null;
+          return profilingData;
+        } else {
+          // Another transaction is finishing before the timed out one
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Profiling data with id %s exists but doesn't match the closing transaction %s",
+                  profilingData.getTraceId(),
+                  transaction.getSpanContext().getTraceId().toString());
+          return null;
+        }
       }
+      // A transaction is finishing, but profiling didn't start. Maybe it was started by another one
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "Transaction %s finished, but profiling never started for it. Skipping",
+              transaction.getSpanContext().getTraceId().toString());
       return null;
     }
 
@@ -136,34 +161,32 @@ public final class AndroidTraceTransactionListener implements ITransactionListen
 
     Debug.stopMethodTracing();
 
-    lastProfilingData = null;
     activeTransaction = null;
 
     if (scheduledFinish != null) {
       scheduledFinish.cancel(true);
+      scheduledFinish = null;
     }
 
     if (traceFile == null || !traceFile.exists()) {
       options
           .getLogger()
           .log(
-              SentryLevel.DEBUG,
+              SentryLevel.ERROR,
               "Trace file %s does not exists",
               traceFile == null ? "null" : traceFile.getPath());
       return null;
     }
 
-    // todo how to retrieve these fields? (version name and code)
-    //  buildNumber = Build.VERSION.INCREMENTAL? - osName = "android"?
+    // todo how to retrieve version name and code?
     return new ProfilingTraceData(
         traceFile,
         transaction,
         Build.VERSION.SDK_INT,
         Build.MANUFACTURER,
         Build.MODEL,
-        "buildNumber", // ???
-        "android", // ???
         Build.VERSION.RELEASE,
+        options.getProguardUuid(),
         "versionName", // ???
         "versionCode", // ???
         options.getEnvironment());

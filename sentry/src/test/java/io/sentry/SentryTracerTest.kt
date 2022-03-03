@@ -122,6 +122,7 @@ class SentryTracerTest {
                 assertEquals(it.transaction, tracer.name)
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -155,6 +156,7 @@ class SentryTracerTest {
                 assertEquals(request, it.request)
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -182,6 +184,7 @@ class SentryTracerTest {
                 }
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -207,6 +210,7 @@ class SentryTracerTest {
                 }
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -225,6 +229,7 @@ class SentryTracerTest {
                 }
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -241,6 +246,7 @@ class SentryTracerTest {
                 assertEquals(1, it.spans.size)
                 assertEquals("op1", it.spans.first().op)
             },
+            anyOrNull(),
             anyOrNull(),
             anyOrNull()
         )
@@ -374,6 +380,7 @@ class SentryTracerTest {
                 }
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -425,7 +432,7 @@ class SentryTracerTest {
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
-        verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -461,6 +468,7 @@ class SentryTracerTest {
                 assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -479,6 +487,7 @@ class SentryTracerTest {
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[0].status)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
             },
+            anyOrNull(),
             anyOrNull(),
             anyOrNull()
         )
@@ -549,6 +558,7 @@ class SentryTracerTest {
                 assertEquals("val", it.getExtra("key"))
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -566,6 +576,7 @@ class SentryTracerTest {
                     assertEquals("val", it["key"])
                 }
             },
+            anyOrNull(),
             anyOrNull(),
             anyOrNull()
         )

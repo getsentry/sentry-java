@@ -53,7 +53,7 @@ final class ManifestMetadataReader {
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
       "io.sentry.traces.activity.auto-finish.enable";
 
-  static final String TRACES_PROFILING_ENABLE = "io.sentry.traces.profiling-enable";
+  static final String TRACES_PROFILING_ENABLE = "io.sentry.traces.profiling.enable";
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
 

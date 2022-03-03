@@ -371,6 +371,7 @@ class ActivityLifecycleIntegrationTest {
                 assertEquals(SpanStatus.OK, it.status)
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -392,6 +393,7 @@ class ActivityLifecycleIntegrationTest {
             check {
                 assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
             },
+            anyOrNull(),
             anyOrNull(),
             anyOrNull()
         )
@@ -432,7 +434,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -501,7 +503,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(mock(), mock())
 
         sut.onActivityCreated(mock(), fixture.bundle)
-        verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -541,7 +543,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
     }
 
     @Test

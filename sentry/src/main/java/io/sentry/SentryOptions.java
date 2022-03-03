@@ -285,13 +285,13 @@ public class SentryOptions {
   private boolean traceSampling;
 
   /** Control if profiling is enabled or not for transactions */
-  private boolean profilingEnabled = true;
+  private boolean profilingEnabled = false;
 
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
   /** Listener interface to perform operations when a transaction is started or ended */
-  private @NotNull ITransactionListener transactionListener = NoOpTransactionListener.getInstance();
+  private @NotNull ITransactionProfiler transactionListener = NoOpTransactionProfiler.getInstance();
 
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
@@ -1504,7 +1504,7 @@ public class SentryOptions {
    *
    * @return the listener interface to perform operations when a transaction is started or ended.
    */
-  public @NotNull ITransactionListener getTransactionListener() {
+  public @NotNull ITransactionProfiler getTransactionListener() {
     return transactionListener;
   }
 
@@ -1513,9 +1513,9 @@ public class SentryOptions {
    *
    * @param transactionListener - the listener for operations when a transaction is started or ended
    */
-  public void setTransactionListener(final @Nullable ITransactionListener transactionListener) {
+  public void setTransactionListener(final @Nullable ITransactionProfiler transactionListener) {
     this.transactionListener =
-        transactionListener != null ? transactionListener : NoOpTransactionListener.getInstance();
+        transactionListener != null ? transactionListener : NoOpTransactionProfiler.getInstance();
   }
 
   /**
