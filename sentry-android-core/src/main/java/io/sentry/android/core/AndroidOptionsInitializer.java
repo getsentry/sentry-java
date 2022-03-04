@@ -166,12 +166,6 @@ final class AndroidOptionsInitializer {
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       if (isIntegrationAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options, loadClass)) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
-      } else {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "sentry-android-fragment is not available, FragmentLifecycleIntegration won't be installed");
       }
     } else {
       options
@@ -182,12 +176,6 @@ final class AndroidOptionsInitializer {
     }
     if (isIntegrationAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options, loadClass)) {
       options.addIntegration(new SentryTimberIntegration());
-    } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "sentry-android-timber is not available, SentryTimberIntegration won't be installed");
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
@@ -318,8 +306,8 @@ final class AndroidOptionsInitializer {
       options
           .getLogger()
           .log(
-              SentryLevel.INFO,
-              integrationClassName + "won't be installed as it's not available on the classpath");
+              SentryLevel.WARNING,
+              integrationClassName + " won't be installed as it's not available on the classpath");
     }
     return isAvailable;
   }

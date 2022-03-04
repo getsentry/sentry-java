@@ -385,7 +385,7 @@ class AndroidOptionsInitializerTest {
 
         verify(logger).log(
             eq(SentryLevel.WARNING),
-            eq("sentry-android-fragment is not available, FragmentLifecycleIntegration won't be installed")
+            eq("${AndroidOptionsInitializer.SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME} won't be installed as it's not available on the classpath")
         )
     }
 
@@ -435,7 +435,7 @@ class AndroidOptionsInitializerTest {
 
         verify(logger).log(
             eq(SentryLevel.WARNING),
-            eq("sentry-android-timber is not available, SentryTimberIntegration won't be installed")
+            eq("${AndroidOptionsInitializer.SENTRY_TIMBER_INTEGRATION_CLASS_NAME} won't be installed as it's not available on the classpath")
         )
     }
 
