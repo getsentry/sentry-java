@@ -6,8 +6,6 @@ import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.atLeastOnce
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -472,7 +470,8 @@ class AndroidOptionsInitializerTest {
     }
 
     private fun createClassMockThrows(
-        ex: Throwable, className: String = SENTRY_NDK_CLASS_NAME
+        ex: Throwable,
+        className: String = SENTRY_NDK_CLASS_NAME
     ): LoadClass {
         val loadClassMock = mock<LoadClass>()
         whenever(loadClassMock.loadClass(eq(className))).thenThrow(ex)
