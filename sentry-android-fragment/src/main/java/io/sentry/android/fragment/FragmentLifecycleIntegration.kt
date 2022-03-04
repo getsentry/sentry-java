@@ -20,7 +20,7 @@ class FragmentLifecycleIntegration(
     Integration,
     Closeable {
 
-    constructor(application: Application) : this(application, true, false)
+    constructor(application: Application) : this(application, true, true)
 
     private lateinit var hub: IHub
     private lateinit var options: SentryOptions

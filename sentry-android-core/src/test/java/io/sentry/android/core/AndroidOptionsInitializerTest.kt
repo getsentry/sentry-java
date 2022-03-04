@@ -6,9 +6,12 @@ import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.atLeastOnce
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
@@ -17,9 +20,11 @@ import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME
+import io.sentry.android.fragment.FragmentLifecycleIntegration
+import io.sentry.android.timber.SentryTimberIntegration
+import io.sentry.util.LoadClass
 import org.junit.runner.RunWith
 import java.io.File
-import java.lang.RuntimeException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -336,6 +341,106 @@ class AndroidOptionsInitializerTest {
         assertNull(actual)
     }
 
+    @Test
+    fun `FragmentLifecycleIntegration added to the integration list if available on classpath`() {
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
+        val logger = mock<ILogger>()
+        val sentryOptions = SentryAndroidOptions().apply {
+            setDebug(true)
+        }
+
+        AndroidOptionsInitializer.init(
+            sentryOptions,
+            mockContext,
+            logger,
+            createBuildInfo(),
+            createClassMock(FragmentLifecycleIntegration::class.java)
+        )
+
+        val actual = sentryOptions.integrations.firstOrNull { it is FragmentLifecycleIntegration }
+        assertNotNull(actual)
+
+        verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>(), any())
+    }
+
+    @Test
+    fun `FragmentLifecycleIntegration won't be enabled, it throws class not found`() {
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
+        val logger = mock<ILogger>()
+        val sentryOptions = SentryAndroidOptions().apply {
+            setDebug(true)
+        }
+
+        AndroidOptionsInitializer.init(
+            sentryOptions,
+            mockContext,
+            logger,
+            createBuildInfo(),
+            createClassMockThrows(
+                ClassNotFoundException(),
+                AndroidOptionsInitializer.SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME
+            )
+        )
+
+        val actual = sentryOptions.integrations.firstOrNull { it is FragmentLifecycleIntegration }
+        assertNull(actual)
+
+        verify(logger).log(
+            eq(SentryLevel.WARNING),
+            eq("sentry-android-fragment is not available, FragmentLifecycleIntegration won't be installed")
+        )
+    }
+
+    @Test
+    fun `SentryTimberIntegration added to the integration list if available on classpath`() {
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
+        val logger = mock<ILogger>()
+        val sentryOptions = SentryAndroidOptions().apply {
+            setDebug(true)
+        }
+
+        AndroidOptionsInitializer.init(
+            sentryOptions,
+            mockContext,
+            logger,
+            createBuildInfo(),
+            createClassMock(SentryTimberIntegration::class.java)
+        )
+
+        val actual = sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
+        assertNotNull(actual)
+
+        verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>(), any())
+    }
+
+    @Test
+    fun `SentryTimberIntegration won't be enabled, it throws class not found`() {
+        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
+        val logger = mock<ILogger>()
+        val sentryOptions = SentryAndroidOptions().apply {
+            setDebug(true)
+        }
+
+        AndroidOptionsInitializer.init(
+            sentryOptions,
+            mockContext,
+            logger,
+            createBuildInfo(),
+            createClassMockThrows(
+                ClassNotFoundException(),
+                AndroidOptionsInitializer.SENTRY_TIMBER_INTEGRATION_CLASS_NAME
+            )
+        )
+
+        val actual = sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
+        assertNull(actual)
+
+        verify(logger).log(
+            eq(SentryLevel.WARNING),
+            eq("sentry-android-timber is not available, SentryTimberIntegration won't be installed")
+        )
+    }
+
     private fun createMockContext(): Context {
         val mockContext = ContextUtilsTest.createMockContext()
         whenever(mockContext.cacheDir).thenReturn(file)
@@ -366,9 +471,11 @@ class AndroidOptionsInitializerTest {
         return loadClassMock
     }
 
-    private fun createClassMockThrows(ex: Throwable): LoadClass {
+    private fun createClassMockThrows(
+        ex: Throwable, className: String = SENTRY_NDK_CLASS_NAME
+    ): LoadClass {
         val loadClassMock = mock<LoadClass>()
-        whenever(loadClassMock.loadClass(eq(SENTRY_NDK_CLASS_NAME))).thenThrow(ex)
+        whenever(loadClassMock.loadClass(eq(className))).thenThrow(ex)
         return loadClassMock
     }
 }

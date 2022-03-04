@@ -1,7 +1,5 @@
 package io.sentry.android.core;
 
-import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
-
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -13,6 +11,9 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.fragment.FragmentLifecycleIntegration;
+import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.util.LoadClass;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -23,12 +24,20 @@ import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
+
 /**
  * Android Options initializer, it reads configurations from AndroidManifest and sets to the
  * SentryOptions. It also adds default values for some fields.
  */
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
+
+  static final String SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME =
+    "io.sentry.android.fragment.FragmentLifecycleIntegration";
+
+  static final String SENTRY_TIMBER_INTEGRATION_CLASS_NAME =
+    "io.sentry.android.timber.SentryTimberIntegration";
 
   /** private ctor */
   private AndroidOptionsInitializer() {}
@@ -155,12 +164,31 @@ final class AndroidOptionsInitializer {
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
+      if (isIntegrationAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options, loadClass)) {
+        options.addIntegration(
+          new FragmentLifecycleIntegration((Application) context, true, true));
+      } else {
+        options
+          .getLogger()
+          .log(
+            SentryLevel.WARNING,
+            "sentry-android-fragment is not available, FragmentLifecycleIntegration won't be installed");
+      }
     } else {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "ActivityLifecycle and UserInteraction Integrations need an Application class to be installed.");
+              "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
+    }
+    if (isIntegrationAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options, loadClass)) {
+      options.addIntegration(new SentryTimberIntegration());
+    } else {
+      options
+        .getLogger()
+        .log(
+          SentryLevel.WARNING,
+          "sentry-android-timber is not available, SentryTimberIntegration won't be installed");
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
@@ -276,5 +304,25 @@ final class AndroidOptionsInitializer {
       }
     }
     return null;
+  }
+
+  private static boolean isIntegrationAvailable(
+    final @NotNull String integrationClassName,
+    final @NotNull SentryOptions options,
+    final @NotNull LoadClass loadClass
+  ) {
+    boolean isAvailable;
+    try {
+      loadClass.loadClass(integrationClassName);
+      isAvailable = true;
+    } catch (ClassNotFoundException ignored) {
+      isAvailable = false;
+      options.getLogger()
+        .log(
+          SentryLevel.INFO,
+          integrationClassName + "won't be installed as it's not available on the classpath"
+        );
+    }
+    return isAvailable;
   }
 }

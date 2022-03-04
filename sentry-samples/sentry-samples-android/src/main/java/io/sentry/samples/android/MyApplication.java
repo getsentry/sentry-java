@@ -3,8 +3,6 @@ package io.sentry.samples.android;
 import android.app.Application;
 import android.os.StrictMode;
 import io.sentry.android.core.SentryAndroid;
-import io.sentry.android.fragment.FragmentLifecycleIntegration;
-import io.sentry.android.timber.SentryTimberIntegration;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
@@ -19,8 +17,13 @@ public class MyApplication extends Application {
     SentryAndroid.init(
         this,
         options -> {
-          options.addIntegration(new FragmentLifecycleIntegration(MyApplication.this, true, true));
-          options.addIntegration(new SentryTimberIntegration());
+          /*
+          use options, for example, to add a beforeSend callback:
+
+          options.setBeforeSend((event, hint) -> {
+            process event
+          });
+           */
         });
   }
 

@@ -12,6 +12,7 @@ import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback;
 import io.sentry.android.core.internal.gestures.SentryGestureListener;
 import io.sentry.android.core.internal.gestures.SentryWindowCallback;
+import io.sentry.util.LoadClass;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;

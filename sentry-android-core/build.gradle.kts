@@ -78,6 +78,8 @@ tasks.withType<JavaCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
+    compileOnly(projects.sentryAndroidFragment)
+    compileOnly(projects.sentryAndroidTimber)
 
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
@@ -102,4 +104,6 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(projects.sentryTestSupport)
+    testImplementation(projects.sentryAndroidFragment)
+    testImplementation(projects.sentryAndroidTimber)
 }
