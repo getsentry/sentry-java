@@ -2,6 +2,7 @@ package io.sentry.util
 
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.CustomCachedApplyScopeDataHint
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import kotlin.test.Test

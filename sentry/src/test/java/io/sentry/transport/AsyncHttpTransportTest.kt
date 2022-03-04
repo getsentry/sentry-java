@@ -16,6 +16,7 @@ import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.Session
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.dsnString
 import io.sentry.protocol.User
 import java.io.IOException
