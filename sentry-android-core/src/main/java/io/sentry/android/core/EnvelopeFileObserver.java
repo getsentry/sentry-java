@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import android.os.FileObserver;
 import io.sentry.IEnvelopeSender;
@@ -60,7 +61,7 @@ final class EnvelopeFileObserver extends FileObserver {
     final CachedEnvelopeHint hint = new CachedEnvelopeHint(flushTimeoutMillis, logger);
 
     final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put("Sentry:TypeCheckHint", hint);
+    hintMap.put(SENTRY_TYPE_CHECK_HINT, hint);
 
     envelopeSender.processEnvelopeFile(this.rootPath + File.separator + relativePath, hintMap);
   }

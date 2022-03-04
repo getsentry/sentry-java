@@ -1,5 +1,8 @@
 package io.sentry.log4j2;
 
+import static io.sentry.TypeCheckHint.LOG4J_LOG_EVENT;
+import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
@@ -127,13 +130,13 @@ public class SentryAppender extends AbstractAppender {
   public void append(final @NotNull LogEvent eventObject) {
     if (eventObject.getLevel().isMoreSpecificThan(minimumEventLevel)) {
       final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put("syntheticException", eventObject);
+      hintMap.put(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
 
       hub.captureEvent(createEvent(eventObject), hintMap);
     }
     if (eventObject.getLevel().isMoreSpecificThan(minimumBreadcrumbLevel)) {
       final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put("LogEvent", eventObject);
+      hintMap.put(LOG4J_LOG_EVENT, eventObject);
 
       hub.addBreadcrumb(createBreadcrumb(eventObject), hintMap);
     }

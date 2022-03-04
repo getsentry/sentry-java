@@ -85,4 +85,9 @@ public final class TypeCheckHint {
   public static final String WEBFLUX_FILTER_RESPONSE = "webFluxFilter:response";
   /** Used for Spring WebFlux filter breadcrumbs. */
   public static final String WEBFLUX_FILTER_REQUEST = "webFluxFilter:request";
+
+  /** Used for Spring exchange filter breadcrumbs. */
+  public static final String SPRING_EXCHANGE_FILTER_RESPONSE = "springExchangeFilter:response";
+  /** Used for Spring exchange filter breadcrumbs. */
+  public static final String SPRING_EXCHANGE_FILTER_REQUEST = "springExchangeFilter:request";
 }

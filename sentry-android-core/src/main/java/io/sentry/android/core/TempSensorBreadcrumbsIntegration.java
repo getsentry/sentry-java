@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static android.content.Context.SENSOR_SERVICE;
+import static io.sentry.TypeCheckHint.ANDROID_SENSOR_EVENT;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -107,7 +108,7 @@ public final class TempSensorBreadcrumbsIntegration
       breadcrumb.setData("degree", event.values[0]); // Celsius
 
       final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put("SensorEvent", event);
+      hintMap.put(ANDROID_SENSOR_EVENT, event);
 
       hub.addBreadcrumb(breadcrumb, hintMap);
     }

@@ -1,5 +1,8 @@
 package io.sentry.android.core.internal.gestures;
 
+import static io.sentry.TypeCheckHint.ANDROID_MOTION_EVENT;
+import static io.sentry.TypeCheckHint.ANDROID_VIEW;
+
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -170,8 +173,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put("MotionEvent", motionEvent);
-    hintMap.put("View", target);
+    hintMap.put(ANDROID_MOTION_EVENT, motionEvent);
+    hintMap.put(ANDROID_VIEW, target);
 
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(

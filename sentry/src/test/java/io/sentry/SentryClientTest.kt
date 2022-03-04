@@ -191,7 +191,7 @@ class SentryClientTest {
         fixture.sentryOptions.environment = "not to be applied"
         val sut = fixture.getSut()
 
-        val hintsMap = mutableMapOf<String, Any?>("Sentry:TypeCheckHint" to Object())
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to Object())
         sut.captureEvent(event, hintsMap)
         verify(fixture.transport).send(any(), eq(hintsMap))
     }
@@ -497,7 +497,7 @@ class SentryClientTest {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
-        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to mock<Cached>())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Cached>())
         sut.captureEvent(event, scope, hintsMap)
 
         assertNotEquals(scope.level, event.level)
@@ -511,7 +511,7 @@ class SentryClientTest {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
-        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to Object())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
         sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
@@ -525,7 +525,7 @@ class SentryClientTest {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
-        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to mock<ApplyScopeData>())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<ApplyScopeData>())
         sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
@@ -539,7 +539,7 @@ class SentryClientTest {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
-        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CustomCachedApplyScopeDataHint())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CustomCachedApplyScopeDataHint())
         sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)

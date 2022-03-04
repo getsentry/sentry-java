@@ -1502,6 +1502,8 @@ public final class io/sentry/TypeCheckHint {
 	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
 	public static final field SENTRY_TYPE_CHECK_HINT Ljava/lang/String;
 	public static final field SERVLET_REQUEST Ljava/lang/String;
+	public static final field SPRING_EXCHANGE_FILTER_REQUEST Ljava/lang/String;
+	public static final field SPRING_EXCHANGE_FILTER_RESPONSE Ljava/lang/String;
 	public static final field SPRING_REQUEST_FILTER_REQUEST Ljava/lang/String;
 	public static final field SPRING_REQUEST_FILTER_RESPONSE Ljava/lang/String;
 	public static final field SPRING_REQUEST_INTERCEPTOR_REQUEST Ljava/lang/String;

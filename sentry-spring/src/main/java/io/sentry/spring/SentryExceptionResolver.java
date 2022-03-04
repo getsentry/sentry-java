@@ -1,5 +1,8 @@
 package io.sentry.spring;
 
+import static io.sentry.TypeCheckHint.SPRING_RESOLVER_REQUEST;
+import static io.sentry.TypeCheckHint.SPRING_RESOLVER_RESPONSE;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
@@ -58,8 +61,8 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
     event.setTransaction(transactionNameProvider.provideTransactionName(request));
 
     final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put("request", request);
-    hintMap.put("response", response);
+    hintMap.put(SPRING_RESOLVER_REQUEST, request);
+    hintMap.put(SPRING_RESOLVER_RESPONSE, response);
 
     hub.captureEvent(event, hintMap);
 

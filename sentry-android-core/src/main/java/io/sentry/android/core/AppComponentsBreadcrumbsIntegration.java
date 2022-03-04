@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.TypeCheckHint.ANDROID_CONFIGURATION;
+
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -99,7 +101,7 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setLevel(SentryLevel.INFO);
 
       final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put("Configuration", newConfig);
+      hintMap.put(ANDROID_CONFIGURATION, newConfig);
 
       hub.addBreadcrumb(breadcrumb, hintMap);
     }

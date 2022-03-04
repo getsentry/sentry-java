@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
+
 import io.sentry.Stack.StackItem;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
@@ -235,13 +237,13 @@ public final class Hub implements IHub {
         // Or create the envelope here with both items and call `captureEnvelope`
         if (pair.getPrevious() != null) {
           final Map<String, Object> hintMap = new HashMap<>();
-          hintMap.put("Sentry:TypeCheckHint", new SessionEndHint());
+          hintMap.put(SENTRY_TYPE_CHECK_HINT, new SessionEndHint());
 
           item.getClient().captureSession(pair.getPrevious(), hintMap);
         }
 
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("Sentry:TypeCheckHint", new SessionStartHint());
+        hintMap.put(SENTRY_TYPE_CHECK_HINT, new SessionStartHint());
 
         item.getClient().captureSession(pair.getCurrent(), hintMap);
       } else {
@@ -261,7 +263,7 @@ public final class Hub implements IHub {
       final Session previousSession = item.getScope().endSession();
       if (previousSession != null) {
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("Sentry:TypeCheckHint", new SessionEndHint());
+        hintMap.put(SENTRY_TYPE_CHECK_HINT, new SessionEndHint());
 
         item.getClient().captureSession(previousSession, hintMap);
       }

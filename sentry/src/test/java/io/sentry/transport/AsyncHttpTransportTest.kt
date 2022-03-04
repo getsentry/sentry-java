@@ -179,7 +179,7 @@ class AsyncHttpTransportTest {
         whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
 
         // when
-        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
         fixture.getSUT().send(envelope, hintsMap)
 
         // then
@@ -237,7 +237,7 @@ class AsyncHttpTransportTest {
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
-        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
         fixture.getSUT().send(envelope, hintsMap)
 
         // then

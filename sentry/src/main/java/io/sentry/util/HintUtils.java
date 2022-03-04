@@ -1,5 +1,7 @@
 package io.sentry.util;
 
+import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
+
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Cached;
 import java.util.Map;
@@ -28,6 +30,6 @@ public final class HintUtils {
     if (hint == null) {
       return null;
     }
-    return hint.get("Sentry:TypeCheckHint");
+    return hint.get(SENTRY_TYPE_CHECK_HINT);
   }
 }

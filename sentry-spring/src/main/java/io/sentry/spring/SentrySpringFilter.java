@@ -1,6 +1,8 @@
 package io.sentry.spring;
 
 import static io.sentry.SentryOptions.RequestSize.*;
+import static io.sentry.TypeCheckHint.SPRING_REQUEST_FILTER_REQUEST;
+import static io.sentry.TypeCheckHint.SPRING_REQUEST_FILTER_RESPONSE;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
@@ -63,8 +65,8 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       hub.pushScope();
       try {
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("request", servletRequest);
-        hintMap.put("response", response);
+        hintMap.put(SPRING_REQUEST_FILTER_REQUEST, servletRequest);
+        hintMap.put(SPRING_REQUEST_FILTER_RESPONSE, response);
 
         hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()), hintMap);
         configureScope(request);

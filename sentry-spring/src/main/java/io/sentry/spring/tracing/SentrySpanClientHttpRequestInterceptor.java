@@ -1,5 +1,9 @@
 package io.sentry.spring.tracing;
 
+import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_REQUEST;
+import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_REQUEST_BODY;
+import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_RESPONSE;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
@@ -78,10 +82,10 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
     breadcrumb.setData("request_body_size", body.length);
 
     final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put("request", request);
-    hintMap.put("requestBody", body);
+    hintMap.put(SPRING_REQUEST_INTERCEPTOR_REQUEST, request);
+    hintMap.put(SPRING_REQUEST_INTERCEPTOR_REQUEST_BODY, body);
     if (response != null) {
-      hintMap.put("response", response);
+      hintMap.put(SPRING_REQUEST_INTERCEPTOR_RESPONSE, response);
     }
 
     hub.addBreadcrumb(breadcrumb, hintMap);

@@ -1,5 +1,8 @@
 package io.sentry.spring.tracing;
 
+import static io.sentry.TypeCheckHint.SPRING_EXCHANGE_FILTER_REQUEST;
+import static io.sentry.TypeCheckHint.SPRING_EXCHANGE_FILTER_RESPONSE;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
@@ -75,9 +78,9 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
             response != null ? response.rawStatusCode() : null);
 
     final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put("request", request);
+    hintMap.put(SPRING_EXCHANGE_FILTER_REQUEST, request);
     if (response != null) {
-      hintMap.put("response", response);
+      hintMap.put(SPRING_EXCHANGE_FILTER_RESPONSE, response);
     }
 
     hub.addBreadcrumb(breadcrumb, hintMap);

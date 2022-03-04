@@ -1,5 +1,8 @@
 package io.sentry.jul;
 
+import static io.sentry.TypeCheckHint.JUL_LOG_RECORD;
+import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Sentry;
@@ -77,13 +80,13 @@ public class SentryHandler extends Handler {
     try {
       if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("syntheticException", record);
+        hintMap.put(SENTRY_SYNTHETIC_EXCEPTION, record);
 
         Sentry.captureEvent(createEvent(record), hintMap);
       }
       if (record.getLevel().intValue() >= minimumBreadcrumbLevel.intValue()) {
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("LogRecord", record);
+        hintMap.put(JUL_LOG_RECORD, record);
 
         Sentry.addBreadcrumb(createBreadcrumb(record), hintMap);
       }

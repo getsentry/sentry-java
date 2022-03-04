@@ -1,5 +1,8 @@
 package io.sentry.openfeign;
 
+import static io.sentry.TypeCheckHint.OPEN_FEIGN_REQUEST;
+import static io.sentry.TypeCheckHint.OPEN_FEIGN_RESPONSE;
+
 import feign.Client;
 import feign.Request;
 import feign.Response;
@@ -90,9 +93,9 @@ public final class SentryFeignClient implements Client {
     }
 
     final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put("request", request);
+    hintMap.put(OPEN_FEIGN_REQUEST, request);
     if (response != null) {
-      hintMap.put("response", response);
+      hintMap.put(OPEN_FEIGN_RESPONSE, response);
     }
 
     hub.addBreadcrumb(breadcrumb, hintMap);

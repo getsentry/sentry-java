@@ -30,6 +30,7 @@ import static android.content.Intent.ACTION_SCREEN_ON;
 import static android.content.Intent.ACTION_SHUTDOWN;
 import static android.content.Intent.ACTION_TIMEZONE_CHANGED;
 import static android.content.Intent.ACTION_TIME_CHANGED;
+import static io.sentry.TypeCheckHint.ANDROID_INTENT;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -215,7 +216,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       breadcrumb.setLevel(SentryLevel.INFO);
 
       final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put("Intent", intent);
+      hintMap.put(ANDROID_INTENT, intent);
 
       hub.addBreadcrumb(breadcrumb, hintMap);
     }

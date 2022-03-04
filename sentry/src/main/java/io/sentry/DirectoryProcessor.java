@@ -1,6 +1,7 @@
 package io.sentry;
 
 import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import io.sentry.hints.Cached;
 import io.sentry.hints.Flushable;
@@ -67,7 +68,7 @@ abstract class DirectoryProcessor {
         final SendCachedEnvelopeHint hint = new SendCachedEnvelopeHint(flushTimeoutMillis, logger);
 
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("Sentry:TypeCheckHint", hint);
+        hintMap.put(SENTRY_TYPE_CHECK_HINT, hint);
 
         processFile(file, hintMap);
       }

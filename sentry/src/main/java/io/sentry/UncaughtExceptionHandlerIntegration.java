@@ -1,6 +1,7 @@
 package io.sentry;
 
 import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.DiskFlushNotification;
@@ -97,7 +98,7 @@ public final class UncaughtExceptionHandlerIntegration
         event.setLevel(SentryLevel.FATAL);
 
         final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put("Sentry:TypeCheckHint", hint);
+        hintMap.put(SENTRY_TYPE_CHECK_HINT, hint);
 
         hub.captureEvent(event, hintMap);
         // Block until the event is flushed to disk

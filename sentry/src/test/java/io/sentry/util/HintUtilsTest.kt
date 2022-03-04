@@ -12,7 +12,7 @@ class HintUtilsTest {
 
     @Test
     fun `if event is Cached, it should not apply scopes data`() {
-        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to mock<Cached>())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Cached>())
         assertFalse(HintUtils.shouldApplyScopeData(hintsMap))
     }
 
@@ -23,13 +23,13 @@ class HintUtilsTest {
 
     @Test
     fun `if event is ApplyScopeData, it should apply scopes data`() {
-        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to mock<ApplyScopeData>())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<ApplyScopeData>())
         assertTrue(HintUtils.shouldApplyScopeData(hintsMap))
     }
 
     @Test
     fun `if event is Cached but also ApplyScopeData, it should apply scopes data`() {
-        val hintsMap = mutableMapOf<String, Any>("Sentry:TypeCheckHint" to CustomCachedApplyScopeDataHint())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CustomCachedApplyScopeDataHint())
         assertTrue(HintUtils.shouldApplyScopeData(hintsMap))
     }
 }

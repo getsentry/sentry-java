@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -126,7 +127,7 @@ public final class ActivityLifecycleIntegration
       breadcrumb.setLevel(SentryLevel.INFO);
 
       final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put("Activity", activity);
+      hintMap.put(ANDROID_ACTIVITY, activity);
 
       hub.addBreadcrumb(breadcrumb, hintMap);
     }

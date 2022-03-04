@@ -1,5 +1,8 @@
 package io.sentry.spring.webflux;
 
+import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_REQUEST;
+import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_RESPONSE;
+
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.util.Objects;
@@ -42,8 +45,8 @@ public final class SentryWebFilter implements WebFilter {
               final ServerHttpResponse response = serverWebExchange.getResponse();
 
               final Map<String, Object> hintMap = new HashMap<>();
-              hintMap.put("request", request);
-              hintMap.put("response", response);
+              hintMap.put(WEBFLUX_FILTER_REQUEST, request);
+              hintMap.put(WEBFLUX_FILTER_RESPONSE, response);
 
               hub.addBreadcrumb(
                   Breadcrumb.http(request.getURI().toString(), request.getMethodValue()), hintMap);
