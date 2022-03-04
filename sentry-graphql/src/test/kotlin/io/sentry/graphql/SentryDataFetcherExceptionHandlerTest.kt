@@ -1,5 +1,7 @@
 package io.sentry.graphql
 
+import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import graphql.execution.DataFetcherExceptionHandler
@@ -19,7 +21,7 @@ class SentryDataFetcherExceptionHandlerTest {
         val parameters = DataFetcherExceptionHandlerParameters.newExceptionParameters().exception(exception).build()
         handler.onException(parameters)
 
-        verify(hub).captureException(exception, parameters)
+        verify(hub).captureException(eq(exception), anyOrNull())
         verify(delegate).onException(parameters)
     }
 }

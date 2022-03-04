@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -139,7 +140,8 @@ class AppComponentsBreadcrumbsIntegrationTest {
                 assertEquals("navigation", it.type)
                 assertEquals(SentryLevel.INFO, it.level)
                 // cant assert data, its not a public API
-            }
+            },
+            anyOrNull()
         )
     }
 }

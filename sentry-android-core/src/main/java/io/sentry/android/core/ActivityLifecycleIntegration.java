@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -22,6 +23,7 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -123,7 +125,11 @@ public final class ActivityLifecycleIntegration
       breadcrumb.setData("screen", getActivityName(activity));
       breadcrumb.setCategory("ui.lifecycle");
       breadcrumb.setLevel(SentryLevel.INFO);
-      hub.addBreadcrumb(breadcrumb);
+
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put(ANDROID_ACTIVITY, activity);
+
+      hub.addBreadcrumb(breadcrumb, hintMap);
     }
   }
 

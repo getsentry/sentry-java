@@ -34,7 +34,7 @@ import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
-import io.sentry.util.ApplyScopeUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
@@ -117,7 +117,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
     final boolean applyScopeData = shouldApplyScopeData(event, hint);
     if (applyScopeData) {
       // we only set memory data if it's not a hard crash, when it's a hard crash the event is
@@ -143,8 +143,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private boolean shouldApplyScopeData(
-      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      final @NotNull SentryBaseEvent event, final @Nullable Map<String, Object> hint) {
+    if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
       logger.log(
@@ -888,7 +888,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction, final @Nullable Map<String, Object> hint) {
     final boolean applyScopeData = shouldApplyScopeData(transaction, hint);
 
     if (applyScopeData) {

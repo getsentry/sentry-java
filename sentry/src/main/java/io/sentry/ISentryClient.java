@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +27,8 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event.
    */
   @NotNull
-  SentryId captureEvent(@NotNull SentryEvent event, @Nullable Scope scope, @Nullable Object hint);
+  SentryId captureEvent(
+      @NotNull SentryEvent event, @Nullable Scope scope, @Nullable Map<String, Object> hint);
 
   /** Flushes out the queue for up to timeout seconds and disable the client. */
   void close();
@@ -66,7 +68,8 @@ public interface ISentryClient {
    * @param hint SDK specific but provides high level information about the origin of the event.
    * @return The Id (SentryId object) of the event.
    */
-  default @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint) {
+  default @NotNull SentryId captureEvent(
+      @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
     return captureEvent(event, null, hint);
   }
 
@@ -119,7 +122,7 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureException(
-      @NotNull Throwable throwable, @Nullable Scope scope, @Nullable Object hint) {
+      @NotNull Throwable throwable, @Nullable Scope scope, @Nullable Map<String, Object> hint) {
     SentryEvent event = new SentryEvent(throwable);
     return captureEvent(event, scope, hint);
   }
@@ -131,7 +134,8 @@ public interface ISentryClient {
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
-  default @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint) {
+  default @NotNull SentryId captureException(
+      @NotNull Throwable throwable, @Nullable Map<String, Object> hint) {
     return captureException(throwable, null, hint);
   }
 
@@ -160,7 +164,7 @@ public interface ISentryClient {
    * @param hint SDK specific but provides high level information about the origin of the event
    * @param session the Session
    */
-  void captureSession(@NotNull Session session, @Nullable Object hint);
+  void captureSession(@NotNull Session session, @Nullable Map<String, Object> hint);
 
   /**
    * Captures a session. This method transform a session to an envelope and forwards to
@@ -180,7 +184,7 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   @Nullable
-  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Object hint);
+  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Map<String, Object> hint);
 
   /**
    * Captures an envelope.
@@ -202,7 +206,9 @@ public interface ISentryClient {
    */
   @NotNull
   default SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Object hint) {
+      @NotNull SentryTransaction transaction,
+      @Nullable Scope scope,
+      @Nullable Map<String, Object> hint) {
     return captureTransaction(transaction, null, scope, hint);
   }
 
@@ -221,7 +227,7 @@ public interface ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       @Nullable Scope scope,
-      @Nullable Object hint);
+      @Nullable Map<String, Object> hint);
 
   /**
    * Captures a transaction without scope nor hint.

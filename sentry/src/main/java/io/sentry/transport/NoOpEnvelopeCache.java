@@ -4,6 +4,7 @@ import io.sentry.SentryEnvelope;
 import io.sentry.cache.IEnvelopeCache;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +16,7 @@ public final class NoOpEnvelopeCache implements IEnvelopeCache {
   }
 
   @Override
-  public void store(@NotNull SentryEnvelope envelope, @Nullable Object hint) {}
+  public void store(@NotNull SentryEnvelope envelope, @Nullable Map<String, Object> hint) {}
 
   @Override
   public void discard(@NotNull SentryEnvelope envelope) {}

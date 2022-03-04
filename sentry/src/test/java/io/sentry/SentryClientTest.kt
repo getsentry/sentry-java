@@ -11,6 +11,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
@@ -57,7 +58,7 @@ class SentryClientTest {
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             sdkVersion = SdkVersion("test", "1.2.3")
-            setDebug(true)
+            isDebug = true
             setDiagnosticLevel(SentryLevel.DEBUG)
             setSerializer(JsonSerializer(this))
             setLogger(mock())
@@ -190,9 +191,10 @@ class SentryClientTest {
         val event = SentryEvent()
         fixture.sentryOptions.environment = "not to be applied"
         val sut = fixture.getSut()
-        val expectedHint = Object()
-        sut.captureEvent(event, expectedHint)
-        verify(fixture.transport).send(any(), eq(expectedHint))
+
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to Object())
+        sut.captureEvent(event, hintsMap)
+        verify(fixture.transport).send(any(), eq(hintsMap))
     }
 
     @Test
@@ -495,7 +497,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, mock<Cached>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Cached>())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertNotEquals(scope.level, event.level)
     }
@@ -507,7 +511,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, Object())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
     }
@@ -519,7 +525,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, mock<ApplyScopeData>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<ApplyScopeData>())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
     }
@@ -531,7 +539,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, mock<CustomCachedApplyScopeDataHint>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CustomCachedApplyScopeDataHint())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
     }
@@ -1277,15 +1287,13 @@ class SentryClientTest {
         )
     }
 
-    internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData
-
     internal class DiskFlushNotificationHint : DiskFlushNotification {
         override fun markFlushed() {}
     }
 
     private fun eventProcessorThrows(): EventProcessor {
         return object : EventProcessor {
-            override fun process(event: SentryEvent, hint: Any?): SentryEvent? {
+            override fun process(event: SentryEvent, hint: Map<String, Any?>?): SentryEvent? {
                 throw Throwable()
             }
         }

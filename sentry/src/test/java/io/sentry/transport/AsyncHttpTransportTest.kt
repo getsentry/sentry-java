@@ -16,6 +16,7 @@ import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.Session
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.dsnString
 import io.sentry.protocol.User
 import java.io.IOException
@@ -179,7 +180,8 @@ class AsyncHttpTransportTest {
         whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
 
         // when
-        fixture.getSUT().send(envelope, CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
+        fixture.getSUT().send(envelope, hintsMap)
 
         // then
         verify(fixture.sentryOptions.envelopeDiskCache).discard(any())
@@ -236,7 +238,8 @@ class AsyncHttpTransportTest {
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
-        fixture.getSUT().send(envelope, CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
+        fixture.getSUT().send(envelope, hintsMap)
 
         // then
         verify(fixture.sentryOptions.envelopeDiskCache).discard(any())

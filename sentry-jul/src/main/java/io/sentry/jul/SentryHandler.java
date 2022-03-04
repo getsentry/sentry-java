@@ -1,5 +1,8 @@
 package io.sentry.jul;
 
+import static io.sentry.TypeCheckHint.JUL_LOG_RECORD;
+import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Sentry;
@@ -12,6 +15,7 @@ import io.sentry.util.CollectionUtils;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.ErrorManager;
@@ -75,10 +79,16 @@ public class SentryHandler extends Handler {
     }
     try {
       if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
-        Sentry.captureEvent(createEvent(record));
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put(SENTRY_SYNTHETIC_EXCEPTION, record);
+
+        Sentry.captureEvent(createEvent(record), hintMap);
       }
       if (record.getLevel().intValue() >= minimumBreadcrumbLevel.intValue()) {
-        Sentry.addBreadcrumb(createBreadcrumb(record));
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put(JUL_LOG_RECORD, record);
+
+        Sentry.addBreadcrumb(createBreadcrumb(record), hintMap);
       }
     } catch (RuntimeException e) {
       reportError(

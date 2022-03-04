@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.TypeCheckHint.ANDROID_CONFIGURATION;
+
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -13,7 +15,9 @@ import io.sentry.protocol.Device;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -95,7 +99,11 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setCategory("device.orientation");
       breadcrumb.setData("position", orientation);
       breadcrumb.setLevel(SentryLevel.INFO);
-      hub.addBreadcrumb(breadcrumb);
+
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put(ANDROID_CONFIGURATION, newConfig);
+
+      hub.addBreadcrumb(breadcrumb, hintMap);
     }
   }
 

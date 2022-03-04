@@ -5,6 +5,7 @@ import io.sentry.EventProcessor;
 import io.sentry.SentryEvent;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +26,7 @@ public class SentryRequestHttpServletRequestProcessor implements EventProcessor 
 
   @Override
   public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
     if (event.getTransaction() == null) {
       event.setTransaction(transactionNameProvider.provideTransactionName(request));
     }

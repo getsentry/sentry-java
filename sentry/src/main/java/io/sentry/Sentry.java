@@ -8,6 +8,7 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -260,7 +261,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
     return getCurrentHub().captureEvent(event, hint);
   }
 
@@ -304,7 +305,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Object hint) {
+      final @NotNull Throwable throwable, final @Nullable Map<String, Object> hint) {
     return getCurrentHub().captureException(throwable, hint);
   }
 
@@ -324,7 +325,7 @@ public final class Sentry {
    * @param hint SDK specific but provides high level information about the origin of the event
    */
   public static void addBreadcrumb(
-      final @NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
+      final @NotNull Breadcrumb breadcrumb, final @Nullable Map<String, Object> hint) {
     getCurrentHub().addBreadcrumb(breadcrumb, hint);
   }
 

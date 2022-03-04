@@ -1,12 +1,15 @@
 package io.sentry;
 
 import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import io.sentry.hints.Cached;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -63,14 +66,19 @@ abstract class DirectoryProcessor {
         logger.log(SentryLevel.DEBUG, "Processing file: %s", file.getAbsolutePath());
 
         final SendCachedEnvelopeHint hint = new SendCachedEnvelopeHint(flushTimeoutMillis, logger);
-        processFile(file, hint);
+
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put(SENTRY_TYPE_CHECK_HINT, hint);
+
+        processFile(file, hintMap);
       }
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
     }
   }
 
-  protected abstract void processFile(final @NotNull File file, final @Nullable Object hint);
+  protected abstract void processFile(
+      final @NotNull File file, final @Nullable Map<String, Object> hint);
 
   protected abstract boolean isRelevantFileName(String fileName);
 
