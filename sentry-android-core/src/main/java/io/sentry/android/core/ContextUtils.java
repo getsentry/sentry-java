@@ -41,6 +41,17 @@ final class ContextUtils {
     return getVersionCodeDep(packageInfo);
   }
 
+  /**
+   * Returns the App's version name based on the PackageInfo
+   *
+   * @param packageInfo the PackageInfo class
+   * @return the versionName
+   */
+  @NotNull
+  static String getVersionName(final @NotNull PackageInfo packageInfo) {
+    return packageInfo.versionName;
+  }
+
   @SuppressWarnings("deprecation")
   private static @NotNull String getVersionCodeDep(final @NotNull PackageInfo packageInfo) {
     return Integer.toString(packageInfo.versionCode);

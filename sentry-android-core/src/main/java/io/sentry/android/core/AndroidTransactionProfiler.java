@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.os.Debug;
 import io.sentry.ITransaction;
@@ -37,9 +38,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private volatile @Nullable ITransaction activeTransaction = null;
   private volatile @Nullable ProfilingTraceData timedOutProfilingData = null;
   private final @NotNull SentryAndroidOptions options;
+  private final @Nullable PackageInfo packageInfo;
 
-  public AndroidTransactionProfiler(final @NotNull SentryAndroidOptions sentryAndroidOptions) {
+  public AndroidTransactionProfiler(
+      final @NotNull SentryAndroidOptions sentryAndroidOptions,
+      final @Nullable PackageInfo packageInfo) {
     this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
+    this.packageInfo = packageInfo;
     final String tracesFilesDirPath = options.getProfilingTracesDirPath();
     if (tracesFilesDirPath == null || tracesFilesDirPath.isEmpty()) {
       options
@@ -178,7 +183,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return null;
     }
 
-    // todo how to retrieve version name and code?
     return new ProfilingTraceData(
         traceFile,
         transaction,
@@ -187,8 +191,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         Build.MODEL,
         Build.VERSION.RELEASE,
         options.getProguardUuid(),
-        "versionName", // ???
-        "versionCode", // ???
+        packageInfo != null ? ContextUtils.getVersionName(packageInfo) : "",
+        packageInfo != null ? ContextUtils.getVersionCode(packageInfo) : "",
         options.getEnvironment());
   }
 }

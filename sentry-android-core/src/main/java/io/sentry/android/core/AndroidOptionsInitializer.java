@@ -117,7 +117,8 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
-    options.setTransactionListener(new AndroidTransactionProfiler(options));
+    options.setTransactionListener(
+        new AndroidTransactionProfiler(options, ContextUtils.getPackageInfo(context, logger)));
   }
 
   private static void installDefaultIntegrations(
