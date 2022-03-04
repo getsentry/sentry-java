@@ -3,7 +3,7 @@ package io.sentry.android.core;
 import org.jetbrains.annotations.NotNull;
 
 /** An Adapter for making Class.forName testable */
-final class LoadClass {
+public final class LoadClass {
 
   /**
    * Try to load a class via reflection

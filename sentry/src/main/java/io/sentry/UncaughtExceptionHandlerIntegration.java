@@ -112,6 +112,10 @@ public final class UncaughtExceptionHandlerIntegration
       if (defaultExceptionHandler != null) {
         options.getLogger().log(SentryLevel.INFO, "Invoking inner uncaught exception handler.");
         defaultExceptionHandler.uncaughtException(thread, thrown);
+      } else {
+        if (options.isPrintUncaughtStackTrace()) {
+          thrown.printStackTrace();
+        }
       }
     }
   }

@@ -763,4 +763,29 @@ class ManifestMetadataReaderTest {
         // Assert
         assertNull(fixture.options.proguardUuid)
     }
+
+    @Test
+    fun `applyMetadata reads ui events breadcrumbs to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_USER_INTERACTION_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isEnableUserInteractionBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads ui events breadcrumbs and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isEnableUserInteractionBreadcrumbs)
+    }
 }

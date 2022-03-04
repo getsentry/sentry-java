@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+## 5.6.2
+
+### Various fixes & improvements
+
+- Prepare 5.6.2-beta.4 (296085d4)
+- Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931) by @marandaneto
+
+## 5.6.2-beta.3
+
+* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
+* Bump: AGP to 7.1.2 (#1930)
+
+## 5.6.2-beta.2
+
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
+
+## 5.6.2-beta.1
+
+* Fix: Do not include stacktrace frames into Timber message (#1898)
+* Fix: Potential memory leaks (#1909)
+
+Breaking changes:
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
+Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
+
+## 5.6.1
+
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body is null (#1884)
+* Bump: AGP to 7.1.0 (#1892)
+* Feat: Add options.printUncaughtStackTrace to print uncaught exceptions (#1890)
+
+## 5.6.0
+
+* Fix: Change scope of servlet-api to compileOnly (#1880)
+* Feat: Add breadcrumbs support for UI events (automatically captured) (#1876)
+
+## 5.5.3
+
 * Fix: Do not create SentryExceptionResolver bean when Spring MVC is not on the classpath (#1865)
 
 ## 5.5.2
@@ -22,7 +60,7 @@
 * Feat: Add locale to device context and deprecate language (#1832)
 * Ref: change `java.util.Random` to `java.security.SecureRandom` for possible security reasons (#1831)
 * Feat: Add `SentryFileInputStream` and `SentryFileOutputStream` for File I/O performance instrumentation (#1826)
-- Feat: Add `SentryFileReader` and `SentryFileWriter` for File I/O instrumentation (#1843)
+* Feat: Add `SentryFileReader` and `SentryFileWriter` for File I/O instrumentation (#1843)
 
 ## 5.4.3
 

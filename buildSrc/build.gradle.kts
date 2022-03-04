@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     `kotlin-dsl`
 }
@@ -6,7 +8,6 @@ repositories {
     mavenCentral()
 }
 
-// Disabling the warning about the use of experimental Kotlin compiler features
-kotlinDslPluginOptions {
-    experimentalWarning.set(false)
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
