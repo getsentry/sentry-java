@@ -5,7 +5,7 @@
 
 set -eux
 
-git checkout main
+git checkout 6.x.x
 GRADLE_FILEPATH="gradle.properties"
 
 # Add a new unreleased entry in the changelog
