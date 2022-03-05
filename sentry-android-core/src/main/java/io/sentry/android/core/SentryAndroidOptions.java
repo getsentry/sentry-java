@@ -16,7 +16,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean anrEnabled = true;
 
-  /** ANR Timeout internal in Millis Default is 5000 = 5s Used by AnrIntegration */
+  /** ANR Timeout interval in Millis Default is 5000 = 5s Used by AnrIntegration */
   private long anrTimeoutIntervalMillis = 5000;
 
   /** Enable or disable ANR on Debug mode Default is disabled Used by AnrIntegration */
