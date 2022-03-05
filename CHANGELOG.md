@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-alpha.3
 
 * Ref: Make hints Map<String, Object> instead of only Object (#1929)
 * Feat: Enable enableScopeSync by default for Android (#1928)
