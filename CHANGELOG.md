@@ -4,10 +4,15 @@
 
 ## 5.6.2
 
-### Various fixes & improvements
+* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
+* Bump: AGP to 7.1.2 (#1930)
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
+* Fix: Do not include stacktrace frames into Timber message (#1898)
+* Fix: Potential memory leaks (#1909)
 
-- Prepare 5.6.2-beta.4 (296085d4)
-- Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931) by @marandaneto
+Breaking changes:
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
+Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
 
 ## 5.6.2-beta.3
 
