@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+* Feat: Automatically enable `Timber` and `Fragment` integrations if they are present on the classpath (#1936)
+
+Behaviour change:
+[Performance tracking](https://docs.sentry.io/platforms/android/configuration/integrations/fragment/#configure) for fragment's lifecycle is enabled by default now.
+
 ## 5.6.2
 
 ### Various fixes & improvements
