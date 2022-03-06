@@ -49,6 +49,7 @@ android {
 
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         checkReleaseBuilds = false
+        disable += "LogNotTimber"
     }
 
     // needed because of Kotlin 1.4.x
