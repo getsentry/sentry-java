@@ -5,7 +5,6 @@ import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
-import io.sentry.util.LoadClass;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

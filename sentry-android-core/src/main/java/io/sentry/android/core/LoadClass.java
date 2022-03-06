@@ -1,4 +1,4 @@
-package io.sentry.util;
+package io.sentry.android.core;
 
 import org.jetbrains.annotations.NotNull;
 

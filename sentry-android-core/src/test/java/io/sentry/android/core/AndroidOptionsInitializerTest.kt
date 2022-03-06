@@ -9,7 +9,6 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
@@ -20,7 +19,6 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
-import io.sentry.util.LoadClass
 import org.junit.runner.RunWith
 import java.io.File
 import kotlin.test.BeforeTest

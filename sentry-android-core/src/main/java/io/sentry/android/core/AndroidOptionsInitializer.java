@@ -15,7 +15,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
-import io.sentry.util.LoadClass;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.File;

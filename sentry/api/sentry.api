@@ -2046,11 +2046,6 @@ public final class io/sentry/util/ExceptionUtils {
 	public static fun findRootCause (Ljava/lang/Throwable;)Ljava/lang/Throwable;
 }
 
-public final class io/sentry/util/LoadClass {
-	public fun <init> ()V
-	public fun loadClass (Ljava/lang/String;)Ljava/lang/Class;
-}
-
 public final class io/sentry/util/LogUtils {
 	public fun <init> ()V
 	public static fun logIfNotFlushable (Lio/sentry/ILogger;Ljava/lang/Object;)V

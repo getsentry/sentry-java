@@ -16,7 +16,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hub
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.core.internal.gestures.SentryWindowCallback
-import io.sentry.util.LoadClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertTrue

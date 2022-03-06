@@ -8,7 +8,6 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
-import io.sentry.util.LoadClass
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
