@@ -297,7 +297,7 @@ public class SentryOptions {
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
   /** Listener interface to perform operations when a transaction is started or ended */
-  private @NotNull ITransactionProfiler transactionListener = NoOpTransactionProfiler.getInstance();
+  private @NotNull ITransactionProfiler transactionProfiler = NoOpTransactionProfiler.getInstance();
 
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
@@ -1539,18 +1539,18 @@ public class SentryOptions {
    *
    * @return the listener interface to perform operations when a transaction is started or ended.
    */
-  public @NotNull ITransactionProfiler getTransactionListener() {
-    return transactionListener;
+  public @NotNull ITransactionProfiler getTransactionProfiler() {
+    return transactionProfiler;
   }
 
   /**
    * Sets the listener interface to perform operations when a transaction is started or ended.
    *
-   * @param transactionListener - the listener for operations when a transaction is started or ended
+   * @param transactionProfiler - the listener for operations when a transaction is started or ended
    */
-  public void setTransactionListener(final @Nullable ITransactionProfiler transactionListener) {
-    this.transactionListener =
-        transactionListener != null ? transactionListener : NoOpTransactionProfiler.getInstance();
+  public void setTransactionProfiler(final @Nullable ITransactionProfiler transactionProfiler) {
+    this.transactionProfiler =
+        transactionProfiler != null ? transactionProfiler : NoOpTransactionProfiler.getInstance();
   }
 
   /**
@@ -1734,7 +1734,7 @@ public class SentryOptions {
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
     }
-    setTransactionListener(options.getTransactionListener());
+    setTransactionProfiler(options.getTransactionProfiler());
     setMaxTraceFileSize(options.getMaxTraceFileSize());
     setProfilingEnabled(options.isProfilingEnabled());
     final Map<String, String> tags = new HashMap<>(options.getTags());

@@ -47,7 +47,7 @@ final class ContextUtils {
    * @param packageInfo the PackageInfo class
    * @return the versionName
    */
-  @NotNull
+  @Nullable
   static String getVersionName(final @NotNull PackageInfo packageInfo) {
     return packageInfo.versionName;
   }
