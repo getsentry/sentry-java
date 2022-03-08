@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Fix: If transaction or span is finished, do not allow to mutate (#)
+* Fix: If transaction or span is finished, do not allow to mutate (#1940)
 
 ## 5.6.2
 
