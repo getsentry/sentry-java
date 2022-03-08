@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: If transaction or span is finished, do not allow to mutate (#)
+
 ## 5.6.2
 
 * Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
