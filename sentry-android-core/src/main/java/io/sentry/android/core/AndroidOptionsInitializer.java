@@ -119,7 +119,8 @@ final class AndroidOptionsInitializer {
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     options.setTransactionProfiler(
-        new AndroidTransactionProfiler(options, ContextUtils.getPackageInfo(context, logger)));
+        new AndroidTransactionProfiler(
+            options, ContextUtils.getPackageInfo(context, logger), buildInfoProvider));
   }
 
   private static void installDefaultIntegrations(
@@ -251,6 +252,7 @@ final class AndroidOptionsInitializer {
    * @param context the Application context
    * @param options the SentryOptions
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static void initializeCacheDirs(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     final File cacheDir = new File(context.getCacheDir(), "sentry");
@@ -259,10 +261,21 @@ final class AndroidOptionsInitializer {
     options.setProfilingTracesDirPath(profilingTracesDir.getAbsolutePath());
 
     if (options.isProfilingEnabled()) {
-      // Method trace files are normally deleted at the end of traces, but if that fails for some
-      // reason we try to clear any old files here.
-      FileUtils.deleteRecursively(profilingTracesDir);
       profilingTracesDir.mkdirs();
+      final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                if (oldTracesDirContent == null) return;
+                // Method trace files are normally deleted at the end of traces, but if that fails
+                // for some
+                // reason we try to clear any old files here.
+                for (File f : oldTracesDirContent) {
+                  FileUtils.deleteRecursively(f);
+                }
+              });
     }
   }
 

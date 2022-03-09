@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import android.annotation.SuppressLint;
 import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.os.Debug;
@@ -38,12 +39,16 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private volatile @Nullable ITransaction activeTransaction = null;
   private volatile @Nullable ProfilingTraceData timedOutProfilingData = null;
   private final @NotNull SentryAndroidOptions options;
+  private final @NotNull IBuildInfoProvider buildInfoProvider;
   private final @Nullable PackageInfo packageInfo;
 
   public AndroidTransactionProfiler(
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
-      final @Nullable PackageInfo packageInfo) {
+      final @Nullable PackageInfo packageInfo,
+      final @NotNull IBuildInfoProvider buildInfoProvider) {
     this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
+    this.buildInfoProvider =
+        Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
     this.packageInfo = packageInfo;
     final String tracesFilesDirPath = options.getProfilingTracesDirPath();
     if (tracesFilesDirPath == null || tracesFilesDirPath.isEmpty()) {
@@ -68,11 +73,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     traceFilesDir = new File(tracesFilesDirPath);
   }
 
+  @SuppressLint("NewApi")
   @Override
   public synchronized void onTransactionStart(@NotNull ITransaction transaction) {
 
     // Debug.startMethodTracingSampling() is only available since Lollipop
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return;
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return;
 
     // traceFilesDir is null or intervalUs is 0 only if there was a problem in the constructor, but
     // we already logged that
@@ -183,16 +189,23 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return null;
     }
 
+    String versionName = "";
+    String versionCode = "";
+    if (packageInfo != null) {
+      versionName = ContextUtils.getVersionName(packageInfo);
+      versionCode = ContextUtils.getVersionCode(packageInfo);
+    }
+
     return new ProfilingTraceData(
         traceFile,
         transaction,
-        Build.VERSION.SDK_INT,
-        Build.MANUFACTURER,
-        Build.MODEL,
-        Build.VERSION.RELEASE,
+        buildInfoProvider.getSdkInfoVersion(),
+        buildInfoProvider.getManufacturer(),
+        buildInfoProvider.getModel(),
+        buildInfoProvider.getVersionRelease(),
         options.getProguardUuid(),
-        packageInfo != null ? ContextUtils.getVersionName(packageInfo) : "",
-        packageInfo != null ? ContextUtils.getVersionCode(packageInfo) : "",
+        versionName,
+        versionCode,
         options.getEnvironment());
   }
 }

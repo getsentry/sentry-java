@@ -215,32 +215,41 @@ public final class SentryEnvelopeItem {
       return null;
     }
 
-    // The payload of the profiling item is a json that includes the trace file encoded with base64
-    byte[] traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
-    String base64Trace = Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
-    profilingTraceData.setStacktrace(base64Trace);
+    // Using CachedItem, so we read the trace file in the background
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              if (!traceFile.exists()) {
+                return null;
+              }
+              // The payload of the profile item is a json including the trace file encoded with
+              // base64
+              byte[] traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
+              String base64Trace = Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
+              profilingTraceData.setStacktrace(base64Trace);
 
-    try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-      serializer.serialize(profilingTraceData, writer);
-      byte[] payloadBytes = stream.toByteArray();
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(profilingTraceData, writer);
+                return stream.toByteArray();
+              } catch (IOException e) {
+                throw new SentryEnvelopeException(
+                    String.format("Failed to serialize profiling trace data\n%s", e.getMessage()));
+              } finally {
+                // In any case we delete the trace file
+                traceFile.delete();
+              }
+            });
 
-      SentryEnvelopeItemHeader itemHeader =
-          new SentryEnvelopeItemHeader(
-              SentryItemType.Profile,
-              () -> payloadBytes.length,
-              "application-json",
-              traceFile.getName());
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.Profile,
+            () -> cachedItem.getBytes().length,
+            "application-json",
+            traceFile.getName());
 
-      // Don't use method reference. This can cause issues on Android
-      return new SentryEnvelopeItem(itemHeader, payloadBytes);
-    } catch (IOException e) {
-      throw new SentryEnvelopeException(
-          String.format("Failed to serialize profiling trace data\n%s", e.getMessage()));
-    } finally {
-      // In any case we delete the trace file
-      traceFile.delete();
-    }
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
   private static byte[] readBytesFromFile(String pathname, long maxFileLength)

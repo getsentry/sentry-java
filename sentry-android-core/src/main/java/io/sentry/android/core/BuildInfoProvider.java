@@ -22,4 +22,19 @@ public final class BuildInfoProvider implements IBuildInfoProvider {
   public @Nullable String getBuildTags() {
     return Build.TAGS;
   }
+
+  @Override
+  public @Nullable String getManufacturer() {
+    return Build.MANUFACTURER;
+  }
+
+  @Override
+  public @Nullable String getModel() {
+    return Build.MODEL;
+  }
+
+  @Override
+  public @Nullable String getVersionRelease() {
+    return Build.VERSION.RELEASE;
+  }
 }

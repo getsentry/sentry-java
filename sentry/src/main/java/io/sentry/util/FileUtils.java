@@ -27,6 +27,6 @@ public final class FileUtils {
     for (File f : children) {
       if (!deleteRecursively(f)) return false;
     }
-    return true;
+    return file.delete();
   }
 }
