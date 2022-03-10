@@ -4,11 +4,18 @@ import android.content.Context;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
+import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.android.fragment.FragmentLifecycleIntegration;
+import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 /** Sentry initialization class */
@@ -69,12 +76,13 @@ public final class SentryAndroid {
 
     try {
       Sentry.init(
-          OptionsContainer.create(SentryAndroidOptions.class),
-          options -> {
-            AndroidOptionsInitializer.init(options, context, logger);
-            configuration.configure(options);
-          },
-          true);
+        OptionsContainer.create(SentryAndroidOptions.class),
+        options -> {
+          AndroidOptionsInitializer.init(options, context, logger);
+          configuration.configure(options);
+          deduplicateIntegrations(options);
+        },
+        true);
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
@@ -93,6 +101,38 @@ public final class SentryAndroid {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
+    }
+  }
+
+  /**
+   * Deduplicate potentially duplicated Fragment and Timber integrations, which can be added
+   * automatically by our SDK as well as by the user. The user's ones win over ours.
+   *
+   * @param options SentryOptions to retrieve integrations from
+   */
+  private static void deduplicateIntegrations(final @NotNull SentryOptions options) {
+    final List<Integration> timberIntegrations = new ArrayList<>();
+    final List<Integration> fragmentIntegrations = new ArrayList<>();
+    for (final Integration integration : options.getIntegrations()) {
+      if (integration instanceof FragmentLifecycleIntegration) {
+        fragmentIntegrations.add(integration);
+      } else if (integration instanceof SentryTimberIntegration) {
+        timberIntegrations.add(integration);
+      }
+    }
+
+    if (fragmentIntegrations.size() > 1) {
+      for (int i = 0; i < fragmentIntegrations.size() - 1; i++) {
+        final Integration integration = fragmentIntegrations.get(i);
+        options.getIntegrations().remove(integration);
+      }
+    }
+
+    if (timberIntegrations.size() > 1) {
+      for (int i = 0; i < timberIntegrations.size() - 1; i++) {
+        final Integration integration = timberIntegrations.get(i);
+        options.getIntegrations().remove(integration);
+      }
     }
   }
 }
