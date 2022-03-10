@@ -14,7 +14,6 @@ import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
@@ -76,13 +75,13 @@ public final class SentryAndroid {
 
     try {
       Sentry.init(
-        OptionsContainer.create(SentryAndroidOptions.class),
-        options -> {
-          AndroidOptionsInitializer.init(options, context, logger);
-          configuration.configure(options);
-          deduplicateIntegrations(options);
-        },
-        true);
+          OptionsContainer.create(SentryAndroidOptions.class),
+          options -> {
+            AndroidOptionsInitializer.init(options, context, logger);
+            configuration.configure(options);
+            deduplicateIntegrations(options);
+          },
+          true);
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 

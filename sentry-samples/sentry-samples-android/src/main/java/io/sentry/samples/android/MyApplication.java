@@ -2,7 +2,6 @@ package io.sentry.samples.android;
 
 import android.app.Application;
 import android.os.StrictMode;
-import io.sentry.android.core.SentryAndroid;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
