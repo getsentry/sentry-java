@@ -21,6 +21,7 @@ class ActivityFramesTrackerTest {
         val activity = mock<Activity>()
         val sentryId = SentryId()
         val loadClass = mock<LoadClass>()
+        val options = SentryAndroidOptions().apply { setDebug(true) }
 
         fun getSut(): ActivityFramesTracker {
             return ActivityFramesTracker(aggregator)
@@ -116,16 +117,16 @@ class ActivityFramesTrackerTest {
 
     @Test
     fun `addActivity does not throw if no AndroidX`() {
-        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
-        val sut = ActivityFramesTracker(fixture.loadClass)
+        whenever(fixture.loadClass.isClassAvailable(any(), any())).thenReturn(false)
+        val sut = ActivityFramesTracker(fixture.loadClass, fixture.options)
 
         sut.addActivity(fixture.activity)
     }
 
     @Test
     fun `setMetrics does not throw if no AndroidX`() {
-        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
-        val sut = ActivityFramesTracker(fixture.loadClass)
+        whenever(fixture.loadClass.isClassAvailable(any(), any())).thenReturn(false)
+        val sut = ActivityFramesTracker(fixture.loadClass, fixture.options)
 
         sut.setMetrics(fixture.activity, fixture.sentryId)
     }
@@ -133,23 +134,23 @@ class ActivityFramesTrackerTest {
     @Test
     fun `setMetrics does not throw if Activity is not added`() {
         whenever(fixture.aggregator.remove(any())).thenThrow(IllegalArgumentException())
-        val sut = ActivityFramesTracker(fixture.loadClass)
+        val sut = ActivityFramesTracker(fixture.loadClass, fixture.options)
 
         sut.setMetrics(fixture.activity, fixture.sentryId)
     }
 
     @Test
     fun `stop does not throw if no AndroidX`() {
-        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
-        val sut = ActivityFramesTracker(fixture.loadClass)
+        whenever(fixture.loadClass.isClassAvailable(any(), any())).thenReturn(false)
+        val sut = ActivityFramesTracker(fixture.loadClass, fixture.options)
 
         sut.stop()
     }
 
     @Test
     fun `takeMetrics returns null if no AndroidX`() {
-        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
-        val sut = ActivityFramesTracker(fixture.loadClass)
+        whenever(fixture.loadClass.isClassAvailable(any(), any())).thenReturn(false)
+        val sut = ActivityFramesTracker(fixture.loadClass, fixture.options)
 
         assertNull(sut.takeMetrics(fixture.sentryId))
     }

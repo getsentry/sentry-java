@@ -115,7 +115,8 @@ final class AndroidOptionsInitializer {
     ManifestMetadataReader.applyMetadata(context, options);
     initializeCacheDirs(context, options);
 
-    final ActivityFramesTracker activityFramesTracker = new ActivityFramesTracker(loadClass);
+    final ActivityFramesTracker activityFramesTracker =
+        new ActivityFramesTracker(loadClass, options);
     installDefaultIntegrations(
         context, options, buildInfoProvider, loadClass, activityFramesTracker);
 
@@ -140,7 +141,10 @@ final class AndroidOptionsInitializer {
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
-    final Class<?> sentryNdkClass = loadNdkIfAvailable(options, buildInfoProvider, loadClass);
+    final Class<?> sentryNdkClass =
+        isNdkAvailable(buildInfoProvider)
+            ? loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options)
+            : null;
     options.addIntegration(new NdkIntegration(sentryNdkClass));
 
     // this integration uses android.os.FileObserver, we can't move to sentry
@@ -163,7 +167,7 @@ final class AndroidOptionsInitializer {
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
-      if (isIntegrationAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options, loadClass)) {
+      if (loadClass.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options)) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context));
       }
     } else {
@@ -173,7 +177,7 @@ final class AndroidOptionsInitializer {
               SentryLevel.WARNING,
               "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
     }
-    if (isIntegrationAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options, loadClass)) {
+    if (loadClass.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options)) {
       options.addIntegration(new SentryTimberIntegration());
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));
@@ -270,44 +274,5 @@ final class AndroidOptionsInitializer {
 
   private static boolean isNdkAvailable(final @NotNull IBuildInfoProvider buildInfoProvider) {
     return buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN;
-  }
-
-  private static @Nullable Class<?> loadNdkIfAvailable(
-      final @NotNull SentryOptions options,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass) {
-    if (isNdkAvailable(buildInfoProvider)) {
-      try {
-        return loadClass.loadClass(SENTRY_NDK_CLASS_NAME);
-      } catch (ClassNotFoundException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to load SentryNdk.", e);
-      } catch (UnsatisfiedLinkError e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to load (UnsatisfiedLinkError) SentryNdk.", e);
-      } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
-      }
-    }
-    return null;
-  }
-
-  private static boolean isIntegrationAvailable(
-      final @NotNull String integrationClassName,
-      final @NotNull SentryOptions options,
-      final @NotNull LoadClass loadClass) {
-    boolean isAvailable;
-    try {
-      loadClass.loadClass(integrationClassName);
-      isAvailable = true;
-    } catch (ClassNotFoundException ignored) {
-      isAvailable = false;
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              integrationClassName + " won't be installed as it's not available on the classpath");
-    }
-    return isAvailable;
   }
 }

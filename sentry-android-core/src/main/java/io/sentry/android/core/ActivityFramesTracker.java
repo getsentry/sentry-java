@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
@@ -25,8 +26,10 @@ public final class ActivityFramesTracker {
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
       activityMeasurements = new ConcurrentHashMap<>();
 
-  public ActivityFramesTracker(final @NotNull LoadClass loadClass) {
-    androidXAvailable = checkAndroidXAvailability(loadClass);
+  public ActivityFramesTracker(
+      final @NotNull LoadClass loadClass, final @NotNull SentryOptions options) {
+    androidXAvailable =
+        loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", options);
     if (androidXAvailable) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
@@ -35,16 +38,6 @@ public final class ActivityFramesTracker {
   @TestOnly
   ActivityFramesTracker(final @Nullable FrameMetricsAggregator frameMetricsAggregator) {
     this.frameMetricsAggregator = frameMetricsAggregator;
-  }
-
-  private static boolean checkAndroidXAvailability(final @NotNull LoadClass loadClass) {
-    try {
-      loadClass.loadClass("androidx.core.app.FrameMetricsAggregator");
-      return true;
-    } catch (ClassNotFoundException ignored) {
-      // androidx.core isn't available.
-      return false;
-    }
   }
 
   private boolean isFrameMetricsAggregatorAvailable() {
