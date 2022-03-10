@@ -168,7 +168,7 @@ final class AndroidOptionsInitializer {
               (Application) context, buildInfoProvider, activityFramesTracker));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       if (loadClass.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options)) {
-        options.addIntegration(new FragmentLifecycleIntegration((Application) context));
+        options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
     } else {
       options
