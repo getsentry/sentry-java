@@ -1,5 +1,5 @@
 public final class io/sentry/android/core/ActivityFramesTracker {
-	public fun <init> (Lio/sentry/android/core/LoadClass;)V
+	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/SentryOptions;)V
 	public fun addActivity (Landroid/app/Activity;)V
 	public fun setMetrics (Landroid/app/Activity;Lio/sentry/protocol/SentryId;)V
 	public fun stop ()V
@@ -82,7 +82,8 @@ public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 
 public final class io/sentry/android/core/LoadClass {
 	public fun <init> ()V
-	public fun loadClass (Ljava/lang/String;)Ljava/lang/Class;
+	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/SentryOptions;)Z
+	public fun loadClass (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/Class;
 }
 
 public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration, java/io/Closeable {
