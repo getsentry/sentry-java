@@ -517,15 +517,18 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 }
 
 public final class io/sentry/ProfilingTraceData {
-	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAndroid_api_level ()I
 	public fun getBuild_id ()Ljava/lang/String;
+	public fun getDevice_cpu_frequencies ()Ljava/util/List;
 	public fun getDevice_locale ()Ljava/lang/String;
 	public fun getDevice_manufacturer ()Ljava/lang/String;
 	public fun getDevice_model ()Ljava/lang/String;
 	public fun getDevice_os_build_number ()Ljava/lang/String;
 	public fun getDevice_os_name ()Ljava/lang/String;
 	public fun getDevice_os_version ()Ljava/lang/String;
+	public fun getDevice_physical_memory_bytes ()Ljava/lang/String;
+	public fun getDuration_ns ()Ljava/lang/String;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getStacktrace ()Ljava/lang/String;
@@ -537,6 +540,7 @@ public final class io/sentry/ProfilingTraceData {
 	public fun getTransaction_name ()Ljava/lang/String;
 	public fun getVersion_code ()Ljava/lang/String;
 	public fun getVersion_name ()Ljava/lang/String;
+	public fun isDevice_is_emulator ()Z
 	public fun setStacktrace (Ljava/lang/String;)V
 }
 
@@ -2101,6 +2105,7 @@ public final class io/sentry/util/ExceptionUtils {
 public final class io/sentry/util/FileUtils {
 	public fun <init> ()V
 	public static fun deleteRecursively (Ljava/io/File;)Z
+	public static fun readText (Ljava/io/File;)Ljava/lang/String;
 }
 
 public final class io/sentry/util/LogUtils {

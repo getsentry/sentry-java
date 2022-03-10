@@ -1,6 +1,7 @@
 package io.sentry;
 
 import java.io.File;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import org.jetbrains.annotations.ApiStatus;
@@ -21,11 +22,16 @@ public final class ProfilingTraceData {
   private final @NotNull String device_os_build_number;
   private final @NotNull String device_os_name;
   private final @NotNull String device_os_version;
+  private final boolean device_is_emulator;
+  private final @NotNull List<String> device_cpu_frequencies;
+  private final @NotNull String device_physical_memory_bytes;
   private final @NotNull String platform;
   private final @NotNull String build_id;
 
   // Transaction info
   private final @NotNull String transaction_name;
+  // duration_ns is a String to avoid issues with numbers and json
+  private final @NotNull String duration_ns;
 
   // App info
   private final @NotNull String version_name;
@@ -44,10 +50,14 @@ public final class ProfilingTraceData {
   public ProfilingTraceData(
       @NotNull File traceFile,
       @NotNull ITransaction transaction,
+      @NotNull String durationNanos,
       int sdkInt,
       @Nullable String deviceManufacturer,
       @Nullable String deviceModel,
       @Nullable String deviceOsVersion,
+      @Nullable Boolean deviceIsEmulator,
+      @NotNull List<String> deviceCpuFrequencies,
+      @Nullable String devicePhysicalMemoryBytes,
       @Nullable String buildId,
       @Nullable String versionName,
       @Nullable String versionCode,
@@ -59,14 +69,19 @@ public final class ProfilingTraceData {
     this.device_locale = Locale.getDefault().toString();
     this.device_manufacturer = deviceManufacturer != null ? deviceManufacturer : "";
     this.device_model = deviceModel != null ? deviceModel : "";
+    this.device_os_version = deviceOsVersion != null ? deviceOsVersion : "";
+    this.device_is_emulator = deviceIsEmulator != null ? deviceIsEmulator : false;
+    this.device_cpu_frequencies = deviceCpuFrequencies;
+    this.device_physical_memory_bytes =
+        devicePhysicalMemoryBytes != null ? devicePhysicalMemoryBytes : "0";
     this.device_os_build_number = "";
     this.device_os_name = "android";
-    this.device_os_version = deviceOsVersion != null ? deviceOsVersion : "";
     this.platform = "android";
     this.build_id = buildId != null ? buildId : "";
 
     // Transaction info
     this.transaction_name = transaction.getName();
+    this.duration_ns = durationNanos;
 
     // App info
     this.version_name = versionName != null ? versionName : "";
@@ -115,6 +130,10 @@ public final class ProfilingTraceData {
     return device_os_version;
   }
 
+  public boolean isDevice_is_emulator() {
+    return device_is_emulator;
+  }
+
   public @NotNull String getPlatform() {
     return platform;
   }
@@ -153,6 +172,18 @@ public final class ProfilingTraceData {
 
   public @Nullable String getStacktrace() {
     return stacktrace;
+  }
+
+  public @NotNull String getDuration_ns() {
+    return duration_ns;
+  }
+
+  public @NotNull List<String> getDevice_cpu_frequencies() {
+    return device_cpu_frequencies;
+  }
+
+  public @NotNull String getDevice_physical_memory_bytes() {
+    return device_physical_memory_bytes;
   }
 
   public void setStacktrace(@Nullable String stacktrace) {

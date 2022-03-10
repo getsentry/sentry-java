@@ -58,7 +58,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger) {
-    init(options, context, logger, new BuildInfoProvider());
+    init(options, context, logger, new BuildInfoProvider(logger));
   }
 
   /**
@@ -119,8 +119,7 @@ final class AndroidOptionsInitializer {
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     options.setTransactionProfiler(
-        new AndroidTransactionProfiler(
-            options, ContextUtils.getPackageInfo(context, logger), buildInfoProvider));
+        new AndroidTransactionProfiler(context, options, buildInfoProvider));
   }
 
   private static void installDefaultIntegrations(

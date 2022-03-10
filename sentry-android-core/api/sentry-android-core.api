@@ -58,12 +58,13 @@ public final class io/sentry/android/core/BuildConfig {
 }
 
 public final class io/sentry/android/core/BuildInfoProvider : io/sentry/android/core/IBuildInfoProvider {
-	public fun <init> ()V
+	public fun <init> (Lio/sentry/ILogger;)V
 	public fun getBuildTags ()Ljava/lang/String;
 	public fun getManufacturer ()Ljava/lang/String;
 	public fun getModel ()Ljava/lang/String;
 	public fun getSdkInfoVersion ()I
 	public fun getVersionRelease ()Ljava/lang/String;
+	public fun isEmulator ()Ljava/lang/Boolean;
 }
 
 public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : io/sentry/Integration, java/io/Closeable {
@@ -79,6 +80,7 @@ public abstract interface class io/sentry/android/core/IBuildInfoProvider {
 	public abstract fun getModel ()Ljava/lang/String;
 	public abstract fun getSdkInfoVersion ()I
 	public abstract fun getVersionRelease ()Ljava/lang/String;
+	public abstract fun isEmulator ()Ljava/lang/Boolean;
 }
 
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {

@@ -1,6 +1,9 @@
 package io.sentry.util;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,5 +31,29 @@ public final class FileUtils {
       if (!deleteRecursively(f)) return false;
     }
     return file.delete();
+  }
+
+  /**
+   * Reads the content of a File into a String. If the file does not exist or is not a file, null is
+   * returned. Do not use with large files, as the String is kept in memory!
+   *
+   * @param file file to read
+   * @return a String containing all the content of the file, or null if it doesn't exists
+   * @throws IOException In case of error reading the file
+   */
+  @SuppressWarnings("DefaultCharset")
+  public static @Nullable String readText(@Nullable File file) throws IOException {
+    if (file == null || !file.exists() || !file.isFile()) {
+      return null;
+    }
+    StringBuilder contentBuilder = new StringBuilder();
+    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+
+      String line;
+      while ((line = br.readLine()) != null) {
+        contentBuilder.append(line).append("\n");
+      }
+    }
+    return contentBuilder.toString();
   }
 }

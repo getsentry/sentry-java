@@ -1,15 +1,20 @@
 package io.sentry.android.core;
 
+import static android.content.Context.ACTIVITY_SERVICE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.os.Debug;
+import android.os.SystemClock;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionProfiler;
 import io.sentry.ProfilingTraceData;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.util.UUID;
@@ -38,18 +43,21 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private @Nullable Future<?> scheduledFinish = null;
   private volatile @Nullable ITransaction activeTransaction = null;
   private volatile @Nullable ProfilingTraceData timedOutProfilingData = null;
+  private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull IBuildInfoProvider buildInfoProvider;
   private final @Nullable PackageInfo packageInfo;
+  private long transactionStartNanos = 0;
 
   public AndroidTransactionProfiler(
+      final @NotNull Context context,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
-      final @Nullable PackageInfo packageInfo,
       final @NotNull IBuildInfoProvider buildInfoProvider) {
+    this.context = Objects.requireNonNull(context, "The application context is required");
     this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
-    this.packageInfo = packageInfo;
+    this.packageInfo = ContextUtils.getPackageInfo(context, options.getLogger());
     final String tracesFilesDirPath = options.getProfilingTracesDirPath();
     if (tracesFilesDirPath == null || tracesFilesDirPath.isEmpty()) {
       options
@@ -116,12 +124,18 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                 () -> timedOutProfilingData = onTransactionFinish(transaction),
                 PROFILING_TIMEOUT_MILLIS);
 
+    transactionStartNanos = SystemClock.elapsedRealtimeNanos();
     Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
   }
 
+  @SuppressLint("NewApi")
   @Override
   public synchronized @Nullable ProfilingTraceData onTransactionFinish(
       @NotNull ITransaction transaction) {
+
+    // onTransactionStart() is only available since Lollipop
+    // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
 
     final ITransaction finalActiveTransaction = activeTransaction;
     final ProfilingTraceData profilingData = timedOutProfilingData;
@@ -171,6 +185,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
 
     Debug.stopMethodTracing();
+    long transactionDurationNanos = SystemClock.elapsedRealtimeNanos() - transactionStartNanos;
 
     activeTransaction = null;
 
@@ -191,21 +206,51 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     String versionName = "";
     String versionCode = "";
+    String totalMem = "0";
+    ActivityManager.MemoryInfo memInfo = getMemInfo();
     if (packageInfo != null) {
       versionName = ContextUtils.getVersionName(packageInfo);
       versionCode = ContextUtils.getVersionCode(packageInfo);
+    }
+    if (memInfo != null) {
+      totalMem = Long.toString(memInfo.totalMem);
     }
 
     return new ProfilingTraceData(
         traceFile,
         transaction,
+        Long.toString(transactionDurationNanos),
         buildInfoProvider.getSdkInfoVersion(),
         buildInfoProvider.getManufacturer(),
         buildInfoProvider.getModel(),
         buildInfoProvider.getVersionRelease(),
+        buildInfoProvider.isEmulator(),
+        CpuInfoUtils.readMaxFrequencies(),
+        totalMem,
         options.getProguardUuid(),
         versionName,
         versionCode,
         options.getEnvironment());
+  }
+
+  /**
+   * Get MemoryInfo object representing the memory state of the application.
+   *
+   * @return MemoryInfo object representing the memory state of the application
+   */
+  private @Nullable ActivityManager.MemoryInfo getMemInfo() {
+    try {
+      ActivityManager actManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
+      ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+      if (actManager != null) {
+        actManager.getMemoryInfo(memInfo);
+        return memInfo;
+      }
+      options.getLogger().log(SentryLevel.INFO, "Error getting MemoryInfo.");
+      return null;
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
+      return null;
+    }
   }
 }

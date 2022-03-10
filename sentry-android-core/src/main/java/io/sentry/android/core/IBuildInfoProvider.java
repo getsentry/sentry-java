@@ -43,4 +43,12 @@ public interface IBuildInfoProvider {
    */
   @Nullable
   String getVersionRelease();
+
+  /**
+   * Check whether the application is running in an emulator.
+   *
+   * @return true if the application is running in an emulator, false otherwise
+   */
+  @Nullable
+  Boolean isEmulator();
 }
