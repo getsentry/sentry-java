@@ -1,0 +1,96 @@
+name: 🐞 Bug Report - Android
+description: Tell us about something that's not working the way we (probably) intend.
+labels: ["Platform: Android", "Type: Bug"]
+body:
+  - type: dropdown
+    id: integration
+    attributes:
+      description: Integration
+      label: Integration
+      options:
+        - sentry-android
+        - sentry-android-ndk
+        - sentry-android-okhttp
+        - sentry-android-timber
+        - sentry-android-fragment
+        - sentry-apollo
+        - other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: build_system
+    attributes:
+      description: Build system
+      label: Build System
+      options:
+        - Gradle
+        - Buck
+        - Bazel
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: agp_version
+    attributes:
+      description: Android Gradle Plugin Version
+      placeholder: 7.0.0 ← should look like this
+      label: AGP Version
+    validations:
+      required: true
+
+  - type: dropdown
+    id: proguard
+    attributes:
+      description: Proguard/R8
+      label: Proguard
+      options:
+        - Enabled
+        - Disabled
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Sentry SDK Version
+      placeholder: 6.0.0 ← should look like this
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce
+      description: How can we see what you're seeing? Specific is terrific.
+      placeholder: |-
+        1. foo
+        2. bar
+        3. baz
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Result
+      description: Logs? Screenshots? Yes, please.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |-
+        ## Thanks 🙏
+        Check our [triage docs](https://open.sentry.io/triage/) for what to expect next.
+    validations:
+      required: false
