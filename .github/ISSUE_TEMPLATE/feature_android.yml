@@ -1,4 +1,4 @@
-name: 💡 Feature Request
+name: 💡 Feature Request - Android
 description: Tell us about a problem our SDK could solve but doesn't.
 labels: ["Platform: Android", "Type: Feature Request"]
 body:
@@ -27,5 +27,3 @@ body:
       value: |-
         ## Thanks 🙏
         Check our [triage docs](https://open.sentry.io/triage/) for what to expect next.
-    validations:
-      required: false
