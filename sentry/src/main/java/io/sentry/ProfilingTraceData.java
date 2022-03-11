@@ -40,12 +40,12 @@ public final class ProfilingTraceData {
   // Stacktrace context
   private final @NotNull String transaction_id;
   private final @NotNull String trace_id;
-  private final @NotNull String stacktrace_id;
+  private final @NotNull String profile_id;
   private final @NotNull String environment;
 
   // Stacktrace (file)
-  /** Stacktrace encoded with Base64 */
-  private @Nullable String stacktrace = null;
+  /** Profile trace encoded with Base64 */
+  private @Nullable String sampled_profile = null;
 
   public ProfilingTraceData(
       @NotNull File traceFile,
@@ -90,7 +90,7 @@ public final class ProfilingTraceData {
     // Stacktrace context
     this.transaction_id = transaction.getEventId().toString();
     this.trace_id = transaction.getSpanContext().getTraceId().toString();
-    this.stacktrace_id = UUID.randomUUID().toString();
+    this.profile_id = UUID.randomUUID().toString();
     this.environment = environment != null ? environment : "";
   }
 
@@ -162,16 +162,16 @@ public final class ProfilingTraceData {
     return trace_id;
   }
 
-  public @NotNull String getStacktrace_id() {
-    return stacktrace_id;
+  public @NotNull String getProfile_id() {
+    return profile_id;
   }
 
   public @NotNull String getEnvironment() {
     return environment;
   }
 
-  public @Nullable String getStacktrace() {
-    return stacktrace;
+  public @Nullable String getSampled_profile() {
+    return sampled_profile;
   }
 
   public @NotNull String getDuration_ns() {
@@ -186,7 +186,7 @@ public final class ProfilingTraceData {
     return device_physical_memory_bytes;
   }
 
-  public void setStacktrace(@Nullable String stacktrace) {
-    this.stacktrace = stacktrace;
+  public void setSampled_profile(@Nullable String sampledProfile) {
+    this.sampled_profile = sampledProfile;
   }
 }

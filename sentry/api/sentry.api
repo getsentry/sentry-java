@@ -531,8 +531,8 @@ public final class io/sentry/ProfilingTraceData {
 	public fun getDuration_ns ()Ljava/lang/String;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getPlatform ()Ljava/lang/String;
-	public fun getStacktrace ()Ljava/lang/String;
-	public fun getStacktrace_id ()Ljava/lang/String;
+	public fun getProfile_id ()Ljava/lang/String;
+	public fun getSampled_profile ()Ljava/lang/String;
 	public fun getTraceFile ()Ljava/io/File;
 	public fun getTraceId ()Ljava/lang/String;
 	public fun getTrace_id ()Ljava/lang/String;
@@ -541,7 +541,7 @@ public final class io/sentry/ProfilingTraceData {
 	public fun getVersion_code ()Ljava/lang/String;
 	public fun getVersion_name ()Ljava/lang/String;
 	public fun isDevice_is_emulator ()Z
-	public fun setStacktrace (Ljava/lang/String;)V
+	public fun setSampled_profile (Ljava/lang/String;)V
 }
 
 public final class io/sentry/RequestDetails {
