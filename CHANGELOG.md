@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Fix: If transaction or span is finished, do not allow to mutate (#1940)
+* Fix: Keep used AndroidX classes from obfuscation (Fixes UI breadcrumbs and Slow/Frozen frames) (#1942)
 
 ## 5.6.2
 
