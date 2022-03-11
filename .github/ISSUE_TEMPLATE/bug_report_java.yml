@@ -29,7 +29,7 @@ body:
     id: java_version
     attributes:
       description: Java Version
-      placeholder: 11
+      placeholder: 8 ← should look like this
       label: Java Version
     validations:
       required: true
@@ -75,5 +75,3 @@ body:
       value: |-
         ## Thanks 🙏
         Check our [triage docs](https://open.sentry.io/triage/) for what to expect next.
-    validations:
-      required: false
