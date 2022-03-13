@@ -133,6 +133,10 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String operation,
       final @Nullable String description,
       @Nullable Date timestamp) {
+    if (root.isFinished()) {
+      return NoOpSpan.getInstance();
+    }
+
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     Objects.requireNonNull(operation, "operation is required");
     final Span span =
@@ -175,6 +179,10 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String operation,
       final @Nullable String description,
       @Nullable Date timestamp) {
+    if (root.isFinished()) {
+      return NoOpSpan.getInstance();
+    }
+
     if (children.size() < hub.getOptions().getMaxSpans()) {
       return root.startChild(operation, description, timestamp);
     } else {
@@ -284,6 +292,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setOperation(final @NotNull String operation) {
+    if (root.isFinished()) {
+      return;
+    }
+
     this.root.setOperation(operation);
   }
 
@@ -294,6 +306,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setDescription(final @Nullable String description) {
+    if (root.isFinished()) {
+      return;
+    }
+
     this.root.setDescription(description);
   }
 
@@ -304,6 +320,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setStatus(final @Nullable SpanStatus status) {
+    if (root.isFinished()) {
+      return;
+    }
+
     this.root.setStatus(status);
   }
 
@@ -314,6 +334,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setThrowable(final @Nullable Throwable throwable) {
+    if (root.isFinished()) {
+      return;
+    }
+
     this.root.setThrowable(throwable);
   }
 
@@ -329,6 +353,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
+    if (root.isFinished()) {
+      return;
+    }
+
     this.root.setTag(key, value);
   }
 
@@ -344,6 +372,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setData(@NotNull String key, @NotNull Object value) {
+    if (root.isFinished()) {
+      return;
+    }
+
     this.root.setData(key, value);
   }
 
@@ -363,6 +395,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setName(@NotNull String name) {
+    if (root.isFinished()) {
+      return;
+    }
+
     this.name = name;
   }
 

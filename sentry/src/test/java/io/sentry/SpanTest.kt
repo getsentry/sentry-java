@@ -182,6 +182,37 @@ class SpanTest {
     }
 
     @Test
+    fun `when span is finished, do nothing`() {
+        val span = fixture.getSut()
+        span.description = "desc"
+        span.setTag("myTag", "myValue")
+        span.setData("myData", "myValue")
+        val ex = RuntimeException()
+        span.throwable = ex
+
+        span.finish(SpanStatus.OK)
+        assertTrue(span.isFinished)
+
+        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null))
+        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc"))
+
+        span.finish(SpanStatus.UNKNOWN_ERROR)
+        span.operation = "newOp"
+        span.description = "newDesc"
+        span.status = SpanStatus.ABORTED
+        span.setTag("myTag", "myNewValue")
+        span.throwable = RuntimeException()
+        span.setData("myData", "myNewValue")
+
+        assertEquals(SpanStatus.OK, span.status)
+        assertEquals("op", span.operation)
+        assertEquals("desc", span.description)
+        assertEquals("myValue", span.tags["myTag"])
+        assertEquals("myValue", span.data["myData"])
+        assertEquals(ex, span.throwable)
+    }
+
+    @Test
     fun `child trace state is equal to transaction trace state`() {
         val transaction = getTransaction()
         val span = transaction.startChild("operation", "description")

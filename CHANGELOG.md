@@ -46,6 +46,11 @@ Breaking changes:
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
 
+## 5.6.3
+
+* Fix: If transaction or span is finished, do not allow to mutate (#1940)
+* Fix: Keep used AndroidX classes from obfuscation (Fixes UI breadcrumbs and Slow/Frozen frames) (#1942)
+
 ## 5.6.2
 
 * Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
