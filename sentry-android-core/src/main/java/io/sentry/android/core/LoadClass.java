@@ -16,8 +16,7 @@ public final class LoadClass {
    * @param logger an instance of ILogger
    * @return a Class<?> if it's available, or null
    */
-  public @Nullable Class<?> loadClass(
-    final @NotNull String clazz, final @Nullable ILogger logger) {
+  public @Nullable Class<?> loadClass(final @NotNull String clazz, final @Nullable ILogger logger) {
     try {
       return Class.forName(clazz);
     } catch (ClassNotFoundException e) {
@@ -36,13 +35,12 @@ public final class LoadClass {
     return null;
   }
 
-  public boolean isClassAvailable(
-    final @NotNull String clazz, final @Nullable ILogger logger) {
+  public boolean isClassAvailable(final @NotNull String clazz, final @Nullable ILogger logger) {
     return loadClass(clazz, logger) != null;
   }
 
   public boolean isClassAvailable(
-    final @NotNull String clazz, final @Nullable SentryOptions options) {
+      final @NotNull String clazz, final @Nullable SentryOptions options) {
     return isClassAvailable(clazz, options != null ? options.getLogger() : null);
   }
 }

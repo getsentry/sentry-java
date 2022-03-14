@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.ILogger;
-import io.sentry.SentryOptions;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
@@ -27,10 +26,9 @@ public final class ActivityFramesTracker {
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
       activityMeasurements = new ConcurrentHashMap<>();
 
-  public ActivityFramesTracker(
-    final @NotNull LoadClass loadClass, final @Nullable ILogger logger) {
+  public ActivityFramesTracker(final @NotNull LoadClass loadClass, final @Nullable ILogger logger) {
     androidXAvailable =
-      loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", logger);
+        loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", logger);
     if (androidXAvailable) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
