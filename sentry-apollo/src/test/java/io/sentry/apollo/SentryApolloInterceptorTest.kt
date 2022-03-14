@@ -84,6 +84,8 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -97,6 +99,8 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -110,6 +114,8 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -144,6 +150,8 @@ class SentryApolloInterceptorTest {
                 val httpClientSpan = it.spans.first()
                 assertEquals("overwritten description", httpClientSpan.description)
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -158,6 +166,8 @@ class SentryApolloInterceptorTest {
             check {
                 assertEquals(1, it.spans.size)
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }

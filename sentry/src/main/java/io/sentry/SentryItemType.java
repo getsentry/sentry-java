@@ -10,6 +10,7 @@ public enum SentryItemType {
   UserFeedback("user_report"), // Sentry backend still uses user_report
   Attachment("attachment"),
   Transaction("transaction"),
+  Profile("profile"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
   private final String itemType;

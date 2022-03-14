@@ -290,6 +290,15 @@ public class SentryOptions {
   /** Controls if the `tracestate` header is attached to envelopes and HTTP client integrations. */
   private boolean traceSampling;
 
+  /** Control if profiling is enabled or not for transactions */
+  private boolean profilingEnabled = false;
+
+  /** Max trace file size in bytes. */
+  private long maxTraceFileSize = 5 * 1024 * 1024;
+
+  /** Listener interface to perform operations when a transaction is started or ended */
+  private @NotNull ITransactionProfiler transactionProfiler = NoOpTransactionProfiler.getInstance();
+
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
@@ -1110,8 +1119,9 @@ public class SentryOptions {
    *
    * @return the SentryExecutorService
    */
+  @ApiStatus.Internal
   @NotNull
-  ISentryExecutorService getExecutorService() {
+  public ISentryExecutorService getExecutorService() {
     return executorService;
   }
 
@@ -1507,6 +1517,61 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the maximum trace file size for each envelope item in bytes.
+   *
+   * @return the maximum attachment size in bytes.
+   */
+  public long getMaxTraceFileSize() {
+    return maxTraceFileSize;
+  }
+
+  /**
+   * Sets the max trace file size for each envelope item in bytes. Default is 5 Mb.
+   *
+   * @param maxTraceFileSize the max trace file size in bytes.
+   */
+  public void setMaxTraceFileSize(long maxTraceFileSize) {
+    this.maxTraceFileSize = maxTraceFileSize;
+  }
+
+  /**
+   * Returns the listener interface to perform operations when a transaction is started or ended.
+   *
+   * @return the listener interface to perform operations when a transaction is started or ended.
+   */
+  public @NotNull ITransactionProfiler getTransactionProfiler() {
+    return transactionProfiler;
+  }
+
+  /**
+   * Sets the listener interface to perform operations when a transaction is started or ended.
+   *
+   * @param transactionProfiler - the listener for operations when a transaction is started or ended
+   */
+  public void setTransactionProfiler(final @Nullable ITransactionProfiler transactionProfiler) {
+    this.transactionProfiler =
+        transactionProfiler != null ? transactionProfiler : NoOpTransactionProfiler.getInstance();
+  }
+
+  /**
+   * Returns if profiling is enabled for transactions.
+   *
+   * @return if profiling is enabled for transactions.
+   */
+  public boolean isProfilingEnabled() {
+    return profilingEnabled;
+  }
+
+  /**
+   * Sets whether profiling is enabled for transactions.
+   *
+   * @param profilingEnabled - whether profiling is enabled for transactions
+   */
+  public void setProfilingEnabled(boolean profilingEnabled) {
+    this.profilingEnabled = profilingEnabled;
+  }
+
+  /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
    * @return the list of origins
@@ -1669,6 +1734,9 @@ public class SentryOptions {
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
     }
+    setTransactionProfiler(options.getTransactionProfiler());
+    setMaxTraceFileSize(options.getMaxTraceFileSize());
+    setProfilingEnabled(options.isProfilingEnabled());
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       this.tags.put(tag.getKey(), tag.getValue());

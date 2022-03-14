@@ -63,6 +63,8 @@ class SentryTransactionAdviceTest {
                 assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
                 assertThat(it.status).isEqualTo(SpanStatus.OK)
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -74,6 +76,8 @@ class SentryTransactionAdviceTest {
             check {
                 assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -86,6 +90,8 @@ class SentryTransactionAdviceTest {
                 assertThat(it.transaction).isEqualTo("SampleService.methodWithoutTransactionNameSet")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("op")
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -107,6 +113,8 @@ class SentryTransactionAdviceTest {
                 assertThat(it.transaction).isEqualTo("ClassAnnotatedSampleService.hello")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("op")
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -119,6 +127,8 @@ class SentryTransactionAdviceTest {
                 assertThat(it.transaction).isEqualTo("ClassAnnotatedWithOperationSampleService.hello")
                 assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
             },
+            anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
