@@ -1,8 +1,5 @@
 package io.sentry.android.core;
 
-import static io.sentry.android.core.AndroidOptionsInitializer.SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME;
-import static io.sentry.android.core.AndroidOptionsInitializer.SENTRY_TIMBER_INTEGRATION_CLASS_NAME;
-
 import android.content.Context;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
@@ -27,6 +24,12 @@ public final class SentryAndroid {
   private static final @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static final long appStart = SystemClock.uptimeMillis();
+
+  static final String SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME =
+      "io.sentry.android.fragment.FragmentLifecycleIntegration";
+
+  static final String SENTRY_TIMBER_INTEGRATION_CLASS_NAME =
+      "io.sentry.android.timber.SentryTimberIntegration";
 
   private SentryAndroid() {}
 
@@ -81,10 +84,15 @@ public final class SentryAndroid {
           OptionsContainer.create(SentryAndroidOptions.class),
           options -> {
             final LoadClass classLoader = new LoadClass();
+            final boolean isFragmentAvailable =
+                classLoader.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options);
+            final boolean isTimberAvailable =
+                classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options);
+
             AndroidOptionsInitializer.init(
-                options, context, logger, new BuildInfoProvider(), classLoader);
+                options, context, logger, isFragmentAvailable, isTimberAvailable);
             configuration.configure(options);
-            deduplicateIntegrations(options, classLoader);
+            deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
           },
           true);
     } catch (IllegalAccessException e) {
@@ -115,14 +123,12 @@ public final class SentryAndroid {
    * @param options SentryOptions to retrieve integrations from
    */
   private static void deduplicateIntegrations(
-      final @NotNull SentryOptions options, final @NotNull LoadClass classLoader) {
+      final @NotNull SentryOptions options,
+      final boolean isFragmentAvailable,
+      final boolean isTimberAvailable) {
+
     final List<Integration> timberIntegrations = new ArrayList<>();
     final List<Integration> fragmentIntegrations = new ArrayList<>();
-
-    final boolean isFragmentAvailable =
-        classLoader.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options);
-    final boolean isTimberAvailable =
-        classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options);
 
     for (final Integration integration : options.getIntegrations()) {
       if (isFragmentAvailable) {

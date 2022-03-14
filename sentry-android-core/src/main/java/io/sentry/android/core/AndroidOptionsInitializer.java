@@ -32,12 +32,6 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
 
-  static final String SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME =
-      "io.sentry.android.fragment.FragmentLifecycleIntegration";
-
-  static final String SENTRY_TIMBER_INTEGRATION_CLASS_NAME =
-      "io.sentry.android.timber.SentryTimberIntegration";
-
   /** private ctor */
   private AndroidOptionsInitializer() {}
 
@@ -51,7 +45,7 @@ final class AndroidOptionsInitializer {
     Objects.requireNonNull(context, "The application context is required.");
     Objects.requireNonNull(options, "The options object is required.");
 
-    init(options, context, new AndroidLogger());
+    init(options, context, new AndroidLogger(), false, false);
   }
 
   /**
@@ -60,12 +54,16 @@ final class AndroidOptionsInitializer {
    * @param options the SentryOptions
    * @param context the Application context
    * @param logger the ILogger interface
+   * @param isFragmentAvailable whether the Fragment integration is available on the classpath
+   * @param isTimberAvailable whether the Timber integration is available on the classpath
    */
   static void init(
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
-      final @NotNull ILogger logger) {
-    init(options, context, logger, new BuildInfoProvider());
+      final @NotNull ILogger logger,
+      final boolean isFragmentAvailable,
+      final boolean isTimberAvailable) {
+    init(options, context, logger, new BuildInfoProvider(), isFragmentAvailable, isTimberAvailable);
   }
 
   /**
@@ -75,13 +73,24 @@ final class AndroidOptionsInitializer {
    * @param context the Application context
    * @param logger the ILogger interface
    * @param buildInfoProvider the IBuildInfoProvider interface
+   * @param isFragmentAvailable whether the Fragment integration is available on the classpath
+   * @param isTimberAvailable whether the Timber integration is available on the classpath
    */
   static void init(
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider) {
-    init(options, context, logger, buildInfoProvider, new LoadClass());
+      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final boolean isFragmentAvailable,
+      final boolean isTimberAvailable) {
+    init(
+        options,
+        context,
+        logger,
+        buildInfoProvider,
+        new LoadClass(),
+        isFragmentAvailable,
+        isTimberAvailable);
   }
 
   /**
@@ -92,13 +101,17 @@ final class AndroidOptionsInitializer {
    * @param logger the ILogger interface
    * @param buildInfoProvider the IBuildInfoProvider interface
    * @param loadClass the LoadClass wrapper
+   * @param isFragmentAvailable whether the Fragment integration is available on the classpath
+   * @param isTimberAvailable whether the Timber integration is available on the classpath
    */
   static void init(
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull IBuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass) {
+      final @NotNull LoadClass loadClass,
+      final boolean isFragmentAvailable,
+      final boolean isTimberAvailable) {
     Objects.requireNonNull(context, "The context is required.");
 
     // it returns null if ContextImpl, so let's check for nullability
@@ -118,7 +131,13 @@ final class AndroidOptionsInitializer {
     final ActivityFramesTracker activityFramesTracker =
         new ActivityFramesTracker(loadClass, options.getLogger());
     installDefaultIntegrations(
-        context, options, buildInfoProvider, loadClass, activityFramesTracker);
+        context,
+        options,
+        buildInfoProvider,
+        loadClass,
+        activityFramesTracker,
+        isFragmentAvailable,
+        isTimberAvailable);
 
     readDefaultOptionValues(options, context);
 
@@ -133,7 +152,9 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryOptions options,
       final @NotNull IBuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final boolean isFragmentAvailable,
+      final boolean isTimberAvailable) {
 
     options.addIntegration(
         new SendCachedEnvelopeFireAndForgetIntegration(
@@ -167,7 +188,7 @@ final class AndroidOptionsInitializer {
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
-      if (loadClass.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options.getLogger())) {
+      if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
     } else {
@@ -177,7 +198,7 @@ final class AndroidOptionsInitializer {
               SentryLevel.WARNING,
               "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
     }
-    if (loadClass.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options.getLogger())) {
+    if (isTimberAvailable) {
       options.addIntegration(new SentryTimberIntegration());
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));

@@ -59,7 +59,9 @@ class AndroidOptionsInitializerTest {
 
         fun initSutWithClassLoader(
             minApi: Int = 16,
-            classToLoad: Class<*>? = null
+            classToLoad: Class<*>? = null,
+            isFragmentAvailable: Boolean = false,
+            isTimberAvailable: Boolean = false
         ) {
             mockContext = ContextUtilsTest.mockMetaData(
                 mockContext = ContextUtilsTest.createMockContext(hasAppContext = true),
@@ -70,7 +72,7 @@ class AndroidOptionsInitializerTest {
             sentryOptions.setDebug(true)
             AndroidOptionsInitializer.init(
                 sentryOptions, mockContext, logger, createBuildInfo(minApi),
-                createClassMock(classToLoad)
+                createClassMock(classToLoad), isFragmentAvailable, isTimberAvailable
             )
         }
 
@@ -301,7 +303,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `FragmentLifecycleIntegration added to the integration list if available on classpath`() {
-        fixture.initSutWithClassLoader(classToLoad = FragmentLifecycleIntegration::class.java)
+        fixture.initSutWithClassLoader(isFragmentAvailable = true)
 
         val actual =
             fixture.sentryOptions.integrations.firstOrNull { it is FragmentLifecycleIntegration }
@@ -310,7 +312,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `FragmentLifecycleIntegration won't be enabled, it throws class not found`() {
-        fixture.initSutWithClassLoader(classToLoad = null)
+        fixture.initSutWithClassLoader(isFragmentAvailable = false)
 
         val actual =
             fixture.sentryOptions.integrations.firstOrNull { it is FragmentLifecycleIntegration }
@@ -319,7 +321,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `SentryTimberIntegration added to the integration list if available on classpath`() {
-        fixture.initSutWithClassLoader(classToLoad = SentryTimberIntegration::class.java)
+        fixture.initSutWithClassLoader(isTimberAvailable = true)
 
         val actual =
             fixture.sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
@@ -328,7 +330,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `SentryTimberIntegration won't be enabled, it throws class not found`() {
-        fixture.initSutWithClassLoader(classToLoad = null)
+        fixture.initSutWithClassLoader(isTimberAvailable = false)
 
         val actual =
             fixture.sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
