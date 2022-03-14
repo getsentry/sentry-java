@@ -6,6 +6,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+
 final class NoOpSentryClient implements ISentryClient {
 
   private static final NoOpSentryClient instance = new NoOpSentryClient();
@@ -50,7 +52,8 @@ final class NoOpSentryClient implements ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       @Nullable Scope scope,
-      @Nullable Map<String, Object> hint) {
+      @Nullable Map<String, Object> hint,
+      @Nullable ProfilingTraceData profilingTraceData) {
     return SentryId.EMPTY_ID;
   }
 }

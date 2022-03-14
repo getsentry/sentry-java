@@ -15,6 +15,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -63,7 +64,7 @@ final class AndroidOptionsInitializer {
       final @NotNull ILogger logger,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
-    init(options, context, logger, new BuildInfoProvider(), isFragmentAvailable, isTimberAvailable);
+    init(options, context, logger, new BuildInfoProvider(logger), isFragmentAvailable, isTimberAvailable);
   }
 
   /**
@@ -145,6 +146,8 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
+    options.setTransactionProfiler(
+        new AndroidTransactionProfiler(context, options, buildInfoProvider));
   }
 
   private static void installDefaultIntegrations(
@@ -287,10 +290,31 @@ final class AndroidOptionsInitializer {
    * @param context the Application context
    * @param options the SentryOptions
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static void initializeCacheDirs(
-      final @NotNull Context context, final @NotNull SentryOptions options) {
+      final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     final File cacheDir = new File(context.getCacheDir(), "sentry");
+    final File profilingTracesDir = new File(cacheDir, "profiling_traces");
     options.setCacheDirPath(cacheDir.getAbsolutePath());
+    options.setProfilingTracesDirPath(profilingTracesDir.getAbsolutePath());
+
+    if (options.isProfilingEnabled()) {
+      profilingTracesDir.mkdirs();
+      final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                if (oldTracesDirContent == null) return;
+                // Method trace files are normally deleted at the end of traces, but if that fails
+                // for some
+                // reason we try to clear any old files here.
+                for (File f : oldTracesDirContent) {
+                  FileUtils.deleteRecursively(f);
+                }
+              });
+    }
   }
 
   private static boolean isNdkAvailable(final @NotNull BuildInfoProvider buildInfoProvider) {

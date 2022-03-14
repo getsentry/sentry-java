@@ -58,7 +58,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(options, "SentryOptions is required.");
     if (options.getDsn() == null || options.getDsn().isEmpty()) {
       throw new IllegalArgumentException(
-          "Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.");
+          "Hub requires a DSN to be instantiated. Considering using the NoOpHub if no DSN is available.");
     }
   }
 
@@ -551,7 +551,8 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Map<String, Object> hint) {
+      final @Nullable Map<String, Object> hint,
+      final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -582,7 +583,9 @@ public final class Hub implements IHub {
           try {
             item = stack.peek();
             sentryId =
-                item.getClient().captureTransaction(transaction, traceState, item.getScope(), hint);
+                item.getClient()
+                    .captureTransaction(
+                        transaction, traceState, item.getScope(), hint, profilingTraceData);
           } catch (Throwable e) {
             options
                 .getLogger()
@@ -671,6 +674,13 @@ public final class Hub implements IHub {
               startTimestamp,
               waitForChildren,
               transactionFinishedCallback);
+
+      // The listener is called only if the transaction exists, as the transaction is needed to
+      // stop it
+      if (samplingDecision && options.isProfilingEnabled()) {
+        final ITransactionProfiler transactionListener = options.getTransactionProfiler();
+        transactionListener.onTransactionStart(transaction);
+      }
     }
     if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));

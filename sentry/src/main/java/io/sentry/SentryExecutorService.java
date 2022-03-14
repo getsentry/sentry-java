@@ -1,28 +1,33 @@
 package io.sentry;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
 final class SentryExecutorService implements ISentryExecutorService {
 
-  private final @NotNull ExecutorService executorService;
+  private final @NotNull ScheduledExecutorService executorService;
 
   @TestOnly
-  SentryExecutorService(final @NotNull ExecutorService executorService) {
+  SentryExecutorService(final @NotNull ScheduledExecutorService executorService) {
     this.executorService = executorService;
   }
 
   SentryExecutorService() {
-    this(Executors.newSingleThreadExecutor());
+    this(Executors.newSingleThreadScheduledExecutor());
   }
 
   @Override
   public @NotNull Future<?> submit(final @NotNull Runnable runnable) {
     return executorService.submit(runnable);
+  }
+
+  @Override
+  public @NotNull Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis) {
+    return executorService.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
   }
 
   @Override
