@@ -225,7 +225,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         buildInfoProvider.getModel(),
         buildInfoProvider.getVersionRelease(),
         buildInfoProvider.isEmulator(),
-        CpuInfoUtils.readMaxFrequencies(),
+        CpuInfoUtils.getInstance().readMaxFrequencies(),
         totalMem,
         options.getProguardUuid(),
         versionName,
