@@ -83,7 +83,7 @@ class AndroidOptionsInitializerTest {
         private fun createClassMock(clazz: Class<*>?): LoadClass {
             val loadClassMock = mock<LoadClass>()
             whenever(loadClassMock.loadClass(any(), any())).thenReturn(clazz)
-            whenever(loadClassMock.isClassAvailable(any(), any())).thenReturn(clazz != null)
+            whenever(loadClassMock.isClassAvailable(any(), any<ILogger>())).thenReturn(clazz != null)
             return loadClassMock
         }
     }

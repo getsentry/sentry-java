@@ -116,7 +116,7 @@ final class AndroidOptionsInitializer {
     initializeCacheDirs(context, options);
 
     final ActivityFramesTracker activityFramesTracker =
-        new ActivityFramesTracker(loadClass, options);
+        new ActivityFramesTracker(loadClass, options.getLogger());
     installDefaultIntegrations(
         context, options, buildInfoProvider, loadClass, activityFramesTracker);
 
@@ -143,7 +143,7 @@ final class AndroidOptionsInitializer {
     // because sentry-native move files around and we don't want to watch that.
     final Class<?> sentryNdkClass =
         isNdkAvailable(buildInfoProvider)
-            ? loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options)
+            ? loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger())
             : null;
     options.addIntegration(new NdkIntegration(sentryNdkClass));
 
@@ -167,7 +167,7 @@ final class AndroidOptionsInitializer {
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
-      if (loadClass.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options)) {
+      if (loadClass.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options.getLogger())) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
     } else {
@@ -177,7 +177,7 @@ final class AndroidOptionsInitializer {
               SentryLevel.WARNING,
               "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
     }
-    if (loadClass.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options)) {
+    if (loadClass.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options.getLogger())) {
       options.addIntegration(new SentryTimberIntegration());
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));

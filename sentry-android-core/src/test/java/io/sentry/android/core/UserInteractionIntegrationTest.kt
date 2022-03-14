@@ -38,7 +38,7 @@ class UserInteractionIntegrationTest {
             callback: Window.Callback? = null,
             isAndroidXAvailable: Boolean = true
         ): UserInteractionIntegration {
-            whenever(loadClass.isClassAvailable(any(), anyOrNull())).thenReturn(isAndroidXAvailable)
+            whenever(loadClass.isClassAvailable(any(), anyOrNull<SentryAndroidOptions>())).thenReturn(isAndroidXAvailable)
             whenever(hub.options).thenReturn(options)
             whenever(window.callback).thenReturn(callback)
             whenever(activity.window).thenReturn(window)
