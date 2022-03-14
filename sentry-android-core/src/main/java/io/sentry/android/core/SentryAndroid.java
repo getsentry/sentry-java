@@ -17,6 +17,9 @@ import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
+import static io.sentry.android.core.AndroidOptionsInitializer.SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME;
+import static io.sentry.android.core.AndroidOptionsInitializer.SENTRY_TIMBER_INTEGRATION_CLASS_NAME;
+
 /** Sentry initialization class */
 public final class SentryAndroid {
 
@@ -77,9 +80,10 @@ public final class SentryAndroid {
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),
           options -> {
-            AndroidOptionsInitializer.init(options, context, logger);
+            final LoadClass classLoader = new LoadClass();
+            AndroidOptionsInitializer.init(options, context, logger, new BuildInfoProvider(), classLoader);
             configuration.configure(options);
-            deduplicateIntegrations(options);
+            deduplicateIntegrations(options, classLoader);
           },
           true);
     } catch (IllegalAccessException e) {
@@ -109,14 +113,23 @@ public final class SentryAndroid {
    *
    * @param options SentryOptions to retrieve integrations from
    */
-  private static void deduplicateIntegrations(final @NotNull SentryOptions options) {
+  private static void deduplicateIntegrations(final @NotNull SentryOptions options, final @NotNull LoadClass classLoader) {
     final List<Integration> timberIntegrations = new ArrayList<>();
     final List<Integration> fragmentIntegrations = new ArrayList<>();
+
+    final boolean isFragmentAvailable = classLoader.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options);
+    final boolean isTimberAvailable = classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options);
+
     for (final Integration integration : options.getIntegrations()) {
-      if (integration instanceof FragmentLifecycleIntegration) {
-        fragmentIntegrations.add(integration);
-      } else if (integration instanceof SentryTimberIntegration) {
-        timberIntegrations.add(integration);
+      if (isFragmentAvailable) {
+        if (integration instanceof FragmentLifecycleIntegration) {
+          fragmentIntegrations.add(integration);
+        }
+      }
+      if (isTimberAvailable) {
+        if (integration instanceof SentryTimberIntegration) {
+          timberIntegrations.add(integration);
+        }
       }
     }
 
