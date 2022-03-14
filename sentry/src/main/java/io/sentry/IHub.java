@@ -272,6 +272,7 @@ public interface IHub {
    * @param transaction the transaction
    * @param traceState the trace state
    * @param hint the hint
+   * @param profilingTraceData the profiling trace data
    * @return transaction's id
    */
   @ApiStatus.Internal
@@ -279,7 +280,25 @@ public interface IHub {
   SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
-      @Nullable Object hint);
+      @Nullable Object hint,
+      final @Nullable ProfilingTraceData profilingTraceData);
+
+  /**
+   * Captures the transaction and enqueues it for sending to Sentry server.
+   *
+   * @param transaction the transaction
+   * @param traceState the trace state
+   * @param hint the hint
+   * @return transaction's id
+   */
+  @ApiStatus.Internal
+  @NotNull
+  default SentryId captureTransaction(
+      @NotNull SentryTransaction transaction,
+      @Nullable TraceState traceState,
+      @Nullable Object hint) {
+    return captureTransaction(transaction, traceState, hint, null);
+  }
 
   @ApiStatus.Internal
   @NotNull

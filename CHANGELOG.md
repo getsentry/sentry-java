@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Add Android profiling traces #1897
+
 ## 5.6.2
 
 ### Various fixes & improvements

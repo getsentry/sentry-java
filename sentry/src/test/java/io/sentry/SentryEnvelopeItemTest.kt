@@ -197,9 +197,9 @@ class SentryEnvelopeItemTest {
         }
 
         assertEquals(
-            "Dropping attachment, because the size of the it located at " +
+            "Dropping item, because its size located at " +
                 "'${fixture.pathname}' with ${file.length()} bytes is bigger than the maximum " +
-                "allowed attachment size of ${fixture.maxAttachmentSize} bytes.",
+                "allowed size of ${fixture.maxAttachmentSize} bytes.",
             exception.message
         )
     }

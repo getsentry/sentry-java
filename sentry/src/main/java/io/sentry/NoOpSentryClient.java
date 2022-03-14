@@ -48,7 +48,8 @@ final class NoOpSentryClient implements ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       @Nullable Scope scope,
-      @Nullable Object hint) {
+      @Nullable Object hint,
+      @Nullable ProfilingTraceData profilingTraceData) {
     return SentryId.EMPTY_ID;
   }
 }

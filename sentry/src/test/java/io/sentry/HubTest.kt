@@ -54,7 +54,7 @@ class HubTest {
     @Test
     fun `when no dsn available, ctor throws illegal arg`() {
         val ex = assertFailsWith<IllegalArgumentException> { Hub(SentryOptions()) }
-        assertEquals("Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.", ex.message)
+        assertEquals("Hub requires a DSN to be instantiated. Considering using the NoOpHub if no DSN is available.", ex.message)
     }
 
     @Test
@@ -1084,7 +1084,7 @@ class HubTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
         sentryTracer.finish()
         val traceState = sentryTracer.traceState()
-        verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null))
+        verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null), eq(null))
     }
 
     @Test

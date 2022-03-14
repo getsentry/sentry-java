@@ -203,6 +203,10 @@ public final class SentryTracer implements ITransaction {
   public void finish(@Nullable SpanStatus status) {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
+      ProfilingTraceData profilingTraceData = null;
+      if (hub.getOptions().isProfilingEnabled()) {
+        profilingTraceData = hub.getOptions().getTransactionProfiler().onTransactionFinish(this);
+      }
       root.finish(finishStatus.spanStatus);
 
       // finish unfinished children
@@ -236,7 +240,7 @@ public final class SentryTracer implements ITransaction {
       if (transactionFinishedCallback != null) {
         transactionFinishedCallback.execute(this);
       }
-      hub.captureTransaction(transaction, this.traceState());
+      hub.captureTransaction(transaction, this.traceState(), null, profilingTraceData);
     }
   }
 
