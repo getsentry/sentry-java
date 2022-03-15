@@ -1,25 +1,20 @@
 package io.sentry.android.core
 
-import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.MainEventProcessor
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
-import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME
+import io.sentry.android.fragment.FragmentLifecycleIntegration
+import io.sentry.android.timber.SentryTimberIntegration
 import org.junit.runner.RunWith
 import java.io.File
-import java.lang.RuntimeException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,24 +25,85 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class AndroidOptionsInitializerTest {
-    private lateinit var context: Context
-    private lateinit var file: File
+
+    class Fixture(val context: Context, private val file: File) {
+        val sentryOptions = SentryAndroidOptions()
+        lateinit var mockContext: Context
+        val logger = mock<ILogger>()
+
+        fun initSut(
+            metadata: Bundle? = null,
+            hasAppContext: Boolean = true,
+            useRealContext: Boolean = false,
+            configureOptions: SentryAndroidOptions.() -> Unit = {},
+            configureContext: Context.() -> Unit = {}
+        ) {
+            mockContext = if (metadata != null) {
+                ContextUtilsTest.mockMetaData(
+                    mockContext = ContextUtilsTest.createMockContext(hasAppContext),
+                    metaData = metadata
+                )
+            } else {
+                ContextUtilsTest.createMockContext(hasAppContext)
+            }
+            whenever(mockContext.cacheDir).thenReturn(file)
+            if (mockContext.applicationContext != null) {
+                whenever(mockContext.applicationContext.cacheDir).thenReturn(file)
+            }
+            mockContext.configureContext()
+            sentryOptions.configureOptions()
+            AndroidOptionsInitializer.init(
+                sentryOptions, if (useRealContext) context else mockContext
+            )
+        }
+
+        fun initSutWithClassLoader(
+            minApi: Int = 16,
+            classToLoad: Class<*>? = null,
+            isFragmentAvailable: Boolean = false,
+            isTimberAvailable: Boolean = false
+        ) {
+            mockContext = ContextUtilsTest.mockMetaData(
+                mockContext = ContextUtilsTest.createMockContext(hasAppContext = true),
+                metaData = Bundle().apply {
+                    putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+                }
+            )
+            sentryOptions.setDebug(true)
+            AndroidOptionsInitializer.init(
+                sentryOptions, mockContext, logger, createBuildInfo(minApi),
+                createClassMock(classToLoad), isFragmentAvailable, isTimberAvailable
+            )
+        }
+
+        private fun createBuildInfo(minApi: Int = 16): IBuildInfoProvider {
+            val buildInfo = mock<IBuildInfoProvider>()
+            whenever(buildInfo.sdkInfoVersion).thenReturn(minApi)
+            return buildInfo
+        }
+
+        private fun createClassMock(clazz: Class<*>?): LoadClass {
+            val loadClassMock = mock<LoadClass>()
+            whenever(loadClassMock.loadClass(any(), any())).thenReturn(clazz)
+            whenever(loadClassMock.isClassAvailable(any(), any<ILogger>())).thenReturn(clazz != null)
+            return loadClassMock
+        }
+    }
+
+    private lateinit var fixture: Fixture
 
     @BeforeTest
     fun `set up`() {
-        context = ApplicationProvider.getApplicationContext()
-        file = context.cacheDir
+        val appContext = ApplicationProvider.getApplicationContext<Context>()
+        fixture = Fixture(appContext, appContext.cacheDir)
     }
 
     @Test
     fun `logger set to AndroidLogger`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+        fixture.initSut()
         val logger = SentryOptions::class.java.declaredFields.first { it.name == "logger" }
         logger.isAccessible = true
-        val loggerField = logger.get(sentryOptions)
+        val loggerField = logger.get(fixture.sentryOptions)
         val innerLogger = loggerField.javaClass.declaredFields.first { it.name == "logger" }
         innerLogger.isAccessible = true
         assertTrue(innerLogger.get(loggerField) is AndroidLogger)
@@ -55,320 +111,229 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `AndroidEventProcessor added to processors list`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.eventProcessors.any { it is DefaultAndroidEventProcessor }
+        fixture.initSut()
+        val actual =
+            fixture.sentryOptions.eventProcessors.any { it is DefaultAndroidEventProcessor }
         assertNotNull(actual)
     }
 
     @Test
     fun `PerformanceAndroidEventProcessor added to processors list`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.eventProcessors.any { it is PerformanceAndroidEventProcessor }
+        fixture.initSut()
+        val actual =
+            fixture.sentryOptions.eventProcessors.any { it is PerformanceAndroidEventProcessor }
         assertNotNull(actual)
     }
 
     @Test
     fun `MainEventProcessor added to processors list and its the 1st`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.eventProcessors.firstOrNull { it is MainEventProcessor }
+        fixture.initSut()
+        val actual = fixture.sentryOptions.eventProcessors.firstOrNull { it is MainEventProcessor }
         assertNotNull(actual)
     }
 
     @Test
     fun `envelopesDir should be set at initialization`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
+        fixture.initSut()
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-
-        assertTrue(sentryOptions.cacheDirPath?.endsWith("${File.separator}cache${File.separator}sentry")!!)
+        assertTrue(
+            fixture.sentryOptions.cacheDirPath?.endsWith(
+                "${File.separator}cache${File.separator}sentry"
+            )!!
+        )
     }
 
     @Test
     fun `outboxDir should be set at initialization`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
+        fixture.initSut()
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-
-        assertTrue(sentryOptions.outboxPath?.endsWith("${File.separator}cache${File.separator}sentry${File.separator}outbox")!!)
+        assertTrue(
+            fixture.sentryOptions.outboxPath?.endsWith(
+                "${File.separator}cache${File.separator}sentry${File.separator}outbox"
+            )!!
+        )
     }
 
     @Test
     fun `init should set context package name as appInclude`() {
-        val sentryOptions = SentryAndroidOptions()
-
-        AndroidOptionsInitializer.init(sentryOptions, context)
+        fixture.initSut(useRealContext = true)
 
         // cant mock PackageInfo, its buggy
-        assertTrue(sentryOptions.inAppIncludes.contains("io.sentry.android.core.test"))
+        assertTrue(fixture.sentryOptions.inAppIncludes.contains("io.sentry.android.core.test"))
     }
 
     @Test
     fun `init should set release if empty`() {
-        val sentryOptions = SentryAndroidOptions()
-
-        AndroidOptionsInitializer.init(sentryOptions, context)
+        fixture.initSut(useRealContext = true)
 
         // cant mock PackageInfo, its buggy
-        assertTrue(sentryOptions.release!!.startsWith("io.sentry.android.core.test@"))
+        assertTrue(fixture.sentryOptions.release!!.startsWith("io.sentry.android.core.test@"))
     }
 
     @Test
     fun `init should not replace options if set on manifest`() {
-        val sentryOptions = SentryAndroidOptions().apply {
-            release = "release"
-        }
+        fixture.initSut(configureOptions = { release = "release" })
 
-        AndroidOptionsInitializer.init(sentryOptions, context)
-
-        assertEquals("release", sentryOptions.release)
+        assertEquals("release", fixture.sentryOptions.release)
     }
 
     @Test
     fun `init should not set context package name if it starts with android package`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = ContextUtilsTest.createMockContext()
-        whenever(mockContext.packageName).thenReturn("android.context")
+        fixture.initSut(configureContext = {
+            whenever(packageName).thenReturn("android.context")
+        })
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-
-        assertFalse(sentryOptions.inAppIncludes.contains("android.context"))
+        assertFalse(fixture.sentryOptions.inAppIncludes.contains("android.context"))
     }
 
     @Test
     fun `init should set distinct id on start`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = ContextUtilsTest.createMockContext()
+        fixture.initSut()
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-
-        assertNotNull(sentryOptions.distinctId) {
+        assertNotNull(fixture.sentryOptions.distinctId) {
             assertTrue(it.isNotEmpty())
         }
 
-        val installation = File(context.filesDir, Installation.INSTALLATION)
+        val installation = File(fixture.context.filesDir, Installation.INSTALLATION)
         installation.deleteOnExit()
     }
 
     @Test
     fun `init should set proguard uuid id on start`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithProguardUuid())
+        fixture.initSut(
+            Bundle().apply {
+                putString(ManifestMetadataReader.PROGUARD_UUID, "proguard-uuid")
+            },
+            hasAppContext = false
+        )
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-
-        assertEquals("proguard-uuid", sentryOptions.proguardUuid)
+        assertEquals("proguard-uuid", fixture.sentryOptions.proguardUuid)
     }
 
     @Test
     fun `init should set Android transport gate`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
+        fixture.initSut()
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-
-        assertNotNull(sentryOptions.transportGate)
-        assertTrue(sentryOptions.transportGate is AndroidTransportGate)
+        assertNotNull(fixture.sentryOptions.transportGate)
+        assertTrue(fixture.sentryOptions.transportGate is AndroidTransportGate)
     }
 
     @Test
     fun `NdkIntegration will load SentryNdk class and add to the integration list`() {
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
-        val logger = mock<ILogger>()
-        val sentryOptions = SentryAndroidOptions().apply {
-            setDebug(true)
-        }
+        fixture.initSutWithClassLoader(classToLoad = SentryNdk::class.java)
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(), createClassMock())
-
-        val actual = sentryOptions.integrations.firstOrNull { it is NdkIntegration }
+        val actual = fixture.sentryOptions.integrations.firstOrNull { it is NdkIntegration }
         assertNotNull((actual as NdkIntegration).sentryNdkClass)
-
-        verify(logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
-        verify(logger, never()).log(eq(SentryLevel.FATAL), any<String>(), any())
     }
 
     @Test
     fun `NdkIntegration won't be enabled because API is lower than 16`() {
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
-        val logger = mock<ILogger>()
-        val sentryOptions = SentryAndroidOptions().apply {
-            setDebug(true)
-        }
+        fixture.initSutWithClassLoader(minApi = 14, classToLoad = SentryNdk::class.java)
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(14), createClassMock())
-
-        val actual = sentryOptions.integrations.firstOrNull { it is NdkIntegration }
+        val actual = fixture.sentryOptions.integrations.firstOrNull { it is NdkIntegration }
         assertNull((actual as NdkIntegration).sentryNdkClass)
-
-        verify(logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
-        verify(logger, never()).log(eq(SentryLevel.FATAL), any<String>(), any())
     }
 
     @Test
-    fun `NdkIntegration won't be enabled, it throws linkage error`() {
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
-        val logger = mock<ILogger>()
-        val sentryOptions = SentryAndroidOptions().apply {
-            setDebug(true)
-        }
+    fun `NdkIntegration won't be enabled, if class not found`() {
+        fixture.initSutWithClassLoader(classToLoad = null)
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(), createClassMockThrows(UnsatisfiedLinkError()))
-
-        val actual = sentryOptions.integrations.firstOrNull { it is NdkIntegration }
+        val actual = fixture.sentryOptions.integrations.firstOrNull { it is NdkIntegration }
         assertNull((actual as NdkIntegration).sentryNdkClass)
-
-        verify(logger).log(eq(SentryLevel.ERROR), any<String>(), any())
-    }
-
-    @Test
-    fun `NdkIntegration won't be enabled, it throws class not found`() {
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
-        val logger = mock<ILogger>()
-        val sentryOptions = SentryAndroidOptions().apply {
-            setDebug(true)
-        }
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(), createClassMockThrows(ClassNotFoundException()))
-
-        val actual = sentryOptions.integrations.firstOrNull { it is NdkIntegration }
-        assertNull((actual as NdkIntegration).sentryNdkClass)
-
-        verify(logger).log(eq(SentryLevel.ERROR), any<String>(), any())
-    }
-
-    @Test
-    fun `NdkIntegration won't be enabled, it throws unknown error`() {
-        val mockContext = ContextUtilsTest.mockMetaData(metaData = createBundleWithDsn())
-        val logger = mock<ILogger>()
-        val sentryOptions = SentryAndroidOptions().apply {
-            setDebug(true)
-        }
-
-        AndroidOptionsInitializer.init(sentryOptions, mockContext, logger, createBuildInfo(), createClassMockThrows(RuntimeException()))
-
-        val actual = sentryOptions.integrations.firstOrNull { it is NdkIntegration }
-        assertNull((actual as NdkIntegration).sentryNdkClass)
-
-        verify(logger).log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
     @Test
     fun `AnrIntegration added to integration list`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
+        fixture.initSut()
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.integrations.firstOrNull { it is AnrIntegration }
+        val actual = fixture.sentryOptions.integrations.firstOrNull { it is AnrIntegration }
         assertNotNull(actual)
     }
 
     @Test
     fun `EnvelopeFileObserverIntegration added to integration list`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
+        fixture.initSut()
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.integrations.firstOrNull { it is EnvelopeFileObserverIntegration }
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is EnvelopeFileObserverIntegration }
         assertNotNull(actual)
     }
 
     @Test
     fun `SendCachedEnvelopeFireAndForgetIntegration added to integration list`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = createMockContext()
+        fixture.initSut()
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.integrations.firstOrNull { it is SendCachedEnvelopeFireAndForgetIntegration }
+        val actual =
+            fixture.sentryOptions.integrations
+                .firstOrNull { it is SendCachedEnvelopeFireAndForgetIntegration }
         assertNotNull(actual)
     }
 
     @Test
     fun `When given Context returns a non null ApplicationContext, uses it`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockApp = mock<Application>()
-        val mockContext = mock<Context>()
-        whenever(mockContext.applicationContext).thenReturn(mockApp)
+        fixture.initSut()
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        assertNotNull(mockContext)
+        assertNotNull(fixture.mockContext)
     }
 
     @Test
     fun `When given Context returns a null ApplicationContext is null, keep given Context`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = mock<Context>()
-        whenever(mockContext.applicationContext).thenReturn(null)
+        fixture.initSut(hasAppContext = false)
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        assertNotNull(mockContext)
+        assertNotNull(fixture.mockContext)
     }
 
     @Test
     fun `When given Context is not an Application class, do not add ActivityLifecycleIntegration`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = mock<Context>()
-        whenever(mockContext.applicationContext).thenReturn(null)
+        fixture.initSut(hasAppContext = false)
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.integrations.firstOrNull { it is ActivityLifecycleIntegration }
+        val actual = fixture.sentryOptions.integrations
+            .firstOrNull { it is ActivityLifecycleIntegration }
         assertNull(actual)
     }
 
     @Test
     fun `When given Context is not an Application class, do not add UserInteractionIntegration`() {
-        val sentryOptions = SentryAndroidOptions()
-        val mockContext = mock<Context>()
-        whenever(mockContext.applicationContext).thenReturn(null)
+        fixture.initSut(hasAppContext = false)
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
-        val actual = sentryOptions.integrations.firstOrNull { it is UserInteractionIntegration }
+        val actual = fixture.sentryOptions.integrations
+            .firstOrNull { it is UserInteractionIntegration }
         assertNull(actual)
     }
 
-    private fun createMockContext(): Context {
-        val mockContext = ContextUtilsTest.createMockContext()
-        whenever(mockContext.cacheDir).thenReturn(file)
-        return mockContext
+    @Test
+    fun `FragmentLifecycleIntegration added to the integration list if available on classpath`() {
+        fixture.initSutWithClassLoader(isFragmentAvailable = true)
+
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is FragmentLifecycleIntegration }
+        assertNotNull(actual)
     }
 
-    private fun createBundleWithDsn(): Bundle {
-        return Bundle().apply {
-            putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
-        }
+    @Test
+    fun `FragmentLifecycleIntegration won't be enabled, it throws class not found`() {
+        fixture.initSutWithClassLoader(isFragmentAvailable = false)
+
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is FragmentLifecycleIntegration }
+        assertNull(actual)
     }
 
-    private fun createBundleWithProguardUuid(): Bundle {
-        return Bundle().apply {
-            putString(ManifestMetadataReader.PROGUARD_UUID, "proguard-uuid")
-        }
+    @Test
+    fun `SentryTimberIntegration added to the integration list if available on classpath`() {
+        fixture.initSutWithClassLoader(isTimberAvailable = true)
+
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
+        assertNotNull(actual)
     }
 
-    private fun createBuildInfo(minApi: Int = 16): IBuildInfoProvider {
-        val buildInfo = mock<IBuildInfoProvider>()
-        whenever(buildInfo.sdkInfoVersion).thenReturn(minApi)
-        return buildInfo
-    }
+    @Test
+    fun `SentryTimberIntegration won't be enabled, it throws class not found`() {
+        fixture.initSutWithClassLoader(isTimberAvailable = false)
 
-    private fun createClassMock(clazz: Class<*> = SentryNdk::class.java): LoadClass {
-        val loadClassMock = mock<LoadClass>()
-        whenever(loadClassMock.loadClass(any())).thenReturn(clazz)
-        return loadClassMock
-    }
-
-    private fun createClassMockThrows(ex: Throwable): LoadClass {
-        val loadClassMock = mock<LoadClass>()
-        whenever(loadClassMock.loadClass(eq(SENTRY_NDK_CLASS_NAME))).thenThrow(ex)
-        return loadClassMock
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
+        assertNull(actual)
     }
 }
