@@ -27,14 +27,14 @@ public final class CpuInfoUtils {
   static final @NotNull String CPUINFO_MAX_FREQ_PATH = "cpufreq/cpuinfo_max_freq";
 
   /** Cached max frequencies to avoid reading files multiple times */
-  @VisibleForTesting final @NotNull List<String> cpuMaxFrequenciesMhz = new ArrayList<>();
+  @VisibleForTesting final @NotNull List<Integer> cpuMaxFrequenciesMhz = new ArrayList<>();
 
   /**
    * Read the max frequency of each core of the cpu and returns it in Mhz
    *
    * @return A list with the frequency of each core of the cpu in Mhz
    */
-  public @NotNull List<String> readMaxFrequencies() {
+  public @NotNull List<Integer> readMaxFrequencies() {
     if (!cpuMaxFrequenciesMhz.isEmpty()) {
       return cpuMaxFrequenciesMhz;
     }
@@ -59,7 +59,7 @@ public final class CpuInfoUtils {
       } catch (IOException e) {
         continue;
       }
-      cpuMaxFrequenciesMhz.add(Long.toString(khz / 1000));
+      cpuMaxFrequenciesMhz.add((int) (khz / 1000));
     }
     return cpuMaxFrequenciesMhz;
   }

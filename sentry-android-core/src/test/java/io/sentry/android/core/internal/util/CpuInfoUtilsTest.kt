@@ -40,7 +40,7 @@ class CpuInfoUtilsTest {
 
     @Test
     fun `readMaxFrequencies reads Khz and returns Mhz`() {
-        val expected = listOf("0", "1", "2", "3")
+        val expected = listOf(0, 1, 2, 3)
         populateCpuFiles(listOf("0", "1000", "2000", "3000"))
         // The order given by readFiles() is not guaranteed to be sorted, so we compare in this way
         assert(expected.containsAll(ciu.readMaxFrequencies()))
@@ -61,7 +61,7 @@ class CpuInfoUtilsTest {
 
     @Test
     fun `readMaxFrequencies skips invalid values`() {
-        val expected = listOf("2", "3")
+        val expected = listOf(2, 3)
         populateCpuFiles(listOf("invalid", "2000", "3000", "another"))
 
         // The order given by readFiles() is not guaranteed to be sorted, so we compare in this way
@@ -73,7 +73,7 @@ class CpuInfoUtilsTest {
     fun `readMaxFrequencies caches values if they are valid`() {
         // First call with invalid data
         ciu.readMaxFrequencies()
-        val expected = listOf("0", "1", "2", "3")
+        val expected = listOf(0, 1, 2, 3)
         populateCpuFiles(listOf("0", "1000", "2000", "3000"))
 
         // Second and third call with valid data will be read only once
