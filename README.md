@@ -10,7 +10,7 @@ _Bad software is everywhere, and we're tired of it. Sentry is on a mission to he
 Sentry SDK for Java and Android
 ===========
 [![GH Workflow](https://img.shields.io/github/workflow/status/getsentry/sentry-java/Build?label=GH%20Workflow)](https://github.com/getsentry/sentry-java/actions)
-[![codecov](https://codecov.io/gh/getsentry/sentry-java/branch/ref/sentry-java-2/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-java)
+[![codecov](https://codecov.io/gh/getsentry/sentry-java/branch/main/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-java)
 [![Discord Chat](https://img.shields.io/discord/621778831602221064?logo=discord&logoColor=ffffff&color=7389D8)](https://discord.gg/PXa5Apfe7K)
 
 |      Packages          | Maven Central | Android API |
