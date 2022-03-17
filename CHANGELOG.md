@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.7.0
 
 * Feat: Automatically enable `Timber` and `Fragment` integrations if they are present on the classpath (#1936)
 
