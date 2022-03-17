@@ -3,7 +3,7 @@
 # ./scripts/post-release.sh <old version> <new version>
 # eg ./scripts/post-release.sh "6.0.0-alpha.1" "6.0.0-alpha.2"
 
-set -eux
+set -euo pipefail
 
 git checkout main
 GRADLE_FILEPATH="gradle.properties"
@@ -28,6 +28,6 @@ version_digit_to_bump="$( awk "/$VERSION_NAME_PATTERN/" $GRADLE_FILEPATH | egrep
 new_version="$( echo $version | sed "s/[0-9]*$/$version_digit_to_bump/g" )"
 perl -pi -e "s/$VERSION_NAME_PATTERN=.*$/$VERSION_NAME_PATTERN=$new_version-SNAPSHOT/g" $GRADLE_FILEPATH
 
-git add .
+git add CHANGELOG.md $GRADLE_FILEPATH
 git commit -m "Prepare $new_version"
 git push
