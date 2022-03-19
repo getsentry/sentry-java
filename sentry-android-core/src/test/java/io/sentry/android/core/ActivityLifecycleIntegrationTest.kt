@@ -47,7 +47,7 @@ class ActivityLifecycleIntegrationTest {
         val activityFramesTracker = mock<ActivityFramesTracker>()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
         val transaction = SentryTracer(context, hub, true, transactionFinishedCallback)
-        val buildInfo = mock<IBuildInfoProvider>()
+        val buildInfo = mock<BuildInfoProvider>()
 
         fun getSut(apiVersion: Int = 29, importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND): ActivityLifecycleIntegration {
             whenever(hub.options).thenReturn(options)

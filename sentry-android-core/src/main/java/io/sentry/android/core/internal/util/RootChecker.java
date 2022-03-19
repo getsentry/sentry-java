@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.android.core.IBuildInfoProvider;
+import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,7 +22,7 @@ public final class RootChecker {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final @NotNull Context context;
-  private final @NotNull IBuildInfoProvider buildInfoProvider;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull ILogger logger;
 
   private final @NotNull String[] rootFiles;
@@ -33,7 +33,7 @@ public final class RootChecker {
 
   public RootChecker(
       final @NotNull Context context,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ILogger logger) {
     this(
         context,
@@ -66,7 +66,7 @@ public final class RootChecker {
 
   RootChecker(
       final @NotNull Context context,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ILogger logger,
       final @NotNull String[] rootFiles,
       final @NotNull String[] rootPackages,

@@ -21,7 +21,7 @@ class ANRWatchDogTest {
     @Test
     fun `when ANR is detected, callback is invoked with threads stacktrace`() {
         var anr: ApplicationNotResponding? = null
-        val handler = mock<IHandler>()
+        val handler = mock<MainLooperHandler>()
         val thread = mock<Thread>()
         val expectedState = Thread.State.BLOCKED
         val stacktrace = StackTraceElement("class", "method", "fileName", 10)
@@ -54,7 +54,7 @@ class ANRWatchDogTest {
     @Test
     fun `when ANR is not detected, callback is not invoked`() {
         var anr: ApplicationNotResponding? = null
-        val handler = mock<IHandler>()
+        val handler = mock<MainLooperHandler>()
         val thread = mock<Thread>()
         var invoked = false
         whenever(handler.post(any())).then { i ->
@@ -84,7 +84,7 @@ class ANRWatchDogTest {
     @Test
     fun `when ANR is detected and ActivityManager has ANR process, callback is invoked`() {
         var anr: ApplicationNotResponding? = null
-        val handler = mock<IHandler>()
+        val handler = mock<MainLooperHandler>()
         val thread = mock<Thread>()
         val expectedState = Thread.State.BLOCKED
         val stacktrace = StackTraceElement("class", "method", "fileName", 10)
@@ -125,7 +125,7 @@ class ANRWatchDogTest {
     @Test
     fun `when ANR is detected and ActivityManager has no ANR process, callback is not invoked`() {
         var anr: ApplicationNotResponding? = null
-        val handler = mock<IHandler>()
+        val handler = mock<MainLooperHandler>()
         val thread = mock<Thread>()
         val expectedState = Thread.State.BLOCKED
         val stacktrace = StackTraceElement("class", "method", "fileName", 10)

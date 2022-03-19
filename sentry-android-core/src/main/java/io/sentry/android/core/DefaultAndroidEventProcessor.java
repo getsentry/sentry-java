@@ -64,7 +64,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @TestOnly final Future<Map<String, Object>> contextData;
 
-  private final @NotNull IBuildInfoProvider buildInfoProvider;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull RootChecker rootChecker;
 
   private final @NotNull ILogger logger;
@@ -72,14 +72,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   public DefaultAndroidEventProcessor(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider) {
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this(context, logger, buildInfoProvider, new RootChecker(context, buildInfoProvider, logger));
   }
 
   DefaultAndroidEventProcessor(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull RootChecker rootChecker) {
     this.context = Objects.requireNonNull(context, "The application context is required.");
     this.logger = Objects.requireNonNull(logger, "The Logger is required.");

@@ -9,7 +9,7 @@ import android.net.NetworkCapabilities;
 import android.os.Build;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.android.core.IBuildInfoProvider;
+import io.sentry.android.core.BuildInfoProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,7 +83,7 @@ public final class ConnectivityChecker {
   public static @Nullable String getConnectionType(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider) {
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     final ConnectivityManager connectivityManager = getConnectivityManager(context, logger);
     if (connectivityManager == null) {
       return null;

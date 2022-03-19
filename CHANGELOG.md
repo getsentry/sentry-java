@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Ref: Remove not needed interface abstractions on Android (#)
+
 ## 6.0.0-alpha.3
 
 * Ref: Make hints Map<String, Object> instead of only Object (#1929)

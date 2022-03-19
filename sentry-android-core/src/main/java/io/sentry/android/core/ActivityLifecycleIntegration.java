@@ -62,7 +62,7 @@ public final class ActivityLifecycleIntegration
 
   public ActivityLifecycleIntegration(
       final @NotNull Application application,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
     this.application = Objects.requireNonNull(application, "Application is required");
     Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
