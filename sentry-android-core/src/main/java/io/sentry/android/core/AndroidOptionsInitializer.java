@@ -72,7 +72,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider) {
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     init(options, context, logger, buildInfoProvider, new LoadClass());
   }
 
@@ -89,7 +89,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass) {
     Objects.requireNonNull(context, "The context is required.");
 
@@ -122,7 +122,7 @@ final class AndroidOptionsInitializer {
   private static void installDefaultIntegrations(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
 
@@ -254,13 +254,13 @@ final class AndroidOptionsInitializer {
     options.setCacheDirPath(cacheDir.getAbsolutePath());
   }
 
-  private static boolean isNdkAvailable(final @NotNull IBuildInfoProvider buildInfoProvider) {
+  private static boolean isNdkAvailable(final @NotNull BuildInfoProvider buildInfoProvider) {
     return buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN;
   }
 
   private static @Nullable Class<?> loadNdkIfAvailable(
       final @NotNull SentryOptions options,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass) {
     if (isNdkAvailable(buildInfoProvider)) {
       try {

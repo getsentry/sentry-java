@@ -6,19 +6,17 @@ import org.jetbrains.annotations.Nullable;
 
 /** The Android Impl. of IBuildInfoProvider which returns the Build class info. */
 @ApiStatus.Internal
-public final class BuildInfoProvider implements IBuildInfoProvider {
+public final class BuildInfoProvider {
 
   /**
    * Returns the Build.VERSION.SDK_INT
    *
    * @return the Build.VERSION.SDK_INT
    */
-  @Override
   public int getSdkInfoVersion() {
     return Build.VERSION.SDK_INT;
   }
 
-  @Override
   public @Nullable String getBuildTags() {
     return Build.TAGS;
   }

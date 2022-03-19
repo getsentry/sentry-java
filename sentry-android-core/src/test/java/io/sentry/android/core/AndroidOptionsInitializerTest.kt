@@ -354,8 +354,8 @@ class AndroidOptionsInitializerTest {
         }
     }
 
-    private fun createBuildInfo(minApi: Int = 16): IBuildInfoProvider {
-        val buildInfo = mock<IBuildInfoProvider>()
+    private fun createBuildInfo(minApi: Int = 16): BuildInfoProvider {
+        val buildInfo = mock<BuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(minApi)
         return buildInfo
     }

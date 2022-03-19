@@ -7,7 +7,7 @@ public final class io/sentry/android/core/ActivityFramesTracker {
 }
 
 public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/IBuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;)V
+	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
@@ -57,7 +57,7 @@ public final class io/sentry/android/core/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/android/core/BuildInfoProvider : io/sentry/android/core/IBuildInfoProvider {
+public final class io/sentry/android/core/BuildInfoProvider {
 	public fun <init> ()V
 	public fun getBuildTags ()Ljava/lang/String;
 	public fun getSdkInfoVersion ()I
@@ -68,11 +68,6 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 	public fun close ()V
 	public static fun getOutboxFileObserver ()Lio/sentry/android/core/EnvelopeFileObserverIntegration;
 	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
-}
-
-public abstract interface class io/sentry/android/core/IBuildInfoProvider {
-	public abstract fun getBuildTags ()Ljava/lang/String;
-	public abstract fun getSdkInfoVersion ()I
 }
 
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {

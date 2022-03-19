@@ -44,14 +44,14 @@ class DefaultAndroidEventProcessorTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.DefaultAndroidEventProcessor"
-    private val ctorTypes = arrayOf(Context::class.java, ILogger::class.java, IBuildInfoProvider::class.java)
+    private val ctorTypes = arrayOf(Context::class.java, ILogger::class.java, BuildInfoProvider::class.java)
 
     init {
         Locale.setDefault(Locale.US)
     }
 
     private class Fixture {
-        val buildInfo = mock<IBuildInfoProvider>()
+        val buildInfo = mock<BuildInfoProvider>()
         val options = SentryOptions().apply {
             setDebug(true)
             setLogger(mock())
@@ -98,7 +98,7 @@ class DefaultAndroidEventProcessorTest {
     fun `when null buildInfo is provided, invalid argument is thrown`() {
         val ctor = className.getCtor(ctorTypes)
 
-        val params = arrayOf(null, null, mock<IBuildInfoProvider>())
+        val params = arrayOf(null, null, mock<BuildInfoProvider>())
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
