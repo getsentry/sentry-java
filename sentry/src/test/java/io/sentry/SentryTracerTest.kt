@@ -330,8 +330,6 @@ class SentryTracerTest {
         transaction.setData("myData", "myValue")
         val ex = RuntimeException()
         transaction.throwable = ex
-        val req = Request()
-        transaction.request = req
 
         transaction.finish(SpanStatus.OK)
         assertTrue(transaction.isFinished)
@@ -346,7 +344,6 @@ class SentryTracerTest {
         transaction.throwable = RuntimeException()
         transaction.setData("myData", "myNewValue")
         transaction.name = "newName"
-        transaction.request = Request()
 
         assertEquals(SpanStatus.OK, transaction.status)
         assertEquals("op", transaction.operation)
@@ -354,7 +351,6 @@ class SentryTracerTest {
         assertEquals("myValue", transaction.getTag("myTag"))
         assertEquals("myValue", transaction.getData("myData"))
         assertEquals("name", transaction.name)
-        assertEquals(req, transaction.request)
         assertEquals(ex, transaction.throwable)
     }
 
