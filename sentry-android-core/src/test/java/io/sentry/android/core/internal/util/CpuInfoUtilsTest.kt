@@ -4,21 +4,21 @@ import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 class CpuInfoUtilsTest {
 
     private lateinit var cpuDirs: File
     private lateinit var ciu: CpuInfoUtils
 
-    private fun populateCpuFiles(values: List<String>) = (values.indices).mapIndexed { i, v ->
+    private fun populateCpuFiles(values: List<String>) = values.mapIndexed { i, v ->
         val cpuMaxFreqFile = File(cpuDirs, "cpu$i${File.separator}${CpuInfoUtils.CPUINFO_MAX_FREQ_PATH}")
         cpuMaxFreqFile.parentFile?.mkdirs()
-        cpuMaxFreqFile.writeText(values[i])
+        cpuMaxFreqFile.writeText(v)
         cpuMaxFreqFile
     }
 

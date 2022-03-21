@@ -22,7 +22,6 @@ import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
-import org.jetbrains.annotations.VisibleForTesting;
 
 final class AndroidTransactionProfiler implements ITransactionProfiler {
 
@@ -43,7 +42,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private @Nullable File traceFile = null;
   private @Nullable File traceFilesDir = null;
   private @Nullable Future<?> scheduledFinish = null;
-  @VisibleForTesting volatile @Nullable ITransaction activeTransaction = null;
+  private volatile @Nullable ITransaction activeTransaction = null;
   private volatile @Nullable ProfilingTraceData timedOutProfilingData = null;
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;

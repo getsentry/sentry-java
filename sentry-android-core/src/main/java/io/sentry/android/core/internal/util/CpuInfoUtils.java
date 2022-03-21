@@ -27,7 +27,7 @@ public final class CpuInfoUtils {
   static final @NotNull String CPUINFO_MAX_FREQ_PATH = "cpufreq/cpuinfo_max_freq";
 
   /** Cached max frequencies to avoid reading files multiple times */
-  @VisibleForTesting final @NotNull List<Integer> cpuMaxFrequenciesMhz = new ArrayList<>();
+  private final @NotNull List<Integer> cpuMaxFrequenciesMhz = new ArrayList<>();
 
   /**
    * Read the max frequency of each core of the cpu and returns it in Mhz

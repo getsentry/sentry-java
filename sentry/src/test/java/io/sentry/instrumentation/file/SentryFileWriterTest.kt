@@ -8,9 +8,9 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus.OK
 import io.sentry.TransactionContext
 import org.junit.Rule
-import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryFileWriterTest {

@@ -29,9 +29,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
 import org.awaitility.kotlin.await
 import org.junit.AfterClass
-import org.junit.Before
 import org.junit.BeforeClass
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -70,6 +68,8 @@ import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -102,7 +102,7 @@ class SentrySpringIntegrationTest {
     @LocalServerPort
     var port: Int? = null
 
-    @Before
+    @BeforeTest
     fun `reset mocks`() {
         reset(transport)
     }

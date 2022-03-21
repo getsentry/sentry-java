@@ -9,12 +9,12 @@ import io.sentry.SpanStatus
 import io.sentry.SpanStatus.INTERNAL_ERROR
 import io.sentry.TransactionContext
 import org.junit.Rule
-import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.IOException
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryFileInputStreamTest {

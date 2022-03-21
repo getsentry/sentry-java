@@ -1,41 +1,60 @@
 package io.sentry.util
 
-import org.junit.Test
 import java.io.File
 import java.nio.file.Files
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class FileUtilsTest {
 
     @Test
-    fun `deleteRecursively returns true on non-existing file or null`() {
-        assert(FileUtils.deleteRecursively(null))
-        assert(FileUtils.deleteRecursively(File("")))
+    fun `deleteRecursively returns true on null file`() {
+        assertTrue(FileUtils.deleteRecursively(null))
+    }
+
+    @Test
+    fun `deleteRecursively returns true on non-existing file`() {
+        assertTrue(FileUtils.deleteRecursively(File("")))
     }
 
     @Test
     fun `deleteRecursively deletes a simple file`() {
         val f = Files.createTempFile("here", "test").toFile()
-        assert(f.exists())
-        assert(FileUtils.deleteRecursively(f))
+        assertTrue(f.exists())
+        assertTrue(FileUtils.deleteRecursively(f))
         assertFalse(f.exists())
     }
 
     @Test
     fun `deleteRecursively deletes a folder`() {
-        val d = Files.createTempDirectory("here").toFile()
-        val f = File(d, "test")
-        val d2 = File(d, "dir2")
-        val f2 = File(d2, "test")
-        f.createNewFile()
-        d2.mkdir()
-        f2.createNewFile()
-        assert(d.exists() && d.isDirectory && f.exists() && d2.exists() && d2.isDirectory)
-        assert(f2.exists())
-        assert(FileUtils.deleteRecursively(d))
-        assertFalse(f.exists() || d.exists() || f2.exists() || d2.exists())
+        // Setup vars
+        val rootDir = Files.createTempDirectory("here").toFile()
+        val rootChild = File(rootDir, "test")
+        val innerDir = File(rootDir, "dir2")
+        val innerChild = File(innerDir, "test")
+
+        // Create directories and files
+        rootChild.createNewFile()
+        innerDir.mkdir()
+        innerChild.createNewFile()
+
+        // Assert dirs and files exist
+        assertTrue(rootDir.exists() && rootDir.isDirectory)
+        assertTrue(rootChild.exists())
+        assertTrue(innerDir.exists() && innerDir.isDirectory)
+        assertTrue(innerChild.exists())
+
+        // Assert deletion returns true
+        assertTrue(FileUtils.deleteRecursively(rootDir))
+
+        // Assert dirs and files no longer exist
+        assertFalse(rootChild.exists())
+        assertFalse(rootDir.exists())
+        assertFalse(innerChild.exists())
+        assertFalse(innerDir.exists())
     }
 
     @Test
