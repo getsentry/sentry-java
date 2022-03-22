@@ -137,6 +137,13 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with mdc tags using external properties`() {
+        withPropertiesFile("mdc-tags=userId,xxx") {
+            assertEquals(listOf("userId", "xxx"), it.mdcTags)
+        }
+    }
+
+    @Test
     fun `creates options with proguardUuid using external properties`() {
         withPropertiesFile("proguard-uuid=id") {
             assertEquals("id", it.proguardUuid)

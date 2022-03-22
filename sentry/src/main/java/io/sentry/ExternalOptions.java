@@ -32,6 +32,7 @@ public final class ExternalOptions {
   private final @NotNull List<String> inAppExcludes = new CopyOnWriteArrayList<>();
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
   private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+  private final @NotNull List<String> mdcTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
@@ -80,6 +81,9 @@ public final class ExternalOptions {
     }
     for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
       options.addTracingOrigin(tracingOrigin);
+    }
+    for (final String mdcTag : propertiesProvider.getList("mdc-tags")) {
+      options.addMdcTag(mdcTag);
     }
     options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
 
@@ -212,6 +216,10 @@ public final class ExternalOptions {
     return inAppIncludes;
   }
 
+  public @NotNull List<String> getMdcTags() {
+    return mdcTags;
+  }
+
   public @Nullable String getProguardUuid() {
     return proguardUuid;
   }
@@ -234,6 +242,10 @@ public final class ExternalOptions {
 
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
     this.tracingOrigins.add(tracingOrigin);
+  }
+
+  public void addMdcTag(final @NotNull String mdcTag) {
+    this.mdcTags.add(mdcTag);
   }
 
   public void addIgnoredExceptionForType(final @NotNull Class<? extends Throwable> exceptionType) {

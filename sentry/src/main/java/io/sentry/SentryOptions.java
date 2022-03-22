@@ -1610,6 +1610,10 @@ public class SentryOptions {
     for (final String tracingOrigin : tracingOrigins) {
       addTracingOrigin(tracingOrigin);
     }
+    final List<String> mdcTags = new ArrayList<>(options.getMdcTags());
+    for (final String mdcTag : mdcTags) {
+      addMdcTag(mdcTag);
+    }
     if (options.getProguardUuid() != null) {
       setProguardUuid(options.getProguardUuid());
     }
