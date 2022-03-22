@@ -1,8 +1,6 @@
 # Changelog
 
-## 5.7.0
-
-* Feat: Automatically enable `Timber` and `Fragment` integrations if they are present on the classpath (#1936)
+## Unreleased
 
 * Ref: Remove not needed interface abstractions on Android (#1953)
 
@@ -49,6 +47,10 @@ Breaking changes:
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
+## 5.7.0
+
+* Feat: Automatically enable `Timber` and `Fragment` integrations if they are present on the classpath (#1936)
 
 ## 5.6.3
 
