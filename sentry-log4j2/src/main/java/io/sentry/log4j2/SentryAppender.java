@@ -16,6 +16,7 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,6 +47,7 @@ public class SentryAppender extends AbstractAppender {
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private final @Nullable Boolean debug;
   private final @NotNull IHub hub;
+  private final @Nullable List<String> mdcTags;
 
   public SentryAppender(
       final @NotNull String name,
@@ -55,7 +57,8 @@ public class SentryAppender extends AbstractAppender {
       final @Nullable Level minimumEventLevel,
       final @Nullable Boolean debug,
       final @Nullable ITransportFactory transportFactory,
-      final @NotNull IHub hub) {
+      final @NotNull IHub hub,
+      final @Nullable String[] mdcTags) {
     super(name, filter, null, true, null);
     this.dsn = dsn;
     if (minimumBreadcrumbLevel != null) {
@@ -67,6 +70,7 @@ public class SentryAppender extends AbstractAppender {
     this.debug = debug;
     this.transportFactory = transportFactory;
     this.hub = hub;
+    this.mdcTags = mdcTags != null ? Arrays.asList(mdcTags) : null;
   }
 
   /**
@@ -87,7 +91,8 @@ public class SentryAppender extends AbstractAppender {
       @Nullable @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
       @Nullable @PluginAttribute("dsn") final String dsn,
       @Nullable @PluginAttribute("debug") final Boolean debug,
-      @Nullable @PluginElement("filter") final Filter filter) {
+      @Nullable @PluginElement("filter") final Filter filter,
+      @Nullable @PluginAttribute("mdcTags") final String mdcTags) {
 
     if (name == null) {
       LOGGER.error("No name provided for SentryAppender");
@@ -101,7 +106,8 @@ public class SentryAppender extends AbstractAppender {
         minimumEventLevel,
         debug,
         null,
-        HubAdapter.getInstance());
+        HubAdapter.getInstance(),
+      mdcTags != null ? mdcTags.split(",") : null);
   }
 
   @Override
@@ -117,6 +123,11 @@ public class SentryAppender extends AbstractAppender {
               }
               options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
               options.setSdkVersion(createSdkVersion(options));
+              if (mdcTags != null) {
+                for (final String mdcTag : mdcTags) {
+                  options.addMdcTag(mdcTag);
+                }
+              }
               Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
             });
       } catch (IllegalArgumentException e) {
@@ -177,7 +188,20 @@ public class SentryAppender extends AbstractAppender {
         CollectionUtils.filterMapEntries(
             loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
-      event.getContexts().put("Context Data", contextData);
+      if (mdcTags != null && !mdcTags.isEmpty()) {
+        for (final String mdcTag : mdcTags) {
+          // if mdc tag is listed in SentryOptions, apply as event tag
+          if (contextData.containsKey(mdcTag)) {
+            event.setTag(mdcTag, contextData.get(mdcTag));
+            // remove from all tags applied to logging event
+            contextData.remove(mdcTag);
+          }
+        }
+      }
+      // put the rest of mdc tags in contexts
+      if (!contextData.isEmpty()) {
+        event.getContexts().put("Context Data", contextData);
+      }
     }
 
     return event;

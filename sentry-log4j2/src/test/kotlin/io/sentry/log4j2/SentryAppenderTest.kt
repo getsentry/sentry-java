@@ -43,13 +43,13 @@ class SentryAppenderTest {
             whenever(transportFactory.create(any(), any())).thenReturn(transport)
         }
 
-        fun getSut(transportFactory: ITransportFactory? = null, minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, debug: Boolean? = null): ExtendedLogger {
+        fun getSut(transportFactory: ITransportFactory? = null, minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, debug: Boolean? = null, mdcTags: List<String>? = null): ExtendedLogger {
             if (transportFactory != null) {
                 this.transportFactory = transportFactory
             }
             loggerContext.start()
             val config: Configuration = loggerContext.configuration
-            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, debug, this.transportFactory, HubAdapter.getInstance())
+            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, debug, this.transportFactory, HubAdapter.getInstance(), mdcTags?.toTypedArray())
             config.addAppender(appender)
 
             val ref = AppenderRef.createAppenderRef("sentry", null, null)
@@ -236,6 +236,22 @@ class SentryAppenderTest {
         verify(fixture.transport).send(
             checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `sets tags from ThreadContext as Sentry tags`() {
+        val logger = fixture.getSut(minimumEventLevel = Level.WARN, mdcTags = listOf("mdcTag1"))
+        ThreadContext.put("key", "value")
+        ThreadContext.put("mdcTag1", "mdcTag1Value")
+        logger.warn("testing MDC tags")
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
+                assertEquals(mapOf("mdcTag1" to "mdcTag1Value"), event.tags)
             },
             anyOrNull()
         )
