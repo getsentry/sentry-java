@@ -28,15 +28,18 @@ import io.sentry.transport.ITransportGate
 import org.junit.Assert.assertArrayEquals
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.nio.charset.Charset
+import java.nio.file.Files
 import java.util.Arrays
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -73,6 +76,9 @@ class SentryClientTest {
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
+        val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
+        var profilingTraceData = ProfilingTraceData(profilingTraceFile, sentryTracer, "1", 0, "", "", "", false, emptyList(), "", "", "", "", "")
+        var profilingNonExistingTraceData = ProfilingTraceData(File("non_existent.trace"), sentryTracer, "1", 0, "", "", "", false, emptyList(), "", "", "", "", "")
 
         fun getSut() = SentryClient(sentryOptions)
     }
@@ -916,6 +922,31 @@ class SentryClientTest {
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
 
         verifyAttachmentsInEnvelope(transaction.eventId)
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+    }
+
+    @Test
+    fun `when captureTransaction with attachments and profiling data`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingTraceData)
+        verifyAttachmentsInEnvelope(transaction.eventId)
+        verifyProfilingTraceInEnvelope(transaction.eventId)
+    }
+
+    @Test
+    fun `when captureTransaction with profiling data`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+        assertFails { verifyAttachmentsInEnvelope(transaction.eventId) }
+        verifyProfilingTraceInEnvelope(transaction.eventId)
+    }
+
+    @Test
+    fun `when captureTransaction with non existing profiling trace file, profiling trace data is not sent`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingNonExistingTraceData)
+        verifyAttachmentsInEnvelope(transaction.eventId)
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
     }
 
     @Test
@@ -1250,7 +1281,7 @@ class SentryClientTest {
 
                 assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
 
-                assertEquals(4, actual.items.count())
+                assertEquals(4, actual.items.filter { it.header.type != SentryItemType.Profile }.count())
                 val attachmentItems = actual.items
                     .filter { item -> item.header.type == SentryItemType.Attachment }
                     .toList()
@@ -1272,6 +1303,20 @@ class SentryClientTest {
                 ) {
                     attachmentItemTooBig.data
                 }
+            },
+            isNull()
+        )
+    }
+
+    private fun verifyProfilingTraceInEnvelope(eventId: SentryId?) {
+        verify(fixture.transport).send(
+            check { actual ->
+                assertEquals(eventId, actual.header.eventId)
+
+                val profilingTraceItem = actual.items.firstOrNull { item ->
+                    item.header.type == SentryItemType.Profile
+                }
+                assertNotNull(profilingTraceItem)
             },
             isNull()
         )

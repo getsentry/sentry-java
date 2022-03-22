@@ -15,8 +15,6 @@ import io.sentry.checkEvent
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
-import org.junit.Before
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.ApplicationRunner
@@ -36,6 +34,8 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import java.time.Duration
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -55,7 +55,7 @@ class SentryWebfluxIntegrationTest {
 
     private val testClient = WebTestClient.bindToServer().build()
 
-    @Before
+    @BeforeTest
     fun `reset mocks`() {
         reset(transport)
     }
