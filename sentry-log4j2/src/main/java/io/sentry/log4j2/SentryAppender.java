@@ -16,7 +16,6 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -107,7 +106,7 @@ public class SentryAppender extends AbstractAppender {
         debug,
         null,
         HubAdapter.getInstance(),
-      mdcTags != null ? mdcTags.split(",") : null);
+        mdcTags != null ? mdcTags.split(",") : null);
   }
 
   @Override

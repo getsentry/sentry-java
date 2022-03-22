@@ -297,9 +297,7 @@ public class SentryOptions {
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
 
-  /**
-   * Contains a list of MDC tags names that are meant to be applied as Sentry tags to events.
-   */
+  /** Contains a list of MDC tags names that are meant to be applied as Sentry tags to events. */
   private final @NotNull List<String> mdcTags = new CopyOnWriteArrayList<>();
 
   /**
@@ -1449,6 +1447,7 @@ public class SentryOptions {
 
   /**
    * Returns MDC tags names applied to Sentry events as Sentry tags.
+   *
    * @return mdc tags
    */
   public @NotNull List<String> getMdcTags() {
@@ -1457,6 +1456,7 @@ public class SentryOptions {
 
   /**
    * Adds MDC tag name that is applied to Sentry events as Sentry tag.
+   *
    * @param mdcTag - the MDC tag
    */
   public void addMdcTag(final @NotNull String mdcTag) {
