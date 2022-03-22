@@ -128,6 +128,28 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when transaction is finished and profiling is disabled, transactionProfiler is not called`() {
+        val transactionProfiler = mock<ITransactionProfiler>()
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.isProfilingEnabled = false
+            it.setTransactionProfiler(transactionProfiler)
+        })
+        tracer.finish()
+        verify(transactionProfiler, never()).onTransactionFinish(any())
+    }
+
+    @Test
+    fun `when transaction is finished and sampled and profiling is enabled, transactionProfiler is called`() {
+        val transactionProfiler = mock<ITransactionProfiler>()
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.isProfilingEnabled = true
+            it.setTransactionProfiler(transactionProfiler)
+        }, sampled = true)
+        tracer.finish()
+        verify(transactionProfiler).onTransactionFinish(any())
+    }
+
+    @Test
     fun `when transaction is finished, transaction is cleared from the scope`() {
         val tracer = fixture.getSut()
         fixture.hub.configureScope { it.transaction = tracer }

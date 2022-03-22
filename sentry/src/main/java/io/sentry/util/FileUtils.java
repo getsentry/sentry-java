@@ -43,15 +43,19 @@ public final class FileUtils {
    */
   @SuppressWarnings("DefaultCharset")
   public static @Nullable String readText(@Nullable File file) throws IOException {
-    if (file == null || !file.exists() || !file.isFile()) {
+    if (file == null || !file.exists() || !file.isFile() || !file.canRead()) {
       return null;
     }
     StringBuilder contentBuilder = new StringBuilder();
     try (BufferedReader br = new BufferedReader(new FileReader(file))) {
 
       String line;
+      // The first line doesn't need the leading \n
+      if ((line = br.readLine()) != null) {
+        contentBuilder.append(line);
+      }
       while ((line = br.readLine()) != null) {
-        contentBuilder.append(line).append("\n");
+        contentBuilder.append("\n").append(line);
       }
     }
     return contentBuilder.toString();

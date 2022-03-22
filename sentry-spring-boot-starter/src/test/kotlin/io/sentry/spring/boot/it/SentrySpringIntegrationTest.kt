@@ -15,8 +15,6 @@ import io.sentry.checkTransaction
 import io.sentry.spring.tracing.SentrySpan
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Before
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -49,6 +47,8 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import java.lang.RuntimeException
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -67,7 +67,7 @@ class SentrySpringIntegrationTest {
     @LocalServerPort
     var port: Int? = null
 
-    @Before
+    @BeforeTest
     fun reset() {
         reset(transport)
     }

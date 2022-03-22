@@ -9,9 +9,9 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel
 import io.sentry.getExc
-import org.junit.Ignore
 import timber.log.Timber
 import kotlin.test.BeforeTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

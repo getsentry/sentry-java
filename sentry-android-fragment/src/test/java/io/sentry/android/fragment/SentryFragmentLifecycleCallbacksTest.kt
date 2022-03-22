@@ -19,7 +19,7 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryFragmentLifecycleCallbacksTest {
