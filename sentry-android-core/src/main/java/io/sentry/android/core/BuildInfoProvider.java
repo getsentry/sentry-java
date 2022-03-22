@@ -4,7 +4,7 @@ import android.os.Build;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-/** The Android Impl. of IBuildInfoProvider which returns the Build class info. */
+/** The Android Impl. of BuildInfoProvider which returns the Build class info. */
 @ApiStatus.Internal
 public final class BuildInfoProvider {
 

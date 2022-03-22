@@ -9,11 +9,10 @@ import android.os.Bundle
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import java.io.File
 import java.io.FileNotFoundException
 
 object ContextUtilsTest {
-    fun mockMetaData(mockContext: Context = createMockContext(), metaData: Bundle): Context {
+    fun mockMetaData(mockContext: Context = createMockContext(hasAppContext = false), metaData: Bundle): Context {
         val mockPackageManager = mock<PackageManager>()
         val mockApplicationInfo = mock<ApplicationInfo>()
         val assets = mock<AssetManager>()
@@ -29,10 +28,9 @@ object ContextUtilsTest {
         return mockContext
     }
 
-    fun createMockContext(): Context {
-        val mockApp = mock<Application>()
-        whenever(mockApp.applicationContext).thenReturn(mockApp)
-        whenever(mockApp.cacheDir).thenReturn(File(""))
+    fun createMockContext(hasAppContext: Boolean = true): Context {
+        val mockApp = mock<Context>()
+        whenever(mockApp.applicationContext).thenReturn(if (hasAppContext) mock<Application>() else null)
         return mockApp
     }
 }

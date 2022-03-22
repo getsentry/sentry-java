@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ILogger
 import io.sentry.protocol.SentryId
 import org.junit.runner.RunWith
 import kotlin.test.Test
@@ -116,7 +117,7 @@ class ActivityFramesTrackerTest {
 
     @Test
     fun `addActivity does not throw if no AndroidX`() {
-        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
+        whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
         val sut = ActivityFramesTracker(fixture.loadClass)
 
         sut.addActivity(fixture.activity)
@@ -124,7 +125,7 @@ class ActivityFramesTrackerTest {
 
     @Test
     fun `setMetrics does not throw if no AndroidX`() {
-        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
+        whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
         val sut = ActivityFramesTracker(fixture.loadClass)
 
         sut.setMetrics(fixture.activity, fixture.sentryId)
@@ -140,7 +141,7 @@ class ActivityFramesTrackerTest {
 
     @Test
     fun `stop does not throw if no AndroidX`() {
-        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
+        whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
         val sut = ActivityFramesTracker(fixture.loadClass)
 
         sut.stop()
@@ -148,7 +149,7 @@ class ActivityFramesTrackerTest {
 
     @Test
     fun `takeMetrics returns null if no AndroidX`() {
-        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
+        whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
         val sut = ActivityFramesTracker(fixture.loadClass)
 
         assertNull(sut.takeMetrics(fixture.sentryId))
