@@ -12,7 +12,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.internal.gestures.SentryWindowCallback.MotionEventObtainer
-import org.junit.Test
+import kotlin.test.Test
 
 class SentryWindowCallbackTest {
     class Fixture {

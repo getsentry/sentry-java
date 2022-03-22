@@ -21,6 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 final class AndroidTransactionProfiler implements ITransactionProfiler {
 
@@ -59,6 +60,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
     this.packageInfo = ContextUtils.getPackageInfo(context, options.getLogger());
     final String tracesFilesDirPath = options.getProfilingTracesDirPath();
+    if (!options.isProfilingEnabled()) {
+      options.getLogger().log(SentryLevel.INFO, "Profiling is disabled in options.");
+      return;
+    }
     if (tracesFilesDirPath == null || tracesFilesDirPath.isEmpty()) {
       options
           .getLogger()
@@ -90,7 +95,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     // traceFilesDir is null or intervalUs is 0 only if there was a problem in the constructor, but
     // we already logged that
-    if (traceFilesDir == null || intervalUs == 0) {
+    if (traceFilesDir == null || intervalUs == 0 || !traceFilesDir.exists()) {
       return;
     }
 
@@ -225,7 +230,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         buildInfoProvider.getModel(),
         buildInfoProvider.getVersionRelease(),
         buildInfoProvider.isEmulator(),
-        CpuInfoUtils.readMaxFrequencies(),
+        CpuInfoUtils.getInstance().readMaxFrequencies(),
         totalMem,
         options.getProguardUuid(),
         versionName,
@@ -252,5 +257,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       options.getLogger().log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
       return null;
     }
+  }
+
+  @TestOnly
+  void setTimedOutProfilingData(@Nullable ProfilingTraceData data) {
+    this.timedOutProfilingData = data;
   }
 }

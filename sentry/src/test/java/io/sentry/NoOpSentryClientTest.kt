@@ -14,16 +14,20 @@ class NoOpSentryClientTest {
     fun `client is always disabled`() = assertFalse(sut.isEnabled)
 
     @Test
-    fun `captureEvent is returns empty SentryId`() =
+    fun `captureEvent returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.callMethod("captureEvent", SentryEvent::class.java, null))
 
     @Test
-    fun `captureException is returns empty SentryId`() =
+    fun `captureException returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.callMethod("captureException", Throwable::class.java, null))
 
     @Test
-    fun `captureMessage is returns empty SentryId`() =
+    fun `captureMessage returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.callMethod("captureMessage", parameterTypes = arrayOf(String::class.java, SentryLevel::class.java), null, null))
+
+    @Test
+    fun `captureEnvelope returns empty SentryId`() =
+        assertEquals(SentryId.EMPTY_ID, sut.captureEnvelope(mock()))
 
     @Test
     fun `close does not affect captureEvent`() {

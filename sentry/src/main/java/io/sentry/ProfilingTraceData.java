@@ -23,7 +23,7 @@ public final class ProfilingTraceData {
   private final @NotNull String device_os_name;
   private final @NotNull String device_os_version;
   private final boolean device_is_emulator;
-  private final @NotNull List<String> device_cpu_frequencies;
+  private final @NotNull List<Integer> device_cpu_frequencies;
   private final @NotNull String device_physical_memory_bytes;
   private final @NotNull String platform;
   private final @NotNull String build_id;
@@ -56,7 +56,7 @@ public final class ProfilingTraceData {
       @Nullable String deviceModel,
       @Nullable String deviceOsVersion,
       @Nullable Boolean deviceIsEmulator,
-      @NotNull List<String> deviceCpuFrequencies,
+      @NotNull List<Integer> deviceCpuFrequencies,
       @Nullable String devicePhysicalMemoryBytes,
       @Nullable String buildId,
       @Nullable String versionName,
@@ -178,7 +178,7 @@ public final class ProfilingTraceData {
     return duration_ns;
   }
 
-  public @NotNull List<String> getDevice_cpu_frequencies() {
+  public @NotNull List<Integer> getDevice_cpu_frequencies() {
     return device_cpu_frequencies;
   }
 

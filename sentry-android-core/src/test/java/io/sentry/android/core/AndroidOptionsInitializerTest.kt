@@ -144,6 +144,29 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `profilingTracesDirPath should be set at initialization`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = createMockContext()
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+
+        assertTrue(sentryOptions.profilingTracesDirPath?.endsWith("${File.separator}cache${File.separator}sentry${File.separator}profiling_traces")!!)
+        assertFalse(File(sentryOptions.profilingTracesDirPath!!).exists())
+    }
+
+    @Test
+    fun `profilingTracesDirPath should be created and cleared when profiling is enabled`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = createMockContext()
+        sentryOptions.isProfilingEnabled = true
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+
+        assertTrue(File(sentryOptions.profilingTracesDirPath!!).exists())
+        assertTrue(File(sentryOptions.profilingTracesDirPath!!).list()!!.isEmpty())
+    }
+
+    @Test
     fun `outboxDir should be set at initialization`() {
         fixture.initSut()
 
@@ -216,6 +239,17 @@ class AndroidOptionsInitializerTest {
 
         assertNotNull(fixture.sentryOptions.transportGate)
         assertTrue(fixture.sentryOptions.transportGate is AndroidTransportGate)
+    }
+
+    @Test
+    fun `init should set Android transaction profiler`() {
+        val sentryOptions = SentryAndroidOptions()
+        val mockContext = createMockContext()
+
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+
+        assertNotNull(sentryOptions.transactionProfiler)
+        assertTrue(sentryOptions.transactionProfiler is AndroidTransactionProfiler)
     }
 
     @Test

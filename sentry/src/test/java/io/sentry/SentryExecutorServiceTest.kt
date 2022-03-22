@@ -23,6 +23,14 @@ class SentryExecutorServiceTest {
     }
 
     @Test
+    fun `SentryExecutorService forwards schedule call to ExecutorService`() {
+        val executor = mock<ScheduledExecutorService>()
+        val sentryExecutor = SentryExecutorService(executor)
+        sentryExecutor.schedule({}, 0L)
+        verify(executor).schedule(any(), any(), any())
+    }
+
+    @Test
     fun `SentryExecutorService forwards close call to ExecutorService`() {
         val executor = mock<ScheduledExecutorService>()
         val sentryExecutor = SentryExecutorService(executor)

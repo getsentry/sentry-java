@@ -1,15 +1,22 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.User
 import io.sentry.test.injectForField
+import io.sentry.vendor.Base64
 import org.junit.Assert.assertArrayEquals
+import java.io.BufferedReader
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.InputStreamReader
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -194,6 +201,71 @@ class SentryEnvelopeItemTest {
 
         val exception = assertFailsWith<SentryEnvelopeException> {
             SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize).data
+        }
+
+        assertEquals(
+            "Dropping item, because its size located at " +
+                "'${fixture.pathname}' with ${file.length()} bytes is bigger than the maximum " +
+                "allowed size of ${fixture.maxAttachmentSize} bytes.",
+            exception.message
+        )
+    }
+
+    @Test
+    fun `fromProfilingTrace saves file as Base64`() {
+        val serializer = SentryOptions().serializer
+        val file = File(fixture.pathname)
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        file.writeBytes(fixture.bytes)
+        val traceDataBytes = SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, serializer)?.data
+        val reader = BufferedReader(InputStreamReader(ByteArrayInputStream(traceDataBytes)))
+        val deserData = serializer.deserialize(reader, ProfilingTraceData::class.java)
+        assertNotNull(deserData)
+        verify(profilingTraceData).sampled_profile = Base64.encodeToString(fixture.bytes, Base64.NO_WRAP or Base64.NO_PADDING)
+    }
+
+    @Test
+    fun `fromProfilingTrace deletes file only after reading data`() {
+        val file = File(fixture.pathname)
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        file.writeBytes(fixture.bytes)
+        assert(file.exists())
+        val traceData = SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())
+        assert(file.exists())
+        traceData?.data
+        assertFalse(file.exists())
+    }
+
+    @Test
+    fun `fromProfilingTrace with invalid file returns null`() {
+        val file = File(fixture.pathname)
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        assertNull(SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())?.data)
+        file.writeBytes(fixture.bytes)
+        assertNotNull(SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())?.data)
+        file.setReadable(false)
+        assertNull(SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())?.data)
+    }
+
+    @Test
+    fun `fromProfilingTrace with file too big`() {
+        val file = File(fixture.pathname)
+        file.writeBytes(fixture.bytesTooBig)
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        val exception = assertFailsWith<SentryEnvelopeException> {
+            SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())?.data
         }
 
         assertEquals(
