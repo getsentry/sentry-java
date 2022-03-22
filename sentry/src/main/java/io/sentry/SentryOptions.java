@@ -298,6 +298,11 @@ public class SentryOptions {
   private @Nullable String proguardUuid;
 
   /**
+   * Contains a list of MDC tags names that are meant to be applied as Sentry tags to events.
+   */
+  private final @NotNull List<String> mdcTags = new CopyOnWriteArrayList<>();
+
+  /**
    * Adds an event processor
    *
    * @param eventProcessor the event processor
@@ -1440,6 +1445,22 @@ public class SentryOptions {
    */
   public void setProguardUuid(final @Nullable String proguardUuid) {
     this.proguardUuid = proguardUuid;
+  }
+
+  /**
+   * Returns MDC tags names applied to Sentry events as Sentry tags.
+   * @return mdc tags
+   */
+  public @NotNull List<String> getMdcTags() {
+    return mdcTags;
+  }
+
+  /**
+   * Adds MDC tag name that is applied to Sentry events as Sentry tag.
+   * @param mdcTag - the MDC tag
+   */
+  public void addMdcTag(final @NotNull String mdcTag) {
+    this.mdcTags.add(mdcTag);
   }
 
   /** The BeforeSend callback */
