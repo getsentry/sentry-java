@@ -42,6 +42,7 @@ public class SentryHandler extends Handler {
 
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.SEVERE;
+  private @NotNull SentryOptions options;
 
   /** Creates an instance of SentryHandler. */
   public SentryHandler() {
@@ -60,6 +61,7 @@ public class SentryHandler extends Handler {
   /** Creates an instance of SentryHandler. */
   @TestOnly
   SentryHandler(final @NotNull SentryOptions options, final boolean configureFromLogManager) {
+    this.options = options;
     setFilter(new DropSentryFilter());
     if (configureFromLogManager) {
       retrieveProperties();
@@ -200,7 +202,20 @@ public class SentryHandler extends Handler {
       mdcProperties =
           CollectionUtils.filterMapEntries(mdcProperties, entry -> entry.getValue() != null);
       if (!mdcProperties.isEmpty()) {
-        event.getContexts().put("MDC", mdcProperties);
+        if (!options.getMdcTags().isEmpty()) {
+          for (final String mdcTag : options.getMdcTags()) {
+            // if mdc tag is listed in SentryOptions, apply as event tag
+            if (mdcProperties.containsKey(mdcTag)) {
+              event.setTag(mdcTag, mdcProperties.get(mdcTag));
+              // remove from all tags applied to logging event
+              mdcProperties.remove(mdcTag);
+            }
+          }
+        }
+        // put the rest of mdc tags in contexts
+        if (!mdcProperties.isEmpty()) {
+          event.getContexts().put("MDC", mdcProperties);
+        }
       }
     }
     event.setExtra(THREAD_ID, record.getThreadID());
