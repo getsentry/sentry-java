@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#)
+
 ## 5.7.0
 
 * Feat: Automatically enable `Timber` and `Fragment` integrations if they are present on the classpath (#1936)
