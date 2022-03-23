@@ -116,7 +116,7 @@ class SentryFragmentLifecycleCallbacks(
             category = "ui.fragment.lifecycle"
             level = INFO
         }
-        hub.addBreadcrumb(breadcrumb)
+        hub.addBreadcrumb(breadcrumb, mapOf("fragmentClassName" to fragment::class.java.name))
     }
 
     private fun getFragmentName(fragment: Fragment): String {

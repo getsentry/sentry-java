@@ -268,6 +268,9 @@ class SentryFragmentLifecycleCallbacksTest {
                 assertEquals(INFO, breadcrumb.level)
                 assertEquals(expectedState, breadcrumb.getData("state"))
                 assertEquals(fixture.fragment.javaClass.simpleName, breadcrumb.getData("screen"))
+            },
+            check { hint: Map<String, Any> ->
+               assertEquals(fixture.fragment.javaClass.name, hint["fragmentClassName"])
             }
         )
     }
