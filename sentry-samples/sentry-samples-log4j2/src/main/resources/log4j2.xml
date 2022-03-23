@@ -12,7 +12,7 @@
             minimumBreadcrumbLevel="DEBUG"
             minimumEventLevel="WARN"
             debug="true"
-            mdcTags="userId"
+            mdcTags="userId,requestId"
     />
   </Appenders>
   <Loggers>

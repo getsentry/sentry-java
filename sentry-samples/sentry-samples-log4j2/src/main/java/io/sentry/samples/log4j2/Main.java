@@ -13,8 +13,11 @@ public class Main {
     // Update the DSN in log4j2.xml to see these events in your Sentry dashboard.
     LOGGER.debug("Hello Sentry!");
 
-    // ThreadContext parameters are converted to Sentry Event tags
+    // ThreadContext tags listed in log4j2.xml are converted to Sentry Event tags
     ThreadContext.put("userId", UUID.randomUUID().toString());
+    ThreadContext.put("requestId", UUID.randomUUID().toString());
+    // ThreadContext tag not listed in log4j2.xml
+    ThreadContext.put("context-tag", "context-tag-value");
 
     // logging arguments are converted to Sentry Event parameters
     LOGGER.info("User has made a purchase of product: {}", 445);
