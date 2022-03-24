@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-alpha.4
 
 * Ref: Remove not needed interface abstractions on Android (#1953)
 
