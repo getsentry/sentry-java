@@ -78,8 +78,8 @@ class SentryClientTest {
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
         val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
-        var profilingTraceData = ProfilingTraceData(profilingTraceFile, sentryTracer, "1", 0, "", "", "", false, emptyList(), "", "", "", "", "")
-        var profilingNonExistingTraceData = ProfilingTraceData(File("non_existent.trace"), sentryTracer, "1", 0, "", "", "", false, emptyList(), "", "", "", "", "")
+        var profilingTraceData = ProfilingTraceData(profilingTraceFile, sentryTracer, "1", 0, { emptyList() }, "", "", "", false, "", "", "", "", "")
+        var profilingNonExistingTraceData = ProfilingTraceData(File("non_existent.trace"), sentryTracer, "1", 0, { emptyList() }, "", "", "", false, "", "", "", "", "")
 
         fun getSut() = SentryClient(sentryOptions)
     }
@@ -1328,7 +1328,7 @@ class SentryClientTest {
                 val profilingTraceItem = actual.items.firstOrNull { item ->
                     item.header.type == SentryItemType.Profile
                 }
-                assertNotNull(profilingTraceItem)
+                assertNotNull(profilingTraceItem?.data)
             },
             isNull()
         )

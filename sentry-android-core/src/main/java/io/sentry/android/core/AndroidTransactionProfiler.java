@@ -199,13 +199,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       scheduledFinish = null;
     }
 
-    if (traceFile == null || !traceFile.exists()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Trace file %s does not exists",
-              traceFile == null ? "null" : traceFile.getPath());
+    if (traceFile == null) {
+      options.getLogger().log(SentryLevel.ERROR, "Trace file does not exists");
       return null;
     }
 
@@ -221,16 +216,18 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       totalMem = Long.toString(memInfo.totalMem);
     }
 
+    // cpu max frequencies are read with a lambda because reading files is involved, so it will be
+    // done in the background when the trace file is read
     return new ProfilingTraceData(
         traceFile,
         transaction,
         Long.toString(transactionDurationNanos),
         buildInfoProvider.getSdkInfoVersion(),
+        () -> CpuInfoUtils.getInstance().readMaxFrequencies(),
         buildInfoProvider.getManufacturer(),
         buildInfoProvider.getModel(),
         buildInfoProvider.getVersionRelease(),
         buildInfoProvider.isEmulator(),
-        CpuInfoUtils.getInstance().readMaxFrequencies(),
         totalMem,
         options.getProguardUuid(),
         versionName,

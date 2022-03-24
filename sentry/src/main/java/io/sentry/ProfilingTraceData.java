@@ -1,9 +1,11 @@
 package io.sentry;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,6 +15,7 @@ public final class ProfilingTraceData {
 
   // This field is transient so that it's ignored by Gson
   private final transient @NotNull File traceFile;
+  private final transient @NotNull Callable<List<Integer>> deviceCpuFrequenciesReader;
 
   // Device metadata
   private final int android_api_level;
@@ -23,7 +26,7 @@ public final class ProfilingTraceData {
   private final @NotNull String device_os_name;
   private final @NotNull String device_os_version;
   private final boolean device_is_emulator;
-  private final @NotNull List<Integer> device_cpu_frequencies;
+  private @NotNull List<Integer> device_cpu_frequencies = new ArrayList<>();
   private final @NotNull String device_physical_memory_bytes;
   private final @NotNull String platform;
   private final @NotNull String build_id;
@@ -52,17 +55,18 @@ public final class ProfilingTraceData {
       @NotNull ITransaction transaction,
       @NotNull String durationNanos,
       int sdkInt,
+      @NotNull Callable<List<Integer>> deviceCpuFrequenciesReader,
       @Nullable String deviceManufacturer,
       @Nullable String deviceModel,
       @Nullable String deviceOsVersion,
       @Nullable Boolean deviceIsEmulator,
-      @NotNull List<Integer> deviceCpuFrequencies,
       @Nullable String devicePhysicalMemoryBytes,
       @Nullable String buildId,
       @Nullable String versionName,
       @Nullable String versionCode,
       @Nullable String environment) {
     this.traceFile = traceFile;
+    this.deviceCpuFrequenciesReader = deviceCpuFrequenciesReader;
 
     // Device metadata
     this.android_api_level = sdkInt;
@@ -71,7 +75,6 @@ public final class ProfilingTraceData {
     this.device_model = deviceModel != null ? deviceModel : "";
     this.device_os_version = deviceOsVersion != null ? deviceOsVersion : "";
     this.device_is_emulator = deviceIsEmulator != null ? deviceIsEmulator : false;
-    this.device_cpu_frequencies = deviceCpuFrequencies;
     this.device_physical_memory_bytes =
         devicePhysicalMemoryBytes != null ? devicePhysicalMemoryBytes : "0";
     this.device_os_build_number = "";
@@ -188,5 +191,13 @@ public final class ProfilingTraceData {
 
   public void setSampled_profile(@Nullable String sampledProfile) {
     this.sampled_profile = sampledProfile;
+  }
+
+  public void readDeviceCpuFrequencies() {
+    try {
+      this.device_cpu_frequencies = deviceCpuFrequenciesReader.call();
+    } catch (Exception e) {
+      this.device_cpu_frequencies = new ArrayList<>();
+    }
   }
 }
