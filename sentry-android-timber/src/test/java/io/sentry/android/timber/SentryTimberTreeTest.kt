@@ -221,9 +221,9 @@ class SentryTimberTreeTest {
         sut.e("test count: %d", 32)
 
         verify(fixture.hub).addBreadcrumb(
-                check<Breadcrumb> {
-                    assertEquals("test count: 32", it.message)
-                }
+            check<Breadcrumb> {
+                assertEquals("test count: 32", it.message)
+            }
         )
     }
 
