@@ -137,9 +137,9 @@ class ExternalOptionsTest {
     }
 
     @Test
-    fun `creates options with mdc tags using external properties`() {
-        withPropertiesFile("mdc-tags=userId,xxx") {
-            assertEquals(listOf("userId", "xxx"), it.mdcTags)
+    fun `creates options with context tags using external properties`() {
+        withPropertiesFile("context-tags=userId,xxx") {
+            assertEquals(listOf("userId", "xxx"), it.contextTags)
         }
     }
 

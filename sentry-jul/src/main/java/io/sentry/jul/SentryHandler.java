@@ -202,13 +202,13 @@ public class SentryHandler extends Handler {
       mdcProperties =
           CollectionUtils.filterMapEntries(mdcProperties, entry -> entry.getValue() != null);
       if (!mdcProperties.isEmpty()) {
-        if (!options.getMdcTags().isEmpty()) {
-          for (final String mdcTag : options.getMdcTags()) {
+        if (!options.getContextTags().isEmpty()) {
+          for (final String contextTag : options.getContextTags()) {
             // if mdc tag is listed in SentryOptions, apply as event tag
-            if (mdcProperties.containsKey(mdcTag)) {
-              event.setTag(mdcTag, mdcProperties.get(mdcTag));
+            if (mdcProperties.containsKey(contextTag)) {
+              event.setTag(contextTag, mdcProperties.get(contextTag));
               // remove from all tags applied to logging event
-              mdcProperties.remove(mdcTag);
+              mdcProperties.remove(contextTag);
             }
           }
         }

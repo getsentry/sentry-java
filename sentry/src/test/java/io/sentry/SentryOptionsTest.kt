@@ -199,8 +199,8 @@ class SentryOptionsTest {
         externalOptions.addInAppExclude("io.off")
         externalOptions.addTracingOrigin("localhost")
         externalOptions.addTracingOrigin("api.foo.com")
-        externalOptions.addMdcTag("userId")
-        externalOptions.addMdcTag("requestId")
+        externalOptions.addContextTag("userId")
+        externalOptions.addContextTag("requestId")
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -219,7 +219,7 @@ class SentryOptionsTest {
         assertEquals(listOf("com.app"), options.inAppIncludes)
         assertEquals(listOf("io.off"), options.inAppExcludes)
         assertEquals(listOf("localhost", "api.foo.com"), options.tracingOrigins)
-        assertEquals(listOf("userId", "requestId"), options.mdcTags)
+        assertEquals(listOf("userId", "requestId"), options.contextTags)
     }
 
     @Test

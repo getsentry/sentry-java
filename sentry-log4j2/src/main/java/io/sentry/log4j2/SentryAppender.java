@@ -46,7 +46,7 @@ public class SentryAppender extends AbstractAppender {
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private final @Nullable Boolean debug;
   private final @NotNull IHub hub;
-  private final @Nullable List<String> mdcTags;
+  private final @Nullable List<String> contextTags;
 
   public SentryAppender(
       final @NotNull String name,
@@ -57,7 +57,7 @@ public class SentryAppender extends AbstractAppender {
       final @Nullable Boolean debug,
       final @Nullable ITransportFactory transportFactory,
       final @NotNull IHub hub,
-      final @Nullable String[] mdcTags) {
+      final @Nullable String[] contextTags) {
     super(name, filter, null, true, null);
     this.dsn = dsn;
     if (minimumBreadcrumbLevel != null) {
@@ -69,7 +69,7 @@ public class SentryAppender extends AbstractAppender {
     this.debug = debug;
     this.transportFactory = transportFactory;
     this.hub = hub;
-    this.mdcTags = mdcTags != null ? Arrays.asList(mdcTags) : null;
+    this.contextTags = contextTags != null ? Arrays.asList(contextTags) : null;
   }
 
   /**
@@ -91,7 +91,7 @@ public class SentryAppender extends AbstractAppender {
       @Nullable @PluginAttribute("dsn") final String dsn,
       @Nullable @PluginAttribute("debug") final Boolean debug,
       @Nullable @PluginElement("filter") final Filter filter,
-      @Nullable @PluginAttribute("mdcTags") final String mdcTags) {
+      @Nullable @PluginAttribute("contextTags") final String contextTags) {
 
     if (name == null) {
       LOGGER.error("No name provided for SentryAppender");
@@ -106,7 +106,7 @@ public class SentryAppender extends AbstractAppender {
         debug,
         null,
         HubAdapter.getInstance(),
-        mdcTags != null ? mdcTags.split(",") : null);
+        contextTags != null ? contextTags.split(",") : null);
   }
 
   @Override
@@ -122,9 +122,9 @@ public class SentryAppender extends AbstractAppender {
               }
               options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
               options.setSdkVersion(createSdkVersion(options));
-              if (mdcTags != null) {
-                for (final String mdcTag : mdcTags) {
-                  options.addMdcTag(mdcTag);
+              if (contextTags != null) {
+                for (final String contextTag : contextTags) {
+                  options.addContextTag(contextTag);
                 }
               }
               Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
@@ -187,13 +187,13 @@ public class SentryAppender extends AbstractAppender {
         CollectionUtils.filterMapEntries(
             loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
-      if (mdcTags != null && !mdcTags.isEmpty()) {
-        for (final String mdcTag : mdcTags) {
+      if (contextTags != null && !contextTags.isEmpty()) {
+        for (final String contextTag : contextTags) {
           // if mdc tag is listed in SentryOptions, apply as event tag
-          if (contextData.containsKey(mdcTag)) {
-            event.setTag(mdcTag, contextData.get(mdcTag));
+          if (contextData.containsKey(contextTag)) {
+            event.setTag(contextTag, contextData.get(contextTag));
             // remove from all tags applied to logging event
-            contextData.remove(mdcTag);
+            contextData.remove(contextTag);
           }
         }
       }

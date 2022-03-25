@@ -297,8 +297,11 @@ public class SentryOptions {
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
 
-  /** Contains a list of MDC tags names that are meant to be applied as Sentry tags to events. */
-  private final @NotNull List<String> mdcTags = new CopyOnWriteArrayList<>();
+  /**
+   * Contains a list of context tags names (for example from MDC) that are meant to be applied as
+   * Sentry tags to events.
+   */
+  private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
 
   /**
    * Adds an event processor
@@ -1446,21 +1449,21 @@ public class SentryOptions {
   }
 
   /**
-   * Returns MDC tags names applied to Sentry events as Sentry tags.
+   * Returns Context tags names applied to Sentry events as Sentry tags.
    *
-   * @return mdc tags
+   * @return context tags
    */
-  public @NotNull List<String> getMdcTags() {
-    return mdcTags;
+  public @NotNull List<String> getContextTags() {
+    return contextTags;
   }
 
   /**
-   * Adds MDC tag name that is applied to Sentry events as Sentry tag.
+   * Adds context tag name that is applied to Sentry events as Sentry tag.
    *
-   * @param mdcTag - the MDC tag
+   * @param contextTag - the context tag
    */
-  public void addMdcTag(final @NotNull String mdcTag) {
-    this.mdcTags.add(mdcTag);
+  public void addContextTag(final @NotNull String contextTag) {
+    this.contextTags.add(contextTag);
   }
 
   /** The BeforeSend callback */
@@ -1610,9 +1613,9 @@ public class SentryOptions {
     for (final String tracingOrigin : tracingOrigins) {
       addTracingOrigin(tracingOrigin);
     }
-    final List<String> mdcTags = new ArrayList<>(options.getMdcTags());
-    for (final String mdcTag : mdcTags) {
-      addMdcTag(mdcTag);
+    final List<String> contextTags = new ArrayList<>(options.getContextTags());
+    for (final String contextTag : contextTags) {
+      addContextTag(contextTag);
     }
     if (options.getProguardUuid() != null) {
       setProguardUuid(options.getProguardUuid());

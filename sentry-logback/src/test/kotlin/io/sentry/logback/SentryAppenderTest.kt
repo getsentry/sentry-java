@@ -31,7 +31,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryAppenderTest {
-    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, mdcTags: List<String>? = null) {
+    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, contextTags: List<String>? = null) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
         val transportFactory = mock<ITransportFactory>()
@@ -43,7 +43,7 @@ class SentryAppenderTest {
             val appender = SentryAppender()
             val options = SentryOptions()
             options.dsn = dsn
-            mdcTags?.forEach { options.addMdcTag(it) }
+            contextTags?.forEach { options.addContextTag(it) }
             appender.setOptions(options)
             appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
             appender.setMinimumEventLevel(minimumEventLevel)
@@ -220,15 +220,15 @@ class SentryAppenderTest {
 
     @Test
     fun `sets tags as sentry tags from MDC`() {
-        fixture = Fixture(minimumEventLevel = Level.WARN, mdcTags = listOf("mdcTag1"))
+        fixture = Fixture(minimumEventLevel = Level.WARN, contextTags = listOf("contextTag1"))
         MDC.put("key", "value")
-        MDC.put("mdcTag1", "mdcTag1Value")
+        MDC.put("contextTag1", "contextTag1Value")
         fixture.logger.warn("testing MDC tags")
 
         verify(fixture.transport).send(
             checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
-                assertEquals(mapOf("mdcTag1" to "mdcTag1Value"), event.tags)
+                assertEquals(mapOf("contextTag1" to "contextTag1Value"), event.tags)
             },
             anyOrNull()
         )

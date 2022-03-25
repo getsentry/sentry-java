@@ -24,7 +24,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryHandlerTest {
-    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, val configureWithLogManager: Boolean = false, val transport: ITransport = mock(), mdcTags: List<String>? = null) {
+    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, val configureWithLogManager: Boolean = false, val transport: ITransport = mock(), contextTags: List<String>? = null) {
         var logger: Logger
         var handler: SentryHandler
 
@@ -32,7 +32,7 @@ class SentryHandlerTest {
             val options = SentryOptions()
             options.dsn = "http://key@localhost/proj"
             options.setTransportFactory { _, _ -> transport }
-            mdcTags?.forEach { options.addMdcTag(it) }
+            contextTags?.forEach { options.addContextTag(it) }
             logger = Logger.getLogger("jul.SentryHandlerTest")
             handler = SentryHandler(options, configureWithLogManager)
             handler.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
@@ -315,15 +315,15 @@ class SentryHandlerTest {
 
     @Test
     fun `sets tags as Sentry tags from MDC`() {
-        fixture = Fixture(minimumEventLevel = Level.WARNING, mdcTags = listOf("mdcTag1"))
+        fixture = Fixture(minimumEventLevel = Level.WARNING, contextTags = listOf("contextTag1"))
         MDC.put("key", "value")
-        MDC.put("mdcTag1", "mdcTag1Value")
+        MDC.put("contextTag1", "contextTag1Value")
         fixture.logger.warning("testing MDC tags")
 
         verify(fixture.transport).send(
             checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
-                assertEquals(mapOf("mdcTag1" to "mdcTag1Value"), event.tags)
+                assertEquals(mapOf("contextTag1" to "contextTag1Value"), event.tags)
             },
             anyOrNull()
         )
