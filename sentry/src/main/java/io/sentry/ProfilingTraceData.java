@@ -196,8 +196,8 @@ public final class ProfilingTraceData {
   public void readDeviceCpuFrequencies() {
     try {
       this.device_cpu_frequencies = deviceCpuFrequenciesReader.call();
-    } catch (Exception e) {
-      this.device_cpu_frequencies = new ArrayList<>();
+    } catch (Throwable ignored) {
+      // should never happen
     }
   }
 }
