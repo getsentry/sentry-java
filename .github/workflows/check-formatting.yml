@@ -9,8 +9,6 @@ on:
 jobs:
   check-formatting:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v2
