@@ -80,7 +80,10 @@ final class ANRWatchDog extends Thread {
         try {
           Thread.currentThread().interrupt();
         } catch (SecurityException ignored) {
-          logger.log(SentryLevel.WARNING, "Failed to interrupt due to SecurityException: %s", e.getMessage());
+          logger.log(
+              SentryLevel.WARNING,
+              "Failed to interrupt due to SecurityException: %s",
+              e.getMessage());
           return;
         }
         logger.log(SentryLevel.WARNING, "Interrupted: %s", e.getMessage());
