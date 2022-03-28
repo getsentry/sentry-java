@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-* Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#)
+* Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
+* Fix: ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
+
 
 ## 5.7.0
 
