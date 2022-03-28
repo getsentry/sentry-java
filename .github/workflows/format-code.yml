@@ -1,0 +1,21 @@
+name: format code
+on:
+  pull_request:
+
+jobs:
+  format-code:
+    name: Format Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - run: make format
+
+      # actions/checkout fetches only a single commit in a detached HEAD state. Therefore
+      # we need to pass the current branch, otherwise we can't commit the changes.
+      # GITHUB_HEAD_REF is the name of the head branch. GitHub Actions only sets this for PRs.
+      - name: Commit Formatted Code
+        run: ./scripts/commit-formatted-code.sh $GITHUB_HEAD_REF
