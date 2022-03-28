@@ -3,6 +3,7 @@
 ## 6.0.0-alpha.4
 
 * Ref: Remove not needed interface abstractions on Android (#1953)
+* Feat: Pass MDC tags as Sentry tags (#1954)
 
 ## 6.0.0-alpha.3
 

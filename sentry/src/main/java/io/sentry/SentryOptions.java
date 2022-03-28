@@ -298,6 +298,12 @@ public class SentryOptions {
   private @Nullable String proguardUuid;
 
   /**
+   * Contains a list of context tags names (for example from MDC) that are meant to be applied as
+   * Sentry tags to events.
+   */
+  private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
+
+  /**
    * Adds an event processor
    *
    * @param eventProcessor the event processor
@@ -1442,6 +1448,24 @@ public class SentryOptions {
     this.proguardUuid = proguardUuid;
   }
 
+  /**
+   * Returns Context tags names applied to Sentry events as Sentry tags.
+   *
+   * @return context tags
+   */
+  public @NotNull List<String> getContextTags() {
+    return contextTags;
+  }
+
+  /**
+   * Adds context tag name that is applied to Sentry events as Sentry tag.
+   *
+   * @param contextTag - the context tag
+   */
+  public void addContextTag(final @NotNull String contextTag) {
+    this.contextTags.add(contextTag);
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1588,6 +1612,10 @@ public class SentryOptions {
     final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
     for (final String tracingOrigin : tracingOrigins) {
       addTracingOrigin(tracingOrigin);
+    }
+    final List<String> contextTags = new ArrayList<>(options.getContextTags());
+    for (final String contextTag : contextTags) {
+      addContextTag(contextTag);
     }
     if (options.getProguardUuid() != null) {
       setProguardUuid(options.getProguardUuid());

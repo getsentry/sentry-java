@@ -112,7 +112,20 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         CollectionUtils.filterMapEntries(
             loggingEvent.getMDCPropertyMap(), entry -> entry.getValue() != null);
     if (!mdcProperties.isEmpty()) {
-      event.getContexts().put("MDC", mdcProperties);
+      if (!options.getContextTags().isEmpty()) {
+        for (final String contextTag : options.getContextTags()) {
+          // if mdc tag is listed in SentryOptions, apply as event tag
+          if (mdcProperties.containsKey(contextTag)) {
+            event.setTag(contextTag, mdcProperties.get(contextTag));
+            // remove from all tags applied to logging event
+            mdcProperties.remove(contextTag);
+          }
+        }
+      }
+      // put the rest of mdc tags in contexts
+      if (!mdcProperties.isEmpty()) {
+        event.getContexts().put("MDC", mdcProperties);
+      }
     }
 
     return event;

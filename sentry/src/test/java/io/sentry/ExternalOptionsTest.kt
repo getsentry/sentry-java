@@ -137,6 +137,13 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with context tags using external properties`() {
+        withPropertiesFile("context-tags=userId,xxx") {
+            assertEquals(listOf("userId", "xxx"), it.contextTags)
+        }
+    }
+
+    @Test
     fun `creates options with proguardUuid using external properties`() {
         withPropertiesFile("proguard-uuid=id") {
             assertEquals("id", it.proguardUuid)
