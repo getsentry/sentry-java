@@ -517,7 +517,7 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 }
 
 public final class io/sentry/ProfilingTraceData {
-	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAndroid_api_level ()I
 	public fun getBuild_id ()Ljava/lang/String;
 	public fun getDevice_cpu_frequencies ()Ljava/util/List;
@@ -541,6 +541,7 @@ public final class io/sentry/ProfilingTraceData {
 	public fun getVersion_code ()Ljava/lang/String;
 	public fun getVersion_name ()Ljava/lang/String;
 	public fun isDevice_is_emulator ()Z
+	public fun readDeviceCpuFrequencies ()V
 	public fun setSampled_profile (Ljava/lang/String;)V
 }
 

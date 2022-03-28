@@ -204,29 +204,29 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
-  public static @Nullable SentryEnvelopeItem fromProfilingTrace(
+  public static @NotNull SentryEnvelopeItem fromProfilingTrace(
       final @NotNull ProfilingTraceData profilingTraceData,
       final long maxTraceFileSize,
       final @NotNull ISerializer serializer)
       throws SentryEnvelopeException {
 
     File traceFile = profilingTraceData.getTraceFile();
-    if (!traceFile.exists()) {
-      return null;
-    }
-
     // Using CachedItem, so we read the trace file in the background
     final CachedItem cachedItem =
         new CachedItem(
             () -> {
               if (!traceFile.exists()) {
-                return null;
+                throw new SentryEnvelopeException(
+                    String.format(
+                        "Dropping profiling trace data, because the file '%s' doesn't exists",
+                        traceFile.getName()));
               }
               // The payload of the profile item is a json including the trace file encoded with
               // base64
               byte[] traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
               String base64Trace = Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
               profilingTraceData.setSampled_profile(base64Trace);
+              profilingTraceData.readDeviceCpuFrequencies();
 
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                   final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {

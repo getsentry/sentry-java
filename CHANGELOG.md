@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Feat: Add Android profiling traces #1897 and its tests #1949
+- All operations involving file reads for profiling were moved to the background #1959
 
 ## 5.6.2
 
