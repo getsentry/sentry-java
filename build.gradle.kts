@@ -150,10 +150,6 @@ spotless {
     }
 }
 
-tasks.named("build") {
-    dependsOn(":spotlessApply")
-}
-
 gradle.projectsEvaluated {
     tasks.create("aggregateJavadocs", Javadoc::class.java) {
         setDestinationDir(file("$buildDir/docs/javadoc"))

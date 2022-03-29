@@ -1,9 +1,14 @@
 # Changelog
 
+## Unreleased
+
+* Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
+* Fix: ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
+* Feat: Pass MDC tags as Sentry tags (#1954)
+
 ## 6.0.0-alpha.4
 
 * Ref: Remove not needed interface abstractions on Android (#1953)
-* Feat: Pass MDC tags as Sentry tags (#1954)
 
 ## 6.0.0-alpha.3
 

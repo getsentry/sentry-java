@@ -216,6 +216,18 @@ class SentryTimberTreeTest {
     }
 
     @Test
+    fun `Tree adds a breadcrumb with formatted message and arguments, when provided`() {
+        val sut = fixture.getSut()
+        sut.e("test count: %d", 32)
+
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("test count: 32", it.message)
+            }
+        )
+    }
+
+    @Test
     fun `Tree adds a breadcrumb if min level is equal`() {
         val sut = fixture.getSut()
         sut.i(Throwable("test"))
