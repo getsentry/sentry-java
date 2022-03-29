@@ -30,7 +30,8 @@ public final class ActivityFramesTracker {
     androidXAvailable =
         loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", logger);
     if (androidXAvailable) {
-      frameMetricsAggregator = new FrameMetricsAggregator();
+      frameMetricsAggregator =
+              new FrameMetricsAggregator();
     }
   }
 
