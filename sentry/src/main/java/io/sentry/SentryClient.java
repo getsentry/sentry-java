@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.TypeCheckHint.SENTRY_SCREENSHOT;
+
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
@@ -161,7 +163,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (hint != null) {
-      final Object screenshotAttachment = hint.get("screenshot");
+      final Object screenshotAttachment = hint.get(SENTRY_SCREENSHOT);
       if (screenshotAttachment instanceof Attachment) {
 
         if (attachments == null) {

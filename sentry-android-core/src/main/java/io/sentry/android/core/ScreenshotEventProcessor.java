@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.TypeCheckHint.SENTRY_SCREENSHOT;
+
 import android.app.Activity;
 import android.app.Application;
 import android.graphics.Bitmap;
@@ -72,7 +74,8 @@ public final class ScreenshotEventProcessor
             if (byteArrayOutputStream.size() > 0) {
               // screenshot png is around ~100-150 kb
               hint.put(
-                  "screenshot", Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
+                  SENTRY_SCREENSHOT,
+                  Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
             }
           } catch (Throwable e) {
             this.options.getLogger().log(SentryLevel.ERROR, "Taking screenshot failed.", e);
