@@ -24,7 +24,7 @@ public final class ScreenshotEventProcessor
 
   private final @NotNull Application application;
   private final @NotNull SentryAndroidOptions options;
-  //  private final @NotNull WeakReference<Activity> currentActivity = new WeakReference();
+  //  TODO: private final @NotNull WeakReference<Activity> currentActivity = new WeakReference();
   private @Nullable Activity activity;
 
   public ScreenshotEventProcessor(
@@ -41,9 +41,14 @@ public final class ScreenshotEventProcessor
   @Override
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
-    if (options.isAttachScreenshot() && MainThreadChecker.isMainThread(Thread.currentThread())) {
-      if (activity != null) {
+    if (options.isAttachScreenshot()
+        && event.isErrored()
+        && MainThreadChecker.isMainThread(Thread.currentThread())) {
+      if (activity != null
+          && activity.getWindow() != null
+          && activity.getWindow().getDecorView() != null) {
         View view = activity.getWindow().getDecorView().getRootView();
+        // TODO: check if using Canvas is better
         final boolean cacheEnabled = view.isDrawingCacheEnabled();
         view.setDrawingCacheEnabled(true);
         view.buildDrawingCache(true);
@@ -55,7 +60,10 @@ public final class ScreenshotEventProcessor
         if (hint == null) {
           hint = new HashMap<>();
         }
-        hint.put("screenshot", byteArrayOutputStream.toByteArray());
+
+        if (byteArrayOutputStream.size() > 0) {
+          hint.put("screenshot", byteArrayOutputStream.toByteArray());
+        }
 
         view.setDrawingCacheEnabled(cacheEnabled);
       }

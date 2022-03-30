@@ -68,10 +68,13 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureEvent(
-      @NotNull SentryEvent event,
-      final @Nullable Scope scope,
-      final @Nullable Map<String, Object> hint) {
+      @NotNull SentryEvent event, final @Nullable Scope scope, @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
+
+    // TODO: workaround
+    if (hint == null) {
+      hint = new HashMap<>();
+    }
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
@@ -161,8 +164,7 @@ public final class SentryClient implements ISentryClient {
       final Object screenshotBytes = hint.get("screenshot");
       if (screenshotBytes instanceof byte[]) {
         final Attachment attachment =
-            new Attachment(
-                (byte[]) screenshotBytes, "screenshot.png", "ContentType: image/png", false);
+            new Attachment((byte[]) screenshotBytes, "screenshot.png", "image/png", false);
 
         if (attachments == null) {
           attachments = new ArrayList<>();
