@@ -161,14 +161,14 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (hint != null) {
-      final Object screenshotBytes = hint.get("screenshot");
-      if (screenshotBytes instanceof Attachment) {
+      final Object screenshotAttachment = hint.get("screenshot");
+      if (screenshotAttachment instanceof Attachment) {
 
         if (attachments == null) {
           attachments = new ArrayList<>();
         }
 
-        attachments.add((Attachment) screenshotBytes);
+        attachments.add((Attachment) screenshotAttachment);
       }
     }
 

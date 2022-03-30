@@ -12,6 +12,7 @@ public final class io/sentry/Attachment {
 	public fun <init> ([BLjava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Z)V
+	public static fun fromScreenshot ([B)Lio/sentry/Attachment;
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getBytes ()[B
 	public fun getContentType ()Ljava/lang/String;
