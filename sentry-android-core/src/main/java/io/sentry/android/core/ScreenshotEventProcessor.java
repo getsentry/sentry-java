@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -70,7 +71,8 @@ public final class ScreenshotEventProcessor
 
             if (byteArrayOutputStream.size() > 0) {
               // screenshot png is around ~100-150 kb
-              hint.put("screenshot", byteArrayOutputStream.toByteArray());
+              hint.put(
+                  "screenshot", Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
             }
           } catch (Throwable e) {
             this.options.getLogger().log(SentryLevel.ERROR, "Taking screenshot failed.", e);

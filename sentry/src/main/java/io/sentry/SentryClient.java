@@ -162,15 +162,13 @@ public final class SentryClient implements ISentryClient {
 
     if (hint != null) {
       final Object screenshotBytes = hint.get("screenshot");
-      if (screenshotBytes instanceof byte[]) {
-        final Attachment attachment =
-            new Attachment((byte[]) screenshotBytes, "screenshot.png", "image/png", false);
+      if (screenshotBytes instanceof Attachment) {
 
         if (attachments == null) {
           attachments = new ArrayList<>();
         }
 
-        attachments.add(attachment);
+        attachments.add((Attachment) screenshotBytes);
       }
     }
 
