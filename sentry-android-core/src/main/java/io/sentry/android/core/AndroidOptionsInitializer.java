@@ -12,7 +12,6 @@ import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.util.Objects;
@@ -27,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Android Options initializer, it reads configurations from AndroidManifest and sets to the
- * SentryOptions. It also adds default values for some fields.
+ * SentryAndroidOptions. It also adds default values for some fields.
  */
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
@@ -38,7 +37,7 @@ final class AndroidOptionsInitializer {
   /**
    * Init method of the Android Options initializer
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Application context
    */
   static void init(final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
@@ -51,7 +50,7 @@ final class AndroidOptionsInitializer {
   /**
    * Init method of the Android Options initializer
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Application context
    * @param logger the ILogger interface
    * @param isFragmentAvailable whether the Fragment integration is available on the classpath
@@ -69,7 +68,7 @@ final class AndroidOptionsInitializer {
   /**
    * Init method of the Android Options initializer
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Application context
    * @param logger the ILogger interface
    * @param buildInfoProvider the BuildInfoProvider interface
@@ -96,7 +95,7 @@ final class AndroidOptionsInitializer {
   /**
    * Init method of the Android Options initializer
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Application context
    * @param logger the ILogger interface
    * @param buildInfoProvider the BuildInfoProvider interface
@@ -149,7 +148,7 @@ final class AndroidOptionsInitializer {
 
   private static void installDefaultIntegrations(
       final @NotNull Context context,
-      final @NotNull SentryOptions options,
+      final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker,
@@ -191,8 +190,7 @@ final class AndroidOptionsInitializer {
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
-      options.addEventProcessor(
-          new ScreenshotEventProcessor((Application) context, (SentryAndroidOptions) options));
+      options.addEventProcessor(new ScreenshotEventProcessor((Application) context, options));
     } else {
       options
           .getLogger()
@@ -212,7 +210,7 @@ final class AndroidOptionsInitializer {
   /**
    * Reads and sets default option values that are Android specific like release and inApp
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Android context methods
    */
   private static void readDefaultOptionValues(
@@ -287,10 +285,10 @@ final class AndroidOptionsInitializer {
    * Sets the cache dirs like sentry, outbox and sessions
    *
    * @param context the Application context
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    */
   private static void initializeCacheDirs(
-      final @NotNull Context context, final @NotNull SentryOptions options) {
+      final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     final File cacheDir = new File(context.getCacheDir(), "sentry");
     options.setCacheDirPath(cacheDir.getAbsolutePath());
   }
