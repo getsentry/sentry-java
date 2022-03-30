@@ -50,6 +50,7 @@ public final class ScreenshotEventProcessor
 
         if (view.getWidth() > 0 && view.getHeight() > 0) {
           try {
+            // ARGB_8888 -> This configuration is very flexible and offers the best quality
             final Bitmap bitmap =
                 Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
 
@@ -57,6 +58,10 @@ public final class ScreenshotEventProcessor
             view.draw(canvas);
 
             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+            // 0 meaning compress for small size, 100 meaning compress for max quality. Some
+            // formats,
+            // like PNG which is lossless, will ignore the quality setting.
             bitmap.compress(Bitmap.CompressFormat.PNG, 0, byteArrayOutputStream);
 
             if (hint == null) {
@@ -64,6 +69,7 @@ public final class ScreenshotEventProcessor
             }
 
             if (byteArrayOutputStream.size() > 0) {
+              // screenshot png is around ~100-150 kb
               hint.put("screenshot", byteArrayOutputStream.toByteArray());
             }
           } catch (Throwable e) {
