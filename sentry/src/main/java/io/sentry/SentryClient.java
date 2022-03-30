@@ -135,7 +135,7 @@ public final class SentryClient implements ISentryClient {
               ? scope.getTransaction().traceState()
               : null;
       final SentryEnvelope envelope =
-          buildEnvelope(event, getAttachmentsFromScope(scope), session, traceState);
+          buildEnvelope(event, getAttachments(scope, hint), session, traceState);
 
       if (envelope != null) {
         transport.send(envelope, hint);
@@ -150,12 +150,29 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private @Nullable List<Attachment> getAttachmentsFromScope(@Nullable Scope scope) {
+  private @Nullable List<Attachment> getAttachments(
+      final @Nullable Scope scope, final @Nullable Map<String, Object> hint) {
+    List<Attachment> attachments = null;
     if (scope != null) {
-      return scope.getAttachments();
-    } else {
-      return null;
+      attachments = scope.getAttachments();
     }
+
+    if (hint != null) {
+      final Object screenshotBytes = hint.get("screenshot");
+      if (screenshotBytes instanceof byte[]) {
+        final Attachment attachment =
+            new Attachment(
+                (byte[]) screenshotBytes, "screenshot.png", "ContentType: image/png", false);
+
+        if (attachments == null) {
+          attachments = new ArrayList<>();
+        }
+
+        attachments.add(attachment);
+      }
+    }
+
+    return attachments;
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
@@ -443,7 +460,7 @@ public final class SentryClient implements ISentryClient {
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
-              transaction, filterForTransaction(getAttachmentsFromScope(scope)), null, traceState);
+              transaction, filterForTransaction(getAttachments(scope, hint)), null, traceState);
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {

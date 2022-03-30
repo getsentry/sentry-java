@@ -191,6 +191,8 @@ final class AndroidOptionsInitializer {
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
+      options.addEventProcessor(
+          new ScreenshotEventProcessor((Application) context, (SentryAndroidOptions) options));
     } else {
       options
           .getLogger()
