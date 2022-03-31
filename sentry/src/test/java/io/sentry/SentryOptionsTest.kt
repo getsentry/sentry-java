@@ -209,10 +209,6 @@ class SentryOptionsTest {
         externalOptions.addInAppExclude("io.off")
         externalOptions.addTracingOrigin("localhost")
         externalOptions.addTracingOrigin("api.foo.com")
-        val transactionProfiler = mock<ITransactionProfiler>()
-        externalOptions.setTransactionProfiler(transactionProfiler)
-        externalOptions.maxTraceFileSize = 1000L
-        externalOptions.isProfilingEnabled = true
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -231,9 +227,6 @@ class SentryOptionsTest {
         assertEquals(listOf("com.app"), options.inAppIncludes)
         assertEquals(listOf("io.off"), options.inAppExcludes)
         assertEquals(listOf("localhost", "api.foo.com"), options.tracingOrigins)
-        assertEquals(true, options.isProfilingEnabled)
-        assertEquals(1000L, options.maxTraceFileSize)
-        assertEquals(transactionProfiler, options.transactionProfiler)
     }
 
     @Test

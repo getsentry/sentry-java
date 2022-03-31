@@ -8,10 +8,7 @@ import io.sentry.protocol.User
 import io.sentry.test.injectForField
 import io.sentry.vendor.Base64
 import org.junit.Assert.assertArrayEquals
-import java.io.BufferedReader
-import java.io.ByteArrayInputStream
 import java.io.File
-import java.io.InputStreamReader
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,6 +20,7 @@ import kotlin.test.assertNull
 class SentryEnvelopeItemTest {
 
     private class Fixture {
+        val serializer = JsonSerializer(SentryOptions())
         val pathname = "hello.txt"
         val filename = pathname
         val bytes = "hello".toByteArray()
@@ -213,18 +211,14 @@ class SentryEnvelopeItemTest {
 
     @Test
     fun `fromProfilingTrace saves file as Base64`() {
-        val serializer = SentryOptions().serializer
         val file = File(fixture.pathname)
         val profilingTraceData = mock<ProfilingTraceData> {
             whenever(it.traceFile).thenReturn(file)
         }
 
         file.writeBytes(fixture.bytes)
-        val traceDataBytes = SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, serializer).data
-        val reader = BufferedReader(InputStreamReader(ByteArrayInputStream(traceDataBytes)))
-        val deserData = serializer.deserialize(reader, ProfilingTraceData::class.java)
-        assertNotNull(deserData)
-        verify(profilingTraceData).sampled_profile = Base64.encodeToString(fixture.bytes, Base64.NO_WRAP or Base64.NO_PADDING)
+        SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, fixture.serializer).data
+        verify(profilingTraceData).sampledProfile = Base64.encodeToString(fixture.bytes, Base64.NO_WRAP or Base64.NO_PADDING)
     }
 
     @Test

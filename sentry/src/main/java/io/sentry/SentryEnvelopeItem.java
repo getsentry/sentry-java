@@ -225,7 +225,7 @@ public final class SentryEnvelopeItem {
               // base64
               byte[] traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
               String base64Trace = Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
-              profilingTraceData.setSampled_profile(base64Trace);
+              profilingTraceData.setSampledProfile(base64Trace);
               profilingTraceData.readDeviceCpuFrequencies();
 
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
