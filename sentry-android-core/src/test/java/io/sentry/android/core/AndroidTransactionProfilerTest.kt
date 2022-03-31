@@ -73,7 +73,7 @@ class AndroidTransactionProfilerTest {
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
         val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertEquals(fixture.transaction1.eventId.toString(), traceData!!.transaction_id)
+        assertEquals(fixture.transaction1.eventId.toString(), traceData!!.transactionId)
     }
 
     @Test
@@ -151,7 +151,7 @@ class AndroidTransactionProfilerTest {
 
         // Start and finish second transaction profiling
         profiler.onTransactionStart(fixture.transaction2)
-        assertEquals(fixture.transaction2.eventId.toString(), profiler.onTransactionFinish(fixture.transaction2)!!.transaction_id)
+        assertEquals(fixture.transaction2.eventId.toString(), profiler.onTransactionFinish(fixture.transaction2)!!.transactionId)
 
         // First transaction finishes: timed out data is returned
         val traceData2 = profiler.onTransactionFinish(fixture.transaction1)
@@ -171,7 +171,7 @@ class AndroidTransactionProfilerTest {
         assertNull(traceData)
 
         traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertEquals(fixture.transaction1.eventId.toString(), traceData!!.transaction_id)
+        assertEquals(fixture.transaction1.eventId.toString(), traceData!!.transactionId)
     }
 
     private fun createMockContext(): Context {
