@@ -23,12 +23,12 @@ class AndroidTransactionProfilerTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.AndroidTransactionProfiler"
-    private val ctorTypes = arrayOf(Context::class.java, SentryAndroidOptions::class.java, IBuildInfoProvider::class.java)
+    private val ctorTypes = arrayOf(Context::class.java, SentryAndroidOptions::class.java, BuildInfoProvider::class.java)
     private val fixture = Fixture()
     private lateinit var file: File
 
     private class Fixture {
-        val buildInfo = mock<IBuildInfoProvider> {
+        val buildInfo = mock<BuildInfoProvider> {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
         val options = SentryAndroidOptions().apply {
@@ -37,7 +37,7 @@ class AndroidTransactionProfilerTest {
         val transaction1 = SentryTracer(TransactionContext("", ""), mock())
         val transaction2 = SentryTracer(TransactionContext("", ""), mock())
 
-        fun getSut(context: Context, buildInfoProvider: IBuildInfoProvider = buildInfo): AndroidTransactionProfiler =
+        fun getSut(context: Context, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidTransactionProfiler =
             AndroidTransactionProfiler(context, options, buildInfoProvider)
     }
 
@@ -78,7 +78,7 @@ class AndroidTransactionProfilerTest {
 
     @Test
     fun `profiler works only on api 21+`() {
-        val buildInfo = mock<IBuildInfoProvider> {
+        val buildInfo = mock<BuildInfoProvider> {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
         }
         val profiler = fixture.getSut(context, buildInfo)

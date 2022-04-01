@@ -64,7 +64,13 @@ final class AndroidOptionsInitializer {
       final @NotNull ILogger logger,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
-    init(options, context, logger, new BuildInfoProvider(logger), isFragmentAvailable, isTimberAvailable);
+    init(
+        options,
+        context,
+        logger,
+        new BuildInfoProvider(logger),
+        isFragmentAvailable,
+        isTimberAvailable);
   }
 
   /**

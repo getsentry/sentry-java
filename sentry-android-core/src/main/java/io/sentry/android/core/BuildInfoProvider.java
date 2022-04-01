@@ -30,17 +30,14 @@ public final class BuildInfoProvider {
     return Build.TAGS;
   }
 
-  @Override
   public @Nullable String getManufacturer() {
     return Build.MANUFACTURER;
   }
 
-  @Override
   public @Nullable String getModel() {
     return Build.MODEL;
   }
 
-  @Override
   public @Nullable String getVersionRelease() {
     return Build.VERSION.RELEASE;
   }
@@ -51,7 +48,6 @@ public final class BuildInfoProvider {
    *
    * @return true if the application is running in an emulator, false otherwise
    */
-  @Override
   public @Nullable Boolean isEmulator() {
     try {
       return (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))

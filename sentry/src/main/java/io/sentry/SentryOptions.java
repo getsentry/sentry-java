@@ -1658,9 +1658,6 @@ public class SentryOptions {
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
     }
-    setTransactionProfiler(options.getTransactionProfiler());
-    setMaxTraceFileSize(options.getMaxTraceFileSize());
-    setProfilingEnabled(options.isProfilingEnabled());
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       this.tags.put(tag.getKey(), tag.getValue());

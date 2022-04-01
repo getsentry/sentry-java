@@ -46,14 +46,14 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private volatile @Nullable ProfilingTraceData timedOutProfilingData = null;
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
-  private final @NotNull IBuildInfoProvider buildInfoProvider;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @Nullable PackageInfo packageInfo;
   private long transactionStartNanos = 0;
 
   public AndroidTransactionProfiler(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
-      final @NotNull IBuildInfoProvider buildInfoProvider) {
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this.context = Objects.requireNonNull(context, "The application context is required");
     this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
     this.buildInfoProvider =
