@@ -57,7 +57,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private boolean shouldApplyScopeData(
-      final @NotNull SentryBaseEvent event, final @Nullable Map<String, Object> hint) {
+      final @NotNull SentryBaseEvent event, final @NotNull Map<String, Object> hint) {
     if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
@@ -155,22 +155,20 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable List<Attachment> getAttachments(
-      final @Nullable Scope scope, final @Nullable Map<String, Object> hint) {
+      final @Nullable Scope scope, final @NotNull Map<String, Object> hint) {
     List<Attachment> attachments = null;
     if (scope != null) {
       attachments = scope.getAttachments();
     }
 
-    if (hint != null) {
-      final Object screenshotAttachment = hint.get(SENTRY_SCREENSHOT);
-      if (screenshotAttachment instanceof Attachment) {
+    final Object screenshotAttachment = hint.get(SENTRY_SCREENSHOT);
+    if (screenshotAttachment instanceof Attachment) {
 
-        if (attachments == null) {
-          attachments = new ArrayList<>();
-        }
-
-        attachments.add((Attachment) screenshotAttachment);
+      if (attachments == null) {
+        attachments = new ArrayList<>();
       }
+
+      attachments.add((Attachment) screenshotAttachment);
     }
 
     return attachments;
@@ -219,7 +217,7 @@ public final class SentryClient implements ISentryClient {
   @Nullable
   private SentryEvent processEvent(
       @NotNull SentryEvent event,
-      final @Nullable Map<String, Object> hint,
+      final @NotNull Map<String, Object> hint,
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
       try {
@@ -250,7 +248,7 @@ public final class SentryClient implements ISentryClient {
   @Nullable
   private SentryTransaction processTransaction(
       @NotNull SentryTransaction transaction,
-      final @Nullable Map<String, Object> hint,
+      final @NotNull Map<String, Object> hint,
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
       try {
@@ -498,7 +496,7 @@ public final class SentryClient implements ISentryClient {
   private @Nullable SentryEvent applyScope(
       @NotNull SentryEvent event,
       final @Nullable Scope scope,
-      final @Nullable Map<String, Object> hint) {
+      final @NotNull Map<String, Object> hint) {
     if (scope != null) {
       applyScope(event, scope);
 
@@ -576,7 +574,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEvent executeBeforeSend(
-      @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
+      @NotNull SentryEvent event, final @NotNull Map<String, Object> hint) {
     final SentryOptions.BeforeSendCallback beforeSend = options.getBeforeSend();
     if (beforeSend != null) {
       try {
