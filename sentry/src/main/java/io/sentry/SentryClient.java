@@ -73,7 +73,6 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @Nullable Scope scope, @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
 
-    // TODO: workaround
     if (hint == null) {
       hint = new HashMap<>();
     }
@@ -426,8 +425,12 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       final @Nullable Scope scope,
-      final @Nullable Map<String, Object> hint) {
+      @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
+
+    if (hint == null) {
+      hint = new HashMap<>();
+    }
 
     options
         .getLogger()

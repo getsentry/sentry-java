@@ -915,7 +915,7 @@ class SentryClientTest {
                 assertNotNull(transaction)
                 assertEquals("a-transaction", transaction.transaction)
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
@@ -966,7 +966,7 @@ class SentryClientTest {
                     assertEquals("b", it.getExtra("a"))
                 }
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
