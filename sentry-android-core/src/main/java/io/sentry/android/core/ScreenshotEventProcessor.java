@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 import static io.sentry.TypeCheckHint.SENTRY_SCREENSHOT;
 
 import android.annotation.SuppressLint;
@@ -23,8 +24,14 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * ScreenshotEventProcessor responsible for taking a screenshot of the screen when an error is
+ * captured.
+ */
+@ApiStatus.Internal
 public final class ScreenshotEventProcessor
     implements EventProcessor, Application.ActivityLifecycleCallbacks, Closeable {
 
@@ -44,6 +51,18 @@ public final class ScreenshotEventProcessor
 
     if (this.options.isAttachScreenshot()) {
       application.registerActivityLifecycleCallbacks(this);
+
+      this.options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "attachScreenshot is enabled, ScreenshotEventProcessor is installed.");
+    } else {
+      this.options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "attachScreenshot is disabled, ScreenshotEventProcessor isn't installed.");
     }
   }
 
@@ -84,11 +103,24 @@ public final class ScreenshotEventProcessor
               hint.put(
                   SENTRY_SCREENSHOT,
                   Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
+              hint.put(ANDROID_ACTIVITY, activity);
+            } else {
+              this.options
+                  .getLogger()
+                  .log(SentryLevel.DEBUG, "Screenshot is 0 bytes, not attaching the image.");
             }
           } catch (Throwable e) {
             this.options.getLogger().log(SentryLevel.ERROR, "Taking screenshot failed.", e);
           }
+        } else {
+          this.options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
         }
+      } else {
+        this.options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
       }
     }
 
