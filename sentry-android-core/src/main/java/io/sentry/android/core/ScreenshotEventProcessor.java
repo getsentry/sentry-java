@@ -2,10 +2,12 @@ package io.sentry.android.core;
 
 import static io.sentry.TypeCheckHint.SENTRY_SCREENSHOT;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import androidx.annotation.NonNull;
@@ -29,23 +31,29 @@ public final class ScreenshotEventProcessor
   private final @NotNull Application application;
   private final @NotNull SentryAndroidOptions options;
   private @Nullable WeakReference<Activity> currentActivity;
+  final @NotNull BuildInfoProvider buildInfoProvider;
 
   public ScreenshotEventProcessor(
-      final @NotNull Application application, final @NotNull SentryAndroidOptions options) {
+      final @NotNull Application application,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this.application = Objects.requireNonNull(application, "Application is required");
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
+    this.buildInfoProvider =
+        Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
 
     if (this.options.isAttachScreenshot()) {
       application.registerActivityLifecycleCallbacks(this);
     }
   }
 
+  @SuppressWarnings("NullAway")
   @Override
   public @NotNull SentryEvent process(
       final @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
     if (options.isAttachScreenshot() && event.isErrored() && currentActivity != null) {
       final Activity activity = currentActivity.get();
-      if (activity != null
+      if (isActivityValid(activity)
           && activity.getWindow() != null
           && activity.getWindow().getDecorView() != null
           && activity.getWindow().getDecorView().getRootView() != null) {
@@ -139,5 +147,17 @@ public final class ScreenshotEventProcessor
       return;
     }
     currentActivity = new WeakReference<>(activity);
+  }
+
+  @SuppressLint("NewApi")
+  private boolean isActivityValid(@Nullable Activity activity) {
+    if (activity == null) {
+      return false;
+    }
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+      return !activity.isFinishing() && !activity.isDestroyed();
+    } else {
+      return !activity.isFinishing();
+    }
   }
 }

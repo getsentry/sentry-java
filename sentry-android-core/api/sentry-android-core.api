@@ -97,7 +97,7 @@ public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/
 }
 
 public final class io/sentry/android/core/ScreenshotEventProcessor : android/app/Application$ActivityLifecycleCallbacks, io/sentry/EventProcessor, java/io/Closeable {
-	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
