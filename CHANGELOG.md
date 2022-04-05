@@ -2,10 +2,6 @@
 
 ## Unreleased
 
-* Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
-* Fix: ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
-* Feat: Pass MDC tags as Sentry tags (#1954)
-
 ## 6.0.0-alpha.4
 
 * Ref: Remove not needed interface abstractions on Android (#1953)
@@ -53,6 +49,12 @@ Breaking changes:
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
+## 5.7.1
+
+* Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
+* Fix: ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
+* Feat: Pass MDC tags as Sentry tags (#1954)
 
 ## 5.7.0
 
