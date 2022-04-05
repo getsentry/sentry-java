@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
 import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
@@ -1152,6 +1153,25 @@ class SentryClientTest {
         val sut = fixture.getSut()
         sut.captureException(IllegalStateException())
         verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `screenshot hint is added to the envelope`() {
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                val screenshot = envelope.items.last()
+                assertNotNull(screenshot) {
+                    assertEquals(attachment.filename, screenshot.header.fileName)
+                }
+            },
+            anyOrNull()
+        )
     }
 
     private fun createScope(): Scope {
