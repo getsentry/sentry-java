@@ -1156,7 +1156,7 @@ class SentryClientTest {
     }
 
     @Test
-    fun `screenshot hint is added to the envelope`() {
+    fun `screenshot is added to the envelope from the hint`() {
         val sut = fixture.getSut()
         val attachment = Attachment.fromScreenshot(byteArrayOf())
         val hints = mapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
@@ -1172,6 +1172,31 @@ class SentryClientTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `screenshot is dropped from hint via before send`() {
+        fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mutableMapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                assertEquals(1, envelope.items.count())
+            },
+            anyOrNull()
+        )
+    }
+
+    class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
+        override fun execute(event: SentryEvent, hint: MutableMap<String, Any?>?): SentryEvent? {
+            hint?.remove(SENTRY_SCREENSHOT)
+
+            return event
+        }
     }
 
     private fun createScope(): Scope {

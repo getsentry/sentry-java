@@ -472,6 +472,7 @@ public abstract interface class io/sentry/JsonUnknown {
 }
 
 public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java/io/Closeable {
+	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close ()V
 	public fun process (Lio/sentry/SentryEvent;Ljava/util/Map;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/util/Map;)Lio/sentry/protocol/SentryTransaction;
