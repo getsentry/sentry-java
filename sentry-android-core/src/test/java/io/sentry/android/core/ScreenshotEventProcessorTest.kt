@@ -1,4 +1,3 @@
 package io.sentry.android.core
 
-class ScreenshotEventProcessorTest {
-}
+class ScreenshotEventProcessorTest
