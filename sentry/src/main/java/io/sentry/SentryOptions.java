@@ -302,9 +302,9 @@ public class SentryOptions {
    * The idle time, measured in ms, to wait until the transaction will be finished. The transaction
    * will use the end timestamp of the last finished span as the endtime for the transaction.
    *
-   * When set to {@code null} the transaction must be finished manually.
+   * <p>When set to {@code null} the transaction must be finished manually.
    *
-   * The default is 3 seconds.
+   * <p>The default is 3 seconds.
    */
   private @Nullable Long idleTimeout = 3000L;
 

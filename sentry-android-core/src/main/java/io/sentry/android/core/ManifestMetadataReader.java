@@ -221,11 +221,7 @@ final class ManifestMetadataReader {
                 options.isEnableActivityLifecycleTracingAutoFinish()));
 
         options.setEnableUserInteractionTracing(
-            readBool(
-                metadata,
-                logger,
-                TRACES_UI_ENABLE,
-                options.isEnableUserInteractionTracing()));
+            readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));
 
         final long idleTimeout = readLong(metadata, logger, IDLE_TIMEOUT, -1);
         if (idleTimeout != -1) {

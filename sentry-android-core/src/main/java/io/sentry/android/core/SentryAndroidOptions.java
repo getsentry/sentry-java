@@ -84,9 +84,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableActivityLifecycleTracingAutoFinish = true;
 
-  /**
-   * Enables the Auto instrumentation for user interaction tracing.
-   */
+  /** Enables the Auto instrumentation for user interaction tracing. */
   private boolean enableUserInteractionTracing = false;
 
   /** Interface that loads the debug images list */

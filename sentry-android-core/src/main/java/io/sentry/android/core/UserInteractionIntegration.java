@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
 import android.os.Bundle;
 import android.view.Window;
 import io.sentry.IHub;
@@ -56,7 +55,12 @@ public final class UserInteractionIntegration
 
       final SentryGestureListener gestureListener =
           new SentryGestureListener(
-              new WeakReference<>(window), new WeakReference<>(activity), hub, options, isAndroidXScrollViewAvailable, performanceEnabled);
+              new WeakReference<>(window),
+              new WeakReference<>(activity),
+              hub,
+              options,
+              isAndroidXScrollViewAvailable,
+              performanceEnabled);
       window.setCallback(new SentryWindowCallback(delegate, activity, gestureListener, options));
     }
   }
@@ -121,7 +125,9 @@ public final class UserInteractionIntegration
             "UserInteractionIntegration enabled: %s",
             this.options.isEnableUserInteractionBreadcrumbs());
 
-    this.performanceEnabled = options.isTracingEnabled() && ((SentryAndroidOptions) options).isEnableUserInteractionTracing();
+    this.performanceEnabled =
+        options.isTracingEnabled()
+            && ((SentryAndroidOptions) options).isEnableUserInteractionTracing();
 
     if (this.options.isEnableUserInteractionBreadcrumbs()) {
       if (isAndroidXAvailable) {

@@ -52,7 +52,7 @@ public final class SentryTracer implements ITransaction {
   private @Nullable TimerTask timerTask;
   private final @NotNull Timer timer = new Timer(true);
   private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
-    new SpanByTimestampComparator();
+      new SpanByTimestampComparator();
 
   private @Nullable TraceState traceState;
 
@@ -97,12 +97,14 @@ public final class SentryTracer implements ITransaction {
 
   private void scheduleFinish(final @NotNull Long idleTimeout) {
     cancelTimer();
-    timerTask = new TimerTask() {
-      @Override public void run() {
-        final SpanStatus status = getStatus();
-        finish((status != null) ? status : SpanStatus.OK);
-      }
-    };
+    timerTask =
+        new TimerTask() {
+          @Override
+          public void run() {
+            final SpanStatus status = getStatus();
+            finish((status != null) ? status : SpanStatus.OK);
+          }
+        };
 
     timer.schedule(timerTask, idleTimeout);
   }
@@ -261,7 +263,10 @@ public final class SentryTracer implements ITransaction {
       // set the transaction finish timestamp to the latest child timestamp, if the transaction
       // is an idle transaction
       if (!children.isEmpty()) {
-        final Date latestChildTimestamp = Objects.requireNonNull(findLatestChildTimestamp(), "The span timestamp should not be null after it was finished");
+        final Date latestChildTimestamp =
+            Objects.requireNonNull(
+                findLatestChildTimestamp(),
+                "The span timestamp should not be null after it was finished");
         if (finishTimestamp.after(latestChildTimestamp)) {
           finishTimestamp = latestChildTimestamp;
         }
@@ -526,9 +531,14 @@ public final class SentryTracer implements ITransaction {
   private static final class SpanByTimestampComparator implements Comparator<Span> {
 
     @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-    @Override public int compare(Span o1, Span o2) {
-      final Date first = Objects.requireNonNull(o1.getTimestamp(), "The span timestamp should not be null after it was finished");
-      final Date second = Objects.requireNonNull(o2.getTimestamp(), "The span timestamp should not be null after it was finished");
+    @Override
+    public int compare(Span o1, Span o2) {
+      final Date first =
+          Objects.requireNonNull(
+              o1.getTimestamp(), "The span timestamp should not be null after it was finished");
+      final Date second =
+          Objects.requireNonNull(
+              o2.getTimestamp(), "The span timestamp should not be null after it was finished");
       return first.compareTo(second);
     }
   }

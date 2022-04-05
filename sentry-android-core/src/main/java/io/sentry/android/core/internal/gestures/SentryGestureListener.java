@@ -184,19 +184,14 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
             eventType, ViewUtils.getResourceId(target), className, additionalData));
   }
 
-  private void startTracing(
-    final @NotNull View target,
-    final @NotNull String eventType
-  ) {
+  private void startTracing(final @NotNull View target, final @NotNull String eventType) {
     if (!performanceEnabled) {
       return;
     }
 
     final Activity activity = currentActivity.get();
     if (activity == null) {
-      options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Activity is null, no transaction captured");
+      options.getLogger().log(SentryLevel.DEBUG, "Activity is null, no transaction captured");
       return;
     }
 
@@ -209,18 +204,12 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     // TODO: if view.id is not specified on the view, do not create a transaction, document this
     final String name = getActivityName(activity) + "." + ViewUtils.getResourceId(target);
     final String op = UI_ACTION + "." + eventType;
-    final ITransaction transaction =
-      hub.startTransaction(
-        name,
-        op,
-        true,
-        options.getIdleTimeout()
-      );
+    final ITransaction transaction = hub.startTransaction(name, op, true, options.getIdleTimeout());
 
     hub.configureScope(
-      scope -> {
-        applyScope(scope, transaction);
-      });
+        scope -> {
+          applyScope(scope, transaction);
+        });
 
     activeTransaction = transaction;
   }
@@ -228,19 +217,19 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   @VisibleForTesting
   void applyScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
-      scopeTransaction -> {
-        // we'd not like to overwrite existent transactions bound to the Scope manually
-        if (scopeTransaction == null) {
-          scope.setTransaction(transaction);
-        } else {
-          options
-            .getLogger()
-            .log(
-              SentryLevel.DEBUG,
-              "Transaction '%s' won't be bound to the Scope since there's one already in there.",
-              transaction.getName());
-        }
-      });
+        scopeTransaction -> {
+          // we'd not like to overwrite existent transactions bound to the Scope manually
+          if (scopeTransaction == null) {
+            scope.setTransaction(transaction);
+          } else {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Transaction '%s' won't be bound to the Scope since there's one already in there.",
+                    transaction.getName());
+          }
+        });
   }
 
   private @NotNull String getActivityName(final @NotNull Activity activity) {
