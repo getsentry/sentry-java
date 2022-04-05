@@ -89,9 +89,8 @@ public final class ScreenshotEventProcessor
 
             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-            // 0 meaning compress for small size, 100 meaning compress for max quality. Some
-            // formats,
-            // like PNG which is lossless, will ignore the quality setting.
+            // 0 meaning compress for small size, 100 meaning compress for max quality.
+            // Some formats, like PNG which is lossless, will ignore the quality setting.
             bitmap.compress(Bitmap.CompressFormat.PNG, 0, byteArrayOutputStream);
 
             if (hint == null) {
