@@ -54,6 +54,7 @@ final class ManifestMetadataReader {
   static final String TRACES_ACTIVITY_ENABLE = "io.sentry.traces.activity.enable";
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
       "io.sentry.traces.activity.auto-finish.enable";
+  static final String TRACES_UI_ENABLE = "io.sentry.traces.user-interaction.enable";
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
 
@@ -61,6 +62,7 @@ final class ManifestMetadataReader {
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
   static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
+  static final String IDLE_TIMEOUT = "io.sentry.idle-timeout";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -217,6 +219,18 @@ final class ManifestMetadataReader {
                 logger,
                 TRACES_ACTIVITY_AUTO_FINISH_ENABLE,
                 options.isEnableActivityLifecycleTracingAutoFinish()));
+
+        options.setEnableUserInteractionTracing(
+            readBool(
+                metadata,
+                logger,
+                TRACES_UI_ENABLE,
+                options.isEnableUserInteractionTracing()));
+
+        final long idleTimeout = readLong(metadata, logger, IDLE_TIMEOUT, -1);
+        if (idleTimeout != -1) {
+          options.setIdleTimeout(idleTimeout);
+        }
 
         final List<String> tracingOrigins = readList(metadata, logger, TRACING_ORIGINS);
         if (tracingOrigins != null) {

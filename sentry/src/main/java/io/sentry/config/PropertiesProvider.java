@@ -74,4 +74,16 @@ public interface PropertiesProvider {
     final String result = getProperty(property);
     return result != null ? Double.valueOf(result) : null;
   }
+
+  /**
+   * Resolves a {@link Long} property given by it's name.
+   *
+   * @param property - the property name
+   * @return property value or the default value if not found.
+   */
+  @Nullable
+  default Long getLongProperty(final @NotNull String property) {
+    final String result = getProperty(property);
+    return result != null ? Long.valueOf(result) : null;
+  }
 }

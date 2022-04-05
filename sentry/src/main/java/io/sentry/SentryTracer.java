@@ -7,9 +7,13 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -45,6 +49,11 @@ public final class SentryTracer implements ITransaction {
    */
   private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
 
+  private @Nullable TimerTask timerTask;
+  private final @NotNull Timer timer = new Timer(true);
+  private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
+    new SpanByTimestampComparator();
+
   private @Nullable TraceState traceState;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
@@ -56,14 +65,14 @@ public final class SentryTracer implements ITransaction {
       final @NotNull IHub hub,
       final boolean waitForChildren,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(context, hub, null, waitForChildren, transactionFinishedCallback);
+    this(context, hub, null, waitForChildren, null, transactionFinishedCallback);
   }
 
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp) {
-    this(context, hub, startTimestamp, false, null);
+    this(context, hub, startTimestamp, false, null, null);
   }
 
   SentryTracer(
@@ -71,6 +80,7 @@ public final class SentryTracer implements ITransaction {
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
@@ -79,6 +89,29 @@ public final class SentryTracer implements ITransaction {
     this.hub = hub;
     this.waitForChildren = waitForChildren;
     this.transactionFinishedCallback = transactionFinishedCallback;
+
+    if (idleTimeout != null) {
+      scheduleFinish(idleTimeout);
+    }
+  }
+
+  private void scheduleFinish(final @NotNull Long idleTimeout) {
+    cancelTimer();
+    timerTask = new TimerTask() {
+      @Override public void run() {
+        final SpanStatus status = getStatus();
+        finish((status != null) ? status : SpanStatus.OK);
+      }
+    };
+
+    timer.schedule(timerTask, idleTimeout);
+  }
+
+  private void cancelTimer() {
+    if (timerTask != null) {
+      timerTask.cancel();
+      timerTask = null;
+    }
   }
 
   public @NotNull List<Span> getChildren() {
@@ -211,29 +244,29 @@ public final class SentryTracer implements ITransaction {
     this.finish(this.getStatus());
   }
 
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   @Override
   public void finish(@Nullable SpanStatus status) {
+    cancelTimer();
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
-      root.finish(finishStatus.spanStatus);
-
       // finish unfinished children
-      Date finishTimestamp = root.getTimestamp();
-      if (finishTimestamp == null) {
-        hub.getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Root span - op: %s, description: %s - has no timestamp set, when finishing unfinished spans.",
-                root.getOperation(),
-                root.getDescription());
-        finishTimestamp = DateUtils.getCurrentDateTime();
-      }
+      Date finishTimestamp = DateUtils.getCurrentDateTime();
       for (final Span child : children) {
         if (!child.isFinished()) {
           child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
         }
       }
+
+      // set the transaction finish timestamp to the latest child timestamp, if the transaction
+      // is an idle transaction
+      if (!children.isEmpty()) {
+        final Date latestChildTimestamp = Objects.requireNonNull(findLatestChildTimestamp(), "The span timestamp should not be null after it was finished");
+        if (finishTimestamp.after(latestChildTimestamp)) {
+          finishTimestamp = latestChildTimestamp;
+        }
+      }
+      root.finish(finishStatus.spanStatus, finishTimestamp);
 
       hub.configureScope(
           scope -> {
@@ -280,6 +313,12 @@ public final class SentryTracer implements ITransaction {
     } else {
       return null;
     }
+  }
+
+  private @Nullable Date findLatestChildTimestamp() {
+    final List<Span> spans = new ArrayList<>(this.children);
+    Collections.sort(spans, spanByTimestampComparator);
+    return spans.get(spans.size() - 1).getTimestamp();
   }
 
   private boolean hasAllChildrenFinished() {
@@ -481,6 +520,16 @@ public final class SentryTracer implements ITransaction {
     private FinishStatus(final boolean isFinishing, final @Nullable SpanStatus spanStatus) {
       this.isFinishing = isFinishing;
       this.spanStatus = spanStatus;
+    }
+  }
+
+  private static final class SpanByTimestampComparator implements Comparator<Span> {
+
+    @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
+    @Override public int compare(Span o1, Span o2) {
+      final Date first = Objects.requireNonNull(o1.getTimestamp(), "The span timestamp should not be null after it was finished");
+      final Date second = Objects.requireNonNull(o2.getTimestamp(), "The span timestamp should not be null after it was finished");
+      return first.compareTo(second);
     }
   }
 }

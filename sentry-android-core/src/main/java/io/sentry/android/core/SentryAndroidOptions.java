@@ -84,6 +84,11 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableActivityLifecycleTracingAutoFinish = true;
 
+  /**
+   * Enables the Auto instrumentation for user interaction tracing.
+   */
+  private boolean enableUserInteractionTracing = false;
+
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
@@ -247,5 +252,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setEnableActivityLifecycleTracingAutoFinish(
       boolean enableActivityLifecycleTracingAutoFinish) {
     this.enableActivityLifecycleTracingAutoFinish = enableActivityLifecycleTracingAutoFinish;
+  }
+
+  public boolean isEnableUserInteractionTracing() {
+    return enableUserInteractionTracing;
+  }
+
+  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
+    this.enableUserInteractionTracing = enableUserInteractionTracing;
   }
 }

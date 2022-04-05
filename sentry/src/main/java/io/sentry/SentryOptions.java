@@ -299,6 +299,16 @@ public class SentryOptions {
   private @Nullable String proguardUuid;
 
   /**
+   * The idle time, measured in ms, to wait until the transaction will be finished. The transaction
+   * will use the end timestamp of the last finished span as the endtime for the transaction.
+   *
+   * When set to {@code null} the transaction must be finished manually.
+   *
+   * The default is 3 seconds.
+   */
+  private @Nullable Long idleTimeout = 3000L;
+
+  /**
    * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
    *
    * @param propertiesProvider the properties provider
@@ -349,6 +359,7 @@ public class SentryOptions {
       options.addTracingOrigin(tracingOrigin);
     }
     options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
+    options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -1542,6 +1553,24 @@ public class SentryOptions {
     this.proguardUuid = proguardUuid;
   }
 
+  /**
+   * Returns the idle timeout.
+   *
+   * @return the idle timeout in millis or null.
+   */
+  public @Nullable Long getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  /**
+   * Sets the idle timeout.
+   *
+   * @param idleTimeout the idle timeout in millis or null.
+   */
+  public void setIdleTimeout(final @Nullable Long idleTimeout) {
+    this.idleTimeout = idleTimeout;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1691,6 +1720,9 @@ public class SentryOptions {
     }
     if (options.getProguardUuid() != null) {
       setProguardUuid(options.getProguardUuid());
+    }
+    if (options.getIdleTimeout() != null) {
+      setIdleTimeout(options.getIdleTimeout());
     }
   }
 
