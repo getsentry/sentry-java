@@ -87,6 +87,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
+  /** Enables or disables the attach screenshot feature when an error happened. */
+  private boolean attachScreenshot;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -250,5 +253,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setEnableActivityLifecycleTracingAutoFinish(
       boolean enableActivityLifecycleTracingAutoFinish) {
     this.enableActivityLifecycleTracingAutoFinish = enableActivityLifecycleTracingAutoFinish;
+  }
+
+  public boolean isAttachScreenshot() {
+    return attachScreenshot;
+  }
+
+  public void setAttachScreenshot(boolean attachScreenshot) {
+    this.attachScreenshot = attachScreenshot;
   }
 }

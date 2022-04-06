@@ -62,6 +62,8 @@ final class ManifestMetadataReader {
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
   static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
 
+  static final String ATTACH_SCREENSHOT = "io.sentry.attach-screenshot";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -193,6 +195,9 @@ final class ManifestMetadataReader {
 
         options.setAttachThreads(
             readBool(metadata, logger, ATTACH_THREADS, options.isAttachThreads()));
+
+        options.setAttachScreenshot(
+            readBool(metadata, logger, ATTACH_SCREENSHOT, options.isAttachScreenshot()));
 
         if (options.getTracesSampleRate() == null) {
           final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);

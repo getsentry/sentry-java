@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Feat: Screenshot is taken when there is an error (#1967)
+
 ## 6.0.0-alpha.4
 
 * Ref: Remove not needed interface abstractions on Android (#1953)

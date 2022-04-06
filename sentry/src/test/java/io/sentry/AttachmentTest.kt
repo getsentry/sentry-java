@@ -101,4 +101,15 @@ class AttachmentTest {
 
         assertEquals("event.attachment", fileAttachment.attachmentType)
     }
+
+    @Test
+    fun `creates attachment from screenshot`() {
+        val bytes = byteArrayOf()
+        val attachment = Attachment.fromScreenshot(bytes)
+
+        assertEquals("screenshot.png", attachment.filename)
+        assertEquals("image/png", attachment.contentType)
+        assertEquals(false, attachment.isAddToTransactions)
+        assertEquals(bytes, attachment.bytes)
+    }
 }
