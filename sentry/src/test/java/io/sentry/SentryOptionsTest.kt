@@ -173,6 +173,16 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options is initialized, profilingEnabled is false`() {
+        assertFalse(SentryOptions().isProfilingEnabled)
+    }
+
+    @Test
+    fun `when options is initialized, transactionProfiler is noop`() {
+        assert(SentryOptions().transactionProfiler == NoOpTransactionProfiler.getInstance())
+    }
+
+    @Test
     fun `when adds scope observer, observer list has it`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {

@@ -16,9 +16,9 @@ import org.jetbrains.annotations.NotNull;
  * <p>A {@code ReusableCountLatch} is initialized with a given <em>count</em>. The {@link
  * #waitTillZero} methods block until the current count reaches zero due to invocations of the
  * {@link #decrement} method, after which all waiting threads are released. If zero has been reached
- * any subsequent invocations of {@link #waitTillZero} return immediately. The coun cen be increased
- * calling the {@link #increment()} method and any subsequent thread calling the {@link
- * #waitTillZero} method will be block again until another zero is reached.
+ * any subsequent invocations of {@link #waitTillZero} return immediately. The count can be
+ * increased calling the {@link #increment()} method and any subsequent thread calling the {@link
+ * #waitTillZero} method will be blocked again until another zero is reached.
  *
  * <p>{@code ReusableCountLatch} provides more versatility than {@link
  * java.util.concurrent.CountDownLatch CountDownLatch} as the count doesn't have to be known upfront
@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
  * instead can count up to 2_147_483_647 (2^31-1).
  *
  * <p>Great use case for {@code ReusableCountLatch} is when you wait for tasks on other threads to
- * finish, but these tasks could trigger more tasks and it is not know upfront how many will be
+ * finish, but these tasks could trigger more tasks and it is not known upfront how many will be
  * triggered in total.
  *
  * @author mtymes

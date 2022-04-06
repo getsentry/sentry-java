@@ -1,5 +1,9 @@
 package io.sentry.android.core
 
+import io.sentry.ITransaction
+import io.sentry.ITransactionProfiler
+import io.sentry.NoOpTransactionProfiler
+import io.sentry.ProfilingTraceData
 import io.sentry.protocol.DebugImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -57,6 +61,28 @@ class SentryAndroidOptionsTest {
     }
 
     @Test
+    fun `init should set NoOpTransactionProfiler`() {
+        val sentryOptions = SentryAndroidOptions()
+        assertEquals(NoOpTransactionProfiler.getInstance(), sentryOptions.transactionProfiler)
+    }
+
+    @Test
+    fun `set transactionProfiler accepts non null value`() {
+        val sentryOptions = SentryAndroidOptions().apply {
+            setTransactionProfiler(CustomTransactionProfiler())
+        }
+        assertNotNull(sentryOptions.transactionProfiler)
+    }
+
+    @Test
+    fun `set transactionProfiler to null sets it to noop`() {
+        val sentryOptions = SentryAndroidOptions().apply {
+            setTransactionProfiler(null)
+        }
+        assertEquals(sentryOptions.transactionProfiler, NoOpTransactionProfiler.getInstance())
+    }
+
+    @Test
     fun `enable scope sync by default for Android`() {
         val sentryOptions = SentryAndroidOptions()
 
@@ -73,5 +99,10 @@ class SentryAndroidOptionsTest {
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
         override fun clearDebugImages() {}
+    }
+
+    private class CustomTransactionProfiler : ITransactionProfiler {
+        override fun onTransactionStart(transaction: ITransaction) {}
+        override fun onTransactionFinish(transaction: ITransaction): ProfilingTraceData? = null
     }
 }

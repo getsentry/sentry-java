@@ -222,12 +222,33 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  @ApiStatus.Experimental
+  @ApiStatus.Internal
+  default SentryId captureTransaction(
+      @NotNull SentryTransaction transaction,
+      @Nullable TraceState traceState,
+      @Nullable Scope scope,
+      @Nullable Map<String, Object> hint) {
+    return captureTransaction(transaction, traceState, scope, hint, null);
+  }
+
+  /**
+   * Captures a transaction.
+   *
+   * @param transaction the {@link ITransaction} to send
+   * @param traceState the trace state
+   * @param scope An optional scope to be applied to the event.
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @param profilingTraceData An optional profiling trace data captured during the transaction
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull
+  @ApiStatus.Internal
   SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       @Nullable Scope scope,
-      @Nullable Map<String, Object> hint);
+      @Nullable Map<String, Object> hint,
+      @Nullable ProfilingTraceData profilingTraceData);
 
   /**
    * Captures a transaction without scope nor hint.
@@ -236,7 +257,7 @@ public interface ISentryClient {
    * @param traceState the trace state
    * @return The Id (SentryId object) of the event
    */
-  @ApiStatus.Experimental
+  @ApiStatus.Internal
   default @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction, @Nullable TraceState traceState) {
     return captureTransaction(transaction, traceState, null, null);

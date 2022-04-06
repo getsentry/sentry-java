@@ -152,6 +152,28 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `profilingTracesDirPath should be set at initialization`() {
+        fixture.initSut()
+
+        assertTrue(
+            fixture.sentryOptions.profilingTracesDirPath?.endsWith(
+                "${File.separator}cache${File.separator}sentry${File.separator}profiling_traces"
+            )!!
+        )
+        assertFalse(File(fixture.sentryOptions.profilingTracesDirPath!!).exists())
+    }
+
+    @Test
+    fun `profilingTracesDirPath should be created and cleared when profiling is enabled`() {
+        fixture.initSut(configureOptions = {
+            isProfilingEnabled = true
+        })
+
+        assertTrue(File(fixture.sentryOptions.profilingTracesDirPath!!).exists())
+        assertTrue(File(fixture.sentryOptions.profilingTracesDirPath!!).list()!!.isEmpty())
+    }
+
+    @Test
     fun `outboxDir should be set at initialization`() {
         fixture.initSut()
 
@@ -224,6 +246,14 @@ class AndroidOptionsInitializerTest {
 
         assertNotNull(fixture.sentryOptions.transportGate)
         assertTrue(fixture.sentryOptions.transportGate is AndroidTransportGate)
+    }
+
+    @Test
+    fun `init should set Android transaction profiler`() {
+        fixture.initSut()
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
     }
 
     @Test

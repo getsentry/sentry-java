@@ -123,7 +123,8 @@ public final class NoOpHub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Map<String, Object> hint) {
+      final @Nullable Map<String, Object> hint,
+      final @Nullable ProfilingTraceData profilingTraceData) {
     return SentryId.EMPTY_ID;
   }
 
