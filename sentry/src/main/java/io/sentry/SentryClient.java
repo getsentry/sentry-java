@@ -1,6 +1,7 @@
 package io.sentry;
 
 import static io.sentry.TypeCheckHint.SENTRY_SCREENSHOT;
+
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
