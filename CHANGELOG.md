@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
+
 ## 5.7.1
 
 * Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
