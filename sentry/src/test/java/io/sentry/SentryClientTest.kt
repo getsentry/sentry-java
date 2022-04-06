@@ -1372,7 +1372,7 @@ class SentryClientTest {
                 }
                 assertNotNull(profilingTraceItem?.data)
             },
-            isNull()
+            anyOrNull()
         )
     }
 
