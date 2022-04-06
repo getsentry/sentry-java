@@ -133,6 +133,14 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `ScreenshotEventProcessor added to processors list`() {
+        fixture.initSut()
+        val actual =
+            fixture.sentryOptions.eventProcessors.any { it is ScreenshotEventProcessor }
+        assertNotNull(actual)
+    }
+
+    @Test
     fun `envelopesDir should be set at initialization`() {
         fixture.initSut()
 

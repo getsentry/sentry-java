@@ -114,5 +114,8 @@
         <!--    how to disable the app components breadcrumbs integration-->
         <!--    <meta-data android:name="io.sentry.breadcrumbs.app-components" android:value="false" />-->
 
+        <!--    how to enable the attach screenshot feature-->
+        <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
+
     </application>
 </manifest>

@@ -4,13 +4,13 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
 import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
@@ -922,7 +922,7 @@ class SentryClientTest {
                 assertNotNull(transaction)
                 assertEquals("a-transaction", transaction.transaction)
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
@@ -998,7 +998,7 @@ class SentryClientTest {
                     assertEquals("b", it.getExtra("a"))
                 }
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
@@ -1186,6 +1186,50 @@ class SentryClientTest {
         verify(fixture.transport, never()).send(any(), anyOrNull())
     }
 
+    @Test
+    fun `screenshot is added to the envelope from the hint`() {
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                val screenshot = envelope.items.last()
+                assertNotNull(screenshot) {
+                    assertEquals(attachment.filename, screenshot.header.fileName)
+                }
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `screenshot is dropped from hint via before send`() {
+        fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mutableMapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                assertEquals(1, envelope.items.count())
+            },
+            anyOrNull()
+        )
+    }
+
+    class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
+        override fun execute(event: SentryEvent, hint: MutableMap<String, Any?>?): SentryEvent? {
+            hint?.remove(SENTRY_SCREENSHOT)
+
+            return event
+        }
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(
@@ -1314,7 +1358,7 @@ class SentryClientTest {
                     attachmentItemTooBig.data
                 }
             },
-            isNull()
+            anyOrNull()
         )
     }
 

@@ -7,6 +7,7 @@ import io.sentry.ProfilingTraceData
 import io.sentry.protocol.DebugImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -86,6 +87,13 @@ class SentryAndroidOptionsTest {
         val sentryOptions = SentryAndroidOptions()
 
         assertTrue(sentryOptions.isEnableScopeSync)
+    }
+
+    @Test
+    fun `attach screenshots disabled by default for Android`() {
+        val sentryOptions = SentryAndroidOptions()
+
+        assertFalse(sentryOptions.isAttachScreenshot)
     }
 
     private class CustomDebugImagesLoader : IDebugImagesLoader {
