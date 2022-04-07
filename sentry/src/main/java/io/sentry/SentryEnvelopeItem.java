@@ -299,7 +299,7 @@ public final class SentryEnvelopeItem {
       final @NotNull ISerializer serializer, final @NotNull ClientReport clientReport)
       throws IOException {
     Objects.requireNonNull(serializer, "ISerializer is required.");
-    Objects.requireNonNull(clientReport, "SentryEvent is required.");
+    Objects.requireNonNull(clientReport, "ClientReport is required.");
 
     final CachedItem cachedItem =
         new CachedItem(
