@@ -11,7 +11,6 @@ import io.sentry.SentryLevel
 import io.sentry.getExc
 import timber.log.Timber
 import kotlin.test.BeforeTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
