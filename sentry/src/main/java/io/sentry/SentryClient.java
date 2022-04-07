@@ -197,11 +197,17 @@ public final class SentryClient implements ISentryClient {
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
+    Boolean isFatal = false;
+
     if (event != null) {
       final SentryEnvelopeItem eventItem =
           SentryEnvelopeItem.fromEvent(options.getSerializer(), event);
       envelopeItems.add(eventItem);
       sentryId = event.getEventId();
+      if (event instanceof SentryEvent) {
+        final SentryEvent sentryEvent = (SentryEvent) event;
+        isFatal = SentryLevel.FATAL.equals(sentryEvent.getLevel());
+      }
     }
 
     if (session != null) {
@@ -228,7 +234,12 @@ public final class SentryClient implements ISentryClient {
     if (!envelopeItems.isEmpty()) {
       final SentryEnvelopeHeader envelopeHeader =
           new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceState);
-      return new SentryEnvelope(envelopeHeader, envelopeItems);
+      SentryEnvelope envelope = new SentryEnvelope(envelopeHeader, envelopeItems);
+      if (isFatal) {
+        return options.getClientReportRecorder().attachReportToEnvelope(envelope, options);
+      } else {
+        return envelope;
+      }
     }
 
     return null;

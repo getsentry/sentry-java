@@ -198,7 +198,10 @@ class ClientReportTestHelper(val options: SentryOptions) {
 
         fun assertClientReport(expectedEvents: List<DiscardedEvent>) {
             val clientReport = resetCountsAndGenerateClientReport()
+            assertClientReport(clientReport, expectedEvents)
+        }
 
+        fun assertClientReport(clientReport: ClientReport?, expectedEvents: List<DiscardedEvent>) {
             assertEquals(expectedEvents.filter { it.quantity > 0 }.size, clientReport?.discardedEvents?.size ?: 0)
 
             expectedEvents.forEach { expectedEvent ->

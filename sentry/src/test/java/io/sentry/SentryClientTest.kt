@@ -2,16 +2,19 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.same
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
 import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
+import io.sentry.clientreport.ClientReport
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.ClientReportTestHelper.Companion.resetCountsAndGenerateClientReport
 import io.sentry.clientreport.DiscardReason
@@ -1297,6 +1300,37 @@ class SentryClientTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `fatal event attaches client report to envelope`() {
+        val eventProcesor = mock<EventProcessor>()
+        fixture.sentryOptions.addEventProcessor(eventProcesor)
+
+        val eventToDrop = SentryEvent()
+        val fatalEvent = SentryEvent().also { it.level = SentryLevel.FATAL }
+
+        whenever(eventProcesor.process(same(eventToDrop), any())).thenReturn(null)
+        whenever(eventProcesor.process(same(fatalEvent), any())).thenReturn(fatalEvent)
+
+        fixture.getSut().captureEvent(eventToDrop)
+
+        fixture.getSut().captureEvent(fatalEvent)
+
+        val captor = argumentCaptor<SentryEnvelope>()
+        verify(fixture.transport).send(captor.capture(), anyOrNull())
+
+        val clientReport = captor
+            .allValues.flatMap { it.items }
+            .firstOrNull { it.header.type == SentryItemType.ClientReport }
+            ?.getClientReport(fixture.sentryOptions.serializer)
+
+        assertNotNull(clientReport, "client report was not sent")
+
+        assertClientReport(clientReport, listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)))
+
+        // assert counts have been reset
+        assertClientReport(emptyList())
     }
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
