@@ -1,9 +1,11 @@
 package io.sentry;
 
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.transport.DataCategory;
 import io.sentry.transport.ITransport;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -101,6 +103,9 @@ public final class SentryClient implements ISentryClient {
                 SentryLevel.DEBUG,
                 "Event %s was dropped due to sampling decision.",
                 event.getEventId());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Error, options);
         // setting event as null to not be sent as its been discarded by sample rate
         event = null;
       }
@@ -115,12 +120,18 @@ public final class SentryClient implements ISentryClient {
                 SentryLevel.DEBUG,
                 "Event was dropped as the exception %s is ignored",
                 event.getThrowable().getClass());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, options);
         return SentryId.EMPTY_ID;
       }
       event = executeBeforeSend(event, hint);
 
       if (event == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error, options);
       }
     }
 
@@ -223,6 +234,9 @@ public final class SentryClient implements ISentryClient {
                 SentryLevel.DEBUG,
                 "Event was dropped by a processor: %s",
                 processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, options);
         break;
       }
     }
@@ -254,6 +268,9 @@ public final class SentryClient implements ISentryClient {
                 SentryLevel.DEBUG,
                 "Transaction was dropped by a processor: %s",
                 processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction, options);
         break;
       }
     }

@@ -6,6 +6,9 @@ import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.clientreport.ClientReportRecorder;
+import io.sentry.clientreport.DiscardReason;
+import io.sentry.hints.Retryable;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
 import io.sentry.transport.ReusableCountLatch;
@@ -37,14 +40,22 @@ public final class ApacheHttpClientTransport implements ITransport {
   private final @NotNull RequestDetails requestDetails;
   private final @NotNull CloseableHttpAsyncClient httpclient;
   private final @NotNull RateLimiter rateLimiter;
+  private final @NotNull ClientReportRecorder clientReportRecorder;
   private final @NotNull ReusableCountLatch currentlyRunning;
 
   public ApacheHttpClientTransport(
       final @NotNull SentryOptions options,
       final @NotNull RequestDetails requestDetails,
       final @NotNull CloseableHttpAsyncClient httpclient,
-      final @NotNull RateLimiter rateLimiter) {
-    this(options, requestDetails, httpclient, rateLimiter, new ReusableCountLatch());
+      final @NotNull RateLimiter rateLimiter,
+      final @NotNull ClientReportRecorder clientReportRecorder) {
+    this(
+        options,
+        requestDetails,
+        httpclient,
+        rateLimiter,
+        clientReportRecorder,
+        new ReusableCountLatch());
   }
 
   ApacheHttpClientTransport(
@@ -52,6 +63,7 @@ public final class ApacheHttpClientTransport implements ITransport {
       final @NotNull RequestDetails requestDetails,
       final @NotNull CloseableHttpAsyncClient httpclient,
       final @NotNull RateLimiter rateLimiter,
+      final @NotNull ClientReportRecorder clientReportRecorder,
       final @NotNull ReusableCountLatch currentlyRunning) {
     this.options = Objects.requireNonNull(options, "options is required");
     this.requestDetails = Objects.requireNonNull(requestDetails, "requestDetails is required");
@@ -59,6 +71,8 @@ public final class ApacheHttpClientTransport implements ITransport {
     this.rateLimiter = Objects.requireNonNull(rateLimiter, "rateLimiter is required");
     this.currentlyRunning =
         Objects.requireNonNull(currentlyRunning, "currentlyRunning is required");
+    this.clientReportRecorder =
+        Objects.requireNonNull(clientReportRecorder, "clientReportRecorder is required");
     this.httpclient.start();
   }
 
@@ -71,68 +85,93 @@ public final class ApacheHttpClientTransport implements ITransport {
       final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, sentrySdkHint);
 
       if (filteredEnvelope != null) {
-        currentlyRunning.increment();
+        final SentryEnvelope envelopeWithClientReport =
+            clientReportRecorder.attachReportToEnvelope(filteredEnvelope, options);
 
-        try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
-          options.getSerializer().serialize(filteredEnvelope, gzip);
+        if (envelopeWithClientReport != null) {
+          currentlyRunning.increment();
 
-          final SimpleHttpRequest request =
-              SimpleHttpRequests.post(requestDetails.getUrl().toString());
-          request.setBody(
-              outputStream.toByteArray(), ContentType.create("application/x-sentry-envelope"));
-          request.setHeader("Content-Encoding", "gzip");
-          request.setHeader("Accept", "application/json");
+          try (final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+              final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
+            options.getSerializer().serialize(envelopeWithClientReport, gzip);
 
-          for (Map.Entry<String, String> header : requestDetails.getHeaders().entrySet()) {
-            request.setHeader(header.getKey(), header.getValue());
-          }
+            final SimpleHttpRequest request =
+                SimpleHttpRequests.post(requestDetails.getUrl().toString());
+            request.setBody(
+                outputStream.toByteArray(), ContentType.create("application/x-sentry-envelope"));
+            request.setHeader("Content-Encoding", "gzip");
+            request.setHeader("Accept", "application/json");
 
-          if (options.getLogger().isEnabled(DEBUG)) {
-            options
-                .getLogger()
-                .log(DEBUG, "Currently running %d requests", currentlyRunning.getCount());
-          }
+            for (Map.Entry<String, String> header : requestDetails.getHeaders().entrySet()) {
+              request.setHeader(header.getKey(), header.getValue());
+            }
 
-          httpclient.execute(
-              request,
-              new FutureCallback<SimpleHttpResponse>() {
-                @Override
-                public void completed(SimpleHttpResponse response) {
-                  if (response.getCode() != 200) {
-                    options
-                        .getLogger()
-                        .log(ERROR, "Request failed, API returned %s", response.getCode());
-                  } else {
-                    options.getLogger().log(INFO, "Envelope sent successfully.");
+            if (options.getLogger().isEnabled(DEBUG)) {
+              options
+                  .getLogger()
+                  .log(DEBUG, "Currently running %d requests", currentlyRunning.getCount());
+            }
+
+            httpclient.execute(
+                request,
+                new FutureCallback<SimpleHttpResponse>() {
+                  @Override
+                  public void completed(SimpleHttpResponse response) {
+                    if (response.getCode() != 200) {
+                      options
+                          .getLogger()
+                          .log(ERROR, "Request failed, API returned %s", response.getCode());
+
+                      if (!(sentrySdkHint instanceof Retryable)) {
+                        if (response.getCode() >= 500) {
+                          clientReportRecorder.recordLostEnvelope(
+                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                        }
+                      }
+                    } else {
+                      options.getLogger().log(INFO, "Envelope sent successfully.");
+                    }
+                    final Header retryAfter = response.getFirstHeader("Retry-After");
+                    final Header rateLimits = response.getFirstHeader("X-Sentry-Rate-Limits");
+                    rateLimiter.updateRetryAfterLimits(
+                        rateLimits != null ? rateLimits.getValue() : null,
+                        retryAfter != null ? retryAfter.getValue() : null,
+                        response.getCode());
+                    currentlyRunning.decrement();
                   }
-                  final Header retryAfter = response.getFirstHeader("Retry-After");
-                  final Header rateLimits = response.getFirstHeader("X-Sentry-Rate-Limits");
-                  rateLimiter.updateRetryAfterLimits(
-                      rateLimits != null ? rateLimits.getValue() : null,
-                      retryAfter != null ? retryAfter.getValue() : null,
-                      response.getCode());
-                  currentlyRunning.decrement();
-                }
 
-                @Override
-                public void failed(Exception ex) {
-                  options.getLogger().log(ERROR, "Error while sending an envelope", ex);
-                  currentlyRunning.decrement();
-                }
+                  @Override
+                  public void failed(Exception ex) {
+                    options.getLogger().log(ERROR, "Error while sending an envelope", ex);
+                    if (!(sentrySdkHint instanceof Retryable)) {
+                      clientReportRecorder.recordLostEnvelope(
+                          DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                    }
+                    currentlyRunning.decrement();
+                  }
 
-                @Override
-                public void cancelled() {
-                  options.getLogger().log(WARNING, "Request cancelled");
-                  currentlyRunning.decrement();
-                }
-              });
-        } catch (Throwable e) {
-          options.getLogger().log(ERROR, "Error when sending envelope", e);
+                  @Override
+                  public void cancelled() {
+                    options.getLogger().log(WARNING, "Request cancelled");
+                    if (!(sentrySdkHint instanceof Retryable)) {
+                      clientReportRecorder.recordLostEnvelope(
+                          DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                    }
+                    currentlyRunning.decrement();
+                  }
+                });
+          } catch (Throwable e) {
+            options.getLogger().log(ERROR, "Error when sending envelope", e);
+            if (!(sentrySdkHint instanceof Retryable)) {
+              clientReportRecorder.recordLostEnvelope(
+                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+            }
+          }
         }
       }
     } else {
       options.getLogger().log(SentryLevel.WARNING, "Submit cancelled");
+      clientReportRecorder.recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelope, options);
     }
   }
 

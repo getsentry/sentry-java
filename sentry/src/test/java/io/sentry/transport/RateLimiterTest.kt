@@ -1,16 +1,31 @@
 package io.sentry.transport
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.same
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.Attachment
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
+import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.Session
 import io.sentry.TransactionContext
+import io.sentry.UserFeedback
+import io.sentry.clientreport.ClientReportRecorder
+import io.sentry.clientreport.DiscardReason
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
+import io.sentry.protocol.User
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -20,10 +35,16 @@ class RateLimiterTest {
 
     private class Fixture {
         val currentDateProvider = mock<ICurrentDateProvider>()
+        val clientReportRecorder = mock<ClientReportRecorder>()
         val serializer = mock<ISerializer>()
 
         fun getSUT(): RateLimiter {
-            return RateLimiter(currentDateProvider, NoOpLogger.getInstance())
+            return RateLimiter(
+                currentDateProvider, NoOpLogger.getInstance(), clientReportRecorder,
+                SentryOptions().apply {
+                    setLogger(NoOpLogger.getInstance())
+                }
+            )
         }
     }
 
@@ -137,5 +158,67 @@ class RateLimiterTest {
 
         val result = rateLimiter.filter(envelope, null)
         assertNull(result)
+    }
+
+    @Test
+    fun `records dropped items as lost`() {
+        val rateLimiter = fixture.getSUT()
+
+        val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
+        val userFeedbackItem = SentryEnvelopeItem.fromUserFeedback(
+            fixture.serializer,
+            UserFeedback(
+                SentryId(UUID.randomUUID())
+            ).also {
+                it.comments = "It broke on Android. I don't know why, but this happens."
+                it.email = "john@me.com"
+                it.setName("John Me")
+            }
+        )
+        val sessionItem = SentryEnvelopeItem.fromSession(fixture.serializer, Session("123", User(), "env", "release"))
+        val attachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
+
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem))
+
+        rateLimiter.updateRetryAfterLimits(null, null, 429)
+        val result = rateLimiter.filter(envelope, null)
+
+        assertNull(result)
+
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(eventItem), any())
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(sessionItem), any())
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(userFeedbackItem), any())
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(attachmentItem), any())
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `records only dropped items as lost`() {
+        val rateLimiter = fixture.getSUT()
+
+        val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
+        val userFeedbackItem = SentryEnvelopeItem.fromUserFeedback(
+            fixture.serializer,
+            UserFeedback(
+                SentryId(UUID.randomUUID())
+            ).also {
+                it.comments = "It broke on Android. I don't know why, but this happens."
+                it.email = "john@me.com"
+                it.setName("John Me")
+            }
+        )
+        val sessionItem = SentryEnvelopeItem.fromSession(fixture.serializer, Session("123", User(), "env", "release"))
+        val attachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
+
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem))
+
+        rateLimiter.updateRetryAfterLimits("60:error:key, 1:error:organization", null, 1)
+        val result = rateLimiter.filter(envelope, null)
+
+        assertNotNull(result)
+        assertEquals(3, result.items.toList().size)
+
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(eventItem), any())
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 }

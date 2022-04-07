@@ -15,6 +15,7 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.clientreport.NoOpClientReportRecorder
 import io.sentry.transport.RateLimiter
 import io.sentry.transport.ReusableCountLatch
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
@@ -33,6 +34,7 @@ class ApacheHttpClientTransportTest {
         val options: SentryOptions
         val logger = mock<ILogger>()
         val rateLimiter = mock<RateLimiter>()
+        val clientReportRecorder = NoOpClientReportRecorder()
         val requestDetails = RequestDetails("http://key@localhost/proj", mapOf("header-name" to "header-value"))
         val client = mock<CloseableHttpAsyncClient>()
         val currentlyRunning = spy<ReusableCountLatch>()
@@ -49,7 +51,7 @@ class ApacheHttpClientTransportTest {
 
         fun getSut(response: SimpleHttpResponse? = null, queueFull: Boolean = false): ApacheHttpClientTransport {
 
-            val transport = ApacheHttpClientTransport(options, requestDetails, client, rateLimiter, currentlyRunning)
+            val transport = ApacheHttpClientTransport(options, requestDetails, client, rateLimiter, clientReportRecorder, currentlyRunning)
 
             if (response != null) {
                 whenever(client.execute(any(), any())).thenAnswer {

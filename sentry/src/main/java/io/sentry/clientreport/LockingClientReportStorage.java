@@ -1,0 +1,62 @@
+package io.sentry.clientreport;
+
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+final class LockingClientReportStorage implements ClientReportStorage {
+
+  private ConcurrentHashMap<ClientReportKey, Long> lostEventCounts = new ConcurrentHashMap<>();
+
+  @Override
+  public synchronized void addCount(ClientReportKey key, Long count) {
+    @Nullable Long oldValue = lostEventCounts.get(key);
+
+    if (oldValue == null) {
+      lostEventCounts.put(key, count);
+    } else {
+      lostEventCounts.put(key, oldValue + count);
+    }
+  }
+
+  @Override
+  public synchronized List<DiscardedEvent> resetCountsAndGet() {
+    List<DiscardedEvent> discardedEvents = new ArrayList<>(lostEventCounts.size());
+
+    for (Map.Entry<ClientReportKey, Long> entry : lostEventCounts.entrySet()) {
+      discardedEvents.add(
+          new DiscardedEvent(
+              entry.getKey().getReason(), entry.getKey().getCategory(), entry.getValue()));
+    }
+
+    lostEventCounts.clear();
+
+    return discardedEvents;
+  }
+
+  @Override
+  public void debug(@NotNull SentryOptions options) {
+    ILogger logger = options.getLogger();
+    if (!logger.isEnabled(SentryLevel.DEBUG)) {
+      return;
+    }
+
+    try {
+      logger.log(SentryLevel.DEBUG, "Client report (" + lostEventCounts.size() + " entries)");
+
+      for (Map.Entry<ClientReportKey, Long> entry : lostEventCounts.entrySet()) {
+        logger.log(SentryLevel.DEBUG, entry.getKey() + "= " + entry.getValue());
+      }
+    } catch (Throwable e) {
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, e, "Unable print client report recorder debug info.");
+    }
+  }
+}

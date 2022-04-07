@@ -7,6 +7,9 @@ import io.sentry.ILogger;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.clientreport.ClientReportRecorder;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.StringUtils;
@@ -21,42 +24,31 @@ import org.jetbrains.annotations.Nullable;
 /** Controls retry limits on different category types sent to Sentry. */
 public final class RateLimiter {
 
-  private enum DataCategory {
-    All("__all__"),
-    Default("default"), // same as Error
-    Error("error"),
-    Session("session"),
-    Attachment("attachment"),
-    Transaction("transaction"),
-    Security("security"),
-    Unknown("unknown");
-
-    private final String category;
-
-    DataCategory(final @NotNull String category) {
-      this.category = category;
-    }
-
-    public String getCategory() {
-      return category;
-    }
-  }
-
   private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
   private final @NotNull ILogger logger;
+  private final @NotNull ClientReportRecorder clientReportRecorder;
+  private final @NotNull SentryOptions options;
   private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
 
   public RateLimiter(
-      final @NotNull ICurrentDateProvider currentDateProvider, final @NotNull ILogger logger) {
+      final @NotNull ICurrentDateProvider currentDateProvider,
+      final @NotNull ILogger logger,
+      final @NotNull ClientReportRecorder clientReportRecorder,
+      final @NotNull SentryOptions options) {
     this.currentDateProvider = currentDateProvider;
     this.logger = logger;
+    this.clientReportRecorder = clientReportRecorder;
+    this.options = options;
   }
 
-  public RateLimiter(@NotNull ILogger logger) {
-    this(CurrentDateProvider.getInstance(), logger);
+  public RateLimiter(
+      final @NotNull ILogger logger,
+      final @NotNull ClientReportRecorder clientReportRecorder,
+      final @NotNull SentryOptions options) {
+    this(CurrentDateProvider.getInstance(), logger, clientReportRecorder, options);
   }
 
   public @Nullable SentryEnvelope filter(
@@ -69,7 +61,9 @@ public final class RateLimiter {
         if (dropItems == null) {
           dropItems = new ArrayList<>();
         }
+
         dropItems.add(item);
+        clientReportRecorder.recordLostEnvelopeItem(DiscardReason.RATELIMIT_BACKOFF, item, options);
       }
     }
 

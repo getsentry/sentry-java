@@ -18,6 +18,10 @@ public final class AsyncHttpTransportFactory implements ITransportFactory {
     Objects.requireNonNull(requestDetails, "requestDetails is required");
 
     return new AsyncHttpTransport(
-        options, new RateLimiter(options.getLogger()), options.getTransportGate(), requestDetails);
+        options,
+        new RateLimiter(options.getLogger(), options.getClientReportRecorder(), options),
+        options.getTransportGate(),
+        requestDetails,
+        options.getClientReportRecorder());
   }
 }
