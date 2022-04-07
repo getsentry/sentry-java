@@ -1,21 +1,22 @@
 package io.sentry.clientreport;
 
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 final class ClientReportKey {
-  private final String reason;
-  private final String category;
+  private final @NotNull String reason;
+  private final @NotNull String category;
 
-  ClientReportKey(String reason, String category) {
+  ClientReportKey(@NotNull String reason, @NotNull String category) {
     this.reason = reason;
     this.category = category;
   }
 
-  public String getReason() {
+  public @NotNull String getReason() {
     return reason;
   }
 
-  public String getCategory() {
+  public @NotNull String getCategory() {
     return category;
   }
 
