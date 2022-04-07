@@ -220,4 +220,14 @@ public final class Attachment {
   public @Nullable String getAttachmentType() {
     return attachmentType;
   }
+
+  /**
+   * Creates a new Screenshot Attachment
+   *
+   * @param screenshotBytes the array bytes
+   * @return the Attachment
+   */
+  public static @NotNull Attachment fromScreenshot(final byte[] screenshotBytes) {
+    return new Attachment(screenshotBytes, "screenshot.png", "image/png", false);
+  }
 }

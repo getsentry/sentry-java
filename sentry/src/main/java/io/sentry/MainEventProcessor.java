@@ -33,7 +33,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
   private final @Nullable HostnameCache hostnameCache;
 
-  MainEventProcessor(final @NotNull SentryOptions options) {
+  public MainEventProcessor(final @NotNull SentryOptions options) {
     this(options, options.isAttachServerName() ? HostnameCache.getInstance() : null);
   }
 

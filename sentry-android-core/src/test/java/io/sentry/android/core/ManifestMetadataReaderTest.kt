@@ -690,6 +690,31 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads enableTracesProfiling to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACES_PROFILING_ENABLE to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isProfilingEnabled)
+    }
+
+    @Test
+    fun `applyMetadata reads enableTracesProfiling to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isProfilingEnabled)
+    }
+
+    @Test
     fun `applyMetadata reads tracingOrigins to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """localhost,^(http|https)://api\..*$""")
@@ -762,5 +787,30 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertTrue(fixture.options.isEnableUserInteractionBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads attach screenshots to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ATTACH_SCREENSHOT to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isAttachScreenshot)
+    }
+
+    @Test
+    fun `applyMetadata reads attach screenshots and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isAttachScreenshot)
     }
 }

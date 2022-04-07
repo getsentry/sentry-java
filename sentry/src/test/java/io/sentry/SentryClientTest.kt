@@ -4,13 +4,13 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
 import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.ClientReportTestHelper.Companion.resetCountsAndGenerateClientReport
@@ -35,15 +35,18 @@ import io.sentry.transport.ITransportGate
 import org.junit.Assert.assertArrayEquals
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.nio.charset.Charset
+import java.nio.file.Files
 import java.util.Arrays
 import java.util.UUID
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -80,6 +83,9 @@ class SentryClientTest {
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
+        val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
+        var profilingTraceData = ProfilingTraceData(profilingTraceFile, sentryTracer)
+        var profilingNonExistingTraceData = ProfilingTraceData(File("non_existent.trace"), sentryTracer)
 
         fun getSut() = SentryClient(sentryOptions)
     }
@@ -993,7 +999,7 @@ class SentryClientTest {
                 assertNotNull(transaction)
                 assertEquals("a-transaction", transaction.transaction)
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
@@ -1003,6 +1009,31 @@ class SentryClientTest {
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
 
         verifyAttachmentsInEnvelope(transaction.eventId)
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+    }
+
+    @Test
+    fun `when captureTransaction with attachments and profiling data`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingTraceData)
+        verifyAttachmentsInEnvelope(transaction.eventId)
+        verifyProfilingTraceInEnvelope(transaction.eventId)
+    }
+
+    @Test
+    fun `when captureTransaction with profiling data`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+        assertFails { verifyAttachmentsInEnvelope(transaction.eventId) }
+        verifyProfilingTraceInEnvelope(transaction.eventId)
+    }
+
+    @Test
+    fun `when captureTransaction with non existing profiling trace file, profiling trace data is not sent`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingNonExistingTraceData)
+        verifyAttachmentsInEnvelope(transaction.eventId)
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
     }
 
     @Test
@@ -1044,7 +1075,7 @@ class SentryClientTest {
                     assertEquals("b", it.getExtra("a"))
                 }
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
@@ -1232,6 +1263,50 @@ class SentryClientTest {
         verify(fixture.transport, never()).send(any(), anyOrNull())
     }
 
+    @Test
+    fun `screenshot is added to the envelope from the hint`() {
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                val screenshot = envelope.items.last()
+                assertNotNull(screenshot) {
+                    assertEquals(attachment.filename, screenshot.header.fileName)
+                }
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `screenshot is dropped from hint via before send`() {
+        fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mutableMapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                assertEquals(1, envelope.items.count())
+            },
+            anyOrNull()
+        )
+    }
+
+    class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
+        override fun execute(event: SentryEvent, hint: MutableMap<String, Any?>?): SentryEvent? {
+            hint?.remove(SENTRY_SCREENSHOT)
+
+            return event
+        }
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(
@@ -1337,7 +1412,7 @@ class SentryClientTest {
 
                 assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
 
-                assertEquals(4, actual.items.count())
+                assertEquals(4, actual.items.filter { it.header.type != SentryItemType.Profile }.count())
                 val attachmentItems = actual.items
                     .filter { item -> item.header.type == SentryItemType.Attachment }
                     .toList()
@@ -1360,7 +1435,21 @@ class SentryClientTest {
                     attachmentItemTooBig.data
                 }
             },
-            isNull()
+            anyOrNull()
+        )
+    }
+
+    private fun verifyProfilingTraceInEnvelope(eventId: SentryId?) {
+        verify(fixture.transport).send(
+            check { actual ->
+                assertEquals(eventId, actual.header.eventId)
+
+                val profilingTraceItem = actual.items.firstOrNull { item ->
+                    item.header.type == SentryItemType.Profile
+                }
+                assertNotNull(profilingTraceItem?.data)
+            },
+            anyOrNull()
         )
     }
 

@@ -76,6 +76,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(Mechanism.class, new Mechanism.Deserializer());
     deserializersByClass.put(Message.class, new Message.Deserializer());
     deserializersByClass.put(OperatingSystem.class, new OperatingSystem.Deserializer());
+    deserializersByClass.put(ProfilingTraceData.class, new ProfilingTraceData.Deserializer());
     deserializersByClass.put(Request.class, new Request.Deserializer());
     deserializersByClass.put(SdkInfo.class, new SdkInfo.Deserializer());
     deserializersByClass.put(SdkVersion.class, new SdkVersion.Deserializer());

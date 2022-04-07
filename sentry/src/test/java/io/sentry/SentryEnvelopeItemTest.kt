@@ -1,21 +1,26 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.User
 import io.sentry.test.injectForField
+import io.sentry.vendor.Base64
 import org.junit.Assert.assertArrayEquals
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SentryEnvelopeItemTest {
 
     private class Fixture {
+        val serializer = JsonSerializer(SentryOptions())
         val pathname = "hello.txt"
         val filename = pathname
         val bytes = "hello".toByteArray()
@@ -197,9 +202,74 @@ class SentryEnvelopeItemTest {
         }
 
         assertEquals(
-            "Dropping attachment, because the size of the it located at " +
+            "Dropping item, because its size located at " +
                 "'${fixture.pathname}' with ${file.length()} bytes is bigger than the maximum " +
-                "allowed attachment size of ${fixture.maxAttachmentSize} bytes.",
+                "allowed size of ${fixture.maxAttachmentSize} bytes.",
+            exception.message
+        )
+    }
+
+    @Test
+    fun `fromProfilingTrace saves file as Base64`() {
+        val file = File(fixture.pathname)
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        file.writeBytes(fixture.bytes)
+        SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, fixture.serializer).data
+        verify(profilingTraceData).sampledProfile = Base64.encodeToString(fixture.bytes, Base64.NO_WRAP or Base64.NO_PADDING)
+    }
+
+    @Test
+    fun `fromProfilingTrace deletes file only after reading data`() {
+        val file = File(fixture.pathname)
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        file.writeBytes(fixture.bytes)
+        assert(file.exists())
+        val traceData = SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())
+        assert(file.exists())
+        traceData.data
+        assertFalse(file.exists())
+    }
+
+    @Test
+    fun `fromProfilingTrace with invalid file throws`() {
+        val file = File(fixture.pathname)
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        assertFailsWith<SentryEnvelopeException>("Dropping profiling trace data, because the file ${file.path} doesn't exists") {
+            SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock()).data
+        }
+        file.writeBytes(fixture.bytes)
+        assertNotNull(SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock()).data)
+        file.setReadable(false)
+        assertFailsWith<SentryEnvelopeException>("Dropping profiling trace data, because the file ${file.path} doesn't exists") {
+            SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock()).data
+        }
+    }
+
+    @Test
+    fun `fromProfilingTrace with file too big`() {
+        val file = File(fixture.pathname)
+        file.writeBytes(fixture.bytesTooBig)
+        val profilingTraceData = mock<ProfilingTraceData> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        val exception = assertFailsWith<SentryEnvelopeException> {
+            SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock()).data
+        }
+
+        assertEquals(
+            "Dropping item, because its size located at " +
+                "'${fixture.pathname}' with ${file.length()} bytes is bigger than the maximum " +
+                "allowed size of ${fixture.maxAttachmentSize} bytes.",
             exception.message
         )
     }

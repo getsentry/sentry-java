@@ -1,8 +1,13 @@
 package io.sentry.android.core
 
+import io.sentry.ITransaction
+import io.sentry.ITransactionProfiler
+import io.sentry.NoOpTransactionProfiler
+import io.sentry.ProfilingTraceData
 import io.sentry.protocol.DebugImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -56,14 +61,48 @@ class SentryAndroidOptionsTest {
     }
 
     @Test
+    fun `init should set NoOpTransactionProfiler`() {
+        val sentryOptions = SentryAndroidOptions()
+        assertEquals(NoOpTransactionProfiler.getInstance(), sentryOptions.transactionProfiler)
+    }
+
+    @Test
+    fun `set transactionProfiler accepts non null value`() {
+        val sentryOptions = SentryAndroidOptions().apply {
+            setTransactionProfiler(CustomTransactionProfiler())
+        }
+        assertNotNull(sentryOptions.transactionProfiler)
+    }
+
+    @Test
+    fun `set transactionProfiler to null sets it to noop`() {
+        val sentryOptions = SentryAndroidOptions().apply {
+            setTransactionProfiler(null)
+        }
+        assertEquals(sentryOptions.transactionProfiler, NoOpTransactionProfiler.getInstance())
+    }
+
+    @Test
     fun `enable scope sync by default for Android`() {
         val sentryOptions = SentryAndroidOptions()
 
         assertTrue(sentryOptions.isEnableScopeSync)
     }
 
+    @Test
+    fun `attach screenshots disabled by default for Android`() {
+        val sentryOptions = SentryAndroidOptions()
+
+        assertFalse(sentryOptions.isAttachScreenshot)
+    }
+
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
         override fun clearDebugImages() {}
+    }
+
+    private class CustomTransactionProfiler : ITransactionProfiler {
+        override fun onTransactionStart(transaction: ITransaction) {}
+        override fun onTransactionFinish(transaction: ITransaction): ProfilingTraceData? = null
     }
 }

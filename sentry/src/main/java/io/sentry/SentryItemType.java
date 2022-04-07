@@ -14,8 +14,9 @@ public enum SentryItemType implements JsonSerializable {
   UserFeedback("user_report"), // Sentry backend still uses user_report
   Attachment("attachment"),
   Transaction("transaction"),
-  Unknown("__unknown__"), // DataCategory.Unknown
-  ClientReport("client_report");
+  Profile("profile"),
+  ClientReport("client_report"),
+  Unknown("__unknown__"); // DataCategory.Unknown
 
   private final String itemType;
 

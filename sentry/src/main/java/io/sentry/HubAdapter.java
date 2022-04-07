@@ -163,8 +163,10 @@ public final class HubAdapter implements IHub {
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
-      @Nullable Map<String, Object> hint) {
-    return Sentry.getCurrentHub().captureTransaction(transaction, traceState, hint);
+      @Nullable Map<String, Object> hint,
+      @Nullable ProfilingTraceData profilingTraceData) {
+    return Sentry.getCurrentHub()
+        .captureTransaction(transaction, traceState, hint, profilingTraceData);
   }
 
   @Override
