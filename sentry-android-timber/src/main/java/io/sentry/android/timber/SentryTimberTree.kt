@@ -17,12 +17,22 @@ class SentryTimberTree(
     private val minEventLevel: SentryLevel,
     private val minBreadcrumbLevel: SentryLevel
 ) : Timber.Tree() {
+    private val pendingTag = ThreadLocal<String?>()
+
+    private fun retrieveTag(): String? {
+        val tag = pendingTag.get()
+        if (tag != null) {
+            this.pendingTag.remove()
+        }
+        return tag
+    }
 
     /** Log a verbose message with optional format args. */
     override fun v(
         message: String?,
         vararg args: Any?
     ) {
+        super.v(message, *args)
         logWithSentry(Log.VERBOSE, null, message, *args)
     }
 
@@ -32,11 +42,13 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.v(t, message, args)
         logWithSentry(Log.VERBOSE, t, message, *args)
     }
 
     /** Log a verbose exception. */
     override fun v(t: Throwable?) {
+        super.v(t)
         logWithSentry(Log.VERBOSE, t, null)
     }
 
@@ -45,6 +57,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.d(message, args)
         logWithSentry(Log.DEBUG, null, message, *args)
     }
 
@@ -54,11 +67,13 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.d(t, message, args)
         logWithSentry(Log.DEBUG, t, message, *args)
     }
 
     /** Log a debug exception. */
     override fun d(t: Throwable?) {
+        super.d(t)
         logWithSentry(Log.DEBUG, t, null)
     }
 
@@ -67,6 +82,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.d(message, args)
         logWithSentry(Log.INFO, null, message, *args)
     }
 
@@ -76,11 +92,13 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.i(t, message, args)
         logWithSentry(Log.INFO, t, message, *args)
     }
 
     /** Log an info exception. */
     override fun i(t: Throwable?) {
+        super.i(t)
         logWithSentry(Log.INFO, t, null)
     }
 
@@ -89,6 +107,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.w(message, args)
         logWithSentry(Log.WARN, null, message, *args)
     }
 
@@ -98,11 +117,13 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.w(t, message, *args)
         logWithSentry(Log.WARN, t, message, *args)
     }
 
     /** Log a warning exception. */
     override fun w(t: Throwable?) {
+        super.w(t)
         logWithSentry(Log.WARN, t, null)
     }
 
@@ -111,6 +132,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.e(message, *args)
         logWithSentry(Log.ERROR, null, message, *args)
     }
 
@@ -120,11 +142,13 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.e(t, message, *args)
         logWithSentry(Log.ERROR, t, message, *args)
     }
 
     /** Log an error exception. */
     override fun e(t: Throwable?) {
+        super.e(t)
         logWithSentry(Log.ERROR, t, null)
     }
 
@@ -133,6 +157,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.wtf(message, *args)
         logWithSentry(Log.ASSERT, null, message, *args)
     }
 
@@ -142,11 +167,13 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.wtf(t, message, *args)
         logWithSentry(Log.ASSERT, t, message, *args)
     }
 
     /** Log an assert exception. */
     override fun wtf(t: Throwable?) {
+        super.wtf(t)
         logWithSentry(Log.ASSERT, t, null)
     }
 
@@ -156,6 +183,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.log(priority, message, *args)
         logWithSentry(priority, null, message, *args)
     }
 
@@ -166,6 +194,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        super.log(priority, t, message, *args)
         logWithSentry(priority, t, message, *args)
     }
 
@@ -174,6 +203,7 @@ class SentryTimberTree(
         priority: Int,
         t: Throwable?
     ) {
+        super.log(priority, t)
         logWithSentry(priority, t, null)
     }
 
@@ -183,7 +213,7 @@ class SentryTimberTree(
         message: String,
         t: Throwable?
     ) {
-        // no-op as we've overridden all the methods
+        pendingTag.set(tag)
     }
 
     private fun logWithSentry(
@@ -192,6 +222,8 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = retrieveTag()
+
         if (message.isNullOrEmpty() && throwable == null) {
             return // Swallow message if it's null and there's no throwable
         }
@@ -205,7 +237,7 @@ class SentryTimberTree(
             this.params = args.map { it.toString() }
         }
 
-        captureEvent(level, sentryMessage, throwable)
+        captureEvent(level, tag, sentryMessage, throwable)
         addBreadcrumb(level, sentryMessage, throwable)
     }
 
@@ -222,6 +254,7 @@ class SentryTimberTree(
      */
     private fun captureEvent(
         sentryLevel: SentryLevel,
+        tag: String?,
         msg: Message,
         throwable: Throwable?
     ) {
@@ -229,6 +262,9 @@ class SentryTimberTree(
             val sentryEvent = SentryEvent().apply {
                 level = sentryLevel
                 throwable?.let { setThrowable(it) }
+                tag?.let {
+                    setTag("TimberTag", it)
+                }
                 message = msg
                 logger = "Timber"
             }

@@ -159,9 +159,6 @@ class SentryTimberTreeTest {
     }
 
     @Test
-    @Ignore(
-        "We have no possibility to get a tag from Timber since it is package-private"
-    )
     fun `Tree captures an event with TimberTag tag`() {
         val sut = fixture.getSut()
         Timber.plant(sut)

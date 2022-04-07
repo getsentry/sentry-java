@@ -54,6 +54,10 @@ Breaking changes:
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
 
+## 5.7.2
+
+* Fix: bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
+
 ## 5.7.1
 
 * Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
