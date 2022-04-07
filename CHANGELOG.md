@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.7.2
 
 * Fix: bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
 
