@@ -318,6 +318,10 @@ public class SentryOptions {
   /** Whether to send client reports containing information about number of dropped events. */
   private boolean sendClientReports = true;
 
+  /** ClientReportRecorder to track count of lost events / transactions / ... * */
+  private @NotNull ClientReportRecorder clientReportRecorder =
+      ClientReportRecorderImpl.getInstance();
+
   /**
    * Adds an event processor
    *
@@ -1553,6 +1557,12 @@ public class SentryOptions {
    */
   public void setSendClientReports(boolean sendClientReports) {
     this.sendClientReports = sendClientReports;
+
+    if (sendClientReports) {
+      clientReportRecorder = ClientReportRecorderImpl.getInstance();
+    } else {
+      clientReportRecorder = new NoOpClientReportRecorder();
+    }
   }
 
   /**
@@ -1561,11 +1571,7 @@ public class SentryOptions {
    * @return a client report recorder or NoOp
    */
   public @NotNull ClientReportRecorder getClientReportRecorder() {
-    if (isSendClientReports()) {
-      return ClientReportRecorderImpl.getInstance();
-    } else {
-      return new NoOpClientReportRecorder();
-    }
+    return clientReportRecorder;
   }
 
   /** The BeforeSend callback */

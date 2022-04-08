@@ -1,6 +1,5 @@
 package io.sentry.clientreport;
 
-import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import java.util.ArrayList;
@@ -42,16 +41,21 @@ final class LockingClientReportStorage implements ClientReportStorage {
 
   @Override
   public void debug(@NotNull SentryOptions options) {
-    ILogger logger = options.getLogger();
-    if (!logger.isEnabled(SentryLevel.DEBUG)) {
-      return;
-    }
-
     try {
-      logger.log(SentryLevel.DEBUG, "Client report (" + lostEventCounts.size() + " entries)");
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Client report (" + lostEventCounts.size() + " entries)");
 
       for (Map.Entry<ClientReportKey, Long> entry : lostEventCounts.entrySet()) {
-        logger.log(SentryLevel.DEBUG, entry.getKey() + "= " + entry.getValue());
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                entry.getKey().getReason()
+                    + ", "
+                    + entry.getKey().getCategory()
+                    + "= "
+                    + entry.getValue());
       }
     } catch (Throwable e) {
       options

@@ -33,9 +33,4 @@ final class ClientReportKey {
   public int hashCode() {
     return Objects.hash(getReason(), getCategory());
   }
-
-  @Override
-  public String toString() {
-    return "ClientReportKey{" + "reason='" + reason + '\'' + ", category='" + category + '\'' + '}';
-  }
 }

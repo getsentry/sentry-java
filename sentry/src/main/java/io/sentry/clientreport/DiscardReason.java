@@ -8,7 +8,6 @@ public enum DiscardReason {
   SAMPLE_RATE("sample_rate"),
   BEFORE_SEND("before_send"),
   EVENT_PROCESSOR("event_processor"), // also for ignored exceptions
-  STORAGE_ERROR("storage_error"), // TODO MOBILE-207 what should we use?
   ;
 
   private final String reason;

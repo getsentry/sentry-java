@@ -1,6 +1,5 @@
 package io.sentry.clientreport;
 
-import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.transport.DataCategory;
@@ -18,22 +17,22 @@ final class AtomicClientReportStorage implements ClientReportStorage {
   private final @NotNull Map<ClientReportKey, AtomicLong> lostEventCounts;
 
   public AtomicClientReportStorage() {
-    Map<ClientReportKey, AtomicLong> map = new ConcurrentHashMap<>();
+    final Map<ClientReportKey, AtomicLong> modifyableEventCountsForInit = new ConcurrentHashMap<>();
 
-    for (DiscardReason discardReason : DiscardReason.values()) {
-      for (DataCategory category : DataCategory.values()) {
-        map.put(
+    for (final DiscardReason discardReason : DiscardReason.values()) {
+      for (final DataCategory category : DataCategory.values()) {
+        modifyableEventCountsForInit.put(
             new ClientReportKey(discardReason.getReason(), category.getCategory()),
             new AtomicLong(0));
       }
     }
 
-    lostEventCounts = Collections.unmodifiableMap(map);
+    lostEventCounts = Collections.unmodifiableMap(modifyableEventCountsForInit);
   }
 
   @Override
   public void addCount(ClientReportKey key, Long count) {
-    @Nullable AtomicLong quantity = lostEventCounts.get(key);
+    final @Nullable AtomicLong quantity = lostEventCounts.get(key);
 
     if (quantity != null) {
       quantity.addAndGet(count);
@@ -42,10 +41,10 @@ final class AtomicClientReportStorage implements ClientReportStorage {
 
   @Override
   public List<DiscardedEvent> resetCountsAndGet() {
-    List<DiscardedEvent> discardedEvents = new ArrayList<>(lostEventCounts.size());
+    final List<DiscardedEvent> discardedEvents = new ArrayList<>(lostEventCounts.size());
 
-    for (Map.Entry<ClientReportKey, AtomicLong> entry : lostEventCounts.entrySet()) {
-      Long quantity = entry.getValue().getAndSet(0);
+    for (final Map.Entry<ClientReportKey, AtomicLong> entry : lostEventCounts.entrySet()) {
+      final Long quantity = entry.getValue().getAndSet(0);
       if (quantity > 0) {
         discardedEvents.add(
             new DiscardedEvent(entry.getKey().getReason(), entry.getKey().getCategory(), quantity));
@@ -56,16 +55,21 @@ final class AtomicClientReportStorage implements ClientReportStorage {
 
   @Override
   public void debug(@NotNull SentryOptions options) {
-    ILogger logger = options.getLogger();
-    if (!logger.isEnabled(SentryLevel.DEBUG)) {
-      return;
-    }
-
     try {
-      logger.log(SentryLevel.DEBUG, "Client report (" + lostEventCounts.size() + " entries)");
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Client report (" + lostEventCounts.size() + " entries)");
 
       for (Map.Entry<ClientReportKey, AtomicLong> entry : lostEventCounts.entrySet()) {
-        logger.log(SentryLevel.DEBUG, entry.getKey() + "= " + entry.getValue());
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                entry.getKey().getReason()
+                    + ", "
+                    + entry.getKey().getCategory()
+                    + "= "
+                    + entry.getValue());
       }
     } catch (Throwable e) {
       options

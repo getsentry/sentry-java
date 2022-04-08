@@ -37,16 +37,6 @@ public final class ClientReport implements JsonUnknown, JsonSerializable {
     return discardedEvents;
   }
 
-  @Override
-  public String toString() {
-    return "ClientReport{"
-        + "timestamp="
-        + timestamp
-        + ", discardedEvents="
-        + discardedEvents
-        + '}';
-  }
-
   public static final class JsonKeys {
     public static final String TIMESTAMP = "timestamp";
     public static final String DISCARDED_EVENTS = "discarded_events";
