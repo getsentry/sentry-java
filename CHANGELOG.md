@@ -3,8 +3,7 @@
 ## Unreleased
 
 * Feat: Screenshot is taken when there is an error (#1967)
-* Feat: Add Android profiling traces #1897 and its tests #1949
-- All operations involving file reads for profiling were moved to the background #1959
+* Feat: Add Android profiling traces (#1897) (#1959) and its tests (#1949)
 
 ## 6.0.0-alpha.4
 
