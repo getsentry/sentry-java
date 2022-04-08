@@ -246,10 +246,13 @@ public final class AsyncHttpTransport implements ITransport {
 
             options.getLogger().log(SentryLevel.ERROR, message);
 
-            if (!(sentrySdkHint instanceof Retryable)) {
-              // ignore e.g. 429 as we're not the ones actively dropping
-              if (result.getResponseCode() >= 500) {
+            // ignore e.g. 429 as we're not the ones actively dropping
+            if (result.getResponseCode() >= 500) {
+              if (!(sentrySdkHint instanceof Retryable)) {
                 clientReportRecorder.recordLostEnvelope(
+                    DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+              } else {
+                clientReportRecorder.recordLostClientReportInEnvelope(
                     DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
               }
             }
@@ -260,6 +263,8 @@ public final class AsyncHttpTransport implements ITransport {
           // Failure due to IO is allowed to retry the event
           if (sentrySdkHint instanceof Retryable) {
             ((Retryable) sentrySdkHint).setRetry(true);
+            clientReportRecorder.recordLostClientReportInEnvelope(
+                DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
           } else {
             LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
             clientReportRecorder.recordLostEnvelope(

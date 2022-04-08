@@ -122,9 +122,12 @@ public final class ApacheHttpClientTransport implements ITransport {
                           .getLogger()
                           .log(ERROR, "Request failed, API returned %s", response.getCode());
 
-                      if (!(sentrySdkHint instanceof Retryable)) {
-                        if (response.getCode() >= 500) {
+                      if (response.getCode() >= 500) {
+                        if (!(sentrySdkHint instanceof Retryable)) {
                           clientReportRecorder.recordLostEnvelope(
+                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                        } else {
+                          clientReportRecorder.recordLostClientReportInEnvelope(
                               DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                         }
                       }
@@ -146,6 +149,9 @@ public final class ApacheHttpClientTransport implements ITransport {
                     if (!(sentrySdkHint instanceof Retryable)) {
                       clientReportRecorder.recordLostEnvelope(
                           DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                    } else {
+                      clientReportRecorder.recordLostClientReportInEnvelope(
+                          DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                     }
                     currentlyRunning.decrement();
                   }
@@ -156,6 +162,9 @@ public final class ApacheHttpClientTransport implements ITransport {
                     if (!(sentrySdkHint instanceof Retryable)) {
                       clientReportRecorder.recordLostEnvelope(
                           DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                    } else {
+                      clientReportRecorder.recordLostClientReportInEnvelope(
+                          DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                     }
                     currentlyRunning.decrement();
                   }
@@ -164,6 +173,9 @@ public final class ApacheHttpClientTransport implements ITransport {
             options.getLogger().log(ERROR, "Error when sending envelope", e);
             if (!(sentrySdkHint instanceof Retryable)) {
               clientReportRecorder.recordLostEnvelope(
+                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+            } else {
+              clientReportRecorder.recordLostClientReportInEnvelope(
                   DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
             }
           }

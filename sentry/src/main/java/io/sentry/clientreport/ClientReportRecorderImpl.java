@@ -62,6 +62,26 @@ public final class ClientReportRecorderImpl implements ClientReportRecorder {
   }
 
   @Override
+  public void recordLostClientReportInEnvelope(
+      @NotNull DiscardReason reason,
+      @Nullable SentryEnvelope envelope,
+      @NotNull SentryOptions options) {
+    if (envelope == null) {
+      return;
+    }
+
+    try {
+      for (SentryEnvelopeItem item : envelope.getItems()) {
+        recordLostEnvelopeItemInternal(reason, item, options, true);
+      }
+    } catch (Throwable e) {
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, e, "Unable to record lost client report in envelope.");
+    }
+  }
+
+  @Override
   public void recordLostEnvelope(
       @NotNull DiscardReason reason,
       @Nullable SentryEnvelope envelope,
@@ -84,28 +104,7 @@ public final class ClientReportRecorderImpl implements ClientReportRecorder {
       @NotNull DiscardReason reason,
       @Nullable SentryEnvelopeItem envelopeItem,
       @NotNull SentryOptions options) {
-    if (envelopeItem == null) {
-      return;
-    }
-
-    try {
-      @NotNull SentryItemType itemType = envelopeItem.getHeader().getType();
-      if (SentryItemType.ClientReport.equals(itemType)) {
-        try {
-          ClientReport clientReport = envelopeItem.getClientReport(options.getSerializer());
-          restoreCountsFromClientReport(clientReport);
-        } catch (Exception e) {
-          options
-              .getLogger()
-              .log(SentryLevel.ERROR, "Unable to restore counts from previous client report.");
-        }
-      } else {
-        recordLostEventInternal(
-            reason.getReason(), categoryFromItemType(itemType).getCategory(), 1L);
-      }
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
-    }
+    recordLostEnvelopeItemInternal(reason, envelopeItem, options, false);
   }
 
   @Override
@@ -123,6 +122,37 @@ public final class ClientReportRecorderImpl implements ClientReportRecorder {
   @Override
   public void debug(@NotNull SentryOptions options) {
     storage.debug(options);
+  }
+
+  private void recordLostEnvelopeItemInternal(
+      @NotNull DiscardReason reason,
+      @Nullable SentryEnvelopeItem envelopeItem,
+      @NotNull SentryOptions options,
+      boolean restoreClientReportOnly) {
+    if (envelopeItem == null) {
+      return;
+    }
+
+    try {
+      @NotNull SentryItemType itemType = envelopeItem.getHeader().getType();
+      if (SentryItemType.ClientReport.equals(itemType)) {
+        try {
+          ClientReport clientReport = envelopeItem.getClientReport(options.getSerializer());
+          restoreCountsFromClientReport(clientReport);
+        } catch (Exception e) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Unable to restore counts from previous client report.");
+        }
+      } else {
+        if (!restoreClientReportOnly) {
+          recordLostEventInternal(
+              reason.getReason(), categoryFromItemType(itemType).getCategory(), 1L);
+        }
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
+    }
   }
 
   private void recordLostEventInternal(
