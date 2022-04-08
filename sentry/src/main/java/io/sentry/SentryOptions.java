@@ -1542,7 +1542,7 @@ public class SentryOptions {
    *
    * @return true if enabled; false if disabled
    */
-  public @NotNull Boolean isSendClientReports() {
+  public boolean isSendClientReports() {
     return sendClientReports;
   }
 
@@ -1551,7 +1551,7 @@ public class SentryOptions {
    *
    * @param sendClientReports true enables client reports; false disables them
    */
-  public void setSendClientReports(@NotNull Boolean sendClientReports) {
+  public void setSendClientReports(boolean sendClientReports) {
     this.sendClientReports = sendClientReports;
   }
 
