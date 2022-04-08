@@ -316,7 +316,7 @@ public class SentryOptions {
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
 
   /** Whether to send client reports containing information about number of dropped events. */
-  private @NotNull boolean sendClientReports = true;
+  private boolean sendClientReports = true;
 
   /**
    * Adds an event processor
