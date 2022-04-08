@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-alpha.5
 
 * Feat: Screenshot is taken when there is an error (#1967)
 * Feat: Add Android profiling traces (#1897) (#1959) and its tests (#1949)
