@@ -46,9 +46,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     try {
       options.getLogger().log(SentryLevel.DEBUG, "Attaching client report to envelope.");
 
-      List<SentryEnvelopeItem> items = new ArrayList<>();
+      final List<SentryEnvelopeItem> items = new ArrayList<>();
 
-      for (SentryEnvelopeItem item : envelope.getItems()) {
+      for (final SentryEnvelopeItem item : envelope.getItems()) {
         items.add(item);
       }
 
@@ -71,7 +71,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     }
 
     try {
-      for (SentryEnvelopeItem item : envelope.getItems()) {
+      for (final SentryEnvelopeItem item : envelope.getItems()) {
         recordLostEnvelopeItemInternal(reason, item, options, true);
       }
     } catch (Throwable e) {
@@ -91,7 +91,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     }
 
     try {
-      for (SentryEnvelopeItem item : envelope.getItems()) {
+      for (final SentryEnvelopeItem item : envelope.getItems()) {
         recordLostEnvelopeItem(reason, item, options);
       }
     } catch (Throwable e) {
@@ -134,10 +134,10 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     }
 
     try {
-      @NotNull SentryItemType itemType = envelopeItem.getHeader().getType();
+      final @NotNull SentryItemType itemType = envelopeItem.getHeader().getType();
       if (SentryItemType.ClientReport.equals(itemType)) {
         try {
-          ClientReport clientReport = envelopeItem.getClientReport(options.getSerializer());
+          final ClientReport clientReport = envelopeItem.getClientReport(options.getSerializer());
           restoreCountsFromClientReport(clientReport);
         } catch (Exception e) {
           options
@@ -157,14 +157,14 @@ public final class ClientReportRecorder implements IClientReportRecorder {
 
   private void recordLostEventInternal(
       @NotNull String reason, @NotNull String category, @NotNull Long countToAdd) {
-    ClientReportKey key = new ClientReportKey(reason, category);
+    final ClientReportKey key = new ClientReportKey(reason, category);
     storage.addCount(key, countToAdd);
   }
 
   @Nullable
   ClientReport resetCountsAndGenerateClientReport() {
-    Date currentDate = DateUtils.getCurrentDateTime();
-    List<DiscardedEvent> discardedEvents = storage.resetCountsAndGet();
+    final Date currentDate = DateUtils.getCurrentDateTime();
+    final List<DiscardedEvent> discardedEvents = storage.resetCountsAndGet();
 
     if (discardedEvents.isEmpty()) {
       return null;
@@ -178,7 +178,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       return;
     }
 
-    for (DiscardedEvent discardedEvent : clientReport.getDiscardedEvents()) {
+    for (final DiscardedEvent discardedEvent : clientReport.getDiscardedEvents()) {
       recordLostEventInternal(
           discardedEvent.getReason(), discardedEvent.getCategory(), discardedEvent.getQuantity());
     }

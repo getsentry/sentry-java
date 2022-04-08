@@ -11,11 +11,11 @@ import org.jetbrains.annotations.Nullable;
 
 final class LockingClientReportStorage implements ClientReportStorage {
 
-  private ConcurrentHashMap<ClientReportKey, Long> lostEventCounts = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<ClientReportKey, Long> lostEventCounts = new ConcurrentHashMap<>();
 
   @Override
   public synchronized void addCount(ClientReportKey key, Long count) {
-    @Nullable Long oldValue = lostEventCounts.get(key);
+    final @Nullable Long oldValue = lostEventCounts.get(key);
 
     if (oldValue == null) {
       lostEventCounts.put(key, count);
@@ -26,9 +26,9 @@ final class LockingClientReportStorage implements ClientReportStorage {
 
   @Override
   public synchronized List<DiscardedEvent> resetCountsAndGet() {
-    List<DiscardedEvent> discardedEvents = new ArrayList<>(lostEventCounts.size());
+    final List<DiscardedEvent> discardedEvents = new ArrayList<>(lostEventCounts.size());
 
-    for (Map.Entry<ClientReportKey, Long> entry : lostEventCounts.entrySet()) {
+    for (final Map.Entry<ClientReportKey, Long> entry : lostEventCounts.entrySet()) {
       discardedEvents.add(
           new DiscardedEvent(
               entry.getKey().getReason(), entry.getKey().getCategory(), entry.getValue()));
@@ -46,7 +46,7 @@ final class LockingClientReportStorage implements ClientReportStorage {
           .getLogger()
           .log(SentryLevel.DEBUG, "Client report (" + lostEventCounts.size() + " entries)");
 
-      for (Map.Entry<ClientReportKey, Long> entry : lostEventCounts.entrySet()) {
+      for (final Map.Entry<ClientReportKey, Long> entry : lostEventCounts.entrySet()) {
         options
             .getLogger()
             .log(

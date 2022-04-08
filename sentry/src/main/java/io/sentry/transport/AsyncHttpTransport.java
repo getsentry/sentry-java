@@ -92,7 +92,7 @@ public final class AsyncHttpTransport implements ITransport {
         envelopeCache.discard(envelope);
       }
     } else {
-      Future<?> future =
+      final Future<?> future =
           executor.submit(
               new EnvelopeSender(
                   filteredEnvelope, hint, currentEnvelopeCache, clientReportRecorder));
@@ -233,7 +233,7 @@ public final class AsyncHttpTransport implements ITransport {
       }
 
       if (transportGate.isConnected()) {
-        SentryEnvelope envelopeWithClientReport =
+        final SentryEnvelope envelopeWithClientReport =
             clientReportRecorder.attachReportToEnvelope(envelope, options);
         try {
           result = connection.send(envelopeWithClientReport);
