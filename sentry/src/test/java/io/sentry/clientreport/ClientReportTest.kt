@@ -31,17 +31,17 @@ import kotlin.test.assertTrue
 class ClientReportTest {
 
     lateinit var opts: SentryOptions
-    lateinit var clientReportRecorder: ClientReportRecorderImpl
+    lateinit var clientReportRecorder: ClientReportRecorder
     lateinit var testHelper: ClientReportTestHelper
 
     @BeforeTest
     fun setup() {
-        ClientReportRecorderImpl.getInstance().resetCountsAndGenerateClientReport()
+        ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
     }
 
     @AfterTest
     fun teardown() {
-        ClientReportRecorderImpl.getInstance().resetCountsAndGenerateClientReport()
+        ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
     }
 
     @Test
@@ -175,7 +175,7 @@ class ClientReportTest {
         setupSentry { options ->
             callback?.configure(options)
         }
-        clientReportRecorder = ClientReportRecorderImpl.getInstance()
+        clientReportRecorder = ClientReportRecorder.getInstance()
         testHelper = ClientReportTestHelper(opts)
     }
 
@@ -237,7 +237,7 @@ class ClientReportTestHelper(val options: SentryOptions) {
         fun retryableHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestRetryable())
 
         fun resetCountsAndGenerateClientReport(): ClientReport? {
-            return ClientReportRecorderImpl.getInstance().resetCountsAndGenerateClientReport()
+            return ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
         }
 
         fun assertClientReport(expectedEvents: List<DiscardedEvent>) {

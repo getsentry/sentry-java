@@ -6,8 +6,8 @@ import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.hints.Retryable;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
@@ -40,7 +40,7 @@ public final class ApacheHttpClientTransport implements ITransport {
   private final @NotNull RequestDetails requestDetails;
   private final @NotNull CloseableHttpAsyncClient httpclient;
   private final @NotNull RateLimiter rateLimiter;
-  private final @NotNull ClientReportRecorder clientReportRecorder;
+  private final @NotNull IClientReportRecorder clientReportRecorder;
   private final @NotNull ReusableCountLatch currentlyRunning;
 
   public ApacheHttpClientTransport(
@@ -48,7 +48,7 @@ public final class ApacheHttpClientTransport implements ITransport {
       final @NotNull RequestDetails requestDetails,
       final @NotNull CloseableHttpAsyncClient httpclient,
       final @NotNull RateLimiter rateLimiter,
-      final @NotNull ClientReportRecorder clientReportRecorder) {
+      final @NotNull IClientReportRecorder clientReportRecorder) {
     this(
         options,
         requestDetails,
@@ -63,7 +63,7 @@ public final class ApacheHttpClientTransport implements ITransport {
       final @NotNull RequestDetails requestDetails,
       final @NotNull CloseableHttpAsyncClient httpclient,
       final @NotNull RateLimiter rateLimiter,
-      final @NotNull ClientReportRecorder clientReportRecorder,
+      final @NotNull IClientReportRecorder clientReportRecorder,
       final @NotNull ReusableCountLatch currentlyRunning) {
     this.options = Objects.requireNonNull(options, "options is required");
     this.requestDetails = Objects.requireNonNull(requestDetails, "requestDetails is required");

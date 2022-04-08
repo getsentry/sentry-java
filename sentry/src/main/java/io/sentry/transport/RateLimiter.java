@@ -8,8 +8,8 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.StringUtils;
@@ -28,7 +28,7 @@ public final class RateLimiter {
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
   private final @NotNull ILogger logger;
-  private final @NotNull ClientReportRecorder clientReportRecorder;
+  private final @NotNull IClientReportRecorder clientReportRecorder;
   private final @NotNull SentryOptions options;
   private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
@@ -36,7 +36,7 @@ public final class RateLimiter {
   public RateLimiter(
       final @NotNull ICurrentDateProvider currentDateProvider,
       final @NotNull ILogger logger,
-      final @NotNull ClientReportRecorder clientReportRecorder,
+      final @NotNull IClientReportRecorder clientReportRecorder,
       final @NotNull SentryOptions options) {
     this.currentDateProvider = currentDateProvider;
     this.logger = logger;
@@ -46,7 +46,7 @@ public final class RateLimiter {
 
   public RateLimiter(
       final @NotNull ILogger logger,
-      final @NotNull ClientReportRecorder clientReportRecorder,
+      final @NotNull IClientReportRecorder clientReportRecorder,
       final @NotNull SentryOptions options) {
     this(CurrentDateProvider.getInstance(), logger, clientReportRecorder, options);
   }

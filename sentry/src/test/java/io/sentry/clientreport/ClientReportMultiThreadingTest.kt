@@ -25,19 +25,19 @@ class ClientReportMultiThreadingTest {
 
     @BeforeTest
     fun setup() {
-        ClientReportRecorderImpl.getInstance().resetCountsAndGenerateClientReport()
+        ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
     }
 
     @AfterTest
     fun teardown() {
-        ClientReportRecorderImpl.getInstance().resetCountsAndGenerateClientReport()
+        ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
     }
 
     @Test
     fun testMultiThreadedCountIncrements() {
         setupSentry()
 
-        val clientReportRecorder = ClientReportRecorderImpl.getInstance()
+        val clientReportRecorder = ClientReportRecorder.getInstance()
 
         val numberOfIncrementThreads = 10
         val numberOfIncrementsPerThread = 10 * 1000
@@ -81,7 +81,7 @@ class ClientReportMultiThreadingTest {
     fun testMultiThreadedCountIncrementsAndResets() {
         setupSentry()
 
-        val clientReportRecorder = ClientReportRecorderImpl.getInstance()
+        val clientReportRecorder = ClientReportRecorder.getInstance()
 
         val numberOfIncrementThreads = 10
         val numberOfIncrementsPerThread = 10 * 1000
@@ -138,7 +138,7 @@ class ClientReportMultiThreadingTest {
     fun testMultiThreadedCountIncrementsResetsAndReadds() {
         setupSentry()
 
-        val clientReportRecorder = ClientReportRecorderImpl.getInstance()
+        val clientReportRecorder = ClientReportRecorder.getInstance()
 
         val numberOfIncrementThreads = 10
         val numberOfIncrementsPerThread = 10 * 1000

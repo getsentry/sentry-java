@@ -13,9 +13,9 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.Session
-import io.sentry.clientreport.ClientReportRecorder
 import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableHint
 import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.dsnString
 import io.sentry.protocol.User
 import java.io.IOException
@@ -34,7 +34,7 @@ class AsyncHttpTransportClientReportTest {
             setSerializer(mock())
             setEnvelopeDiskCache(mock())
         }
-        var clientReportRecorder = mock<ClientReportRecorder>()
+        var clientReportRecorder = mock<IClientReportRecorder>()
         val envelopeBeforeAttachingClientReport = SentryEnvelope.from(sentryOptions.serializer, createSession(), null)
         val envelopeAfterAttachingClientReport = SentryEnvelope.from(sentryOptions.serializer, createSession(), null)
 

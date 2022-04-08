@@ -20,8 +20,8 @@ import io.sentry.SentryTracer
 import io.sentry.Session
 import io.sentry.TransactionContext
 import io.sentry.UserFeedback
-import io.sentry.clientreport.ClientReportRecorder
 import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -35,7 +35,7 @@ class RateLimiterTest {
 
     private class Fixture {
         val currentDateProvider = mock<ICurrentDateProvider>()
-        val clientReportRecorder = mock<ClientReportRecorder>()
+        val clientReportRecorder = mock<IClientReportRecorder>()
         val serializer = mock<ISerializer>()
 
         fun getSUT(): RateLimiter {

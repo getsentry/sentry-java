@@ -6,8 +6,8 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.cache.IEnvelopeCache;
-import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
@@ -36,14 +36,14 @@ public final class AsyncHttpTransport implements ITransport {
   private final @NotNull RateLimiter rateLimiter;
   private final @NotNull ITransportGate transportGate;
   private final @NotNull HttpConnection connection;
-  private final @NotNull ClientReportRecorder clientReportRecorder;
+  private final @NotNull IClientReportRecorder clientReportRecorder;
 
   public AsyncHttpTransport(
       final @NotNull SentryOptions options,
       final @NotNull RateLimiter rateLimiter,
       final @NotNull ITransportGate transportGate,
       final @NotNull RequestDetails requestDetails,
-      final @NotNull ClientReportRecorder clientReportRecorder) {
+      final @NotNull IClientReportRecorder clientReportRecorder) {
     this(
         initExecutor(
             options.getMaxQueueSize(), options.getEnvelopeDiskCache(), options.getLogger()),
@@ -59,7 +59,7 @@ public final class AsyncHttpTransport implements ITransport {
       final @NotNull SentryOptions options,
       final @NotNull RateLimiter rateLimiter,
       final @NotNull ITransportGate transportGate,
-      final @NotNull ClientReportRecorder clientReportRecorder,
+      final @NotNull IClientReportRecorder clientReportRecorder,
       final @NotNull HttpConnection httpConnection) {
     this.executor = Objects.requireNonNull(executor, "executor is required");
     this.envelopeCache =
@@ -186,14 +186,14 @@ public final class AsyncHttpTransport implements ITransport {
     private final @NotNull SentryEnvelope envelope;
     private final @Nullable Map<String, Object> hint;
     private final @NotNull IEnvelopeCache envelopeCache;
-    private final @NotNull ClientReportRecorder clientReportRecorder;
+    private final @NotNull IClientReportRecorder clientReportRecorder;
     private final TransportResult failedResult = TransportResult.error();
 
     EnvelopeSender(
         final @NotNull SentryEnvelope envelope,
         final @Nullable Map<String, Object> hint,
         final @NotNull IEnvelopeCache envelopeCache,
-        final @NotNull ClientReportRecorder clientReportRecorder) {
+        final @NotNull IClientReportRecorder clientReportRecorder) {
       this.envelope = Objects.requireNonNull(envelope, "Envelope is required.");
       this.hint = hint;
       this.envelopeCache = Objects.requireNonNull(envelopeCache, "EnvelopeCache is required.");

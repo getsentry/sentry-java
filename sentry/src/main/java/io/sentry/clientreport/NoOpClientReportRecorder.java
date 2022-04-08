@@ -7,7 +7,7 @@ import io.sentry.transport.DataCategory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class NoOpClientReportRecorder implements ClientReportRecorder {
+public final class NoOpClientReportRecorder implements IClientReportRecorder {
   @Override
   public void recordLostEnvelope(
       @NotNull DiscardReason reason,

@@ -3,7 +3,7 @@ package io.sentry;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
-import io.sentry.clientreport.ClientReportRecorderImpl;
+import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
@@ -319,8 +319,7 @@ public class SentryOptions {
   private boolean sendClientReports = true;
 
   /** ClientReportRecorder to track count of lost events / transactions / ... * */
-  private @NotNull ClientReportRecorder clientReportRecorder =
-      ClientReportRecorderImpl.getInstance();
+  private @NotNull IClientReportRecorder clientReportRecorder = ClientReportRecorder.getInstance();
 
   /**
    * Adds an event processor
@@ -1559,7 +1558,7 @@ public class SentryOptions {
     this.sendClientReports = sendClientReports;
 
     if (sendClientReports) {
-      clientReportRecorder = ClientReportRecorderImpl.getInstance();
+      clientReportRecorder = ClientReportRecorder.getInstance();
     } else {
       clientReportRecorder = new NoOpClientReportRecorder();
     }
@@ -1570,7 +1569,7 @@ public class SentryOptions {
    *
    * @return a client report recorder or NoOp
    */
-  public @NotNull ClientReportRecorder getClientReportRecorder() {
+  public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
   }
 

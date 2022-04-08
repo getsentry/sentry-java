@@ -18,8 +18,8 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.TypeCheckHint
-import io.sentry.clientreport.ClientReportRecorder
 import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.hints.Retryable
 import io.sentry.transport.RateLimiter
 import io.sentry.transport.ReusableCountLatch
@@ -37,7 +37,7 @@ class ApacheHttpClientTransportClientReportTest {
         val options: SentryOptions
         val logger = mock<ILogger>()
         val rateLimiter = mock<RateLimiter>()
-        val clientReportRecorder = mock<ClientReportRecorder>()
+        val clientReportRecorder = mock<IClientReportRecorder>()
         val requestDetails = RequestDetails("http://key@localhost/proj", mapOf("header-name" to "header-value"))
         val client = mock<CloseableHttpAsyncClient>()
         val currentlyRunning = spy<ReusableCountLatch>()
