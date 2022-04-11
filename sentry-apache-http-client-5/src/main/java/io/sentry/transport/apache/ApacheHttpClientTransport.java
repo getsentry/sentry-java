@@ -110,7 +110,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                           .getLogger()
                           .log(ERROR, "Request failed, API returned %s", response.getCode());
 
-                      if (response.getCode() >= 500) {
+                      if (response.getCode() >= 400 && response.getCode() != 429) {
                         if (!(sentrySdkHint instanceof Retryable)) {
                           options
                               .getClientReportRecorder()

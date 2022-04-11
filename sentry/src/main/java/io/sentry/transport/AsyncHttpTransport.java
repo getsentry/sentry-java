@@ -245,7 +245,7 @@ public final class AsyncHttpTransport implements ITransport {
             options.getLogger().log(SentryLevel.ERROR, message);
 
             // ignore e.g. 429 as we're not the ones actively dropping
-            if (result.getResponseCode() >= 500) {
+            if (result.getResponseCode() >= 400 && result.getResponseCode() != 429) {
               if (!(sentrySdkHint instanceof Retryable)) {
                 options
                     .getClientReportRecorder()

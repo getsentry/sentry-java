@@ -100,6 +100,38 @@ class AsyncHttpTransportClientReportTest {
     }
 
     @Test
+    fun `does not record lost envelope on 400 error for retryable`() {
+        // given
+        givenSetup(TransportResult.error(400))
+
+        // when
+        assertFailsWith(java.lang.IllegalStateException::class) {
+            fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableHint())
+        }
+
+        // then
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport), any())
+        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `records lost envelope on 400 error for non retryable`() {
+        // given
+        givenSetup(TransportResult.error(400))
+
+        // when
+        assertFailsWith(java.lang.IllegalStateException::class) {
+            fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport)
+        }
+
+        // then
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport), any())
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterAttachingClientReport), any())
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
     fun `records lost envelope on full queue for non retryable`() {
         // given
         givenSetup(cancel = true)

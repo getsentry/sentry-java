@@ -142,6 +142,28 @@ class ApacheHttpClientTransportClientReportTest {
     }
 
     @Test
+    fun `records lost envelope on 400 error for non retryable`() {
+        val sut = fixture.getSut(SimpleHttpResponse(400))
+
+        sut.send(fixture.envelopeBeforeClientReportAttached)
+
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached), any())
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `does not record lost envelope on 400 error for retryable`() {
+        val sut = fixture.getSut(SimpleHttpResponse(400))
+
+        sut.send(fixture.envelopeBeforeClientReportAttached, retryableHint())
+
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
+        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
     fun `does not record lost envelope on 429 error for non retryable`() {
         val sut = fixture.getSut(SimpleHttpResponse(429))
 
