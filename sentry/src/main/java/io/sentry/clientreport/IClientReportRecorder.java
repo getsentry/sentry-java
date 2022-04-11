@@ -23,11 +23,6 @@ public interface IClientReportRecorder {
       @NotNull DataCategory category,
       @NotNull SentryOptions options);
 
-  void recordLostClientReportInEnvelope(
-      @NotNull DiscardReason reason,
-      @Nullable SentryEnvelope envelope,
-      @NotNull SentryOptions options);
-
   @NotNull
   SentryEnvelope attachReportToEnvelope(
       @NotNull SentryEnvelope envelope, @NotNull SentryOptions options);

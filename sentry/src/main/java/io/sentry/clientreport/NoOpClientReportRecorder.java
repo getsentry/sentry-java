@@ -33,14 +33,6 @@ public final class NoOpClientReportRecorder implements IClientReportRecorder {
   }
 
   @Override
-  public void recordLostClientReportInEnvelope(
-      @NotNull DiscardReason reason,
-      @Nullable SentryEnvelope envelope,
-      @NotNull SentryOptions options) {
-    // do nothing
-  }
-
-  @Override
   public @NotNull SentryEnvelope attachReportToEnvelope(
       @NotNull SentryEnvelope envelope, @NotNull SentryOptions options) {
     return envelope;

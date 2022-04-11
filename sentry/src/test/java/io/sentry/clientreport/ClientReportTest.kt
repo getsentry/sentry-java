@@ -141,36 +141,6 @@ class ClientReportTest {
         )
     }
 
-    @Test
-    fun `recording only client report does not record the rest of the envelope as lost`() {
-        givenClientReportRecorder()
-
-        val lostClientReport = ClientReport(
-            DateUtils.getCurrentDateTime(),
-            listOf(
-                DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
-                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
-                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
-            )
-        )
-
-        val envelope = testHelper.newEnvelope(
-            SentryEnvelopeItem.fromClientReport(opts.serializer, lostClientReport),
-            SentryEnvelopeItem.fromEvent(opts.serializer, SentryEvent()),
-            SentryEnvelopeItem.fromSession(opts.serializer, Session("dis", User(), "env", "0.0.1")),
-            SentryEnvelopeItem.fromUserFeedback(opts.serializer, UserFeedback(SentryId(UUID.randomUUID()))),
-            SentryEnvelopeItem.fromAttachment(Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
-        )
-
-        clientReportRecorder.recordLostClientReportInEnvelope(DiscardReason.NETWORK_ERROR, envelope, opts)
-
-        val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
-        testHelper.assertTotalCount(6, clientReportAtEnd)
-        testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Error, 3, clientReportAtEnd)
-        testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Error, 2, clientReportAtEnd)
-        testHelper.assertCountFor(DiscardReason.QUEUE_OVERFLOW, DataCategory.Transaction, 1, clientReportAtEnd)
-    }
-
     private fun givenClientReportRecorder(callback: Sentry.OptionsConfiguration<SentryOptions>? = null) {
         setupSentry { options ->
             callback?.configure(options)

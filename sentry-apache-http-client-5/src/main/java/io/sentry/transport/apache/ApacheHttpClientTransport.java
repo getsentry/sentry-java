@@ -116,11 +116,6 @@ public final class ApacheHttpClientTransport implements ITransport {
                               .getClientReportRecorder()
                               .recordLostEnvelope(
                                   DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
-                        } else {
-                          options
-                              .getClientReportRecorder()
-                              .recordLostClientReportInEnvelope(
-                                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                         }
                       }
                     } else {
@@ -143,11 +138,6 @@ public final class ApacheHttpClientTransport implements ITransport {
                           .getClientReportRecorder()
                           .recordLostEnvelope(
                               DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
-                    } else {
-                      options
-                          .getClientReportRecorder()
-                          .recordLostClientReportInEnvelope(
-                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                     }
                     currentlyRunning.decrement();
                   }
@@ -160,11 +150,6 @@ public final class ApacheHttpClientTransport implements ITransport {
                           .getClientReportRecorder()
                           .recordLostEnvelope(
                               DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
-                    } else {
-                      options
-                          .getClientReportRecorder()
-                          .recordLostClientReportInEnvelope(
-                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                     }
                     currentlyRunning.decrement();
                   }
@@ -175,11 +160,6 @@ public final class ApacheHttpClientTransport implements ITransport {
               options
                   .getClientReportRecorder()
                   .recordLostEnvelope(
-                      DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
-            } else {
-              options
-                  .getClientReportRecorder()
-                  .recordLostClientReportInEnvelope(
                       DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
             }
           }

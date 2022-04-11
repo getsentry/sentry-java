@@ -241,11 +241,6 @@ public final class AsyncHttpTransport implements ITransport {
                     .getClientReportRecorder()
                     .recordLostEnvelope(
                         DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
-              } else {
-                options
-                    .getClientReportRecorder()
-                    .recordLostClientReportInEnvelope(
-                        DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
               }
             }
 
@@ -255,10 +250,6 @@ public final class AsyncHttpTransport implements ITransport {
           // Failure due to IO is allowed to retry the event
           if (sentrySdkHint instanceof Retryable) {
             ((Retryable) sentrySdkHint).setRetry(true);
-            options
-                .getClientReportRecorder()
-                .recordLostClientReportInEnvelope(
-                    DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
           } else {
             LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
             options

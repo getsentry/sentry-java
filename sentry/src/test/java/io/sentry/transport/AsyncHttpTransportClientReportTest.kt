@@ -66,7 +66,7 @@ class AsyncHttpTransportClientReportTest {
     }
 
     @Test
-    fun `does not record lost envelope on 500 error for retryable but restores counts`() {
+    fun `does not record lost envelope on 500 error for retryable`() {
         // given
         givenSetup(TransportResult.error(500))
 
@@ -78,7 +78,6 @@ class AsyncHttpTransportClientReportTest {
         // then
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport), any())
         verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostClientReportInEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterAttachingClientReport), any())
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -144,7 +143,7 @@ class AsyncHttpTransportClientReportTest {
     }
 
     @Test
-    fun `does not record lost envelope on io exception for retryable but restores counts`() {
+    fun `does not record lost envelope on io exception for retryable`() {
         // given
         givenSetup()
         whenever(fixture.connection.send(any())).thenThrow(IOException("thrown on purpose"))
@@ -157,7 +156,6 @@ class AsyncHttpTransportClientReportTest {
         // then
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport), any())
         verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostClientReportInEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterAttachingClientReport), any())
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
