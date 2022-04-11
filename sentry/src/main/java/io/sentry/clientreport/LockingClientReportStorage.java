@@ -1,12 +1,9 @@
 package io.sentry.clientreport;
 
-import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class LockingClientReportStorage implements ClientReportStorage {
@@ -38,30 +35,5 @@ final class LockingClientReportStorage implements ClientReportStorage {
     lostEventCounts.clear();
 
     return discardedEvents;
-  }
-
-  @Override
-  public void debug(@NotNull SentryOptions options) {
-    try {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Client report (" + lostEventCounts.size() + " entries)");
-
-      for (final Map.Entry<ClientReportKey, Long> entry : lostEventCounts.entrySet()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                entry.getKey().getReason()
-                    + ", "
-                    + entry.getKey().getCategory()
-                    + "= "
-                    + entry.getValue());
-      }
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, e, "Unable print client report recorder debug info.");
-    }
   }
 }

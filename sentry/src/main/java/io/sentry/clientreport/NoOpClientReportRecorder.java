@@ -37,9 +37,4 @@ public final class NoOpClientReportRecorder implements IClientReportRecorder {
       @NotNull SentryEnvelope envelope, @NotNull SentryOptions options) {
     return envelope;
   }
-
-  @Override
-  public void debug(@NotNull SentryOptions options) {
-    // do nothing
-  }
 }

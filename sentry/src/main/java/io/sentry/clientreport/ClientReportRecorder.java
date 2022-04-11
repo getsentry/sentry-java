@@ -120,11 +120,6 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     }
   }
 
-  @Override
-  public void debug(@NotNull SentryOptions options) {
-    storage.debug(options);
-  }
-
   private void recordLostEventInternal(
       @NotNull String reason, @NotNull String category, @NotNull Long countToAdd) {
     final ClientReportKey key = new ClientReportKey(reason, category);

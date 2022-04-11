@@ -70,7 +70,6 @@ class ClientReportMultiThreadingTest {
         val t2 = System.currentTimeMillis()
         println("took ${t2 - t1}ms")
 
-        clientReportRecorder.debug(opts)
         val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
         val numberOfLostItems = clientReport?.discardedEvents?.sumOf { it.quantity.toInt() } ?: 0L
 
@@ -127,7 +126,6 @@ class ClientReportMultiThreadingTest {
         val t2 = System.currentTimeMillis()
         println("took ${t2 - t1}ms")
 
-        clientReportRecorder.debug(opts)
         clientReportRecorder.resetCountsAndGenerateClientReport()?.let { clientReports.add(it) }
         val numberOfLostItems = clientReports.sumOf { clientReport -> clientReport.discardedEvents.sumOf { it.quantity.toInt() } }
 
@@ -189,7 +187,6 @@ class ClientReportMultiThreadingTest {
         val t2 = System.currentTimeMillis()
         println("took ${t2 - t1}ms")
 
-        clientReportRecorder.debug(opts)
         val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
         val numberOfLostItems = clientReport?.discardedEvents?.sumOf { it.quantity.toInt() } ?: 0L
 

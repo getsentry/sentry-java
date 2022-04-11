@@ -26,6 +26,4 @@ public interface IClientReportRecorder {
   @NotNull
   SentryEnvelope attachReportToEnvelope(
       @NotNull SentryEnvelope envelope, @NotNull SentryOptions options);
-
-  void debug(@NotNull SentryOptions options);
 }

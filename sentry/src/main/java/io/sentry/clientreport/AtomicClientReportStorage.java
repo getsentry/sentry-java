@@ -1,7 +1,5 @@
 package io.sentry.clientreport;
 
-import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import io.sentry.transport.DataCategory;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,30 +49,5 @@ final class AtomicClientReportStorage implements ClientReportStorage {
       }
     }
     return discardedEvents;
-  }
-
-  @Override
-  public void debug(@NotNull SentryOptions options) {
-    try {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Client report (" + lostEventCounts.size() + " entries)");
-
-      for (Map.Entry<ClientReportKey, AtomicLong> entry : lostEventCounts.entrySet()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                entry.getKey().getReason()
-                    + ", "
-                    + entry.getKey().getCategory()
-                    + "= "
-                    + entry.getValue());
-      }
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, e, "Unable print client report recorder debug info.");
-    }
   }
 }
