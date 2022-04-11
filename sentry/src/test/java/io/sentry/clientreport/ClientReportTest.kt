@@ -13,6 +13,7 @@ import io.sentry.Session
 import io.sentry.TypeCheckHint
 import io.sentry.UserFeedback
 import io.sentry.dsnString
+import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
@@ -205,6 +206,8 @@ class ClientReportTestHelper(val options: SentryOptions) {
 
     companion object {
         fun retryableHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestRetryable())
+        fun diskFlushNotificationHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestDiskFlushNotification())
+        fun retryableDiskFlushNotificationHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestRetryableDiskFlushNotification())
 
         fun resetCountsAndGenerateClientReport(): ClientReport? {
             return ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
@@ -236,5 +239,30 @@ class TestRetryable : Retryable {
 
     override fun isRetry(): Boolean {
         return this.retry
+    }
+}
+
+class TestRetryableDiskFlushNotification : Retryable, DiskFlushNotification {
+    private var retry = false
+    var flushed = false
+
+    override fun setRetry(retry: Boolean) {
+        this.retry = retry
+    }
+
+    override fun isRetry(): Boolean {
+        return this.retry
+    }
+
+    override fun markFlushed() {
+        flushed = true
+    }
+}
+
+class TestDiskFlushNotification : DiskFlushNotification {
+    var flushed = false
+
+    override fun markFlushed() {
+        flushed = true
     }
 }

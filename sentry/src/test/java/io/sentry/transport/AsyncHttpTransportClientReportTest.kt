@@ -14,6 +14,8 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
+import io.sentry.clientreport.ClientReportTestHelper.Companion.diskFlushNotificationHint
+import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableDiskFlushNotificationHint
 import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableHint
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
@@ -122,6 +124,34 @@ class AsyncHttpTransportClientReportTest {
         // then
         verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any(), any())
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeBeforeAttachingClientReport), any())
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `attaches report and records lost envelope on full queue for non retryable disk flush notification`() {
+        // given
+        givenSetup(cancel = true)
+
+        // when
+        fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, diskFlushNotificationHint())
+
+        // then
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport), any())
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeAfterAttachingClientReport), any())
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `attaches report and records lost envelope on full queue for retryable disk flush notification`() {
+        // given
+        givenSetup(cancel = true)
+
+        // when
+        fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableDiskFlushNotificationHint())
+
+        // then
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport), any())
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeAfterAttachingClientReport), any())
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 

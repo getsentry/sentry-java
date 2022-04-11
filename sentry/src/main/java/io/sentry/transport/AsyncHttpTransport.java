@@ -85,13 +85,23 @@ public final class AsyncHttpTransport implements ITransport {
         envelopeCache.discard(envelope);
       }
     } else {
+      SentryEnvelope envelopeThatMayIncludeClientReport;
+      if (sentrySdkHint instanceof DiskFlushNotification) {
+        envelopeThatMayIncludeClientReport =
+            options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope, options);
+      } else {
+        envelopeThatMayIncludeClientReport = filteredEnvelope;
+      }
+
       final Future<?> future =
-          executor.submit(new EnvelopeSender(filteredEnvelope, hint, currentEnvelopeCache));
+          executor.submit(
+              new EnvelopeSender(envelopeThatMayIncludeClientReport, hint, currentEnvelopeCache));
 
       if (future != null && future.isCancelled()) {
         options
             .getClientReportRecorder()
-            .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, filteredEnvelope, options);
+            .recordLostEnvelope(
+                DiscardReason.QUEUE_OVERFLOW, envelopeThatMayIncludeClientReport, options);
       }
     }
   }
