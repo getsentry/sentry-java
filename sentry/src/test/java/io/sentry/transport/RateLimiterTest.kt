@@ -16,6 +16,7 @@ import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryOptionsManipulator
 import io.sentry.SentryTracer
 import io.sentry.Session
 import io.sentry.TransactionContext
@@ -39,11 +40,15 @@ class RateLimiterTest {
         val serializer = mock<ISerializer>()
 
         fun getSUT(): RateLimiter {
+            val options = SentryOptions().apply {
+                setLogger(NoOpLogger.getInstance())
+            }
+
+            SentryOptionsManipulator.setClientReportRecorder(options, clientReportRecorder)
+
             return RateLimiter(
-                currentDateProvider, NoOpLogger.getInstance(), clientReportRecorder,
-                SentryOptions().apply {
-                    setLogger(NoOpLogger.getInstance())
-                }
+                currentDateProvider, NoOpLogger.getInstance(),
+                options
             )
         }
     }

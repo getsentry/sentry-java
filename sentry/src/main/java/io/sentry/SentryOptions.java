@@ -319,7 +319,7 @@ public class SentryOptions {
   private boolean sendClientReports = true;
 
   /** ClientReportRecorder to track count of lost events / transactions / ... * */
-  private @NotNull IClientReportRecorder clientReportRecorder = ClientReportRecorder.getInstance();
+  @NotNull IClientReportRecorder clientReportRecorder = ClientReportRecorder.getInstance();
 
   /**
    * Adds an event processor

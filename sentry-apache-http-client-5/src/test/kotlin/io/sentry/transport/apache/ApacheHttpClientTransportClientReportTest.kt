@@ -17,6 +17,7 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.SentryOptionsManipulator
 import io.sentry.TypeCheckHint
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
@@ -52,6 +53,7 @@ class ApacheHttpClientTransportClientReportTest {
             options.setDiagnosticLevel(SentryLevel.WARNING)
             options.setDebug(true)
             options.setLogger(logger)
+            SentryOptionsManipulator.setClientReportRecorder(options, clientReportRecorder)
 
             envelopeBeforeClientReportAttached = SentryEnvelope.from(options.serializer, SentryEvent(), null)
             envelopeAfterClientReportAttached = SentryEnvelope.from(options.serializer, SentryEvent(), null)
@@ -61,7 +63,7 @@ class ApacheHttpClientTransportClientReportTest {
 
         fun getSut(response: SimpleHttpResponse? = null, queueFull: Boolean = false): ApacheHttpClientTransport {
 
-            val transport = ApacheHttpClientTransport(options, requestDetails, client, rateLimiter, clientReportRecorder, currentlyRunning)
+            val transport = ApacheHttpClientTransport(options, requestDetails, client, rateLimiter, currentlyRunning)
 
             if (response != null) {
                 whenever(client.execute(any(), any())).thenAnswer {

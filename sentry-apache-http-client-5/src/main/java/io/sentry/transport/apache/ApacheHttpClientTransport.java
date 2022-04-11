@@ -7,7 +7,6 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
-import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.hints.Retryable;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
@@ -40,22 +39,14 @@ public final class ApacheHttpClientTransport implements ITransport {
   private final @NotNull RequestDetails requestDetails;
   private final @NotNull CloseableHttpAsyncClient httpclient;
   private final @NotNull RateLimiter rateLimiter;
-  private final @NotNull IClientReportRecorder clientReportRecorder;
   private final @NotNull ReusableCountLatch currentlyRunning;
 
   public ApacheHttpClientTransport(
       final @NotNull SentryOptions options,
       final @NotNull RequestDetails requestDetails,
       final @NotNull CloseableHttpAsyncClient httpclient,
-      final @NotNull RateLimiter rateLimiter,
-      final @NotNull IClientReportRecorder clientReportRecorder) {
-    this(
-        options,
-        requestDetails,
-        httpclient,
-        rateLimiter,
-        clientReportRecorder,
-        new ReusableCountLatch());
+      final @NotNull RateLimiter rateLimiter) {
+    this(options, requestDetails, httpclient, rateLimiter, new ReusableCountLatch());
   }
 
   ApacheHttpClientTransport(
@@ -63,7 +54,6 @@ public final class ApacheHttpClientTransport implements ITransport {
       final @NotNull RequestDetails requestDetails,
       final @NotNull CloseableHttpAsyncClient httpclient,
       final @NotNull RateLimiter rateLimiter,
-      final @NotNull IClientReportRecorder clientReportRecorder,
       final @NotNull ReusableCountLatch currentlyRunning) {
     this.options = Objects.requireNonNull(options, "options is required");
     this.requestDetails = Objects.requireNonNull(requestDetails, "requestDetails is required");
@@ -71,8 +61,6 @@ public final class ApacheHttpClientTransport implements ITransport {
     this.rateLimiter = Objects.requireNonNull(rateLimiter, "rateLimiter is required");
     this.currentlyRunning =
         Objects.requireNonNull(currentlyRunning, "currentlyRunning is required");
-    this.clientReportRecorder =
-        Objects.requireNonNull(clientReportRecorder, "clientReportRecorder is required");
     this.httpclient.start();
   }
 
@@ -86,7 +74,7 @@ public final class ApacheHttpClientTransport implements ITransport {
 
       if (filteredEnvelope != null) {
         final SentryEnvelope envelopeWithClientReport =
-            clientReportRecorder.attachReportToEnvelope(filteredEnvelope, options);
+            options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope, options);
 
         if (envelopeWithClientReport != null) {
           currentlyRunning.increment();
@@ -124,11 +112,15 @@ public final class ApacheHttpClientTransport implements ITransport {
 
                       if (response.getCode() >= 500) {
                         if (!(sentrySdkHint instanceof Retryable)) {
-                          clientReportRecorder.recordLostEnvelope(
-                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                          options
+                              .getClientReportRecorder()
+                              .recordLostEnvelope(
+                                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                         } else {
-                          clientReportRecorder.recordLostClientReportInEnvelope(
-                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                          options
+                              .getClientReportRecorder()
+                              .recordLostClientReportInEnvelope(
+                                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                         }
                       }
                     } else {
@@ -147,11 +139,15 @@ public final class ApacheHttpClientTransport implements ITransport {
                   public void failed(Exception ex) {
                     options.getLogger().log(ERROR, "Error while sending an envelope", ex);
                     if (!(sentrySdkHint instanceof Retryable)) {
-                      clientReportRecorder.recordLostEnvelope(
-                          DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                      options
+                          .getClientReportRecorder()
+                          .recordLostEnvelope(
+                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                     } else {
-                      clientReportRecorder.recordLostClientReportInEnvelope(
-                          DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                      options
+                          .getClientReportRecorder()
+                          .recordLostClientReportInEnvelope(
+                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                     }
                     currentlyRunning.decrement();
                   }
@@ -160,11 +156,15 @@ public final class ApacheHttpClientTransport implements ITransport {
                   public void cancelled() {
                     options.getLogger().log(WARNING, "Request cancelled");
                     if (!(sentrySdkHint instanceof Retryable)) {
-                      clientReportRecorder.recordLostEnvelope(
-                          DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                      options
+                          .getClientReportRecorder()
+                          .recordLostEnvelope(
+                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                     } else {
-                      clientReportRecorder.recordLostClientReportInEnvelope(
-                          DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                      options
+                          .getClientReportRecorder()
+                          .recordLostClientReportInEnvelope(
+                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
                     }
                     currentlyRunning.decrement();
                   }
@@ -172,18 +172,24 @@ public final class ApacheHttpClientTransport implements ITransport {
           } catch (Throwable e) {
             options.getLogger().log(ERROR, "Error when sending envelope", e);
             if (!(sentrySdkHint instanceof Retryable)) {
-              clientReportRecorder.recordLostEnvelope(
-                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+              options
+                  .getClientReportRecorder()
+                  .recordLostEnvelope(
+                      DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
             } else {
-              clientReportRecorder.recordLostClientReportInEnvelope(
-                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+              options
+                  .getClientReportRecorder()
+                  .recordLostClientReportInEnvelope(
+                      DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
             }
           }
         }
       }
     } else {
       options.getLogger().log(SentryLevel.WARNING, "Submit cancelled");
-      clientReportRecorder.recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelope, options);
+      options
+          .getClientReportRecorder()
+          .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelope, options);
     }
   }
 

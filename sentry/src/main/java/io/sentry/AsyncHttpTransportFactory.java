@@ -19,9 +19,8 @@ public final class AsyncHttpTransportFactory implements ITransportFactory {
 
     return new AsyncHttpTransport(
         options,
-        new RateLimiter(options.getLogger(), options.getClientReportRecorder(), options),
+        new RateLimiter(options.getLogger(), options),
         options.getTransportGate(),
-        requestDetails,
-        options.getClientReportRecorder());
+        requestDetails);
   }
 }

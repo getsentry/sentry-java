@@ -7,7 +7,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
-import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
@@ -36,21 +35,18 @@ public final class AsyncHttpTransport implements ITransport {
   private final @NotNull RateLimiter rateLimiter;
   private final @NotNull ITransportGate transportGate;
   private final @NotNull HttpConnection connection;
-  private final @NotNull IClientReportRecorder clientReportRecorder;
 
   public AsyncHttpTransport(
       final @NotNull SentryOptions options,
       final @NotNull RateLimiter rateLimiter,
       final @NotNull ITransportGate transportGate,
-      final @NotNull RequestDetails requestDetails,
-      final @NotNull IClientReportRecorder clientReportRecorder) {
+      final @NotNull RequestDetails requestDetails) {
     this(
         initExecutor(
             options.getMaxQueueSize(), options.getEnvelopeDiskCache(), options.getLogger()),
         options,
         rateLimiter,
         transportGate,
-        clientReportRecorder,
         new HttpConnection(options, requestDetails, rateLimiter));
   }
 
@@ -59,7 +55,6 @@ public final class AsyncHttpTransport implements ITransport {
       final @NotNull SentryOptions options,
       final @NotNull RateLimiter rateLimiter,
       final @NotNull ITransportGate transportGate,
-      final @NotNull IClientReportRecorder clientReportRecorder,
       final @NotNull HttpConnection httpConnection) {
     this.executor = Objects.requireNonNull(executor, "executor is required");
     this.envelopeCache =
@@ -67,8 +62,6 @@ public final class AsyncHttpTransport implements ITransport {
     this.options = Objects.requireNonNull(options, "options is required");
     this.rateLimiter = Objects.requireNonNull(rateLimiter, "rateLimiter is required");
     this.transportGate = Objects.requireNonNull(transportGate, "transportGate is required");
-    this.clientReportRecorder =
-        Objects.requireNonNull(clientReportRecorder, "clientReportRecorder is required");
     this.connection = Objects.requireNonNull(httpConnection, "httpConnection is required");
   }
 
@@ -93,13 +86,12 @@ public final class AsyncHttpTransport implements ITransport {
       }
     } else {
       final Future<?> future =
-          executor.submit(
-              new EnvelopeSender(
-                  filteredEnvelope, hint, currentEnvelopeCache, clientReportRecorder));
+          executor.submit(new EnvelopeSender(filteredEnvelope, hint, currentEnvelopeCache));
 
       if (future != null && future.isCancelled()) {
-        clientReportRecorder.recordLostEnvelope(
-            DiscardReason.QUEUE_OVERFLOW, filteredEnvelope, options);
+        options
+            .getClientReportRecorder()
+            .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, filteredEnvelope, options);
       }
     }
   }
@@ -186,19 +178,15 @@ public final class AsyncHttpTransport implements ITransport {
     private final @NotNull SentryEnvelope envelope;
     private final @Nullable Map<String, Object> hint;
     private final @NotNull IEnvelopeCache envelopeCache;
-    private final @NotNull IClientReportRecorder clientReportRecorder;
     private final TransportResult failedResult = TransportResult.error();
 
     EnvelopeSender(
         final @NotNull SentryEnvelope envelope,
         final @Nullable Map<String, Object> hint,
-        final @NotNull IEnvelopeCache envelopeCache,
-        final @NotNull IClientReportRecorder clientReportRecorder) {
+        final @NotNull IEnvelopeCache envelopeCache) {
       this.envelope = Objects.requireNonNull(envelope, "Envelope is required.");
       this.hint = hint;
       this.envelopeCache = Objects.requireNonNull(envelopeCache, "EnvelopeCache is required.");
-      this.clientReportRecorder =
-          Objects.requireNonNull(clientReportRecorder, "ClientReportRecorder is required");
     }
 
     @Override
@@ -234,7 +222,7 @@ public final class AsyncHttpTransport implements ITransport {
 
       if (transportGate.isConnected()) {
         final SentryEnvelope envelopeWithClientReport =
-            clientReportRecorder.attachReportToEnvelope(envelope, options);
+            options.getClientReportRecorder().attachReportToEnvelope(envelope, options);
         try {
           result = connection.send(envelopeWithClientReport);
           if (result.isSuccess()) {
@@ -249,11 +237,15 @@ public final class AsyncHttpTransport implements ITransport {
             // ignore e.g. 429 as we're not the ones actively dropping
             if (result.getResponseCode() >= 500) {
               if (!(sentrySdkHint instanceof Retryable)) {
-                clientReportRecorder.recordLostEnvelope(
-                    DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                options
+                    .getClientReportRecorder()
+                    .recordLostEnvelope(
+                        DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
               } else {
-                clientReportRecorder.recordLostClientReportInEnvelope(
-                    DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                options
+                    .getClientReportRecorder()
+                    .recordLostClientReportInEnvelope(
+                        DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
               }
             }
 
@@ -263,12 +255,15 @@ public final class AsyncHttpTransport implements ITransport {
           // Failure due to IO is allowed to retry the event
           if (sentrySdkHint instanceof Retryable) {
             ((Retryable) sentrySdkHint).setRetry(true);
-            clientReportRecorder.recordLostClientReportInEnvelope(
-                DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+            options
+                .getClientReportRecorder()
+                .recordLostClientReportInEnvelope(
+                    DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
           } else {
             LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
-            clientReportRecorder.recordLostEnvelope(
-                DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+            options
+                .getClientReportRecorder()
+                .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
           }
           throw new IllegalStateException("Sending the event failed.", e);
         }
@@ -278,7 +273,9 @@ public final class AsyncHttpTransport implements ITransport {
           ((Retryable) sentrySdkHint).setRetry(true);
         } else {
           LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
-          clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope, options);
+          options
+              .getClientReportRecorder()
+              .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope, options);
         }
       }
       return result;

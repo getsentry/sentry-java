@@ -12,6 +12,7 @@ import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
+import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
 import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableHint
 import io.sentry.clientreport.DiscardReason
@@ -39,7 +40,8 @@ class AsyncHttpTransportClientReportTest {
         val envelopeAfterAttachingClientReport = SentryEnvelope.from(sentryOptions.serializer, createSession(), null)
 
         fun getSUT(): AsyncHttpTransport {
-            return AsyncHttpTransport(executor, sentryOptions, rateLimiter, transportGate, clientReportRecorder, connection)
+            SentryOptionsManipulator.setClientReportRecorder(sentryOptions, clientReportRecorder)
+            return AsyncHttpTransport(executor, sentryOptions, rateLimiter, transportGate, connection)
         }
 
         private fun createSession(): Session {

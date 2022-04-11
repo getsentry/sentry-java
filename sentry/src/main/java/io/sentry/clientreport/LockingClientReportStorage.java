@@ -11,7 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 final class LockingClientReportStorage implements ClientReportStorage {
 
-  private final ConcurrentHashMap<ClientReportKey, Long> lostEventCounts = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<ClientReportKey, Long> lostEventCounts =
+      new ConcurrentHashMap<>();
 
   @Override
   public synchronized void addCount(ClientReportKey key, Long count) {

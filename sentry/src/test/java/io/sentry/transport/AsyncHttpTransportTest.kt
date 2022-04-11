@@ -15,6 +15,7 @@ import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
 import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.clientreport.NoOpClientReportRecorder
@@ -46,7 +47,8 @@ class AsyncHttpTransportTest {
         }
 
         fun getSUT(): AsyncHttpTransport {
-            return AsyncHttpTransport(executor, sentryOptions, rateLimiter, transportGate, clientReportRecorder, connection)
+            SentryOptionsManipulator.setClientReportRecorder(sentryOptions, clientReportRecorder)
+            return AsyncHttpTransport(executor, sentryOptions, rateLimiter, transportGate, connection)
         }
     }
 
