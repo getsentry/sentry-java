@@ -39,7 +39,7 @@ final class AtomicClientReportStorage implements ClientReportStorage {
 
   @Override
   public List<DiscardedEvent> resetCountsAndGet() {
-    final List<DiscardedEvent> discardedEvents = new ArrayList<>(lostEventCounts.size());
+    final List<DiscardedEvent> discardedEvents = new ArrayList<>();
 
     for (final Map.Entry<ClientReportKey, AtomicLong> entry : lostEventCounts.entrySet()) {
       final Long quantity = entry.getValue().getAndSet(0);
