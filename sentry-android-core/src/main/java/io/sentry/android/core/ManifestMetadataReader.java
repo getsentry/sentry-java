@@ -62,7 +62,7 @@ final class ManifestMetadataReader {
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
   static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
-  static final String IDLE_TIMEOUT = "io.sentry.idle-timeout";
+  static final String IDLE_TIMEOUT = "io.sentry.traces.idle-timeout";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
