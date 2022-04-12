@@ -10,6 +10,7 @@ import io.sentry.IHub
 import io.sentry.SentryLevel
 import io.sentry.getExc
 import timber.log.Timber
+import java.util.MissingFormatArgumentException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -275,5 +276,11 @@ class SentryTimberTreeTest {
         val sut = fixture.getSut()
         sut.e(Throwable())
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+    }
+
+    @Test
+    fun `Tree does not throw when using log with args`() {
+        val sut = fixture.getSut()
+        sut.d("test %s, %s", 1, 1);
     }
 }
