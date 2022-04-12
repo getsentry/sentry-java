@@ -1,6 +1,7 @@
 package io.sentry.android.core.internal.gestures;
 
 import android.app.Activity;
+import android.content.res.Resources;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -175,7 +176,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(
-            eventType, ViewUtils.getResourceId(target), className, additionalData));
+            eventType, ViewUtils.getResourceIdWithFallback(target), className, additionalData));
   }
 
   private void startTracing(final @NotNull View target, final @NotNull String eventType) {
@@ -189,14 +190,21 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return;
     }
 
+    final String viewId;
+    try {
+      viewId = ViewUtils.getResourceId(target);
+    } catch (Resources.NotFoundException e) {
+      options.getLogger().log(SentryLevel.DEBUG, "View id cannot be retrieved from Resources, no transaction captured");
+      return;
+    }
+
     // as we allow a single UI transaction running on the bound Scope, we finish the previous one
     if (activeTransaction != null) {
       activeTransaction.finish();
     }
 
     // we can only bind to the scope if there's no running transaction
-    // TODO: if view.id is not specified on the view, do not create a transaction, document this
-    final String name = getActivityName(activity) + "." + ViewUtils.getResourceId(target);
+    final String name = getActivityName(activity) + "." + viewId;
     final String op = UI_ACTION + "." + eventType;
     final ITransaction transaction = hub.startTransaction(name, op, true, options.getIdleTimeout());
 
