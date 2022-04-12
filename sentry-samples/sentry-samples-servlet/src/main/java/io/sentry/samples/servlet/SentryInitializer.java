@@ -1,22 +1,25 @@
 package io.sentry.samples.servlet;
 
 import io.sentry.Sentry;
-import java.util.Set;
-import javax.servlet.ServletContainerInitializer;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import javax.servlet.annotation.WebListener;
 
 /** Initializes Sentry. */
-public final class SentryInitializer implements ServletContainerInitializer {
+@WebListener
+public final class SentryInitializer implements ServletContextListener {
 
   @Override
-  public void onStartup(Set<Class<?>> c, ServletContext ctx) throws ServletException {
+  public void contextInitialized(ServletContextEvent sce) {
     Sentry.init(
         options -> {
           // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
           // your Sentry project/dashboard
           options.setDsn(
               "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
+
+          // disables shutdown hook, as Sentry has to be closed on application undeploy.
+          options.setEnableShutdownHook(false);
 
           // All events get assigned to the release. See more at
           // https://docs.sentry.io/workflow/releases/
@@ -53,5 +56,11 @@ public final class SentryInitializer implements ServletContainerInitializer {
           // Include frames from our package
           options.addInAppInclude("io.sentry.samples");
         });
+  }
+
+  @Override
+  public void contextDestroyed(ServletContextEvent sce) {
+    Sentry.flush(5000);
+    Sentry.close();
   }
 }
