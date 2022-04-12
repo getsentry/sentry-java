@@ -322,8 +322,7 @@ public final class SentryTracer implements ITransaction {
 
   private @Nullable Date findLatestChildTimestamp() {
     final List<Span> spans = new ArrayList<>(this.children);
-    Collections.sort(spans, spanByTimestampComparator);
-    return spans.get(spans.size() - 1).getTimestamp();
+    return Collections.max(spans, spanByTimestampComparator).getTimestamp();
   }
 
   private boolean hasAllChildrenFinished() {
