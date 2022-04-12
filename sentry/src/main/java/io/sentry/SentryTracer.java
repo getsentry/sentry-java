@@ -532,13 +532,15 @@ public final class SentryTracer implements ITransaction {
     @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
     @Override
     public int compare(Span o1, Span o2) {
-      final Date first =
-          Objects.requireNonNull(
-              o1.getTimestamp(), "The span timestamp should not be null after it was finished");
-      final Date second =
-          Objects.requireNonNull(
-              o2.getTimestamp(), "The span timestamp should not be null after it was finished");
-      return first.compareTo(second);
+      final Date first = o1.getTimestamp();
+      final Date second = o2.getTimestamp();
+      if (first == null) {
+        return -1;
+      } else if (second == null) {
+        return 1;
+      } else {
+        return first.compareTo(second);
+      }
     }
   }
 }
