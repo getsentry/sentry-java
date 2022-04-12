@@ -27,7 +27,6 @@ public final class UserInteractionIntegration
 
   private final boolean isAndroidXAvailable;
   private final boolean isAndroidXScrollViewAvailable;
-  private boolean performanceEnabled = false;
 
   public UserInteractionIntegration(
       final @NotNull Application application, final @NotNull LoadClass classLoader) {
@@ -59,8 +58,7 @@ public final class UserInteractionIntegration
               activity,
               hub,
               options,
-              isAndroidXScrollViewAvailable,
-              performanceEnabled);
+              isAndroidXScrollViewAvailable);
       window.setCallback(new SentryWindowCallback(delegate, activity, gestureListener, options));
     }
   }
@@ -125,10 +123,6 @@ public final class UserInteractionIntegration
             SentryLevel.DEBUG,
             "UserInteractionIntegration enabled: %s",
             this.options.isEnableUserInteractionBreadcrumbs());
-
-    this.performanceEnabled =
-        options.isTracingEnabled()
-            && ((SentryAndroidOptions) options).isEnableUserInteractionTracing();
 
     if (this.options.isEnableUserInteractionBreadcrumbs()) {
       if (isAndroidXAvailable) {

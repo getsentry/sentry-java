@@ -28,7 +28,6 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private final @NotNull IHub hub;
   private final @NotNull SentryAndroidOptions options;
   private final boolean isAndroidXAvailable;
-  private final boolean performanceEnabled;
 
   private @Nullable ITransaction activeTransaction = null;
 
@@ -38,13 +37,11 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       final @NotNull Activity currentActivity,
       final @NotNull IHub hub,
       final @NotNull SentryAndroidOptions options,
-      final boolean isAndroidXAvailable,
-      final boolean performanceEnabled) {
+      final boolean isAndroidXAvailable) {
     this.activityRef = new WeakReference<>(currentActivity);
     this.hub = hub;
     this.options = options;
     this.isAndroidXAvailable = isAndroidXAvailable;
-    this.performanceEnabled = performanceEnabled;
   }
 
   public void onUp(final @NotNull MotionEvent motionEvent) {
@@ -182,7 +179,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   }
 
   private void startTracing(final @NotNull View target, final @NotNull String eventType) {
-    if (!performanceEnabled) {
+    if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
       return;
     }
 
