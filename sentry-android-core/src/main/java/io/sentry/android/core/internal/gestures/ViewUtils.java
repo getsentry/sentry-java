@@ -111,6 +111,13 @@ final class ViewUtils {
     }
   }
 
+  /**
+   * Retrieves the human-readable view id based on {@code view.getContext().getResources()}.
+   *
+   * @param view - the view whose id is being retrieved
+   * @return human-readable view id
+   * @throws Resources.NotFoundException in case the view id was not found
+   */
   static String getResourceId(final @NotNull View view) throws Resources.NotFoundException {
     final int viewId = view.getId();
     final Resources resources = view.getContext().getResources();
