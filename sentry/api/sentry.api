@@ -1718,9 +1718,7 @@ public final class io/sentry/clientreport/ClientReport$JsonKeys {
 
 public final class io/sentry/clientreport/ClientReportRecorder : io/sentry/clientreport/IClientReportRecorder {
 	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)Lio/sentry/SentryEnvelope;
-	public fun debug (Lio/sentry/SentryOptions;)V
 	public static fun getInstance ()Lio/sentry/clientreport/ClientReportRecorder;
-	public fun recordLostClientReportInEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)V
 	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)V
 	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;Lio/sentry/SentryOptions;)V
 	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;Lio/sentry/SentryOptions;)V
@@ -1728,7 +1726,6 @@ public final class io/sentry/clientreport/ClientReportRecorder : io/sentry/clien
 
 public abstract interface class io/sentry/clientreport/ClientReportStorage {
 	public abstract fun addCount (Lio/sentry/clientreport/ClientReportKey;Ljava/lang/Long;)V
-	public abstract fun debug (Lio/sentry/SentryOptions;)V
 	public abstract fun resetCountsAndGet ()Ljava/util/List;
 }
 
@@ -1771,8 +1768,6 @@ public final class io/sentry/clientreport/DiscardedEvent$JsonKeys {
 
 public abstract interface class io/sentry/clientreport/IClientReportRecorder {
 	public abstract fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)Lio/sentry/SentryEnvelope;
-	public abstract fun debug (Lio/sentry/SentryOptions;)V
-	public abstract fun recordLostClientReportInEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)V
 	public abstract fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)V
 	public abstract fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;Lio/sentry/SentryOptions;)V
 	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;Lio/sentry/SentryOptions;)V
@@ -1781,8 +1776,6 @@ public abstract interface class io/sentry/clientreport/IClientReportRecorder {
 public final class io/sentry/clientreport/NoOpClientReportRecorder : io/sentry/clientreport/IClientReportRecorder {
 	public fun <init> ()V
 	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)Lio/sentry/SentryEnvelope;
-	public fun debug (Lio/sentry/SentryOptions;)V
-	public fun recordLostClientReportInEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)V
 	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)V
 	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;Lio/sentry/SentryOptions;)V
 	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;Lio/sentry/SentryOptions;)V
@@ -2810,8 +2803,8 @@ public final class io/sentry/protocol/User$JsonKeys {
 }
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/RequestDetails;Lio/sentry/clientreport/IClientReportRecorder;)V
-	public fun <init> (Lio/sentry/transport/QueuedThreadPoolExecutor;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/clientreport/IClientReportRecorder;Lio/sentry/transport/HttpConnection;)V
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/RequestDetails;)V
+	public fun <init> (Lio/sentry/transport/QueuedThreadPoolExecutor;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
 	public fun close ()V
 	public fun flush (J)V
 	public fun send (Lio/sentry/SentryEnvelope;Ljava/util/Map;)V
@@ -2872,8 +2865,8 @@ public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/I
 }
 
 public final class io/sentry/transport/RateLimiter {
-	public fun <init> (Lio/sentry/ILogger;Lio/sentry/clientreport/IClientReportRecorder;Lio/sentry/SentryOptions;)V
-	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/ILogger;Lio/sentry/clientreport/IClientReportRecorder;Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/ILogger;Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/ILogger;Lio/sentry/SentryOptions;)V
 	public fun filter (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)Lio/sentry/SentryEnvelope;
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
 }
