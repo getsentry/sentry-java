@@ -39,7 +39,8 @@ public final class UserInteractionIntegration
         classLoader.isClassAvailable("androidx.core.view.ScrollingView", options);
   }
 
-  private void startTracking(final @Nullable Window window, final @NotNull Activity activity) {
+  private void startTracking(final @NotNull Activity activity) {
+    final Window window = activity.getWindow();
     if (window == null) {
       if (options != null) {
         options.getLogger().log(SentryLevel.INFO, "Window was null in startTracking");
@@ -55,8 +56,7 @@ public final class UserInteractionIntegration
 
       final SentryGestureListener gestureListener =
           new SentryGestureListener(
-              new WeakReference<>(window),
-              new WeakReference<>(activity),
+              activity,
               hub,
               options,
               isAndroidXScrollViewAvailable,
@@ -65,7 +65,8 @@ public final class UserInteractionIntegration
     }
   }
 
-  private void stopTracking(final @Nullable Window window) {
+  private void stopTracking(final @NotNull Activity activity) {
+    final Window window = activity.getWindow();
     if (window == null) {
       if (options != null) {
         options.getLogger().log(SentryLevel.INFO, "Window was null in stopTracking");
@@ -92,12 +93,12 @@ public final class UserInteractionIntegration
 
   @Override
   public void onActivityResumed(@NotNull Activity activity) {
-    startTracking(activity.getWindow(), activity);
+    startTracking(activity);
   }
 
   @Override
   public void onActivityPaused(@NotNull Activity activity) {
-    stopTracking(activity.getWindow());
+    stopTracking(activity);
   }
 
   @Override

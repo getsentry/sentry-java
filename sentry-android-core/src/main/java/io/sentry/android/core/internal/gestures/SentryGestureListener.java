@@ -24,8 +24,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   static final String UI_ACTION = "ui.action";
 
-  private final @NotNull WeakReference<Window> windowRef;
-  private final @NotNull WeakReference<Activity> currentActivity;
+  private final @NotNull WeakReference<Activity> activityRef;
   private final @NotNull IHub hub;
   private final @NotNull SentryAndroidOptions options;
   private final boolean isAndroidXAvailable;
@@ -36,18 +35,16 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private final ScrollState scrollState = new ScrollState();
 
   public SentryGestureListener(
-      final @NotNull WeakReference<Window> windowRef,
-      final @NotNull WeakReference<Activity> currentActivity,
+      final @NotNull Activity currentActivity,
       final @NotNull IHub hub,
       final @NotNull SentryAndroidOptions options,
       final boolean isAndroidXAvailable,
       final boolean performanceEnabled) {
-    this.windowRef = windowRef;
+    this.activityRef = new WeakReference<>(currentActivity);
     this.hub = hub;
     this.options = options;
     this.isAndroidXAvailable = isAndroidXAvailable;
     this.performanceEnabled = performanceEnabled;
-    this.currentActivity = currentActivity;
   }
 
   public void onUp(final @NotNull MotionEvent motionEvent) {
@@ -189,7 +186,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return;
     }
 
-    final Activity activity = currentActivity.get();
+    final Activity activity = activityRef.get();
     if (activity == null) {
       options.getLogger().log(SentryLevel.DEBUG, "Activity is null, no transaction captured");
       return;
@@ -237,7 +234,15 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   }
 
   private @Nullable View ensureWindowDecorView(final @NotNull String caller) {
-    final Window window = windowRef.get();
+    final Activity activity = activityRef.get();
+    if (activity == null) {
+      options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Activity is null in " + caller + ". No breadcrumb captured.");
+      return null;
+    }
+
+    final Window window = activity.getWindow();
     if (window == null) {
       options
           .getLogger()
