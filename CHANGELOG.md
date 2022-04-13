@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Feat: Add sentry-servlet-jakarta module (#1987)
+
 ## 6.0.0-alpha.5
 
 * Feat: Screenshot is taken when there is an error (#1967)
