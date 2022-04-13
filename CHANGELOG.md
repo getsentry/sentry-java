@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.7.3
 
 * Fix: Sentry Timber integration throws an exception when using args (#1986)
 
