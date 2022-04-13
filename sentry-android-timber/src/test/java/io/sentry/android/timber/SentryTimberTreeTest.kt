@@ -276,4 +276,10 @@ class SentryTimberTreeTest {
         sut.e(Throwable())
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
+
+    @Test
+    fun `Tree does not throw when using log with args`() {
+        val sut = fixture.getSut()
+        sut.d("test %s, %s", 1, 1)
+    }
 }

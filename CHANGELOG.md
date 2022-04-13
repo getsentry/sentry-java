@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix: Sentry Timber integration throws an exception when using args (#1986)
+
 ## 5.7.2
 
 * Fix: bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
