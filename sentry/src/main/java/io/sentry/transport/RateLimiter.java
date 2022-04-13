@@ -3,7 +3,6 @@ package io.sentry.transport;
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.SentryLevel.INFO;
 
-import io.sentry.ILogger;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
@@ -26,22 +25,19 @@ public final class RateLimiter {
   private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
-  private final @NotNull ILogger logger;
   private final @NotNull SentryOptions options;
   private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
 
   public RateLimiter(
       final @NotNull ICurrentDateProvider currentDateProvider,
-      final @NotNull ILogger logger,
       final @NotNull SentryOptions options) {
     this.currentDateProvider = currentDateProvider;
-    this.logger = logger;
     this.options = options;
   }
 
-  public RateLimiter(final @NotNull ILogger logger, final @NotNull SentryOptions options) {
-    this(CurrentDateProvider.getInstance(), logger, options);
+  public RateLimiter(final @NotNull SentryOptions options) {
+    this(CurrentDateProvider.getInstance(), options);
   }
 
   public @Nullable SentryEnvelope filter(
@@ -63,7 +59,9 @@ public final class RateLimiter {
     }
 
     if (dropItems != null) {
-      logger.log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
+      options
+          .getLogger()
+          .log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
 
       //       Need a new envelope
       List<SentryEnvelopeItem> toSend = new ArrayList<>();
@@ -75,7 +73,7 @@ public final class RateLimiter {
 
       // no reason to continue
       if (toSend.isEmpty()) {
-        logger.log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
+        options.getLogger().log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
 
         markHintWhenSendingFailed(sentrySdkHint, false);
         return null;
@@ -198,10 +196,10 @@ public final class RateLimiter {
                   if (catItemCapitalized != null) {
                     dataCategory = DataCategory.valueOf(catItemCapitalized);
                   } else {
-                    logger.log(ERROR, "Couldn't capitalize: %s", catItem);
+                    options.getLogger().log(ERROR, "Couldn't capitalize: %s", catItem);
                   }
                 } catch (IllegalArgumentException e) {
-                  logger.log(INFO, e, "Unknown category: %s", catItem);
+                  options.getLogger().log(INFO, e, "Unknown category: %s", catItem);
                 }
                 // we dont apply rate limiting for unknown categories
                 if (DataCategory.Unknown.equals(dataCategory)) {

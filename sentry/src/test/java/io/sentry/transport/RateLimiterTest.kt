@@ -47,7 +47,7 @@ class RateLimiterTest {
             SentryOptionsManipulator.setClientReportRecorder(options, clientReportRecorder)
 
             return RateLimiter(
-                currentDateProvider, NoOpLogger.getInstance(),
+                currentDateProvider,
                 options
             )
         }

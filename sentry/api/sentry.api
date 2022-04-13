@@ -2865,8 +2865,8 @@ public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/I
 }
 
 public final class io/sentry/transport/RateLimiter {
-	public fun <init> (Lio/sentry/ILogger;Lio/sentry/SentryOptions;)V
-	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/ILogger;Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
 	public fun filter (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)Lio/sentry/SentryEnvelope;
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
 }
