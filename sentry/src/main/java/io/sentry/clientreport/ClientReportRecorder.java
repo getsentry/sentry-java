@@ -29,7 +29,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     return SHARED_INSTANCE;
   }
 
-  private final ClientReportStorage storage;
+  private final IClientReportStorage storage;
 
   private ClientReportRecorder() {
     this.storage = new AtomicClientReportStorage();

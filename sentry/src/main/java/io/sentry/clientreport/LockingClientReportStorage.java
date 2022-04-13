@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.Nullable;
 
-final class LockingClientReportStorage implements ClientReportStorage {
+final class LockingClientReportStorage implements IClientReportStorage {
 
   private final ConcurrentHashMap<ClientReportKey, Long> lostEventCounts =
       new ConcurrentHashMap<>();

@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class AtomicClientReportStorage implements ClientReportStorage {
+final class AtomicClientReportStorage implements IClientReportStorage {
 
   private final @NotNull Map<ClientReportKey, AtomicLong> lostEventCounts;
 
