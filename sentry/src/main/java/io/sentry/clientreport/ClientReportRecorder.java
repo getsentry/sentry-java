@@ -15,29 +15,16 @@ import org.jetbrains.annotations.Nullable;
 
 public final class ClientReportRecorder implements IClientReportRecorder {
 
-  private static volatile @Nullable ClientReportRecorder SHARED_INSTANCE = null;
+  private final @NotNull IClientReportStorage storage;
+  private final @NotNull SentryOptions options;
 
-  public static @NotNull ClientReportRecorder getInstance() {
-    if (SHARED_INSTANCE == null) {
-      synchronized (ClientReportRecorder.class) {
-        if (SHARED_INSTANCE == null) {
-          SHARED_INSTANCE = new ClientReportRecorder();
-        }
-      }
-    }
-
-    return SHARED_INSTANCE;
-  }
-
-  private final IClientReportStorage storage;
-
-  private ClientReportRecorder() {
+  public ClientReportRecorder(@NotNull SentryOptions options) {
+    this.options = options;
     this.storage = new AtomicClientReportStorage();
   }
 
   @Override
-  public @NotNull SentryEnvelope attachReportToEnvelope(
-      @NotNull SentryEnvelope envelope, @NotNull SentryOptions options) {
+  public @NotNull SentryEnvelope attachReportToEnvelope(@NotNull SentryEnvelope envelope) {
     @Nullable ClientReport clientReport = resetCountsAndGenerateClientReport();
     if (clientReport == null) {
       return envelope;
@@ -62,17 +49,14 @@ public final class ClientReportRecorder implements IClientReportRecorder {
   }
 
   @Override
-  public void recordLostEnvelope(
-      @NotNull DiscardReason reason,
-      @Nullable SentryEnvelope envelope,
-      @NotNull SentryOptions options) {
+  public void recordLostEnvelope(@NotNull DiscardReason reason, @Nullable SentryEnvelope envelope) {
     if (envelope == null) {
       return;
     }
 
     try {
       for (final SentryEnvelopeItem item : envelope.getItems()) {
-        recordLostEnvelopeItem(reason, item, options);
+        recordLostEnvelopeItem(reason, item);
       }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope.");
@@ -81,9 +65,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
 
   @Override
   public void recordLostEnvelopeItem(
-      @NotNull DiscardReason reason,
-      @Nullable SentryEnvelopeItem envelopeItem,
-      @NotNull SentryOptions options) {
+      @NotNull DiscardReason reason, @Nullable SentryEnvelopeItem envelopeItem) {
     if (envelopeItem == null) {
       return;
     }
@@ -109,10 +91,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
   }
 
   @Override
-  public void recordLostEvent(
-      @NotNull DiscardReason reason,
-      @NotNull DataCategory category,
-      @NotNull SentryOptions options) {
+  public void recordLostEvent(@NotNull DiscardReason reason, @NotNull DataCategory category) {
     try {
       recordLostEventInternal(reason.getReason(), category.getCategory(), 1L);
     } catch (Throwable e) {

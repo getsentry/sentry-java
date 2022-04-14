@@ -7,7 +7,6 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.Session
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
-import io.sentry.clientreport.ClientReportTestHelper.Companion.resetCountsAndGenerateClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.transport.DataCategory
@@ -127,6 +126,7 @@ class CacheStrategyTest {
         assertTrue(expectedSession.init!!)
 
         assertClientReport(
+            options.clientReportRecorder,
             listOf(
                 DiscardedEvent(
                     DiscardReason.CACHE_OVERFLOW.reason,
@@ -142,7 +142,6 @@ class CacheStrategyTest {
         fixture.dir.listFiles()?.forEach {
             it.deleteRecursively()
         }
-        resetCountsAndGenerateClientReport()
     }
 
     private class CustomCache(options: SentryOptions, path: String, maxSize: Int) : CacheStrategy(options, path, maxSize)

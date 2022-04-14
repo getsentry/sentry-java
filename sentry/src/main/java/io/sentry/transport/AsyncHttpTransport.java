@@ -88,7 +88,7 @@ public final class AsyncHttpTransport implements ITransport {
       SentryEnvelope envelopeThatMayIncludeClientReport;
       if (sentrySdkHint instanceof DiskFlushNotification) {
         envelopeThatMayIncludeClientReport =
-            options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope, options);
+            options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope);
       } else {
         envelopeThatMayIncludeClientReport = filteredEnvelope;
       }
@@ -100,8 +100,7 @@ public final class AsyncHttpTransport implements ITransport {
       if (future != null && future.isCancelled()) {
         options
             .getClientReportRecorder()
-            .recordLostEnvelope(
-                DiscardReason.QUEUE_OVERFLOW, envelopeThatMayIncludeClientReport, options);
+            .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelopeThatMayIncludeClientReport);
       }
     }
   }
@@ -232,7 +231,7 @@ public final class AsyncHttpTransport implements ITransport {
 
       if (transportGate.isConnected()) {
         final SentryEnvelope envelopeWithClientReport =
-            options.getClientReportRecorder().attachReportToEnvelope(envelope, options);
+            options.getClientReportRecorder().attachReportToEnvelope(envelope);
         try {
           result = connection.send(envelopeWithClientReport);
           if (result.isSuccess()) {
@@ -249,8 +248,7 @@ public final class AsyncHttpTransport implements ITransport {
               if (!(sentrySdkHint instanceof Retryable)) {
                 options
                     .getClientReportRecorder()
-                    .recordLostEnvelope(
-                        DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
               }
             }
 
@@ -264,7 +262,7 @@ public final class AsyncHttpTransport implements ITransport {
             LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
             options
                 .getClientReportRecorder()
-                .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
           }
           throw new IllegalStateException("Sending the event failed.", e);
         }
@@ -276,7 +274,7 @@ public final class AsyncHttpTransport implements ITransport {
           LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
           options
               .getClientReportRecorder()
-              .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope, options);
+              .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope);
         }
       }
       return result;

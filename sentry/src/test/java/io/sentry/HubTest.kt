@@ -17,7 +17,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.cache.EnvelopeCache
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
-import io.sentry.clientreport.ClientReportTestHelper.Companion.resetCountsAndGenerateClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.hints.SessionEndHint
@@ -50,13 +49,11 @@ class HubTest {
     @BeforeTest
     fun `set up`() {
         file = Files.createTempDirectory("sentry-disk-cache-test").toAbsolutePath().toFile()
-        resetCountsAndGenerateClientReport()
     }
 
     @AfterTest
     fun shutdown() {
         file.deleteRecursively()
-        resetCountsAndGenerateClientReport()
         Sentry.close()
     }
 
@@ -1194,7 +1191,10 @@ class HubTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op", false), sut)
         sentryTracer.finish()
 
-        assertClientReport(listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1)))
+        assertClientReport(
+            options.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1))
+        )
     }
     //endregion
 

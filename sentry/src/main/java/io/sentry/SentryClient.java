@@ -110,7 +110,7 @@ public final class SentryClient implements ISentryClient {
                 event.getEventId());
         options
             .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Error, options);
+            .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Error);
         // setting event as null to not be sent as its been discarded by sample rate
         event = null;
       }
@@ -127,7 +127,7 @@ public final class SentryClient implements ISentryClient {
                 event.getThrowable().getClass());
         options
             .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, options);
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
         return SentryId.EMPTY_ID;
       }
       event = executeBeforeSend(event, hint);
@@ -136,7 +136,7 @@ public final class SentryClient implements ISentryClient {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
         options
             .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error, options);
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
       }
     }
 
@@ -261,7 +261,7 @@ public final class SentryClient implements ISentryClient {
                 processor.getClass().getName());
         options
             .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, options);
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
         break;
       }
     }
@@ -295,7 +295,7 @@ public final class SentryClient implements ISentryClient {
                 processor.getClass().getName());
         options
             .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction, options);
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
         break;
       }
     }

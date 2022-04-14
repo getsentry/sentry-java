@@ -582,7 +582,7 @@ public final class Hub implements IHub {
                   transaction.getEventId());
           options
               .getClientReportRecorder()
-              .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction, options);
+              .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
         } else {
           StackItem item = null;
           try {

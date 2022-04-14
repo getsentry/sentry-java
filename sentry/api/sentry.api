@@ -1717,11 +1717,11 @@ public final class io/sentry/clientreport/ClientReport$JsonKeys {
 }
 
 public final class io/sentry/clientreport/ClientReportRecorder : io/sentry/clientreport/IClientReportRecorder {
-	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)Lio/sentry/SentryEnvelope;
-	public static fun getInstance ()Lio/sentry/clientreport/ClientReportRecorder;
-	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)V
-	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;Lio/sentry/SentryOptions;)V
-	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/SentryEnvelope;
+	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
+	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;)V
 }
 
 public final class io/sentry/clientreport/DiscardReason : java/lang/Enum {
@@ -1762,10 +1762,10 @@ public final class io/sentry/clientreport/DiscardedEvent$JsonKeys {
 }
 
 public abstract interface class io/sentry/clientreport/IClientReportRecorder {
-	public abstract fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)Lio/sentry/SentryEnvelope;
-	public abstract fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)V
-	public abstract fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;Lio/sentry/SentryOptions;)V
-	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;Lio/sentry/SentryOptions;)V
+	public abstract fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/SentryEnvelope;
+	public abstract fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
+	public abstract fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
+	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;)V
 }
 
 public abstract interface class io/sentry/clientreport/IClientReportStorage {
@@ -1775,10 +1775,10 @@ public abstract interface class io/sentry/clientreport/IClientReportStorage {
 
 public final class io/sentry/clientreport/NoOpClientReportRecorder : io/sentry/clientreport/IClientReportRecorder {
 	public fun <init> ()V
-	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)Lio/sentry/SentryEnvelope;
-	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;Lio/sentry/SentryOptions;)V
-	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;Lio/sentry/SentryOptions;)V
-	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;Lio/sentry/SentryOptions;)V
+	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/SentryEnvelope;
+	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
+	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;)V
 }
 
 public abstract interface class io/sentry/config/PropertiesProvider {

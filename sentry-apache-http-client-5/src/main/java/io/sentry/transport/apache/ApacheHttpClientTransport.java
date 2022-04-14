@@ -74,7 +74,7 @@ public final class ApacheHttpClientTransport implements ITransport {
 
       if (filteredEnvelope != null) {
         final SentryEnvelope envelopeWithClientReport =
-            options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope, options);
+            options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope);
 
         if (envelopeWithClientReport != null) {
           currentlyRunning.increment();
@@ -115,7 +115,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                           options
                               .getClientReportRecorder()
                               .recordLostEnvelope(
-                                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
                         }
                       }
                     } else {
@@ -137,7 +137,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                       options
                           .getClientReportRecorder()
                           .recordLostEnvelope(
-                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
                     }
                     currentlyRunning.decrement();
                   }
@@ -149,7 +149,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                       options
                           .getClientReportRecorder()
                           .recordLostEnvelope(
-                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
                     }
                     currentlyRunning.decrement();
                   }
@@ -159,17 +159,14 @@ public final class ApacheHttpClientTransport implements ITransport {
             if (!(sentrySdkHint instanceof Retryable)) {
               options
                   .getClientReportRecorder()
-                  .recordLostEnvelope(
-                      DiscardReason.NETWORK_ERROR, envelopeWithClientReport, options);
+                  .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
             }
           }
         }
       }
     } else {
       options.getLogger().log(SentryLevel.WARNING, "Submit cancelled");
-      options
-          .getClientReportRecorder()
-          .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelope, options);
+      options.getClientReportRecorder().recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelope);
     }
   }
 

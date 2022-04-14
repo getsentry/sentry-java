@@ -57,7 +57,7 @@ class ApacheHttpClientTransportClientReportTest {
 
             envelopeBeforeClientReportAttached = SentryEnvelope.from(options.serializer, SentryEvent(), null)
             envelopeAfterClientReportAttached = SentryEnvelope.from(options.serializer, SentryEvent(), null)
-            whenever(clientReportRecorder.attachReportToEnvelope(same(envelopeBeforeClientReportAttached), any()))
+            whenever(clientReportRecorder.attachReportToEnvelope(same(envelopeBeforeClientReportAttached)))
                 .thenReturn(envelopeAfterClientReportAttached)
         }
 
@@ -92,8 +92,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
-        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
-        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -103,8 +103,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
-        verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any(), any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), eq(fixture.envelopeBeforeClientReportAttached), any())
+        verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any())
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), eq(fixture.envelopeBeforeClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -114,8 +114,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached, retryableHint())
 
-        verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any(), any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeBeforeClientReportAttached), any())
+        verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any())
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeBeforeClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -125,8 +125,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
-        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached), any())
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -136,8 +136,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached, retryableHint())
 
-        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
-        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -147,8 +147,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
-        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached), any())
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -158,8 +158,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached, retryableHint())
 
-        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
-        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -169,8 +169,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
-        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
-        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -180,8 +180,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached, retryableHint())
 
-        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
-        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -192,8 +192,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached, retryableHint())
 
-        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
-        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any(), any())
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+        verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -204,8 +204,8 @@ class ApacheHttpClientTransportClientReportTest {
 
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
-        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached), any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached), any())
+        verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 

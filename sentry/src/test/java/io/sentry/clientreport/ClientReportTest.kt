@@ -23,8 +23,6 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -34,16 +32,6 @@ class ClientReportTest {
     lateinit var opts: SentryOptions
     lateinit var clientReportRecorder: ClientReportRecorder
     lateinit var testHelper: ClientReportTestHelper
-
-    @BeforeTest
-    fun setup() {
-        ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
-    }
-
-    @AfterTest
-    fun teardown() {
-        ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
-    }
 
     @Test
     fun `lost envelope can be recorded`() {
@@ -66,7 +54,7 @@ class ClientReportTest {
             SentryEnvelopeItem.fromAttachment(Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
         )
 
-        clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope, opts)
+        clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
 
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
         testHelper.assertTotalCount(10, clientReportAtEnd)
@@ -83,7 +71,7 @@ class ClientReportTest {
     fun `lost event can be recorded`() {
         givenClientReportRecorder()
 
-        clientReportRecorder.recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, opts)
+        clientReportRecorder.recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error)
 
         val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
         testHelper.assertTotalCount(1, clientReport)
@@ -105,7 +93,7 @@ class ClientReportTest {
 
         val envelopeItem = SentryEnvelopeItem.fromClientReport(opts.serializer, lostClientReport)
 
-        clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelopeItem, opts)
+        clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelopeItem)
 
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
         testHelper.assertTotalCount(6, clientReportAtEnd)
@@ -118,12 +106,12 @@ class ClientReportTest {
     fun `attaching client report to an envelope resets counts`() {
         givenClientReportRecorder()
 
-        clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment, opts)
-        clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment, opts)
-        clientReportRecorder.recordLostEvent(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error, opts)
-        clientReportRecorder.recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error, opts)
+        clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment)
+        clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment)
+        clientReportRecorder.recordLostEvent(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error)
+        clientReportRecorder.recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error)
 
-        val envelope = clientReportRecorder.attachReportToEnvelope(testHelper.newEnvelope(), opts)
+        val envelope = clientReportRecorder.attachReportToEnvelope(testHelper.newEnvelope())
 
         testHelper.assertTotalCount(0, clientReportRecorder.resetCountsAndGenerateClientReport())
 
@@ -146,7 +134,7 @@ class ClientReportTest {
         setupSentry { options ->
             callback?.configure(options)
         }
-        clientReportRecorder = ClientReportRecorder.getInstance()
+        clientReportRecorder = opts.clientReportRecorder as ClientReportRecorder
         testHelper = ClientReportTestHelper(opts)
     }
 
@@ -209,12 +197,9 @@ class ClientReportTestHelper(val options: SentryOptions) {
         fun diskFlushNotificationHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestDiskFlushNotification())
         fun retryableDiskFlushNotificationHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestRetryableDiskFlushNotification())
 
-        fun resetCountsAndGenerateClientReport(): ClientReport? {
-            return ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
-        }
-
-        fun assertClientReport(expectedEvents: List<DiscardedEvent>) {
-            val clientReport = resetCountsAndGenerateClientReport()
+        fun assertClientReport(clientReportRecorder: IClientReportRecorder, expectedEvents: List<DiscardedEvent>) {
+            val recorder = clientReportRecorder as ClientReportRecorder
+            val clientReport = recorder.resetCountsAndGenerateClientReport()
             assertClientReport(clientReport, expectedEvents)
         }
 

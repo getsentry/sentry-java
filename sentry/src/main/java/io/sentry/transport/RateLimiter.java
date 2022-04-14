@@ -54,7 +54,7 @@ public final class RateLimiter {
         dropItems.add(item);
         options
             .getClientReportRecorder()
-            .recordLostEnvelopeItem(DiscardReason.RATELIMIT_BACKOFF, item, options);
+            .recordLostEnvelopeItem(DiscardReason.RATELIMIT_BACKOFF, item);
       }
     }
 

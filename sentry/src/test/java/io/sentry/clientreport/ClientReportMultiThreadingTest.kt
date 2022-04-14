@@ -12,8 +12,6 @@ import java.util.UUID
 import java.util.concurrent.ExecutorCompletionService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -23,21 +21,11 @@ class ClientReportMultiThreadingTest {
     val reasons = DiscardReason.values()
     val categories = listOf(DataCategory.Error, DataCategory.Attachment, DataCategory.Session, DataCategory.Transaction, DataCategory.UserReport)
 
-    @BeforeTest
-    fun setup() {
-        ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
-    }
-
-    @AfterTest
-    fun teardown() {
-        ClientReportRecorder.getInstance().resetCountsAndGenerateClientReport()
-    }
-
     @Test
     fun testMultiThreadedCountIncrements() {
         setupSentry()
 
-        val clientReportRecorder = ClientReportRecorder.getInstance()
+        val clientReportRecorder = ClientReportRecorder(opts)
 
         val numberOfIncrementThreads = 10
         val numberOfIncrementsPerThread = 10 * 1000
@@ -57,7 +45,7 @@ class ClientReportMultiThreadingTest {
                     println("running #$nThread on thread ${Thread.currentThread()}")
 
                     (1..numberOfIncrementsPerThread).forEach {
-                        clientReportRecorder.recordLostEvent(randomReason(), randomCategory(), opts)
+                        clientReportRecorder.recordLostEvent(randomReason(), randomCategory())
                     }
                 }
             )
@@ -80,7 +68,7 @@ class ClientReportMultiThreadingTest {
     fun testMultiThreadedCountIncrementsAndResets() {
         setupSentry()
 
-        val clientReportRecorder = ClientReportRecorder.getInstance()
+        val clientReportRecorder = ClientReportRecorder(opts)
 
         val numberOfIncrementThreads = 10
         val numberOfIncrementsPerThread = 10 * 1000
@@ -102,7 +90,7 @@ class ClientReportMultiThreadingTest {
                     println("running #$nThread on thread ${Thread.currentThread()}")
 
                     (1..numberOfIncrementsPerThread).forEach {
-                        clientReportRecorder.recordLostEvent(randomReason(), randomCategory(), opts)
+                        clientReportRecorder.recordLostEvent(randomReason(), randomCategory())
                     }
                 }
             )
@@ -136,7 +124,7 @@ class ClientReportMultiThreadingTest {
     fun testMultiThreadedCountIncrementsResetsAndReadds() {
         setupSentry()
 
-        val clientReportRecorder = ClientReportRecorder.getInstance()
+        val clientReportRecorder = ClientReportRecorder(opts)
 
         val numberOfIncrementThreads = 10
         val numberOfIncrementsPerThread = 10 * 1000
@@ -157,7 +145,7 @@ class ClientReportMultiThreadingTest {
                     println("running #$nThread on thread ${Thread.currentThread()}")
 
                     (1..numberOfIncrementsPerThread).forEach {
-                        clientReportRecorder.recordLostEvent(randomReason(), randomCategory(), opts)
+                        clientReportRecorder.recordLostEvent(randomReason(), randomCategory())
                     }
                 }
             )
@@ -174,7 +162,7 @@ class ClientReportMultiThreadingTest {
                         val envelopeItem = SentryEnvelopeItem.fromClientReport(opts.serializer, clientReport)
                         val header = SentryEnvelopeHeader(SentryId(UUID.randomUUID()))
                         val envelope = SentryEnvelope(header, listOf(envelopeItem))
-                        clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope, opts)
+                        clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
                     }
                 }
             }

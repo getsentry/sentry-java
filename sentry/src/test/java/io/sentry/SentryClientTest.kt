@@ -13,7 +13,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
 import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
-import io.sentry.clientreport.ClientReportTestHelper.Companion.resetCountsAndGenerateClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.clientreport.DropEverythingEventProcessor
@@ -42,8 +41,6 @@ import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.Arrays
 import java.util.UUID
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -91,16 +88,6 @@ class SentryClientTest {
     }
 
     private val fixture = Fixture()
-
-    @BeforeTest
-    fun setup() {
-        resetCountsAndGenerateClientReport()
-    }
-
-    @AfterTest
-    fun teardown() {
-        resetCountsAndGenerateClientReport()
-    }
 
     @Test
     fun `when fixture is unchanged, client is enabled`() {
@@ -170,7 +157,10 @@ class SentryClientTest {
         sut.captureEvent(event)
         verify(fixture.transport, never()).send(any(), anyOrNull())
 
-        assertClientReport(listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1)))
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1))
+        )
     }
 
     @Test
@@ -442,7 +432,10 @@ class SentryClientTest {
 
         sut.captureEvent(SentryEvent())
 
-        assertClientReport(listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 1)))
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 1))
+        )
     }
 
     @Test
@@ -683,7 +676,10 @@ class SentryClientTest {
 
         fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceState())
 
-        assertClientReport(listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1)))
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1))
+        )
     }
 
     @Test
@@ -696,7 +692,10 @@ class SentryClientTest {
 
         sut.captureTransaction(transaction, scope, null)
 
-        assertClientReport(listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1)))
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1))
+        )
     }
 
     @Test
@@ -707,12 +706,18 @@ class SentryClientTest {
 
         fixture.getSut().captureEvent(event)
 
-        assertClientReport(listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)))
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
+        )
     }
 
     @Test
     fun `event dropped by scope event processor is recorded`() {
-        assertClientReport(listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 0)))
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 0))
+        )
         val event = SentryEvent()
         val scope = createScope()
         scope.addEventProcessor(DropEverythingEventProcessor())
@@ -721,7 +726,10 @@ class SentryClientTest {
 
         sut.captureEvent(event, scope)
 
-        assertClientReport(listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)))
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
+        )
     }
 
     @Test

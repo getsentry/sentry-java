@@ -127,7 +127,7 @@ abstract class CacheStrategy {
 
     options
         .getClientReportRecorder()
-        .recordLostEnvelope(DiscardReason.CACHE_OVERFLOW, currentEnvelope, options);
+        .recordLostEnvelope(DiscardReason.CACHE_OVERFLOW, currentEnvelope);
 
     final Session currentSession = getFirstSession(currentEnvelope);
 
