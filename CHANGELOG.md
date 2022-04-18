@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Scope data set in Java is included in native/NDK crashes. Opt-out through setEnableScopeSync(false)  ([#1991](https://github.com/getsentry/sentry-java/pull/1991))
+
 ## 6.0.0-alpha.5
 
 * Feat: Screenshot is taken when there is an error (#1967)
