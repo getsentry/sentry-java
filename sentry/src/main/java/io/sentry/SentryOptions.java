@@ -253,7 +253,7 @@ public class SentryOptions {
    * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
    * for sentry-android.
    */
-  private boolean enableScopeSync;
+  private boolean enableScopeSync = true;
 
   /**
    * Enables loading additional options from external locations like {@code sentry.properties} file
