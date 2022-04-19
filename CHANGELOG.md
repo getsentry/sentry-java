@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Ref: Make options.printUncaughtStackTrace primitive type (#)
+* Ref: Make options.printUncaughtStackTrace primitive type (#1995)
 
 ## 6.0.0-alpha.5
 
