@@ -238,7 +238,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     // we can only bind to the scope if there's no running transaction
     final String name = getActivityName(activity) + "." + viewId;
     final String op = UI_ACTION + "." + eventType;
-    final ITransaction transaction = hub.startTransaction(name, op, true, options.getIdleTimeout());
+    final ITransaction transaction = hub.startTransaction(name, op, true, options.getIdleTimeout(), true);
 
     hub.configureScope(
         scope -> {

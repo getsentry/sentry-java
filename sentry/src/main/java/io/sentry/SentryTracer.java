@@ -45,6 +45,14 @@ public final class SentryTracer implements ITransaction {
    */
   private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
 
+  /**
+   * If `trimEnd` is true, sets the end timestamp of the transaction to the
+   * highest timestamp of child spans, trimming the duration of the
+   * transaction. This is useful to discard extra time in the idle transactions to trim their
+   * duration to children' duration.
+   */
+  private final boolean trimEnd;
+
   private @Nullable TimerTask timerTask;
   private final @NotNull Timer timer = new Timer(true);
   private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
@@ -61,14 +69,14 @@ public final class SentryTracer implements ITransaction {
       final @NotNull IHub hub,
       final boolean waitForChildren,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(context, hub, null, waitForChildren, null, transactionFinishedCallback);
+    this(context, hub, null, waitForChildren, null, false, transactionFinishedCallback);
   }
 
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp) {
-    this(context, hub, startTimestamp, false, null, null);
+    this(context, hub, startTimestamp, false, null, false, null);
   }
 
   SentryTracer(
@@ -77,6 +85,7 @@ public final class SentryTracer implements ITransaction {
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
       final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
@@ -84,6 +93,7 @@ public final class SentryTracer implements ITransaction {
     this.name = context.getName();
     this.hub = hub;
     this.waitForChildren = waitForChildren;
+    this.trimEnd = trimEnd;
     this.transactionFinishedCallback = transactionFinishedCallback;
 
     if (idleTimeout != null) {
@@ -275,7 +285,7 @@ public final class SentryTracer implements ITransaction {
 
       // set the transaction finish timestamp to the latest child timestamp, if the transaction
       // is an idle transaction
-      if (!children.isEmpty()) {
+      if (!children.isEmpty() && trimEnd) {
         final Span oldestChild = Collections.max(children, spanByTimestampComparator);
         final Double oldestChildTimestamp = oldestChild.getTimestamp();
         if (oldestChildTimestamp != null && finishTimestamp > oldestChildTimestamp) {
