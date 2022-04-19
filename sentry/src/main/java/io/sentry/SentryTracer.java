@@ -95,7 +95,8 @@ public final class SentryTracer implements ITransaction {
     }
   }
 
-  private void scheduleFinish(final @NotNull Long idleTimeout) {
+  @Override
+  public void scheduleFinish(final @NotNull Long idleTimeout) {
     cancelTimer();
     timerTask =
         new TimerTask() {

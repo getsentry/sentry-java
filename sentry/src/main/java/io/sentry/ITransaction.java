@@ -55,6 +55,13 @@ public interface ITransaction extends ISpan {
   SentryId getEventId();
 
   /**
+   * Schedules
+   *
+   * @param idleTimeout - the time to wait before finishing the transaction
+   */
+  void scheduleFinish(final @NotNull Long idleTimeout);
+
+  /**
    * Attaches request information to the transaction.
    *
    * @param request the request

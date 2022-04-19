@@ -89,6 +89,8 @@ public final class NoOpTransaction implements ITransaction {
     return SentryId.EMPTY_ID;
   }
 
+  @Override public void scheduleFinish(@NotNull Long idleTimeout) {}
+
   @Override
   public boolean isFinished() {
     return true;

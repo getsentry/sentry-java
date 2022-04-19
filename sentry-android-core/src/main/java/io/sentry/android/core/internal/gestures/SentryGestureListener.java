@@ -30,7 +30,9 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private final @NotNull SentryAndroidOptions options;
   private final boolean isAndroidXAvailable;
 
+  private @NotNull WeakReference<View> activeView = new WeakReference<>(null);
   private @Nullable ITransaction activeTransaction = null;
+  private @Nullable String activeEventType = null;
 
   private final ScrollState scrollState = new ScrollState();
 
@@ -186,7 +188,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     final Activity activity = activityRef.get();
     if (activity == null) {
-      options.getLogger().log(SentryLevel.DEBUG, "Activity is null, no transaction captured");
+      options.getLogger().log(SentryLevel.DEBUG, "Activity is null, no transaction captured.");
       return;
     }
 
@@ -194,13 +196,29 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     try {
       viewId = ViewUtils.getResourceId(target);
     } catch (Resources.NotFoundException e) {
-      options.getLogger().log(SentryLevel.DEBUG, "View id cannot be retrieved from Resources, no transaction captured");
+      options.getLogger().log(SentryLevel.DEBUG, "View id cannot be retrieved from Resources, no transaction captured.");
       return;
     }
 
-    // as we allow a single UI transaction running on the bound Scope, we finish the previous one
+    final View view = activeView.get();
     if (activeTransaction != null) {
-      activeTransaction.finish();
+      if (target.equals(view) && eventType.equals(activeEventType) && !activeTransaction.isFinished()) {
+        options.getLogger().log(SentryLevel.DEBUG, "The view with id: " + viewId +
+          " already has an ongoing transaction assigned. Rescheduling finish");
+
+        final Long idleTimeout = options.getIdleTimeout();
+        if (idleTimeout != null) {
+          // reschedule the finish task for the idle transaction, so it keeps running for the same view
+          activeTransaction.scheduleFinish(idleTimeout);
+        }
+        return;
+      } else {
+        // as we allow a single UI transaction running on the bound Scope, we finish the previous one, if it's a new view
+        activeTransaction.finish();
+        activeTransaction = null;
+        activeView.clear();
+        activeEventType = null;
+      }
     }
 
     // we can only bind to the scope if there's no running transaction
@@ -214,6 +232,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         });
 
     activeTransaction = transaction;
+    activeView = new WeakReference<>(target);
+    activeEventType = eventType;
   }
 
   @VisibleForTesting
