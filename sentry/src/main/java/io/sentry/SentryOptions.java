@@ -1569,6 +1569,7 @@ public class SentryOptions {
    *
    * @return a client report recorder or NoOp
    */
+  @ApiStatus.Internal
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
   }

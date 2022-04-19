@@ -28,7 +28,6 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
-import io.sentry.transport.DataCategory
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import org.junit.Assert.assertArrayEquals

@@ -82,6 +82,21 @@ public final class io/sentry/CustomSamplingContext {
 	public fun set (Ljava/lang/String;Ljava/lang/Object;)V
 }
 
+public final class io/sentry/DataCategory : java/lang/Enum {
+	public static final field All Lio/sentry/DataCategory;
+	public static final field Attachment Lio/sentry/DataCategory;
+	public static final field Default Lio/sentry/DataCategory;
+	public static final field Error Lio/sentry/DataCategory;
+	public static final field Security Lio/sentry/DataCategory;
+	public static final field Session Lio/sentry/DataCategory;
+	public static final field Transaction Lio/sentry/DataCategory;
+	public static final field Unknown Lio/sentry/DataCategory;
+	public static final field UserReport Lio/sentry/DataCategory;
+	public fun getCategory ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/DataCategory;
+	public static fun values ()[Lio/sentry/DataCategory;
+}
+
 public final class io/sentry/DateUtils {
 	public static fun dateToSeconds (Ljava/util/Date;)D
 	public static fun getCurrentDateTime ()Ljava/util/Date;
@@ -1721,7 +1736,7 @@ public final class io/sentry/clientreport/ClientReportRecorder : io/sentry/clien
 	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/SentryEnvelope;
 	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
 	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
-	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
 }
 
 public final class io/sentry/clientreport/DiscardReason : java/lang/Enum {
@@ -1765,7 +1780,7 @@ public abstract interface class io/sentry/clientreport/IClientReportRecorder {
 	public abstract fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/SentryEnvelope;
 	public abstract fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
 	public abstract fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
-	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;)V
+	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
 }
 
 public abstract interface class io/sentry/clientreport/IClientReportStorage {
@@ -1778,7 +1793,7 @@ public final class io/sentry/clientreport/NoOpClientReportRecorder : io/sentry/c
 	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/SentryEnvelope;
 	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
 	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
-	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/transport/DataCategory;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
 }
 
 public abstract interface class io/sentry/config/PropertiesProvider {
@@ -2813,21 +2828,6 @@ public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/
 public final class io/sentry/transport/CurrentDateProvider : io/sentry/transport/ICurrentDateProvider {
 	public final fun getCurrentTimeMillis ()J
 	public static fun getInstance ()Lio/sentry/transport/ICurrentDateProvider;
-}
-
-public final class io/sentry/transport/DataCategory : java/lang/Enum {
-	public static final field All Lio/sentry/transport/DataCategory;
-	public static final field Attachment Lio/sentry/transport/DataCategory;
-	public static final field Default Lio/sentry/transport/DataCategory;
-	public static final field Error Lio/sentry/transport/DataCategory;
-	public static final field Security Lio/sentry/transport/DataCategory;
-	public static final field Session Lio/sentry/transport/DataCategory;
-	public static final field Transaction Lio/sentry/transport/DataCategory;
-	public static final field Unknown Lio/sentry/transport/DataCategory;
-	public static final field UserReport Lio/sentry/transport/DataCategory;
-	public fun getCategory ()Ljava/lang/String;
-	public static fun valueOf (Ljava/lang/String;)Lio/sentry/transport/DataCategory;
-	public static fun values ()[Lio/sentry/transport/DataCategory;
 }
 
 public abstract interface class io/sentry/transport/ICurrentDateProvider {

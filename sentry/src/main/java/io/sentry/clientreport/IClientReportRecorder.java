@@ -1,11 +1,13 @@
 package io.sentry.clientreport;
 
+import io.sentry.DataCategory;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
-import io.sentry.transport.DataCategory;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public interface IClientReportRecorder {
   void recordLostEnvelope(@NotNull DiscardReason reason, @Nullable SentryEnvelope envelope);
 

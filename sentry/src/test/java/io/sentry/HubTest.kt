@@ -25,7 +25,6 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
-import io.sentry.transport.DataCategory
 import io.sentry.util.HintUtils
 import java.io.File
 import java.nio.file.Files

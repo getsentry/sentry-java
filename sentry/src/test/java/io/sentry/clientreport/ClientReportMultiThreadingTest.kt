@@ -1,5 +1,6 @@
 package io.sentry.clientreport
 
+import io.sentry.DataCategory
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -7,7 +8,6 @@ import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryOptions
 import io.sentry.dsnString
 import io.sentry.protocol.SentryId
-import io.sentry.transport.DataCategory
 import java.util.UUID
 import java.util.concurrent.ExecutorCompletionService
 import java.util.concurrent.Executors

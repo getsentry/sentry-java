@@ -1,15 +1,17 @@
 package io.sentry.clientreport;
 
-import io.sentry.transport.DataCategory;
+import io.sentry.DataCategory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 final class AtomicClientReportStorage implements IClientReportStorage {
 
   private final @NotNull Map<ClientReportKey, AtomicLong> lostEventCounts;

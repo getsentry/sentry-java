@@ -3,6 +3,7 @@ package io.sentry.transport;
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.SentryLevel.INFO;
 
+import io.sentry.DataCategory;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;

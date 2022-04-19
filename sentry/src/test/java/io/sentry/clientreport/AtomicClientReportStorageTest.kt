@@ -1,6 +1,6 @@
 package io.sentry.clientreport
 
-import io.sentry.transport.DataCategory
+import io.sentry.DataCategory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

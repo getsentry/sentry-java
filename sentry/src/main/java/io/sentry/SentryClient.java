@@ -8,7 +8,6 @@ import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
-import io.sentry.transport.DataCategory;
 import io.sentry.transport.ITransport;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;

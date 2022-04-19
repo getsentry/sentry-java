@@ -1,8 +1,10 @@
 package io.sentry.clientreport;
 
 import java.util.Objects;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 final class ClientReportKey {
   private final @NotNull String reason;
   private final @NotNull String category;

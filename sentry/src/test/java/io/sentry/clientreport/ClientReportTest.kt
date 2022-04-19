@@ -1,6 +1,7 @@
 package io.sentry.clientreport
 
 import io.sentry.Attachment
+import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.EventProcessor
 import io.sentry.Sentry
@@ -18,7 +19,6 @@ import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
-import io.sentry.transport.DataCategory
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit

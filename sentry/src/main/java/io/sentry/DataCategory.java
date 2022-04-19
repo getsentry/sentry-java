@@ -1,7 +1,9 @@
-package io.sentry.transport;
+package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public enum DataCategory {
   All("__all__"),
   Default("default"), // same as Error

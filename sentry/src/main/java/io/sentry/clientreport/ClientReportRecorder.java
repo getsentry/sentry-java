@@ -1,18 +1,20 @@
 package io.sentry.clientreport;
 
+import io.sentry.DataCategory;
 import io.sentry.DateUtils;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.transport.DataCategory;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class ClientReportRecorder implements IClientReportRecorder {
 
   private final @NotNull IClientReportStorage storage;
