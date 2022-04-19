@@ -258,8 +258,14 @@ public final class SentryTracer implements ITransaction {
         profilingTraceData = hub.getOptions().getTransactionProfiler().onTransactionFinish(this);
       }
 
+      // try to get the high precision timestamp from the root span
+      root.setEndNanos(System.nanoTime());
+      Double finishTimestamp = root.getHighPrecisionTimestamp();
+      // if it's not set -> fallback to the current time
+      if (finishTimestamp == null) {
+        finishTimestamp = DateUtils.dateToSeconds(DateUtils.getCurrentDateTime());
+      }
       // finish unfinished children
-      Date finishTimestamp = DateUtils.getCurrentDateTime();
       for (final Span child : children) {
         if (!child.isFinished()) {
           child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
@@ -269,11 +275,8 @@ public final class SentryTracer implements ITransaction {
       // set the transaction finish timestamp to the latest child timestamp, if the transaction
       // is an idle transaction
       if (!children.isEmpty()) {
-        final Date latestChildTimestamp =
-            Objects.requireNonNull(
-                findLatestChildTimestamp(),
-                "The span timestamp should not be null after it was finished");
-        if (finishTimestamp.after(latestChildTimestamp)) {
+        final Double latestChildTimestamp = findLatestChildTimestamp();
+        if (latestChildTimestamp != null && finishTimestamp > latestChildTimestamp) {
           finishTimestamp = latestChildTimestamp;
         }
       }
@@ -326,9 +329,9 @@ public final class SentryTracer implements ITransaction {
     }
   }
 
-  private @Nullable Date findLatestChildTimestamp() {
+  private @Nullable Double findLatestChildTimestamp() {
     final List<Span> spans = new ArrayList<>(this.children);
-    return Collections.max(spans, spanByTimestampComparator).getTimestamp();
+    return Collections.max(spans, spanByTimestampComparator).getHighPrecisionTimestamp();
   }
 
   private boolean hasAllChildrenFinished() {
@@ -517,8 +520,8 @@ public final class SentryTracer implements ITransaction {
     @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
     @Override
     public int compare(Span o1, Span o2) {
-      final Date first = o1.getTimestamp();
-      final Date second = o2.getTimestamp();
+      final Double first = o1.getHighPrecisionTimestamp();
+      final Double second = o2.getHighPrecisionTimestamp();
       if (first == null) {
         return -1;
       } else if (second == null) {

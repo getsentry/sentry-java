@@ -304,6 +304,15 @@ public final class Span implements ISpan {
   }
 
   /**
+   * Sets Span end time in nanoseconds.
+   *
+   * @param endNanos the end time in nanoseconds.
+   */
+  void setEndNanos(final @Nullable Long endNanos) {
+    this.endNanos = endNanos;
+  }
+
+  /**
    * Returns high precision span finish time represented as {@link Double}.
    *
    * @return high precision span finish time
