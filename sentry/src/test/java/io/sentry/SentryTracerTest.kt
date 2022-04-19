@@ -36,11 +36,13 @@ class SentryTracerTest {
             optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {},
             startTimestamp: Date? = null,
             waitForChildren: Boolean = false,
+            idleTimeout: Long? = null,
+            trimEnd: Boolean = false,
             transactionFinishedCallback: TransactionFinishedCallback? = null,
             sampled: Boolean? = null
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op", sampled), hub, startTimestamp, waitForChildren, transactionFinishedCallback)
+            return SentryTracer(TransactionContext("name", "op", sampled), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback)
         }
     }
 
