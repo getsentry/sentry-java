@@ -11,7 +11,6 @@ import io.sentry.SentryLevel
 import io.sentry.getExc
 import timber.log.Timber
 import kotlin.test.BeforeTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -159,9 +158,6 @@ class SentryTimberTreeTest {
     }
 
     @Test
-    @Ignore(
-        "We have no possibility to get a tag from Timber since it is package-private"
-    )
     fun `Tree captures an event with TimberTag tag`() {
         val sut = fixture.getSut()
         Timber.plant(sut)
@@ -279,5 +275,11 @@ class SentryTimberTreeTest {
         val sut = fixture.getSut()
         sut.e(Throwable())
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+    }
+
+    @Test
+    fun `Tree does not throw when using log with args`() {
+        val sut = fixture.getSut()
+        sut.d("test %s, %s", 1, 1)
     }
 }
