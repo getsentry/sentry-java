@@ -259,28 +259,31 @@ public final class SentryTracer implements ITransaction {
       }
 
       // try to get the high precision timestamp from the root span
-      root.setEndNanos(System.nanoTime());
-      Double finishTimestamp = root.getHighPrecisionTimestamp();
+      Long endTime = System.nanoTime();
+      Double finishTimestamp = root.getHighPrecisionTimestamp(endTime);
       // if it's not set -> fallback to the current time
       if (finishTimestamp == null) {
         finishTimestamp = DateUtils.dateToSeconds(DateUtils.getCurrentDateTime());
+        endTime = null;
       }
       // finish unfinished children
       for (final Span child : children) {
         if (!child.isFinished()) {
-          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
+          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp, endTime);
         }
       }
 
       // set the transaction finish timestamp to the latest child timestamp, if the transaction
       // is an idle transaction
       if (!children.isEmpty()) {
-        final Double latestChildTimestamp = findLatestChildTimestamp();
-        if (latestChildTimestamp != null && finishTimestamp > latestChildTimestamp) {
-          finishTimestamp = latestChildTimestamp;
+        final Span oldestChild = Collections.max(children, spanByTimestampComparator);
+        final Double oldestChildTimestamp = oldestChild.getTimestamp();
+        if (oldestChildTimestamp != null && finishTimestamp > oldestChildTimestamp) {
+          finishTimestamp = oldestChildTimestamp;
+          endTime = oldestChild.getEndNanos();
         }
       }
-      root.finish(finishStatus.spanStatus, finishTimestamp);
+      root.finish(finishStatus.spanStatus, finishTimestamp, endTime);
 
       hub.configureScope(
           scope -> {
@@ -327,11 +330,6 @@ public final class SentryTracer implements ITransaction {
     } else {
       return null;
     }
-  }
-
-  private @Nullable Double findLatestChildTimestamp() {
-    final List<Span> spans = new ArrayList<>(this.children);
-    return Collections.max(spans, spanByTimestampComparator).getHighPrecisionTimestamp();
   }
 
   private boolean hasAllChildrenFinished() {
