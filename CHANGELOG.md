@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* Ref: Make options.printUncaughtStackTrace primitive type (#)
+
 ## 6.0.0-alpha.5
 
 * Feat: Screenshot is taken when there is an error (#1967)
