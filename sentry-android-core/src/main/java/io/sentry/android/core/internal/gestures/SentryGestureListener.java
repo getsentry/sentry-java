@@ -236,6 +236,18 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     activeEventType = eventType;
   }
 
+  void stopTracing() {
+    hub.configureScope(
+      scope -> {
+        scope.withTransaction(
+          transaction -> {
+            if (transaction == activeTransaction) {
+              scope.clearTransaction();
+            }
+          });
+      });
+  }
+
   @VisibleForTesting
   void applyScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(

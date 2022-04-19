@@ -74,7 +74,7 @@ public final class UserInteractionIntegration
 
     final Window.Callback current = window.getCallback();
     if (current instanceof SentryWindowCallback) {
-      // TODO: Notify SentryGestureListener that it should finish the ongoing UI transaction
+      ((SentryWindowCallback) current).stopTracking();
       if (((SentryWindowCallback) current).getDelegate() instanceof NoOpWindowCallback) {
         window.setCallback(null);
       } else {

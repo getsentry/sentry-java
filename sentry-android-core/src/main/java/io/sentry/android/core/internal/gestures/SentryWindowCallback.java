@@ -71,6 +71,10 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
     }
   }
 
+  public void stopTracking() {
+    gestureListener.stopTracing();
+  }
+
   public @NotNull Window.Callback getDelegate() {
     return delegate;
   }
