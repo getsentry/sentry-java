@@ -210,24 +210,37 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     try {
       viewId = ViewUtils.getResourceId(target);
     } catch (Resources.NotFoundException e) {
-      options.getLogger().log(SentryLevel.DEBUG, "View id cannot be retrieved from Resources, no transaction captured.");
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "View id cannot be retrieved from Resources, no transaction captured.");
       return;
     }
 
     final View view = activeView.get();
     if (activeTransaction != null) {
-      if (target.equals(view) && eventType.equals(activeEventType) && !activeTransaction.isFinished()) {
-        options.getLogger().log(SentryLevel.DEBUG, "The view with id: " + viewId +
-          " already has an ongoing transaction assigned. Rescheduling finish");
+      if (target.equals(view)
+          && eventType.equals(activeEventType)
+          && !activeTransaction.isFinished()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The view with id: "
+                    + viewId
+                    + " already has an ongoing transaction assigned. Rescheduling finish");
 
         final Long idleTimeout = options.getIdleTimeout();
         if (idleTimeout != null) {
-          // reschedule the finish task for the idle transaction, so it keeps running for the same view
+          // reschedule the finish task for the idle transaction, so it keeps running for the same
+          // view
           activeTransaction.scheduleFinish(idleTimeout);
         }
         return;
       } else {
-        // as we allow a single UI transaction running on the bound Scope, we finish the previous one, if it's a new view
+        // as we allow a single UI transaction running on the bound Scope, we finish the previous
+        // one, if it's a new view
         activeTransaction.finish();
         activeTransaction = null;
         activeView.clear();
@@ -238,7 +251,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     // we can only bind to the scope if there's no running transaction
     final String name = getActivityName(activity) + "." + viewId;
     final String op = UI_ACTION + "." + eventType;
-    final ITransaction transaction = hub.startTransaction(name, op, true, options.getIdleTimeout(), true);
+    final ITransaction transaction =
+        hub.startTransaction(name, op, true, options.getIdleTimeout(), true);
 
     hub.configureScope(
         scope -> {
@@ -252,14 +266,14 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   void stopTracing() {
     hub.configureScope(
-      scope -> {
-        scope.withTransaction(
-          transaction -> {
-            if (transaction == activeTransaction) {
-              scope.clearTransaction();
-            }
-          });
-      });
+        scope -> {
+          scope.withTransaction(
+              transaction -> {
+                if (transaction == activeTransaction) {
+                  scope.clearTransaction();
+                }
+              });
+        });
   }
 
   @VisibleForTesting
@@ -288,8 +302,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     final Activity activity = activityRef.get();
     if (activity == null) {
       options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Activity is null in " + caller + ". No breadcrumb captured.");
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Activity is null in " + caller + ". No breadcrumb captured.");
       return null;
     }
 

@@ -164,7 +164,10 @@ public final class Span implements ISpan {
    * @param status - status to finish span with
    * @param timestamp - the root span timestamp.
    */
-  void finish(final @Nullable SpanStatus status, final @NotNull Double timestamp, final @Nullable Long endNanos) {
+  void finish(
+      final @Nullable SpanStatus status,
+      final @NotNull Double timestamp,
+      final @Nullable Long endNanos) {
     // the span can be finished only once
     if (!finished.compareAndSet(false, true)) {
       return;
@@ -300,7 +303,8 @@ public final class Span implements ISpan {
     return data.get(key);
   }
 
-  @Nullable Long getEndNanos() {
+  @Nullable
+  Long getEndNanos() {
     return endNanos;
   }
 
@@ -314,7 +318,8 @@ public final class Span implements ISpan {
    * @return high precision span finish time
    */
   @SuppressWarnings("JavaUtilDate")
-  @Nullable Double getHighPrecisionTimestamp(final @Nullable Long endNanos) {
+  @Nullable
+  Double getHighPrecisionTimestamp(final @Nullable Long endNanos) {
     final Double duration = getDurationInMillis(endNanos);
     if (duration != null) {
       return DateUtils.millisToSeconds(startTimestamp.getTime() + duration);

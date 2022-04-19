@@ -14,7 +14,6 @@ import io.sentry.android.core.internal.gestures.SentryWindowCallback;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,11 +53,7 @@ public final class UserInteractionIntegration
       }
 
       final SentryGestureListener gestureListener =
-          new SentryGestureListener(
-              activity,
-              hub,
-              options,
-              isAndroidXScrollViewAvailable);
+          new SentryGestureListener(activity, hub, options, isAndroidXScrollViewAvailable);
       window.setCallback(new SentryWindowCallback(delegate, activity, gestureListener, options));
     }
   }

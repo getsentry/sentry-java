@@ -606,7 +606,7 @@ public final class Hub implements IHub {
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, null, false, null, false,null);
+        transactionContext, customSamplingContext, bindToScope, null, false, null, false, null);
   }
 
   @ApiStatus.Internal
@@ -617,7 +617,14 @@ public final class Hub implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, startTimestamp, false, null,  false, null);
+        transactionContext,
+        customSamplingContext,
+        bindToScope,
+        startTimestamp,
+        false,
+        null,
+        false,
+        null);
   }
 
   @ApiStatus.Internal

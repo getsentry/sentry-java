@@ -46,10 +46,9 @@ public final class SentryTracer implements ITransaction {
   private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
 
   /**
-   * If `trimEnd` is true, sets the end timestamp of the transaction to the
-   * highest timestamp of child spans, trimming the duration of the
-   * transaction. This is useful to discard extra time in the idle transactions to trim their
-   * duration to children' duration.
+   * If `trimEnd` is true, sets the end timestamp of the transaction to the highest timestamp of
+   * child spans, trimming the duration of the transaction. This is useful to discard extra time in
+   * the idle transactions to trim their duration to children' duration.
    */
   private final boolean trimEnd;
 
