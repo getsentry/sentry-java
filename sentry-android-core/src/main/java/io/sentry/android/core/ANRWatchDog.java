@@ -21,7 +21,7 @@ final class ANRWatchDog extends Thread {
 
   private final boolean reportInDebug;
   private final ANRListener anrListener;
-  private final IHandler uiHandler;
+  private final MainLooperHandler uiHandler;
   private final long timeoutIntervalMillis;
   private final @NotNull ILogger logger;
   private final AtomicLong tick = new AtomicLong(0);
@@ -51,7 +51,7 @@ final class ANRWatchDog extends Thread {
       boolean reportInDebug,
       @NotNull ANRListener listener,
       @NotNull ILogger logger,
-      @NotNull IHandler uiHandler,
+      @NotNull MainLooperHandler uiHandler,
       final @NotNull Context context) {
     super();
     this.reportInDebug = reportInDebug;

@@ -1,11 +1,14 @@
 package io.sentry;
 
+import static io.sentry.TypeCheckHint.SENTRY_SCREENSHOT;
+
+import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
-import io.sentry.util.ApplyScopeUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -55,8 +58,8 @@ public final class SentryClient implements ISentryClient {
   }
 
   private boolean shouldApplyScopeData(
-      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      final @NotNull SentryBaseEvent event, final @NotNull Map<String, Object> hint) {
+    if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
       options
@@ -68,8 +71,12 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureEvent(
-      @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
+      @NotNull SentryEvent event, final @Nullable Scope scope, @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
+
+    if (hint == null) {
+      hint = new HashMap<>();
+    }
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
@@ -133,12 +140,12 @@ public final class SentryClient implements ISentryClient {
               ? scope.getTransaction().traceState()
               : null;
       final SentryEnvelope envelope =
-          buildEnvelope(event, getAttachmentsFromScope(scope), session, traceState);
+          buildEnvelope(event, getAttachments(scope, hint), session, traceState, null);
 
       if (envelope != null) {
         transport.send(envelope, hint);
       }
-    } catch (IOException e) {
+    } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
 
       // if there was an error capturing the event, we return an emptyId
@@ -148,20 +155,33 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private @Nullable List<Attachment> getAttachmentsFromScope(@Nullable Scope scope) {
+  private @Nullable List<Attachment> getAttachments(
+      final @Nullable Scope scope, final @NotNull Map<String, Object> hint) {
+    List<Attachment> attachments = null;
     if (scope != null) {
-      return scope.getAttachments();
-    } else {
-      return null;
+      attachments = scope.getAttachments();
     }
+
+    final Object screenshotAttachment = hint.get(SENTRY_SCREENSHOT);
+    if (screenshotAttachment instanceof Attachment) {
+
+      if (attachments == null) {
+        attachments = new ArrayList<>();
+      }
+
+      attachments.add((Attachment) screenshotAttachment);
+    }
+
+    return attachments;
   }
 
   private @Nullable SentryEnvelope buildEnvelope(
       final @Nullable SentryBaseEvent event,
       final @Nullable List<Attachment> attachments,
       final @Nullable Session session,
-      final @Nullable TraceState traceState)
-      throws IOException {
+      final @Nullable TraceState traceState,
+      final @Nullable ProfilingTraceData profilingTraceData)
+      throws IOException, SentryEnvelopeException {
     SentryId sentryId = null;
 
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -177,6 +197,13 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelopeItem sessionItem =
           SentryEnvelopeItem.fromSession(options.getSerializer(), session);
       envelopeItems.add(sessionItem);
+    }
+
+    if (profilingTraceData != null) {
+      final SentryEnvelopeItem profilingTraceItem =
+          SentryEnvelopeItem.fromProfilingTrace(
+              profilingTraceData, options.getMaxTraceFileSize(), options.getSerializer());
+      envelopeItems.add(profilingTraceItem);
     }
 
     if (attachments != null) {
@@ -199,7 +226,7 @@ public final class SentryClient implements ISentryClient {
   @Nullable
   private SentryEvent processEvent(
       @NotNull SentryEvent event,
-      final @Nullable Object hint,
+      final @NotNull Map<String, Object> hint,
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
       try {
@@ -230,7 +257,7 @@ public final class SentryClient implements ISentryClient {
   @Nullable
   private SentryTransaction processTransaction(
       @NotNull SentryTransaction transaction,
-      final @Nullable Object hint,
+      final @NotNull Map<String, Object> hint,
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
       try {
@@ -307,10 +334,12 @@ public final class SentryClient implements ISentryClient {
   @TestOnly
   @Nullable
   Session updateSessionData(
-      final @NotNull SentryEvent event, final @Nullable Object hint, final @Nullable Scope scope) {
+      final @NotNull SentryEvent event,
+      final @Nullable Map<String, Object> hint,
+      final @Nullable Scope scope) {
     Session clonedSession = null;
 
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+    if (HintUtils.shouldApplyScopeData(hint)) {
       if (scope != null) {
         clonedSession =
             scope.withSession(
@@ -334,9 +363,10 @@ public final class SentryClient implements ISentryClient {
                     }
 
                     if (session.update(status, userAgent, crashedOrErrored)) {
+                      Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
                       // if hint is DiskFlushNotification, it means we have an uncaughtException
                       // and we can end the session.
-                      if (hint instanceof DiskFlushNotification) {
+                      if (sentrySdkHint instanceof DiskFlushNotification) {
                         session.end();
                       }
                     }
@@ -355,7 +385,8 @@ public final class SentryClient implements ISentryClient {
 
   @ApiStatus.Internal
   @Override
-  public void captureSession(final @NotNull Session session, final @Nullable Object hint) {
+  public void captureSession(
+      final @NotNull Session session, final @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(session, "Session is required.");
 
     if (session.getRelease() == null || session.getRelease().isEmpty()) {
@@ -379,7 +410,7 @@ public final class SentryClient implements ISentryClient {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(
-      final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
+      final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     try {
@@ -401,8 +432,13 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       final @Nullable Scope scope,
-      final @Nullable Object hint) {
+      @Nullable Map<String, Object> hint,
+      final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "Transaction is required.");
+
+    if (hint == null) {
+      hint = new HashMap<>();
+    }
 
     options
         .getLogger()
@@ -437,13 +473,18 @@ public final class SentryClient implements ISentryClient {
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
-              transaction, filterForTransaction(getAttachmentsFromScope(scope)), null, traceState);
+              transaction,
+              filterForTransaction(getAttachments(scope, hint)),
+              null,
+              traceState,
+              profilingTraceData);
+
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {
         sentryId = SentryId.EMPTY_ID;
       }
-    } catch (IOException e) {
+    } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
@@ -468,7 +509,9 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEvent applyScope(
-      @NotNull SentryEvent event, final @Nullable Scope scope, final @Nullable Object hint) {
+      @NotNull SentryEvent event,
+      final @Nullable Scope scope,
+      final @NotNull Map<String, Object> hint) {
     if (scope != null) {
       applyScope(event, scope);
 
@@ -546,7 +589,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryEvent executeBeforeSend(
-      @NotNull SentryEvent event, final @Nullable Object hint) {
+      @NotNull SentryEvent event, final @NotNull Map<String, Object> hint) {
     final SentryOptions.BeforeSendCallback beforeSend = options.getBeforeSend();
     if (beforeSend != null) {
       try {
@@ -566,6 +609,7 @@ public final class SentryClient implements ISentryClient {
         if (e.getMessage() != null) {
           breadcrumb.setData("sentry:message", e.getMessage());
         }
+
         event.addBreadcrumb(breadcrumb);
       }
     }
@@ -577,7 +621,7 @@ public final class SentryClient implements ISentryClient {
     options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
 
     try {
-      flush(options.getShutdownTimeout());
+      flush(options.getShutdownTimeoutMillis());
       transport.close();
     } catch (IOException e) {
       options

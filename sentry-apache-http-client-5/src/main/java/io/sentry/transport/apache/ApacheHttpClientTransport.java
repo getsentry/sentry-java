@@ -9,6 +9,7 @@ import io.sentry.SentryOptions;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
 import io.sentry.transport.ReusableCountLatch;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -63,10 +64,11 @@ public final class ApacheHttpClientTransport implements ITransport {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint)
       throws IOException {
     if (isSchedulingAllowed()) {
-      final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
+      Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+      final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, sentrySdkHint);
 
       if (filteredEnvelope != null) {
         currentlyRunning.increment();

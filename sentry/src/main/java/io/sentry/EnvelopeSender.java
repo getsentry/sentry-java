@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
+import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -11,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,7 +36,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   }
 
   @Override
-  protected void processFile(final @NotNull File file, final @Nullable Object hint) {
+  protected void processFile(final @NotNull File file, final @Nullable Map<String, Object> hint) {
     if (!file.isFile()) {
       logger.log(SentryLevel.DEBUG, "'%s' is not a file.", file.getAbsolutePath());
       return;
@@ -54,6 +56,8 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       return;
     }
 
+    Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+
     try (final InputStream is = new BufferedInputStream(new FileInputStream(file))) {
       SentryEnvelope envelope = serializer.deserializeEnvelope(is);
       if (envelope == null) {
@@ -63,12 +67,12 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
         hub.captureEnvelope(envelope, hint);
       }
 
-      if (hint instanceof Flushable) {
-        if (!((Flushable) hint).waitFlush()) {
+      if (sentrySdkHint instanceof Flushable) {
+        if (!((Flushable) sentrySdkHint).waitFlush()) {
           logger.log(SentryLevel.WARNING, "Timed out waiting for envelope submission.");
         }
       } else {
-        LogUtils.logIfNotFlushable(logger, hint);
+        LogUtils.logIfNotFlushable(logger, sentrySdkHint);
       }
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.ERROR, e, "File '%s' cannot be found.", file.getAbsolutePath());
@@ -77,16 +81,16 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     } catch (Throwable e) {
       logger.log(
           SentryLevel.ERROR, e, "Failed to capture cached envelope %s", file.getAbsolutePath());
-      if (hint instanceof Retryable) {
-        ((Retryable) hint).setRetry(false);
+      if (sentrySdkHint instanceof Retryable) {
+        ((Retryable) sentrySdkHint).setRetry(false);
         logger.log(SentryLevel.INFO, e, "File '%s' won't retry.", file.getAbsolutePath());
       } else {
-        LogUtils.logIfNotRetryable(logger, hint);
+        LogUtils.logIfNotRetryable(logger, sentrySdkHint);
       }
     } finally {
       // Unless the transport marked this to be retried, it'll be deleted.
-      if (hint instanceof Retryable) {
-        if (!((Retryable) hint).isRetry()) {
+      if (sentrySdkHint instanceof Retryable) {
+        if (!((Retryable) sentrySdkHint).isRetry()) {
           safeDelete(file, "after trying to capture it");
           logger.log(SentryLevel.DEBUG, "Deleted file %s.", file.getAbsolutePath());
         } else {
@@ -96,7 +100,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
               file.getAbsolutePath());
         }
       } else {
-        LogUtils.logIfNotRetryable(logger, hint);
+        LogUtils.logIfNotRetryable(logger, sentrySdkHint);
       }
     }
   }
@@ -107,7 +111,8 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   }
 
   @Override
-  public void processEnvelopeFile(final @NotNull String path, final @Nullable Object hint) {
+  public void processEnvelopeFile(
+      final @NotNull String path, final @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(path, "Path is required.");
 
     processFile(new File(path), hint);

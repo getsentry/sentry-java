@@ -8,14 +8,11 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.protocol.App
-import io.sentry.protocol.Request
 import io.sentry.protocol.User
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -121,8 +118,32 @@ class SentryTracerTest {
             check {
                 assertEquals(it.transaction, tracer.name)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `when transaction is finished and profiling is disabled, transactionProfiler is not called`() {
+        val transactionProfiler = mock<ITransactionProfiler>()
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.isProfilingEnabled = false
+            it.setTransactionProfiler(transactionProfiler)
+        })
+        tracer.finish()
+        verify(transactionProfiler, never()).onTransactionFinish(any())
+    }
+
+    @Test
+    fun `when transaction is finished and sampled and profiling is enabled, transactionProfiler is called`() {
+        val transactionProfiler = mock<ITransactionProfiler>()
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.isProfilingEnabled = true
+            it.setTransactionProfiler(transactionProfiler)
+        }, sampled = true)
+        tracer.finish()
+        verify(transactionProfiler).onTransactionFinish(any())
     }
 
     @Test
@@ -144,70 +165,6 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when transaction with request set is finished, request is set on the transaction`() {
-        val tracer = fixture.getSut()
-        val request = Request()
-        tracer.request = request
-        tracer.finish()
-        verify(fixture.hub).captureTransaction(
-            check {
-                assertEquals(request, it.request)
-            },
-            anyOrNull()
-        )
-    }
-
-    @Test
-    fun `when transaction with contexts is finished, contexts are set on the transaction`() {
-        val tracer = fixture.getSut()
-        val contexts = tracer.contexts
-        val app = App()
-        contexts.setApp(app)
-        contexts["custom"] = "value"
-        tracer.finish()
-        verify(fixture.hub).captureTransaction(
-            check {
-                assertEquals(app, it.contexts.app)
-                assertEquals("value", it.contexts["custom"])
-                assertNotNull(it.contexts.trace) {
-                    assertEquals(tracer.spanContext.traceId, it.traceId)
-                    assertEquals(tracer.spanContext.spanId, it.spanId)
-                    assertEquals(tracer.spanContext.parentSpanId, it.parentSpanId)
-                    assertEquals(tracer.spanContext.op, it.op)
-                    assertEquals(tracer.spanContext.description, it.description)
-                    assertEquals(tracer.spanContext.status, it.status)
-                    assertEquals(tracer.spanContext.sampled, it.sampled)
-                }
-            },
-            anyOrNull()
-        )
-    }
-
-    @Test
-    fun `when transaction with contexts has overwritten trace, tracer span context is applied to transaction`() {
-        val tracer = fixture.getSut()
-        val contexts = tracer.contexts
-        val spanContext = SpanContext("op")
-        contexts.trace = spanContext
-        tracer.finish()
-        verify(fixture.hub).captureTransaction(
-            check {
-                assertNotNull(it.contexts.trace) {
-                    assertNotEquals(spanContext, it)
-                    assertEquals(tracer.spanContext.traceId, it.traceId)
-                    assertEquals(tracer.spanContext.spanId, it.spanId)
-                    assertEquals(tracer.spanContext.parentSpanId, it.parentSpanId)
-                    assertEquals(tracer.spanContext.op, it.op)
-                    assertEquals(tracer.spanContext.description, it.description)
-                    assertEquals(tracer.spanContext.status, it.status)
-                    assertEquals(tracer.spanContext.sampled, it.sampled)
-                }
-            },
-            anyOrNull()
-        )
-    }
-
-    @Test
     fun `when transaction with tags set is finished, tags are set on the transaction but not on the trace context`() {
         val tracer = fixture.getSut()
         tracer.setTag("tag1", "val1")
@@ -220,6 +177,8 @@ class SentryTracerTest {
                     assertEquals(emptyMap(), it.tags)
                 }
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -236,6 +195,8 @@ class SentryTracerTest {
                 assertEquals(1, it.spans.size)
                 assertEquals("op1", it.spans.first().op)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -367,6 +328,8 @@ class SentryTracerTest {
                     assertEquals(SpanStatus.OK, it.status)
                 }
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -397,8 +360,6 @@ class SentryTracerTest {
         transaction.setData("myData", "myValue")
         val ex = RuntimeException()
         transaction.throwable = ex
-        val req = Request()
-        transaction.request = req
 
         transaction.finish(SpanStatus.OK)
         assertTrue(transaction.isFinished)
@@ -413,7 +374,6 @@ class SentryTracerTest {
         transaction.throwable = RuntimeException()
         transaction.setData("myData", "myNewValue")
         transaction.name = "newName"
-        transaction.request = Request()
 
         assertEquals(SpanStatus.OK, transaction.status)
         assertEquals("op", transaction.operation)
@@ -421,7 +381,6 @@ class SentryTracerTest {
         assertEquals("myValue", transaction.getTag("myTag"))
         assertEquals("myValue", transaction.getData("myData"))
         assertEquals("name", transaction.name)
-        assertEquals(req, transaction.request)
         assertEquals(ex, transaction.throwable)
     }
 
@@ -445,7 +404,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         transaction.startChild("op")
         transaction.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -454,7 +413,7 @@ class SentryTracerTest {
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
-        verify(fixture.hub).captureTransaction(any(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceState>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -475,7 +434,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         child.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -483,12 +442,14 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
-        verify(fixture.hub, never()).captureTransaction(any(), any())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull(), anyOrNull())
         child.finish()
         verify(fixture.hub, times(1)).captureTransaction(
             check {
                 assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -507,6 +468,8 @@ class SentryTracerTest {
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[0].status)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -575,6 +538,8 @@ class SentryTracerTest {
             check {
                 assertEquals("val", it.getExtra("key"))
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -592,6 +557,8 @@ class SentryTracerTest {
                     assertEquals("val", it["key"])
                 }
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }

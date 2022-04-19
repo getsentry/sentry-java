@@ -17,7 +17,7 @@ public final class io/sentry/spring/HttpServletRequestSentryUserProvider : io/se
 
 public class io/sentry/spring/SentryExceptionResolver : org/springframework/core/Ordered, org/springframework/web/servlet/HandlerExceptionResolver {
 	public static final field MECHANISM_TYPE Ljava/lang/String;
-	public fun <init> (Lio/sentry/IHub;I)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/tracing/TransactionNameProvider;I)V
 	public fun getOrder ()I
 	public fun resolveException (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljava/lang/Object;Ljava/lang/Exception;)Lorg/springframework/web/servlet/ModelAndView;
 }
@@ -35,8 +35,8 @@ public class io/sentry/spring/SentryInitBeanPostProcessor : org/springframework/
 }
 
 public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sentry/EventProcessor {
-	public fun <init> (Ljavax/servlet/http/HttpServletRequest;)V
-	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
+	public fun <init> (Lio/sentry/spring/tracing/TransactionNameProvider;Ljavax/servlet/http/HttpServletRequest;)V
+	public fun process (Lio/sentry/SentryEvent;Ljava/util/Map;)Lio/sentry/SentryEvent;
 }
 
 public class io/sentry/spring/SentryRequestResolver {
@@ -47,16 +47,8 @@ public class io/sentry/spring/SentryRequestResolver {
 public class io/sentry/spring/SentrySpringFilter : org/springframework/web/filter/OncePerRequestFilter {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IHub;)V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;Lio/sentry/spring/tracing/TransactionNameProvider;)V
 	protected fun doFilterInternal (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljavax/servlet/FilterChain;)V
-}
-
-public class io/sentry/spring/SentrySpringRequestListener : javax/servlet/ServletRequestListener, org/springframework/core/Ordered {
-	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/spring/SentryRequestResolver;)V
-	public fun getOrder ()I
-	public fun requestDestroyed (Ljavax/servlet/ServletRequestEvent;)V
-	public fun requestInitialized (Ljavax/servlet/ServletRequestEvent;)V
 }
 
 public class io/sentry/spring/SentrySpringServletContainerInitializer : javax/servlet/ServletContainerInitializer {
@@ -77,13 +69,6 @@ public class io/sentry/spring/SentryUserFilter : org/springframework/web/filter/
 
 public abstract interface class io/sentry/spring/SentryUserProvider {
 	public abstract fun provideUser ()Lio/sentry/protocol/User;
-}
-
-public final class io/sentry/spring/SentryUserProviderEventProcessor : io/sentry/EventProcessor {
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/spring/SentryUserProvider;)V
-	public fun getSentryUserProvider ()Lio/sentry/spring/SentryUserProvider;
-	public fun process (Lio/sentry/SentryEvent;Ljava/lang/Object;)Lio/sentry/SentryEvent;
-	public fun process (Lio/sentry/protocol/SentryTransaction;Ljava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public class io/sentry/spring/SentryWebConfiguration {
@@ -157,9 +142,13 @@ public class io/sentry/spring/tracing/SentryTransactionPointcutConfiguration {
 	public fun sentryTransactionPointcut ()Lorg/springframework/aop/Pointcut;
 }
 
-public final class io/sentry/spring/tracing/TransactionNameProvider {
+public final class io/sentry/spring/tracing/SpringMvcTransactionNameProvider : io/sentry/spring/tracing/TransactionNameProvider {
 	public fun <init> ()V
 	public fun provideTransactionName (Ljavax/servlet/http/HttpServletRequest;)Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/spring/tracing/TransactionNameProvider {
+	public abstract fun provideTransactionName (Ljavax/servlet/http/HttpServletRequest;)Ljava/lang/String;
 }
 
 public class io/sentry/spring/webflux/SentryRequestResolver {

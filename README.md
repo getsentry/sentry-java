@@ -40,49 +40,33 @@ Sentry SDK for Java and Android
 
 # Useful links and docs
 
-Current Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
-
-Java SDK version 1.x [can still be found here](https://docs.sentry.io/clients/java/).
-
-Migration page from [sentry-android 1.x and 2.x to sentry-android 4.x](https://docs.sentry.io/platforms/android/migration/).
-
-Migration page from [sentry 1.x to sentry 4.x](https://docs.sentry.io/platforms/java/migration/).
-
-Releases from sentry-android [2.x and its changelogs](https://github.com/getsentry/sentry-android/releases).
-
-Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/getsentry/sentry-android-gradle-plugin)
+* Current Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
+* Java SDK version 1.x [can still be found here](https://docs.sentry.io/clients/java/).
+* Migration page from [sentry-android 1.x and 2.x to sentry-android 4.x](https://docs.sentry.io/platforms/android/migration/).
+* Migration page from [sentry 1.x to sentry 4.x](https://docs.sentry.io/platforms/java/migration/).
+* Releases from sentry-android [2.x and its changelogs](https://github.com/getsentry/sentry-android/releases).
+* Sentry Android Gradle Plugin repo [sits on another repo](https://github.com/getsentry/sentry-android-gradle-plugin)
 
 # Blog posts
 
-[UI Breadcrumbs for Android Error Events](https://blog.sentry.io/2022/02/08/ui-breadcrumbs-for-android-error-events)
-
-[Bytecode transformations: The Android Gradle Plugin](https://blog.sentry.io/2021/12/14/bytecode-transformations-the-android-gradle-plugin)
-
-[Sentry's response to Log4j vulnerability CVE-2021-44228](https://blog.sentry.io/2021/12/15/sentrys-response-to-log4j-vulnerability-cve-2021-44228)
-
-[Mobile Vitals - Four Metrics Every Mobile Developer Should Care About](https://blog.sentry.io/2021/08/23/mobile-vitals-four-metrics-every-mobile-developer-should-care-about/).
-
-[Supporting Native Android Libraries Loaded From APKs](https://blog.sentry.io/2021/05/13/supporting-native-android-libraries-loaded-from-apks).
-
-[A Sanity Listicle for Mobile Developers](https://blog.sentry.io/2021/03/30/a-sanity-listicle-for-mobile-developers/).
-
-[Performance Monitoring for Android Applications](https://blog.sentry.io/2021/03/18/performance-monitoring-for-android-applications).
-
-[Close the Loop with User Feedback](https://blog.sentry.io/2021/02/16/close-the-loop-with-user-feedback).
-
-[How to use Sentry Attachments with Mobile Applications](https://blog.sentry.io/2021/02/03/how-to-use-sentry-attachments-with-mobile-applications).
-
-[Adding Native support to our Android SDK](https://blog.sentry.io/2019/11/25/adding-native-support-to-our-android-sdk).
-
-[New Android SDK How-to](https://blog.sentry.io/2019/12/10/new-android-sdk-how-to).
+* [Android Manifest Placeholders](https://blog.sentry.io/2022/03/30/android-manifest-placeholders/)
+* [UI Breadcrumbs for Android Error Events](https://blog.sentry.io/2022/02/08/ui-breadcrumbs-for-android-error-events)
+* [Bytecode transformations: The Android Gradle Plugin](https://blog.sentry.io/2021/12/14/bytecode-transformations-the-android-gradle-plugin)
+* [Sentry's response to Log4j vulnerability CVE-2021-44228](https://blog.sentry.io/2021/12/15/sentrys-response-to-log4j-vulnerability-cve-2021-44228)
+* [Mobile Vitals - Four Metrics Every Mobile Developer Should Care About](https://blog.sentry.io/2021/08/23/mobile-vitals-four-metrics-every-mobile-developer-should-care-about/).
+* [Supporting Native Android Libraries Loaded From APKs](https://blog.sentry.io/2021/05/13/supporting-native-android-libraries-loaded-from-apks).
+* [A Sanity Listicle for Mobile Developers](https://blog.sentry.io/2021/03/30/a-sanity-listicle-for-mobile-developers/).
+* [Performance Monitoring for Android Applications](https://blog.sentry.io/2021/03/18/performance-monitoring-for-android-applications).
+* [Close the Loop with User Feedback](https://blog.sentry.io/2021/02/16/close-the-loop-with-user-feedback).
+* [How to use Sentry Attachments with Mobile Applications](https://blog.sentry.io/2021/02/03/how-to-use-sentry-attachments-with-mobile-applications).
+* [Adding Native support to our Android SDK](https://blog.sentry.io/2019/11/25/adding-native-support-to-our-android-sdk).
+* [New Android SDK How-to](https://blog.sentry.io/2019/12/10/new-android-sdk-how-to).
 
 # Samples
 
-[Sample App. with Sentry Android SDK and Sentry Gradle Plugin](https://github.com/getsentry/examples/tree/master/android).
-
-[Sample App. with Sentry Java SDK](https://github.com/getsentry/examples/tree/master/java).
-
-[Sample for Development](https://github.com/getsentry/sentry-java/tree/main/sentry-samples).
+* [Sample App. with Sentry Android SDK and Sentry Gradle Plugin](https://github.com/getsentry/examples/tree/master/android).
+* [Sample App. with Sentry Java SDK](https://github.com/getsentry/examples/tree/master/java).
+* [Sample for Development](https://github.com/getsentry/sentry-java/tree/main/sentry-samples).
 
 # Development
 

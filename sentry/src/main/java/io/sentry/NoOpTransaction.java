@@ -1,12 +1,9 @@
 package io.sentry;
 
-import io.sentry.protocol.Contexts;
-import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,30 +40,6 @@ public final class NoOpTransaction implements ITransaction {
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
     return NoOpSpan.getInstance();
-  }
-
-  /** @deprecated use {@link Scope#setRequest(Request)} */
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public void setRequest(@Nullable Request request) {}
-
-  /** @deprecated use {@link Scope#getRequest()} */
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  @SuppressWarnings("InlineMeSuggester")
-  public @Nullable Request getRequest() {
-    return null;
-  }
-
-  /** @deprecated use {@link Scope#getContexts()} */
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  @SuppressWarnings("InlineMeSuggester")
-  public @NotNull Contexts getContexts() {
-    return new Contexts();
   }
 
   @Override

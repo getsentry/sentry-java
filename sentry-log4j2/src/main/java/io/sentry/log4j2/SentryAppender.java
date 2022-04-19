@@ -1,5 +1,8 @@
 package io.sentry.log4j2;
 
+import static io.sentry.TypeCheckHint.LOG4J_LOG_EVENT;
+import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
@@ -15,6 +18,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,6 +46,7 @@ public class SentryAppender extends AbstractAppender {
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private final @Nullable Boolean debug;
   private final @NotNull IHub hub;
+  private final @Nullable List<String> contextTags;
 
   public SentryAppender(
       final @NotNull String name,
@@ -51,7 +56,8 @@ public class SentryAppender extends AbstractAppender {
       final @Nullable Level minimumEventLevel,
       final @Nullable Boolean debug,
       final @Nullable ITransportFactory transportFactory,
-      final @NotNull IHub hub) {
+      final @NotNull IHub hub,
+      final @Nullable String[] contextTags) {
     super(name, filter, null, true, null);
     this.dsn = dsn;
     if (minimumBreadcrumbLevel != null) {
@@ -63,6 +69,7 @@ public class SentryAppender extends AbstractAppender {
     this.debug = debug;
     this.transportFactory = transportFactory;
     this.hub = hub;
+    this.contextTags = contextTags != null ? Arrays.asList(contextTags) : null;
   }
 
   /**
@@ -83,7 +90,8 @@ public class SentryAppender extends AbstractAppender {
       @Nullable @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
       @Nullable @PluginAttribute("dsn") final String dsn,
       @Nullable @PluginAttribute("debug") final Boolean debug,
-      @Nullable @PluginElement("filter") final Filter filter) {
+      @Nullable @PluginElement("filter") final Filter filter,
+      @Nullable @PluginAttribute("contextTags") final String contextTags) {
 
     if (name == null) {
       LOGGER.error("No name provided for SentryAppender");
@@ -97,7 +105,8 @@ public class SentryAppender extends AbstractAppender {
         minimumEventLevel,
         debug,
         null,
-        HubAdapter.getInstance());
+        HubAdapter.getInstance(),
+        contextTags != null ? contextTags.split(",") : null);
   }
 
   @Override
@@ -108,9 +117,16 @@ public class SentryAppender extends AbstractAppender {
             options -> {
               options.setEnableExternalConfiguration(true);
               options.setDsn(dsn);
-              options.setDebug(debug);
+              if (debug != null) {
+                options.setDebug(debug);
+              }
               options.setSentryClientName(BuildConfig.SENTRY_LOG4J2_SDK_NAME);
               options.setSdkVersion(createSdkVersion(options));
+              if (contextTags != null) {
+                for (final String contextTag : contextTags) {
+                  options.addContextTag(contextTag);
+                }
+              }
               Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
             });
       } catch (IllegalArgumentException e) {
@@ -123,10 +139,16 @@ public class SentryAppender extends AbstractAppender {
   @Override
   public void append(final @NotNull LogEvent eventObject) {
     if (eventObject.getLevel().isMoreSpecificThan(minimumEventLevel)) {
-      hub.captureEvent(createEvent(eventObject));
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
+
+      hub.captureEvent(createEvent(eventObject), hintMap);
     }
     if (eventObject.getLevel().isMoreSpecificThan(minimumBreadcrumbLevel)) {
-      hub.addBreadcrumb(createBreadcrumb(eventObject));
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put(LOG4J_LOG_EVENT, eventObject);
+
+      hub.addBreadcrumb(createBreadcrumb(eventObject), hintMap);
     }
   }
 
@@ -165,7 +187,20 @@ public class SentryAppender extends AbstractAppender {
         CollectionUtils.filterMapEntries(
             loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
-      event.getContexts().put("Context Data", contextData);
+      if (contextTags != null && !contextTags.isEmpty()) {
+        for (final String contextTag : contextTags) {
+          // if mdc tag is listed in SentryOptions, apply as event tag
+          if (contextData.containsKey(contextTag)) {
+            event.setTag(contextTag, contextData.get(contextTag));
+            // remove from all tags applied to logging event
+            contextData.remove(contextTag);
+          }
+        }
+      }
+      // put the rest of mdc tags in contexts
+      if (!contextData.isEmpty()) {
+        event.getContexts().put("Context Data", contextData);
+      }
     }
 
     return event;

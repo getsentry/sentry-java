@@ -2,6 +2,7 @@
 package io.sentry.android.okhttp
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -162,7 +163,8 @@ class SentryOkHttpInterceptorTest {
                 assertEquals("http", it.type)
                 assertEquals(13L, it.data["response_body_size"])
                 assertEquals(12L, it.data["request_body_size"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -182,7 +184,8 @@ class SentryOkHttpInterceptorTest {
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
-            }
+            },
+            anyOrNull()
         )
     }
 

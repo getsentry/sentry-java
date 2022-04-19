@@ -10,20 +10,11 @@ public final class Attachment {
   private @Nullable byte[] bytes;
   private @Nullable String pathname;
   private final @NotNull String filename;
-  private final @NotNull String contentType;
+  private final @Nullable String contentType;
   private final boolean addToTransactions;
 
   /** The special type of this attachment */
   private @Nullable String attachmentType = DEFAULT_ATTACHMENT_TYPE;
-
-  /**
-   * We could use Files.probeContentType(path) to determine the content type of the filename. This
-   * needs a path, but file.toPath or Paths.get only work on above Android API level 26, see
-   * https://developer.android.com/reference/java/nio/file/Paths. There are also ways via
-   * URLConnection, but we don't want to use this in constructors. Therefore we use the default
-   * content type of Sentry.
-   */
-  private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
   /** A standard attachment without special meaning */
   private static final String DEFAULT_ATTACHMENT_TYPE = "event.attachment";
@@ -36,7 +27,7 @@ public final class Attachment {
    * @param filename The name of the attachment to display in Sentry.
    */
   public Attachment(final @NotNull byte[] bytes, final @NotNull String filename) {
-    this(bytes, filename, DEFAULT_CONTENT_TYPE);
+    this(bytes, filename, null);
   }
 
   /**
@@ -50,7 +41,7 @@ public final class Attachment {
   public Attachment(
       final @NotNull byte[] bytes,
       final @NotNull String filename,
-      final @NotNull String contentType) {
+      final @Nullable String contentType) {
     this(bytes, filename, contentType, false);
   }
 
@@ -66,7 +57,7 @@ public final class Attachment {
   public Attachment(
       final @NotNull byte[] bytes,
       final @NotNull String filename,
-      final @NotNull String contentType,
+      final @Nullable String contentType,
       final boolean addToTransactions) {
     this.bytes = bytes;
     this.filename = filename;
@@ -100,7 +91,7 @@ public final class Attachment {
    * @param filename The name of the attachment to display in Sentry.
    */
   public Attachment(final @NotNull String pathname, final @NotNull String filename) {
-    this(pathname, filename, DEFAULT_CONTENT_TYPE);
+    this(pathname, filename, null);
   }
 
   /**
@@ -118,7 +109,7 @@ public final class Attachment {
   public Attachment(
       final @NotNull String pathname,
       final @NotNull String filename,
-      final @NotNull String contentType) {
+      final @Nullable String contentType) {
     this(pathname, filename, contentType, false);
   }
 
@@ -138,7 +129,7 @@ public final class Attachment {
   public Attachment(
       final @NotNull String pathname,
       final @NotNull String filename,
-      final @NotNull String contentType,
+      final @Nullable String contentType,
       final boolean addToTransactions) {
     this.pathname = pathname;
     this.filename = filename;
@@ -164,7 +155,7 @@ public final class Attachment {
   public Attachment(
       final @NotNull String pathname,
       final @NotNull String filename,
-      final @NotNull String contentType,
+      final @Nullable String contentType,
       final boolean addToTransactions,
       final @Nullable String attachmentType) {
     this.pathname = pathname;
@@ -202,11 +193,12 @@ public final class Attachment {
   }
 
   /**
-   * Gets the content type of the attachment. Default is "application/octet-stream".
+   * Gets the content type of the attachment. The server infers "application/octet-stream" if not
+   * set.
    *
-   * @return the content type.
+   * @return the content type or null if not set.
    */
-  public @NotNull String getContentType() {
+  public @Nullable String getContentType() {
     return contentType;
   }
 
@@ -227,5 +219,15 @@ public final class Attachment {
    */
   public @Nullable String getAttachmentType() {
     return attachmentType;
+  }
+
+  /**
+   * Creates a new Screenshot Attachment
+   *
+   * @param screenshotBytes the array bytes
+   * @return the Attachment
+   */
+  public static @NotNull Attachment fromScreenshot(final byte[] screenshotBytes) {
+    return new Attachment(screenshotBytes, "screenshot.png", "image/png", false);
   }
 }

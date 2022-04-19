@@ -42,7 +42,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
    */
   @Override
   @Nullable
-  public SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
+  public SentryEvent process(@NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
     // that's only necessary because on newer versions of Unity, if not overriding this method, it's
     // throwing 'java.lang.AbstractMethodError: abstract method' and the reason is probably
     // compilation mismatch.
@@ -52,7 +52,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   @SuppressWarnings("NullAway")
   @Override
   public synchronized @NotNull SentryTransaction process(
-      @NotNull SentryTransaction transaction, @Nullable Object hint) {
+      @NotNull SentryTransaction transaction, @Nullable Map<String, Object> hint) {
 
     if (!options.isTracingEnabled()) {
       return transaction;

@@ -11,6 +11,8 @@ import io.sentry.SpanStatus;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
 
@@ -49,7 +51,7 @@ public class Main {
 
           // Configure the background worker which sends events to sentry:
           // Wait up to 5 seconds before shutdown while there are events to send.
-          options.setShutdownTimeout(5000);
+          options.setShutdownTimeoutMillis(5000);
 
           // Enable SDK logging with Debug level
           options.setDebug(true);
@@ -134,7 +136,10 @@ public class Main {
       message.setFormatted(String.format(messageContent, i, count));
       SentryEvent event = new SentryEvent();
       event.setMessage(message);
-      Sentry.captureEvent(event, SentryLevel.DEBUG);
+
+      final Map<String, Object> hintsMap = new HashMap<>();
+      hintsMap.put("level", SentryLevel.DEBUG);
+      Sentry.captureEvent(event, hintsMap);
     }
 
     // Performance feature
@@ -166,7 +171,7 @@ public class Main {
 
   private static class SomeEventProcessor implements EventProcessor {
     @Override
-    public SentryEvent process(SentryEvent event, Object hint) {
+    public SentryEvent process(SentryEvent event, Map<String, Object> hint) {
       // Here you can modify the event as you need
       if (event.getLevel() != null && event.getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
         event.addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));

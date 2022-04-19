@@ -5,6 +5,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +26,8 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryId captureEvent(
+      @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
     return Sentry.captureEvent(event, hint);
   }
 
@@ -37,12 +39,13 @@ public final class HubAdapter implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(
-      @NotNull SentryEnvelope envelope, @Nullable Object hint) {
+      @NotNull SentryEnvelope envelope, @Nullable Map<String, Object> hint) {
     return Sentry.getCurrentHub().captureEnvelope(envelope, hint);
   }
 
   @Override
-  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint) {
+  public @NotNull SentryId captureException(
+      @NotNull Throwable throwable, @Nullable Map<String, Object> hint) {
     return Sentry.captureException(throwable, hint);
   }
 
@@ -67,7 +70,7 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint) {
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Map<String, Object> hint) {
     Sentry.addBreadcrumb(breadcrumb, hint);
   }
 
@@ -160,8 +163,10 @@ public final class HubAdapter implements IHub {
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
-      @Nullable Object hint) {
-    return Sentry.getCurrentHub().captureTransaction(transaction, traceState, hint);
+      @Nullable Map<String, Object> hint,
+      @Nullable ProfilingTraceData profilingTraceData) {
+    return Sentry.getCurrentHub()
+        .captureTransaction(transaction, traceState, hint, profilingTraceData);
   }
 
   @Override

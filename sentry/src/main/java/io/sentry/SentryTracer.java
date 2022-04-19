@@ -1,7 +1,5 @@
 package io.sentry;
 
-import io.sentry.protocol.Contexts;
-import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -26,8 +24,6 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Span root;
   private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
   private final @NotNull IHub hub;
-  private final @NotNull Contexts contexts = new Contexts();
-  private @Nullable Request request;
   private @NotNull String name;
   /**
    * When `waitForChildren` is set to `true`, tracer will finish only when both conditions are met
@@ -125,7 +121,7 @@ public final class SentryTracer implements ITransaction {
     return this.root.getStartTimestamp();
   }
 
-  public @Nullable Date getTimestamp() {
+  public @Nullable Double getTimestamp() {
     return this.root.getTimestamp();
   }
 
@@ -253,6 +249,15 @@ public final class SentryTracer implements ITransaction {
     cancelTimer();
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
+      ProfilingTraceData profilingTraceData = null;
+      Boolean isSampled = isSampled();
+      if (isSampled == null) {
+        isSampled = false;
+      }
+      if (hub.getOptions().isProfilingEnabled() && isSampled) {
+        profilingTraceData = hub.getOptions().getTransactionProfiler().onTransactionFinish(this);
+      }
+
       // finish unfinished children
       Date finishTimestamp = DateUtils.getCurrentDateTime();
       for (final Span child : children) {
@@ -287,7 +292,7 @@ public final class SentryTracer implements ITransaction {
       if (transactionFinishedCallback != null) {
         transactionFinishedCallback.execute(this);
       }
-      hub.captureTransaction(transaction, this.traceState());
+      hub.captureTransaction(transaction, this.traceState(), null, profilingTraceData);
     }
   }
 
@@ -456,31 +461,6 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public void setRequest(final @Nullable Request request) {
-    if (root.isFinished()) {
-      return;
-    }
-
-    this.request = request;
-  }
-
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public @Nullable Request getRequest() {
-    return this.request;
-  }
-
-  @Override
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public @NotNull Contexts getContexts() {
-    return this.contexts;
-  }
-
-  @Override
   public @NotNull List<Span> getSpans() {
     return this.children;
   }
@@ -501,6 +481,10 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @NotNull SentryId getEventId() {
     return eventId;
+  }
+
+  public @Nullable Double getHighPrecisionTimestamp() {
+    return root.getHighPrecisionTimestamp();
   }
 
   @NotNull

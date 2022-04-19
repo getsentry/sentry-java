@@ -9,6 +9,7 @@ import android.view.Window
 import android.widget.CheckBox
 import android.widget.RadioButton
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -18,8 +19,8 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
-import org.junit.Test
 import java.lang.ref.WeakReference
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryGestureListenerClickTest {
@@ -113,7 +114,8 @@ class SentryGestureListenerClickTest {
                 assertEquals("test_button", it.data["view.id"])
                 assertEquals("android.view.View", it.data["view.class"])
                 assertEquals(INFO, it.level)
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -132,7 +134,8 @@ class SentryGestureListenerClickTest {
             check<Breadcrumb> {
                 assertEquals("radio_button", it.data["view.id"])
                 assertEquals("android.widget.RadioButton", it.data["view.class"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -151,7 +154,8 @@ class SentryGestureListenerClickTest {
             check<Breadcrumb> {
                 assertEquals("check_box", it.data["view.id"])
                 assertEquals("android.widget.CheckBox", it.data["view.class"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -182,7 +186,8 @@ class SentryGestureListenerClickTest {
             check<Breadcrumb> {
                 assertEquals(decorView.javaClass.canonicalName, it.data["view.class"])
                 assertEquals("decor_view", it.data["view.id"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -212,7 +217,8 @@ class SentryGestureListenerClickTest {
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals(fixture.target.javaClass.simpleName, it.data["view.class"])
-            }
+            },
+            anyOrNull()
         )
     }
 }

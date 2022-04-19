@@ -12,9 +12,9 @@ import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Android Options initializer, it reads configurations from AndroidManifest and sets to the
- * SentryOptions. It also adds default values for some fields.
+ * SentryAndroidOptions. It also adds default values for some fields.
  */
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
@@ -38,7 +38,7 @@ final class AndroidOptionsInitializer {
   /**
    * Init method of the Android Options initializer
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Application context
    */
   static void init(final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
@@ -51,7 +51,7 @@ final class AndroidOptionsInitializer {
   /**
    * Init method of the Android Options initializer
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Application context
    * @param logger the ILogger interface
    * @param isFragmentAvailable whether the Fragment integration is available on the classpath
@@ -63,16 +63,22 @@ final class AndroidOptionsInitializer {
       final @NotNull ILogger logger,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
-    init(options, context, logger, new BuildInfoProvider(), isFragmentAvailable, isTimberAvailable);
+    init(
+        options,
+        context,
+        logger,
+        new BuildInfoProvider(logger),
+        isFragmentAvailable,
+        isTimberAvailable);
   }
 
   /**
    * Init method of the Android Options initializer
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Application context
    * @param logger the ILogger interface
-   * @param buildInfoProvider the IBuildInfoProvider interface
+   * @param buildInfoProvider the BuildInfoProvider interface
    * @param isFragmentAvailable whether the Fragment integration is available on the classpath
    * @param isTimberAvailable whether the Timber integration is available on the classpath
    */
@@ -80,7 +86,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
     init(
@@ -96,10 +102,10 @@ final class AndroidOptionsInitializer {
   /**
    * Init method of the Android Options initializer
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Application context
    * @param logger the ILogger interface
-   * @param buildInfoProvider the IBuildInfoProvider interface
+   * @param buildInfoProvider the BuildInfoProvider interface
    * @param loadClass the LoadClass wrapper
    * @param isFragmentAvailable whether the Fragment integration is available on the classpath
    * @param isTimberAvailable whether the Timber integration is available on the classpath
@@ -108,7 +114,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
@@ -145,12 +151,14 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
+    options.setTransactionProfiler(
+        new AndroidTransactionProfiler(context, options, buildInfoProvider));
   }
 
   private static void installDefaultIntegrations(
       final @NotNull Context context,
-      final @NotNull SentryOptions options,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
@@ -191,6 +199,8 @@ final class AndroidOptionsInitializer {
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
+      options.addEventProcessor(
+          new ScreenshotEventProcessor((Application) context, options, buildInfoProvider));
     } else {
       options
           .getLogger()
@@ -210,7 +220,7 @@ final class AndroidOptionsInitializer {
   /**
    * Reads and sets default option values that are Android specific like release and inApp
    *
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    * @param context the Android context methods
    */
   private static void readDefaultOptionValues(
@@ -285,15 +295,36 @@ final class AndroidOptionsInitializer {
    * Sets the cache dirs like sentry, outbox and sessions
    *
    * @param context the Application context
-   * @param options the SentryOptions
+   * @param options the SentryAndroidOptions
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static void initializeCacheDirs(
-      final @NotNull Context context, final @NotNull SentryOptions options) {
+      final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     final File cacheDir = new File(context.getCacheDir(), "sentry");
+    final File profilingTracesDir = new File(cacheDir, "profiling_traces");
     options.setCacheDirPath(cacheDir.getAbsolutePath());
+    options.setProfilingTracesDirPath(profilingTracesDir.getAbsolutePath());
+
+    if (options.isProfilingEnabled()) {
+      profilingTracesDir.mkdirs();
+      final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                if (oldTracesDirContent == null) return;
+                // Method trace files are normally deleted at the end of traces, but if that fails
+                // for some
+                // reason we try to clear any old files here.
+                for (File f : oldTracesDirContent) {
+                  FileUtils.deleteRecursively(f);
+                }
+              });
+    }
   }
 
-  private static boolean isNdkAvailable(final @NotNull IBuildInfoProvider buildInfoProvider) {
+  private static boolean isNdkAvailable(final @NotNull BuildInfoProvider buildInfoProvider) {
     return buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN;
   }
 }

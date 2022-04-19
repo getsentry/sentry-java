@@ -1,12 +1,13 @@
 import java.math.BigDecimal
 
 object Config {
-    val kotlinVersion = "1.4.32"
+    val kotlinVersion = "1.5.31"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.4.4"
     // Spring is currently not compatible with Kotlin 1.4
     val springKotlinCompatibleLanguageVersion = "1.3"
+    val kotlinCompatibleLanguageVersion = "1.4"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:7.1.2"
@@ -44,10 +45,6 @@ object Config {
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
         val okhttp = "com.squareup.okhttp3:okhttp"
-        // only bump gson if https://github.com/google/gson/issues/1597 is fixed
-        private val gsonVersion = "2.8.5"
-        val gsonDep = "com.google.code.gson:gson"
-        val gson = "$gsonDep:$gsonVersion"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
 
         private val lifecycleVersion = "2.2.0"

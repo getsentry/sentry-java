@@ -6,7 +6,7 @@ import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
-import io.sentry.util.ApplyScopeUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,7 +33,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
   private final @Nullable HostnameCache hostnameCache;
 
-  MainEventProcessor(final @NotNull SentryOptions options) {
+  public MainEventProcessor(final @NotNull SentryOptions options) {
     this(options, options.isAttachServerName() ? HostnameCache.getInstance() : null);
   }
 
@@ -65,7 +65,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   @Override
   public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
     setCommons(event);
     setExceptions(event);
     setDebugMeta(event);
@@ -100,8 +100,8 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   }
 
   private boolean shouldApplyScopeData(
-      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      final @NotNull SentryBaseEvent event, final @Nullable Map<String, Object> hint) {
+    if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
       options
@@ -126,7 +126,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction, final @Nullable Map<String, Object> hint) {
     setCommons(transaction);
 
     if (shouldApplyScopeData(transaction, hint)) {
@@ -213,7 +213,8 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     }
   }
 
-  private void setThreads(final @NotNull SentryEvent event, final @Nullable Object hint) {
+  private void setThreads(
+      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
     if (event.getThreads() == null) {
       // collecting threadIds that came from the exception mechanism, so we can mark threads as
       // crashed properly
@@ -232,11 +233,12 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
         }
       }
 
+      Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
       if (options.isAttachThreads()) {
         event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
       } else if (options.isAttachStacktrace()
           && (eventExceptions == null || eventExceptions.isEmpty())
-          && !isCachedHint(hint)) {
+          && !isCachedHint(sentrySdkHint)) {
         // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
         // if there are no exceptions, exceptions have its own stack traces.
         event.setThreads(sentryThreadFactory.getCurrentThread());
@@ -248,11 +250,11 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
    * If the event has a Cached Hint, it means that it came from the EnvelopeFileObserver. We don't
    * want to append the current thread to the event.
    *
-   * @param hint the Hint
+   * @param sentrySdkHint the Hint
    * @return true if Cached or false otherwise
    */
-  private boolean isCachedHint(final @Nullable Object hint) {
-    return (hint instanceof Cached);
+  private boolean isCachedHint(final @Nullable Object sentrySdkHint) {
+    return (sentrySdkHint instanceof Cached);
   }
 
   @Override

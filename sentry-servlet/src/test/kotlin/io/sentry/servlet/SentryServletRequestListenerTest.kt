@@ -1,5 +1,6 @@
 package io.sentry.servlet
 
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -43,7 +44,8 @@ class SentryServletRequestListenerTest {
                 assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
                 assertThat(it.getData("method")).isEqualTo("POST")
                 assertThat(it.type).isEqualTo("http")
-            }
+            },
+            anyOrNull()
         )
     }
 

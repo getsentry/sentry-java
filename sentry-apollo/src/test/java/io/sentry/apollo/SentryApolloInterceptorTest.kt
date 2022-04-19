@@ -15,6 +15,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.TraceState
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryTransaction
 import kotlinx.coroutines.launch
@@ -84,6 +85,8 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -97,6 +100,8 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -110,6 +115,8 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -144,6 +151,8 @@ class SentryApolloInterceptorTest {
                 val httpClientSpan = it.spans.first()
                 assertEquals("overwritten description", httpClientSpan.description)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -158,6 +167,8 @@ class SentryApolloInterceptorTest {
             check {
                 assertEquals(1, it.spans.size)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -170,7 +181,8 @@ class SentryApolloInterceptorTest {
                 assertEquals("http", it.type)
                 assertEquals(280L, it.data["response_body_size"])
                 assertEquals(193L, it.data["request_body_size"])
-            }
+            },
+            anyOrNull()
         )
     }
 

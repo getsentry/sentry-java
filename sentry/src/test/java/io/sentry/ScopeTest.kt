@@ -858,7 +858,7 @@ class ScopeTest {
 
     private fun eventProcessor(): EventProcessor {
         return object : EventProcessor {
-            override fun process(event: SentryEvent, hint: Any?): SentryEvent? {
+            override fun process(event: SentryEvent, hint: MutableMap<String, Any>?): SentryEvent? {
                 return event
             }
         }

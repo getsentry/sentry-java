@@ -1,10 +1,14 @@
 package io.sentry.servlet;
 
+import static io.sentry.TypeCheckHint.SERVLET_REQUEST;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
@@ -41,7 +45,11 @@ public class SentryServletRequestListener implements ServletRequestListener {
     if (servletRequest instanceof HttpServletRequest) {
       final HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
 
-      hub.addBreadcrumb(Breadcrumb.http(httpRequest.getRequestURI(), httpRequest.getMethod()));
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put(SERVLET_REQUEST, httpRequest);
+
+      hub.addBreadcrumb(
+          Breadcrumb.http(httpRequest.getRequestURI(), httpRequest.getMethod()), hintMap);
 
       hub.configureScope(
           scope -> {

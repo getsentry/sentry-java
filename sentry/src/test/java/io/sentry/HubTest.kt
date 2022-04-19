@@ -14,6 +14,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
@@ -21,13 +22,13 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
+import io.sentry.util.HintUtils
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
 import java.util.UUID
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -55,21 +56,7 @@ class HubTest {
     @Test
     fun `when no dsn available, ctor throws illegal arg`() {
         val ex = assertFailsWith<IllegalArgumentException> { Hub(SentryOptions()) }
-        assertEquals("Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.", ex.message)
-    }
-
-    @Ignore("Sentry static class is registering integrations")
-    @Test
-    fun `when a root hub is initialized, integrations are registered`() {
-        val integrationMock = mock<Integration>()
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        options.addIntegration(integrationMock)
-        val expected = HubAdapter.getInstance()
-        Hub(options)
-        verify(integrationMock).register(expected, options)
+        assertEquals("Hub requires a DSN to be instantiated. Considering using the NoOpHub if no DSN is available.", ex.message)
     }
 
     @Test
@@ -275,7 +262,7 @@ class HubTest {
         sut.close()
 
         sut.captureEvent(SentryEvent())
-        verify(mockClient, never()).captureEvent(any(), any())
+        verify(mockClient, never()).captureEvent(any(), any<Map<String, Any?>>())
     }
 
     @Test
@@ -283,9 +270,9 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
-        val hint = { }
-        sut.captureEvent(event, hint)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        sut.captureEvent(event, hintsMap)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
     }
 
     @Test
@@ -293,11 +280,11 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         whenever(mockClient.captureEvent(any(), any(), anyOrNull())).thenReturn(SentryId(UUID.randomUUID()))
         val event = SentryEvent()
-        val hint = { }
-        sut.captureEvent(event, hint)
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        sut.captureEvent(event, hintsMap)
         val lastEventId = sut.lastEventId
         sut.close()
-        sut.captureEvent(event, hint)
+        sut.captureEvent(event, hintsMap)
         assertEquals(lastEventId, sut.lastEventId)
     }
 
@@ -306,9 +293,9 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
-        val hint = { }
-        sut.captureEvent(event, hint)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        sut.captureEvent(event, hintsMap)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
         verify(mockClient, never()).captureSession(any(), any())
     }
 
@@ -317,9 +304,9 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
-        val hint = { }
-        sut.captureEvent(event, hint)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        sut.captureEvent(event, hintsMap)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
         verify(mockClient, never()).captureSession(any(), any())
     }
 
@@ -333,10 +320,10 @@ class HubTest {
 
         val event = SentryEvent(exception)
 
-        val hint = { }
-        sut.captureEvent(event, hint)
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        sut.captureEvent(event, hintsMap)
         assertEquals(span.spanContext, event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
     }
 
     @Test
@@ -349,10 +336,10 @@ class HubTest {
 
         val event = SentryEvent(RuntimeException(rootCause))
 
-        val hint = { }
-        sut.captureEvent(event, hint)
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        sut.captureEvent(event, hintsMap)
         assertEquals(span.spanContext, event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
     }
 
     @Test
@@ -366,10 +353,10 @@ class HubTest {
 
         val event = SentryEvent(RuntimeException(exceptionAssignedToSpan))
 
-        val hint = { }
-        sut.captureEvent(event, hint)
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        sut.captureEvent(event, hintsMap)
         assertEquals(span.spanContext, event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
     }
 
     @Test
@@ -384,10 +371,10 @@ class HubTest {
         val originalSpanContext = SpanContext("op")
         event.contexts.trace = originalSpanContext
 
-        val hint = { }
-        sut.captureEvent(event, hint)
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        sut.captureEvent(event, hintsMap)
         assertEquals(originalSpanContext, event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
     }
 
     @Test
@@ -396,10 +383,10 @@ class HubTest {
 
         val event = SentryEvent(RuntimeException())
 
-        val hint = { }
-        sut.captureEvent(event, hint)
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        sut.captureEvent(event, hintsMap)
         assertNull(event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hint))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
     }
     //endregion
 
@@ -465,7 +452,8 @@ class HubTest {
     fun `when captureException is called with a valid argument and hint, captureEvent on the client should be called`() {
         val (sut, mockClient) = getEnabledHub()
 
-        sut.captureException(Throwable(), Object())
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to Object())
+        sut.captureException(Throwable(), hintsMap)
         verify(mockClient).captureEvent(any(), any(), any())
     }
 
@@ -982,7 +970,7 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.startSession()
-        verify(mockClient).captureSession(any(), argWhere { it is SessionStartHint })
+        verify(mockClient).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionStartHint })
     }
 
     @Test
@@ -998,8 +986,8 @@ class HubTest {
 
         sut.startSession()
         sut.startSession()
-        verify(mockClient).captureSession(any(), argWhere { it is SessionEndHint })
-        verify(mockClient, times(2)).captureSession(any(), argWhere { it is SessionStartHint })
+        verify(mockClient).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionEndHint })
+        verify(mockClient, times(2)).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionStartHint })
     }
     //endregion
 
@@ -1048,8 +1036,8 @@ class HubTest {
 
         sut.startSession()
         sut.endSession()
-        verify(mockClient).captureSession(any(), argWhere { it is SessionStartHint })
-        verify(mockClient).captureSession(any(), argWhere { it is SessionEndHint })
+        verify(mockClient).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionStartHint })
+        verify(mockClient).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionEndHint })
     }
 
     @Test
@@ -1082,8 +1070,9 @@ class HubTest {
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), sut)
         sentryTracer.finish()
-        sut.captureTransaction(SentryTransaction(sentryTracer), null)
+        sut.captureTransaction(SentryTransaction(sentryTracer), null as TraceState?)
         verify(mockClient, never()).captureTransaction(any(), any(), any())
+        verify(mockClient, never()).captureTransaction(any(), any(), any(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -1099,7 +1088,43 @@ class HubTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
         sentryTracer.finish()
         val traceState = sentryTracer.traceState()
-        verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null))
+        verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null), anyOrNull())
+    }
+
+    @Test
+    fun `when startTransaction and profiling is enabled, transaction is profiled only if sampled`() {
+        val mockTransactionProfiler = mock<ITransactionProfiler>()
+        val hub = generateHub {
+            it.isProfilingEnabled = true
+            it.setTransactionProfiler(mockTransactionProfiler)
+        }
+        // Transaction is not sampled, so it should not be profiled
+        val contexts = TransactionContext("name", "op", false)
+        val transaction = hub.startTransaction(contexts)
+        transaction.finish()
+        verify(mockTransactionProfiler, never()).onTransactionStart(anyOrNull())
+        verify(mockTransactionProfiler, never()).onTransactionFinish(anyOrNull())
+
+        // Transaction is sampled, so it should be profiled
+        val sampledContexts = TransactionContext("name", "op", true)
+        val sampledTransaction = hub.startTransaction(sampledContexts)
+        sampledTransaction.finish()
+        verify(mockTransactionProfiler).onTransactionStart(anyOrNull())
+        verify(mockTransactionProfiler).onTransactionFinish(anyOrNull())
+    }
+
+    @Test
+    fun `when startTransaction and is sampled but profiling is disabled, transaction is not profiled`() {
+        val mockTransactionProfiler = mock<ITransactionProfiler>()
+        val hub = generateHub {
+            it.isProfilingEnabled = false
+            it.setTransactionProfiler(mockTransactionProfiler)
+        }
+        val contexts = TransactionContext("name", "op", true)
+        val transaction = hub.startTransaction(contexts)
+        transaction.finish()
+        verify(mockTransactionProfiler, never()).onTransactionStart(anyOrNull())
+        verify(mockTransactionProfiler, never()).onTransactionFinish(anyOrNull())
     }
 
     @Test
@@ -1111,7 +1136,7 @@ class HubTest {
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
-        whenever(mockClient.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(SentryId())
+        whenever(mockClient.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(SentryId())
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
         sentryTracer.finish()
@@ -1129,8 +1154,8 @@ class HubTest {
         sut.bindClient(mockClient)
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
-        sut.captureTransaction(SentryTransaction(sentryTracer), null)
-        verify(mockClient, never()).captureTransaction(any(), any(), any(), eq(null))
+        sut.captureTransaction(SentryTransaction(sentryTracer), null as TraceState?)
+        verify(mockClient, never()).captureTransaction(any(), any(), any(), eq(null), anyOrNull())
     }
 
     @Test
@@ -1146,7 +1171,7 @@ class HubTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op", false), sut)
         sentryTracer.finish()
         val traceState = sentryTracer.traceState()
-        verify(mockClient, never()).captureTransaction(any(), eq(traceState), any(), eq(null))
+        verify(mockClient, never()).captureTransaction(any(), eq(traceState), any(), eq(null), anyOrNull())
     }
     //endregion
 

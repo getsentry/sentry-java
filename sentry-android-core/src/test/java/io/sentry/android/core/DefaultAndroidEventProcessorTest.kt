@@ -16,6 +16,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
@@ -43,14 +44,14 @@ class DefaultAndroidEventProcessorTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.DefaultAndroidEventProcessor"
-    private val ctorTypes = arrayOf(Context::class.java, ILogger::class.java, IBuildInfoProvider::class.java)
+    private val ctorTypes = arrayOf(Context::class.java, ILogger::class.java, BuildInfoProvider::class.java)
 
     init {
         Locale.setDefault(Locale.US)
     }
 
     private class Fixture {
-        val buildInfo = mock<IBuildInfoProvider>()
+        val buildInfo = mock<BuildInfoProvider>()
         val options = SentryOptions().apply {
             setDebug(true)
             setLogger(mock())
@@ -97,7 +98,7 @@ class DefaultAndroidEventProcessorTest {
     fun `when null buildInfo is provided, invalid argument is thrown`() {
         val ctor = className.getCtor(ctorTypes)
 
-        val params = arrayOf(null, null, mock<IBuildInfoProvider>())
+        val params = arrayOf(null, null, mock<BuildInfoProvider>())
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
@@ -162,7 +163,8 @@ class DefaultAndroidEventProcessorTest {
     fun `When Event and hint is Cached, data should not be applied`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryEvent(), CachedEvent())) {
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
+        assertNotNull(sut.process(SentryEvent(), hintsMap)) {
             assertNull(it.contexts.app)
             assertNull(it.debugMeta)
             assertNull(it.dist)
@@ -173,7 +175,8 @@ class DefaultAndroidEventProcessorTest {
     fun `When Transaction and hint is Cached, data should not be applied`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), CachedEvent())) {
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
+        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), hintsMap)) {
             assertNull(it.contexts.app)
             assertNull(it.dist)
         }
@@ -183,7 +186,8 @@ class DefaultAndroidEventProcessorTest {
     fun `When Event and hint is Cached, userId is applied anyway`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryEvent(), CachedEvent())) {
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
+        assertNotNull(sut.process(SentryEvent(), hintsMap)) {
             assertNotNull(it.user)
         }
     }
@@ -192,7 +196,8 @@ class DefaultAndroidEventProcessorTest {
     fun `When Transaction and hint is Cached, userId is applied anyway`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), CachedEvent())) {
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
+        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), hintsMap)) {
             assertNotNull(it.user)
         }
     }
@@ -254,7 +259,8 @@ class DefaultAndroidEventProcessorTest {
     fun `Processor won't throw exception when theres a hint`() {
         val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
 
-        processor.process(SentryEvent(), CachedEvent())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
+        processor.process(SentryEvent(), hintsMap)
 
         verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
@@ -306,7 +312,8 @@ class DefaultAndroidEventProcessorTest {
     fun `When hint is Cached, memory data should not be applied`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryEvent(), CachedEvent())) {
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
+        assertNotNull(sut.process(SentryEvent(), hintsMap)) {
             assertNull(it.contexts.device!!.freeMemory)
             assertNull(it.contexts.device!!.isLowMemory)
         }

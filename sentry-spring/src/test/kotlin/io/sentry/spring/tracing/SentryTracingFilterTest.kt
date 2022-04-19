@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
@@ -16,6 +15,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanId
 import io.sentry.SpanStatus
+import io.sentry.TraceState
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryId
 import org.assertj.core.api.Assertions.assertThat
@@ -35,7 +35,7 @@ class SentryTracingFilterTest {
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
-        val transactionNameProvider = spy(TransactionNameProvider())
+        val transactionNameProvider = mock<TransactionNameProvider>()
 
         init {
             whenever(hub.options).thenReturn(
@@ -49,6 +49,7 @@ class SentryTracingFilterTest {
             request.requestURI = "/product/12"
             request.method = "POST"
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
+            whenever(transactionNameProvider.provideTransactionName(request)).thenReturn("POST /product/{id}")
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
                 whenever(hub.startTransaction(any(), any<CustomSamplingContext>(), eq(true))).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
@@ -83,6 +84,8 @@ class SentryTracingFilterTest {
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
                 assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -97,6 +100,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -111,6 +116,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.contexts.trace!!.status).isNull()
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -125,6 +132,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.contexts.trace!!.parentSpanId).isNull()
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -140,6 +149,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -171,6 +182,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }

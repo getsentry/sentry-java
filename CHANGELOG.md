@@ -1,10 +1,71 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-alpha.5
+
+* Feat: Screenshot is taken when there is an error (#1967)
+* Feat: Add Android profiling traces (#1897) (#1959) and its tests (#1949)
+
+## 6.0.0-alpha.4
+
+* Ref: Remove not needed interface abstractions on Android (#1953)
+
+## 6.0.0-alpha.3
+
+* Ref: Make hints Map<String, Object> instead of only Object (#1929)
+* Feat: Enable enableScopeSync by default for Android (#1928)
+
+## 6.0.0-alpha.2
+
+* Ref: Simplify DateUtils with ISO8601Utils (#1837)
+
+Breaking changes:
+
+* Ref: Remove deprecated and scheduled fields (#1875)
+* Ref: Add shutdownTimeoutMillis in favor of shutdownTimeout (#1873)
+* Feat: Relax TransactionNameProvider (#1861)
+* Ref: Remove Attachment ContentType since the Server infers it (#1874)
+
+## 6.0.0-alpha.1
+
+* Feat: Use float instead of Date for protocol types for higher precision (#1737)
+* Ref: Bind external properties to a dedicated class. (#1750)
+* Ref: Debug log serializable objects (#1795)
+* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
+
+Breaking changes:
+
+* `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
+* Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
+* `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
+* Feat: Vendor JSON (#1554)
+    * Introduce `JsonSerializable` and `JsonDeserializer` interfaces for manual json
+      serialization/deserialization.
+    * Introduce `JsonUnknwon` interface to preserve unknown properties when deserializing/serializing
+      SDK classes.
+    * When passing custom objects, for example in `Contexts`, these are supported for serialization:
+        * `JsonSerializable`
+        * `Map`, `Collection`, `Array`, `String` and all primitive types.
+        * Objects with the help of refection.
+            * `Map`, `Collection`, `Array`, `String` and all primitive types.
+            * Call `toString()` on objects that have a cyclic reference to a ancestor object.
+            * Call `toString()` where object graphs exceed max depth.
+    * Remove `gson` dependency.
+    * Remove `IUnknownPropertiesConsumer`
+* Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
+## 5.7.3
+
+* Fix: Sentry Timber integration throws an exception when using args (#1986)
+
+## 5.7.2
+
+* Fix: bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
+
+## 5.7.1
 
 * Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
 * Fix: ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
-
+* Feat: Pass MDC tags as Sentry tags (#1954)
 
 ## 5.7.0
 
@@ -42,7 +103,7 @@ Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900
 * Fix: Potential memory leaks (#1909)
 
 Breaking changes:
-`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events.
 Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
 
 ## 5.6.1

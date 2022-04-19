@@ -7,6 +7,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -84,16 +85,28 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableActivityLifecycleTracingAutoFinish = true;
 
+  /** The cache dir. path for caching profiling traces */
+  private @Nullable String profilingTracesDirPath;
+
+  /** Interval for profiling traces in milliseconds. Defaults to 300 times per second */
+  private int profilingTracesIntervalMillis = 1_000 / 300;
+
   /** Enables the Auto instrumentation for user interaction tracing. */
   private boolean enableUserInteractionTracing = false;
 
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
+  /** Enables or disables the attach screenshot feature when an error happened. */
+  private boolean attachScreenshot;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
     setAttachServerName(false);
+
+    // enable scope sync for Android by default
+    setEnableScopeSync(true);
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -217,6 +230,42 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
+   * Returns the profiling traces dir. path if set
+   *
+   * @return the profiling traces dir. path or null if not set
+   */
+  public @Nullable String getProfilingTracesDirPath() {
+    return profilingTracesDirPath;
+  }
+
+  /**
+   * Sets the profiling traces dir. path
+   *
+   * @param profilingTracesDirPath the profiling traces dir. path
+   */
+  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
+  }
+
+  /**
+   * Returns the interval for profiling traces in milliseconds.
+   *
+   * @return the interval for profiling traces in milliseconds.
+   */
+  public int getProfilingTracesIntervalMillis() {
+    return profilingTracesIntervalMillis;
+  }
+
+  /**
+   * Sets the interval for profiling traces in milliseconds.
+   *
+   * @param profilingTracesIntervalMillis - the interval for profiling traces in milliseconds.
+   */
+  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {
+    this.profilingTracesIntervalMillis = profilingTracesIntervalMillis;
+  }
+
+  /**
    * Returns the Debug image loader
    *
    * @return the image loader
@@ -250,6 +299,14 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setEnableActivityLifecycleTracingAutoFinish(
       boolean enableActivityLifecycleTracingAutoFinish) {
     this.enableActivityLifecycleTracingAutoFinish = enableActivityLifecycleTracingAutoFinish;
+  }
+
+  public boolean isAttachScreenshot() {
+    return attachScreenshot;
+  }
+
+  public void setAttachScreenshot(boolean attachScreenshot) {
+    this.attachScreenshot = attachScreenshot;
   }
 
   public boolean isEnableUserInteractionTracing() {

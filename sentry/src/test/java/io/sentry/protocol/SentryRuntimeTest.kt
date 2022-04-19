@@ -11,7 +11,7 @@ class SentryRuntimeTest {
     fun `copying Sentry runtime wont have the same references`() {
         val runtime = SentryRuntime()
         val unknown = mapOf(Pair("unknown", "unknown"))
-        runtime.acceptUnknownProperties(unknown)
+        runtime.setUnknown(unknown)
 
         val clone = SentryRuntime(runtime)
 
@@ -28,7 +28,7 @@ class SentryRuntimeTest {
         runtime.version = "version"
         runtime.rawDescription = "raw description"
         val unknown = mapOf(Pair("unknown", "unknown"))
-        runtime.acceptUnknownProperties(unknown)
+        runtime.setUnknown(unknown)
 
         val clone = SentryRuntime(runtime)
 

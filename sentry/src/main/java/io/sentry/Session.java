@@ -1,14 +1,20 @@
 package io.sentry;
 
 import io.sentry.protocol.User;
+import io.sentry.util.StringUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Session {
+public final class Session implements JsonUnknown, JsonSerializable {
 
   /** Session state */
   public enum State {
@@ -59,6 +65,9 @@ public final class Session {
 
   /** The session lock, ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
+
+  @SuppressWarnings("unused")
+  private @Nullable Map<String, Object> unknown;
 
   public Session(
       final @NotNull State status,
@@ -293,5 +302,217 @@ public final class Session {
         userAgent,
         environment,
         release);
+  }
+
+  // JsonSerializable
+
+  public static final class JsonKeys {
+    public static final String SID = "sid";
+    public static final String DID = "did";
+    public static final String INIT = "init";
+    public static final String STARTED = "started";
+    public static final String STATUS = "status";
+    public static final String SEQ = "seq";
+    public static final String ERRORS = "errors";
+    public static final String DURATION = "duration";
+    public static final String TIMESTAMP = "timestamp";
+
+    public static final String ATTRS = "attrs";
+    public static final String RELEASE = "release";
+    public static final String ENVIRONMENT = "environment";
+    public static final String IP_ADDRESS = "ip_address";
+    public static final String USER_AGENT = "user_agent";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (sessionId != null) {
+      writer.name(JsonKeys.SID).value(sessionId.toString());
+    }
+    if (distinctId != null) {
+      writer.name(JsonKeys.DID).value(distinctId);
+    }
+    if (init != null) {
+      writer.name(JsonKeys.INIT).value(init);
+    }
+    writer.name(JsonKeys.STARTED).value(logger, started);
+    writer.name(JsonKeys.STATUS).value(logger, status.name().toLowerCase(Locale.ROOT));
+    if (sequence != null) {
+      writer.name(JsonKeys.SEQ).value(sequence);
+    }
+    writer.name(JsonKeys.ERRORS).value(errorCount.intValue());
+    if (duration != null) {
+      writer.name(JsonKeys.DURATION).value(duration);
+    }
+    if (timestamp != null) {
+      writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+    }
+    writer.name(JsonKeys.ATTRS);
+    writer.beginObject();
+    writer.name(JsonKeys.RELEASE).value(logger, release);
+    if (environment != null) {
+      writer.name(JsonKeys.ENVIRONMENT).value(logger, environment);
+    }
+    if (ipAddress != null) {
+      writer.name(JsonKeys.IP_ADDRESS).value(logger, ipAddress);
+    }
+    if (userAgent != null) {
+      writer.name(JsonKeys.USER_AGENT).value(logger, userAgent);
+    }
+    writer.endObject();
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key);
+        writer.value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class Deserializer implements JsonDeserializer<Session> {
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull Session deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      reader.beginObject();
+
+      Date started = null; // @NotNull
+      Date timestamp = null;
+      Integer errorCount = null; // @NotNull
+      String distinctId = null;
+      UUID sessionId = null;
+      Boolean init = null;
+      State status = null; // @NotNull
+      Long sequence = null;
+      Double duration = null;
+      String ipAddress = null;
+      String userAgent = null;
+      String environment = null;
+      String release = null; // @NotNull
+
+      Map<String, Object> unknown = null;
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.SID:
+            String sidString = null;
+            try {
+              sidString = reader.nextStringOrNull();
+              sessionId = UUID.fromString(sidString);
+            } catch (IllegalArgumentException e) {
+              logger.log(SentryLevel.ERROR, "%s sid is not valid.", sidString);
+            }
+            break;
+          case JsonKeys.DID:
+            distinctId = reader.nextStringOrNull();
+            break;
+          case JsonKeys.INIT:
+            init = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.STARTED:
+            started = reader.nextDateOrNull(logger);
+            break;
+          case JsonKeys.STATUS:
+            String statusValue = StringUtils.capitalize(reader.nextStringOrNull());
+            if (statusValue != null) {
+              status = State.valueOf(statusValue);
+            }
+            break;
+          case JsonKeys.SEQ:
+            sequence = reader.nextLongOrNull();
+            break;
+          case JsonKeys.ERRORS:
+            errorCount = reader.nextIntegerOrNull();
+            break;
+          case JsonKeys.DURATION:
+            duration = reader.nextDoubleOrNull();
+            break;
+          case JsonKeys.TIMESTAMP:
+            timestamp = reader.nextDateOrNull(logger);
+            break;
+          case JsonKeys.ATTRS:
+            reader.beginObject();
+            while (reader.peek() == JsonToken.NAME) {
+              final String nextAttrName = reader.nextName();
+              switch (nextAttrName) {
+                case JsonKeys.RELEASE:
+                  release = reader.nextStringOrNull();
+                  break;
+                case JsonKeys.ENVIRONMENT:
+                  environment = reader.nextStringOrNull();
+                  break;
+                case JsonKeys.IP_ADDRESS:
+                  ipAddress = reader.nextStringOrNull();
+                  break;
+                case JsonKeys.USER_AGENT:
+                  userAgent = reader.nextStringOrNull();
+                  break;
+                default:
+                  reader.skipValue(); // Ignore unknown properties in attrs, as this is flattend
+              }
+            }
+            reader.endObject();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      if (status == null) {
+        throw missingRequiredFieldException(JsonKeys.STATUS, logger);
+      }
+      if (started == null) {
+        throw missingRequiredFieldException(JsonKeys.STARTED, logger);
+      }
+      if (errorCount == null) {
+        throw missingRequiredFieldException(JsonKeys.ERRORS, logger);
+      }
+      if (release == null) {
+        throw missingRequiredFieldException(JsonKeys.RELEASE, logger);
+      }
+      Session session =
+          new Session(
+              status,
+              started,
+              timestamp,
+              errorCount,
+              distinctId,
+              sessionId,
+              init,
+              sequence,
+              duration,
+              ipAddress,
+              userAgent,
+              environment,
+              release);
+      session.setUnknown(unknown);
+      reader.endObject();
+      return session;
+    }
+
+    private Exception missingRequiredFieldException(String field, ILogger logger) {
+      String message = "Missing required field \"" + field + "\"";
+      Exception exception = new IllegalStateException(message);
+      logger.log(SentryLevel.ERROR, message, exception);
+      return exception;
+    }
   }
 }

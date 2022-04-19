@@ -4,13 +4,14 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
@@ -28,16 +29,18 @@ import io.sentry.transport.ITransportGate
 import org.junit.Assert.assertArrayEquals
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.nio.charset.Charset
+import java.nio.file.Files
 import java.util.Arrays
 import java.util.UUID
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -51,16 +54,16 @@ class SentryClientTest {
     class Fixture {
         var transport = mock<ITransport>()
         var factory = mock<ITransportFactory>()
-        val maxAttachmentSize: Long = 5 * 1024 * 1024
+        val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
         val hub = mock<IHub>()
         val sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), hub)
 
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             sdkVersion = SdkVersion("test", "1.2.3")
-            setDebug(true)
+            isDebug = true
             setDiagnosticLevel(SentryLevel.DEBUG)
-            setSerializer(GsonSerializer(this))
+            setSerializer(JsonSerializer(this))
             setLogger(mock())
             maxAttachmentSize = this@Fixture.maxAttachmentSize
             setTransportFactory(factory)
@@ -74,6 +77,9 @@ class SentryClientTest {
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
+        val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
+        var profilingTraceData = ProfilingTraceData(profilingTraceFile, sentryTracer)
+        var profilingNonExistingTraceData = ProfilingTraceData(File("non_existent.trace"), sentryTracer)
 
         fun getSut() = SentryClient(sentryOptions)
     }
@@ -87,26 +93,15 @@ class SentryClientTest {
     }
 
     @Test
-    @Ignore("Not implemented")
-    fun `when dsn is an invalid string, client is disabled`() {
-        fixture.sentryOptions.dsn = "invalid-dsn"
-        val sut = fixture.getSut()
-        assertFalse(sut.isEnabled)
-    }
-
-    @Test
     fun `when dsn is an invalid string, client throws`() {
-        fixture.sentryOptions.setTransportFactory(NoOpTransportFactory.getInstance())
         fixture.sentryOptions.dsn = "invalid-dsn"
         assertFailsWith<IllegalArgumentException> { fixture.getSut() }
     }
 
     @Test
-    @Ignore("Not implemented")
-    fun `when dsn is null, client is disabled`() {
+    fun `when dsn is null, client throws`() {
         fixture.sentryOptions.dsn = null
-        val sut = fixture.getSut()
-        assertFalse(sut.isEnabled)
+        assertFailsWith<IllegalArgumentException> { fixture.getSut() }
     }
 
     @Test
@@ -202,9 +197,10 @@ class SentryClientTest {
         val event = SentryEvent()
         fixture.sentryOptions.environment = "not to be applied"
         val sut = fixture.getSut()
-        val expectedHint = Object()
-        sut.captureEvent(event, expectedHint)
-        verify(fixture.transport).send(any(), eq(expectedHint))
+
+        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to Object())
+        sut.captureEvent(event, hintsMap)
+        verify(fixture.transport).send(any(), eq(hintsMap))
     }
 
     @Test
@@ -507,7 +503,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, mock<Cached>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Cached>())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertNotEquals(scope.level, event.level)
     }
@@ -519,7 +517,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, Object())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
     }
@@ -531,7 +531,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, mock<ApplyScopeData>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<ApplyScopeData>())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
     }
@@ -543,7 +545,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, mock<CustomCachedApplyScopeDataHint>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CustomCachedApplyScopeDataHint())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
     }
@@ -863,7 +867,7 @@ class SentryClientTest {
         val scope = Scope(fixture.sentryOptions)
         scope.setContexts("boolean", true)
         scope.setContexts("string", "test")
-        scope.setContexts("number", 1.0)
+        scope.setContexts("number", 1)
         scope.setContexts("collection", listOf("a", "b"))
         scope.setContexts("array", arrayOf("a", "b"))
         scope.setContexts("char", 'a')
@@ -880,7 +884,7 @@ class SentryClientTest {
                 assertEquals("test", strKey["value"])
 
                 val numKey = contexts["number"] as Map<*, *>
-                assertEquals(1.0, numKey["value"])
+                assertEquals(1, numKey["value"])
 
                 val listKey = contexts["collection"] as Map<*, *>
                 assertEquals("a", (listKey["value"] as List<*>)[0])
@@ -918,7 +922,7 @@ class SentryClientTest {
                 assertNotNull(transaction)
                 assertEquals("a-transaction", transaction.transaction)
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
@@ -928,6 +932,31 @@ class SentryClientTest {
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
 
         verifyAttachmentsInEnvelope(transaction.eventId)
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+    }
+
+    @Test
+    fun `when captureTransaction with attachments and profiling data`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingTraceData)
+        verifyAttachmentsInEnvelope(transaction.eventId)
+        verifyProfilingTraceInEnvelope(transaction.eventId)
+    }
+
+    @Test
+    fun `when captureTransaction with profiling data`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+        assertFails { verifyAttachmentsInEnvelope(transaction.eventId) }
+        verifyProfilingTraceInEnvelope(transaction.eventId)
+    }
+
+    @Test
+    fun `when captureTransaction with non existing profiling trace file, profiling trace data is not sent`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingNonExistingTraceData)
+        verifyAttachmentsInEnvelope(transaction.eventId)
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
     }
 
     @Test
@@ -969,7 +998,7 @@ class SentryClientTest {
                     assertEquals("b", it.getExtra("a"))
                 }
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
@@ -1157,6 +1186,50 @@ class SentryClientTest {
         verify(fixture.transport, never()).send(any(), anyOrNull())
     }
 
+    @Test
+    fun `screenshot is added to the envelope from the hint`() {
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                val screenshot = envelope.items.last()
+                assertNotNull(screenshot) {
+                    assertEquals(attachment.filename, screenshot.header.fileName)
+                }
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `screenshot is dropped from hint via before send`() {
+        fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mutableMapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                assertEquals(1, envelope.items.count())
+            },
+            anyOrNull()
+        )
+    }
+
+    class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
+        override fun execute(event: SentryEvent, hint: MutableMap<String, Any?>?): SentryEvent? {
+            hint?.remove(SENTRY_SCREENSHOT)
+
+            return event
+        }
+    }
+
     private fun createScope(): Scope {
         return Scope(SentryOptions()).apply {
             addBreadcrumb(
@@ -1262,7 +1335,7 @@ class SentryClientTest {
 
                 assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
 
-                assertEquals(4, actual.items.count())
+                assertEquals(4, actual.items.filter { it.header.type != SentryItemType.Profile }.count())
                 val attachmentItems = actual.items
                     .filter { item -> item.header.type == SentryItemType.Attachment }
                     .toList()
@@ -1285,11 +1358,23 @@ class SentryClientTest {
                     attachmentItemTooBig.data
                 }
             },
-            isNull()
+            anyOrNull()
         )
     }
 
-    internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData
+    private fun verifyProfilingTraceInEnvelope(eventId: SentryId?) {
+        verify(fixture.transport).send(
+            check { actual ->
+                assertEquals(eventId, actual.header.eventId)
+
+                val profilingTraceItem = actual.items.firstOrNull { item ->
+                    item.header.type == SentryItemType.Profile
+                }
+                assertNotNull(profilingTraceItem?.data)
+            },
+            anyOrNull()
+        )
+    }
 
     internal class DiskFlushNotificationHint : DiskFlushNotification {
         override fun markFlushed() {}
@@ -1297,7 +1382,7 @@ class SentryClientTest {
 
     private fun eventProcessorThrows(): EventProcessor {
         return object : EventProcessor {
-            override fun process(event: SentryEvent, hint: Any?): SentryEvent? {
+            override fun process(event: SentryEvent, hint: Map<String, Any?>?): SentryEvent? {
                 throw Throwable()
             }
         }

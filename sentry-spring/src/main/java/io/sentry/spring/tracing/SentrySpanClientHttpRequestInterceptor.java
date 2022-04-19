@@ -1,5 +1,9 @@
 package io.sentry.spring.tracing;
 
+import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_REQUEST;
+import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_REQUEST_BODY;
+import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_RESPONSE;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
@@ -9,6 +13,8 @@ import io.sentry.SpanStatus;
 import io.sentry.TracingOrigins;
 import io.sentry.util.Objects;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.http.HttpRequest;
@@ -31,6 +37,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       @NotNull ClientHttpRequestExecution execution)
       throws IOException {
     Integer responseStatusCode = null;
+    ClientHttpResponse response = null;
     try {
       final ISpan activeSpan = hub.getSpan();
       if (activeSpan == null) {
@@ -47,7 +54,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       }
 
       try {
-        final ClientHttpResponse response = execution.execute(request, body);
+        response = execution.execute(request, body);
         // handles both success and error responses
         span.setStatus(SpanStatus.fromHttpStatusCode(response.getRawStatusCode()));
         responseStatusCode = response.getRawStatusCode();
@@ -61,17 +68,26 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
         span.finish();
       }
     } finally {
-      addBreadcrumb(request, body, responseStatusCode);
+      addBreadcrumb(request, body, responseStatusCode, response);
     }
   }
 
   private void addBreadcrumb(
       final @NotNull HttpRequest request,
       final @NotNull byte[] body,
-      final @Nullable Integer responseStatusCode) {
+      final @Nullable Integer responseStatusCode,
+      final @Nullable ClientHttpResponse response) {
     final Breadcrumb breadcrumb =
         Breadcrumb.http(request.getURI().toString(), request.getMethodValue(), responseStatusCode);
     breadcrumb.setData("request_body_size", body.length);
-    hub.addBreadcrumb(breadcrumb);
+
+    final Map<String, Object> hintMap = new HashMap<>();
+    hintMap.put(SPRING_REQUEST_INTERCEPTOR_REQUEST, request);
+    hintMap.put(SPRING_REQUEST_INTERCEPTOR_REQUEST_BODY, body);
+    if (response != null) {
+      hintMap.put(SPRING_REQUEST_INTERCEPTOR_RESPONSE, response);
+    }
+
+    hub.addBreadcrumb(breadcrumb, hintMap);
   }
 }

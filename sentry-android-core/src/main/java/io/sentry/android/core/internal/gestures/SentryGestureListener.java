@@ -1,5 +1,8 @@
 package io.sentry.android.core.internal.gestures;
 
+import static io.sentry.TypeCheckHint.ANDROID_MOTION_EVENT;
+import static io.sentry.TypeCheckHint.ANDROID_VIEW;
+
 import android.app.Activity;
 import android.content.res.Resources;
 import android.view.GestureDetector;
@@ -14,6 +17,7 @@ import io.sentry.SentryLevel;
 import io.sentry.android.core.SentryAndroidOptions;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -62,7 +66,11 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     final String direction = scrollState.calculateDirection(motionEvent);
-    addBreadcrumb(scrollTarget, scrollState.type, Collections.singletonMap("direction", direction));
+    addBreadcrumb(
+        scrollTarget,
+        scrollState.type,
+        Collections.singletonMap("direction", direction),
+        motionEvent);
     startTracing(scrollTarget, scrollState.type);
     scrollState.reset();
   }
@@ -100,7 +108,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return false;
     }
 
-    addBreadcrumb(target, "click", Collections.emptyMap());
+    addBreadcrumb(target, "click", Collections.emptyMap(), motionEvent);
     startTracing(target, "click");
     return false;
   }
@@ -167,7 +175,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private void addBreadcrumb(
       final @NotNull View target,
       final @NotNull String eventType,
-      final @NotNull Map<String, Object> additionalData) {
+      final @NotNull Map<String, Object> additionalData,
+      final @NotNull MotionEvent motionEvent) {
     @NotNull String className;
     @Nullable String canonicalName = target.getClass().getCanonicalName();
     if (canonicalName != null) {
@@ -176,9 +185,14 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       className = target.getClass().getSimpleName();
     }
 
+    final Map<String, Object> hintMap = new HashMap<>();
+    hintMap.put(ANDROID_MOTION_EVENT, motionEvent);
+    hintMap.put(ANDROID_VIEW, target);
+
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(
-            eventType, ViewUtils.getResourceIdWithFallback(target), className, additionalData));
+            eventType, ViewUtils.getResourceIdWithFallback(target), className, additionalData),
+        hintMap);
   }
 
   private void startTracing(final @NotNull View target, final @NotNull String eventType) {
