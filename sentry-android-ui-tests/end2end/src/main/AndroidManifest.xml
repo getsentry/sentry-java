@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="io.sentry.android.uitests.end2end">
+
+  <application
+    android:theme="@style/Theme.AppCompat"
+    android:label="Sentry End2End Tests"
+    android:usesCleartextTraffic="true">
+
+    <activity android:name=".EmptyActivity" />
+
+    <meta-data android:name="io.sentry.auto-init" android:value="false" />
+    <meta-data android:name="io.sentry.environment" android:value="${sentryEnvironment}" />
+    <meta-data android:name="io.sentry.debug" android:value="${sentryDebug}" />
+
+  </application>
+
+</manifest>

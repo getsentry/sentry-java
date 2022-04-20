@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="io.sentry.android.uitests.benchmark">
+
+    <application
+        android:theme="@style/Theme.AppCompat"
+        android:label="Sentry Benchmark">
+
+      <activity android:name=".BenchmarkActivity" />
+
+      <meta-data android:name="io.sentry.dsn" android:value="https://fakesecret@fakeuri.ingest.sentry.io/1234567" />
+      <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />
+      <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
+      <meta-data android:name="io.sentry.traces.profiling.enable" android:value="true" />
+
+    </application>
+
+</manifest>

@@ -12,6 +12,8 @@ include(
     "sentry-android-timber",
     "sentry-android-okhttp",
     "sentry-android-fragment",
+    "sentry-android-ui-tests:benchmark",
+    "sentry-android-ui-tests:end2end",
     "sentry-apollo",
     "sentry-test-support",
     "sentry-log4j2",
