@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.Sentry
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.test.getCtor
@@ -28,10 +29,12 @@ class AndroidTransactionProfilerTest {
     private lateinit var file: File
 
     private class Fixture {
+        private val mockDsn = "http://key@localhost/proj"
         val buildInfo = mock<BuildInfoProvider> {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
         val options = SentryAndroidOptions().apply {
+            dsn = mockDsn
             isProfilingEnabled = true
         }
         val transaction1 = SentryTracer(TransactionContext("", ""), mock())
@@ -46,6 +49,7 @@ class AndroidTransactionProfilerTest {
         context = ApplicationProvider.getApplicationContext()
         file = context.cacheDir
         AndroidOptionsInitializer.init(fixture.options, createMockContext())
+        Sentry.init(fixture.options)
     }
 
     @AfterTest

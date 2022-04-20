@@ -160,15 +160,7 @@ class AndroidOptionsInitializerTest {
                 "${File.separator}cache${File.separator}sentry${File.separator}profiling_traces"
             )!!
         )
-        assertTrue(File(fixture.sentryOptions.profilingTracesDirPath!!).exists())
-    }
-
-    @Test
-    fun `profilingTracesDirPath should be created and cleared at initialization`() {
-        fixture.initSut()
-
-        assertTrue(File(fixture.sentryOptions.profilingTracesDirPath!!).exists())
-        assertTrue(File(fixture.sentryOptions.profilingTracesDirPath!!).list()!!.isEmpty())
+        assertFalse(File(fixture.sentryOptions.profilingTracesDirPath!!).exists())
     }
 
     @Test
