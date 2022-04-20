@@ -52,6 +52,16 @@ public final class SentryTracer implements ITransaction {
    */
   private final boolean trimEnd;
 
+  /**
+   * The idle time, measured in ms, to wait until the transaction will be finished. The transaction
+   * will use the end timestamp of the last finished span as the endtime for the transaction.
+   *
+   * <p>When set to {@code null} the transaction must be finished manually.
+   *
+   * <p>The default is 3 seconds.
+   */
+  private final @Nullable Long idleTimeout;
+
   private @Nullable TimerTask timerTask;
   private final @NotNull Timer timer = new Timer(true);
   private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
@@ -92,6 +102,7 @@ public final class SentryTracer implements ITransaction {
     this.name = context.getName();
     this.hub = hub;
     this.waitForChildren = waitForChildren;
+    this.idleTimeout = idleTimeout;
     this.trimEnd = trimEnd;
     this.transactionFinishedCallback = transactionFinishedCallback;
 
@@ -306,6 +317,10 @@ public final class SentryTracer implements ITransaction {
       SentryTransaction transaction = new SentryTransaction(this);
       if (transactionFinishedCallback != null) {
         transactionFinishedCallback.execute(this);
+      }
+      if (children.isEmpty() && idleTimeout != null) {
+        // if it's an idle transaction which has no children, we drop it to save user's quota
+        return;
       }
       hub.captureTransaction(transaction, this.traceState(), null, profilingTraceData);
     }
