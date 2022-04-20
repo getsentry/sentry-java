@@ -1208,7 +1208,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
-	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
+	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfilingEnabled (Z)V
 	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
 	public fun setProguardUuid (Ljava/lang/String;)V

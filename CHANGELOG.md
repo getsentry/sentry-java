@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Fix: Profiling rate decreased from 300hz to 100hz; fixed profiling traces folder creation on manual sdk init (#1997)
+* Fix: Profiling rate decreased from 300hz to 100hz; fixed profiling traces folder creation on manual sdk init (#1997)
+* Ref: Make options.printUncaughtStackTrace primitive type (#1995)
 
 ## 6.0.0-alpha.5
 
