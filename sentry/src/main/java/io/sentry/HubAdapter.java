@@ -202,7 +202,6 @@ public final class HubAdapter implements IHub {
       @Nullable Date startTimestamp,
       boolean waitForChildren,
       @Nullable Long idleTimeout,
-      boolean trimEnd,
       @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return Sentry.startTransaction(
         transactionContexts,
@@ -211,7 +210,6 @@ public final class HubAdapter implements IHub {
         startTimestamp,
         waitForChildren,
         idleTimeout,
-        trimEnd,
         transactionFinishedCallback);
   }
 

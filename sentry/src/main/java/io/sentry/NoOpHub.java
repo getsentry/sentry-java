@@ -158,7 +158,6 @@ public final class NoOpHub implements IHub {
       @Nullable Date startTimestamp,
       boolean waitForChildren,
       @Nullable Long idleTimeout,
-      boolean trimEnd,
       @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return NoOpTransaction.getInstance();
   }

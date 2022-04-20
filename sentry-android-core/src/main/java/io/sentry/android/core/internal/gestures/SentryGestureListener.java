@@ -252,7 +252,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     final String name = getActivityName(activity) + "." + viewId;
     final String op = UI_ACTION + "." + eventType;
     final ITransaction transaction =
-        hub.startTransaction(name, op, true, options.getIdleTimeout(), true);
+        hub.startTransaction(name, op, true, options.getIdleTimeout());
 
     hub.configureScope(
         scope -> {

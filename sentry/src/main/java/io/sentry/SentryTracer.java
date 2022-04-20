@@ -45,17 +45,8 @@ public final class SentryTracer implements ITransaction {
    */
   private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
 
-  /**
-   * If `trimEnd` is true, sets the end timestamp of the transaction to the highest timestamp of
-   * child spans, trimming the duration of the transaction. This is useful to discard extra time in
-   * the idle transactions to trim their duration to children' duration.
-   */
-  private final boolean trimEnd;
-
   private @Nullable TimerTask timerTask;
   private final @NotNull Timer timer = new Timer(true);
-  private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
-      new SpanByTimestampComparator();
 
   private @Nullable TraceState traceState;
 
@@ -68,14 +59,14 @@ public final class SentryTracer implements ITransaction {
       final @NotNull IHub hub,
       final boolean waitForChildren,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(context, hub, null, waitForChildren, null, false, transactionFinishedCallback);
+    this(context, hub, null, waitForChildren, null, transactionFinishedCallback);
   }
 
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
       final @Nullable Date startTimestamp) {
-    this(context, hub, startTimestamp, false, null, false, null);
+    this(context, hub, startTimestamp, false, null, null);
   }
 
   SentryTracer(
@@ -84,7 +75,6 @@ public final class SentryTracer implements ITransaction {
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
       final @Nullable Long idleTimeout,
-      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
@@ -92,7 +82,6 @@ public final class SentryTracer implements ITransaction {
     this.name = context.getName();
     this.hub = hub;
     this.waitForChildren = waitForChildren;
-    this.trimEnd = trimEnd;
     this.transactionFinishedCallback = transactionFinishedCallback;
 
     if (idleTimeout != null) {
@@ -266,33 +255,25 @@ public final class SentryTracer implements ITransaction {
       if (hub.getOptions().isProfilingEnabled() && isSampled) {
         profilingTraceData = hub.getOptions().getTransactionProfiler().onTransactionFinish(this);
       }
+      root.finish(finishStatus.spanStatus);
 
-      // try to get the high precision timestamp from the root span
-      Long endTime = System.nanoTime();
-      Double finishTimestamp = root.getHighPrecisionTimestamp(endTime);
-      // if it's not set -> fallback to the current time
-      if (finishTimestamp == null) {
-        finishTimestamp = DateUtils.dateToSeconds(DateUtils.getCurrentDateTime());
-        endTime = null;
-      }
       // finish unfinished children
+      Double finishTimestamp = root.getTimestamp();
+      if (finishTimestamp == null) {
+        hub.getOptions()
+          .getLogger()
+          .log(
+            SentryLevel.WARNING,
+            "Root span - op: %s, description: %s - has no timestamp set, when finishing unfinished spans.",
+            root.getOperation(),
+            root.getDescription());
+        finishTimestamp = DateUtils.dateToSeconds(DateUtils.getCurrentDateTime());
+      }
       for (final Span child : children) {
         if (!child.isFinished()) {
-          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp, endTime);
+          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp, null);
         }
       }
-
-      // set the transaction finish timestamp to the latest child timestamp, if the transaction
-      // is an idle transaction
-      if (!children.isEmpty() && trimEnd) {
-        final Span oldestChild = Collections.max(children, spanByTimestampComparator);
-        final Double oldestChildTimestamp = oldestChild.getTimestamp();
-        if (oldestChildTimestamp != null && finishTimestamp > oldestChildTimestamp) {
-          finishTimestamp = oldestChildTimestamp;
-          endTime = oldestChild.getEndNanos();
-        }
-      }
-      root.finish(finishStatus.spanStatus, finishTimestamp, endTime);
 
       hub.configureScope(
           scope -> {
@@ -519,23 +500,6 @@ public final class SentryTracer implements ITransaction {
     private FinishStatus(final boolean isFinishing, final @Nullable SpanStatus spanStatus) {
       this.isFinishing = isFinishing;
       this.spanStatus = spanStatus;
-    }
-  }
-
-  private static final class SpanByTimestampComparator implements Comparator<Span> {
-
-    @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-    @Override
-    public int compare(Span o1, Span o2) {
-      final Double first = o1.getHighPrecisionTimestamp();
-      final Double second = o2.getHighPrecisionTimestamp();
-      if (first == null) {
-        return -1;
-      } else if (second == null) {
-        return 1;
-      } else {
-        return first.compareTo(second);
-      }
     }
   }
 }
