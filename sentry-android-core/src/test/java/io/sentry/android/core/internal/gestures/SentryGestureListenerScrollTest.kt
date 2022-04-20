@@ -1,5 +1,6 @@
 package io.sentry.android.core.internal.gestures
 
+import android.app.Activity
 import android.content.Context
 import android.content.res.Resources
 import android.view.MotionEvent
@@ -28,6 +29,7 @@ import kotlin.test.assertEquals
 
 class SentryGestureListenerScrollTest {
     class Fixture {
+        val activity = mock<Activity>()
         val window = mock<Window>()
         val context = mock<Context>()
         val resources = mock<Resources>()
@@ -65,7 +67,7 @@ class SentryGestureListenerScrollTest {
                 endEvent.mockDirection(firstEvent, direction)
             }
             return SentryGestureListener(
-                WeakReference(window),
+                activity,
                 hub,
                 options,
                 isAndroidXAvailable

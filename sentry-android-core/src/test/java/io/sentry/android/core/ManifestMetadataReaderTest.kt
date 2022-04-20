@@ -813,4 +813,55 @@ class ManifestMetadataReaderTest {
         // Assert
         assertFalse(fixture.options.isAttachScreenshot)
     }
+
+    @Test
+    fun `applyMetadata reads user interaction tracing to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACES_UI_ENABLE to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isEnableUserInteractionTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads user interaction tracing and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isEnableUserInteractionTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads idleTimeout from metadata`() {
+        // Arrange
+        val expectedIdleTimeout = 1500
+        val bundle = bundleOf(ManifestMetadataReader.IDLE_TIMEOUT to expectedIdleTimeout)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(expectedIdleTimeout.toLong(), fixture.options.idleTimeout)
+    }
+
+    @Test
+    fun `applyMetadata without specifying idleTimeout, stays default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(3000L, fixture.options.idleTimeout)
+    }
 }
