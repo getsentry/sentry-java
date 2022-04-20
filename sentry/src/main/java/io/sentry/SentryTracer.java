@@ -271,7 +271,7 @@ public final class SentryTracer implements ITransaction {
       }
       for (final Span child : children) {
         if (!child.isFinished()) {
-          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp);
+          child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp, null);
         }
       }
 
