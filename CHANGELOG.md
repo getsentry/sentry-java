@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix: Profiling rate decreased from 300hz to 100hz; fixed profiling traces folder creation on manual sdk init (#1997)
+
 ## 6.0.0-alpha.5
 
 * Feat: Screenshot is taken when there is an error (#1967)
