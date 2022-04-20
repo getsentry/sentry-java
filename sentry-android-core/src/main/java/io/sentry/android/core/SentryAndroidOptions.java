@@ -88,8 +88,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** The cache dir. path for caching profiling traces */
   private @Nullable String profilingTracesDirPath;
 
-  /** Interval for profiling traces in milliseconds. Defaults to 300 times per second */
-  private int profilingTracesIntervalMillis = 1_000 / 300;
+  /** Interval for profiling traces in milliseconds. Defaults to 100 times per second */
+  private int profilingTracesIntervalMillis = 1_000 / 100;
 
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();

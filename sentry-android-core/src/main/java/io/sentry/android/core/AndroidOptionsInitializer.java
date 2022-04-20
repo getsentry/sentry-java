@@ -305,23 +305,23 @@ final class AndroidOptionsInitializer {
     options.setCacheDirPath(cacheDir.getAbsolutePath());
     options.setProfilingTracesDirPath(profilingTracesDir.getAbsolutePath());
 
-    if (options.isProfilingEnabled()) {
-      profilingTracesDir.mkdirs();
-      final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+    // We don't have the options set by code (manual initialisation) at this point, so we have no
+    // way to know if profiling is manually enabled or not.
+    // In case it's disabled the overhead should be low enough
+    profilingTracesDir.mkdirs();
+    final File[] oldTracesDirContent = profilingTracesDir.listFiles();
 
-      options
-          .getExecutorService()
-          .submit(
-              () -> {
-                if (oldTracesDirContent == null) return;
-                // Method trace files are normally deleted at the end of traces, but if that fails
-                // for some
-                // reason we try to clear any old files here.
-                for (File f : oldTracesDirContent) {
-                  FileUtils.deleteRecursively(f);
-                }
-              });
-    }
+    options
+        .getExecutorService()
+        .submit(
+            () -> {
+              if (oldTracesDirContent == null) return;
+              // Method trace files are normally deleted at the end of traces, but if that fails
+              // for some reason we try to clear any old files here.
+              for (File f : oldTracesDirContent) {
+                FileUtils.deleteRecursively(f);
+              }
+            });
   }
 
   private static boolean isNdkAvailable(final @NotNull BuildInfoProvider buildInfoProvider) {
