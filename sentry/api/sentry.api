@@ -1137,7 +1137,6 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getOutboxPath ()Ljava/lang/String;
-	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
