@@ -18,14 +18,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
+import radiography.Radiography;
+import radiography.ScanScopes;
+import radiography.ViewStateRenderers;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
 
   private int crashCount = 0;
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -176,6 +181,22 @@ public class MainActivity extends AppCompatActivity {
               new RuntimeException("Uncaught Exception from Java."),
               "Something wrong happened %d times",
               crashCount);
+        });
+
+    binding.attachRadiography.setOnClickListener(
+        view -> {
+          Sentry.withScope(
+              scope -> {
+                // you can pass params to scan()
+                // DefaultsIncludingPii can be used if defaultPii is enabled
+                final String radiography =
+                    Radiography.scan(
+                        ScanScopes.AllWindowsScope, ViewStateRenderers.DefaultsIncludingPii);
+                final Attachment attachment =
+                    new Attachment(radiography.getBytes(UTF_8), "radiography.txt");
+                scope.addAttachment(attachment);
+                Sentry.captureMessage("message with radiography attachment");
+              });
         });
 
     setContentView(binding.getRoot());

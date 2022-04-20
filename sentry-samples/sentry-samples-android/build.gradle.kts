@@ -105,6 +105,7 @@ dependencies {
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
     implementation(Config.Libs.fragment)
+    implementation("com.squareup.radiography:radiography:2.4.1")
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(projects.sentryAndroid) {
