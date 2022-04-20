@@ -424,6 +424,7 @@ public interface IHub {
       @Nullable Date startTimestamp,
       boolean waitForChildren,
       @Nullable Long idleTimeout,
+      boolean trimEnd,
       @Nullable TransactionFinishedCallback transactionFinishedCallback);
 
   /**
@@ -454,6 +455,7 @@ public interface IHub {
         startTimestamp,
         waitForChildren,
         null,
+        false,
         transactionFinishedCallback);
   }
 
@@ -462,7 +464,8 @@ public interface IHub {
       final @NotNull String name,
       final @NotNull String operation,
       final boolean waitForChildren,
-      final @Nullable Long idleTimeout) {
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd) {
     return startTransaction(
         new TransactionContext(name, operation),
         null,
@@ -470,6 +473,7 @@ public interface IHub {
         null,
         waitForChildren,
         idleTimeout,
+        trimEnd,
         null);
   }
 
