@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Feat: Add sentry-servlet-jakarta module (#1987)
+* Feat: Add sentry-servlet-jakarta module (#1987)
+* Ref: Make options.printUncaughtStackTrace primitive type (#1995)
 
 ## 6.0.0-alpha.5
 
@@ -56,6 +57,10 @@ Breaking changes:
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
+## 5.7.3
+
+* Fix: Sentry Timber integration throws an exception when using args (#1986)
 
 ## 5.7.2
 

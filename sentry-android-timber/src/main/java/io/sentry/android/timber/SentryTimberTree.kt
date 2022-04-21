@@ -42,7 +42,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
-        super.v(t, message, args)
+        super.v(t, message, *args)
         logWithSentry(Log.VERBOSE, t, message, *args)
     }
 
@@ -57,7 +57,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
-        super.d(message, args)
+        super.d(message, *args)
         logWithSentry(Log.DEBUG, null, message, *args)
     }
 
@@ -67,7 +67,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
-        super.d(t, message, args)
+        super.d(t, message, *args)
         logWithSentry(Log.DEBUG, t, message, *args)
     }
 
@@ -82,7 +82,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
-        super.d(message, args)
+        super.d(message, *args)
         logWithSentry(Log.INFO, null, message, *args)
     }
 
@@ -92,7 +92,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
-        super.i(t, message, args)
+        super.i(t, message, *args)
         logWithSentry(Log.INFO, t, message, *args)
     }
 
@@ -107,7 +107,7 @@ class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
-        super.w(message, args)
+        super.w(message, *args)
         logWithSentry(Log.WARN, null, message, *args)
     }
 
