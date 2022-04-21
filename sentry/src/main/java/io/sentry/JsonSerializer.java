@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.clientreport.ClientReport;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Browser;
 import io.sentry.protocol.Contexts;
@@ -99,6 +100,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SpanStatus.class, new SpanStatus.Deserializer());
     deserializersByClass.put(User.class, new User.Deserializer());
     deserializersByClass.put(UserFeedback.class, new UserFeedback.Deserializer());
+    deserializersByClass.put(ClientReport.class, new ClientReport.Deserializer());
   }
 
   // Deserialize

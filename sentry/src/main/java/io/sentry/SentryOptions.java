@@ -2,6 +2,9 @@ package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.clientreport.ClientReportRecorder;
+import io.sentry.clientreport.IClientReportRecorder;
+import io.sentry.clientreport.NoOpClientReportRecorder;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -314,6 +317,12 @@ public class SentryOptions {
    * Sentry tags to events.
    */
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
+
+  /** Whether to send client reports containing information about number of dropped events. */
+  private boolean sendClientReports = true;
+
+  /** ClientReportRecorder to track count of lost events / transactions / ... * */
+  @NotNull IClientReportRecorder clientReportRecorder = new ClientReportRecorder(this);
 
   /**
    * Adds an event processor
@@ -1541,6 +1550,40 @@ public class SentryOptions {
    */
   public void addContextTag(final @NotNull String contextTag) {
     this.contextTags.add(contextTag);
+  }
+
+  /**
+   * Returns whether sending of client reports has been enabled.
+   *
+   * @return true if enabled; false if disabled
+   */
+  public boolean isSendClientReports() {
+    return sendClientReports;
+  }
+
+  /**
+   * Enables / disables sending of client reports.
+   *
+   * @param sendClientReports true enables client reports; false disables them
+   */
+  public void setSendClientReports(boolean sendClientReports) {
+    this.sendClientReports = sendClientReports;
+
+    if (sendClientReports) {
+      clientReportRecorder = new ClientReportRecorder(this);
+    } else {
+      clientReportRecorder = new NoOpClientReportRecorder();
+    }
+  }
+
+  /**
+   * Returns a ClientReportRecorder or a NoOp if sending of client reports has been disabled.
+   *
+   * @return a client report recorder or NoOp
+   */
+  @ApiStatus.Internal
+  public @NotNull IClientReportRecorder getClientReportRecorder() {
+    return clientReportRecorder;
   }
 
   /** The BeforeSend callback */

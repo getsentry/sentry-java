@@ -6,6 +6,7 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
@@ -15,6 +16,7 @@ import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -64,7 +66,6 @@ public final class AsyncHttpTransport implements ITransport {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void send(final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint)
       throws IOException {
     // For now no caching on envelopes
@@ -84,7 +85,23 @@ public final class AsyncHttpTransport implements ITransport {
         envelopeCache.discard(envelope);
       }
     } else {
-      executor.submit(new EnvelopeSender(filteredEnvelope, hint, currentEnvelopeCache));
+      SentryEnvelope envelopeThatMayIncludeClientReport;
+      if (sentrySdkHint instanceof DiskFlushNotification) {
+        envelopeThatMayIncludeClientReport =
+            options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope);
+      } else {
+        envelopeThatMayIncludeClientReport = filteredEnvelope;
+      }
+
+      final Future<?> future =
+          executor.submit(
+              new EnvelopeSender(envelopeThatMayIncludeClientReport, hint, currentEnvelopeCache));
+
+      if (future != null && future.isCancelled()) {
+        options
+            .getClientReportRecorder()
+            .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelopeThatMayIncludeClientReport);
+      }
     }
   }
 
@@ -213,8 +230,10 @@ public final class AsyncHttpTransport implements ITransport {
       }
 
       if (transportGate.isConnected()) {
+        final SentryEnvelope envelopeWithClientReport =
+            options.getClientReportRecorder().attachReportToEnvelope(envelope);
         try {
-          result = connection.send(envelope);
+          result = connection.send(envelopeWithClientReport);
           if (result.isSuccess()) {
             envelopeCache.discard(envelope);
           } else {
@@ -224,6 +243,15 @@ public final class AsyncHttpTransport implements ITransport {
 
             options.getLogger().log(SentryLevel.ERROR, message);
 
+            // ignore e.g. 429 as we're not the ones actively dropping
+            if (result.getResponseCode() >= 400 && result.getResponseCode() != 429) {
+              if (!(sentrySdkHint instanceof Retryable)) {
+                options
+                    .getClientReportRecorder()
+                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+              }
+            }
+
             throw new IllegalStateException(message);
           }
         } catch (IOException e) {
@@ -232,6 +260,9 @@ public final class AsyncHttpTransport implements ITransport {
             ((Retryable) sentrySdkHint).setRetry(true);
           } else {
             LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
+            options
+                .getClientReportRecorder()
+                .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
           }
           throw new IllegalStateException("Sending the event failed.", e);
         }
@@ -241,6 +272,9 @@ public final class AsyncHttpTransport implements ITransport {
           ((Retryable) sentrySdkHint).setRetry(true);
         } else {
           LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
+          options
+              .getClientReportRecorder()
+              .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope);
         }
       }
       return result;
