@@ -20,7 +20,6 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
-import java.lang.ref.WeakReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
