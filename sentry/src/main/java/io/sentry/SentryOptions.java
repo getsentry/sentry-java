@@ -223,7 +223,7 @@ public class SentryOptions {
    * When enabled, UncaughtExceptionHandler will print exceptions (same as java would normally do),
    * if no other UncaughtExceptionHandler was registered before.
    */
-  private @Nullable Boolean printUncaughtStackTrace = false;
+  private boolean printUncaughtStackTrace = false;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
@@ -1017,15 +1017,6 @@ public class SentryOptions {
    * @return true if enabled or false otherwise.
    */
   public boolean isPrintUncaughtStackTrace() {
-    return Boolean.TRUE.equals(printUncaughtStackTrace);
-  }
-
-  /**
-   * Checks if printing exceptions by UncaughtExceptionHandler is enabled or disabled.
-   *
-   * @return true if enabled, false otherwise or null if not set.
-   */
-  public @Nullable Boolean getPrintUncaughtStackTrace() {
     return printUncaughtStackTrace;
   }
 
@@ -1034,7 +1025,7 @@ public class SentryOptions {
    *
    * @param printUncaughtStackTrace true if enabled or false otherwise.
    */
-  public void setPrintUncaughtStackTrace(final @Nullable Boolean printUncaughtStackTrace) {
+  public void setPrintUncaughtStackTrace(final boolean printUncaughtStackTrace) {
     this.printUncaughtStackTrace = printUncaughtStackTrace;
   }
 

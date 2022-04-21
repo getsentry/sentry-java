@@ -162,7 +162,7 @@ class UncaughtExceptionHandlerIntegrationTest {
 
             val handlerMock = mock<UncaughtExceptionHandler>()
             val options = SentryOptions().noFlushTimeout()
-            options.printUncaughtStackTrace = true
+            options.isPrintUncaughtStackTrace = true
             val sut = UncaughtExceptionHandlerIntegration(handlerMock)
             sut.register(mock<IHub>(), options)
             sut.uncaughtException(mock<Thread>(), RuntimeException("This should be printed!"))
