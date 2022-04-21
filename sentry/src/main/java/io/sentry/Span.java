@@ -44,7 +44,7 @@ public final class Span implements ISpan {
 
   private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
-  private final @Nullable SpanFinishedCallback spanFinishedCallback;
+  private @Nullable SpanFinishedCallback spanFinishedCallback;
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
 
@@ -306,6 +306,10 @@ public final class Span implements ISpan {
   @Nullable
   Long getEndNanos() {
     return endNanos;
+  }
+
+  void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {
+    this.spanFinishedCallback = callback;
   }
 
   public @Nullable Double getHighPrecisionTimestamp() {

@@ -2,14 +2,18 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.atLeastOnce
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import java.util.Date
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -39,10 +43,11 @@ class SentryTracerTest {
             idleTimeout: Long? = null,
             trimEnd: Boolean = false,
             transactionFinishedCallback: TransactionFinishedCallback? = null,
-            sampled: Boolean? = null
+            sampled: Boolean? = null,
+            latch: CountDownLatch? = null
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op", sampled), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback)
+            return SentryTracer(TransactionContext("name", "op", sampled), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback, latch)
         }
     }
 
@@ -459,14 +464,14 @@ class SentryTracerTest {
     @Test
     fun `finishing unfinished spans with the transaction timestamp`() {
         val transaction = fixture.getSut(sampled = true)
-        transaction.startChild("op")
+        val span = transaction.startChild("op") as Span
         transaction.startChild("op2")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
+
         verify(fixture.hub, times(1)).captureTransaction(
             check {
-                val timestamp = it.timestamp
                 assertEquals(2, it.spans.size)
-                assertEquals(timestamp, it.spans[0].timestamp)
+                assertEquals(transaction.root.endNanos, span.endNanos)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[0].status)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
             },
@@ -560,6 +565,99 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceState>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when initialized without idleTimeout, does not schedule finish timer`() {
+        val transaction = fixture.getSut()
+
+        assertNull(transaction.timerTask)
+    }
+
+    @Test
+    fun `when initialized with idleTimeout, schedules finish timer`() {
+        val transaction = fixture.getSut(idleTimeout = 50)
+
+        assertNotNull(transaction.timerTask)
+    }
+
+    @Test
+    fun `when no children and the transaction is idle, drops the transaction`() {
+        val latch = CountDownLatch(1)
+        fixture.getSut(idleTimeout = 50, latch = latch)
+
+        latch.await()
+
+        verify(fixture.hub, never()).captureTransaction(
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
+    }
+
+    @Test
+    fun `cancels timer when manually finished`() {
+        val latch = CountDownLatch(1)
+        val transaction = fixture.getSut(idleTimeout = 10000, latch = latch)
+
+        transaction.finish()
+
+        assertNull(transaction.timerTask)
+    }
+
+    @Test
+    fun `when idle transaction with children, finishes the transaction after the idle timeout`() {
+        val latch = CountDownLatch(1)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, latch = latch)
+
+        val span = transaction.startChild("op")
+        span.finish()
+
+        latch.await()
+
+        verify(fixture.hub).captureTransaction(
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
+    }
+
+    @Test
+    fun `when a new child is added to the idle transaction, resets the timer`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50)
+
+        val initialTime = transaction.timerTask!!.scheduledExecutionTime()
+
+        transaction.startChild("op")
+        val timeAfterAddingChild = transaction.timerTask!!.scheduledExecutionTime()
+
+        assertTrue { timeAfterAddingChild > initialTime }
+    }
+
+    @Test
+    fun `when trimEnd, trims idle transaction time to the latest child timestamp`() {
+        val latch = CountDownLatch(1)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, latch = latch, sampled = true)
+
+        val span = transaction.startChild("op")
+        span.finish()
+
+        val span2 = transaction.startChild("op2") as Span
+        span2.finish()
+
+        latch.await()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(2, it.spans.size)
+                assertEquals(transaction.root.endNanos, span2.endNanos)
+            },
+            anyOrNull(),
             anyOrNull(),
             anyOrNull()
         )
