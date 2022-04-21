@@ -195,6 +195,10 @@ public final class SentryTracer implements ITransaction {
 
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     Objects.requireNonNull(operation, "operation is required");
+    if (idleTimeout != null) {
+      // reset the timer when a new child gets added to extend the idle transaction
+      scheduleFinish(idleTimeout);
+    }
     final Span span =
         new Span(
             root.getTraceId(),
