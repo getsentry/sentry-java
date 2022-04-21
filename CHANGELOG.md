@@ -4,6 +4,7 @@
 
 * Feat: Add sentry-servlet-jakarta module (#1987)
 * Ref: Make options.printUncaughtStackTrace primitive type (#1995)
+* Feat: Add client reports (#1982)
 
 ## 6.0.0-alpha.5
 
