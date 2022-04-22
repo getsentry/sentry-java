@@ -630,6 +630,9 @@ class SentryTracerTest {
 
         val initialTime = transaction.timerTask!!.scheduledExecutionTime()
 
+        // just a small sleep to make sure the 2nd span finishes later than the 1st one
+        Thread.sleep(10)
+
         transaction.startChild("op")
         val timeAfterAddingChild = transaction.timerTask!!.scheduledExecutionTime()
 
@@ -639,10 +642,13 @@ class SentryTracerTest {
     @Test
     fun `when trimEnd, trims idle transaction time to the latest child timestamp`() {
         val latch = CountDownLatch(1)
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, latch = latch, sampled = true)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 100, trimEnd = true, latch = latch, sampled = true)
 
         val span = transaction.startChild("op")
         span.finish()
+
+        // just a small sleep to make sure the 2nd span finishes later than the 1st one
+        Thread.sleep(10)
 
         val span2 = transaction.startChild("op2") as Span
         span2.finish()
