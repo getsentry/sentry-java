@@ -71,8 +71,16 @@ public interface PropertiesProvider {
    */
   @Nullable
   default Double getDoubleProperty(final @NotNull String property) {
-    final String result = getProperty(property);
-    return result != null ? Double.valueOf(result) : null;
+    final String prop = getProperty(property);
+    Double result = null;
+    if (prop != null) {
+      try {
+        result = Double.valueOf(prop);
+      } catch (NumberFormatException e) {
+        // ignored
+      }
+    }
+    return result;
   }
 
   /**
@@ -83,7 +91,15 @@ public interface PropertiesProvider {
    */
   @Nullable
   default Long getLongProperty(final @NotNull String property) {
-    final String result = getProperty(property);
-    return result != null ? Long.valueOf(result) : null;
+    final String prop = getProperty(property);
+    Long result = null;
+    if (prop != null) {
+      try {
+        result = Long.valueOf(prop);
+      } catch (NumberFormatException e) {
+        // ignored
+      }
+    }
+    return result;
   }
 }
