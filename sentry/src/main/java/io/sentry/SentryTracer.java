@@ -92,14 +92,22 @@ public final class SentryTracer implements ITransaction {
   }
 
   SentryTracer(
-    final @NotNull TransactionContext context,
-    final @NotNull IHub hub,
-    final @Nullable Date startTimestamp,
-    final boolean waitForChildren,
-    final @Nullable Long idleTimeout,
-    final boolean trimEnd,
-    final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(context, hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback, null);
+      final @NotNull TransactionContext context,
+      final @NotNull IHub hub,
+      final @Nullable Date startTimestamp,
+      final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
+    this(
+        context,
+        hub,
+        startTimestamp,
+        waitForChildren,
+        idleTimeout,
+        trimEnd,
+        transactionFinishedCallback,
+        null);
   }
 
   SentryTracer(
@@ -131,16 +139,16 @@ public final class SentryTracer implements ITransaction {
   void scheduleFinish(final @NotNull Long idleTimeout, final @Nullable CountDownLatch latch) {
     cancelTimer();
     timerTask =
-      new TimerTask() {
-        @Override
-        public void run() {
-          final SpanStatus status = getStatus();
-          finish((status != null) ? status : SpanStatus.OK);
-          if (latch != null) {
-            latch.countDown();
+        new TimerTask() {
+          @Override
+          public void run() {
+            final SpanStatus status = getStatus();
+            finish((status != null) ? status : SpanStatus.OK);
+            if (latch != null) {
+              latch.countDown();
+            }
           }
-        }
-      };
+        };
 
     timer.schedule(timerTask, idleTimeout);
   }
@@ -317,7 +325,8 @@ public final class SentryTracer implements ITransaction {
       // finish unfinished children
       for (final Span child : children) {
         if (!child.isFinished()) {
-          child.setSpanFinishedCallback(null); // reset the callback, as we're already in the finish method
+          child.setSpanFinishedCallback(
+              null); // reset the callback, as we're already in the finish method
           child.finish(SpanStatus.DEADLINE_EXCEEDED, finishTimestamp, endTime);
         }
       }

@@ -274,11 +274,11 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   @VisibleForTesting
   void clearScope(final @NotNull Scope scope) {
     scope.withTransaction(
-      transaction -> {
-        if (transaction == activeTransaction) {
-          scope.clearTransaction();
-        }
-      });
+        transaction -> {
+          if (transaction == activeTransaction) {
+            scope.clearTransaction();
+          }
+        });
   }
 
   @VisibleForTesting

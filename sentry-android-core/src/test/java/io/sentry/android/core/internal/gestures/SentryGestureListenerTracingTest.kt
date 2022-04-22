@@ -182,7 +182,8 @@ class SentryGestureListenerTracingTest {
         verify(fixture.hub).startTransaction(
             check {
                 assertEquals("Activity.test_button", it)
-            }, anyOrNull(), any(), anyOrNull(), any<Boolean>()
+            },
+            anyOrNull(), any(), anyOrNull(), any<Boolean>()
         )
     }
 
@@ -205,9 +206,12 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(check {
-            assertEquals("Activity.test_button", it)
-        }, any(), any(), anyOrNull(), any<Boolean>())
+        verify(fixture.hub).startTransaction(
+            check {
+                assertEquals("Activity.test_button", it)
+            },
+            any(), any(), anyOrNull(), any<Boolean>()
+        )
 
         clearInvocations(fixture.hub)
         // second view interaction with another view
@@ -231,9 +235,12 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(check {
-            assertEquals("Activity.test_checkbox", it)
-        }, any(), any(), anyOrNull(), any<Boolean>())
+        verify(fixture.hub).startTransaction(
+            check {
+                assertEquals("Activity.test_checkbox", it)
+            },
+            any(), any(), anyOrNull(), any<Boolean>()
+        )
     }
 
     @Test
@@ -242,11 +249,15 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(check {
-            assertEquals("Activity.test_scroll_view", it)
-        }, check {
-            assertEquals("ui.action.click", it)
-        }, any(), anyOrNull(), any<Boolean>())
+        verify(fixture.hub).startTransaction(
+            check {
+                assertEquals("Activity.test_scroll_view", it)
+            },
+            check {
+                assertEquals("ui.action.click", it)
+            },
+            any(), anyOrNull(), any<Boolean>()
+        )
 
         clearInvocations(fixture.hub)
 
@@ -261,11 +272,15 @@ class SentryGestureListenerTracingTest {
         sut.onScroll(fixture.event, mock(), 10.0f, 0f)
         sut.onUp(mock())
 
-        verify(fixture.hub).startTransaction(check {
-            assertEquals("Activity.test_scroll_view", it)
-        }, check {
-            assertEquals("ui.action.scroll", it)
-        }, any(), anyOrNull(), any<Boolean>())
+        verify(fixture.hub).startTransaction(
+            check {
+                assertEquals("Activity.test_scroll_view", it)
+            },
+            check {
+                assertEquals("ui.action.scroll", it)
+            },
+            any(), anyOrNull(), any<Boolean>()
+        )
     }
 
     @Test
@@ -276,9 +291,12 @@ class SentryGestureListenerTracingTest {
 
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.hub).startTransaction(check {
-            assertEquals("Activity.test_button", it)
-        }, any(), any(), anyOrNull(), any<Boolean>())
+        verify(fixture.hub).startTransaction(
+            check {
+                assertEquals("Activity.test_button", it)
+            },
+            any(), any(), anyOrNull(), any<Boolean>()
+        )
 
         // second view interaction
         sut.onSingleTapUp(fixture.event)

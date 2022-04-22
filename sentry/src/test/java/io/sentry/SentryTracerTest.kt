@@ -2,18 +2,15 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.atLeastOnce
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import java.util.Date
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
