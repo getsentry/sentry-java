@@ -72,6 +72,7 @@ class SentryGestureListenerClickTest {
             resources.mockForTarget(this.target, resourceName)
             whenever(context.resources).thenReturn(resources)
             whenever(this.target.context).thenReturn(context)
+            whenever(activity.window).thenReturn(window)
             return SentryGestureListener(
                 activity,
                 hub,

@@ -65,6 +65,7 @@ class SentryGestureListenerScrollTest {
             if (direction in directions) {
                 endEvent.mockDirection(firstEvent, direction)
             }
+            whenever(activity.window).thenReturn(window)
             return SentryGestureListener(
                 activity,
                 hub,
