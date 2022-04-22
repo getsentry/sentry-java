@@ -626,7 +626,7 @@ class SentryTracerTest {
 
     @Test
     fun `when a new child is added to the idle transaction, resets the timer`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 3000)
 
         val initialTime = transaction.timerTask!!.scheduledExecutionTime()
 
