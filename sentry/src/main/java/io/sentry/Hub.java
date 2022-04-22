@@ -3,6 +3,7 @@ package io.sentry;
 import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import io.sentry.Stack.StackItem;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
@@ -578,6 +579,9 @@ public final class Hub implements IHub {
                   SentryLevel.DEBUG,
                   "Transaction %s was dropped due to sampling decision.",
                   transaction.getEventId());
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
         } else {
           StackItem item = null;
           try {

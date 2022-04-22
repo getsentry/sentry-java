@@ -82,6 +82,21 @@ public final class io/sentry/CustomSamplingContext {
 	public fun set (Ljava/lang/String;Ljava/lang/Object;)V
 }
 
+public final class io/sentry/DataCategory : java/lang/Enum {
+	public static final field All Lio/sentry/DataCategory;
+	public static final field Attachment Lio/sentry/DataCategory;
+	public static final field Default Lio/sentry/DataCategory;
+	public static final field Error Lio/sentry/DataCategory;
+	public static final field Security Lio/sentry/DataCategory;
+	public static final field Session Lio/sentry/DataCategory;
+	public static final field Transaction Lio/sentry/DataCategory;
+	public static final field Unknown Lio/sentry/DataCategory;
+	public static final field UserReport Lio/sentry/DataCategory;
+	public fun getCategory ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/DataCategory;
+	public static fun values ()[Lio/sentry/DataCategory;
+}
+
 public final class io/sentry/DateUtils {
 	public static fun dateToSeconds (Ljava/util/Date;)D
 	public static fun getCurrentDateTime ()Ljava/util/Date;
@@ -986,10 +1001,12 @@ public final class io/sentry/SentryEnvelopeHeader$JsonKeys {
 
 public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromAttachment (Lio/sentry/Attachment;J)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromClientReport (Lio/sentry/ISerializer;Lio/sentry/clientreport/ClientReport;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
+	public fun getClientReport (Lio/sentry/ISerializer;)Lio/sentry/clientreport/ClientReport;
 	public fun getData ()[B
 	public fun getEvent (Lio/sentry/ISerializer;)Lio/sentry/SentryEvent;
 	public fun getHeader ()Lio/sentry/SentryEnvelopeItemHeader;
@@ -1077,6 +1094,7 @@ public final class io/sentry/SentryEvent$JsonKeys {
 
 public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field Attachment Lio/sentry/SentryItemType;
+	public static final field ClientReport Lio/sentry/SentryItemType;
 	public static final field Event Lio/sentry/SentryItemType;
 	public static final field Profile Lio/sentry/SentryItemType;
 	public static final field Session Lio/sentry/SentryItemType;
@@ -1115,6 +1133,7 @@ public class io/sentry/SentryOptions {
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
 	public fun getCacheDirPath ()Ljava/lang/String;
+	public fun getClientReportRecorder ()Lio/sentry/clientreport/IClientReportRecorder;
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
@@ -1143,7 +1162,6 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getOutboxPath ()Ljava/lang/String;
-	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getReadTimeoutMillis ()I
@@ -1177,6 +1195,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableUncaughtExceptionHandler ()Z
 	public fun isPrintUncaughtStackTrace ()Z
 	public fun isProfilingEnabled ()Z
+	public fun isSendClientReports ()Z
 	public fun isSendDefaultPii ()Z
 	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
@@ -1214,7 +1233,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
-	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
+	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfilingEnabled (Z)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
@@ -1222,6 +1241,7 @@ public class io/sentry/SentryOptions {
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setSampleRate (Ljava/lang/Double;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
+	public fun setSendClientReports (Z)V
 	public fun setSendDefaultPii (Z)V
 	public fun setSentryClientName (Ljava/lang/String;)V
 	public fun setSerializer (Lio/sentry/ISerializer;)V
@@ -1695,6 +1715,92 @@ public abstract interface class io/sentry/cache/IEnvelopeCache : java/lang/Itera
 	public abstract fun discard (Lio/sentry/SentryEnvelope;)V
 	public fun store (Lio/sentry/SentryEnvelope;)V
 	public abstract fun store (Lio/sentry/SentryEnvelope;Ljava/util/Map;)V
+}
+
+public final class io/sentry/clientreport/ClientReport : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Ljava/util/Date;Ljava/util/List;)V
+	public fun getDiscardedEvents ()Ljava/util/List;
+	public fun getTimestamp ()Ljava/util/Date;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/clientreport/ClientReport$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/clientreport/ClientReport;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/clientreport/ClientReport$JsonKeys {
+	public static final field DISCARDED_EVENTS Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/clientreport/ClientReportRecorder : io/sentry/clientreport/IClientReportRecorder {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/SentryEnvelope;
+	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
+	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
+}
+
+public final class io/sentry/clientreport/DiscardReason : java/lang/Enum {
+	public static final field BEFORE_SEND Lio/sentry/clientreport/DiscardReason;
+	public static final field CACHE_OVERFLOW Lio/sentry/clientreport/DiscardReason;
+	public static final field EVENT_PROCESSOR Lio/sentry/clientreport/DiscardReason;
+	public static final field NETWORK_ERROR Lio/sentry/clientreport/DiscardReason;
+	public static final field QUEUE_OVERFLOW Lio/sentry/clientreport/DiscardReason;
+	public static final field RATELIMIT_BACKOFF Lio/sentry/clientreport/DiscardReason;
+	public static final field SAMPLE_RATE Lio/sentry/clientreport/DiscardReason;
+	public fun getReason ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/clientreport/DiscardReason;
+	public static fun values ()[Lio/sentry/clientreport/DiscardReason;
+}
+
+public final class io/sentry/clientreport/DiscardedEvent : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)V
+	public fun getCategory ()Ljava/lang/String;
+	public fun getQuantity ()Ljava/lang/Long;
+	public fun getReason ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/clientreport/DiscardedEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/clientreport/DiscardedEvent;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/clientreport/DiscardedEvent$JsonKeys {
+	public static final field CATEGORY Ljava/lang/String;
+	public static final field QUANTITY Ljava/lang/String;
+	public static final field REASON Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public abstract interface class io/sentry/clientreport/IClientReportRecorder {
+	public abstract fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/SentryEnvelope;
+	public abstract fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
+	public abstract fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
+	public abstract fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
+}
+
+public abstract interface class io/sentry/clientreport/IClientReportStorage {
+	public abstract fun addCount (Lio/sentry/clientreport/ClientReportKey;Ljava/lang/Long;)V
+	public abstract fun resetCountsAndGet ()Ljava/util/List;
+}
+
+public final class io/sentry/clientreport/NoOpClientReportRecorder : io/sentry/clientreport/IClientReportRecorder {
+	public fun <init> ()V
+	public fun attachReportToEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/SentryEnvelope;
+	public fun recordLostEnvelope (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelope;)V
+	public fun recordLostEnvelopeItem (Lio/sentry/clientreport/DiscardReason;Lio/sentry/SentryEnvelopeItem;)V
+	public fun recordLostEvent (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;)V
 }
 
 public abstract interface class io/sentry/config/PropertiesProvider {
@@ -2767,8 +2873,8 @@ public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/I
 }
 
 public final class io/sentry/transport/RateLimiter {
-	public fun <init> (Lio/sentry/ILogger;)V
-	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/ILogger;)V
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
 	public fun filter (Lio/sentry/SentryEnvelope;Ljava/lang/Object;)Lio/sentry/SentryEnvelope;
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
 }

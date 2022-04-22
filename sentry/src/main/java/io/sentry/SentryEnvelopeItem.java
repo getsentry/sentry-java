@@ -3,6 +3,7 @@ package io.sentry;
 import static io.sentry.vendor.Base64.NO_PADDING;
 import static io.sentry.vendor.Base64.NO_WRAP;
 
+import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.Objects;
@@ -291,6 +292,44 @@ public final class SentryEnvelopeItem {
     } catch (IOException | SecurityException exception) {
       throw new SentryEnvelopeException(
           String.format("Reading the item %s failed.\n%s", pathname, exception.getMessage()));
+    }
+  }
+
+  public static @NotNull SentryEnvelopeItem fromClientReport(
+      final @NotNull ISerializer serializer, final @NotNull ClientReport clientReport)
+      throws IOException {
+    Objects.requireNonNull(serializer, "ISerializer is required.");
+    Objects.requireNonNull(clientReport, "ClientReport is required.");
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(clientReport, writer);
+                return stream.toByteArray();
+              }
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.resolve(clientReport),
+            () -> cachedItem.getBytes().length,
+            "application/json",
+            null);
+
+    // Don't use method reference. This can cause issues on Android
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  @Nullable
+  public ClientReport getClientReport(final @NotNull ISerializer serializer) throws Exception {
+    if (header == null || header.getType() != SentryItemType.ClientReport) {
+      return null;
+    }
+    try (final Reader eventReader =
+        new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+      return serializer.deserialize(eventReader, ClientReport.class);
     }
   }
 

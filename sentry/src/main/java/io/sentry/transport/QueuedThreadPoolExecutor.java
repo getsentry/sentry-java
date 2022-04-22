@@ -88,7 +88,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
     return unfinishedTasksCount.getCount() < maxQueueSize;
   }
 
-  private static final class CancelledFuture<T> implements Future<T> {
+  static final class CancelledFuture<T> implements Future<T> {
     @Override
     public boolean cancel(final boolean mayInterruptIfRunning) {
       return true;
