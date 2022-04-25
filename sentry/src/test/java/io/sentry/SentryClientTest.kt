@@ -198,7 +198,7 @@ class SentryClientTest {
         fixture.sentryOptions.environment = "not to be applied"
         val sut = fixture.getSut()
 
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to Object())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
         sut.captureEvent(event, hintsMap)
         verify(fixture.transport).send(any(), eq(hintsMap))
     }
