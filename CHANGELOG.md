@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Starting with version `6.6.0` of the `sentry`, [Sentry's version >= v21.9.0](https://github.com/getsentry/self-hosted/releases) is required. This only applies to self-hosted Sentry. If you are using [sentry.io](https://sentry.io), no action is needed.
+
 ## 6.0.0-alpha.6
 
 * Feat: Add sentry-servlet-jakarta module (#1987)
