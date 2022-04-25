@@ -16,6 +16,9 @@ import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.cache.EnvelopeCache
+import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
+import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.DiscardedEvent
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
@@ -1172,6 +1175,25 @@ class HubTest {
         sentryTracer.finish()
         val traceState = sentryTracer.traceState()
         verify(mockClient, never()).captureTransaction(any(), eq(traceState), any(), eq(null), anyOrNull())
+    }
+
+    @Test
+    fun `transactions lost due to sampling are recorded as lost`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = Hub(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", false), sut)
+        sentryTracer.finish()
+
+        assertClientReport(
+            options.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1))
+        )
     }
     //endregion
 
