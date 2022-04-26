@@ -37,6 +37,7 @@ public final class ExternalOptions {
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
   private @Nullable Boolean printUncaughtStackTrace;
+  private @Nullable Boolean sendClientReports;
 
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
@@ -54,6 +55,7 @@ public final class ExternalOptions {
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
+    options.setSendClientReports(propertiesProvider.getBooleanProperty("send-client-reports"));
     final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
     if (maxRequestBodySize != null) {
       options.setMaxRequestBodySize(
@@ -262,5 +264,13 @@ public final class ExternalOptions {
 
   public void setPrintUncaughtStackTrace(final @Nullable Boolean printUncaughtStackTrace) {
     this.printUncaughtStackTrace = printUncaughtStackTrace;
+  }
+
+  public @Nullable Boolean getSendClientReports() {
+    return sendClientReports;
+  }
+
+  public void setSendClientReports(final @Nullable Boolean sendClientReports) {
+    this.sendClientReports = sendClientReports;
   }
 }

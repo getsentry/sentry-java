@@ -295,6 +295,9 @@ public class SentryOptions {
   /** Control if profiling is enabled or not for transactions */
   private boolean profilingEnabled = false;
 
+  /** The cache dir. path for caching profiling traces */
+  private @Nullable String profilingTracesDirPath;
+
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
@@ -1478,6 +1481,24 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the profiling traces dir. path if set
+   *
+   * @return the profiling traces dir. path or null if not set
+   */
+  public @Nullable String getProfilingTracesDirPath() {
+    return profilingTracesDirPath;
+  }
+
+  /**
+   * Sets the profiling traces dir. path
+   *
+   * @param profilingTracesDirPath the profiling traces dir. path
+   */
+  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
+  }
+
+  /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
    * @return the list of origins
@@ -1691,6 +1712,9 @@ public class SentryOptions {
     }
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
+    }
+    if (options.getSendClientReports() != null) {
+      setSendClientReports(options.getSendClientReports());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
