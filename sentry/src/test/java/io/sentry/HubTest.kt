@@ -273,7 +273,7 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
         sut.captureEvent(event, hintsMap)
         verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
     }
@@ -283,7 +283,7 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         whenever(mockClient.captureEvent(any(), any(), anyOrNull())).thenReturn(SentryId(UUID.randomUUID()))
         val event = SentryEvent()
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
         sut.captureEvent(event, hintsMap)
         val lastEventId = sut.lastEventId
         sut.close()
@@ -296,7 +296,7 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
         sut.captureEvent(event, hintsMap)
         verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
         verify(mockClient, never()).captureSession(any(), any())
@@ -307,7 +307,7 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
         sut.captureEvent(event, hintsMap)
         verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
         verify(mockClient, never()).captureSession(any(), any())
@@ -323,7 +323,7 @@ class HubTest {
 
         val event = SentryEvent(exception)
 
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
         sut.captureEvent(event, hintsMap)
         assertEquals(span.spanContext, event.contexts.trace)
         verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
@@ -339,7 +339,7 @@ class HubTest {
 
         val event = SentryEvent(RuntimeException(rootCause))
 
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
         sut.captureEvent(event, hintsMap)
         assertEquals(span.spanContext, event.contexts.trace)
         verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
@@ -356,7 +356,7 @@ class HubTest {
 
         val event = SentryEvent(RuntimeException(exceptionAssignedToSpan))
 
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
         sut.captureEvent(event, hintsMap)
         assertEquals(span.spanContext, event.contexts.trace)
         verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
@@ -374,7 +374,7 @@ class HubTest {
         val originalSpanContext = SpanContext("op")
         event.contexts.trace = originalSpanContext
 
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
         sut.captureEvent(event, hintsMap)
         assertEquals(originalSpanContext, event.contexts.trace)
         verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
@@ -386,7 +386,7 @@ class HubTest {
 
         val event = SentryEvent(RuntimeException())
 
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to { })
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
         sut.captureEvent(event, hintsMap)
         assertNull(event.contexts.trace)
         verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
@@ -455,7 +455,7 @@ class HubTest {
     fun `when captureException is called with a valid argument and hint, captureEvent on the client should be called`() {
         val (sut, mockClient) = getEnabledHub()
 
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to Object())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
         sut.captureException(Throwable(), hintsMap)
         verify(mockClient).captureEvent(any(), any(), any())
     }

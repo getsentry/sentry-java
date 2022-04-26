@@ -123,6 +123,15 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with sendClientReports using external properties`() {
+        withPropertiesFile("send-client-reports=false") {
+            assertNotNull(it.sendClientReports) {
+                assertFalse(it)
+            }
+        }
+    }
+
+    @Test
     fun `creates options with maxRequestBodySize using external properties`() {
         withPropertiesFile("max-request-body-size=small") {
             assertEquals(SentryOptions.RequestSize.SMALL, it.maxRequestBodySize)
