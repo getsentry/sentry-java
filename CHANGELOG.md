@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Fix: Profiling rate decreased from 300hz to 100hz; fixed profiling traces folder creation on manual sdk init (#1997)
 * Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)
 
 ## 6.0.0-alpha.6
