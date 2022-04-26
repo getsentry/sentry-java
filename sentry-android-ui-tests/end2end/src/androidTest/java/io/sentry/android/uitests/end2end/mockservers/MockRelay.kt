@@ -1,5 +1,6 @@
 package io.sentry.android.uitests.end2end.mockservers
 
+import android.util.Log
 import androidx.test.espresso.idling.CountingIdlingResource
 import io.sentry.android.uitests.end2end.BaseUiTest
 import io.sentry.android.uitests.end2end.utils.BooleanIdlingResource
@@ -37,7 +38,7 @@ class MockRelay (
                 val response = responses.asSequence()
                     .mapNotNull { it(request) }
                     .firstOrNull()
-                    ?: MockResponse().setResponseCode(404)
+                    ?: MockResponse()
                 dispatchSentRequest(RelayAsserter.RelayResponse(request, response))
 
                 if (checkIdlingResources) {

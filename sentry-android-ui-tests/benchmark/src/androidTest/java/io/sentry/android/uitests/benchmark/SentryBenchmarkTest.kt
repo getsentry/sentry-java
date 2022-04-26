@@ -13,9 +13,12 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnitRunner
 import io.sentry.ITransaction
 import io.sentry.Sentry
+import io.sentry.SentryOptions
+import io.sentry.android.core.SentryAndroid
 import io.sentry.android.uitests.benchmark.util.BenchmarkOperation
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.assertTrue
 
@@ -47,16 +50,14 @@ class SentryBenchmarkTest {
     fun benchmarkProfiledTransaction() {
         // runOnMainSync ensure that we're using Sentry on a thread that belongs to the actual
         // application, rather than the test application.
-        // todo Right now we cannot enable profiling via code, but only via manifest.
-        //  We should fix it and initialize via code, so that different tests can use different options.
         runner.runOnMainSync {
-//            SentryAndroid.init(context) { options: SentryOptions ->
-//                options.dsn = "https://12345678901234567890123456789012@fakeuri.ingest.sentry.io/1234567"
-//                options.isEnableAutoSessionTracking = false
-//                options.tracesSampleRate = 1.0
-//                options.isTraceSampling = true
-//                options.isProfilingEnabled = true
-//            }
+            SentryAndroid.init(context) { options: SentryOptions ->
+                options.dsn = "https://fakesecret@fakeuri.ingest.sentry.io/1234567"
+                options.isEnableAutoSessionTracking = false
+                options.tracesSampleRate = 1.0
+                options.isTraceSampling = true
+                options.isProfilingEnabled = true
+            }
         }
 
         val benchmarkOperationNoTransaction = BenchmarkOperation(runner, getOperation(runner) { null })

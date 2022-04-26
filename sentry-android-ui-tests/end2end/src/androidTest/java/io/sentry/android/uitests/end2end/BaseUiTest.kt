@@ -12,6 +12,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnitRunner
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.android.core.SentryAndroid
 import io.sentry.android.uitests.end2end.mockservers.MockRelay
 import org.junit.runner.RunWith
 import kotlin.test.AfterTest
@@ -27,20 +28,23 @@ abstract class BaseUiTest {
     protected val relay = MockRelay(false, relayIdlingResource)
 
     init {
-        IdlingRegistry.getInstance().register(relayIdlingResource)
     }
 
     @BeforeTest
     fun baseSetUp() {
         runner = InstrumentationRegistry.getInstrumentation() as AndroidJUnitRunner
         context = ApplicationProvider.getApplicationContext()
+        context.cacheDir.deleteRecursively()
+        IdlingRegistry.getInstance().register(relayIdlingResource)
         relay.start()
         dsn = "http://key@${relay.hostName}:${relay.port}/${relay.dsnProject}"
     }
 
     @AfterTest
     fun baseFinish() {
+        IdlingRegistry.getInstance().unregister(relayIdlingResource)
         relay.shutdown()
+        Sentry.close()
     }
 
     protected fun initSentry(
@@ -48,7 +52,7 @@ abstract class BaseUiTest {
         optionsConfiguration: ((options: SentryOptions) -> Unit)? = null
     ) {
         relay.checkIdlingResources = relayCheckIdlingResources
-        Sentry.init {
+        SentryAndroid.init(context) {
             it.dsn = dsn
             optionsConfiguration?.invoke(it)
         }
