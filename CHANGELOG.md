@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-Starting with version `6.6.0` of the `sentry`, [Sentry's version >= v21.9.0](https://github.com/getsentry/self-hosted/releases) is required. This only applies to self-hosted Sentry. If you are using [sentry.io](https://sentry.io), no action is needed.
+Starting with version `6.6.0` of the `sentry`, [Sentry's version >= v21.9.0](https://github.com/getsentry/self-hosted/releases) is required or you have to manually disable sending client reports via the `sendClientReports` option. This only applies to self-hosted Sentry. If you are using [sentry.io](https://sentry.io), no action is needed.
 
 ## 6.0.0-alpha.6
 
