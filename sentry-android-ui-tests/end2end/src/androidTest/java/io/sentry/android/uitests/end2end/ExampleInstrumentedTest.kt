@@ -4,6 +4,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Sentry
+import io.sentry.SentryEvent
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,15 +22,18 @@ class ExampleInstrumentedTest : BaseUiTest() {
     @Test
     fun useAppContext() {
 
-        Sentry.init {
-            it.dsn = "http://12345678901234567890123456789012@${servers.relay.hostName}:${servers.relay.port}/1234567"
-        }
+        initSentry(true)
+        relayIdlingResource.increment()
+        Sentry.captureMessage("Message captured during test")
 
-        val emptyActivity = launchActivity<EmptyActivity>()
-        Sentry.captureMessage("aaaaa")
-        Thread.sleep(10000)
-        emptyActivity.moveToState(Lifecycle.State.DESTROYED)
-        // Context of the app under test.
-        assertEquals("io.sentry.android.uitests.end2end.test", context.packageName)
+        relay.assert {
+            assertEnvelope {
+                val event = it.assertItem(SentryEvent::class.java)
+                it.assertNoOtherItems()
+                assertTrue(event.message?.formatted == "Message captured during test")
+            }
+            assertNoOtherEnvelopes()
+            assertNoOtherRequests()
+        }
     }
 }

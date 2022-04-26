@@ -65,6 +65,7 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
     implementation(projects.sentryAndroid)
+    implementation(projects.sentryAndroidUiTests.end2end)
     implementation(Config.Libs.appCompat)
     implementation(Config.Libs.androidxCore)
     implementation(Config.Libs.androidxRecylerView)

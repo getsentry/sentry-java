@@ -13,36 +13,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
+import io.sentry.android.uitests.end2end.utils.BooleanIdlingResource
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.random.Random
-
-/** Idling resource based on a boolean flag. */
-class BooleanIdlingResource(private val name: String) : IdlingResource {
-
-    private val isIdle = AtomicBoolean(true)
-
-    private val isIdleLock = Object()
-
-    private var callback: IdlingResource.ResourceCallback? = null
-
-    fun setIdle(idling: Boolean) {
-        if (!isIdle.getAndSet(idling) && idling) {
-            callback?.onTransitionToIdle()
-        }
-    }
-
-    override fun getName(): String = name
-
-    override fun isIdleNow(): Boolean = synchronized(isIdleLock) { isIdle.get() }
-
-    override fun registerIdleTransitionCallback(callback: IdlingResource.ResourceCallback?) {
-        this.callback = callback
-    }
-
-}
 
 /** A simple list of items, using [RecyclerView]. */
 class BenchmarkActivity : AppCompatActivity() {
@@ -58,8 +32,8 @@ class BenchmarkActivity : AppCompatActivity() {
     }
 
     internal class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imageView = view.findViewById<ImageView>(R.id.benchmark_item_list_image)
-        val textView = view.findViewById<TextView>(R.id.benchmark_item_list_text)
+        val imageView: ImageView = view.findViewById(R.id.benchmark_item_list_image)
+        val textView: TextView = view.findViewById(R.id.benchmark_item_list_text)
     }
 
     internal inner class Adapter : RecyclerView.Adapter<ViewHolder>() {

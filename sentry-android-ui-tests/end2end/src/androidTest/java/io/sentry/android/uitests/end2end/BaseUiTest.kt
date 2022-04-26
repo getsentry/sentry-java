@@ -5,57 +5,60 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
+import androidx.test.espresso.IdlingRegistry
+import androidx.test.espresso.idling.CountingIdlingResource
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnitRunner
-import io.sentry.android.uitests.end2end.mockservers.TestMockWebServers
+import io.sentry.Sentry
+import io.sentry.SentryOptions
+import io.sentry.android.uitests.end2end.mockservers.MockRelay
 import org.junit.runner.RunWith
-import java.net.InetAddress
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 
 @RunWith(AndroidJUnit4::class)
 abstract class BaseUiTest {
 
+    protected val relayIdlingResource = CountingIdlingResource("relay-requests")
     protected lateinit var runner: AndroidJUnitRunner
     protected lateinit var context: Context
-    protected val servers = TestMockWebServers()
+    protected lateinit var dsn: String
+    protected val relay = MockRelay(false, relayIdlingResource)
 
-    protected val mainThreadId: Long
-        get() {
-            var id = -1L
-            runner.runOnMainSync { id = android.os.Process.myTid().toLong() }
-            check(id != -1L)
-            return id
-        }
-
-    protected val applicationId: String
-        get() = InstrumentationRegistry.getInstrumentation().context
-            .packageName.removeSuffix(".test")
-
-    protected val isAppDebuggable =
-        (
-            ApplicationProvider.getApplicationContext<Application>().applicationInfo.flags and
-                ApplicationInfo.FLAG_DEBUGGABLE
-            ) != 0
-
-    /**
-     * Waits until the Specto SDK is idle.
-     */
-    fun waitUntilIdle() {
-        // We rely on Espresso's idling resources.
-        Espresso.onIdle()
+    init {
+        IdlingRegistry.getInstance().register(relayIdlingResource)
     }
 
     @BeforeTest
     fun baseSetUp() {
         runner = InstrumentationRegistry.getInstrumentation() as AndroidJUnitRunner
         context = ApplicationProvider.getApplicationContext()
-        servers.relay.start()
+        relay.start()
+        dsn = "http://key@${relay.hostName}:${relay.port}/${relay.dsnProject}"
     }
 
     @AfterTest
     fun baseFinish() {
-        servers.relay.shutdown()
+        relay.shutdown()
     }
+
+    protected fun initSentry(
+        relayCheckIdlingResources: Boolean = true,
+        optionsConfiguration: ((options: SentryOptions) -> Unit)? = null
+    ) {
+        relay.checkIdlingResources = relayCheckIdlingResources
+        Sentry.init {
+            it.dsn = dsn
+            optionsConfiguration?.invoke(it)
+        }
+    }
+}
+
+/**
+ * Waits until the Specto SDK is idle.
+ */
+fun waitUntilIdle() {
+    // We rely on Espresso's idling resources.
+    Espresso.onIdle()
 }
