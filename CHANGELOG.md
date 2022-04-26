@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)
+
 ## 6.0.0-alpha.6
 
 * Feat: Add sentry-servlet-jakarta module (#1987)
