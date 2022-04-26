@@ -233,7 +233,7 @@ public final class Sentry {
       options.setEnvelopeDiskCache(EnvelopeCache.create(options));
     }
 
-    String profilingTracesDirPath = options.getProfilingTracesDirPath();
+    final String profilingTracesDirPath = options.getProfilingTracesDirPath();
     if (options.isProfilingEnabled()
         && profilingTracesDirPath != null
         && !profilingTracesDirPath.isEmpty()) {
