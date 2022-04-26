@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+* Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)
+
+## 6.0.0-alpha.6
+
 * Feat: Add sentry-servlet-jakarta module (#1987)
 * Ref: Make options.printUncaughtStackTrace primitive type (#1995)
 * Feat: Add client reports (#1982)
