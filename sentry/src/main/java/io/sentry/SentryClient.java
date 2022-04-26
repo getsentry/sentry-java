@@ -82,14 +82,14 @@ public final class SentryClient implements ISentryClient {
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
     if (event != null) {
-      if (event.getThrowable() != null
-          && options.containsIgnoredExceptionForType(event.getThrowable())) {
+      Throwable eventThrowable = event.getThrowable();
+      if (eventThrowable != null && options.containsIgnoredExceptionForType(eventThrowable)) {
         options
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
                 "Event was dropped as the exception %s is ignored",
-                event.getThrowable().getClass());
+                eventThrowable.getClass());
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
