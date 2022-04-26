@@ -149,7 +149,7 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
-    boolean shouldSendSessionUpdate = shouldSendSessionUpdate(oldSession, session);
+    boolean shouldSendSessionUpdate = shouldSendSessionUpdateForDroppedEvent(oldSession, session);
 
     if (event == null && !shouldSendSessionUpdate) {
       return SentryId.EMPTY_ID;
@@ -182,7 +182,7 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
-  private boolean shouldSendSessionUpdate(
+  private boolean shouldSendSessionUpdateForDroppedEvent(
       @Nullable Session oldSession, @Nullable Session newSession) {
     if (newSession == null) {
       return false;
