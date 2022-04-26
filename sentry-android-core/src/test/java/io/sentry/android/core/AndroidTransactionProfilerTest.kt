@@ -25,13 +25,14 @@ class AndroidTransactionProfilerTest {
     private val className = "io.sentry.android.core.AndroidTransactionProfiler"
     private val ctorTypes = arrayOf(Context::class.java, SentryAndroidOptions::class.java, BuildInfoProvider::class.java)
     private val fixture = Fixture()
-    private lateinit var file: File
 
     private class Fixture {
+        private val mockDsn = "http://key@localhost/proj"
         val buildInfo = mock<BuildInfoProvider> {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
         val options = SentryAndroidOptions().apply {
+            dsn = mockDsn
             isProfilingEnabled = true
         }
         val transaction1 = SentryTracer(TransactionContext("", ""), mock())
@@ -44,13 +45,15 @@ class AndroidTransactionProfilerTest {
     @BeforeTest
     fun `set up`() {
         context = ApplicationProvider.getApplicationContext()
-        file = context.cacheDir
-        AndroidOptionsInitializer.init(fixture.options, createMockContext())
+        AndroidOptionsInitializer.init(fixture.options, context)
+        // Profiler doesn't start if the folder doesn't exists.
+        // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
+        File(fixture.options.profilingTracesDirPath).mkdirs()
     }
 
     @AfterTest
     fun clear() {
-        file.deleteRecursively()
+        context.cacheDir.deleteRecursively()
     }
 
     @Test
@@ -172,11 +175,5 @@ class AndroidTransactionProfilerTest {
 
         traceData = profiler.onTransactionFinish(fixture.transaction1)
         assertEquals(fixture.transaction1.eventId.toString(), traceData!!.transactionId)
-    }
-
-    private fun createMockContext(): Context {
-        val mockContext = ContextUtilsTest.createMockContext()
-        whenever(mockContext.cacheDir).thenReturn(file)
-        return mockContext
     }
 }

@@ -9,6 +9,7 @@ import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -123,6 +124,10 @@ abstract class CacheStrategy {
     if (currentEnvelope == null || !isValidEnvelope(currentEnvelope)) {
       return;
     }
+
+    options
+        .getClientReportRecorder()
+        .recordLostEnvelope(DiscardReason.CACHE_OVERFLOW, currentEnvelope);
 
     final Session currentSession = getFirstSession(currentEnvelope);
 

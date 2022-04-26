@@ -12,6 +12,10 @@ import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
 import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
+import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
+import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.DiscardedEvent
+import io.sentry.clientreport.DropEverythingEventProcessor
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
@@ -32,8 +36,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
-import java.lang.IllegalArgumentException
-import java.lang.IllegalStateException
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.Arrays
@@ -153,6 +155,11 @@ class SentryClientTest {
         val event = SentryEvent()
         sut.captureEvent(event)
         verify(fixture.transport, never()).send(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1))
+        )
     }
 
     @Test
@@ -198,7 +205,7 @@ class SentryClientTest {
         fixture.sentryOptions.environment = "not to be applied"
         val sut = fixture.getSut()
 
-        val hintsMap = mutableMapOf<String, Any?>(SENTRY_TYPE_CHECK_HINT to Object())
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
         sut.captureEvent(event, hintsMap)
         verify(fixture.transport).send(any(), eq(hintsMap))
     }
@@ -415,6 +422,19 @@ class SentryClientTest {
         val allEvents = 10
         (0..allEvents).forEach { _ -> sut.captureEvent(SentryEvent()) }
         assertTrue(allEvents > mockingDetails(fixture.transport).invocations.size)
+    }
+
+    @Test
+    fun `events dropped by sampling are recorded as lost`() {
+        fixture.sentryOptions.sampleRate = 0.000000001
+        val sut = fixture.getSut()
+
+        sut.captureEvent(SentryEvent())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 1))
+        )
     }
 
     @Test
@@ -645,6 +665,70 @@ class SentryClientTest {
 
         fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceState())
         verify(processor).process(eq(transaction), anyOrNull())
+    }
+
+    @Test
+    fun `transaction dropped by global event processor is recorded`() {
+        fixture.sentryOptions.addEventProcessor(DropEverythingEventProcessor())
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceState())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1))
+        )
+    }
+
+    @Test
+    fun `transaction dropped by scope event processor is recorded`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        val scope = createScope()
+        scope.addEventProcessor(DropEverythingEventProcessor())
+
+        val sut = fixture.getSut()
+
+        sut.captureTransaction(transaction, scope, null)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1))
+        )
+    }
+
+    @Test
+    fun `event dropped by global event processor is recorded`() {
+        fixture.sentryOptions.addEventProcessor(DropEverythingEventProcessor())
+
+        val event = SentryEvent()
+
+        fixture.getSut().captureEvent(event)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
+        )
+    }
+
+    @Test
+    fun `event dropped by scope event processor is recorded`() {
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 0))
+        )
+        val event = SentryEvent()
+        val scope = createScope()
+        scope.addEventProcessor(DropEverythingEventProcessor())
+
+        val sut = fixture.getSut()
+
+        sut.captureEvent(event, scope)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
+        )
     }
 
     @Test

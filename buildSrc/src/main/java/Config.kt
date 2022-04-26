@@ -77,6 +77,7 @@ object Config {
         val springAop = "org.springframework:spring-aop"
         val aspectj = "org.aspectj:aspectjweaver"
         val servletApi = "javax.servlet:javax.servlet-api:3.1.0"
+        val servletApiJakarta = "jakarta.servlet:jakarta.servlet-api:5.0.0"
 
         val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.4"
 

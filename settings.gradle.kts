@@ -20,6 +20,7 @@ include(
     "sentry-logback",
     "sentry-jul",
     "sentry-servlet",
+    "sentry-servlet-jakarta",
     "sentry-apache-http-client-5",
     "sentry-spring",
     "sentry-spring-boot-starter",

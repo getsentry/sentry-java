@@ -65,6 +65,7 @@ final class ManifestMetadataReader {
   static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
 
   static final String ATTACH_SCREENSHOT = "io.sentry.attach-screenshot";
+  static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -200,6 +201,9 @@ final class ManifestMetadataReader {
 
         options.setAttachScreenshot(
             readBool(metadata, logger, ATTACH_SCREENSHOT, options.isAttachScreenshot()));
+
+        options.setSendClientReports(
+            readBool(metadata, logger, CLIENT_REPORTS_ENABLE, options.isSendClientReports()));
 
         if (options.getTracesSampleRate() == null) {
           final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);

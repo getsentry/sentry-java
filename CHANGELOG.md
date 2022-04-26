@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+* Fix: Profiling rate decreased from 300hz to 100hz; fixed profiling traces folder creation on manual sdk init (#1997)
+* Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)
+
+## 6.0.0-alpha.6
+
+* Feat: Add sentry-servlet-jakarta module (#1987)
+* Ref: Make options.printUncaughtStackTrace primitive type (#1995)
+* Feat: Add client reports (#1982)
+
 ## 6.0.0-alpha.5
 
 * Feat: Screenshot is taken when there is an error (#1967)

@@ -164,16 +164,6 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `profilingTracesDirPath should be created and cleared when profiling is enabled`() {
-        fixture.initSut(configureOptions = {
-            isProfilingEnabled = true
-        })
-
-        assertTrue(File(fixture.sentryOptions.profilingTracesDirPath!!).exists())
-        assertTrue(File(fixture.sentryOptions.profilingTracesDirPath!!).list()!!.isEmpty())
-    }
-
-    @Test
     fun `outboxDir should be set at initialization`() {
         fixture.initSut()
 

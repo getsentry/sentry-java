@@ -2,6 +2,9 @@ package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.clientreport.ClientReportRecorder;
+import io.sentry.clientreport.IClientReportRecorder;
+import io.sentry.clientreport.NoOpClientReportRecorder;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -220,7 +223,7 @@ public class SentryOptions {
    * When enabled, UncaughtExceptionHandler will print exceptions (same as java would normally do),
    * if no other UncaughtExceptionHandler was registered before.
    */
-  private @Nullable Boolean printUncaughtStackTrace = false;
+  private boolean printUncaughtStackTrace = false;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
@@ -292,6 +295,9 @@ public class SentryOptions {
   /** Control if profiling is enabled or not for transactions */
   private boolean profilingEnabled = false;
 
+  /** The cache dir. path for caching profiling traces */
+  private @Nullable String profilingTracesDirPath;
+
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
@@ -311,6 +317,12 @@ public class SentryOptions {
    * Sentry tags to events.
    */
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
+
+  /** Whether to send client reports containing information about number of dropped events. */
+  private boolean sendClientReports = true;
+
+  /** ClientReportRecorder to track count of lost events / transactions / ... * */
+  @NotNull IClientReportRecorder clientReportRecorder = new ClientReportRecorder(this);
 
   /**
    * Adds an event processor
@@ -1008,15 +1020,6 @@ public class SentryOptions {
    * @return true if enabled or false otherwise.
    */
   public boolean isPrintUncaughtStackTrace() {
-    return Boolean.TRUE.equals(printUncaughtStackTrace);
-  }
-
-  /**
-   * Checks if printing exceptions by UncaughtExceptionHandler is enabled or disabled.
-   *
-   * @return true if enabled, false otherwise or null if not set.
-   */
-  public @Nullable Boolean getPrintUncaughtStackTrace() {
     return printUncaughtStackTrace;
   }
 
@@ -1025,7 +1028,7 @@ public class SentryOptions {
    *
    * @param printUncaughtStackTrace true if enabled or false otherwise.
    */
-  public void setPrintUncaughtStackTrace(final @Nullable Boolean printUncaughtStackTrace) {
+  public void setPrintUncaughtStackTrace(final boolean printUncaughtStackTrace) {
     this.printUncaughtStackTrace = printUncaughtStackTrace;
   }
 
@@ -1478,6 +1481,24 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the profiling traces dir. path if set
+   *
+   * @return the profiling traces dir. path or null if not set
+   */
+  public @Nullable String getProfilingTracesDirPath() {
+    return profilingTracesDirPath;
+  }
+
+  /**
+   * Sets the profiling traces dir. path
+   *
+   * @param profilingTracesDirPath the profiling traces dir. path
+   */
+  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
+  }
+
+  /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
    * @return the list of origins
@@ -1529,6 +1550,40 @@ public class SentryOptions {
    */
   public void addContextTag(final @NotNull String contextTag) {
     this.contextTags.add(contextTag);
+  }
+
+  /**
+   * Returns whether sending of client reports has been enabled.
+   *
+   * @return true if enabled; false if disabled
+   */
+  public boolean isSendClientReports() {
+    return sendClientReports;
+  }
+
+  /**
+   * Enables / disables sending of client reports.
+   *
+   * @param sendClientReports true enables client reports; false disables them
+   */
+  public void setSendClientReports(boolean sendClientReports) {
+    this.sendClientReports = sendClientReports;
+
+    if (sendClientReports) {
+      clientReportRecorder = new ClientReportRecorder(this);
+    } else {
+      clientReportRecorder = new NoOpClientReportRecorder();
+    }
+  }
+
+  /**
+   * Returns a ClientReportRecorder or a NoOp if sending of client reports has been disabled.
+   *
+   * @return a client report recorder or NoOp
+   */
+  @ApiStatus.Internal
+  public @NotNull IClientReportRecorder getClientReportRecorder() {
+    return clientReportRecorder;
   }
 
   /** The BeforeSend callback */
@@ -1657,6 +1712,9 @@ public class SentryOptions {
     }
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
+    }
+    if (options.getSendClientReports() != null) {
+      setSendClientReports(options.getSendClientReports());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
