@@ -149,7 +149,7 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
-    boolean shouldSendSessionUpdate =
+    final boolean shouldSendSessionUpdate =
         shouldSendSessionUpdateForDroppedEvent(sessionBeforeUpdate, session);
 
     if (event == null && !shouldSendSessionUpdate) {
