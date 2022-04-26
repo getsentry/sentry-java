@@ -4,6 +4,7 @@
 
 * Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)
 * Fix: Change order of event filtering mechanisms (#2001)
+* Fix: Only send session update for dropped events if state changed (#2002)
 
 ## 6.0.0-alpha.6
 
