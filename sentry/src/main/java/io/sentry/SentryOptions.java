@@ -1713,6 +1713,9 @@ public class SentryOptions {
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
     }
+    if (options.getSendClientReports() != null) {
+      setSendClientReports(options.getSendClientReports());
+    }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       this.tags.put(tag.getKey(), tag.getValue());
