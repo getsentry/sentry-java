@@ -82,7 +82,7 @@ public final class SentryClient implements ISentryClient {
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
     if (event != null) {
-      Throwable eventThrowable = event.getThrowable();
+      final Throwable eventThrowable = event.getThrowable();
       if (eventThrowable != null && options.containsIgnoredExceptionForType(eventThrowable)) {
         options
             .getLogger()
