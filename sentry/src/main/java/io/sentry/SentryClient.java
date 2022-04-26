@@ -127,7 +127,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     @Nullable
-    Session oldSession =
+    Session sessionBeforeUpdate =
         scope != null ? scope.withSession((@Nullable Session session) -> {}) : null;
     @Nullable Session session = null;
 
@@ -149,7 +149,8 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
-    boolean shouldSendSessionUpdate = shouldSendSessionUpdateForDroppedEvent(oldSession, session);
+    boolean shouldSendSessionUpdate =
+        shouldSendSessionUpdateForDroppedEvent(sessionBeforeUpdate, session);
 
     if (event == null && !shouldSendSessionUpdate) {
       return SentryId.EMPTY_ID;
@@ -183,21 +184,25 @@ public final class SentryClient implements ISentryClient {
   }
 
   private boolean shouldSendSessionUpdateForDroppedEvent(
-      @Nullable Session oldSession, @Nullable Session newSession) {
-    if (newSession == null) {
+      @Nullable Session sessionBeforeUpdate, @Nullable Session sessionAfterUpdate) {
+    if (sessionAfterUpdate == null) {
       return false;
     }
 
-    if (oldSession == null) {
+    if (sessionBeforeUpdate == null) {
       return true;
     }
 
-    if (newSession.getStatus() == Session.State.Crashed
-        && oldSession.getStatus() != Session.State.Crashed) {
+    final boolean didSessionMoveToCrashedState =
+        sessionAfterUpdate.getStatus() == Session.State.Crashed
+            && sessionBeforeUpdate.getStatus() != Session.State.Crashed;
+    if (didSessionMoveToCrashedState) {
       return true;
     }
 
-    if (newSession.errorCount() > 0 && oldSession.errorCount() <= 0) {
+    final boolean didSessionMoveToErroredState =
+        sessionAfterUpdate.errorCount() > 0 && sessionBeforeUpdate.errorCount() <= 0;
+    if (didSessionMoveToErroredState) {
       return true;
     }
 
