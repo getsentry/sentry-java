@@ -584,7 +584,7 @@ class SentryTracerTest {
     @Test
     fun `when no children and the transaction is idle, drops the transaction`() {
         val latch = CountDownLatch(1)
-        fixture.getSut(idleTimeout = 50, latch = latch)
+        fixture.getSut(idleTimeout = 10, latch = latch)
 
         latch.await()
 
@@ -597,19 +597,9 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `cancels timer when manually finished`() {
-        val latch = CountDownLatch(1)
-        val transaction = fixture.getSut(idleTimeout = 10000, latch = latch)
-
-        transaction.finish()
-
-        assertNull(transaction.timerTask)
-    }
-
-    @Test
     fun `when idle transaction with children, finishes the transaction after the idle timeout`() {
         val latch = CountDownLatch(1)
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, latch = latch)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 10, latch = latch)
 
         val span = transaction.startChild("op")
         span.finish()
@@ -625,24 +615,33 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when a new child is added to the idle transaction, resets the timer`() {
+    fun `when a new child is added to the idle transaction, cancels the timer`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 3000)
+
+        transaction.startChild("op")
+
+        assertNull(transaction.timerTask)
+    }
+
+    @Test
+    fun `when a child is finished and the transaction is idle, resets the timer`() {
         val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 3000)
 
         val initialTime = transaction.timerTask!!.scheduledExecutionTime()
 
-        // just a small sleep to make sure the 2nd span finishes later than the 1st one
+        val span = transaction.startChild("op")
         Thread.sleep(10)
+        span.finish()
 
-        transaction.startChild("op")
-        val timeAfterAddingChild = transaction.timerTask!!.scheduledExecutionTime()
+        val timerAfterFinishingChild = transaction.timerTask!!.scheduledExecutionTime()
 
-        assertTrue { timeAfterAddingChild > initialTime }
+        assertTrue { timerAfterFinishingChild > initialTime }
     }
 
     @Test
     fun `when trimEnd, trims idle transaction time to the latest child timestamp`() {
         val latch = CountDownLatch(1)
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 100, trimEnd = true, latch = latch, sampled = true)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, latch = latch, sampled = true)
 
         val span = transaction.startChild("op")
         span.finish()

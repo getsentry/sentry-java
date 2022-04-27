@@ -227,10 +227,7 @@ public final class SentryTracer implements ITransaction {
 
     Objects.requireNonNull(parentSpanId, "parentSpanId is required");
     Objects.requireNonNull(operation, "operation is required");
-    if (idleTimeout != null) {
-      // reset the timer when a new child gets added to extend the idle transaction
-      scheduleFinish(idleTimeout, latch);
-    }
+    cancelTimer();
     final Span span =
         new Span(
             root.getTraceId(),
@@ -241,7 +238,12 @@ public final class SentryTracer implements ITransaction {
             timestamp,
             __ -> {
               final FinishStatus finishStatus = this.finishStatus;
-              if (finishStatus.isFinishing) {
+              if (idleTimeout != null) {
+                // if it's an idle transaction, no matter the status, we'll reset the timeout here
+                // the transaction will either idle and finish itself, or a new child will be added
+                // and we'll wait for it again
+                scheduleFinish(idleTimeout, latch);
+              } else if (finishStatus.isFinishing) {
                 finish(finishStatus.spanStatus);
               }
             });
@@ -302,7 +304,6 @@ public final class SentryTracer implements ITransaction {
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   @Override
   public void finish(@Nullable SpanStatus status) {
-    cancelTimer();
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
       ProfilingTraceData profilingTraceData = null;
