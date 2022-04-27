@@ -219,11 +219,11 @@ public final class ActivityLifecycleIntegration
   @VisibleForTesting
   void clearScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
-      scopeTransaction -> {
-        if (scopeTransaction == transaction) {
-          scope.clearTransaction();
-        }
-      });
+        scopeTransaction -> {
+          if (scopeTransaction == transaction) {
+            scope.clearTransaction();
+          }
+        });
   }
 
   private boolean isRunningTransaction(final @NotNull Activity activity) {
@@ -255,9 +255,9 @@ public final class ActivityLifecycleIntegration
         // make sure to remove the transaction from scope, as it may contain running children,
         // therefore `finish` method will not remove it from scope
         hub.configureScope(
-          scope -> {
-            clearScope(scope, transaction);
-          });
+            scope -> {
+              clearScope(scope, transaction);
+            });
       }
     }
   }
