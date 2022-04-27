@@ -49,6 +49,8 @@ Sentry SDK for Java and Android
 
 # Blog posts
 
+* [Sentry’s Android Gradle Plugin Updated with Room Support and More](https://blog.sentry.io/2022/04/20/sentrys-android-gradle-plugin-updated-with-room-support-and-more/)
+* [Troubleshooting Spring Boot applications with Sentry](https://blog.sentry.io/2022/04/18/troubleshooting-spring-boot-applications-with-sentry)
 * [Android Manifest Placeholders](https://blog.sentry.io/2022/03/30/android-manifest-placeholders/)
 * [UI Breadcrumbs for Android Error Events](https://blog.sentry.io/2022/02/08/ui-breadcrumbs-for-android-error-events)
 * [Bytecode transformations: The Android Gradle Plugin](https://blog.sentry.io/2021/12/14/bytecode-transformations-the-android-gradle-plugin)

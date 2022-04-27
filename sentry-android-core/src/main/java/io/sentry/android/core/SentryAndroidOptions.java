@@ -7,7 +7,6 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -85,11 +84,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableActivityLifecycleTracingAutoFinish = true;
 
-  /** The cache dir. path for caching profiling traces */
-  private @Nullable String profilingTracesDirPath;
-
-  /** Interval for profiling traces in milliseconds. Defaults to 300 times per second */
-  private int profilingTracesIntervalMillis = 1_000 / 300;
+  /** Interval for profiling traces in milliseconds. Defaults to 100 times per second */
+  private int profilingTracesIntervalMillis = 1_000 / 100;
 
   /** Enables the Auto instrumentation for user interaction tracing. */
   private boolean enableUserInteractionTracing = false;
@@ -227,24 +223,6 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableSystemEventBreadcrumbs = enable;
     enableAppLifecycleBreadcrumbs = enable;
     enableUserInteractionBreadcrumbs = enable;
-  }
-
-  /**
-   * Returns the profiling traces dir. path if set
-   *
-   * @return the profiling traces dir. path or null if not set
-   */
-  public @Nullable String getProfilingTracesDirPath() {
-    return profilingTracesDirPath;
-  }
-
-  /**
-   * Sets the profiling traces dir. path
-   *
-   * @param profilingTracesDirPath the profiling traces dir. path
-   */
-  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
-    this.profilingTracesDirPath = profilingTracesDirPath;
   }
 
   /**

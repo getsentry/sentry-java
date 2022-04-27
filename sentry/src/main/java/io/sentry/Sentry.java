@@ -4,6 +4,7 @@ import io.sentry.cache.EnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.FileUtils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
@@ -190,6 +191,7 @@ public final class Sentry {
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static boolean initConfigurations(final @NotNull SentryOptions options) {
     if (options.isEnableExternalConfiguration()) {
       options.merge(ExternalOptions.from(PropertiesProviderFactory.create(), options.getLogger()));
@@ -229,6 +231,28 @@ public final class Sentry {
       final File cacheDir = new File(options.getCacheDirPath());
       cacheDir.mkdirs();
       options.setEnvelopeDiskCache(EnvelopeCache.create(options));
+    }
+
+    final String profilingTracesDirPath = options.getProfilingTracesDirPath();
+    if (options.isProfilingEnabled()
+        && profilingTracesDirPath != null
+        && !profilingTracesDirPath.isEmpty()) {
+
+      final File profilingTracesDir = new File(profilingTracesDirPath);
+      profilingTracesDir.mkdirs();
+      final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                if (oldTracesDirContent == null) return;
+                // Method trace files are normally deleted at the end of traces, but if that fails
+                // for some reason we try to clear any old files here.
+                for (File f : oldTracesDirContent) {
+                  FileUtils.deleteRecursively(f);
+                }
+              });
     }
 
     return true;

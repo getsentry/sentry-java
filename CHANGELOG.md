@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+Starting with version `6.6.0` of the `sentry`, [Sentry's version >= v21.9.0](https://github.com/getsentry/self-hosted/releases) is required or you have to manually disable sending client reports via the `sendClientReports` option. This only applies to self-hosted Sentry. If you are using [sentry.io](https://sentry.io), no action is needed.
+
+* Fix: Profiling rate decreased from 300hz to 100hz; fixed profiling traces folder creation on manual sdk init (#1997)
+* Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)
+* Ref: Upgrade Spring Boot dependency to 2.5.13 (#2011)
 * Feat: Automatically create transactions for UI events (#1975)
 
 ## 6.0.0-alpha.6

@@ -815,6 +815,31 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads send client reports to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.CLIENT_REPORTS_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isSendClientReports)
+    }
+
+    @Test
+    fun `applyMetadata reads send client reports and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isSendClientReports)
+    }
+
+    @Test
     fun `applyMetadata reads user interaction tracing to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACES_UI_ENABLE to true)
