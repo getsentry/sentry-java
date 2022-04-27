@@ -741,6 +741,28 @@ class ActivityLifecycleIntegrationTest {
         verify(fixture.hub).startTransaction(any(), any(), eq(nullDate), any(), any())
     }
 
+    @Test
+    fun `When transaction is finished, it gets removed from scope`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        whenever(fixture.hub.configureScope(any())).thenAnswer {
+            val scope = Scope(fixture.options)
+
+            scope.transaction = fixture.transaction
+
+            sut.clearScope(scope, fixture.transaction)
+
+            assertNull(scope.transaction)
+        }
+
+        sut.onActivityDestroyed(activity)
+    }
+
     private fun setAppStartTime(date: Date = Date(0)) {
         // set by SentryPerformanceProvider so forcing it here
         AppStartState.getInstance().setAppStartTime(0, date)
