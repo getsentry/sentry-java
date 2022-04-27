@@ -14,6 +14,7 @@ import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.Scope;
 import io.sentry.SentryLevel;
+import io.sentry.SpanStatus;
 import io.sentry.android.core.SentryAndroidOptions;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -241,10 +242,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       } else {
         // as we allow a single UI transaction running on the bound Scope, we finish the previous
         // one, if it's a new view
-        activeTransaction.finish();
-        activeTransaction = null;
-        activeView.clear();
-        activeEventType = null;
+        stopTracing(SpanStatus.OK);
       }
     }
 
@@ -264,11 +262,17 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     activeEventType = eventType;
   }
 
-  void stopTracing() {
+  void stopTracing(final @NotNull SpanStatus status) {
+    if (activeTransaction != null) {
+      activeTransaction.finish(status);
+    }
     hub.configureScope(
         scope -> {
           clearScope(scope);
         });
+    activeTransaction = null;
+    activeView.clear();
+    activeEventType = null;
   }
 
   @VisibleForTesting

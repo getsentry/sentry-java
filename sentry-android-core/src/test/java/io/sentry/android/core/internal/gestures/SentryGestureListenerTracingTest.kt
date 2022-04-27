@@ -20,6 +20,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.SentryTracer
+import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.android.core.SentryAndroidOptions
 import kotlin.test.Test
@@ -153,6 +154,7 @@ class SentryGestureListenerTracingTest {
     @Test
     fun `stopTracing remove transaction from scope`() {
         val sut = fixture.getSut<View>()
+        val expectedStatus = SpanStatus.CANCELLED
 
         whenever(fixture.hub.configureScope(any())).thenAnswer {
             val scope = Scope(fixture.options)
@@ -168,9 +170,10 @@ class SentryGestureListenerTracingTest {
 
             sut.clearScope(scope)
 
+            assertEquals(expectedStatus, fixture.transaction.status)
             assertNull(scope.transaction)
         }
-        sut.stopTracing()
+        sut.stopTracing(expectedStatus)
     }
 
     @Test
