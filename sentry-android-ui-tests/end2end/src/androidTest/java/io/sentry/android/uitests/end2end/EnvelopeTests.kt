@@ -1,30 +1,22 @@
 package io.sentry.android.uitests.end2end
 
-import androidx.lifecycle.Lifecycle
-import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryTransaction
-import okhttp3.mockwebserver.MockResponse
 
 import org.junit.Test
 import org.junit.runner.RunWith
 
 import org.junit.Assert.*
 
-/**
- * Instrumented test, which will execute on an Android device.
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
 @RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest : BaseUiTest() {
+class EnvelopeTests : BaseUiTest() {
 
     @Test
-    fun useAppContext() {
+    fun checkEnvelopeCaptureMessage() {
 
         initSentry(true)
         relayIdlingResource.increment()
@@ -42,7 +34,7 @@ class ExampleInstrumentedTest : BaseUiTest() {
     }
 
     @Test
-    fun useAppContex2t() {
+    fun checkEnvelopeProfiledTransaction() {
 
         initSentry(true) { options: SentryOptions ->
             options.isEnableAutoSessionTracking = false

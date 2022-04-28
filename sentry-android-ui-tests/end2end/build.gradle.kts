@@ -14,13 +14,15 @@ android {
         // Runs each test in its own instance of Instrumentation. This way they are isolated from
         // one another and get their own Application instance.
         // https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner#enable-gradle
-        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+        // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
+        // Check the readme for more info.
+//        testInstrumentationRunnerArguments["clearPackageData"] = "true"
         consumerProguardFiles("consumer-rules.pro")
     }
 
-//    testOptions {
-//        execution = "ANDROIDX_TEST_ORCHESTRATOR" it doesn't work with Android 11...
-//    }
+    testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
+    }
 
     testBuildType = "debug"
 

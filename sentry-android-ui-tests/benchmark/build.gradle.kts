@@ -14,14 +14,14 @@ android {
         // Runs each test in its own instance of Instrumentation. This way they are isolated from
         // one another and get their own Application instance.
         // https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner#enable-gradle
-        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+        // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
+        // Check the readme for more info.
+//        testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
-//    testOptions {
-//        execution = "ANDROIDX_TEST_ORCHESTRATOR" it doesn't work with Android 11...
-//    }
-
-    testBuildType = "release"
+    testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
+    }
 
     signingConfigs {
         getByName("debug") {
@@ -38,9 +38,15 @@ android {
             // it must be done in a manifest - see src/androidTest/AndroidManifest.xml
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
+
+            addManifestPlaceholders(
+                mapOf(
+                    "sentryDebug" to false,
+                    "sentryEnvironment" to "release"
+                )
+            )
         }
         named("release") {
-            isDefault = true
             isMinifyEnabled = true
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode

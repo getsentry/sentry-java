@@ -2,6 +2,7 @@ package io.sentry.android.uitests.benchmark.util
 
 import java.util.concurrent.TimeUnit
 
+/** Stores the results of a [BenchmarkOperation]. */
 internal data class BenchmarkOperationResult(
     val avgCpuTimeMillis: Long,
     val avgDroppedFrames: Double,
@@ -9,7 +10,12 @@ internal data class BenchmarkOperationResult(
     val avgFramesPerSecond: Int,
     val operationName: String
 ) {
-    fun compare(other: BenchmarkOperationResult): BenchmarkOperationComparison {
+    /**
+     * Compare two [BenchmarkOperationResult], calculating increases of each parameter in percentage.
+     */
+    fun compare(other: BenchmarkOperationResult): BenchmarkResult {
+
+        // Measure average duration
         val durationDiffNanos = avgDurationNanos - other.avgDurationNanos
         val durationIncreasePercentage = durationDiffNanos * 100.0 / other.avgDurationNanos
         println("Measuring the duration increase of the operation in the transaction. If it's low enough, " +
@@ -24,6 +30,7 @@ internal data class BenchmarkOperationResult(
 
         println("--------------------")
 
+        // Measure average cpu time
         val cpuTimeDiff = (avgCpuTimeMillis - other.avgCpuTimeMillis) / Runtime.getRuntime().availableProcessors()
         val cpuTimeOverheadPercentage = cpuTimeDiff * 100.0 / other.avgCpuTimeMillis
         // Cpu time spent profiling is weighted based on available threads, as profiling runs on 1 thread only.
@@ -40,6 +47,7 @@ internal data class BenchmarkOperationResult(
 
         println("--------------------")
 
+        // Measure average fps
         val fpsDiff = other.avgFramesPerSecond - avgFramesPerSecond
         val fpsDecreasePercentage = fpsDiff * 100.0 / other.avgFramesPerSecond
         println("Measuring the decreased fps. Not really important, as even if fps are the same, the cpu could be " +
@@ -54,6 +62,7 @@ internal data class BenchmarkOperationResult(
 
         println("--------------------")
 
+        // Measure average dropped frames
         val droppedFramesDiff = avgDroppedFrames - other.avgDroppedFrames
         val totalExpectedFrames = TimeUnit.NANOSECONDS.toMillis(other.avgDurationNanos) * 60 / 1000
         val droppedFramesIncreasePercentage = droppedFramesDiff * 100 / (totalExpectedFrames-other.avgDroppedFrames)
@@ -68,7 +77,7 @@ internal data class BenchmarkOperationResult(
             println("No measurable frame drop increase detected.")
         }
 
-        return BenchmarkOperationComparison(
+        return BenchmarkResult(
             cpuTimeOverheadPercentage,
             droppedFramesIncreasePercentage,
             durationIncreasePercentage,
@@ -77,7 +86,7 @@ internal data class BenchmarkOperationResult(
     }
 }
 
-internal data class BenchmarkOperationComparison(
+internal data class BenchmarkResult(
     val cpuTimeIncrease: Double,
     val droppedFramesIncrease: Double,
     val durationIncrease: Double,

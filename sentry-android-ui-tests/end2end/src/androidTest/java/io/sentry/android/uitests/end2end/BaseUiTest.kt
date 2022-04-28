@@ -1,8 +1,6 @@
 package io.sentry.android.uitests.end2end
 
-import android.app.Application
 import android.content.Context
-import android.content.pm.ApplicationInfo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
@@ -25,24 +23,23 @@ abstract class BaseUiTest {
     protected lateinit var runner: AndroidJUnitRunner
     protected lateinit var context: Context
     protected lateinit var dsn: String
-    protected val relay = MockRelay(false, relayIdlingResource)
-
-    init {
-    }
+    protected var relayCheckIdlingResources: Boolean = false
+    protected val relay = MockRelay(relayCheckIdlingResources, relayIdlingResource)
 
     @BeforeTest
     fun baseSetUp() {
         runner = InstrumentationRegistry.getInstrumentation() as AndroidJUnitRunner
         context = ApplicationProvider.getApplicationContext()
         context.cacheDir.deleteRecursively()
-        IdlingRegistry.getInstance().register(relayIdlingResource)
         relay.start()
         dsn = "http://key@${relay.hostName}:${relay.port}/${relay.dsnProject}"
     }
 
     @AfterTest
     fun baseFinish() {
-        IdlingRegistry.getInstance().unregister(relayIdlingResource)
+        if (relayCheckIdlingResources) {
+            IdlingRegistry.getInstance().unregister(relayIdlingResource)
+        }
         relay.shutdown()
         Sentry.close()
     }
@@ -51,7 +48,11 @@ abstract class BaseUiTest {
         relayCheckIdlingResources: Boolean = true,
         optionsConfiguration: ((options: SentryOptions) -> Unit)? = null
     ) {
+        this.relayCheckIdlingResources = relayCheckIdlingResources
         relay.checkIdlingResources = relayCheckIdlingResources
+        if (relayCheckIdlingResources) {
+            IdlingRegistry.getInstance().register(relayIdlingResource)
+        }
         SentryAndroid.init(context) {
             it.dsn = dsn
             optionsConfiguration?.invoke(it)
@@ -59,9 +60,7 @@ abstract class BaseUiTest {
     }
 }
 
-/**
- * Waits until the Specto SDK is idle.
- */
+/** Waits until the Sentry SDK is idle. */
 fun waitUntilIdle() {
     // We rely on Espresso's idling resources.
     Espresso.onIdle()

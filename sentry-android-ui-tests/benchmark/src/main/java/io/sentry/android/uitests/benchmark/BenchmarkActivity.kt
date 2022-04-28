@@ -1,14 +1,6 @@
 package io.sentry.android.uitests.benchmark
 
-import android.annotation.SuppressLint
-import android.graphics.Bitmap
-import android.graphics.Color
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -16,19 +8,14 @@ import androidx.test.espresso.IdlingRegistry
 import io.sentry.android.uitests.end2end.utils.BooleanIdlingResource
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.random.Random
 
 /** A simple activity with a list of bitmaps. */
 class BenchmarkActivity : AppCompatActivity() {
 
     companion object {
 
-        /** The activity will set this manage when scrolling. */
+        /** The activity will set this when scrolling. */
         val scrollingIdlingResource = BooleanIdlingResource("benchmark-activity")
-
-        init {
-            IdlingRegistry.getInstance().register(scrollingIdlingResource)
-        }
     }
 
     /**
@@ -45,6 +32,7 @@ class BenchmarkActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_benchmark)
 
+        // We show a simple list that changes the idling resource
         findViewById<RecyclerView>(R.id.benchmark_transaction_list).apply {
             layoutManager = LinearLayoutManager(this@BenchmarkActivity)
             adapter = BenchmarkTransactionListAdapter()
@@ -57,7 +45,6 @@ class BenchmarkActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("MagicNumber")
     override fun onResume() {
         super.onResume()
         resumed = true
