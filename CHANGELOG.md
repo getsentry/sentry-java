@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-beta.2
 
 * Fix: Android profiling initializes on first profile start (#2009)
 
