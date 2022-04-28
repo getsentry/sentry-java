@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-beta.1
 
 * Fix: Profiling rate decreased from 300hz to 100hz (#1997)
 * Fix: Android profiling initializes on first profile start (#2009)
