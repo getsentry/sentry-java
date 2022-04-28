@@ -49,6 +49,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @Nullable PackageInfo packageInfo;
   private long transactionStartNanos = 0;
+  private boolean isInitialized = false;
 
   public AndroidTransactionProfiler(
       final @NotNull Context context,
@@ -59,6 +60,14 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
     this.packageInfo = ContextUtils.getPackageInfo(context, options.getLogger());
+  }
+
+  private void init() {
+    // We initialize it only once
+    if (isInitialized) {
+      return;
+    }
+    isInitialized = true;
     final String tracesFilesDirPath = options.getProfilingTracesDirPath();
     if (!options.isProfilingEnabled()) {
       options.getLogger().log(SentryLevel.INFO, "Profiling is disabled in options.");
@@ -93,7 +102,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     // Debug.startMethodTracingSampling() is only available since Lollipop
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return;
 
-    // traceFilesDir is null or intervalUs is 0 only if there was a problem in the constructor, but
+    // Let's initialize trace folder and profiling interval
+    init();
+
+    // traceFilesDir is null or intervalUs is 0 only if there was a problem in the init, but
     // we already logged that
     if (traceFilesDir == null || intervalUs == 0 || !traceFilesDir.exists()) {
       return;

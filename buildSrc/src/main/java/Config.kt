@@ -4,9 +4,7 @@ object Config {
     val kotlinVersion = "1.5.31"
     val kotlinStdLib = "stdlib-jdk8"
 
-    val springBootVersion = "2.4.4"
-    // Spring is currently not compatible with Kotlin 1.4
-    val springKotlinCompatibleLanguageVersion = "1.3"
+    val springBootVersion = "2.5.13"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     object BuildPlugins {
