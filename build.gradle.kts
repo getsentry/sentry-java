@@ -45,6 +45,8 @@ apiValidation {
     )
     ignoredProjects.addAll(
         listOf(
+            "benchmark",
+            "end2end",
             "sentry-samples-android",
             "sentry-samples-console",
             "sentry-samples-jul",
@@ -165,7 +167,7 @@ gradle.projectsEvaluated {
             "https://docs.spring.io/spring-boot/docs/current/api/"
         )
         subprojects
-            .filter { !it.name.contains("sample") }
+            .filter { !it.name.contains("sample") && it.name != "benchmark" && it.name != "end2end" }
             .forEach { proj ->
                 proj.tasks.withType<Javadoc>().forEach { javadocTask ->
                     source += javadocTask.source

@@ -25,5 +25,4 @@ class BooleanIdlingResource(private val name: String) : IdlingResource {
     override fun registerIdleTransitionCallback(callback: IdlingResource.ResourceCallback?) {
         this.callback = callback
     }
-
 }

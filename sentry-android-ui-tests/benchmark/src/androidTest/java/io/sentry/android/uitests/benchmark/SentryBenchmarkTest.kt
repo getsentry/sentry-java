@@ -11,17 +11,14 @@ import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.rule.GrantPermissionRule
 import androidx.test.runner.AndroidJUnitRunner
 import io.sentry.ITransaction
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroid
 import io.sentry.android.uitests.benchmark.util.BenchmarkOperation
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.assertTrue
@@ -85,9 +82,12 @@ class SentryBenchmarkTest {
         // We compare the same operation with and without profiled transaction.
         // We expect the profiled transaction operation to be slower, but not slower than 5%.
         val benchmarkOperationNoTransaction = BenchmarkOperation(runner, getOperation(runner) { null })
-        val benchmarkOperationProfiled = BenchmarkOperation(runner, getOperation(runner) {
-            Sentry.startTransaction("Benchmark", "ProfiledTransaction")
-        })
+        val benchmarkOperationProfiled = BenchmarkOperation(
+            runner,
+            getOperation(runner) {
+                Sentry.startTransaction("Benchmark", "ProfiledTransaction")
+            }
+        )
         val comparisonResult = BenchmarkOperation.compare(
             benchmarkOperationNoTransaction,
             "NoTransaction",

@@ -41,5 +41,5 @@ class RelayAsserter(
         }
     }
 
-    data class RelayResponse (val request: RecordedRequest, val response: MockResponse)
+    data class RelayResponse(val request: RecordedRequest, val response: MockResponse)
 }

@@ -6,11 +6,10 @@ import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryTransaction
-
 import org.junit.Test
 import org.junit.runner.RunWith
-
-import org.junit.Assert.*
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class EnvelopeTests : BaseUiTest() {
@@ -52,7 +51,7 @@ class EnvelopeTests : BaseUiTest() {
                 val profilingTraceData = it.assertItem(ProfilingTraceData::class.java)
                 it.assertNoOtherItems()
                 assertTrue(transactionItem.transaction == "e2etests")
-                assertTrue(profilingTraceData.transactionId == transactionItem.eventId.toString())
+                assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
                 assertTrue(profilingTraceData.transactionName == "e2etests")
             }
             assertNoOtherEnvelopes()

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Tests: added Android UI tests (#2013)
+
 * Fix: Profiling rate decreased from 300hz to 100hz (#1997)
 * Fix: Android profiling initializes on first profile start (#2009)
 * Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)

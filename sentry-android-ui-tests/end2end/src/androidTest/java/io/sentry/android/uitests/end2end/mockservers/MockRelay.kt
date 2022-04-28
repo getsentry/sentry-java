@@ -1,9 +1,6 @@
 package io.sentry.android.uitests.end2end.mockservers
 
-import android.util.Log
 import androidx.test.espresso.idling.CountingIdlingResource
-import io.sentry.android.uitests.end2end.BaseUiTest
-import io.sentry.android.uitests.end2end.utils.BooleanIdlingResource
 import io.sentry.android.uitests.end2end.waitUntilIdle
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -11,7 +8,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 
 /** Interface exposing mock webservers */
-class MockRelay (
+class MockRelay(
     var checkIdlingResources: Boolean,
     private val relayIdlingResource: CountingIdlingResource
 ) {
