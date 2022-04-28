@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.random.Random
 
-/** A simple list of items, using [RecyclerView]. */
+/** A simple activity with a list of bitmaps. */
 class BenchmarkActivity : AppCompatActivity() {
 
     companion object {
@@ -31,34 +31,10 @@ class BenchmarkActivity : AppCompatActivity() {
         }
     }
 
-    internal class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imageView: ImageView = view.findViewById(R.id.benchmark_item_list_image)
-        val textView: TextView = view.findViewById(R.id.benchmark_item_list_text)
-    }
-
-    internal inner class Adapter : RecyclerView.Adapter<ViewHolder>() {
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.benchmark_item_list, parent, false)
-            return ViewHolder(view)
-        }
-
-        @Suppress("MagicNumber")
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.imageView.setImageBitmap(generateBitmap())
-
-            @SuppressLint("SetTextI18n")
-            holder.textView.text = "Item $position ${"sentry ".repeat(position)}"
-        }
-
-        // Disables view recycling.
-        override fun getItemViewType(position: Int): Int = position
-
-        override fun getItemCount(): Int = 200
-    }
-
     /**
-     * Each background thread will run non-stop calculations during the benchmark. One such thread seems
-     * enough to represent a busy application. This number can be increased to mimic busier applications.
+     * Each background thread will run non-stop calculations during the benchmark.
+     * One such thread seems enough to represent a busy application.
+     * This number can be increased to mimic busier applications.
      */
     private val backgroundThreadPoolSize = 1
     private val executor: ExecutorService = Executors.newFixedThreadPool(backgroundThreadPoolSize)
@@ -71,7 +47,7 @@ class BenchmarkActivity : AppCompatActivity() {
 
         findViewById<RecyclerView>(R.id.benchmark_transaction_list).apply {
             layoutManager = LinearLayoutManager(this@BenchmarkActivity)
-            adapter = Adapter()
+            adapter = BenchmarkTransactionListAdapter()
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
@@ -82,19 +58,11 @@ class BenchmarkActivity : AppCompatActivity() {
     }
 
     @Suppress("MagicNumber")
-    internal fun generateBitmap(): Bitmap {
-        val bitmapSize = 100
-        val colors = (0 until (bitmapSize * bitmapSize)).map {
-            Color.rgb(Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
-        }.toIntArray()
-        return Bitmap.createBitmap(colors, bitmapSize, bitmapSize, Bitmap.Config.ARGB_8888)
-    }
-
-    @Suppress("MagicNumber")
     override fun onResume() {
         super.onResume()
         resumed = true
 
+        // Do operations until the activity is paused.
         repeat(backgroundThreadPoolSize) {
             executor.execute {
                 var x = 0
