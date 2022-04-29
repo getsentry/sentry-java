@@ -149,7 +149,7 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
-    boolean shouldSendSessionUpdate =
+    final boolean shouldSendSessionUpdate =
         shouldSendSessionUpdateForDroppedEvent(sessionBeforeUpdate, session);
 
     if (event == null && !shouldSendSessionUpdate) {
@@ -166,7 +166,7 @@ public final class SentryClient implements ISentryClient {
           scope != null && scope.getTransaction() != null
               ? scope.getTransaction().traceState()
               : null;
-      boolean shouldSendAttachments = event != null;
+      final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(scope, hint) : null;
       final SentryEnvelope envelope = buildEnvelope(event, attachments, session, traceState, null);
 
