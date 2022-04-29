@@ -174,6 +174,21 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with filtered exception types using external properties`() {
+        val logger = mock<ILogger>()
+        // Setting few types of classes:
+        // - RuntimeException and IllegalStateException - valid exception classes
+        // - NonExistingClass - class that does not exist - should not trigger a failure to create options
+        // - io.sentry.Sentry - class that does not extend Throwable - should not trigger a failure
+        withPropertiesFile("exception-filters-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,com.xx.NonExistingClass,io.sentry.Sentry", logger) { options ->
+            assertTrue(options.ignoredExceptionsForType.contains(RuntimeException::class.java))
+            assertTrue(options.ignoredExceptionsForType.contains(IllegalStateException::class.java))
+            verify(logger).log(eq(SentryLevel.WARNING), any<String>(), eq("com.xx.NonExistingClass"), eq("com.xx.NonExistingClass"))
+            verify(logger).log(eq(SentryLevel.WARNING), any<String>(), eq("io.sentry.Sentry"), eq("io.sentry.Sentry"))
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()

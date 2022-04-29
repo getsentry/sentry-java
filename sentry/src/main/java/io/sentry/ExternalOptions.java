@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.config.PropertiesProvider;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -89,8 +90,10 @@ public final class ExternalOptions {
     }
     options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
 
-    for (final String ignoredExceptionType :
-        propertiesProvider.getList("ignored-exceptions-for-type")) {
+    Set<String> ignoredExceptionTypes = new HashSet<>();
+    ignoredExceptionTypes.addAll(propertiesProvider.getList("ignored-exceptions-for-type"));
+    ignoredExceptionTypes.addAll(propertiesProvider.getList("exception-filters-for-type"));
+    for (final String ignoredExceptionType : ignoredExceptionTypes) {
       try {
         Class<?> clazz = Class.forName(ignoredExceptionType);
         if (Throwable.class.isAssignableFrom(clazz)) {

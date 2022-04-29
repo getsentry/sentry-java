@@ -1121,6 +1121,7 @@ public class io/sentry/SentryOptions {
 	public fun <init> ()V
 	public fun addContextTag (Ljava/lang/String;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
+	public fun addExceptionFilterForType (Ljava/lang/Class;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addInAppExclude (Ljava/lang/String;)V
 	public fun addInAppInclude (Ljava/lang/String;)V

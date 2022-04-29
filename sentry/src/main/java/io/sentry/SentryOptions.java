@@ -1336,6 +1336,15 @@ public class SentryOptions {
   }
 
   /**
+   * Adds exception type to the list of ignored exceptions.
+   *
+   * @param exceptionType - the exception type
+   */
+  public void addExceptionFilterForType(final @NotNull Class<? extends Throwable> exceptionType) {
+    this.ignoredExceptionsForType.add(exceptionType);
+  }
+
+  /**
    * Checks if the type of exception given by parameter is ignored.
    *
    * @param throwable the throwable
