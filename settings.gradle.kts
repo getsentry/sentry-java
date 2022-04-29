@@ -12,8 +12,6 @@ include(
     "sentry-android-timber",
     "sentry-android-okhttp",
     "sentry-android-fragment",
-    "sentry-android-ui-tests:benchmark",
-    "sentry-android-ui-tests:end2end",
     "sentry-apollo",
     "sentry-test-support",
     "sentry-log4j2",
@@ -38,7 +36,9 @@ include(
     "sentry-samples:sentry-samples-spring",
     "sentry-samples:sentry-samples-spring-boot",
     "sentry-samples:sentry-samples-spring-boot-webflux",
-    "sentry-samples:sentry-samples-netflix-dgs"
+    "sentry-samples:sentry-samples-netflix-dgs",
+    "sentry-uitest:sentry-uitest-android-benchmark",
+    "sentry-uitest:sentry-uitest-android"
 )
 
 gradle.beforeProject {

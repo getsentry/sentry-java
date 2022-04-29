@@ -39,7 +39,7 @@ object Config {
 
     object Libs {
         val okHttpVersion = "4.9.2"
-        val appCompat = "androidx.appcompat:appcompat:1.2.0"
+        val appCompat = "androidx.appcompat:appcompat:1.3.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
         val okhttp = "com.squareup.okhttp3:okhttp"

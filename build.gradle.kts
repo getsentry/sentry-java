@@ -45,8 +45,6 @@ apiValidation {
     )
     ignoredProjects.addAll(
         listOf(
-            "benchmark",
-            "end2end",
             "sentry-samples-android",
             "sentry-samples-console",
             "sentry-samples-jul",
@@ -58,6 +56,8 @@ apiValidation {
             "sentry-samples-spring-boot",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-netflix-dgs",
+            "sentry-uitest-android",
+            "sentry-uitest-android-benchmark",
         )
     )
 }
@@ -88,7 +88,7 @@ allprojects {
 }
 
 subprojects {
-    if (!this.name.contains("sample") && this.name != "sentry-test-support") {
+    if (!this.name.contains("sample") && !this.name.contains("uitest") && this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
 
         val sep = File.separator
@@ -167,7 +167,7 @@ gradle.projectsEvaluated {
             "https://docs.spring.io/spring-boot/docs/current/api/"
         )
         subprojects
-            .filter { !it.name.contains("sample") && it.name != "benchmark" && it.name != "end2end" }
+            .filter { !it.name.contains("sample") && !it.name.contains("uitest") }
             .forEach { proj ->
                 proj.tasks.withType<Javadoc>().forEach { javadocTask ->
                     source += javadocTask.source
