@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+* Align how to add an ignored Exception with other SDKs (#2014)
+
 ## 6.0.0-beta.2
 
 * Fix: Android profiling initializes on first profile start (#2009)
