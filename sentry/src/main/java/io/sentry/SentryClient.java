@@ -126,6 +126,22 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
+    Session session = null;
+    if (event != null) {
+      event = executeBeforeSend(event, hint);
+
+      if (event == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
+      }
+    }
+
+    if (event == null) {
+      return SentryId.EMPTY_ID;
+    }
+
     @Nullable
     Session sessionBeforeUpdate =
         scope != null ? scope.withSession((@Nullable Session session) -> {}) : null;
