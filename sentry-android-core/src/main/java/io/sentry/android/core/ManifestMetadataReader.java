@@ -245,18 +245,21 @@ final class ManifestMetadataReader {
         options.setProguardUuid(
             readString(metadata, logger, PROGUARD_UUID, options.getProguardUuid()));
 
-        SdkVersion sdkVersion = options.getSdkVersion();
-        Objects.requireNonNull(sdkVersion, "Property options.sdkVersion must not be null.");
-        final String sdkVersionName = readString(metadata, logger, SDK_NAME, sdkVersion.getName());
-        if (sdkVersionName != null) {
-          sdkVersion.setName(sdkVersionName);
+        SdkVersion sdkInfo = options.getSdkVersion();
+        if (sdkInfo != null) {
+          final String sdkName = readString(metadata, logger, SDK_NAME, sdkInfo.getName());
+          if (sdkName != null) {
+            sdkInfo.setName(sdkName);
+          }
+          final String sdkVersion = readString(metadata, logger, SDK_VERSION, sdkInfo.getVersion());
+          if (sdkVersion != null) {
+            sdkInfo.setVersion(sdkVersion);
+          }
+          options.setSdkVersion(sdkInfo);
+        } else {
+          // Should always be set by the Options constructor but let's error out if that changes.
+          Objects.requireNonNull(sdkInfo, "Property options.sdkVersion must not be null.");
         }
-        final String sdkVersionVersion =
-            readString(metadata, logger, SDK_VERSION, sdkVersion.getVersion());
-        if (sdkVersionVersion != null) {
-          sdkVersion.setVersion(sdkVersionVersion);
-        }
-        options.setSdkVersion(sdkVersion);
       }
 
       options
