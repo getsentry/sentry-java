@@ -153,6 +153,11 @@ public final class SentryClient implements ISentryClient {
         shouldSendSessionUpdateForDroppedEvent(sessionBeforeUpdate, session);
 
     if (event == null && !shouldSendSessionUpdate) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not sending session update for dropped event as it did not cause the session health to change.");
       return SentryId.EMPTY_ID;
     }
 
