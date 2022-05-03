@@ -126,7 +126,10 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
-    Session session = null;
+    @Nullable
+    Session sessionBeforeUpdate =
+        scope != null ? scope.withSession((@Nullable Session session) -> {}) : null;
+    @Nullable Session session = null;
 
     if (event != null) {
       session = updateSessionData(event, hint, scope);
@@ -146,6 +149,18 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
+    final boolean shouldSendSessionUpdate =
+        shouldSendSessionUpdateForDroppedEvent(sessionBeforeUpdate, session);
+
+    if (event == null && !shouldSendSessionUpdate) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not sending session update for dropped event as it did not cause the session health to change.");
+      return SentryId.EMPTY_ID;
+    }
+
     SentryId sentryId = SentryId.EMPTY_ID;
     if (event != null && event.getEventId() != null) {
       sentryId = event.getEventId();
@@ -156,8 +171,9 @@ public final class SentryClient implements ISentryClient {
           scope != null && scope.getTransaction() != null
               ? scope.getTransaction().traceState()
               : null;
-      final SentryEnvelope envelope =
-          buildEnvelope(event, getAttachments(scope, hint), session, traceState, null);
+      final boolean shouldSendAttachments = event != null;
+      List<Attachment> attachments = shouldSendAttachments ? getAttachments(scope, hint) : null;
+      final SentryEnvelope envelope = buildEnvelope(event, attachments, session, traceState, null);
 
       if (envelope != null) {
         transport.send(envelope, hint);
@@ -170,6 +186,32 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  private boolean shouldSendSessionUpdateForDroppedEvent(
+      @Nullable Session sessionBeforeUpdate, @Nullable Session sessionAfterUpdate) {
+    if (sessionAfterUpdate == null) {
+      return false;
+    }
+
+    if (sessionBeforeUpdate == null) {
+      return true;
+    }
+
+    final boolean didSessionMoveToCrashedState =
+        sessionAfterUpdate.getStatus() == Session.State.Crashed
+            && sessionBeforeUpdate.getStatus() != Session.State.Crashed;
+    if (didSessionMoveToCrashedState) {
+      return true;
+    }
+
+    final boolean didSessionMoveToErroredState =
+        sessionAfterUpdate.errorCount() > 0 && sessionBeforeUpdate.errorCount() <= 0;
+    if (didSessionMoveToErroredState) {
+      return true;
+    }
+
+    return false;
   }
 
   private @Nullable List<Attachment> getAttachments(
