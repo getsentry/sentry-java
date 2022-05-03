@@ -81,6 +81,22 @@ public final class SentryClient implements ISentryClient {
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
+    if (event != null) {
+      final Throwable eventThrowable = event.getThrowable();
+      if (eventThrowable != null && options.containsIgnoredExceptionForType(eventThrowable)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped as the exception %s is ignored",
+                eventThrowable.getClass());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        return SentryId.EMPTY_ID;
+      }
+    }
+
     if (shouldApplyScopeData(event, hint)) {
       // Event has already passed through here before it was cached
       // Going through again could be reading data that is no longer relevant
@@ -94,6 +110,21 @@ public final class SentryClient implements ISentryClient {
     }
 
     event = processEvent(event, hint, options.getEventProcessors());
+
+    if (event != null) {
+      event = executeBeforeSend(event, hint);
+
+      if (event == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
+      }
+    }
+
+    if (event == null) {
+      return SentryId.EMPTY_ID;
+    }
 
     Session session = null;
 
@@ -112,30 +143,6 @@ public final class SentryClient implements ISentryClient {
             .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Error);
         // setting event as null to not be sent as its been discarded by sample rate
         event = null;
-      }
-    }
-
-    if (event != null) {
-      if (event.getThrowable() != null
-          && options.containsIgnoredExceptionForType(event.getThrowable())) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Event was dropped as the exception %s is ignored",
-                event.getThrowable().getClass());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
-        return SentryId.EMPTY_ID;
-      }
-      event = executeBeforeSend(event, hint);
-
-      if (event == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
       }
     }
 
