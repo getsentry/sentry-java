@@ -2,8 +2,23 @@
 
 ## Unreleased
 
+### Fix
+
+* Change order of event filtering mechanisms (#2001)
+
+## 6.0.0-beta.2
+
+* Fix: Android profiling initializes on first profile start (#2009)
+
+## 6.0.0-beta.1
+
+* Fix: Profiling rate decreased from 300hz to 100hz (#1997)
 * Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)
-* Fix: Change order of event filtering mechanisms (#2001)
+* Ref: Upgrade Spring Boot dependency to 2.5.13 (#2011)
+
+### Sentry Self-hosted Compatibility
+
+- Starting with version `6.6.0` of `sentry`, [Sentry's version >= v21.9.0](https://github.com/getsentry/self-hosted/releases) is required or you have to manually disable sending client reports via the `sendClientReports` option. This only applies to self-hosted Sentry. If you are using [sentry.io](https://sentry.io), no action is needed.
 
 ## 6.0.0-alpha.6
 
