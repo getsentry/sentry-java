@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +32,8 @@ final class ManifestMetadataReader {
   static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
   static final String RELEASE = "io.sentry.release";
   static final String ENVIRONMENT = "io.sentry.environment";
+  static final String SDK_NAME = "io.sentry.sdk.name";
+  static final String SDK_VERSION = "io.sentry.sdk.version";
 
   // TODO: remove on 6.x in favor of SESSION_AUTO_TRACKING_ENABLE
   static final String SESSION_TRACKING_ENABLE = "io.sentry.session-tracking.enable";
@@ -241,6 +244,19 @@ final class ManifestMetadataReader {
 
         options.setProguardUuid(
             readString(metadata, logger, PROGUARD_UUID, options.getProguardUuid()));
+
+        SdkVersion sdkVersion = options.getSdkVersion();
+        Objects.requireNonNull(sdkVersion, "Property options.sdkVersion must not be null.");
+        final String sdkVersionName = readString(metadata, logger, SDK_NAME, sdkVersion.getName());
+        if (sdkVersionName != null) {
+          sdkVersion.setName(sdkVersionName);
+        }
+        final String sdkVersionVersion =
+            readString(metadata, logger, SDK_VERSION, sdkVersion.getVersion());
+        if (sdkVersionVersion != null) {
+          sdkVersion.setVersion(sdkVersionVersion);
+        }
+        options.setSdkVersion(sdkVersion);
       }
 
       options

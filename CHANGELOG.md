@@ -83,6 +83,8 @@ Breaking changes:
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
 
+* Feat: Allow setting SDK info (name & version) in manifest (#2016)
+
 ## 5.7.3
 
 * Fix: Sentry Timber integration throws an exception when using args (#1986)
