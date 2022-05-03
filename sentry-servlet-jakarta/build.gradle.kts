@@ -26,7 +26,7 @@ configure<JavaPluginExtension> {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.springKotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
 }
 
 dependencies {
@@ -82,12 +82,12 @@ repositories {
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
     jvmTarget = JavaVersion.VERSION_1_8.toString()
-    languageVersion = Config.springKotlinCompatibleLanguageVersion
+    languageVersion = Config.kotlinCompatibleLanguageVersion
 }
 val compileTestKotlin: KotlinCompile by tasks
 compileTestKotlin.kotlinOptions {
     jvmTarget = JavaVersion.VERSION_1_8.toString()
-    languageVersion = Config.springKotlinCompatibleLanguageVersion
+    languageVersion = Config.kotlinCompatibleLanguageVersion
 }
 
 tasks.withType<JavaCompile>().configureEach {
