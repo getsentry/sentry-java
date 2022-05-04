@@ -50,6 +50,12 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
+    variantFilter {
+        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
+            ignore = true
+        }
+    }
 }
 
 dependencies {
