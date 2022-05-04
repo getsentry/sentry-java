@@ -564,41 +564,11 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata does not override SDK name from options`() {
-        // Arrange
-        val expectedValue = "custom.sdk"
-        fixture.options.sdkVersion!!.name = expectedValue
-        val bundle = bundleOf(ManifestMetadataReader.SDK_NAME to "foo")
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
-
-        // Assert
-        assertEquals(expectedValue, fixture.options.sdkVersion?.name)
-    }
-
-    @Test
     fun `applyMetadata reads SDK version from metadata`() {
         // Arrange
         val expectedValue = "1.2.3-alpha.0"
 
         val bundle = bundleOf(ManifestMetadataReader.SDK_VERSION to expectedValue)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
-
-        // Assert
-        assertEquals(expectedValue, fixture.options.sdkVersion?.version)
-    }
-
-    @Test
-    fun `applyMetadata does not override SDK version from options`() {
-        // Arrange
-        val expectedValue = "1.2.3-alpha.0"
-        fixture.options.sdkVersion!!.version = expectedValue
-        val bundle = bundleOf(ManifestMetadataReader.SDK_VERSION to "foo")
         val context = fixture.getContext(metaData = bundle)
 
         // Act
