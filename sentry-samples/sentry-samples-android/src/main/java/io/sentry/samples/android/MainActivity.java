@@ -178,6 +178,12 @@ public class MainActivity extends AppCompatActivity {
               crashCount);
         });
 
+    binding.openPermissionsActivity.setOnClickListener(
+      view -> {
+        startActivity(new Intent(this, PermissionsActivity.class));
+      }
+    );
+
     setContentView(binding.getRoot());
   }
 

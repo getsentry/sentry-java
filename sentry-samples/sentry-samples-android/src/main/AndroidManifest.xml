@@ -10,6 +10,10 @@
     <!-- extra recommended permission, we'd be able to collect device ringing breadcrumbs (PhoneStateBreadcrumbsIntegration) -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
+    <!-- Just some random permissions to showcase the permission context sent to Sentry -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
     <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
     <uses-sdk
         tools:overrideLibrary="io.sentry.android"/>
@@ -43,6 +47,10 @@
 
       <activity
             android:name=".GesturesActivity"
+            android:exported="false" />
+
+      <activity
+            android:name=".PermissionsActivity"
             android:exported="false" />
 
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->

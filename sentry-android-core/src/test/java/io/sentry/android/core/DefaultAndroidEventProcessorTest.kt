@@ -44,7 +44,8 @@ class DefaultAndroidEventProcessorTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.DefaultAndroidEventProcessor"
-    private val ctorTypes = arrayOf(Context::class.java, ILogger::class.java, BuildInfoProvider::class.java)
+    private val ctorTypes =
+        arrayOf(Context::class.java, ILogger::class.java, BuildInfoProvider::class.java)
 
     init {
         Locale.setDefault(Locale.US)
@@ -109,6 +110,13 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(SentryEvent(), null)) {
             assertNotNull(it.contexts.app)
             assertNotNull(it.dist)
+
+            // assert adds permissions as unknown
+            val permissions = it.contexts.app!!.unknown
+            assertTrue {
+                permissions!!.isNotEmpty() &&
+                    permissions.keys.all { permission -> permission. startsWith("android.permission") }
+            }
         }
     }
 
@@ -252,17 +260,24 @@ class DefaultAndroidEventProcessorTest {
 
         sut.process(SentryEvent(), null)
 
-        verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(
+            (fixture.options.logger as DiagnosticLogger).logger,
+            never()
+        )!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
     @Test
     fun `Processor won't throw exception when theres a hint`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
+        val processor =
+            DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
 
         val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
         processor.process(SentryEvent(), hintsMap)
 
-        verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(
+            (fixture.options.logger as DiagnosticLogger).logger,
+            never()
+        )!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
     @Test

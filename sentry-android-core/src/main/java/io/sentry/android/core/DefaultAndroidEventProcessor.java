@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static android.content.Context.ACTIVITY_SERVICE;
+import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 import static android.os.BatteryManager.EXTRA_TEMPERATURE;
 
 import android.app.ActivityManager;
@@ -215,7 +216,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setPackageInfo(final @NotNull SentryBaseEvent event, final @NotNull App app) {
-    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
+    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, PackageManager.GET_PERMISSIONS, logger);
     if (packageInfo != null) {
       String versionCode = ContextUtils.getVersionCode(packageInfo);
 
@@ -731,6 +732,24 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     app.setAppIdentifier(packageInfo.packageName);
     app.setAppVersion(packageInfo.versionName);
     app.setAppBuild(ContextUtils.getVersionCode(packageInfo));
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+      final Map<String, Object> permissions = new HashMap<>();
+      final String[] requestedPermissions = packageInfo.requestedPermissions;
+      final int[] requestedPermissionsFlags = packageInfo.requestedPermissionsFlags;
+
+      if (requestedPermissions != null && requestedPermissions.length > 0 &&
+        requestedPermissionsFlags != null && requestedPermissionsFlags.length > 0) {
+        for (int i = 0; i < requestedPermissions.length; i++) {
+          if ((requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED) == REQUESTED_PERMISSION_GRANTED) {
+            permissions.put(requestedPermissions[i], "granted");
+          } else {
+            permissions.put(requestedPermissions[i], "not_granted");
+          }
+        }
+      }
+      app.setUnknown(permissions);
+    }
   }
 
   /**
