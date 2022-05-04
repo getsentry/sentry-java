@@ -24,7 +24,6 @@ class PermissionsActivity : AppCompatActivity() {
 
         binding = ActivityPermissionsBinding.inflate(layoutInflater)
 
-
         binding.cameraPermission.setOnClickListener {
             requestPermissionLauncher.launch(Manifest.permission.CAMERA)
         }

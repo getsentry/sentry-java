@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -29,7 +28,8 @@ final class ContextUtils {
    * @return the Application's PackageInfo if possible, or null
    */
   @Nullable
-  static PackageInfo getPackageInfo(final @NotNull Context context, final int flags, final @NotNull ILogger logger) {
+  static PackageInfo getPackageInfo(
+      final @NotNull Context context, final int flags, final @NotNull ILogger logger) {
     try {
       return context.getPackageManager().getPackageInfo(context.getPackageName(), flags);
     } catch (Throwable e) {

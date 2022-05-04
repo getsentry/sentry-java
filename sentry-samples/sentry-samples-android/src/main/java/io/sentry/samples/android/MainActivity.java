@@ -179,10 +179,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
     binding.openPermissionsActivity.setOnClickListener(
-      view -> {
-        startActivity(new Intent(this, PermissionsActivity.class));
-      }
-    );
+        view -> {
+          startActivity(new Intent(this, PermissionsActivity.class));
+        });
 
     setContentView(binding.getRoot());
   }

@@ -115,7 +115,7 @@ class DefaultAndroidEventProcessorTest {
             val permissions = it.contexts.app!!.unknown
             assertTrue {
                 permissions!!.isNotEmpty() &&
-                    permissions.keys.all { permission -> permission. startsWith("android.permission") }
+                    permissions.keys.all { permission -> permission.startsWith("android.permission") }
             }
         }
     }

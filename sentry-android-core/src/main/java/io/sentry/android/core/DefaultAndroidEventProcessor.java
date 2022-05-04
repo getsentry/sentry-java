@@ -216,7 +216,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setPackageInfo(final @NotNull SentryBaseEvent event, final @NotNull App app) {
-    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, PackageManager.GET_PERMISSIONS, logger);
+    final PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, PackageManager.GET_PERMISSIONS, logger);
     if (packageInfo != null) {
       String versionCode = ContextUtils.getVersionCode(packageInfo);
 
@@ -738,10 +739,13 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       final String[] requestedPermissions = packageInfo.requestedPermissions;
       final int[] requestedPermissionsFlags = packageInfo.requestedPermissionsFlags;
 
-      if (requestedPermissions != null && requestedPermissions.length > 0 &&
-        requestedPermissionsFlags != null && requestedPermissionsFlags.length > 0) {
+      if (requestedPermissions != null
+          && requestedPermissions.length > 0
+          && requestedPermissionsFlags != null
+          && requestedPermissionsFlags.length > 0) {
         for (int i = 0; i < requestedPermissions.length; i++) {
-          if ((requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED) == REQUESTED_PERMISSION_GRANTED) {
+          if ((requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED)
+              == REQUESTED_PERMISSION_GRANTED) {
             permissions.put(requestedPermissions[i], "granted");
           } else {
             permissions.put(requestedPermissions[i], "not_granted");
