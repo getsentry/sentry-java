@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Feature
+
+* Include application permissions in Android events (#2018)
+
 ### Fix
 
 * Change order of event filtering mechanisms (#2001)
