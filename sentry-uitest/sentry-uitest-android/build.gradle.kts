@@ -24,8 +24,6 @@ android {
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
 
-    testBuildType = "debug"
-
     signingConfigs {
         getByName("debug") {
             storeFile = rootProject.file("debug.keystore")
@@ -36,10 +34,16 @@ android {
     }
 
     buildTypes {
-        named("debug") {
+        getByName("debug") {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+        }
+        getByName("release") {
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
+            isShrinkResources = false
         }
     }
 

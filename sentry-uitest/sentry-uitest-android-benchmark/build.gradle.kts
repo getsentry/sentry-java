@@ -33,13 +33,13 @@ android {
     }
 
     buildTypes {
-        named("debug") {
+        getByName("debug") {
             // Since debuggable can"t be modified by gradle for library modules,
             // it must be done in a manifest - see src/androidTest/AndroidManifest.xml
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "sentry-uitest-android-benchmark-proguard-rules.pro")
         }
-        named("release") {
+        getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
