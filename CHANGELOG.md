@@ -4,6 +4,11 @@
 
 * Tests: added Android UI tests (#2013)
 
+### Fix
+
+* Change order of event filtering mechanisms (#2001)
+* Only send session update for dropped events if state changed (#2002)
+
 ## 6.0.0-beta.2
 
 * Fix: Android profiling initializes on first profile start (#2009)

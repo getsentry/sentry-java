@@ -81,6 +81,22 @@ public final class SentryClient implements ISentryClient {
 
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
+    if (event != null) {
+      final Throwable eventThrowable = event.getThrowable();
+      if (eventThrowable != null && options.containsIgnoredExceptionForType(eventThrowable)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped as the exception %s is ignored",
+                eventThrowable.getClass());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        return SentryId.EMPTY_ID;
+      }
+    }
+
     if (shouldApplyScopeData(event, hint)) {
       // Event has already passed through here before it was cached
       // Going through again could be reading data that is no longer relevant
@@ -95,7 +111,25 @@ public final class SentryClient implements ISentryClient {
 
     event = processEvent(event, hint, options.getEventProcessors());
 
-    Session session = null;
+    if (event != null) {
+      event = executeBeforeSend(event, hint);
+
+      if (event == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
+      }
+    }
+
+    if (event == null) {
+      return SentryId.EMPTY_ID;
+    }
+
+    @Nullable
+    Session sessionBeforeUpdate =
+        scope != null ? scope.withSession((@Nullable Session session) -> {}) : null;
+    @Nullable Session session = null;
 
     if (event != null) {
       session = updateSessionData(event, hint, scope);
@@ -115,28 +149,16 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
-    if (event != null) {
-      if (event.getThrowable() != null
-          && options.containsIgnoredExceptionForType(event.getThrowable())) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Event was dropped as the exception %s is ignored",
-                event.getThrowable().getClass());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
-        return SentryId.EMPTY_ID;
-      }
-      event = executeBeforeSend(event, hint);
+    final boolean shouldSendSessionUpdate =
+        shouldSendSessionUpdateForDroppedEvent(sessionBeforeUpdate, session);
 
-      if (event == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
-      }
+    if (event == null && !shouldSendSessionUpdate) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not sending session update for dropped event as it did not cause the session health to change.");
+      return SentryId.EMPTY_ID;
     }
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -149,8 +171,9 @@ public final class SentryClient implements ISentryClient {
           scope != null && scope.getTransaction() != null
               ? scope.getTransaction().traceState()
               : null;
-      final SentryEnvelope envelope =
-          buildEnvelope(event, getAttachments(scope, hint), session, traceState, null);
+      final boolean shouldSendAttachments = event != null;
+      List<Attachment> attachments = shouldSendAttachments ? getAttachments(scope, hint) : null;
+      final SentryEnvelope envelope = buildEnvelope(event, attachments, session, traceState, null);
 
       if (envelope != null) {
         transport.send(envelope, hint);
@@ -163,6 +186,32 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  private boolean shouldSendSessionUpdateForDroppedEvent(
+      @Nullable Session sessionBeforeUpdate, @Nullable Session sessionAfterUpdate) {
+    if (sessionAfterUpdate == null) {
+      return false;
+    }
+
+    if (sessionBeforeUpdate == null) {
+      return true;
+    }
+
+    final boolean didSessionMoveToCrashedState =
+        sessionAfterUpdate.getStatus() == Session.State.Crashed
+            && sessionBeforeUpdate.getStatus() != Session.State.Crashed;
+    if (didSessionMoveToCrashedState) {
+      return true;
+    }
+
+    final boolean didSessionMoveToErroredState =
+        sessionAfterUpdate.errorCount() > 0 && sessionBeforeUpdate.errorCount() <= 0;
+    if (didSessionMoveToErroredState) {
+      return true;
+    }
+
+    return false;
   }
 
   private @Nullable List<Attachment> getAttachments(
