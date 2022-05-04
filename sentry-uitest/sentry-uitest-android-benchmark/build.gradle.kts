@@ -1,5 +1,5 @@
 plugins {
-    id("com.android.library")
+    id("com.android.application")
     kotlin("android")
 }
 
@@ -7,8 +7,11 @@ android {
     compileSdk = Config.Android.compileSdkVersion
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersionOkHttp
+        applicationId = "io.sentry.uitest.android.benchmark"
+        minSdk = Config.Android.minSdkVersionNdk
         targetSdk = Config.Android.targetSdkVersion
+        versionCode = 1
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
         // Runs each test in its own instance of Instrumentation. This way they are isolated from
@@ -48,7 +51,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
     variantFilter {
@@ -63,7 +66,6 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
     implementation(projects.sentryAndroid)
-    implementation(projects.sentryUitest.sentryUitestAndroid)
     implementation(Config.Libs.appCompat)
     implementation(Config.Libs.androidxCore)
     implementation(Config.Libs.androidxRecylerView)

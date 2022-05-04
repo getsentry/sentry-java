@@ -13,8 +13,7 @@
       android:theme="@style/Theme.AppCompat"
       android:label="Sentry Benchmark"
       android:debuggable="false"
-      tools:ignore="HardcodedDebugMode"
-      tools:replace="android:label,android:debuggable">
+      tools:ignore="HardcodedDebugMode">
 
       <activity android:name=".BenchmarkActivity" />
 

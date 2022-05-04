@@ -1,5 +1,5 @@
 plugins {
-    id("com.android.library")
+    id("com.android.application")
     kotlin("android")
 }
 
@@ -7,8 +7,11 @@ android {
     compileSdk = Config.Android.compileSdkVersion
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersionOkHttp
+        applicationId = "io.sentry.uitest.android"
+        minSdk = Config.Android.minSdkVersionNdk
         targetSdk = Config.Android.targetSdkVersion
+        versionCode = 1
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Runs each test in its own instance of Instrumentation. This way they are isolated from
@@ -17,7 +20,6 @@ android {
         // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
         // Check the readme for more info.
 //        testInstrumentationRunnerArguments["clearPackageData"] = "true"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
     testOptions {
@@ -48,7 +50,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
     variantFilter {

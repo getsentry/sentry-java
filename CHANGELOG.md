@@ -2,8 +2,6 @@
 
 ## Unreleased
 
-* Tests: added Android UI tests (#2013)
-
 ### Fix
 
 * Change order of event filtering mechanisms (#2001)

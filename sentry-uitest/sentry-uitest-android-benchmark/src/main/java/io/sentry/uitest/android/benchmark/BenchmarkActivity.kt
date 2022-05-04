@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import io.sentry.uitest.android.utils.BooleanIdlingResource
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
