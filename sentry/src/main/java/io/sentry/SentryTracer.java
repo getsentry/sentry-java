@@ -242,7 +242,9 @@ public final class SentryTracer implements ITransaction {
                 // if it's an idle transaction, no matter the status, we'll reset the timeout here
                 // so the transaction will either idle and finish itself, or a new child will be
                 // added and we'll wait for it again
-                scheduleFinish(idleTimeout, latch);
+                if (!waitForChildren || hasAllChildrenFinished()) {
+                  scheduleFinish(idleTimeout, latch);
+                }
               } else if (finishStatus.isFinishing) {
                 finish(finishStatus.spanStatus);
               }

@@ -630,12 +630,24 @@ class SentryTracerTest {
         val initialTime = transaction.timerTask!!.scheduledExecutionTime()
 
         val span = transaction.startChild("op")
-        Thread.sleep(10)
+        Thread.sleep(1)
         span.finish()
 
         val timerAfterFinishingChild = transaction.timerTask!!.scheduledExecutionTime()
 
         assertTrue { timerAfterFinishingChild > initialTime }
+    }
+
+    @Test
+    fun `when idle transaction has still unfinished children, does not reset the timer`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 3000)
+
+        val span = transaction.startChild("op")
+        val span2 = transaction.startChild("op2")
+        Thread.sleep(1)
+        span.finish()
+
+        assertNull(transaction.timerTask)
     }
 
     @Test
@@ -647,7 +659,7 @@ class SentryTracerTest {
         span.finish()
 
         // just a small sleep to make sure the 2nd span finishes later than the 1st one
-        Thread.sleep(10)
+        Thread.sleep(1)
 
         val span2 = transaction.startChild("op2") as Span
         span2.finish()
