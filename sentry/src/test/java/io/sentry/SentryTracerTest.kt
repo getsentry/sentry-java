@@ -390,6 +390,42 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when span is finished, do nothing`() {
+        val transaction = fixture.getSut()
+        transaction.description = "desc"
+        transaction.setTag("myTag", "myValue")
+        transaction.setData("myData", "myValue")
+        val ex = RuntimeException()
+        transaction.throwable = ex
+        val req = Request()
+        transaction.request = req
+
+        transaction.finish(SpanStatus.OK)
+        assertTrue(transaction.isFinished)
+
+        assertEquals(NoOpSpan.getInstance(), transaction.startChild("op", "desc"))
+
+        transaction.finish(SpanStatus.UNKNOWN_ERROR)
+        transaction.operation = "newOp"
+        transaction.description = "newDesc"
+        transaction.status = SpanStatus.ABORTED
+        transaction.setTag("myTag", "myNewValue")
+        transaction.throwable = RuntimeException()
+        transaction.setData("myData", "myNewValue")
+        transaction.name = "newName"
+        transaction.request = Request()
+
+        assertEquals(SpanStatus.OK, transaction.status)
+        assertEquals("op", transaction.operation)
+        assertEquals("desc", transaction.description)
+        assertEquals("myValue", transaction.getTag("myTag"))
+        assertEquals("myValue", transaction.getData("myData"))
+        assertEquals("name", transaction.name)
+        assertEquals(req, transaction.request)
+        assertEquals(ex, transaction.throwable)
+    }
+
+    @Test
     fun `when startTimestamp is given, use it as startTimestamp`() {
         val date = Date(0)
         val transaction = fixture.getSut(startTimestamp = date)

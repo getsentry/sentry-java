@@ -4,11 +4,17 @@ import android.content.Context;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
+import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.android.fragment.FragmentLifecycleIntegration;
+import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 /** Sentry initialization class */
@@ -18,6 +24,12 @@ public final class SentryAndroid {
   private static final @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static final long appStart = SystemClock.uptimeMillis();
+
+  static final String SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME =
+      "io.sentry.android.fragment.FragmentLifecycleIntegration";
+
+  static final String SENTRY_TIMBER_INTEGRATION_CLASS_NAME =
+      "io.sentry.android.timber.SentryTimberIntegration";
 
   private SentryAndroid() {}
 
@@ -71,8 +83,16 @@ public final class SentryAndroid {
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),
           options -> {
-            AndroidOptionsInitializer.init(options, context, logger);
+            final LoadClass classLoader = new LoadClass();
+            final boolean isFragmentAvailable =
+                classLoader.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options);
+            final boolean isTimberAvailable =
+                classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options);
+
+            AndroidOptionsInitializer.init(
+                options, context, logger, isFragmentAvailable, isTimberAvailable);
             configuration.configure(options);
+            deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
           },
           true);
     } catch (IllegalAccessException e) {
@@ -93,6 +113,48 @@ public final class SentryAndroid {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
+    }
+  }
+
+  /**
+   * Deduplicate potentially duplicated Fragment and Timber integrations, which can be added
+   * automatically by our SDK as well as by the user. The user's ones win over ours.
+   *
+   * @param options SentryOptions to retrieve integrations from
+   */
+  private static void deduplicateIntegrations(
+      final @NotNull SentryOptions options,
+      final boolean isFragmentAvailable,
+      final boolean isTimberAvailable) {
+
+    final List<Integration> timberIntegrations = new ArrayList<>();
+    final List<Integration> fragmentIntegrations = new ArrayList<>();
+
+    for (final Integration integration : options.getIntegrations()) {
+      if (isFragmentAvailable) {
+        if (integration instanceof FragmentLifecycleIntegration) {
+          fragmentIntegrations.add(integration);
+        }
+      }
+      if (isTimberAvailable) {
+        if (integration instanceof SentryTimberIntegration) {
+          timberIntegrations.add(integration);
+        }
+      }
+    }
+
+    if (fragmentIntegrations.size() > 1) {
+      for (int i = 0; i < fragmentIntegrations.size() - 1; i++) {
+        final Integration integration = fragmentIntegrations.get(i);
+        options.getIntegrations().remove(integration);
+      }
+    }
+
+    if (timberIntegrations.size() > 1) {
+      for (int i = 0; i < timberIntegrations.size() - 1; i++) {
+        final Integration integration = timberIntegrations.get(i);
+        options.getIntegrations().remove(integration);
+      }
     }
   }
 }

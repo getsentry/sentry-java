@@ -33,26 +33,10 @@ public final class UserInteractionIntegration
       final @NotNull Application application, final @NotNull LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
 
-    isAndroidXAvailable = checkAndroidXAvailability(classLoader);
-    isAndroidXScrollViewAvailable = checkAndroidXScrollViewAvailability(classLoader);
-  }
-
-  private static boolean checkAndroidXAvailability(final @NotNull LoadClass loadClass) {
-    try {
-      loadClass.loadClass("androidx.core.view.GestureDetectorCompat");
-      return true;
-    } catch (ClassNotFoundException ignored) {
-      return false;
-    }
-  }
-
-  private static boolean checkAndroidXScrollViewAvailability(final @NotNull LoadClass loadClass) {
-    try {
-      loadClass.loadClass("androidx.core.view.ScrollingView");
-      return true;
-    } catch (ClassNotFoundException ignored) {
-      return false;
-    }
+    isAndroidXAvailable =
+        classLoader.isClassAvailable("androidx.core.view.GestureDetectorCompat", options);
+    isAndroidXScrollViewAvailable =
+        classLoader.isClassAvailable("androidx.core.view.ScrollingView", options);
   }
 
   private void startTracking(final @Nullable Window window, final @NotNull Context context) {

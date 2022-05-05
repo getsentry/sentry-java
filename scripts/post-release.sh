@@ -3,19 +3,13 @@
 # ./scripts/post-release.sh <old version> <new version>
 # eg ./scripts/post-release.sh "6.0.0-alpha.1" "6.0.0-alpha.2"
 
-set -eux
-
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $SCRIPT_DIR/..
-
-OLD_VERSION="${1}"
-NEW_VERSION="${2}"
+set -euo pipefail
 
 git checkout main
 GRADLE_FILEPATH="gradle.properties"
 
 # Add a new unreleased entry in the changelog
-sed -i "" 's/# Changelog/# Changelog\n\n## Unreleased/' CHANGELOG.md
+perl -pi -e 's/# Changelog/# Changelog\n\n## Unreleased/' CHANGELOG.md
 
 # Increment `versionName` and make it a snapshot
 # Incrementing the version name before the release (`bump-version.sh`) sets a
@@ -32,8 +26,8 @@ version_digit_to_bump="$( awk "/$VERSION_NAME_PATTERN/" $GRADLE_FILEPATH | egrep
 # Using `*` instead of `+` for compatibility. The result is the same,
 # since the version to be bumped is extracted using `+`.
 new_version="$( echo $version | sed "s/[0-9]*$/$version_digit_to_bump/g" )"
-sed -i "" -e "s/$VERSION_NAME_PATTERN=.*$/$VERSION_NAME_PATTERN=$new_version-SNAPSHOT/g" $GRADLE_FILEPATH
+perl -pi -e "s/$VERSION_NAME_PATTERN=.*$/$VERSION_NAME_PATTERN=$new_version-SNAPSHOT/g" $GRADLE_FILEPATH
 
-git add .
+git add CHANGELOG.md $GRADLE_FILEPATH
 git commit -m "Prepare $new_version"
 git push

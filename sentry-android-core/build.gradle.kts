@@ -49,6 +49,7 @@ android {
 
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         checkReleaseBuilds = false
+        disable += "LogNotTimber"
     }
 
     // needed because of Kotlin 1.4.x
@@ -78,6 +79,8 @@ tasks.withType<JavaCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
+    compileOnly(projects.sentryAndroidFragment)
+    compileOnly(projects.sentryAndroidTimber)
 
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
@@ -102,4 +105,6 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(projects.sentryTestSupport)
+    testImplementation(projects.sentryAndroidFragment)
+    testImplementation(projects.sentryAndroidTimber)
 }

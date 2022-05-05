@@ -1,5 +1,59 @@
 # Changelog
 
+## Unreleased
+
+## 5.7.3
+
+* Fix: Sentry Timber integration throws an exception when using args (#1986)
+
+## 5.7.2
+
+* Fix: bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
+
+## 5.7.1
+
+* Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
+* Fix: ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
+
+## 5.7.0
+
+* Feat: Automatically enable `Timber` and `Fragment` integrations if they are present on the classpath (#1936)
+
+## 5.6.3
+
+* Fix: If transaction or span is finished, do not allow to mutate (#1940)
+* Fix: Keep used AndroidX classes from obfuscation (Fixes UI breadcrumbs and Slow/Frozen frames) (#1942)
+
+## 5.6.2
+
+* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
+* Bump: AGP to 7.1.2 (#1930)
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
+* Fix: Do not include stacktrace frames into Timber message (#1898)
+* Fix: Potential memory leaks (#1909)
+
+Breaking changes:
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
+Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
+
+## 5.6.2-beta.3
+
+* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
+* Bump: AGP to 7.1.2 (#1930)
+
+## 5.6.2-beta.2
+
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
+
+## 5.6.2-beta.1
+
+* Fix: Do not include stacktrace frames into Timber message (#1898)
+* Fix: Potential memory leaks (#1909)
+
+Breaking changes:
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
+Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
+
 ## 5.6.1
 
 ### Features
