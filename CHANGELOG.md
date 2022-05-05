@@ -1243,7 +1243,7 @@ Release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.30](https://github.com/getsentry/sentry-android/releases/tag/v1.7.30)
+Until then, the [stable SDK offered by Sentry is at version 1.7.30](https://github.com/getsentry/sentry-java/releases/tag/v1.7.30)
 
 ## 2.0.0-rc03
 
@@ -1257,7 +1257,7 @@ Release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.30](https://github.com/getsentry/sentry-android/releases/tag/v1.7.30)
+Until then, the [stable SDK offered by Sentry is at version 1.7.30](https://github.com/getsentry/sentry-java/releases/tag/v1.7.30)
 
 ## 2.0.0-rc02
 
@@ -1288,7 +1288,7 @@ Release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.30](https://github.com/getsentry/sentry-android/releases/tag/v1.7.30)
+Until then, the [stable SDK offered by Sentry is at version 1.7.30](https://github.com/getsentry/sentry-java/releases/tag/v1.7.30)
 
 ## 2.0.0-rc01
 
@@ -1327,7 +1327,7 @@ Release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.29](https://github.com/getsentry/sentry-android/releases/tag/v1.7.29)
+Until then, the [stable SDK offered by Sentry is at version 1.7.29](https://github.com/getsentry/sentry-java/releases/tag/v1.7.29)
 
 ## 2.0.0-beta02
 
@@ -1344,7 +1344,7 @@ Release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-android/releases/tag/v1.7.28)
+Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
 ## 2.0.0-beta01
 
@@ -1363,7 +1363,7 @@ Release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-android/releases/tag/v1.7.28)
+Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
 ## 2.0.0-alpha09
 
@@ -1384,7 +1384,7 @@ Release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-android/releases/tag/v1.7.28)
+Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
 ## 2.0.0-alpha08
 
@@ -1401,7 +1401,7 @@ Release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-android/releases/tag/v1.7.28)
+Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
 ## 2.0.0-alpha07
 
@@ -1414,7 +1414,7 @@ Third release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-android/releases/tag/v1.7.28)
+Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
 ## 2.0.0-alpha06
 
@@ -1427,7 +1427,7 @@ Second release of Sentry's new SDK for Android.
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-android/releases/tag/v1.7.28)
+Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
 
 ## 2.0.0-alpha05
 
@@ -1455,4 +1455,4 @@ Features from the current SDK like `ANR` are also available (by default triggere
 Packages were released on [`bintray`](https://dl.bintray.com/getsentry/sentry-android/io/sentry/), [`jcenter`](https://jcenter.bintray.com/io/sentry/sentry-android/)
 
 We'd love to get feedback and we'll work in getting the GA `2.0.0` out soon.
-Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-android/releases/tag/v1.7.28)
+Until then, the [stable SDK offered by Sentry is at version 1.7.28](https://github.com/getsentry/sentry-java/releases/tag/v1.7.28)
