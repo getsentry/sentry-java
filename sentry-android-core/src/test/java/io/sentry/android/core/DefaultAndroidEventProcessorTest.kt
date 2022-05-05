@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.content.Context
+import android.os.Build
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -9,6 +10,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.DiagnosticLogger
 import io.sentry.ILogger
 import io.sentry.SentryEvent
@@ -105,6 +107,7 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `When Event and hint is not Cached, data should be applied`() {
+        whenever(fixture.buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
         val sut = fixture.getSut(context)
 
         assertNotNull(sut.process(SentryEvent(), null)) {
@@ -112,11 +115,20 @@ class DefaultAndroidEventProcessorTest {
             assertNotNull(it.dist)
 
             // assert adds permissions as unknown
-            val permissions = it.contexts.app!!.unknown
-            assertTrue {
-                permissions!!.isNotEmpty() &&
-                    permissions.keys.all { permission -> permission.startsWith("android.permission") }
-            }
+            val permissions = it.contexts.app!!.unknown!!["permissions"]
+            assertNotNull(permissions)
+        }
+    }
+
+    @Test
+    fun `when Android version is below JELLY_BEAN, does not add permissions`() {
+        whenever(fixture.buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        val sut = fixture.getSut(context)
+
+        assertNotNull(sut.process(SentryEvent(), null)) {
+            // assert adds permissions as unknown
+            val unknown = it.contexts.app!!.unknown
+            assertNull(unknown)
         }
     }
 

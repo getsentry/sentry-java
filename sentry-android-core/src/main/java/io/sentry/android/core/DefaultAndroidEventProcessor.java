@@ -4,6 +4,7 @@ import static android.content.Context.ACTIVITY_SERVICE;
 import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 import static android.os.BatteryManager.EXTRA_TEMPERATURE;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
@@ -729,13 +730,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return os;
   }
 
+  @SuppressLint("NewApi") // we perform an if-check for that, but lint fails to recognize
   private void setAppPackageInfo(final @NotNull App app, final @NotNull PackageInfo packageInfo) {
     app.setAppIdentifier(packageInfo.packageName);
     app.setAppVersion(packageInfo.versionName);
     app.setAppBuild(ContextUtils.getVersionCode(packageInfo));
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-      final Map<String, Object> permissions = new HashMap<>();
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
+      final Map<String, String> permissions = new HashMap<>();
       final String[] requestedPermissions = packageInfo.requestedPermissions;
       final int[] requestedPermissionsFlags = packageInfo.requestedPermissionsFlags;
 
@@ -752,7 +754,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           }
         }
       }
-      app.setUnknown(permissions);
+      final Map<String, Object> unknown = new HashMap<>();
+      unknown.put("permissions", permissions);
+      app.setUnknown(unknown);
     }
   }
 
