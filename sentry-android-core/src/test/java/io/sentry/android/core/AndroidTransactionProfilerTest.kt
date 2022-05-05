@@ -5,7 +5,12 @@ import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ILogger
+import io.sentry.SentryLevel
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.test.getCtor
@@ -31,9 +36,12 @@ class AndroidTransactionProfilerTest {
         val buildInfo = mock<BuildInfoProvider> {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
+        val mockLogger = mock<ILogger>()
         val options = SentryAndroidOptions().apply {
             dsn = mockDsn
             isProfilingEnabled = true
+            isDebug = true
+            setLogger(mockLogger)
         }
         val transaction1 = SentryTracer(TransactionContext("", ""), mock())
         val transaction2 = SentryTracer(TransactionContext("", ""), mock())
@@ -45,7 +53,7 @@ class AndroidTransactionProfilerTest {
     @BeforeTest
     fun `set up`() {
         context = ApplicationProvider.getApplicationContext()
-        AndroidOptionsInitializer.init(fixture.options, context)
+        AndroidOptionsInitializer.init(fixture.options, context, fixture.mockLogger, false, false)
         // Profiler doesn't start if the folder doesn't exists.
         // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
         File(fixture.options.profilingTracesDirPath).mkdirs()
@@ -99,6 +107,68 @@ class AndroidTransactionProfilerTest {
         profiler.onTransactionStart(fixture.transaction1)
         val traceData = profiler.onTransactionFinish(fixture.transaction1)
         assertNull(traceData)
+    }
+
+    @Test
+    fun `profiler evaluates isProfiling options only on first transaction profiling`() {
+        fixture.options.apply {
+            isProfilingEnabled = false
+        }
+
+        // We create the profiler, and nothing goes wrong
+        val profiler = fixture.getSut(context)
+        verify(fixture.mockLogger, never()).log(SentryLevel.INFO, "Profiling is disabled in options.")
+
+        // Regardless of how many times the profiler is started, the option is evaluated and logged only once
+        profiler.onTransactionStart(fixture.transaction1)
+        profiler.onTransactionStart(fixture.transaction1)
+        verify(fixture.mockLogger, times(1)).log(SentryLevel.INFO, "Profiling is disabled in options.")
+    }
+
+    @Test
+    fun `profiler evaluates profilingTracesDirPath options only on first transaction profiling`() {
+        fixture.options.apply {
+            profilingTracesDirPath = ""
+        }
+
+        // We create the profiler, and nothing goes wrong
+        val profiler = fixture.getSut(context)
+        verify(fixture.mockLogger, never()).log(
+            SentryLevel.WARNING,
+            "Disabling profiling because no profiling traces dir path is defined in options."
+        )
+
+        // Regardless of how many times the profiler is started, the option is evaluated and logged only once
+        profiler.onTransactionStart(fixture.transaction1)
+        profiler.onTransactionStart(fixture.transaction1)
+        verify(fixture.mockLogger, times(1)).log(
+            SentryLevel.WARNING,
+            "Disabling profiling because no profiling traces dir path is defined in options."
+        )
+    }
+
+    @Test
+    fun `profiler evaluates profilingTracesIntervalMillis options only on first transaction profiling`() {
+        fixture.options.apply {
+            profilingTracesIntervalMillis = 0
+        }
+
+        // We create the profiler, and nothing goes wrong
+        val profiler = fixture.getSut(context)
+        verify(fixture.mockLogger, never()).log(
+            SentryLevel.WARNING,
+            "Disabling profiling because trace interval is set to %d milliseconds",
+            0L
+        )
+
+        // Regardless of how many times the profiler is started, the option is evaluated and logged only once
+        profiler.onTransactionStart(fixture.transaction1)
+        profiler.onTransactionStart(fixture.transaction1)
+        verify(fixture.mockLogger, times(1)).log(
+            SentryLevel.WARNING,
+            "Disabling profiling because trace interval is set to %d milliseconds",
+            0L
+        )
     }
 
     @Test
