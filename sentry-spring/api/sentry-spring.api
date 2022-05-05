@@ -27,8 +27,9 @@ public class io/sentry/spring/SentryHubRegistrar : org/springframework/context/a
 	public fun registerBeanDefinitions (Lorg/springframework/core/type/AnnotationMetadata;Lorg/springframework/beans/factory/support/BeanDefinitionRegistry;)V
 }
 
-public class io/sentry/spring/SentryInitBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/context/ApplicationContextAware {
+public class io/sentry/spring/SentryInitBeanPostProcessor : org/springframework/beans/factory/DisposableBean, org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/context/ApplicationContextAware {
 	public fun <init> ()V
+	public fun destroy ()V
 	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
 	public fun setApplicationContext (Lorg/springframework/context/ApplicationContext;)V
 }

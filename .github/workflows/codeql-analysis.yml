@@ -2,12 +2,12 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ main ]
+    branches: [main]
   schedule:
-    - cron: '17 23 * * 3'
+    - cron: "17 23 * * 3"
 
 jobs:
   analyze:
@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp', 'java' ]
+        language: ["cpp", "java"]
 
     steps:
       - name: Checkout repository
@@ -39,7 +39,7 @@ jobs:
           languages: ${{ matrix.language }}
 
       - run: |
-         ./gradlew assemble
+          ./gradlew assemble
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1

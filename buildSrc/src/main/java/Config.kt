@@ -9,7 +9,7 @@ object Config {
     val springKotlinCompatibleLanguageVersion = "1.3"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.1.0"
+        val androidGradle = "com.android.tools.build:gradle:7.1.2"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -48,7 +48,7 @@ object Config {
         private val gsonVersion = "2.8.5"
         val gsonDep = "com.google.code.gson:gson"
         val gson = "$gsonDep:$gsonVersion"
-        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.7"
+        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
 
         private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
@@ -123,11 +123,11 @@ object Config {
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val robolectric = "org.robolectric:robolectric:4.7.3"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val mockitoInline = "org.mockito:mockito-inline:4.1.0"
+        val mockitoInline = "org.mockito:mockito-inline:4.3.1"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
-        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.28.0"
+        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
     }
 
@@ -137,15 +137,15 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "5.17.0"
+        val spotlessVersion = "6.2.1"
         val errorProne = "net.ltgt.errorprone"
         val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:2.0.1"
-        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.39.0"
+        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.18.1"
+        val detektVersion = "1.19.0"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorVersion = "0.7.1"
+        val binaryCompatibilityValidatorVersion = "0.8.0"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
         val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
     }
@@ -170,12 +170,12 @@ object Config {
         val jetbrainsAnnotations = "org.jetbrains:annotations:23.0.0"
         val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
-        val errorprone = "com.google.errorprone:error_prone_core:2.10.0"
-        val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.2"
+        val errorprone = "com.google.errorprone:error_prone_core:2.11.0"
+        val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.5"
     }
 
     object NativePlugins {
-        val nativeBundlePlugin = "io.github.howardpang:androidNativeBundle:1.0.9"
+        val nativeBundlePlugin = "io.github.howardpang:androidNativeBundle:1.1.1"
         val nativeBundleExport = "com.ydq.android.gradle.native-aar.export"
     }
 }

@@ -15,7 +15,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class SentryTimberTreeTest {
 
@@ -29,6 +28,7 @@ class SentryTimberTreeTest {
             return SentryTimberTree(hub, minEventLevel, minBreadcrumbLevel)
         }
     }
+
     private val fixture = Fixture()
 
     @BeforeTest
@@ -190,8 +190,35 @@ class SentryTimberTreeTest {
         verify(fixture.hub).captureEvent(
             check {
                 assertNotNull(it.message) { message ->
-                    assertEquals("message", message.formatted)
+                    assertEquals("message", message.message)
                 }
+            }
+        )
+    }
+
+    @Test
+    fun `Tree captures an event with formatted message and arguments, when provided`() {
+        val sut = fixture.getSut()
+        sut.e("test count: %d", 32)
+        verify(fixture.hub).captureEvent(
+            check {
+                assertNotNull(it.message) { message ->
+                    assertEquals("test count: %d", message.message)
+                    assertEquals("test count: 32", message.formatted)
+                    assertEquals("32", message.params!!.first())
+                }
+            }
+        )
+    }
+
+    @Test
+    fun `Tree adds a breadcrumb with formatted message and arguments, when provided`() {
+        val sut = fixture.getSut()
+        sut.e("test count: %d", 32)
+
+        verify(fixture.hub).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("test count: 32", it.message)
             }
         )
     }
@@ -218,35 +245,41 @@ class SentryTimberTreeTest {
     }
 
     @Test
-    fun `Tree adds a breadcrumb with given level`() {
+    fun `Tree adds an info breadcrumb`() {
         val sut = fixture.getSut()
-        sut.e(Throwable("test"))
-        verify(fixture.hub).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals(SentryLevel.ERROR, it.level)
-            }
-        )
-    }
-
-    @Test
-    fun `Tree adds a breadcrumb with Timber category`() {
-        val sut = fixture.getSut()
-        sut.e(Throwable("test"))
+        sut.i("message")
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("Timber", it.category)
+                assertEquals(SentryLevel.INFO, it.level)
+                assertEquals("message", it.message)
             }
         )
     }
 
     @Test
-    fun `Tree adds a breadcrumb with exception message`() {
+    fun `Tree adds an error breadcrumb`() {
         val sut = fixture.getSut()
         sut.e(Throwable("test"))
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
-                assertTrue(it.message!!.contains("test"))
+                assertEquals("exception", it.category)
+                assertEquals(SentryLevel.ERROR, it.level)
+                assertEquals("test", it.message)
             }
         )
+    }
+
+    @Test
+    fun `Tree does not add a breadcrumb, if no message provided`() {
+        val sut = fixture.getSut()
+        sut.e(Throwable())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+    }
+
+    @Test
+    fun `Tree does not throw when using log with args`() {
+        val sut = fixture.getSut()
+        sut.d("test %s, %s", 1, 1)
     }
 }

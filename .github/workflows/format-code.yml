@@ -1,15 +1,15 @@
-name: "Generate Javadocs"
+name: format code
 on:
-  release:
-    types: [released]
+  pull_request:
 
 jobs:
-  build-and-deploy-javadocs:
-    name: Build and deploy Javadocs
+  format-code:
+    name: Format Code
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout 🛎️
+      - name: Checkout
         uses: actions/checkout@v2
+
       - name: set up JDK 11
         uses: actions/setup-java@v2
         with:
@@ -26,13 +26,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Generate Aggregate Javadocs
-        run: |
-          ./gradlew aggregateJavadocs
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@3.7.1
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: build/docs/javadoc
-          CLEAN: true
+      - name: Make format
+        run: make format
+
+      # actions/checkout fetches only a single commit in a detached HEAD state. Therefore
+      # we need to pass the current branch, otherwise we can't commit the changes.
+      # GITHUB_HEAD_REF is the name of the head branch. GitHub Actions only sets this for PRs.
+      - name: Commit Formatted Code
+        run: ./scripts/commit-formatted-code.sh $GITHUB_HEAD_REF

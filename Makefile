@@ -13,7 +13,7 @@ compile:
 
 # do a dry release (like a local deploy)
 dryRelease:
-	./gradlew publishToMavenLocal --no-daemon
+	./gradlew publishToMavenLocal --no-daemon --no-parallel
 
 # check for dependencies update
 update:
