@@ -746,12 +746,13 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           && requestedPermissionsFlags != null
           && requestedPermissionsFlags.length > 0) {
         for (int i = 0; i < requestedPermissions.length; i++) {
-          if ((requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED)
-              == REQUESTED_PERMISSION_GRANTED) {
-            permissions.put(requestedPermissions[i], "granted");
-          } else {
-            permissions.put(requestedPermissions[i], "not_granted");
-          }
+          String permission = requestedPermissions[i];
+          permission = permission.substring(permission.lastIndexOf('.') + 1);
+
+          final boolean granted =
+              (requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED)
+                  == REQUESTED_PERMISSION_GRANTED;
+          permissions.put(permission, String.valueOf(granted));
         }
       }
       final Map<String, Object> unknown = new HashMap<>();
