@@ -1,6 +1,18 @@
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import net.ltgt.gradle.errorprone.errorprone
+
 plugins {
     id("com.android.application")
     kotlin("android")
+    id(Config.QualityPlugins.errorProne)
+    id(Config.QualityPlugins.gradleVersions)
+    id(Config.QualityPlugins.detektPlugin)
+}
+
+configure<JavaPluginExtension> {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 android {
@@ -54,6 +66,14 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
+    lint {
+        warningsAsErrors = true
+        checkDependencies = true
+
+        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+        checkReleaseBuilds = false
+    }
+
     variantFilter {
         if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
             ignore = true
@@ -72,6 +92,11 @@ dependencies {
     implementation(Config.Libs.constraintLayout)
     implementation(Config.TestLibs.espressoIdlingResource)
 
+    compileOnly(Config.CompileOnly.nopen)
+    errorprone(Config.CompileOnly.nopenChecker)
+    errorprone(Config.CompileOnly.errorprone)
+    errorprone(Config.CompileOnly.errorProneNullAway)
+
     androidTestImplementation(Config.TestLibs.kotlinTestJunit)
     androidTestImplementation(Config.TestLibs.androidxBenchmarkJunit)
     androidTestImplementation(Config.TestLibs.espressoCore)
@@ -80,4 +105,25 @@ dependencies {
     androidTestImplementation(Config.TestLibs.androidxTestRules)
     androidTestImplementation(Config.TestLibs.androidxJunit)
     androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.errorprone {
+        check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+        option("NullAway:AnnotatedPackages", "io.sentry")
+    }
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt> {
+    // Target version of the generated JVM bytecode. It is used for type resolution.
+    jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
+
+configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
+    buildUponDefaultConfig = true
+    allRules = true
+}
+
+kotlin {
+    explicitApi()
 }

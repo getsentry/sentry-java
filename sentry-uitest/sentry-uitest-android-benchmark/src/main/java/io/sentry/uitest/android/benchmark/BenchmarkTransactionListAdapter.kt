@@ -26,6 +26,7 @@ internal class BenchmarkTransactionListAdapter : RecyclerView.Adapter<ViewHolder
         holder.textView.text = "Item $position ${"sentry ".repeat(position)}"
     }
 
+    @Suppress("MagicNumber")
     private fun generateBitmap(): Bitmap {
         val bitmapSize = 100
         val colors = (0 until (bitmapSize * bitmapSize)).map {

@@ -43,6 +43,7 @@ class BenchmarkActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("MagicNumber")
     override fun onResume() {
         super.onResume()
         resumed = true
