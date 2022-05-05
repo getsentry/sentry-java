@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fix
+
+* Flaky JsonSerializerTest has been fixed (#2021)
+
 ## 6.0.0-beta.3
 
 ### Fix
