@@ -2,24 +2,30 @@
 
 ## Unreleased
 
-* Feat: Allow setting SDK info (name & version) in manifest (#2016)
+### Features
+
+- Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
 
 ## 6.0.0-beta.3
 
-### Fix
+### Fixes
 
-* Change order of event filtering mechanisms (#2001)
-* Only send session update for dropped events if state changed (#2002)
+- Change order of event filtering mechanisms ([#2001](https://github.com/getsentry/sentry-java/pull/2001))
+- Only send session update for dropped events if state changed ([#2002](https://github.com/getsentry/sentry-java/pull/2002))
 
 ## 6.0.0-beta.2
 
-* Fix: Android profiling initializes on first profile start (#2009)
+### Fixes
+
+- Android profiling initializes on first profile start ([#2009](https://github.com/getsentry/sentry-java/pull/2009))
 
 ## 6.0.0-beta.1
 
-* Fix: Profiling rate decreased from 300hz to 100hz (#1997)
-* Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)
-* Ref: Upgrade Spring Boot dependency to 2.5.13 (#2011)
+### Fixes
+
+- Profiling rate decreased from 300hz to 100hz ([#1997](https://github.com/getsentry/sentry-java/pull/1997))
+- Allow disabling sending of client reports via Android Manifest and external options ([#2007](https://github.com/getsentry/sentry-java/pull/2007))
+- Ref: Upgrade Spring Boot dependency to 2.5.13 ([#2011](https://github.com/getsentry/sentry-java/pull/2011))
 
 ### Sentry Self-hosted Compatibility
 
@@ -27,93 +33,128 @@
 
 ## 6.0.0-alpha.6
 
-* Feat: Add sentry-servlet-jakarta module (#1987)
-* Ref: Make options.printUncaughtStackTrace primitive type (#1995)
-* Feat: Add client reports (#1982)
+### Features
+
+- Add sentry-servlet-jakarta module ([#1987](https://github.com/getsentry/sentry-java/pull/1987))
+- Add client reports ([#1982](https://github.com/getsentry/sentry-java/pull/1982))
+
+### Fixes
+
+- Ref: Make options.printUncaughtStackTrace primitive type ([#1995](https://github.com/getsentry/sentry-java/pull/1995))
 
 ## 6.0.0-alpha.5
 
-* Feat: Screenshot is taken when there is an error (#1967)
-* Feat: Add Android profiling traces (#1897) (#1959) and its tests (#1949)
+### Features
+
+- Screenshot is taken when there is an error ([#1967](https://github.com/getsentry/sentry-java/pull/1967))
+- Add Android profiling traces ([#1897](https://github.com/getsentry/sentry-java/pull/1897)) ([#1959](https://github.com/getsentry/sentry-java/pull/1959)) and its tests ([#1949](https://github.com/getsentry/sentry-java/pull/1949))
 
 ## 6.0.0-alpha.4
 
-* Ref: Remove not needed interface abstractions on Android (#1953)
+### Fixes
+
+- Ref: Remove not needed interface abstractions on Android ([#1953](https://github.com/getsentry/sentry-java/pull/1953))
 
 ## 6.0.0-alpha.3
 
-* Ref: Make hints Map<String, Object> instead of only Object (#1929)
-* Feat: Enable enableScopeSync by default for Android (#1928)
+### Features
+
+- Enable enableScopeSync by default for Android ([#1928](https://github.com/getsentry/sentry-java/pull/1928))
+
+### Fixes
+
+- Ref: Make hints Map<String, Object> instead of only Object ([#1929](https://github.com/getsentry/sentry-java/pull/1929))
 
 ## 6.0.0-alpha.2
 
-* Ref: Simplify DateUtils with ISO8601Utils (#1837)
+### Features
+
+- Relax TransactionNameProvider ([#1861](https://github.com/getsentry/sentry-java/pull/1861))
+
+### Fixes
+
+- Ref: Simplify DateUtils with ISO8601Utils ([#1837](https://github.com/getsentry/sentry-java/pull/1837))
 
 Breaking changes:
 
-* Ref: Remove deprecated and scheduled fields (#1875)
-* Ref: Add shutdownTimeoutMillis in favor of shutdownTimeout (#1873)
-* Feat: Relax TransactionNameProvider (#1861)
-* Ref: Remove Attachment ContentType since the Server infers it (#1874)
+- Ref: Remove deprecated and scheduled fields ([#1875](https://github.com/getsentry/sentry-java/pull/1875))
+- Ref: Add shutdownTimeoutMillis in favor of shutdownTimeout ([#1873](https://github.com/getsentry/sentry-java/pull/1873))
+- Ref: Remove Attachment ContentType since the Server infers it ([#1874](https://github.com/getsentry/sentry-java/pull/1874))
 
 ## 6.0.0-alpha.1
 
-* Feat: Use float instead of Date for protocol types for higher precision (#1737)
-* Ref: Bind external properties to a dedicated class. (#1750)
-* Ref: Debug log serializable objects (#1795)
-* Ref: catch Throwable instead of Exception to suppress internal SDK errors (#1812)
+### Features
+
+- Use float instead of Date for protocol types for higher precision ([#1737](https://github.com/getsentry/sentry-java/pull/1737))
+
+### Fixes
+
+- Ref: Bind external properties to a dedicated class. ([#1750](https://github.com/getsentry/sentry-java/pull/1750))
+- Ref: Debug log serializable objects ([#1795](https://github.com/getsentry/sentry-java/pull/1795))
+- Ref: catch Throwable instead of Exception to suppress internal SDK errors ([#1812](https://github.com/getsentry/sentry-java/pull/1812))
 
 Breaking changes:
 
-* `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
-* Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
-* `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
-* Feat: Vendor JSON (#1554)
-    * Introduce `JsonSerializable` and `JsonDeserializer` interfaces for manual json
+- `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
+- Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
+- `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
+- Feat: Vendor JSON ([#1554](https://github.com/getsentry/sentry-java/pull/1554))
+    - Introduce `JsonSerializable` and `JsonDeserializer` interfaces for manual json
       serialization/deserialization.
-    * Introduce `JsonUnknwon` interface to preserve unknown properties when deserializing/serializing
+    - Introduce `JsonUnknwon` interface to preserve unknown properties when deserializing/serializing
       SDK classes.
-    * When passing custom objects, for example in `Contexts`, these are supported for serialization:
-        * `JsonSerializable`
-        * `Map`, `Collection`, `Array`, `String` and all primitive types.
-        * Objects with the help of refection.
-            * `Map`, `Collection`, `Array`, `String` and all primitive types.
-            * Call `toString()` on objects that have a cyclic reference to a ancestor object.
-            * Call `toString()` where object graphs exceed max depth.
-    * Remove `gson` dependency.
-    * Remove `IUnknownPropertiesConsumer`
-* Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+    - When passing custom objects, for example in `Contexts`, these are supported for serialization:
+        - `JsonSerializable`
+        - `Map`, `Collection`, `Array`, `String` and all primitive types.
+        - Objects with the help of refection.
+            - `Map`, `Collection`, `Array`, `String` and all primitive types.
+            - Call `toString()` on objects that have a cyclic reference to a ancestor object.
+            - Call `toString()` where object graphs exceed max depth.
+    - Remove `gson` dependency.
+    - Remove `IUnknownPropertiesConsumer`
+- Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber ([#1815](https://github.com/getsentry/sentry-java/pull/1815))
 
 ## 5.7.3
 
-* Fix: Sentry Timber integration throws an exception when using args (#1986)
+### Fixes
+
+- Sentry Timber integration throws an exception when using args ([#1986](https://github.com/getsentry/sentry-java/pull/1986))
 
 ## 5.7.2
 
-* Fix: bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
+### Fixes
+
+- Bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
 
 ## 5.7.1
 
-* Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
-* Fix: ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
-* Feat: Pass MDC tags as Sentry tags (#1954)
+### Fixes
+
+- Sentry Timber integration does not submit msg.formatted breadcrumbs ([#1957](https://github.com/getsentry/sentry-java/pull/1957))
+- ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
 
 ## 5.7.0
 
-* Feat: Automatically enable `Timber` and `Fragment` integrations if they are present on the classpath (#1936)
+### Features
+
+- Automatically enable `Timber` and `Fragment` integrations if they are present on the classpath ([#1936](https://github.com/getsentry/sentry-java/pull/1936))
 
 ## 5.6.3
 
-* Fix: If transaction or span is finished, do not allow to mutate (#1940)
-* Fix: Keep used AndroidX classes from obfuscation (Fixes UI breadcrumbs and Slow/Frozen frames) (#1942)
+### Fixes
+
+- If transaction or span is finished, do not allow to mutate ([#1940](https://github.com/getsentry/sentry-java/pull/1940))
+- Keep used AndroidX classes from obfuscation (Fixes UI breadcrumbs and Slow/Frozen frames) ([#1942](https://github.com/getsentry/sentry-java/pull/1942))
 
 ## 5.6.2
 
-* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
-* Bump: AGP to 7.1.2 (#1930)
-* Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
-* Fix: Do not include stacktrace frames into Timber message (#1898)
-* Fix: Potential memory leaks (#1909)
+### Fixes
+
+- Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs ([#1931](https://github.com/getsentry/sentry-java/pull/1931))
+- Bump: AGP to 7.1.2 ([#1930](https://github.com/getsentry/sentry-java/pull/1930))
+- NPE while adding "response_body_size" breadcrumb, when response body length is unknown ([#1908](https://github.com/getsentry/sentry-java/pull/1908))
+- Do not include stacktrace frames into Timber message ([#1898](https://github.com/getsentry/sentry-java/pull/1898))
+- Potential memory leaks ([#1909](https://github.com/getsentry/sentry-java/pull/1909))
 
 Breaking changes:
 `Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
@@ -121,20 +162,26 @@ Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900
 
 ## 5.6.2-beta.3
 
-* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
-* Bump: AGP to 7.1.2 (#1930)
+### Fixes
+
+- Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs ([#1931](https://github.com/getsentry/sentry-java/pull/1931))
+- Bump: AGP to 7.1.2 ([#1930](https://github.com/getsentry/sentry-java/pull/1930))
 
 ## 5.6.2-beta.2
 
-* Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
+### Fixes
+
+- NPE while adding "response_body_size" breadcrumb, when response body length is unknown ([#1908](https://github.com/getsentry/sentry-java/pull/1908))
 
 ## 5.6.2-beta.1
 
-* Fix: Do not include stacktrace frames into Timber message (#1898)
-* Fix: Potential memory leaks (#1909)
+### Fixes
+
+- Do not include stacktrace frames into Timber message ([#1898](https://github.com/getsentry/sentry-java/pull/1898))
+- Potential memory leaks ([#1909](https://github.com/getsentry/sentry-java/pull/1909))
 
 Breaking changes:
-`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events.
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
 Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
 
 ## 5.6.1
