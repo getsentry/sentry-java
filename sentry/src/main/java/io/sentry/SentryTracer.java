@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -68,7 +68,7 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Timer timer = new Timer(true);
   private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
       new SpanByTimestampComparator();
-  private @Nullable CountDownLatch latch = null;
+  private final @NotNull AtomicBoolean isFinishTimerRunning = new AtomicBoolean(false);
 
   private @Nullable TraceState traceState;
 
@@ -99,26 +99,6 @@ public final class SentryTracer implements ITransaction {
       final @Nullable Long idleTimeout,
       final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    this(
-        context,
-        hub,
-        startTimestamp,
-        waitForChildren,
-        idleTimeout,
-        trimEnd,
-        transactionFinishedCallback,
-        null);
-  }
-
-  SentryTracer(
-      final @NotNull TransactionContext context,
-      final @NotNull IHub hub,
-      final @Nullable Date startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback,
-      final @Nullable CountDownLatch latch) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.root = new Span(context, this, hub, startTimestamp);
@@ -128,39 +108,33 @@ public final class SentryTracer implements ITransaction {
     this.idleTimeout = idleTimeout;
     this.trimEnd = trimEnd;
     this.transactionFinishedCallback = transactionFinishedCallback;
-    this.latch = latch;
 
     if (idleTimeout != null) {
-      scheduleFinish(idleTimeout, latch);
+      scheduleFinish(idleTimeout);
     }
   }
 
-  @TestOnly
-  void scheduleFinish(final @NotNull Long idleTimeout, final @Nullable CountDownLatch latch) {
+  @Override
+  public void scheduleFinish(final @NotNull Long idleTimeout) {
     cancelTimer();
+    isFinishTimerRunning.set(true);
     timerTask =
         new TimerTask() {
           @Override
           public void run() {
             final SpanStatus status = getStatus();
             finish((status != null) ? status : SpanStatus.OK);
-            if (latch != null) {
-              latch.countDown();
-            }
+            isFinishTimerRunning.set(false);
           }
         };
 
     timer.schedule(timerTask, idleTimeout);
   }
 
-  @Override
-  public void scheduleFinish(final @NotNull Long idleTimeout) {
-    scheduleFinish(idleTimeout, null);
-  }
-
   private void cancelTimer() {
     if (timerTask != null) {
       timerTask.cancel();
+      isFinishTimerRunning.set(false);
       timerTask = null;
     }
   }
@@ -243,7 +217,7 @@ public final class SentryTracer implements ITransaction {
                 // so the transaction will either idle and finish itself, or a new child will be
                 // added and we'll wait for it again
                 if (!waitForChildren || hasAllChildrenFinished()) {
-                  scheduleFinish(idleTimeout, latch);
+                  scheduleFinish(idleTimeout);
                 }
               } else if (finishStatus.isFinishing) {
                 finish(finishStatus.spanStatus);
@@ -562,6 +536,12 @@ public final class SentryTracer implements ITransaction {
   @Nullable
   TimerTask getTimerTask() {
     return timerTask;
+  }
+
+  @TestOnly
+  @NotNull
+  AtomicBoolean isFinishTimerRunning() {
+    return isFinishTimerRunning;
   }
 
   private static final class FinishStatus {

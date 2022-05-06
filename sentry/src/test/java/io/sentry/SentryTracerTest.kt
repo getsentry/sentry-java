@@ -9,8 +9,8 @@ import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.User
+import org.awaitility.kotlin.await
 import java.util.Date
-import java.util.concurrent.CountDownLatch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -40,11 +40,10 @@ class SentryTracerTest {
             idleTimeout: Long? = null,
             trimEnd: Boolean = false,
             transactionFinishedCallback: TransactionFinishedCallback? = null,
-            sampled: Boolean? = null,
-            latch: CountDownLatch? = null
+            sampled: Boolean? = null
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op", sampled), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback, latch)
+            return SentryTracer(TransactionContext("name", "op", sampled), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback)
         }
     }
 
@@ -583,10 +582,9 @@ class SentryTracerTest {
 
     @Test
     fun `when no children and the transaction is idle, drops the transaction`() {
-        val latch = CountDownLatch(1)
-        fixture.getSut(idleTimeout = 10, latch = latch)
+        val transaction = fixture.getSut(idleTimeout = 10)
 
-        latch.await()
+        await.untilFalse(transaction.isFinishTimerRunning)
 
         verify(fixture.hub, never()).captureTransaction(
             anyOrNull(),
@@ -598,13 +596,12 @@ class SentryTracerTest {
 
     @Test
     fun `when idle transaction with children, finishes the transaction after the idle timeout`() {
-        val latch = CountDownLatch(1)
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 10, latch = latch)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 10)
 
         val span = transaction.startChild("op")
         span.finish()
 
-        latch.await()
+        await.untilFalse(transaction.isFinishTimerRunning)
 
         verify(fixture.hub).captureTransaction(
             anyOrNull(),
@@ -652,8 +649,7 @@ class SentryTracerTest {
 
     @Test
     fun `when trimEnd, trims idle transaction time to the latest child timestamp`() {
-        val latch = CountDownLatch(1)
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, latch = latch, sampled = true)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, sampled = true)
 
         val span = transaction.startChild("op")
         span.finish()
@@ -664,7 +660,7 @@ class SentryTracerTest {
         val span2 = transaction.startChild("op2") as Span
         span2.finish()
 
-        latch.await()
+        await.untilFalse(transaction.isFinishTimerRunning)
 
         verify(fixture.hub).captureTransaction(
             check {
