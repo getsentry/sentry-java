@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+* Feat: Allow setting SDK info (name & version) in manifest (#2016)
+
 ## 6.0.0-beta.3
 
 ### Fixes
