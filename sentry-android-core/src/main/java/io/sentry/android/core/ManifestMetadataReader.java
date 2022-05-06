@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +32,8 @@ final class ManifestMetadataReader {
   static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
   static final String RELEASE = "io.sentry.release";
   static final String ENVIRONMENT = "io.sentry.environment";
+  static final String SDK_NAME = "io.sentry.sdk.name";
+  static final String SDK_VERSION = "io.sentry.sdk.version";
 
   // TODO: remove on 6.x in favor of SESSION_AUTO_TRACKING_ENABLE
   static final String SESSION_TRACKING_ENABLE = "io.sentry.session-tracking.enable";
@@ -241,6 +244,15 @@ final class ManifestMetadataReader {
 
         options.setProguardUuid(
             readString(metadata, logger, PROGUARD_UUID, options.getProguardUuid()));
+
+        SdkVersion sdkInfo = options.getSdkVersion();
+        if (sdkInfo == null) {
+          // Is already set by the Options constructor, let's use an empty default otherwise.
+          sdkInfo = new SdkVersion("", "");
+        }
+        sdkInfo.setName(readStringNotNull(metadata, logger, SDK_NAME, sdkInfo.getName()));
+        sdkInfo.setVersion(readStringNotNull(metadata, logger, SDK_VERSION, sdkInfo.getVersion()));
+        options.setSdkVersion(sdkInfo);
       }
 
       options
@@ -269,6 +281,16 @@ final class ManifestMetadataReader {
       final @NotNull ILogger logger,
       final @NotNull String key,
       final @Nullable String defaultValue) {
+    final String value = metadata.getString(key, defaultValue);
+    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    return value;
+  }
+
+  private static @NotNull String readStringNotNull(
+      final @NotNull Bundle metadata,
+      final @NotNull ILogger logger,
+      final @NotNull String key,
+      final @NotNull String defaultValue) {
     final String value = metadata.getString(key, defaultValue);
     logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
     return value;
