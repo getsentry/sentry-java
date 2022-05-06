@@ -4,7 +4,7 @@
 
 ### Features
 
-* Feat: Allow setting SDK info (name & version) in manifest (#2016)
+- Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
 
 ## 6.0.0-beta.3
 
