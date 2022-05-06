@@ -120,7 +120,7 @@ Breaking changes:
 
 ### Fixes
 
-- bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
+- Bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
 
 ## 5.7.1
 
