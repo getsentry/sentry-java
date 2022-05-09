@@ -5,7 +5,7 @@
 ### Features
 
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
-- Include application permissions in Android events (#2018)
+- Include application permissions in Android events ((#2018)[https://github.com/getsentry/sentry-java/pull/2018))
 
 ## 6.0.0-beta.3
 
