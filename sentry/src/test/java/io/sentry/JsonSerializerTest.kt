@@ -620,7 +620,7 @@ class JsonSerializerTest {
 
         assertEquals("transaction-name", element["transaction"] as String)
         assertEquals("transaction", element["type"] as String)
-        assertNotNull(element["start_timestamp"] as Double)
+        assertNotNull(element["start_timestamp"] as Number)
         assertNotNull(element["event_id"] as String)
         assertNotNull(element["spans"] as List<*>)
         assertEquals("myValue", (element["tags"] as Map<*, *>)["myTag"] as String)
