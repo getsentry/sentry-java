@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- No longer close OutputStream that is passed into JsonSerializer (#2029)
+
 ### Features
 
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
