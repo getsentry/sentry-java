@@ -5,6 +5,7 @@
 ### Features
 
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
+- Allow setting native Android SDK name during build ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
 
 ## 6.0.0-beta.3
 
