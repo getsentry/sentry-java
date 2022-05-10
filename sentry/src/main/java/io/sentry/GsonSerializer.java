@@ -151,7 +151,7 @@ public final class GsonSerializer implements ISerializer {
    * Serialize a SentryEnvelope to a stream Writer (JSON)
    *
    * @param envelope the SentryEnvelope
-   * @param outputStream the OutputStream
+   * @param outputStream the OutputStream which will not be closed automatically
    * @throws Exception an Exception
    */
   @Override
@@ -161,32 +161,32 @@ public final class GsonSerializer implements ISerializer {
     Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
     Objects.requireNonNull(outputStream, "The Stream object is required.");
 
-    try (final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
-        final Writer writer =
-            new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8))) {
-      gson.toJson(envelope.getHeader(), SentryEnvelopeHeader.class, writer);
-      writer.write("\n");
+    // we do not want to close these as we would also close the stream that was passed in
+    final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+    final Writer writer = new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8));
 
-      for (final SentryEnvelopeItem item : envelope.getItems()) {
-        try {
-          // When this throws we don't write anything and continue with the next item.
-          final byte[] data = item.getData();
+    gson.toJson(envelope.getHeader(), SentryEnvelopeHeader.class, writer);
+    writer.write("\n");
 
-          gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
-          writer.write("\n");
-          writer.flush();
+    for (final SentryEnvelopeItem item : envelope.getItems()) {
+      try {
+        // When this throws we don't write anything and continue with the next item.
+        final byte[] data = item.getData();
 
-          outputStream.write(data);
+        gson.toJson(item.getHeader(), SentryEnvelopeItemHeader.class, writer);
+        writer.write("\n");
+        writer.flush();
 
-          writer.write("\n");
-        } catch (Throwable exception) {
-          options
-              .getLogger()
-              .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
-        }
+        outputStream.write(data);
+
+        writer.write("\n");
+      } catch (Throwable exception) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
       }
-      writer.flush();
     }
+    writer.flush();
   }
 
   /**
