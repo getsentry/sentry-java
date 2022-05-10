@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.SentryEnvelopeException
@@ -18,6 +19,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.io.StringReader
 import java.io.StringWriter
@@ -860,6 +862,14 @@ class JsonSerializerTest {
             },
             any<Any>()
         )
+    }
+
+    @Test
+    fun `json serializer does not close the stream that is passed in`() {
+        val stream = mock<OutputStream>()
+        JsonSerializer(SentryOptions()).serialize(SentryEnvelope.from(fixture.serializer, SentryEvent(), null), stream)
+
+        verify(stream, never()).close()
     }
 
     private fun assertSessionData(expectedSession: Session?) {
