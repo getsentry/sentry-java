@@ -6,6 +6,10 @@
 
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
 
+### Changed
+
+- Update sentry-native to 0.4.17 ([#2033](https://github.com/getsentry/sentry-java/pull/2033))
+
 ## 6.0.0-beta.3
 
 ### Fixes
