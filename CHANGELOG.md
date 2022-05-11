@@ -9,7 +9,7 @@
 
 ### Fixes
 
-- Isolate cached events with hashed DSN subfolder ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
+- Isolate cached events with hashed DSN subfolder ([#2038](https://github.com/getsentry/sentry-java/pull/2038))
 
 ### Changed
 
