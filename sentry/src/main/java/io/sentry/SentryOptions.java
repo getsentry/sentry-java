@@ -644,7 +644,8 @@ public class SentryOptions {
     if (cacheDirPath == null || cacheDirPath.isEmpty()) {
       return null;
     }
-    return new File(cacheDirPath, dsnHash != null ? dsnHash : "").getAbsolutePath();
+
+    return dsnHash != null ? new File(cacheDirPath, dsnHash).getAbsolutePath() : cacheDirPath;
   }
 
   /**
@@ -1326,7 +1327,7 @@ public class SentryOptions {
 
   /**
    * Sets the max attachment size for each attachment in bytes. Default is 20 MiB. Please also check
-   * the maximum attachment size of Relay to make sure your attachments don't getdiscarded there:
+   * the maximum attachment size of Relay to make sure your attachments don't get discarded there:
    * https://docs.sentry.io/product/relay/options/
    *
    * @param maxAttachmentSize the max attachment size in bytes.
