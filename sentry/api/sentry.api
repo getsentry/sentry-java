@@ -1231,7 +1231,6 @@ public class io/sentry/SentryOptions {
 	public fun setMaxTraceFileSize (J)V
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfilingEnabled (Z)V
-	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
