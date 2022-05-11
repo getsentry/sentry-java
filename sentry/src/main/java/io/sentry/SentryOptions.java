@@ -417,7 +417,7 @@ public class SentryOptions {
 
     // For specifying wrong message digest algorithms
     catch (NoSuchAlgorithmException e) {
-      logger.log(SentryLevel.INFO, "SHA-1 ", e, dsn);
+      logger.log(SentryLevel.INFO, "SHA-1 isn't available to culate dsn hash.", e);
     } catch (Throwable e) {
       logger.log(SentryLevel.INFO, "dsn: %s could not calculate its hash", e, dsn);
     }
