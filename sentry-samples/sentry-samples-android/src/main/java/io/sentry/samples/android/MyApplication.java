@@ -2,7 +2,6 @@ package io.sentry.samples.android;
 
 import android.app.Application;
 import android.os.StrictMode;
-import io.sentry.android.core.SentryAndroid;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
@@ -14,12 +13,17 @@ public class MyApplication extends Application {
 
     // Example how to initialize the SDK manually which allows access to SentryOptions callbacks.
     // Make sure you disable the auto init via manifest meta-data: io.sentry.auto-init=false
-    SentryAndroid.init(
-        this,
-        options -> {
-          options.setDsn(
-              "https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559");
-        });
+    // SentryAndroid.init(
+    //    this,
+    //    options -> {
+    //      /*
+    //      use options, for example, to add a beforeSend callback:
+    //
+    //      options.setBeforeSend((event, hint) -> {
+    //        process event
+    //      });
+    //       */
+    //    });
   }
 
   private void strictMode() {
