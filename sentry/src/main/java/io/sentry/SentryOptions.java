@@ -11,6 +11,10 @@ import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
 import java.io.File;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +37,8 @@ public class SentryOptions {
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
+
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
    * means just adding data OR return null in case the event will be dropped and not sent.
@@ -54,6 +60,9 @@ public class SentryOptions {
    * just not send any events.
    */
   private @Nullable String dsn;
+
+  /** dsnHash is used as a subfolder of cacheDirPath to isolate events when rotating DSNs */
+  private @Nullable String dsnHash;
 
   /**
    * Controls how many seconds to wait before shutting down. Sentry SDKs send events from a
@@ -295,9 +304,6 @@ public class SentryOptions {
   /** Control if profiling is enabled or not for transactions */
   private boolean profilingEnabled = false;
 
-  /** The cache dir. path for caching profiling traces */
-  private @Nullable String profilingTracesDirPath;
-
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
@@ -374,8 +380,46 @@ public class SentryOptions {
    *
    * @param dsn the DSN
    */
-  public void setDsn(@Nullable String dsn) {
+  public void setDsn(final @Nullable String dsn) {
     this.dsn = dsn;
+
+    dsnHash = calculateHashedDsn(this.dsn);
+  }
+
+  private @Nullable String calculateHashedDsn(final @Nullable String dsn) {
+    if (dsn == null || dsn.isEmpty()) {
+      return null;
+    }
+
+    try {
+      // getInstance() method is called with algorithm SHA-1
+      final MessageDigest md = MessageDigest.getInstance("SHA-1");
+
+      // digest() method is called
+      // to calculate message digest of the input string
+      // returned as array of byte
+      final byte[] messageDigest = md.digest(dsn.getBytes(UTF_8));
+
+      // Convert byte array into signum representation
+      final BigInteger no = new BigInteger(1, messageDigest);
+
+      // Convert message digest into hex value
+      String hashtext = no.toString(16);
+
+      // Add preceding 0s to make it 32 bit
+      while (hashtext.length() < 32) {
+        hashtext = "0" + hashtext;
+      }
+
+      // return the HashText
+      return hashtext;
+    }
+
+    // For specifying wrong message digest algorithms
+    catch (NoSuchAlgorithmException e) {
+      logger.log(SentryLevel.INFO, "dsn: %s could not calculate hash", e, dsn);
+    }
+    return null;
   }
 
   /**
@@ -597,7 +641,10 @@ public class SentryOptions {
    * @return the cache dir. path or null if not set
    */
   public @Nullable String getCacheDirPath() {
-    return cacheDirPath;
+    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+      return null;
+    }
+    return new File(cacheDirPath, dsnHash != null ? dsnHash : "").getAbsolutePath();
   }
 
   /**
@@ -606,10 +653,11 @@ public class SentryOptions {
    * @return the outbox path or null if not set
    */
   public @Nullable String getOutboxPath() {
+    final String cacheDirPath = getCacheDirPath();
     if (cacheDirPath == null || cacheDirPath.isEmpty()) {
       return null;
     }
-    return cacheDirPath + File.separator + "outbox";
+    return new File(cacheDirPath, "outbox").getAbsolutePath();
   }
 
   /**
@@ -617,7 +665,7 @@ public class SentryOptions {
    *
    * @param cacheDirPath the cache dir. path
    */
-  public void setCacheDirPath(@Nullable String cacheDirPath) {
+  public void setCacheDirPath(final @Nullable String cacheDirPath) {
     this.cacheDirPath = cacheDirPath;
   }
 
@@ -1278,7 +1326,7 @@ public class SentryOptions {
 
   /**
    * Sets the max attachment size for each attachment in bytes. Default is 20 MiB. Please also check
-   * the maximum attachment size of Relay to make sure your attachments don't get discarded there:
+   * the maximum attachment size of Relay to make sure your attachments don't getdiscarded there:
    * https://docs.sentry.io/product/relay/options/
    *
    * @param maxAttachmentSize the max attachment size in bytes.
@@ -1486,16 +1534,11 @@ public class SentryOptions {
    * @return the profiling traces dir. path or null if not set
    */
   public @Nullable String getProfilingTracesDirPath() {
-    return profilingTracesDirPath;
-  }
-
-  /**
-   * Sets the profiling traces dir. path
-   *
-   * @param profilingTracesDirPath the profiling traces dir. path
-   */
-  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
-    this.profilingTracesDirPath = profilingTracesDirPath;
+    final String cacheDirPath = getCacheDirPath();
+    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+      return null;
+    }
+    return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
   }
 
   /**
