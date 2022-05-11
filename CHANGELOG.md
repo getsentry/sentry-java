@@ -7,6 +7,10 @@
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
 - Allow setting native Android SDK name during build ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
 
+### Fixes
+
+- Isolate cached events with hashed DSN subfolder ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
+
 ### Changed
 
 - Update sentry-native to 0.4.17 ([#2033](https://github.com/getsentry/sentry-java/pull/2033))
