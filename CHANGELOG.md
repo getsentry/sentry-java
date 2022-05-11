@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+* Change order of event filtering mechanisms and only send session update for dropped events if session state changed (#2028)
+
 ## 5.7.3
 
 * Fix: Sentry Timber integration throws an exception when using args (#1986)
