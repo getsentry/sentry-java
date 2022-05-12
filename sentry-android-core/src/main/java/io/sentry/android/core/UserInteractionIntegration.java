@@ -27,9 +27,15 @@ public final class UserInteractionIntegration
   private final boolean isAndroidXAvailable;
   private final boolean isAndroidXScrollViewAvailable;
 
+  private final @NotNull ActivityFramesTracker activityFramesTracker;
+
   public UserInteractionIntegration(
-      final @NotNull Application application, final @NotNull LoadClass classLoader) {
+      final @NotNull Application application,
+      final @NotNull LoadClass classLoader,
+      final @NotNull ActivityFramesTracker activityFramesTracker) {
     this.application = Objects.requireNonNull(application, "Application is required");
+    this.activityFramesTracker =
+        Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
 
     isAndroidXAvailable =
         classLoader.isClassAvailable("androidx.core.view.GestureDetectorCompat", options);
@@ -53,7 +59,8 @@ public final class UserInteractionIntegration
       }
 
       final SentryGestureListener gestureListener =
-          new SentryGestureListener(activity, hub, options, isAndroidXScrollViewAvailable);
+          new SentryGestureListener(
+              activity, hub, options, activityFramesTracker, isAndroidXScrollViewAvailable);
       window.setCallback(new SentryWindowCallback(delegate, activity, gestureListener, options));
     }
   }
@@ -82,7 +89,14 @@ public final class UserInteractionIntegration
   public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle bundle) {}
 
   @Override
-  public void onActivityStarted(@NotNull Activity activity) {}
+  public void onActivityStarted(@NotNull Activity activity) {
+    // The docs on the screen rendering performance tracing
+    // (https://firebase.google.com/docs/perf-mon/screen-traces?platform=android#definition),
+    // state that the tracing starts for every Activity class when the app calls .onActivityStarted.
+    // Adding an Activity in onActivityCreated leads to Window.FEATURE_NO_TITLE not
+    // working. Moving this to onActivityStarted fixes the problem.
+    activityFramesTracker.addActivity(activity);
+  }
 
   @Override
   public void onActivityResumed(@NotNull Activity activity) {
@@ -140,5 +154,7 @@ public final class UserInteractionIntegration
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration removed.");
     }
+
+    activityFramesTracker.stop();
   }
 }

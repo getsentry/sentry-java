@@ -11,6 +11,7 @@ import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import io.sentry.Sentry
 import io.sentry.samples.android.R.layout
 import io.sentry.samples.android.databinding.ActivityGesturesBinding
 import io.sentry.samples.android.databinding.FragmentRecyclerBinding
@@ -38,6 +39,11 @@ class GesturesActivity : AppCompatActivity() {
         }
 
         setContentView(binding.root)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Sentry.getSpan()?.finish()
     }
 }
 

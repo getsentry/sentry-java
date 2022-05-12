@@ -33,19 +33,25 @@ class UserInteractionIntegrationTest {
         val activity = mock<Activity>()
         val window = mock<Window>()
         val loadClass = mock<LoadClass>()
+        val activityFramesTracker = mock<ActivityFramesTracker>()
 
         fun getSut(
             callback: Window.Callback? = null,
             isAndroidXAvailable: Boolean = true
         ): UserInteractionIntegration {
-            whenever(loadClass.isClassAvailable(any(), anyOrNull<SentryAndroidOptions>())).thenReturn(isAndroidXAvailable)
+            whenever(
+                loadClass.isClassAvailable(
+                    any(),
+                    anyOrNull<SentryAndroidOptions>()
+                )
+            ).thenReturn(isAndroidXAvailable)
             whenever(hub.options).thenReturn(options)
             whenever(window.callback).thenReturn(callback)
             whenever(activity.window).thenReturn(window)
 
             val resources = mockResources()
             whenever(activity.resources).thenReturn(resources)
-            return UserInteractionIntegration(application, loadClass)
+            return UserInteractionIntegration(application, loadClass, activityFramesTracker)
         }
 
         companion object {
@@ -91,12 +97,32 @@ class UserInteractionIntegrationTest {
     }
 
     @Test
+    fun `when UserInteractionIntegration is closed stops ActivityFramesTracker`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        sut.close()
+
+        verify(fixture.activityFramesTracker).stop()
+    }
+
+    @Test
     fun `when androidx is unavailable doesn't register a callback`() {
         val sut = fixture.getSut(isAndroidXAvailable = false)
 
         sut.register(fixture.hub, fixture.options)
 
         verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+    }
+
+    @Test
+    fun `adds activity to ActivityFramesTracker on activity started`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        sut.onActivityStarted(fixture.activity)
+
+        verify(fixture.activityFramesTracker).addActivity(fixture.activity)
     }
 
     @Test

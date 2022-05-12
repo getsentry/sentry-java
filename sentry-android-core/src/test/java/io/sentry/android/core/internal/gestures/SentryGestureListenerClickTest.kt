@@ -77,6 +77,7 @@ class SentryGestureListenerClickTest {
                 activity,
                 hub,
                 options,
+                mock(),
                 true
             )
         }

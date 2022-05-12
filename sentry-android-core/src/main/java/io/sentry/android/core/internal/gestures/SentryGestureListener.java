@@ -15,6 +15,7 @@ import io.sentry.ITransaction;
 import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
+import io.sentry.android.core.ActivityFramesTracker;
 import io.sentry.android.core.SentryAndroidOptions;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -28,12 +29,13 @@ import org.jetbrains.annotations.VisibleForTesting;
 @ApiStatus.Internal
 public final class SentryGestureListener implements GestureDetector.OnGestureListener {
 
-  static final String UI_ACTION = "ui.action";
+  public static final String UI_ACTION = "ui.action";
 
   private final @NotNull WeakReference<Activity> activityRef;
   private final @NotNull IHub hub;
   private final @NotNull SentryAndroidOptions options;
   private final boolean isAndroidXAvailable;
+  private final @NotNull ActivityFramesTracker activityFramesTracker;
 
   private @NotNull WeakReference<View> activeView = new WeakReference<>(null);
   private @Nullable ITransaction activeTransaction = null;
@@ -45,10 +47,12 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       final @NotNull Activity currentActivity,
       final @NotNull IHub hub,
       final @NotNull SentryAndroidOptions options,
+      final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isAndroidXAvailable) {
     this.activityRef = new WeakReference<>(currentActivity);
     this.hub = hub;
     this.options = options;
+    this.activityFramesTracker = activityFramesTracker;
     this.isAndroidXAvailable = isAndroidXAvailable;
   }
 
@@ -250,7 +254,15 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     final String name = getActivityName(activity) + "." + viewId;
     final String op = UI_ACTION + "." + eventType;
     final ITransaction transaction =
-        hub.startTransaction(name, op, true, options.getIdleTimeout(), true);
+        hub.startTransaction(
+            name,
+            op,
+            true,
+            options.getIdleTimeout(),
+            true,
+            (finishingTransaction) -> {
+              activityFramesTracker.setMetrics(finishingTransaction.getEventId());
+            });
 
     hub.configureScope(
         scope -> {

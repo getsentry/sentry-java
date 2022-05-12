@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
+import static io.sentry.android.core.internal.gestures.SentryGestureListener.UI_ACTION;
 
 import io.sentry.EventProcessor;
 import io.sentry.SentryEvent;
@@ -82,7 +83,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     // users it, we'll also add the metrics if available
     if (eventId != null
         && spanContext != null
-        && spanContext.getOperation().contentEquals(UI_LOAD_OP)) {
+        && (spanContext.getOperation().contentEquals(UI_LOAD_OP)
+            || spanContext.getOperation().startsWith(UI_ACTION))) {
       final Map<String, @NotNull MeasurementValue> framesMetrics =
           activityFramesTracker.takeMetrics(eventId);
       if (framesMetrics != null) {

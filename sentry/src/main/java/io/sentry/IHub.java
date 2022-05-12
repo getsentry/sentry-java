@@ -465,7 +465,8 @@ public interface IHub {
       final @NotNull String operation,
       final boolean waitForChildren,
       final @Nullable Long idleTimeout,
-      final boolean trimEnd) {
+      final boolean trimEnd,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return startTransaction(
         new TransactionContext(name, operation),
         null,
@@ -474,7 +475,7 @@ public interface IHub {
         waitForChildren,
         idleTimeout,
         trimEnd,
-        null);
+        transactionFinishedCallback);
   }
 
   /**
