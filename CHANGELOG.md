@@ -10,6 +10,7 @@
 ### Changed
 
 - Update sentry-native to 0.4.17 ([#2033](https://github.com/getsentry/sentry-java/pull/2033))
+- Update Gradle to 7.4.2 and AGP to 7.2 ([#2042](https://github.com/getsentry/sentry-java/pull/2042))
 
 ## 6.0.0-beta.3
 
