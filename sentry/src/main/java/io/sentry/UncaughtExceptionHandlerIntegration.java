@@ -1,17 +1,16 @@
 package io.sentry;
 
 import static io.sentry.SentryLevel.ERROR;
-import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Flushable;
+import io.sentry.hints.Hints;
 import io.sentry.hints.SessionEnd;
 import io.sentry.protocol.Mechanism;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -97,10 +96,9 @@ public final class UncaughtExceptionHandlerIntegration
         final SentryEvent event = new SentryEvent(throwable);
         event.setLevel(SentryLevel.FATAL);
 
-        final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put(SENTRY_TYPE_CHECK_HINT, hint);
+        final Hints hints = HintUtils.createWithTypeCheckHint(hint);
 
-        hub.captureEvent(event, hintMap);
+        hub.captureEvent(event, hints);
         // Block until the event is flushed to disk
         if (!hint.waitFlush()) {
           options

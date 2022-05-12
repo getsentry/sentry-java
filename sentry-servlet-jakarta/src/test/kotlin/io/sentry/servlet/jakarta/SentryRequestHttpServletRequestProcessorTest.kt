@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.hints.Hints
 import jakarta.servlet.http.HttpServletRequest
 import java.net.URI
 import java.util.Collections
@@ -29,7 +30,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
-        eventProcessor.process(event, null)
+        eventProcessor.process(event, Hints())
 
         assertNotNull(event.request)
         val eventRequest = event.request!!
@@ -56,7 +57,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
-        eventProcessor.process(event, null)
+        eventProcessor.process(event, Hints())
 
         assertNotNull(event.request) {
             assertEquals(
@@ -81,7 +82,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
-        eventProcessor.process(event, null)
+        eventProcessor.process(event, Hints())
 
         assertNotNull(event.request) {
             assertNull(it.cookies)
@@ -105,7 +106,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
-        eventProcessor.process(event, null)
+        eventProcessor.process(event, Hints())
 
         assertNotNull(event.request) { req ->
             assertNotNull(req.headers) {

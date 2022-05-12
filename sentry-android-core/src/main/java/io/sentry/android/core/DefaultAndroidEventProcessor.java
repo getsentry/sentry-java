@@ -28,6 +28,7 @@ import io.sentry.android.core.internal.util.ConnectivityChecker;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.android.core.internal.util.MainThreadChecker;
 import io.sentry.android.core.internal.util.RootChecker;
+import io.sentry.hints.Hints;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
@@ -117,8 +118,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
-    final boolean applyScopeData = shouldApplyScopeData(event, hint);
+      final @NotNull SentryEvent event, final @NotNull Hints hints) {
+    final boolean applyScopeData = shouldApplyScopeData(event, hints);
     if (applyScopeData) {
       // we only set memory data if it's not a hard crash, when it's a hard crash the event is
       // enriched on restart, so non static data might be wrong, eg lowMemory or availMem will
@@ -143,8 +144,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private boolean shouldApplyScopeData(
-      final @NotNull SentryBaseEvent event, final @Nullable Map<String, Object> hint) {
-    if (HintUtils.shouldApplyScopeData(hint)) {
+      final @NotNull SentryBaseEvent event, final @NotNull Hints hints) {
+    if (HintUtils.shouldApplyScopeData(hints)) {
       return true;
     } else {
       logger.log(
@@ -857,8 +858,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @Nullable Map<String, Object> hint) {
-    final boolean applyScopeData = shouldApplyScopeData(transaction, hint);
+      final @NotNull SentryTransaction transaction, final @NotNull Hints hints) {
+    final boolean applyScopeData = shouldApplyScopeData(transaction, hints);
 
     if (applyScopeData) {
       processNonCachedEvent(transaction);

@@ -15,6 +15,7 @@ import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
 import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
+import io.sentry.hints.Hints
 import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -95,7 +96,7 @@ class ScreenshotEventProcessorTest {
     @Test
     fun `when process is called and attachScreenshot is disabled, does nothing`() {
         val sut = fixture.getSut(false)
-        val hints = mutableMapOf<String, Any>()
+        val hints = Hints()
 
         sut.onActivityCreated(fixture.activity, null)
 
@@ -108,7 +109,7 @@ class ScreenshotEventProcessorTest {
     @Test
     fun `when event is not errored, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hints = Hints()
 
         sut.onActivityCreated(fixture.activity, null)
 
@@ -121,7 +122,7 @@ class ScreenshotEventProcessorTest {
     @Test
     fun `when there is not activity, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hints = Hints()
 
         val event = fixture.mainProcessor.process(getEvent(), hints)
         sut.process(event, hints)
@@ -132,7 +133,7 @@ class ScreenshotEventProcessorTest {
     @Test
     fun `when activity is finishing, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hints = Hints()
 
         whenever(fixture.activity.isFinishing).thenReturn(true)
         sut.onActivityCreated(fixture.activity, null)
@@ -146,7 +147,7 @@ class ScreenshotEventProcessorTest {
     @Test
     fun `when view is zeroed, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hints = Hints()
 
         whenever(fixture.rootView.width).thenReturn(0)
         whenever(fixture.rootView.height).thenReturn(0)
@@ -161,7 +162,7 @@ class ScreenshotEventProcessorTest {
     @Test
     fun `when process is called and attachScreenshot is enabled, add attachment to hints`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hints = Hints()
 
         sut.onActivityCreated(fixture.activity, null)
 
@@ -179,7 +180,7 @@ class ScreenshotEventProcessorTest {
     @Test
     fun `when activity is destroyed, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hints = Hints()
 
         sut.onActivityCreated(fixture.activity, null)
         sut.onActivityDestroyed(fixture.activity)

@@ -17,13 +17,12 @@ import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.hints.Hints;
 import io.sentry.util.Objects;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -68,8 +67,7 @@ public final class ScreenshotEventProcessor
 
   @SuppressWarnings("NullAway")
   @Override
-  public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
+  public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hints hints) {
     if (options.isAttachScreenshot() && event.isErrored() && currentActivity != null) {
       final Activity activity = currentActivity.get();
       if (isActivityValid(activity)
@@ -93,16 +91,12 @@ public final class ScreenshotEventProcessor
             // Some formats, like PNG which is lossless, will ignore the quality setting.
             bitmap.compress(Bitmap.CompressFormat.PNG, 0, byteArrayOutputStream);
 
-            if (hint == null) {
-              hint = new HashMap<>();
-            }
-
             if (byteArrayOutputStream.size() > 0) {
               // screenshot png is around ~100-150 kb
-              hint.put(
+              hints.set(
                   SENTRY_SCREENSHOT,
                   Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
-              hint.put(ANDROID_ACTIVITY, activity);
+              hints.set(ANDROID_ACTIVITY, activity);
             } else {
               this.options
                   .getLogger()

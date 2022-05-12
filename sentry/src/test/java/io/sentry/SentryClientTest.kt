@@ -15,7 +15,6 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
-import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
@@ -24,6 +23,7 @@ import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
+import io.sentry.hints.Hints
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
@@ -34,6 +34,7 @@ import io.sentry.protocol.User
 import io.sentry.test.callMethod
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
+import io.sentry.util.HintUtils
 import org.junit.Assert.assertArrayEquals
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -212,9 +213,9 @@ class SentryClientTest {
         fixture.sentryOptions.environment = "not to be applied"
         val sut = fixture.getSut()
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
-        sut.captureEvent(event, hintsMap)
-        verify(fixture.transport).send(any(), eq(hintsMap))
+        val hints = HintUtils.createWithTypeCheckHint(Object())
+        sut.captureEvent(event, hints)
+        verify(fixture.transport).send(any(), eq(hints))
     }
 
     @Test
@@ -531,8 +532,8 @@ class SentryClientTest {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Cached>())
-        sut.captureEvent(event, scope, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint(mock<Cached>())
+        sut.captureEvent(event, scope, hints)
 
         assertNotEquals(scope.level, event.level)
     }
@@ -545,8 +546,8 @@ class SentryClientTest {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
-        sut.captureEvent(event, scope, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint(Object())
+        sut.captureEvent(event, scope, hints)
 
         assertEquals(scope.level, event.level)
     }
@@ -559,8 +560,8 @@ class SentryClientTest {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<ApplyScopeData>())
-        sut.captureEvent(event, scope, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint(mock<ApplyScopeData>())
+        sut.captureEvent(event, scope, hints)
 
         assertEquals(scope.level, event.level)
     }
@@ -573,8 +574,8 @@ class SentryClientTest {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CustomCachedApplyScopeDataHint())
-        sut.captureEvent(event, scope, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint(CustomCachedApplyScopeDataHint())
+        sut.captureEvent(event, scope, hints)
 
         assertEquals(scope.level, event.level)
     }
@@ -786,7 +787,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             exceptions = createNonHandledException()
         }
-        fixture.getSut().updateSessionData(event, null, scope)
+        fixture.getSut().updateSessionData(event, Hints(), scope)
         scope.withSession {
             assertEquals(Session.State.Crashed, it!!.status)
         }
@@ -800,7 +801,7 @@ class SentryClientTest {
             val session = it.current
             val level = session.status
             val event = SentryEvent()
-            fixture.getSut().updateSessionData(event, null, scope)
+            fixture.getSut().updateSessionData(event, Hints(), scope)
             assertEquals(level, session.status)
         }
     }
@@ -812,7 +813,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             exceptions = createNonHandledException()
         }
-        fixture.getSut().updateSessionData(event, null, scope)
+        fixture.getSut().updateSessionData(event, Hints(), scope)
         scope.withSession {
             assertEquals(1, it!!.errorCount())
         }
@@ -827,7 +828,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             setExceptions(exceptions)
         }
-        fixture.getSut().updateSessionData(event, null, scope)
+        fixture.getSut().updateSessionData(event, Hints(), scope)
         scope.withSession {
             assertEquals(1, it!!.errorCount())
         }
@@ -841,7 +842,7 @@ class SentryClientTest {
             val session = it.current
             val errorCount = session.errorCount()
             val event = SentryEvent()
-            fixture.getSut().updateSessionData(event, null, scope)
+            fixture.getSut().updateSessionData(event, Hints(), scope)
             assertEquals(errorCount, session.errorCount())
         }
     }
@@ -856,7 +857,7 @@ class SentryClientTest {
                     headers = mutableMapOf("user-agent" to "jamesBond")
                 }
             }
-            fixture.getSut().updateSessionData(event, null, scope)
+            fixture.getSut().updateSessionData(event, Hints(), scope)
             scope.withSession {
                 assertEquals("jamesBond", it!!.userAgent)
             }
@@ -875,7 +876,7 @@ class SentryClientTest {
                     headers = mutableMapOf()
                 }
             }
-            fixture.getSut().updateSessionData(event, null, scope)
+            fixture.getSut().updateSessionData(event, Hints(), scope)
             assertEquals(userAgent, session.userAgent)
         }
     }
@@ -884,7 +885,7 @@ class SentryClientTest {
     fun `When capture an event and there's no session, do nothing`() {
         val scope = Scope(fixture.sentryOptions)
         val event = SentryEvent()
-        fixture.getSut().updateSessionData(event, null, scope)
+        fixture.getSut().updateSessionData(event, Hints(), scope)
         scope.withSession {
             assertNull(it)
         }
@@ -1281,7 +1282,7 @@ class SentryClientTest {
     fun `screenshot is added to the envelope from the hint`() {
         val sut = fixture.getSut()
         val attachment = Attachment.fromScreenshot(byteArrayOf())
-        val hints = mapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+        val hints = Hints().also { it.set(SENTRY_SCREENSHOT, attachment) }
 
         sut.captureEvent(SentryEvent(), hints)
 
@@ -1301,7 +1302,7 @@ class SentryClientTest {
         fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
         val sut = fixture.getSut()
         val attachment = Attachment.fromScreenshot(byteArrayOf())
-        val hints = mutableMapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+        val hints = Hints().also { it.set(SENTRY_SCREENSHOT, attachment) }
 
         sut.captureEvent(SentryEvent(), hints)
 
@@ -1639,8 +1640,8 @@ class SentryClientTest {
     }
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
-        override fun execute(event: SentryEvent, hint: MutableMap<String, Any?>?): SentryEvent? {
-            hint?.remove(SENTRY_SCREENSHOT)
+        override fun execute(event: SentryEvent, hints: Hints): SentryEvent? {
+            hints.remove(SENTRY_SCREENSHOT)
 
             return event
         }
@@ -1802,7 +1803,7 @@ class SentryClientTest {
 
     private fun eventProcessorThrows(): EventProcessor {
         return object : EventProcessor {
-            override fun process(event: SentryEvent, hint: Map<String, Any?>?): SentryEvent? {
+            override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
                 throw Throwable()
             }
         }

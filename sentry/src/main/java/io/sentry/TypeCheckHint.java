@@ -2,6 +2,7 @@ package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
 
+// TODO can this be an enum?
 /** Constants used for Type Check hints. */
 public final class TypeCheckHint {
 

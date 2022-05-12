@@ -5,6 +5,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.hints.Hints;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -1593,11 +1594,11 @@ public class SentryOptions {
      * Mutates or drop an event before being sent
      *
      * @param event the event
-     * @param hint the hint, usually the source of the event
+     * @param hints the hints
      * @return the original event or the mutated event or null if event was dropped
      */
     @Nullable
-    SentryEvent execute(@NotNull SentryEvent event, @Nullable Map<String, Object> hint);
+    SentryEvent execute(@NotNull SentryEvent event, @NotNull Hints hints);
   }
 
   /** The BeforeBreadcrumb callback */
@@ -1607,11 +1608,11 @@ public class SentryOptions {
      * Mutates or drop a callback before being added
      *
      * @param breadcrumb the breadcrumb
-     * @param hint the hint, usually the source of the breadcrumb
+     * @param hints the hints, usually the source of the breadcrumb
      * @return the original breadcrumb or the mutated breadcrumb of null if breadcrumb was dropped
      */
     @Nullable
-    Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @Nullable Map<String, Object> hint);
+    Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @NotNull Hints hints);
   }
 
   /** The traces sampler callback. */

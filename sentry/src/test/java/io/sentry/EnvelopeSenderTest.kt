@@ -7,9 +7,10 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.cache.EnvelopeCache
+import io.sentry.hints.Hints
 import io.sentry.hints.Retryable
+import io.sentry.util.HintUtils
 import io.sentry.util.noFlushTimeout
 import java.io.File
 import java.nio.file.Files
@@ -97,8 +98,8 @@ class EnvelopeSenderTest {
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", EnvelopeCache.SUFFIX_ENVELOPE_FILE).toUri())
         testFile.deleteOnExit()
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Retryable>())
-        sut.processFile(testFile, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processFile(testFile, hints)
         verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached envelope %s"), eq(testFile.absolutePath))
         verifyNoMoreInteractions(fixture.hub)
         assertFalse(testFile.exists())
@@ -111,7 +112,7 @@ class EnvelopeSenderTest {
         val sut = fixture.getSut()
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", EnvelopeCache.SUFFIX_ENVELOPE_FILE).toUri())
         testFile.deleteOnExit()
-        sut.processFile(testFile, any())
+        sut.processFile(testFile, Hints())
         verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached envelope %s"), eq(testFile.absolutePath))
         verifyNoMoreInteractions(fixture.hub)
     }

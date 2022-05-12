@@ -6,13 +6,12 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.hints.Hints;
 import io.sentry.util.Objects;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletRequestEvent;
 import jakarta.servlet.ServletRequestListener;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -45,11 +44,11 @@ public class SentryServletRequestListener implements ServletRequestListener {
     if (servletRequest instanceof HttpServletRequest) {
       final HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
 
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(SERVLET_REQUEST, httpRequest);
+      final Hints hints = new Hints();
+      hints.set(SERVLET_REQUEST, httpRequest);
 
       hub.addBreadcrumb(
-          Breadcrumb.http(httpRequest.getRequestURI(), httpRequest.getMethod()), hintMap);
+          Breadcrumb.http(httpRequest.getRequestURI(), httpRequest.getMethod()), hints);
 
       hub.configureScope(
           scope -> {

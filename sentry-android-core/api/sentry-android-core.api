@@ -110,7 +110,7 @@ public final class io/sentry/android/core/ScreenshotEventProcessor : android/app
 	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onActivityStopped (Landroid/app/Activity;)V
-	public fun process (Lio/sentry/SentryEvent;Ljava/util/Map;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/hints/Hints;)Lio/sentry/SentryEvent;
 }
 
 public final class io/sentry/android/core/SentryAndroid {

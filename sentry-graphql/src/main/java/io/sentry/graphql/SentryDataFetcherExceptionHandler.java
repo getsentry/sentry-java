@@ -7,9 +7,8 @@ import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.hints.Hints;
 import io.sentry.util.Objects;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -34,10 +33,10 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   @SuppressWarnings("deprecation")
   public DataFetcherExceptionHandlerResult onException(
       final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
-    final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put(GRAPHQL_HANDLER_PARAMETERS, handlerParameters);
+    final Hints hints = new Hints();
+    hints.set(GRAPHQL_HANDLER_PARAMETERS, handlerParameters);
 
-    hub.captureException(handlerParameters.getException(), hintMap);
+    hub.captureException(handlerParameters.getException(), hints);
     return delegate.onException(handlerParameters);
   }
 }

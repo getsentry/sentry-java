@@ -1,21 +1,20 @@
 package io.sentry;
 
-import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
-
 import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.hints.Hints;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.ExceptionUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.io.Closeable;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -77,7 +76,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
+      final @NotNull SentryEvent event, final @Nullable Hints hints) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -90,7 +89,7 @@ public final class Hub implements IHub {
       try {
         assignTraceContext(event);
         final StackItem item = stack.peek();
-        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
+        sentryId = item.getClient().captureEvent(event, item.getScope(), hints);
         this.lastEventId = sentryId;
       } catch (Throwable e) {
         options
@@ -129,7 +128,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(
-      final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint) {
+      final @NotNull SentryEnvelope envelope, final @Nullable Hints hints) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -142,7 +141,7 @@ public final class Hub implements IHub {
     } else {
       try {
         final SentryId capturedEnvelopeId =
-            stack.peek().getClient().captureEnvelope(envelope, hint);
+            stack.peek().getClient().captureEnvelope(envelope, hints);
         if (capturedEnvelopeId != null) {
           sentryId = capturedEnvelopeId;
         }
@@ -155,7 +154,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Map<String, Object> hint) {
+      final @NotNull Throwable throwable, final @Nullable Hints hints) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -170,7 +169,7 @@ public final class Hub implements IHub {
         final StackItem item = stack.peek();
         final SentryEvent event = new SentryEvent(throwable);
         assignTraceContext(event);
-        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
+        sentryId = item.getClient().captureEvent(event, item.getScope(), hints);
       } catch (Throwable e) {
         options
             .getLogger()
@@ -237,16 +236,14 @@ public final class Hub implements IHub {
         // single envelope
         // Or create the envelope here with both items and call `captureEnvelope`
         if (pair.getPrevious() != null) {
-          final Map<String, Object> hintMap = new HashMap<>();
-          hintMap.put(SENTRY_TYPE_CHECK_HINT, new SessionEndHint());
+          final Hints hints = HintUtils.createWithTypeCheckHint(new SessionEndHint());
 
-          item.getClient().captureSession(pair.getPrevious(), hintMap);
+          item.getClient().captureSession(pair.getPrevious(), hints);
         }
 
-        final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put(SENTRY_TYPE_CHECK_HINT, new SessionStartHint());
+        final Hints hints = HintUtils.createWithTypeCheckHint(new SessionStartHint());
 
-        item.getClient().captureSession(pair.getCurrent(), hintMap);
+        item.getClient().captureSession(pair.getCurrent(), hints);
       } else {
         options.getLogger().log(SentryLevel.WARNING, "Session could not be started.");
       }
@@ -263,10 +260,9 @@ public final class Hub implements IHub {
       final StackItem item = this.stack.peek();
       final Session previousSession = item.getScope().endSession();
       if (previousSession != null) {
-        final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put(SENTRY_TYPE_CHECK_HINT, new SessionEndHint());
+        final Hints hints = HintUtils.createWithTypeCheckHint(new SessionEndHint());
 
-        item.getClient().captureSession(previousSession, hintMap);
+        item.getClient().captureSession(previousSession, hints);
       }
     }
   }
@@ -298,8 +294,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(
-      final @NotNull Breadcrumb breadcrumb, final @Nullable Map<String, Object> hint) {
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Hints hints) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -309,7 +304,7 @@ public final class Hub implements IHub {
     } else if (breadcrumb == null) {
       options.getLogger().log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
     } else {
-      stack.peek().getScope().addBreadcrumb(breadcrumb, hint);
+      stack.peek().getScope().addBreadcrumb(breadcrumb, hints);
     }
   }
 
@@ -552,7 +547,7 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Map<String, Object> hint,
+      final @Nullable Hints hints,
       final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "transaction is required");
 
@@ -589,7 +584,7 @@ public final class Hub implements IHub {
             sentryId =
                 item.getClient()
                     .captureTransaction(
-                        transaction, traceState, item.getScope(), hint, profilingTraceData);
+                        transaction, traceState, item.getScope(), hints, profilingTraceData);
           } catch (Throwable e) {
             options
                 .getLogger()

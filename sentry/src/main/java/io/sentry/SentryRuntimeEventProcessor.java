@@ -1,8 +1,8 @@
 package io.sentry;
 
+import io.sentry.hints.Hints;
 import io.sentry.protocol.SentryRuntime;
 import io.sentry.protocol.SentryTransaction;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,13 +23,13 @@ final class SentryRuntimeEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
+      final @NotNull SentryEvent event, final @Nullable Hints hints) {
     return process(event);
   }
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @Nullable Map<String, Object> hint) {
+      final @NotNull SentryTransaction transaction, final @Nullable Hints hints) {
     return process(transaction);
   }
 

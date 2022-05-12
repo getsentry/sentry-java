@@ -11,10 +11,9 @@ import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TracingOrigins;
+import io.sentry.hints.Hints;
 import io.sentry.util.Objects;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.http.HttpRequest;
@@ -81,13 +80,13 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
         Breadcrumb.http(request.getURI().toString(), request.getMethodValue(), responseStatusCode);
     breadcrumb.setData("request_body_size", body.length);
 
-    final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put(SPRING_REQUEST_INTERCEPTOR_REQUEST, request);
-    hintMap.put(SPRING_REQUEST_INTERCEPTOR_REQUEST_BODY, body);
+    final Hints hints = new Hints();
+    hints.set(SPRING_REQUEST_INTERCEPTOR_REQUEST, request);
+    hints.set(SPRING_REQUEST_INTERCEPTOR_REQUEST_BODY, body);
     if (response != null) {
-      hintMap.put(SPRING_REQUEST_INTERCEPTOR_RESPONSE, response);
+      hints.set(SPRING_REQUEST_INTERCEPTOR_RESPONSE, response);
     }
 
-    hub.addBreadcrumb(breadcrumb, hintMap);
+    hub.addBreadcrumb(breadcrumb, hints);
   }
 }

@@ -8,11 +8,10 @@ import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.hints.Hints;
 import io.sentry.protocol.Mechanism;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
-import java.util.HashMap;
-import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -60,11 +59,11 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
     event.setLevel(SentryLevel.FATAL);
     event.setTransaction(transactionNameProvider.provideTransactionName(request));
 
-    final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put(SPRING_RESOLVER_REQUEST, request);
-    hintMap.put(SPRING_RESOLVER_RESPONSE, response);
+    final Hints hints = new Hints();
+    hints.set(SPRING_RESOLVER_REQUEST, request);
+    hints.set(SPRING_RESOLVER_RESPONSE, response);
 
-    hub.captureEvent(event, hintMap);
+    hub.captureEvent(event, hints);
 
     // null = run other HandlerExceptionResolvers to actually handle the exception
     return null;

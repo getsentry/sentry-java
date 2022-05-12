@@ -13,6 +13,7 @@ import io.sentry.ISpan
 import io.sentry.SentryLevel.INFO
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.ANDROID_FRAGMENT
+import io.sentry.hints.Hints
 import java.util.WeakHashMap
 
 @Suppress("TooManyFunctions")
@@ -118,9 +119,9 @@ class SentryFragmentLifecycleCallbacks(
             level = INFO
         }
 
-        val hintsMap = mutableMapOf<String, Any>(ANDROID_FRAGMENT to fragment)
+        val hints = Hints().also { it.set(ANDROID_FRAGMENT, fragment) }
 
-        hub.addBreadcrumb(breadcrumb, hintsMap)
+        hub.addBreadcrumb(breadcrumb, hints)
     }
 
     private fun getFragmentName(fragment: Fragment): String {

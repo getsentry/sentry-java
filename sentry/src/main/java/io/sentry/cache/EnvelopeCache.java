@@ -15,6 +15,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
 import io.sentry.hints.DiskFlushNotification;
+import io.sentry.hints.Hints;
 import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -78,22 +79,20 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
   }
 
   @Override
-  public void store(
-      final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint) {
+  public void store(final @NotNull SentryEnvelope envelope, final @NotNull Hints hints) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
     rotateCacheIfNeeded(allEnvelopeFiles());
 
     final File currentSessionFile = getCurrentSessionFile();
 
-    Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-    if (sentrySdkHint instanceof SessionEnd) {
+    if (HintUtils.hasType(hints, SessionEnd.class)) {
       if (!currentSessionFile.delete()) {
         options.getLogger().log(WARNING, "Current envelope doesn't exist.");
       }
     }
 
-    if (sentrySdkHint instanceof SessionStart) {
+    if (HintUtils.hasType(hints, SessionStart.class)) {
       boolean crashedLastRun = false;
 
       // TODO: should we move this to AppLifecycleIntegration? and do on SDK init? but it's too much
@@ -201,7 +200,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
     writeEnvelopeToDisk(envelopeFile, envelope);
 
     // write file to the disk when its about to crash so crashedLastRun can be marked on restart
-    if (sentrySdkHint instanceof DiskFlushNotification) {
+    if (HintUtils.hasType(hints, DiskFlushNotification.class)) {
       writeCrashMarkerFile();
     }
   }
