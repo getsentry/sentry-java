@@ -10,11 +10,8 @@ import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
+import io.sentry.util.StringUtils;
 import java.io.File;
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,8 +33,6 @@ public class SentryOptions {
 
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
-
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
@@ -383,45 +378,7 @@ public class SentryOptions {
   public void setDsn(final @Nullable String dsn) {
     this.dsn = dsn;
 
-    dsnHash = calculateHashedDsn(this.dsn);
-  }
-
-  private @Nullable String calculateHashedDsn(final @Nullable String dsn) {
-    if (dsn == null || dsn.isEmpty()) {
-      return null;
-    }
-
-    try {
-      // getInstance() method is called with algorithm SHA-1
-      final MessageDigest md = MessageDigest.getInstance("SHA-1");
-
-      // digest() method is called
-      // to calculate message digest of the input string
-      // returned as array of byte
-      final byte[] messageDigest = md.digest(dsn.getBytes(UTF_8));
-
-      // Convert byte array into signum representation
-      final BigInteger no = new BigInteger(1, messageDigest);
-
-      // Convert message digest into hex value
-      String hashtext = no.toString(16);
-
-      // Add preceding 0s to make it 32 bit
-      while (hashtext.length() < 32) {
-        hashtext = "0" + hashtext;
-      }
-
-      // return the HashText
-      return hashtext;
-    }
-
-    // For specifying wrong message digest algorithms
-    catch (NoSuchAlgorithmException e) {
-      logger.log(SentryLevel.INFO, "SHA-1 isn't available to culate dsn hash.", e);
-    } catch (Throwable e) {
-      logger.log(SentryLevel.INFO, "dsn: %s could not calculate its hash", e, dsn);
-    }
-    return null;
+    dsnHash = StringUtils.calculateStringHash(this.dsn, logger);
   }
 
   /**
@@ -657,7 +614,7 @@ public class SentryOptions {
    */
   public @Nullable String getOutboxPath() {
     final String cacheDirPath = getCacheDirPath();
-    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+    if (cacheDirPath == null) {
       return null;
     }
     return new File(cacheDirPath, "outbox").getAbsolutePath();
@@ -1538,7 +1495,7 @@ public class SentryOptions {
    */
   public @Nullable String getProfilingTracesDirPath() {
     final String cacheDirPath = getCacheDirPath();
-    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+    if (cacheDirPath == null) {
       return null;
     }
     return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
