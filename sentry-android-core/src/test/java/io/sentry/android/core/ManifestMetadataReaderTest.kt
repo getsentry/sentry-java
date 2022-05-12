@@ -549,6 +549,36 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads SDK name from metadata`() {
+        // Arrange
+        val expectedValue = "custom.sdk"
+
+        val bundle = bundleOf(ManifestMetadataReader.SDK_NAME to expectedValue)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(expectedValue, fixture.options.sdkVersion?.name)
+    }
+
+    @Test
+    fun `applyMetadata reads SDK version from metadata`() {
+        // Arrange
+        val expectedValue = "1.2.3-alpha.0"
+
+        val bundle = bundleOf(ManifestMetadataReader.SDK_VERSION to expectedValue)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(expectedValue, fixture.options.sdkVersion?.version)
+    }
+
+    @Test
     fun `applyMetadata reads enableScopeSync to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.NDK_SCOPE_SYNC_ENABLE to false)
