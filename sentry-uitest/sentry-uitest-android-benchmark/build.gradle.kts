@@ -25,7 +25,7 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Runs each test in its own instance of Instrumentation. This way they are isolated from
         // one another and get their own Application instance.
         // https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner#enable-gradle
@@ -47,18 +47,21 @@ android {
         }
     }
 
+    testBuildType = System.getProperty("testBuildType", "debug")
+
     buildTypes {
         getByName("debug") {
-            // Since debuggable can"t be modified by gradle for library modules,
-            // it must be done in a manifest - see src/androidTest/AndroidManifest.xml
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "sentry-uitest-android-benchmark-proguard-rules.pro")
+            isDebuggable = false
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
         }
         getByName("release") {
-            isMinifyEnabled = true
+            isDebuggable = false
+            isMinifyEnabled = false
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "sentry-uitest-android-benchmark-proguard-rules.pro")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
         }
     }
 
@@ -98,7 +101,6 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
 
     androidTestImplementation(Config.TestLibs.kotlinTestJunit)
-    androidTestImplementation(Config.TestLibs.androidxBenchmarkJunit)
     androidTestImplementation(Config.TestLibs.espressoCore)
     androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
     androidTestImplementation(Config.TestLibs.androidxRunner)

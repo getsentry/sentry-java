@@ -47,17 +47,19 @@ android {
         }
     }
 
+    testBuildType = System.getProperty("testBuildType", "debug")
+
     buildTypes {
         getByName("debug") {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
         getByName("release") {
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
+            isMinifyEnabled = false
             isShrinkResources = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
         }
     }
 
@@ -95,11 +97,11 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
 
     androidTestImplementation(Config.TestLibs.kotlinTestJunit)
-    androidTestImplementation(Config.TestLibs.mockWebserver)
     androidTestImplementation(Config.TestLibs.espressoCore)
-    androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
     androidTestImplementation(Config.TestLibs.androidxRunner)
     androidTestImplementation(Config.TestLibs.androidxTestRules)
+    androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
+    androidTestImplementation(Config.TestLibs.mockWebserver)
     androidTestImplementation(Config.TestLibs.androidxJunit)
     androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
 }

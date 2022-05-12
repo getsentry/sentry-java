@@ -682,8 +682,8 @@ public final class Hub implements IHub {
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
       if (samplingDecision && options.isProfilingEnabled()) {
-        final ITransactionProfiler transactionListener = options.getTransactionProfiler();
-        transactionListener.onTransactionStart(transaction);
+        final ITransactionProfiler transactionProfiler = options.getTransactionProfiler();
+        transactionProfiler.onTransactionStart(transaction);
       }
     }
     if (bindToScope) {

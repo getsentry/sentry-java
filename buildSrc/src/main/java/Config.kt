@@ -119,7 +119,6 @@ object Config {
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
         val androidxTestCoreKtx = "androidx.test:core-ktx:$androidxTestVersion"
         val androidxTestRules = "androidx.test:rules:$androidxTestVersion"
-        val androidxBenchmarkJunit = "androidx.benchmark:benchmark-junit4:1.0.0"
         val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
         val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
         val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.1"

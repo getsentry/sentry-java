@@ -10,6 +10,21 @@ _Care: the benchmarks need to run the tests multiple times to get reliable resul
 If you don't care about benchmark tests you can run `./gradlew connectedCheck -x :sentry-uitest:sentry-uitest-android-benchmark:connectedCheck`.
 You can run benchmark tests only with `./gradlew :sentry-uitest:sentry-uitest-android-benchmark:connectedCheck`.
 
+# SauceLabs
+To run on saucelabs execute following commands (need also `SAUCE_USERNAME` and `SAUCE_ACCESS_KEY` environment variables):
+For Benchmarks:
+```
+./gradlew :sentry-uitest:sentry-uitest-android-benchmark:assembleRelease
+./gradlew :sentry-uitest:sentry-uitest-android-benchmark:assembleAndroidTest -DtestBuildType=release
+saucectl run -c .sauce/sentry-uitest-android-benchmark.yml
+```
+For End 2 End:
+```
+./gradlew :sentry-uitest:sentry-uitest-android:assembleRelease
+./gradlew :sentry-uitest:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
+saucectl run -c .sauce/sentry-uitest-android-end2end.yml
+```
+
 # Troubleshooting
 
 There is an issue with Android 11+ (Xiaomi only?).
