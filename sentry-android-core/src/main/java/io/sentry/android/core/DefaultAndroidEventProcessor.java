@@ -752,7 +752,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           final boolean granted =
               (requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED)
                   == REQUESTED_PERMISSION_GRANTED;
-          permissions.put(permission, String.valueOf(granted));
+          permissions.put(permission, granted ? "granted" : "not_granted");
         }
       }
       final Map<String, Object> unknown = new HashMap<>();
