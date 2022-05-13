@@ -7,6 +7,7 @@
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
 - Allow setting native Android SDK name during build ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
 - Include application permissions in Android events ([#2018](https://github.com/getsentry/sentry-java/pull/2018))
+- Automatically create transactions for UI events ([#1975](https://github.com/getsentry/sentry-java/pull/1975))
 
 ### Changed
 

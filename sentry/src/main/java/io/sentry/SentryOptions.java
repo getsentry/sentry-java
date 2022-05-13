@@ -313,6 +313,16 @@ public class SentryOptions {
   private @Nullable String proguardUuid;
 
   /**
+   * The idle time, measured in ms, to wait until the transaction will be finished. The transaction
+   * will use the end timestamp of the last finished span as the endtime for the transaction.
+   *
+   * <p>When set to {@code null} the transaction must be finished manually.
+   *
+   * <p>The default is 3 seconds.
+   */
+  private @Nullable Long idleTimeout = 3000L;
+
+  /**
    * Contains a list of context tags names (for example from MDC) that are meant to be applied as
    * Sentry tags to events.
    */
@@ -1553,6 +1563,24 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the idle timeout.
+   *
+   * @return the idle timeout in millis or null.
+   */
+  public @Nullable Long getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  /**
+   * Sets the idle timeout.
+   *
+   * @param idleTimeout the idle timeout in millis or null.
+   */
+  public void setIdleTimeout(final @Nullable Long idleTimeout) {
+    this.idleTimeout = idleTimeout;
+  }
+
+  /**
    * Returns whether sending of client reports has been enabled.
    *
    * @return true if enabled; false if disabled
@@ -1742,6 +1770,9 @@ public class SentryOptions {
     }
     if (options.getProguardUuid() != null) {
       setProguardUuid(options.getProguardUuid());
+    }
+    if (options.getIdleTimeout() != null) {
+      setIdleTimeout(options.getIdleTimeout());
     }
   }
 

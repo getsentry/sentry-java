@@ -70,7 +70,7 @@ class SecondActivity : AppCompatActivity() {
             ?: Sentry.startTransaction("updateRepos", "task")
 
         GithubAPI.service.listRepos(binding.editRepo.text.toString()).enqueue(object : Callback<List<Repo>> {
-            override fun onFailure(call: Call<List<Repo>>?, t: Throwable) {
+            override fun onFailure(call: Call<List<Repo>>, t: Throwable) {
                 span.finish(SpanStatus.INTERNAL_ERROR)
                 Sentry.captureException(t)
 

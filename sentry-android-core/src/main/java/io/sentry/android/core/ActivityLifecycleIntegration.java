@@ -216,6 +216,16 @@ public final class ActivityLifecycleIntegration
         });
   }
 
+  @VisibleForTesting
+  void clearScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+    scope.withTransaction(
+        scopeTransaction -> {
+          if (scopeTransaction == transaction) {
+            scope.clearTransaction();
+          }
+        });
+  }
+
   private boolean isRunningTransaction(final @NotNull Activity activity) {
     return activitiesWithOngoingTransactions.containsKey(activity);
   }
@@ -241,6 +251,14 @@ public final class ActivityLifecycleIntegration
         status = SpanStatus.OK;
       }
       transaction.finish(status);
+      if (hub != null) {
+        // make sure to remove the transaction from scope, as it may contain running children,
+        // therefore `finish` method will not remove it from scope
+        hub.configureScope(
+            scope -> {
+              clearScope(scope, transaction);
+            });
+      }
     }
   }
 
