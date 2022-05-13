@@ -115,7 +115,7 @@ class DefaultAndroidEventProcessorTest {
             assertNotNull(it.dist)
 
             // assert adds permissions as unknown
-            val permissions = it.contexts.app!!.unknown!!["permissions"]
+            val permissions = it.contexts.app!!.permissions
             assertNotNull(permissions)
         }
     }
@@ -126,8 +126,8 @@ class DefaultAndroidEventProcessorTest {
         val sut = fixture.getSut(context)
 
         assertNotNull(sut.process(SentryEvent(), null)) {
-            // assert adds permissions as unknown
-            val unknown = it.contexts.app!!.unknown
+            // assert adds permissions
+            val unknown = it.contexts.app!!.permissions
             assertNull(unknown)
         }
     }
