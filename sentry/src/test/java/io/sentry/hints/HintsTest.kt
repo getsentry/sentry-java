@@ -88,7 +88,7 @@ class HintsTest {
     fun `can create hints with attachment`() {
         val attachment = newAttachment("test1")
         val hints = Hints.withAttachment(attachment)
-        assertEquals(listOf(attachment), hints.attachments.all)
+        assertEquals(listOf(attachment), hints.attachments)
     }
 
     @Test
@@ -96,6 +96,6 @@ class HintsTest {
         val attachment1 = newAttachment("test1")
         val attachment2 = newAttachment("test1")
         val hints = Hints.withAttachments(listOf(attachment1, attachment2))
-        assertEquals(listOf(attachment1, attachment2), hints.attachments.all)
+        assertEquals(listOf(attachment1, attachment2), hints.attachments)
     }
 }
