@@ -128,7 +128,7 @@ class AndroidTransactionProfilerTest {
     @Test
     fun `profiler evaluates profilingTracesDirPath options only on first transaction profiling`() {
         fixture.options.apply {
-            cacheDirPath = ""
+            cacheDirPath = null
         }
 
         // We create the profiler, and nothing goes wrong
