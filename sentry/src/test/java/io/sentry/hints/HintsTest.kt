@@ -1,6 +1,6 @@
 package io.sentry.hints
 
-import io.sentry.hints.AttachmentContainerTest.Companion.newAttachment
+import io.sentry.hints.AttachmentsTest.Companion.newAttachment
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -79,16 +79,16 @@ class HintsTest {
     }
 
     @Test
-    fun `can retrieve AttachmentContainer`() {
+    fun `can retrieve Attachments`() {
         val hints = Hints()
-        assertNotNull(hints.attachmentContainer)
+        assertNotNull(hints.attachments)
     }
 
     @Test
     fun `can create hints with attachment`() {
         val attachment = newAttachment("test1")
         val hints = Hints.withAttachment(attachment)
-        assertEquals(listOf(attachment), hints.attachmentContainer.all)
+        assertEquals(listOf(attachment), hints.attachments.all)
     }
 
     @Test
@@ -96,6 +96,6 @@ class HintsTest {
         val attachment1 = newAttachment("test1")
         val attachment2 = newAttachment("test1")
         val hints = Hints.withAttachments(listOf(attachment1, attachment2))
-        assertEquals(listOf(attachment1, attachment2), hints.attachmentContainer.all)
+        assertEquals(listOf(attachment1, attachment2), hints.attachments.all)
     }
 }

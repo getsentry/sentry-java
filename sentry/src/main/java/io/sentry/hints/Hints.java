@@ -15,13 +15,13 @@ public final class Hints {
 
   public static @NotNull Hints withAttachment(@Nullable Attachment attachment) {
     @NotNull final Hints hints = new Hints();
-    hints.getAttachmentContainer().add(attachment);
+    hints.getAttachments().add(attachment);
     return hints;
   }
 
   public static @NotNull Hints withAttachments(@Nullable List<Attachment> attachments) {
     @NotNull final Hints hints = new Hints();
-    hints.getAttachmentContainer().addAll(attachments);
+    hints.getAttachments().addAll(attachments);
     return hints;
   }
 
@@ -48,16 +48,16 @@ public final class Hints {
     internalStorage.remove(hintName);
   }
 
-  public @NotNull AttachmentContainer getAttachmentContainer() {
+  public @NotNull Attachments getAttachments() {
     if (internalStorage.containsKey(SENTRY_ATTACHMENTS)) {
-      AttachmentContainer container = getAs(SENTRY_ATTACHMENTS, AttachmentContainer.class);
+      Attachments container = getAs(SENTRY_ATTACHMENTS, Attachments.class);
       if (container != null) {
         return container;
       }
     }
 
-    AttachmentContainer attachmentContainer = new AttachmentContainer();
-    internalStorage.put(SENTRY_ATTACHMENTS, attachmentContainer);
-    return attachmentContainer;
+    Attachments attachments = new Attachments();
+    internalStorage.put(SENTRY_ATTACHMENTS, attachments);
+    return attachments;
   }
 }

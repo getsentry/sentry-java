@@ -1618,8 +1618,8 @@ class SentryClientTest {
     fun `can add to attachments in beforeSend`() {
         val sut = fixture.getSut { options ->
             options.setBeforeSend { event, hints ->
-                assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachmentContainer.all)
-                hints.attachmentContainer.add(fixture.attachment3)
+                assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachments.all)
+                hints.attachments.add(fixture.attachment3)
                 event
             }
         }
@@ -1635,7 +1635,7 @@ class SentryClientTest {
     fun `can replace attachments in beforeSend`() {
         val sut = fixture.getSut { options ->
             options.setBeforeSend { event, hints ->
-                hints.attachmentContainer.replaceAll(listOf(fixture.attachment))
+                hints.attachments.replaceAll(listOf(fixture.attachment))
                 event
             }
         }
@@ -1652,8 +1652,8 @@ class SentryClientTest {
         val sut = fixture.getSut { options ->
             options.addEventProcessor(object : EventProcessor {
                 override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
-                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachmentContainer.all)
-                    hints.attachmentContainer.add(fixture.attachment3)
+                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachments.all)
+                    hints.attachments.add(fixture.attachment3)
                     return event
                 }
 
@@ -1678,7 +1678,7 @@ class SentryClientTest {
         val sut = fixture.getSut { options ->
             options.addEventProcessor(object : EventProcessor {
                 override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
-                    hints.attachmentContainer.replaceAll(listOf(fixture.attachment))
+                    hints.attachments.replaceAll(listOf(fixture.attachment))
                     return event
                 }
 
@@ -1740,8 +1740,8 @@ class SentryClientTest {
                     transaction: SentryTransaction,
                     hints: Hints
                 ): SentryTransaction? {
-                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachmentContainer.all)
-                    hints.attachmentContainer.add(fixture.attachment3)
+                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachments.all)
+                    hints.attachments.add(fixture.attachment3)
                     return transaction
                 }
             })
@@ -1771,7 +1771,7 @@ class SentryClientTest {
                     transaction: SentryTransaction,
                     hints: Hints
                 ): SentryTransaction? {
-                    hints.attachmentContainer.replaceAll(listOf(fixture.attachment))
+                    hints.attachments.replaceAll(listOf(fixture.attachment))
                     return transaction
                 }
             })
@@ -1809,7 +1809,7 @@ class SentryClientTest {
     fun `adding attachments in beforeBreadcrumb ignores them`() {
         val sut = fixture.getSut { options ->
             options.setBeforeBreadcrumb { breadcrumb, hints ->
-                hints.attachmentContainer.add(fixture.attachment)
+                hints.attachments.add(fixture.attachment)
                 breadcrumb
             }
         }

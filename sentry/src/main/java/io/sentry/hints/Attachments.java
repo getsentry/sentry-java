@@ -6,7 +6,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class AttachmentContainer {
+public final class Attachments {
 
   private final @NotNull List<Attachment> internalStorage = new CopyOnWriteArrayList<>();
 

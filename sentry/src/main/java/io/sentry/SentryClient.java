@@ -196,7 +196,7 @@ public final class SentryClient implements ISentryClient {
 
   private void addScopeAttachmentsToHints(@Nullable Scope scope, @NotNull Hints hints) {
     if (scope != null) {
-      hints.getAttachmentContainer().addAll(scope.getAttachments());
+      hints.getAttachments().addAll(scope.getAttachments());
     }
   }
 
@@ -227,7 +227,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable List<Attachment> getAttachments(final @NotNull Hints hints) {
-    @NotNull final List<Attachment> attachments = hints.getAttachmentContainer().getAll();
+    @NotNull final List<Attachment> attachments = hints.getAttachments().getAll();
 
     @Nullable final Attachment screenshot = hints.getAs(SENTRY_SCREENSHOT, Attachment.class);
     if (screenshot != null) {
