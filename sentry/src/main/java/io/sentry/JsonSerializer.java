@@ -166,31 +166,34 @@ public final class JsonSerializer implements ISerializer {
     final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
     final Writer writer = new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8));
 
-    envelope
-        .getHeader()
-        .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
-    writer.write("\n");
+    try {
+      envelope
+          .getHeader()
+          .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
+      writer.write("\n");
 
-    for (final SentryEnvelopeItem item : envelope.getItems()) {
-      try {
-        // When this throws we don't write anything and continue with the next item.
-        final byte[] data = item.getData();
+      for (final SentryEnvelopeItem item : envelope.getItems()) {
+        try {
+          // When this throws we don't write anything and continue with the next item.
+          final byte[] data = item.getData();
 
-        item.getHeader()
-            .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
-        writer.write("\n");
-        writer.flush();
+          item.getHeader()
+              .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
+          writer.write("\n");
+          writer.flush();
 
-        outputStream.write(data);
+          outputStream.write(data);
 
-        writer.write("\n");
-      } catch (Exception exception) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
+          writer.write("\n");
+        } catch (Exception exception) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
+        }
       }
+    } finally {
+      writer.flush();
     }
-    writer.flush();
   }
 
   @Override
