@@ -1788,7 +1788,40 @@ class SentryClientTest {
 
         thenEnvelopeIsSentWith(0, 0, 1, 1)
     }
-// TODO breadcrumb test
+
+    @Test
+    fun `passing attachments via hint into breadcrumb ignores them`() {
+        val sut = fixture.getSut { options ->
+            options.setBeforeBreadcrumb { breadcrumb, hints ->
+                breadcrumb
+            }
+        }
+
+        val scope = givenScopeWithStartedSession()
+        scope.addBreadcrumb(Breadcrumb.info("hello from breadcrumb"), Hints.withAttachment(fixture.attachment))
+
+        sut.captureException(IllegalStateException(), scope)
+
+        thenEnvelopeIsSentWith(1, 1, 0)
+    }
+
+    @Test
+    fun `adding attachments in beforeBreadcrumb ignores them`() {
+        val sut = fixture.getSut { options ->
+            options.setBeforeBreadcrumb { breadcrumb, hints ->
+                hints.attachmentContainer.add(fixture.attachment)
+                breadcrumb
+            }
+        }
+
+        val scope = givenScopeWithStartedSession()
+        scope.addBreadcrumb(Breadcrumb.info("hello from breadcrumb"))
+
+        sut.captureException(IllegalStateException(), scope)
+
+        thenEnvelopeIsSentWith(1, 1, 0)
+    }
+
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): Scope {
         val scope = createScope(fixture.sentryOptions)
         scope.startSession()
