@@ -1937,6 +1937,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun getAppVersion ()Ljava/lang/String;
 	public fun getBuildType ()Ljava/lang/String;
 	public fun getDeviceAppHash ()Ljava/lang/String;
+	public fun getPermissions ()Ljava/util/Map;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAppBuild (Ljava/lang/String;)V
@@ -1946,6 +1947,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun setAppVersion (Ljava/lang/String;)V
 	public fun setBuildType (Ljava/lang/String;)V
 	public fun setDeviceAppHash (Ljava/lang/String;)V
+	public fun setPermissions (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -1959,6 +1961,7 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public static final field APP_BUILD Ljava/lang/String;
 	public static final field APP_IDENTIFIER Ljava/lang/String;
 	public static final field APP_NAME Ljava/lang/String;
+	public static final field APP_PERMISSIONS Ljava/lang/String;
 	public static final field APP_START_TIME Ljava/lang/String;
 	public static final field APP_VERSION Ljava/lang/String;
 	public static final field BUILD_TYPE Ljava/lang/String;

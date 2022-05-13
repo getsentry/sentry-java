@@ -42,7 +42,12 @@
             "build_type": "d78c56cd-eb0f-4213-8899-cd10ddf20763",
             "app_name": "873656fd-f620-4edf-bb7a-a0d13325dba0",
             "app_version": "801aab22-ad4b-44fb-995c-bacb5387e20c",
-            "app_build": "660f0cde-eedb-49dc-a973-8aa1c04f4a28"
+            "app_build": "660f0cde-eedb-49dc-a973-8aa1c04f4a28",
+            "permissions":
+            {
+              "WRITE_EXTERNAL_STORAGE": "not_granted",
+              "CAMERA": "granted"
+            }
         },
         "browser":
         {
