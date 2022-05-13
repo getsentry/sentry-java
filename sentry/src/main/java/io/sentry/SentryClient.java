@@ -80,6 +80,11 @@ public final class SentryClient implements ISentryClient {
       hints = new Hints();
     }
 
+    // TODO what does cached etc mean for devs manipulating hints in beforeSend and eventProcessor?
+    if (shouldApplyScopeData(event, hints)) {
+      addScopeAttachmentsToHints(scope, hints);
+    }
+
     options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
 
     if (event != null) {
@@ -173,7 +178,7 @@ public final class SentryClient implements ISentryClient {
               ? scope.getTransaction().traceState()
               : null;
       final boolean shouldSendAttachments = event != null;
-      List<Attachment> attachments = shouldSendAttachments ? getAttachments(scope, hints) : null;
+      List<Attachment> attachments = shouldSendAttachments ? getAttachments(hints) : null;
       final SentryEnvelope envelope = buildEnvelope(event, attachments, session, traceState, null);
 
       if (envelope != null) {
@@ -187,6 +192,12 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  private void addScopeAttachmentsToHints(@Nullable Scope scope, @NotNull Hints hints) {
+    if (scope != null) {
+      hints.getAttachmentContainer().addAll(scope.getAttachments());
+    }
   }
 
   private boolean shouldSendSessionUpdateForDroppedEvent(
@@ -215,21 +226,12 @@ public final class SentryClient implements ISentryClient {
     return false;
   }
 
-  private @Nullable List<Attachment> getAttachments(
-      final @Nullable Scope scope, final @NotNull Hints hints) {
-    List<Attachment> attachments = null;
-    if (scope != null) {
-      attachments = scope.getAttachments();
-    }
+  private @Nullable List<Attachment> getAttachments(final @NotNull Hints hints) {
+    @NotNull final List<Attachment> attachments = hints.getAttachmentContainer().getAll();
 
-    final Object screenshotAttachment = hints.get(SENTRY_SCREENSHOT);
-    if (screenshotAttachment instanceof Attachment) {
-
-      if (attachments == null) {
-        attachments = new ArrayList<>();
-      }
-
-      attachments.add((Attachment) screenshotAttachment);
+    @Nullable final Attachment screenshot = hints.getAs(SENTRY_SCREENSHOT, Attachment.class);
+    if (screenshot != null) {
+      attachments.add(screenshot);
     }
 
     return attachments;
@@ -506,6 +508,10 @@ public final class SentryClient implements ISentryClient {
       hints = new Hints();
     }
 
+    if (shouldApplyScopeData(transaction, hints)) {
+      addScopeAttachmentsToHints(scope, hints);
+    }
+
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
@@ -540,7 +546,7 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelope envelope =
           buildEnvelope(
               transaction,
-              filterForTransaction(getAttachments(scope, hints)),
+              filterForTransaction(getAttachments(hints)),
               null,
               traceState,
               profilingTraceData);

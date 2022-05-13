@@ -84,6 +84,8 @@ class SentryClientTest {
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
+        var attachment2 = Attachment("hello2".toByteArray(), "hello2.txt", "text/plain", true)
+        var attachment3 = Attachment("hello3".toByteArray(), "hello3.txt", "text/plain", true)
         val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
         var profilingTraceData = ProfilingTraceData(profilingTraceFile, sentryTracer)
         var profilingNonExistingTraceData = ProfilingTraceData(File("non_existent.trace"), sentryTracer)
@@ -1592,6 +1594,201 @@ class SentryClientTest {
         )
     }
 
+    @Test
+    fun `can pass an attachment via hints`() {
+        val sut = fixture.getSut()
+
+        sut.captureException(IllegalStateException(), Hints.withAttachment(fixture.attachment))
+
+        thenEnvelopeIsSentWith(1, 0, 1)
+    }
+
+    @Test
+    fun `an attachment passed via hint is used with scope attachments`() {
+        val sut = fixture.getSut()
+
+        val scope = givenScopeWithStartedSession()
+        scope.addAttachment(fixture.attachment2)
+        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+
+        thenEnvelopeIsSentWith(1, 1, 2)
+    }
+
+    @Test
+    fun `can add to attachments in beforeSend`() {
+        val sut = fixture.getSut { options ->
+            options.setBeforeSend { event, hints ->
+                assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachmentContainer.all)
+                hints.attachmentContainer.add(fixture.attachment3)
+                event
+            }
+        }
+
+        val scope = givenScopeWithStartedSession()
+        scope.addAttachment(fixture.attachment2)
+        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+
+        thenEnvelopeIsSentWith(1, 1, 3)
+    }
+
+    @Test
+    fun `can replace attachments in beforeSend`() {
+        val sut = fixture.getSut { options ->
+            options.setBeforeSend { event, hints ->
+                hints.attachmentContainer.replaceAll(listOf(fixture.attachment))
+                event
+            }
+        }
+
+        val scope = givenScopeWithStartedSession()
+        scope.addAttachment(fixture.attachment2)
+        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+
+        thenEnvelopeIsSentWith(1, 1, 1)
+    }
+
+    @Test
+    fun `can add to attachments in eventProcessor`() {
+        val sut = fixture.getSut { options ->
+            options.addEventProcessor(object : EventProcessor {
+                override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
+                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachmentContainer.all)
+                    hints.attachmentContainer.add(fixture.attachment3)
+                    return event
+                }
+
+                override fun process(
+                    transaction: SentryTransaction,
+                    hints: Hints
+                ): SentryTransaction? {
+                    return transaction
+                }
+            })
+        }
+
+        val scope = givenScopeWithStartedSession()
+        scope.addAttachment(fixture.attachment2)
+        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+
+        thenEnvelopeIsSentWith(1, 1, 3)
+    }
+
+    @Test
+    fun `can replace attachments in eventProcessor`() {
+        val sut = fixture.getSut { options ->
+            options.addEventProcessor(object : EventProcessor {
+                override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
+                    hints.attachmentContainer.replaceAll(listOf(fixture.attachment))
+                    return event
+                }
+
+                override fun process(
+                    transaction: SentryTransaction,
+                    hints: Hints
+                ): SentryTransaction? {
+                    return transaction
+                }
+            })
+        }
+
+        val scope = givenScopeWithStartedSession()
+        scope.addAttachment(fixture.attachment2)
+        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+
+        thenEnvelopeIsSentWith(1, 1, 1)
+    }
+
+    @Test
+    fun `can pass an attachment via hints for transactions`() {
+        val sut = fixture.getSut()
+        val scope = createScope()
+
+        sut.captureTransaction(
+            SentryTransaction(fixture.sentryTracer),
+            scope,
+            Hints.withAttachment(fixture.attachment)
+        )
+
+        thenEnvelopeIsSentWith(0, 0, 1, 1)
+    }
+
+    @Test
+    fun `an attachment passed via hint is used with scope attachments for transactions`() {
+        val sut = fixture.getSut()
+
+        val scope = givenScopeWithStartedSession()
+        scope.addAttachment(fixture.attachment2)
+
+        sut.captureTransaction(
+            SentryTransaction(fixture.sentryTracer),
+            scope,
+            Hints.withAttachment(fixture.attachment)
+        )
+
+        thenEnvelopeIsSentWith(0, 0, 2, 1)
+    }
+
+    @Test
+    fun `can add to attachments in eventProcessor for transactions`() {
+        val sut = fixture.getSut { options ->
+            options.addEventProcessor(object : EventProcessor {
+                override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
+                    return event
+                }
+
+                override fun process(
+                    transaction: SentryTransaction,
+                    hints: Hints
+                ): SentryTransaction? {
+                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachmentContainer.all)
+                    hints.attachmentContainer.add(fixture.attachment3)
+                    return transaction
+                }
+            })
+        }
+
+        val scope = givenScopeWithStartedSession()
+        scope.addAttachment(fixture.attachment2)
+
+        sut.captureTransaction(
+            SentryTransaction(fixture.sentryTracer),
+            scope,
+            Hints.withAttachment(fixture.attachment)
+        )
+
+        thenEnvelopeIsSentWith(0, 0, 3, 1)
+    }
+
+    @Test
+    fun `can replace attachments in eventProcessor for transactions`() {
+        val sut = fixture.getSut { options ->
+            options.addEventProcessor(object : EventProcessor {
+                override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
+                    return event
+                }
+
+                override fun process(
+                    transaction: SentryTransaction,
+                    hints: Hints
+                ): SentryTransaction? {
+                    hints.attachmentContainer.replaceAll(listOf(fixture.attachment))
+                    return transaction
+                }
+            })
+        }
+
+        val scope = givenScopeWithStartedSession()
+        scope.addAttachment(fixture.attachment2)
+
+        sut.captureTransaction(
+            SentryTransaction(fixture.sentryTracer),
+            scope,
+            Hints.withAttachment(fixture.attachment)
+        )
+
+        thenEnvelopeIsSentWith(0, 0, 1, 1)
+    }
+// TODO breadcrumb test
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): Scope {
         val scope = createScope(fixture.sentryOptions)
         scope.startSession()
@@ -1611,7 +1808,7 @@ class SentryClientTest {
         verify(fixture.transport, never()).send(anyOrNull(), anyOrNull())
     }
 
-    private fun thenEnvelopeIsSentWith(eventCount: Int, sessionCount: Int) {
+    private fun thenEnvelopeIsSentWith(eventCount: Int, sessionCount: Int, attachmentCount: Int = 0, transactionCount: Int = 0) {
         val argumentCaptor = argumentCaptor<SentryEnvelope>()
         verify(fixture.transport, times(1)).send(argumentCaptor.capture(), anyOrNull())
 
@@ -1619,6 +1816,8 @@ class SentryClientTest {
         val envelopeItemTypes = envelope.items.map { it.header.type }
         assertEquals(eventCount, envelopeItemTypes.count { it == SentryItemType.Event })
         assertEquals(sessionCount, envelopeItemTypes.count { it == SentryItemType.Session })
+        assertEquals(attachmentCount, envelopeItemTypes.count { it == SentryItemType.Attachment })
+        assertEquals(transactionCount, envelopeItemTypes.count { it == SentryItemType.Transaction })
     }
 
     private fun thenSessionIsStillOK(scope: Scope) {

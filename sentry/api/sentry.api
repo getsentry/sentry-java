@@ -1638,6 +1638,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OKHTTP_RESPONSE Ljava/lang/String;
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
+	public static final field SENTRY_ATTACHMENTS Ljava/lang/String;
 	public static final field SENTRY_SCREENSHOT Ljava/lang/String;
 	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
 	public static final field SENTRY_TYPE_CHECK_HINT Ljava/lang/String;
@@ -1835,6 +1836,15 @@ public final class io/sentry/exception/SentryEnvelopeException : java/lang/Excep
 public abstract interface class io/sentry/hints/ApplyScopeData {
 }
 
+public final class io/sentry/hints/AttachmentContainer {
+	public fun <init> ()V
+	public fun add (Lio/sentry/Attachment;)V
+	public fun addAll (Ljava/util/List;)V
+	public fun clear ()V
+	public fun getAll ()Ljava/util/List;
+	public fun replaceAll (Ljava/util/List;)V
+}
+
 public abstract interface class io/sentry/hints/Cached {
 }
 
@@ -1849,8 +1859,12 @@ public abstract interface class io/sentry/hints/Flushable {
 public final class io/sentry/hints/Hints {
 	public fun <init> ()V
 	public fun get (Ljava/lang/String;)Ljava/lang/Object;
+	public fun getAs (Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
+	public fun getAttachmentContainer ()Lio/sentry/hints/AttachmentContainer;
 	public fun remove (Ljava/lang/String;)V
 	public fun set (Ljava/lang/String;Ljava/lang/Object;)V
+	public static fun withAttachment (Lio/sentry/Attachment;)Lio/sentry/hints/Hints;
+	public static fun withAttachments (Ljava/util/List;)Lio/sentry/hints/Hints;
 }
 
 public abstract interface class io/sentry/hints/Resettable {
