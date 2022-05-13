@@ -755,9 +755,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           permissions.put(permission, granted ? "granted" : "not_granted");
         }
       }
-      final Map<String, Object> unknown = new HashMap<>();
-      unknown.put("permissions", permissions);
-      app.setUnknown(unknown);
+      app.setPermissions(permissions);
     }
   }
 
