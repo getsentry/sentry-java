@@ -35,7 +35,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private final @NotNull SentryAndroidOptions options;
   private final boolean isAndroidXAvailable;
 
-  private @NotNull WeakReference<View> activeView = new WeakReference<>(null);
+  private @Nullable WeakReference<View> activeView = null;
   private @Nullable ITransaction activeTransaction = null;
   private @Nullable String activeEventType = null;
 
@@ -219,7 +219,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return;
     }
 
-    final View view = activeView.get();
+    final View view = (activeView != null) ? activeView.get() : null;
     if (activeTransaction != null) {
       if (target.equals(view)
           && eventType.equals(activeEventType)
@@ -271,7 +271,9 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
           clearScope(scope);
         });
     activeTransaction = null;
-    activeView.clear();
+    if (activeView != null) {
+      activeView.clear();
+    }
     activeEventType = null;
   }
 
