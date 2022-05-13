@@ -11,7 +11,6 @@ import android.widget.AbsListView
 import android.widget.ListAdapter
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.clearInvocations
 import com.nhaarman.mockitokotlin2.mock
@@ -23,8 +22,6 @@ import io.sentry.Scope
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import io.sentry.TransactionFinishedCallback
-import io.sentry.android.core.ActivityFramesTracker
 import io.sentry.android.core.SentryAndroidOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -40,7 +37,6 @@ class SentryGestureListenerTracingTest {
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
-        val activityFramesTracker = mock<ActivityFramesTracker>()
         val hub = mock<IHub>()
         val event = mock<MotionEvent>()
         lateinit var target: View
@@ -76,14 +72,13 @@ class SentryGestureListenerTracingTest {
 
             whenever(activity.window).thenReturn(window)
 
-            whenever(hub.startTransaction(any(), any(), any(), anyOrNull(), any(), anyOrNull()))
+            whenever(hub.startTransaction(any(), any(), any(), anyOrNull(), any<Boolean>()))
                 .thenReturn(transaction)
             whenever(hub.options).thenReturn(options)
             return SentryGestureListener(
                 activity,
                 hub,
                 options,
-                activityFramesTracker,
                 true
             )
         }
@@ -98,7 +93,7 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), anyOrNull(), any(), anyOrNull(), any(), anyOrNull()
+            any(), anyOrNull(), any(), anyOrNull(), any<Boolean>()
         )
     }
 
@@ -109,7 +104,7 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), anyOrNull(), any(), anyOrNull(), any(), anyOrNull()
+            any(), anyOrNull(), any(), anyOrNull(), any<Boolean>()
         )
     }
 
@@ -120,7 +115,7 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), anyOrNull(), any(), anyOrNull(), any(), anyOrNull()
+            any(), anyOrNull(), any(), anyOrNull(), any<Boolean>()
         )
     }
 
@@ -191,23 +186,8 @@ class SentryGestureListenerTracingTest {
             check {
                 assertEquals("Activity.test_button", it)
             },
-            anyOrNull(), any(), anyOrNull(), any(), anyOrNull()
+            anyOrNull(), any(), anyOrNull(), any<Boolean>()
         )
-    }
-
-    @Test
-    fun `captures frame metrics when transaction is finished`() {
-        val sut = fixture.getSut<View>()
-
-        sut.onSingleTapUp(fixture.event)
-
-        val argumentCaptor = argumentCaptor<TransactionFinishedCallback>()
-        verify(fixture.hub).startTransaction(
-            any(), anyOrNull(), any(), anyOrNull(), any(), argumentCaptor.capture()
-        )
-
-        argumentCaptor.firstValue.execute(fixture.transaction)
-        verify(fixture.activityFramesTracker).setMetrics(fixture.activity, fixture.transaction.eventId)
     }
 
     @Test
@@ -218,7 +198,7 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.hub).startTransaction(
             any(), check { assertEquals("ui.action.click", it) }, any(),
-            anyOrNull(), any(), anyOrNull()
+            anyOrNull(), any<Boolean>()
         )
     }
 
@@ -233,7 +213,7 @@ class SentryGestureListenerTracingTest {
             check {
                 assertEquals("Activity.test_button", it)
             },
-            any(), any(), anyOrNull(), any(), anyOrNull()
+            any(), any(), anyOrNull(), any<Boolean>()
         )
 
         clearInvocations(fixture.hub)
@@ -249,7 +229,7 @@ class SentryGestureListenerTracingTest {
             whenever(it.getChildAt(0)).thenReturn(newTarget)
         }
 
-        whenever(fixture.hub.startTransaction(any(), any(), any(), anyOrNull(), any(), anyOrNull()))
+        whenever(fixture.hub.startTransaction(any(), any(), any(), anyOrNull(), any<Boolean>()))
             .thenAnswer {
                 // verify that the active transaction gets finished when a new one appears
                 assertEquals(true, fixture.transaction.isFinished)
@@ -262,7 +242,7 @@ class SentryGestureListenerTracingTest {
             check {
                 assertEquals("Activity.test_checkbox", it)
             },
-            any(), any(), anyOrNull(), any(), anyOrNull()
+            any(), any(), anyOrNull(), any<Boolean>()
         )
     }
 
@@ -279,13 +259,13 @@ class SentryGestureListenerTracingTest {
             check {
                 assertEquals("ui.action.click", it)
             },
-            any(), anyOrNull(), any(), anyOrNull()
+            any(), anyOrNull(), any<Boolean>()
         )
 
         clearInvocations(fixture.hub)
 
         // second view interaction with a different interaction type (scroll)
-        whenever(fixture.hub.startTransaction(any(), any(), any(), anyOrNull(), any(), anyOrNull()))
+        whenever(fixture.hub.startTransaction(any(), any(), any(), anyOrNull(), any<Boolean>()))
             .thenAnswer {
                 // verify that the active transaction gets finished when a new one appears
                 assertEquals(true, fixture.transaction.isFinished)
@@ -302,7 +282,7 @@ class SentryGestureListenerTracingTest {
             check {
                 assertEquals("ui.action.scroll", it)
             },
-            any(), anyOrNull(), any(), anyOrNull()
+            any(), anyOrNull(), any<Boolean>()
         )
     }
 
@@ -318,7 +298,7 @@ class SentryGestureListenerTracingTest {
             check {
                 assertEquals("Activity.test_button", it)
             },
-            any(), any(), anyOrNull(), any(), anyOrNull()
+            any(), any(), anyOrNull(), any<Boolean>()
         )
 
         // second view interaction

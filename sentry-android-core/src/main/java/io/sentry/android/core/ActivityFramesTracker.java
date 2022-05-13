@@ -55,13 +55,9 @@ public final class ActivityFramesTracker {
     frameMetricsAggregator.add(activity);
   }
 
-  public synchronized void setMetrics(final @NotNull SentryId sentryId) {
-    setMetrics(null, sentryId);
-  }
-
   @SuppressWarnings("NullAway")
   public synchronized void setMetrics(
-      final @Nullable Activity activity, final @NotNull SentryId sentryId) {
+      final @NotNull Activity activity, final @NotNull SentryId sentryId) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
@@ -72,11 +68,7 @@ public final class ActivityFramesTracker {
 
     SparseIntArray[] framesRates = null;
     try {
-      if (activity != null) {
-        framesRates = frameMetricsAggregator.remove(activity);
-      } else {
-        framesRates = frameMetricsAggregator.getMetrics();
-      }
+      framesRates = frameMetricsAggregator.remove(activity);
     } catch (Throwable ignored) {
       // throws IllegalArgumentException when attempting to remove OnFrameMetricsAvailableListener
       // that was never added.

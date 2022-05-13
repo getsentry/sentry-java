@@ -70,7 +70,6 @@ class SentryGestureListenerScrollTest {
                 activity,
                 hub,
                 options,
-                mock(),
                 isAndroidXAvailable
             )
         }
