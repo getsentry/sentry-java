@@ -845,6 +845,24 @@ class JsonSerializerTest {
     }
 
     @Test
+    fun `threads are serialized with current thread flag`() {
+        val event = generateEmptySentryEvent()
+        val sentryThreadFactory = SentryThreadFactory(
+            SentryStackTraceFactory(listOf("io.sentry"), listOf()),
+            with(SentryOptions()) {
+                isAttachStacktrace = true
+                this
+            }
+        )
+        event.threads = sentryThreadFactory.currentThread
+
+        val serialized = serializeToString(event)
+        val deserialized = fixture.serializer.deserialize(StringReader(serialized), SentryEvent::class.java)
+
+        assertEquals(true, deserialized?.threads?.first()?.isCurrent)
+    }
+
+    @Test
     fun `json serializer uses logger set on SentryOptions`() {
         val logger = mock<ILogger>()
         val options = SentryOptions()
