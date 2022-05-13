@@ -180,6 +180,26 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
+    fun `Current should remain true`() {
+        val sut = fixture.getSut(context)
+
+        val event = SentryEvent().apply {
+            threads = mutableListOf(
+                SentryThread().apply {
+                    id = 10L
+                    isCurrent = true
+                }
+            )
+        }
+
+        assertNotNull(sut.process(event, null)) {
+            assertNotNull(it.threads) { threads ->
+                assertTrue(threads.first().isCurrent == true)
+            }
+        }
+    }
+
+    @Test
     fun `When Event and hint is Cached, data should not be applied`() {
         val sut = fixture.getSut(context)
 
