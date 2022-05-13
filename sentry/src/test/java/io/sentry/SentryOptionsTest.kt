@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.util.StringUtils
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -262,5 +263,18 @@ class SentryOptionsTest {
     @Test
     fun `when options are initialized, maxAttachmentSize is 20`() {
         assertEquals((20 * 1024 * 1024).toLong(), SentryOptions().maxAttachmentSize)
+    }
+
+    @Test
+    fun `when setting dsn, calculates hash and add as subfolder of caching dirs`() {
+        val dsn = "http://key@localhost/proj"
+        val hash = StringUtils.calculateStringHash(dsn, mock())
+        val options = SentryOptions().apply {
+            setDsn(dsn)
+            cacheDirPath = "${File.separator}test"
+        }
+
+        assertEquals("${File.separator}test${File.separator}${hash}${File.separator}outbox", options.outboxPath)
+        assertEquals("${File.separator}test${File.separator}${hash}${File.separator}profiling_traces", options.profilingTracesDirPath)
     }
 }
