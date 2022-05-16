@@ -1,8 +1,6 @@
 package io.sentry.uitest.android.benchmark
 
-import android.content.Context
 import androidx.lifecycle.Lifecycle
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
@@ -10,7 +8,6 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnitRunner
 import io.sentry.ITransaction
 import io.sentry.Sentry
@@ -24,16 +21,10 @@ import kotlin.test.BeforeTest
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
-class SentryBenchmarkTest {
-
-    private lateinit var runner: AndroidJUnitRunner
-    private lateinit var context: Context
+class SentryBenchmarkTest : BaseBenchmarkTest() {
 
     @BeforeTest
     fun setUp() {
-        runner = InstrumentationRegistry.getInstrumentation() as AndroidJUnitRunner
-        context = ApplicationProvider.getApplicationContext()
-        context.cacheDir.deleteRecursively()
         IdlingRegistry.getInstance().register(BenchmarkActivity.scrollingIdlingResource)
     }
 
@@ -47,14 +38,14 @@ class SentryBenchmarkTest {
 
         // We compare two operation that are the same. We expect the increases to be negligible, as the results
         // should be very similar.
-        val op1 = BenchmarkOperation(runner, getOperation(runner) { null })
-        val op2 = BenchmarkOperation(runner, getOperation(runner) { null })
+        val op1 = BenchmarkOperation(runner, op = getOperation(runner) { null })
+        val op2 = BenchmarkOperation(runner, op = getOperation(runner) { null })
         val comparisonResult = BenchmarkOperation.compare(op1, "Op1", op2, "Op2")
 
-        assertTrue { comparisonResult.durationIncrease >= -1 }
-        assertTrue { comparisonResult.durationIncrease < 1 }
-        assertTrue { comparisonResult.cpuTimeIncrease >= -1 }
-        assertTrue { comparisonResult.cpuTimeIncrease < 1 }
+        assertTrue { comparisonResult.durationIncreasePercentage >= -1 }
+        assertTrue { comparisonResult.durationIncreasePercentage < 1 }
+        assertTrue { comparisonResult.cpuTimeIncreasePercentage >= -1 }
+        assertTrue { comparisonResult.cpuTimeIncreasePercentage < 1 }
         // The fps decrease is skipped for the moment, due to approximation:
         // if an operation runs at 59.49 fps and the other at 59.51, they are considered 59 and 60 fps respectively.
         // Their difference would be 1 / 60 * 100 = 1.66666%
@@ -62,30 +53,36 @@ class SentryBenchmarkTest {
         // On even slower devices the difference would be even higher. Let's skip for now, as it's not important anyway.
 //        assertTrue { comparisonResult.fpsDecrease >= -2 }
 //        assertTrue { comparisonResult.fpsDecrease < 2 }
-        assertTrue { comparisonResult.droppedFramesIncrease >= -1 }
-        assertTrue { comparisonResult.droppedFramesIncrease < 1 }
+        assertTrue { comparisonResult.droppedFramesIncreasePercentage >= -1 }
+        assertTrue { comparisonResult.droppedFramesIncreasePercentage < 1 }
     }
 
     @Test
     fun benchmarkProfiledTransaction() {
 
-        runner.runOnMainSync {
-            SentryAndroid.init(context) { options: SentryOptions ->
-                options.dsn = "https://key@uri/1234567"
-                options.isEnableAutoSessionTracking = false
-                options.tracesSampleRate = 1.0
-                options.isTraceSampling = true
-                options.isProfilingEnabled = true
-            }
-        }
-
         // We compare the same operation with and without profiled transaction.
         // We expect the profiled transaction operation to be slower, but not slower than 5%.
-        val benchmarkOperationNoTransaction = BenchmarkOperation(runner, getOperation(runner) { null })
+        val benchmarkOperationNoTransaction = BenchmarkOperation(runner, op = getOperation(runner) { null })
         val benchmarkOperationProfiled = BenchmarkOperation(
             runner,
-            getOperation(runner) {
+            before = {
+                runner.runOnMainSync {
+                    SentryAndroid.init(context) { options: SentryOptions ->
+                        options.dsn = "https://key@uri/1234567"
+                        options.isEnableAutoSessionTracking = false
+                        options.tracesSampleRate = 1.0
+                        options.isTraceSampling = true
+                        options.isProfilingEnabled = true
+                    }
+                }
+            },
+            op = getOperation(runner) {
                 Sentry.startTransaction("Benchmark", "ProfiledTransaction")
+            },
+            after = {
+                runner.runOnMainSync {
+                    Sentry.close()
+                }
             }
         )
         val comparisonResult = BenchmarkOperation.compare(
@@ -95,14 +92,14 @@ class SentryBenchmarkTest {
             "ProfiledTransaction"
         )
 
-        assertTrue { comparisonResult.durationIncrease >= 0 }
-        assertTrue { comparisonResult.durationIncrease < 5.0 }
-        assertTrue { comparisonResult.cpuTimeIncrease >= 0 }
-        assertTrue { comparisonResult.cpuTimeIncrease < 5.0 }
-        assertTrue { comparisonResult.fpsDecrease >= 0 }
-        assertTrue { comparisonResult.fpsDecrease < 5.0 }
-        assertTrue { comparisonResult.droppedFramesIncrease >= 0 }
-        assertTrue { comparisonResult.droppedFramesIncrease < 5.0 }
+        assertTrue { comparisonResult.durationIncreasePercentage >= 0 }
+        assertTrue { comparisonResult.durationIncreasePercentage < 5.0 }
+        assertTrue { comparisonResult.cpuTimeIncreasePercentage >= 0 }
+        assertTrue { comparisonResult.cpuTimeIncreasePercentage < 5.0 }
+        assertTrue { comparisonResult.fpsDecreasePercentage >= 0 }
+        assertTrue { comparisonResult.fpsDecreasePercentage < 5.0 }
+        assertTrue { comparisonResult.droppedFramesIncreasePercentage >= 0 }
+        assertTrue { comparisonResult.droppedFramesIncreasePercentage < 5.0 }
     }
 
     /**

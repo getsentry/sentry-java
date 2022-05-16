@@ -11,10 +11,15 @@ private const val FRAME_DURATION_60FPS_NS: Double = 1_000_000_000 / 60.0
 /**
  * Class that allows to sentry-uitest-android-benchmark some operations.
  * Create two [BenchmarkOperation] objects and compare them using [BenchmarkOperation.compare] to get
- * a [BenchmarkResult] with relative measured overheads.
+ * a [BenchmarkResult] with relative or absolute measured overheads.
  */
 
-internal class BenchmarkOperation(runner: AndroidJUnitRunner, private val op: () -> Unit) {
+internal class BenchmarkOperation(
+    runner: AndroidJUnitRunner,
+    private val before: (() -> Unit)? = null,
+    private val after: (() -> Unit)? = null,
+    private val op: () -> Unit
+) {
 
     companion object {
 
@@ -77,12 +82,16 @@ internal class BenchmarkOperation(runner: AndroidJUnitRunner, private val op: ()
 
     /** Run the operation without measuring it. */
     private fun warmup() {
+        before?.invoke()
         op()
+        after?.invoke()
         isolate()
     }
 
     /** Run the operation and measure it, updating sentry-uitest-android-benchmark data. */
     private fun iterate() {
+        before?.invoke()
+        Thread.sleep(500)
         val startRealtimeNs = SystemClock.elapsedRealtimeNanos()
         val startCpuTimeMs = Process.getElapsedCpuTime()
 
@@ -96,6 +105,7 @@ internal class BenchmarkOperation(runner: AndroidJUnitRunner, private val op: ()
         cpuDurationMillis += Process.getElapsedCpuTime() - startCpuTimeMs
         durationNanos += SystemClock.elapsedRealtimeNanos() - startRealtimeNs
 
+        after?.invoke()
         isolate()
     }
 
