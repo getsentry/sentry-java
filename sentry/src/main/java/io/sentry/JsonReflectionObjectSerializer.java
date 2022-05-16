@@ -37,11 +37,7 @@ public final class JsonReflectionObjectSerializer {
       return ((Byte) object).intValue();
     } else if (object instanceof Short) {
       return ((Short) object).intValue();
-    } else if (object instanceof Integer) {
-      return object;
-    } else if (object instanceof Float) {
-      return object;
-    } else if (object instanceof Double) {
+    } else if (object instanceof Number) {
       return object;
     } else if (object instanceof Boolean) {
       return object;

@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.Device
+import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentrySpan
@@ -842,6 +843,22 @@ class JsonSerializerTest {
         val deserialized = fixture.serializer.deserialize(StringReader(serialized), SentryEvent::class.java)
 
         assertNull(deserialized?.threads)
+    }
+
+    @Test
+    fun `Long can be serialized inside request data`() {
+        val request = Request()
+
+        data class LongContainer(val longValue: Long)
+
+        request.data = LongContainer(10)
+
+        val serialized = serializeToString(request)
+        val deserialized = fixture.serializer.deserialize(StringReader(serialized), Request::class.java)
+
+        val deserializedData = deserialized?.data as? Map<String, Any>
+        assertNotNull(deserializedData)
+        assertEquals(10, deserializedData["longValue"])
     }
 
     @Test
