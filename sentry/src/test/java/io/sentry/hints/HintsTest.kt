@@ -39,7 +39,7 @@ class HintsTest {
     fun `kotlin java interop for primitives does not work yet`() {
         val hints = Hints()
 
-        hints.set("hint1", 1718)
+        hints.set("hint1", 1718L)
 
         assertNull(hints.getAs("hint1", Long::class.java))
     }
