@@ -212,7 +212,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (event.getThreads() != null) {
       for (SentryThread thread : event.getThreads()) {
         Boolean isCurrentThread = thread.isCurrent();
-        if (isCurrentThread == null || !isCurrentThread) {
+        if (isCurrentThread == null) {
           thread.setCurrent(MainThreadChecker.isMainThread(thread));
         }
       }
