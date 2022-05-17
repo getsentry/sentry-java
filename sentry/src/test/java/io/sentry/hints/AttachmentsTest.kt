@@ -8,50 +8,50 @@ class AttachmentsTest {
 
     @Test
     fun `can add an attachment`() {
-        val container = Attachments()
+        val hints = Hints()
         val attachment = newAttachment("test1")
-        container.add(attachment)
+        hints.addAttachment(attachment)
 
-        assertEquals(listOf(attachment), container.all)
+        assertEquals(listOf(attachment), hints.attachments)
     }
 
     @Test
     fun `can add multiple attachments`() {
-        val container = Attachments()
+        val hints = Hints()
         val attachment1 = newAttachment("test1")
         val attachment2 = newAttachment("test2")
-        container.add(attachment1)
-        container.add(attachment2)
+        hints.addAttachment(attachment1)
+        hints.addAttachment(attachment2)
 
-        assertEquals(listOf(attachment1, attachment2), container.all)
+        assertEquals(listOf(attachment1, attachment2), hints.attachments)
     }
 
     @Test
     fun `after reset list is empty`() {
-        val container = Attachments()
+        val hints = Hints()
         val attachment1 = newAttachment("test1")
         val attachment2 = newAttachment("test2")
-        container.add(attachment1)
-        container.add(attachment2)
+        hints.addAttachment(attachment1)
+        hints.addAttachment(attachment2)
 
-        container.clear()
+        hints.clear()
 
-        assertEquals(emptyList(), container.all)
+        assertEquals(emptyList(), hints.attachments)
     }
 
     @Test
     fun `after replace list contains only new item`() {
-        val container = Attachments()
+        val hints = Hints()
         val attachment1 = newAttachment("test1")
         val attachment2 = newAttachment("test2")
         val attachment3 = newAttachment("test2")
         val attachment4 = newAttachment("test2")
-        container.add(attachment1)
-        container.add(attachment2)
+        hints.addAttachment(attachment1)
+        hints.addAttachment(attachment2)
 
-        container.replaceAll(listOf(attachment3, attachment4))
+        hints.replaceAttachments(listOf(attachment3, attachment4))
 
-        assertEquals(listOf(attachment3, attachment4), container.all)
+        assertEquals(listOf(attachment3, attachment4), hints.attachments)
     }
 
     companion object {

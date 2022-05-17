@@ -1,27 +1,27 @@
 package io.sentry.hints;
 
-import static io.sentry.TypeCheckHint.SENTRY_ATTACHMENTS;
-
 import io.sentry.Attachment;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class Hints {
 
   private final @NotNull Map<String, Object> internalStorage = new HashMap<String, Object>();
+  private final @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
 
   public static @NotNull Hints withAttachment(@Nullable Attachment attachment) {
     @NotNull final Hints hints = new Hints();
-    hints.getAttachments().add(attachment);
+    hints.addAttachment(attachment);
     return hints;
   }
 
   public static @NotNull Hints withAttachments(@Nullable List<Attachment> attachments) {
     @NotNull final Hints hints = new Hints();
-    hints.getAttachments().addAll(attachments);
+    hints.addAttachments(attachments);
     return hints;
   }
 
@@ -48,16 +48,30 @@ public final class Hints {
     internalStorage.remove(hintName);
   }
 
-  public @NotNull Attachments getAttachments() {
-    if (internalStorage.containsKey(SENTRY_ATTACHMENTS)) {
-      Attachments container = getAs(SENTRY_ATTACHMENTS, Attachments.class);
-      if (container != null) {
-        return container;
-      }
+  public void addAttachment(@Nullable Attachment attachment) {
+    if (attachment != null) {
+      attachments.add(attachment);
     }
+  }
 
-    Attachments attachments = new Attachments();
-    internalStorage.put(SENTRY_ATTACHMENTS, attachments);
-    return attachments;
+  @SuppressWarnings("unchecked")
+  public void addAttachments(@Nullable List<Attachment> attachments) {
+    if (attachments != null) {
+      this.attachments.addAll(attachments);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public @NotNull List<Attachment> getAttachments() {
+    return new CopyOnWriteArrayList<>(attachments);
+  }
+
+  public void replaceAttachments(@Nullable List<Attachment> attachments) {
+    clear();
+    addAttachments(attachments);
+  }
+
+  public void clear() {
+    attachments.clear();
   }
 }

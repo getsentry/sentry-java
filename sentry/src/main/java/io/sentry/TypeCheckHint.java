@@ -27,8 +27,6 @@ public final class TypeCheckHint {
   public static final String ANDROID_FRAGMENT = "android:fragment";
   /** Used for screenshots. */
   public static final String SENTRY_SCREENSHOT = "sentry:screenshot";
-  /** Used for attachments. */
-  public static final String SENTRY_ATTACHMENTS = "sentry:attachments";
 
   /** Used for OkHttp response breadcrumbs. */
   public static final String OKHTTP_RESPONSE = "okHttp:response";
