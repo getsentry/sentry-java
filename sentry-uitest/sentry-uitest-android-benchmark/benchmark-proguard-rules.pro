@@ -21,6 +21,8 @@
 #-renamesourcefileattribute SourceFile
 
 -dontobfuscate
+#Shrinking removes annotations and "unused classes" from test apk, so we don't shrink
+-dontshrink
 
 -ignorewarnings
 
@@ -31,7 +33,3 @@
 
 -dontwarn androidx.test.**
 -dontwarn org.junit.**
--dontwarn org.hamcrest.**
--dontwarn com.squareup.javawriter.JavaWriter
-
--keepclasseswithmembers @org.junit.runner.RunWith public class *

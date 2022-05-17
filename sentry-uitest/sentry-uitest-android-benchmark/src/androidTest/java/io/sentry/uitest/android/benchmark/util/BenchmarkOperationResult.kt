@@ -33,14 +33,15 @@ internal data class BenchmarkOperationResult(
         println("--------------------")
 
         // Measure average cpu time
-        val cpuTimeDiff = (avgCpuTimeMillis - other.avgCpuTimeMillis) / Runtime.getRuntime().availableProcessors()
+        val cores = Runtime.getRuntime().availableProcessors()
+        val cpuTimeDiff = (avgCpuTimeMillis - other.avgCpuTimeMillis) / cores
         val cpuTimeOverheadPercentage = cpuTimeDiff * 100.0 / other.avgCpuTimeMillis
         // Cpu time spent profiling is weighted based on available threads, as profiling runs on 1 thread only.
         println(
             "Measuring the increased cpu time. It has no direct impact on performance of the app, " +
                 "but it has on battery usage, as the cpu is 'awaken' longer."
         )
-        println("The weighted difference of cpu times is $cpuTimeDiff ms.")
+        println("The weighted difference of cpu times is $cpuTimeDiff ms (over $cores available cores).")
         println("[${other.operationName}] Cpu time: ${other.avgCpuTimeMillis} ms")
         println("[$operationName] Cpu time: $avgCpuTimeMillis ms")
         if (cpuTimeOverheadPercentage > 0) {

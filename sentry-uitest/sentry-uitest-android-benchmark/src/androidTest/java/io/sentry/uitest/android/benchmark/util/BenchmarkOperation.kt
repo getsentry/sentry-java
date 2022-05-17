@@ -3,7 +3,7 @@ package io.sentry.uitest.android.benchmark.util
 import android.os.Process
 import android.os.SystemClock
 import android.view.Choreographer
-import androidx.test.runner.AndroidJUnitRunner
+import java.util.concurrent.TimeUnit
 
 // 60 FPS is the recommended target: https://www.youtube.com/watch?v=CaMTIgxCSqU
 private const val FRAME_DURATION_60FPS_NS: Double = 1_000_000_000 / 60.0
@@ -14,7 +14,7 @@ private const val FRAME_DURATION_60FPS_NS: Double = 1_000_000_000 / 60.0
  * a [BenchmarkResult] with relative measured overheads.
  */
 
-internal class BenchmarkOperation(runner: AndroidJUnitRunner, private val op: () -> Unit) {
+internal class BenchmarkOperation(private val choreographer: Choreographer, private val op: () -> Unit) {
 
     companion object {
 
@@ -60,20 +60,12 @@ internal class BenchmarkOperation(runner: AndroidJUnitRunner, private val op: ()
         }
     }
 
-    private lateinit var choreographer: Choreographer
     private var iterations: Int = 0
     private var durationNanos: Long = 0
     private var cpuDurationMillis: Long = 0
     private var frames: Int = 0
     private var droppedFrames: Double = 0.0
     private var lastFrameTimeNanos: Long = 0
-
-    init {
-        // Must run on the main thread to get the main thread choreographer.
-        runner.runOnMainSync {
-            choreographer = Choreographer.getInstance()
-        }
-    }
 
     /** Run the operation without measuring it. */
     private fun warmup() {
@@ -104,17 +96,20 @@ internal class BenchmarkOperation(runner: AndroidJUnitRunner, private val op: ()
         cpuDurationMillis / iterations,
         droppedFrames / iterations,
         durationNanos / iterations,
-        (frames * 1_000_000_000L / durationNanos).toInt(),
+        // fps = counted frames per seconds converted into frames per nanoseconds, divided by duration in nanoseconds
+        // We don't convert the duration into seconds to avoid issues with rounding and possible division by 0
+        (frames * TimeUnit.SECONDS.toNanos(1) / durationNanos).toInt(),
         operationName
     )
 
     /**
      * Helps ensure that operations don't impact one another.
-     * Doesn't appear to currently have an impact on the sentry-uitest-android-benchmark.
+     * Doesn't appear to currently have an impact on the benchmark.
      */
     private fun isolate() {
         Thread.sleep(500)
         Runtime.getRuntime().gc()
+        Thread.sleep(100)
     }
 
     private val frameCallback = object : Choreographer.FrameCallback {
