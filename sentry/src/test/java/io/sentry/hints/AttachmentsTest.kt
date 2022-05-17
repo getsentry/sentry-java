@@ -34,7 +34,7 @@ class AttachmentsTest {
         hints.addAttachment(attachment1)
         hints.addAttachment(attachment2)
 
-        hints.clear()
+        hints.clearAttachments()
 
         assertEquals(emptyList(), hints.attachments)
     }

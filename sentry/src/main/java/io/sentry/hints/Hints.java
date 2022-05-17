@@ -80,11 +80,11 @@ public final class Hints {
   }
 
   public void replaceAttachments(@Nullable List<Attachment> attachments) {
-    clear();
+    clearAttachments();
     addAttachments(attachments);
   }
 
-  public void clear() {
+  public void clearAttachments() {
     attachments.clear();
   }
 
