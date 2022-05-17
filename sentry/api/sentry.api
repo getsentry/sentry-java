@@ -1638,7 +1638,6 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OKHTTP_RESPONSE Ljava/lang/String;
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
-	public static final field SENTRY_ATTACHMENTS Ljava/lang/String;
 	public static final field SENTRY_SCREENSHOT Ljava/lang/String;
 	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
 	public static final field SENTRY_TYPE_CHECK_HINT Ljava/lang/String;

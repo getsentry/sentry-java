@@ -36,12 +36,61 @@ class HintsTest {
     }
 
     @Test
-    fun `kotlin java interop for primitives does not work yet`() {
+    fun `kotlin java interop for primitives works for float`() {
         val hints = Hints()
+        hints.set("hint1", 1.3f)
+        assertEquals(1.3f, hints.getAs("hint1", Float::class.java))
+    }
 
+    @Test
+    fun `kotlin java interop for primitives works for double`() {
+        val hints = Hints()
+        hints.set("hint1", 1.4)
+        assertEquals(1.4, hints.getAs("hint1", Double::class.java))
+    }
+
+    @Test
+    fun `kotlin java interop for primitives works for long`() {
+        val hints = Hints()
         hints.set("hint1", 1718L)
+        assertEquals(1718L, hints.getAs("hint1", Long::class.java))
+    }
 
-        assertNull(hints.getAs("hint1", Long::class.java))
+    @Test
+    fun `kotlin java interop for primitives works for int`() {
+        val hints = Hints()
+        hints.set("hint1", 123)
+        assertEquals(123, hints.getAs("hint1", Int::class.java))
+    }
+
+    @Test
+    fun `kotlin java interop for primitives works for short`() {
+        val hints = Hints()
+        val s: Short = 123
+        hints.set("hint1", s)
+        assertEquals(s, hints.getAs("hint1", Short::class.java))
+    }
+
+    @Test
+    fun `kotlin java interop for primitives works for byte`() {
+        val hints = Hints()
+        val b: Byte = 1
+        hints.set("hint1", b)
+        assertEquals(b, hints.getAs("hint1", Byte::class.java))
+    }
+
+    @Test
+    fun `kotlin java interop for primitives works for char`() {
+        val hints = Hints()
+        hints.set("hint1", 'a')
+        assertEquals('a', hints.getAs("hint1", Char::class.java))
+    }
+
+    @Test
+    fun `kotlin java interop for primitives works for boolean`() {
+        val hints = Hints()
+        hints.set("hint1", true)
+        assertEquals(true, hints.getAs("hint1", Boolean::class.java))
     }
 
     @Test
