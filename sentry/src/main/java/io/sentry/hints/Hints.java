@@ -38,17 +38,17 @@ public final class Hints {
     primitiveMappings.put("double", Double.class);
   }
 
-  public void set(@NotNull String hintType, @Nullable Object hint) {
-    internalStorage.put(hintType, hint);
+  public void set(@NotNull String name, @Nullable Object hint) {
+    internalStorage.put(name, hint);
   }
 
-  public @Nullable Object get(@NotNull String hintName) {
-    return internalStorage.get(hintName);
+  public @Nullable Object get(@NotNull String name) {
+    return internalStorage.get(name);
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends Object> @Nullable T getAs(@NotNull String hintName, @NotNull Class<T> clazz) {
-    Object hintValue = internalStorage.get(hintName);
+  public <T extends Object> @Nullable T getAs(@NotNull String name, @NotNull Class<T> clazz) {
+    Object hintValue = internalStorage.get(name);
 
     if (clazz.isInstance(hintValue)) {
       return (T) hintValue;
@@ -59,8 +59,8 @@ public final class Hints {
     }
   }
 
-  public void remove(@NotNull String hintName) {
-    internalStorage.remove(hintName);
+  public void remove(@NotNull String name) {
+    internalStorage.remove(name);
   }
 
   public void addAttachment(@Nullable Attachment attachment) {
