@@ -102,7 +102,7 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(getEvent(), hints)
         sut.process(event, hints)
 
-        assertNull(hints.getScreenshot())
+        assertNull(hints.screenshot)
     }
 
     @Test
