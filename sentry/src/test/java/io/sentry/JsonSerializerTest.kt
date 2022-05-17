@@ -862,6 +862,34 @@ class JsonSerializerTest {
     }
 
     @Test
+    fun `Primitives can be serialized inside request data`() {
+        val request = Request()
+
+        request.data = JsonReflectionObjectSerializerTest.ClassWithPrimitiveFields(
+            17,
+            3,
+            'x',
+            9001,
+            0.9f,
+            0.99,
+            true
+        )
+
+        val serialized = serializeToString(request)
+        val deserialized = fixture.serializer.deserialize(StringReader(serialized), Request::class.java)
+
+        val deserializedData = deserialized?.data as? Map<String, Any>
+        assertNotNull(deserializedData)
+        assertEquals(17, deserializedData["byte"])
+        assertEquals(3, deserializedData["short"])
+        assertEquals("x", deserializedData["char"])
+        assertEquals(9001, deserializedData["integer"])
+        assertEquals(0.9, deserializedData["float"])
+        assertEquals(0.99, deserializedData["double"])
+        assertEquals(true, deserializedData["boolean"])
+    }
+
+    @Test
     fun `json serializer uses logger set on SentryOptions`() {
         val logger = mock<ILogger>()
         val options = SentryOptions()

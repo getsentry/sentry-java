@@ -26,8 +26,8 @@ class JsonReflectionObjectSerializerTest {
             true
         )
         val expected = mapOf(
-            "byte" to 17,
-            "short" to 3,
+            "byte" to 17.toByte(),
+            "short" to 3.toShort(),
             "char" to "x",
             "integer" to 9001,
             "float" to 0.9f,
