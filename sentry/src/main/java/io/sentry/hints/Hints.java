@@ -12,6 +12,7 @@ public final class Hints {
 
   private final @NotNull Map<String, Object> internalStorage = new HashMap<String, Object>();
   private final @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
+  private @Nullable Attachment screenshot = null;
 
   public static @NotNull Hints withAttachment(@Nullable Attachment attachment) {
     @NotNull final Hints hints = new Hints();
@@ -68,14 +69,12 @@ public final class Hints {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public void addAttachments(@Nullable List<Attachment> attachments) {
     if (attachments != null) {
       this.attachments.addAll(attachments);
     }
   }
 
-  @SuppressWarnings("unchecked")
   public @NotNull List<Attachment> getAttachments() {
     return new CopyOnWriteArrayList<>(attachments);
   }
@@ -87,6 +86,14 @@ public final class Hints {
 
   public void clear() {
     attachments.clear();
+  }
+
+  public void setScreenshot(@Nullable Attachment screenshot) {
+    this.screenshot = screenshot;
+  }
+
+  public @Nullable Attachment getScreenshot() {
+    return screenshot;
   }
 
   private final Map<String, Class<?>> primitiveMappings;

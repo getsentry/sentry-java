@@ -1,7 +1,5 @@
 package io.sentry;
 
-import static io.sentry.TypeCheckHint.SENTRY_SCREENSHOT;
-
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.DiskFlushNotification;
@@ -229,7 +227,7 @@ public final class SentryClient implements ISentryClient {
   private @Nullable List<Attachment> getAttachments(final @NotNull Hints hints) {
     @NotNull final List<Attachment> attachments = hints.getAttachments();
 
-    @Nullable final Attachment screenshot = hints.getAs(SENTRY_SCREENSHOT, Attachment.class);
+    @Nullable final Attachment screenshot = hints.getScreenshot();
     if (screenshot != null) {
       attachments.add(screenshot);
     }

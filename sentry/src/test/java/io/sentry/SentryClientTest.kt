@@ -14,7 +14,6 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
@@ -1284,7 +1283,7 @@ class SentryClientTest {
     fun `screenshot is added to the envelope from the hint`() {
         val sut = fixture.getSut()
         val attachment = Attachment.fromScreenshot(byteArrayOf())
-        val hints = Hints().also { it.set(SENTRY_SCREENSHOT, attachment) }
+        val hints = Hints().also { it.screenshot = attachment }
 
         sut.captureEvent(SentryEvent(), hints)
 
@@ -1304,7 +1303,7 @@ class SentryClientTest {
         fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
         val sut = fixture.getSut()
         val attachment = Attachment.fromScreenshot(byteArrayOf())
-        val hints = Hints().also { it.set(SENTRY_SCREENSHOT, attachment) }
+        val hints = Hints().also { it.screenshot = attachment }
 
         sut.captureEvent(SentryEvent(), hints)
 
@@ -1873,7 +1872,7 @@ class SentryClientTest {
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
         override fun execute(event: SentryEvent, hints: Hints): SentryEvent? {
-            hints.remove(SENTRY_SCREENSHOT)
+            hints.screenshot = null
 
             return event
         }
