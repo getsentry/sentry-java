@@ -1599,7 +1599,7 @@ class SentryClientTest {
 
         sut.captureException(IllegalStateException(), Hints.withAttachment(fixture.attachment))
 
-        thenEnvelopeIsSentWith(1, 0, 1)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 0, attachmentCount = 1)
     }
 
     @Test
@@ -1610,7 +1610,7 @@ class SentryClientTest {
         scope.addAttachment(fixture.attachment2)
         sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
 
-        thenEnvelopeIsSentWith(1, 1, 2)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 2)
     }
 
     @Test
@@ -1627,7 +1627,7 @@ class SentryClientTest {
         scope.addAttachment(fixture.attachment2)
         sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
 
-        thenEnvelopeIsSentWith(1, 1, 3)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 3)
     }
 
     @Test
@@ -1643,7 +1643,7 @@ class SentryClientTest {
         scope.addAttachment(fixture.attachment2)
         sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
 
-        thenEnvelopeIsSentWith(1, 1, 1)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 1)
     }
 
     @Test
@@ -1669,7 +1669,7 @@ class SentryClientTest {
         scope.addAttachment(fixture.attachment2)
         sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
 
-        thenEnvelopeIsSentWith(1, 1, 3)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 3)
     }
 
     @Test
@@ -1694,7 +1694,7 @@ class SentryClientTest {
         scope.addAttachment(fixture.attachment2)
         sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
 
-        thenEnvelopeIsSentWith(1, 1, 1)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 1)
     }
 
     @Test
@@ -1708,7 +1708,7 @@ class SentryClientTest {
             Hints.withAttachment(fixture.attachment)
         )
 
-        thenEnvelopeIsSentWith(0, 0, 1, 1)
+        thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 0, attachmentCount = 1, transactionCount = 1)
     }
 
     @Test
@@ -1724,7 +1724,7 @@ class SentryClientTest {
             Hints.withAttachment(fixture.attachment)
         )
 
-        thenEnvelopeIsSentWith(0, 0, 2, 1)
+        thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 0, attachmentCount = 2, transactionCount = 1)
     }
 
     @Test
@@ -1755,7 +1755,7 @@ class SentryClientTest {
             Hints.withAttachment(fixture.attachment)
         )
 
-        thenEnvelopeIsSentWith(0, 0, 3, 1)
+        thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 0, attachmentCount = 3, transactionCount = 1)
     }
 
     @Test
@@ -1785,7 +1785,7 @@ class SentryClientTest {
             Hints.withAttachment(fixture.attachment)
         )
 
-        thenEnvelopeIsSentWith(0, 0, 1, 1)
+        thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 0, attachmentCount = 1, transactionCount = 1)
     }
 
     @Test
@@ -1801,7 +1801,7 @@ class SentryClientTest {
 
         sut.captureException(IllegalStateException(), scope)
 
-        thenEnvelopeIsSentWith(1, 1, 0)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 0)
     }
 
     @Test
@@ -1818,7 +1818,7 @@ class SentryClientTest {
 
         sut.captureException(IllegalStateException(), scope)
 
-        thenEnvelopeIsSentWith(1, 1, 0)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 0)
     }
 
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): Scope {
