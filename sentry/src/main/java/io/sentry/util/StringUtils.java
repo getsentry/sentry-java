@@ -109,11 +109,6 @@ public final class StringUtils {
       // Convert message digest into hex value
       final StringBuilder stringBuilder = new StringBuilder(no.toString(16));
 
-      // Add preceding 0s to make it 32 bit
-      while (stringBuilder.length() < 32) {
-        stringBuilder.insert(0, "0");
-      }
-
       // return the HashText
       return stringBuilder.toString();
     }
