@@ -52,14 +52,15 @@ android {
     buildTypes {
         getByName("debug") {
             isDebuggable = false
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
         }
         getByName("release") {
             isDebuggable = false
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
         }
