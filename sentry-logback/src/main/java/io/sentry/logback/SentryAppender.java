@@ -42,6 +42,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   @Override
   public void start() {
+    // NOTE: logback.xml properties will only be applied if the SDK has not yet been initialized
     if (!Sentry.isEnabled()) {
       if (options.getDsn() == null || !options.getDsn().endsWith("_IS_UNDEFINED")) {
         options.setEnableExternalConfiguration(true);
@@ -54,8 +55,6 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
           addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
         }
       } else {
-        // NOTE: logback.xml properties will not be applied in this case as the SDK has already been
-        // initialized
         options
             .getLogger()
             .log(SentryLevel.WARNING, "DSN is null. SentryAppender is not being initialized");
