@@ -164,4 +164,14 @@ class UserInteractionIntegrationTest {
 
         verify(fixture.window).callback = delegate
     }
+
+    @Test
+    fun `stops tracing on activity paused`() {
+        val callback = mock<SentryWindowCallback>()
+        val sut = fixture.getSut(callback)
+
+        sut.onActivityPaused(fixture.activity)
+
+        verify(callback).stopTracking()
+    }
 }

@@ -697,6 +697,8 @@ public final class Sentry {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return getCurrentHub()
         .startTransaction(
@@ -705,6 +707,8 @@ public final class Sentry {
             bindToScope,
             startTimestamp,
             waitForChildren,
+            idleTimeout,
+            trimEnd,
             transactionFinishedCallback);
   }
 

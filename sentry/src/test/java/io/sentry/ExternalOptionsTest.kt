@@ -160,6 +160,13 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with idleTimeout using external properties`() {
+        withPropertiesFile("idle-timeout=2000") {
+            assertEquals(2000L, it.idleTimeout)
+        }
+    }
+
+    @Test
     fun `creates options with ignored exception types using external properties`() {
         val logger = mock<ILogger>()
         // Setting few types of classes:

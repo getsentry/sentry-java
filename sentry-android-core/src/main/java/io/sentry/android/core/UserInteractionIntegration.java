@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
 import android.os.Bundle;
 import android.view.Window;
 import io.sentry.IHub;
@@ -15,7 +14,6 @@ import io.sentry.android.core.internal.gestures.SentryWindowCallback;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +37,8 @@ public final class UserInteractionIntegration
         classLoader.isClassAvailable("androidx.core.view.ScrollingView", options);
   }
 
-  private void startTracking(final @Nullable Window window, final @NotNull Context context) {
+  private void startTracking(final @NotNull Activity activity) {
+    final Window window = activity.getWindow();
     if (window == null) {
       if (options != null) {
         options.getLogger().log(SentryLevel.INFO, "Window was null in startTracking");
@@ -54,13 +53,13 @@ public final class UserInteractionIntegration
       }
 
       final SentryGestureListener gestureListener =
-          new SentryGestureListener(
-              new WeakReference<>(window), hub, options, isAndroidXScrollViewAvailable);
-      window.setCallback(new SentryWindowCallback(delegate, context, gestureListener, options));
+          new SentryGestureListener(activity, hub, options, isAndroidXScrollViewAvailable);
+      window.setCallback(new SentryWindowCallback(delegate, activity, gestureListener, options));
     }
   }
 
-  private void stopTracking(final @Nullable Window window) {
+  private void stopTracking(final @NotNull Activity activity) {
+    final Window window = activity.getWindow();
     if (window == null) {
       if (options != null) {
         options.getLogger().log(SentryLevel.INFO, "Window was null in stopTracking");
@@ -70,6 +69,7 @@ public final class UserInteractionIntegration
 
     final Window.Callback current = window.getCallback();
     if (current instanceof SentryWindowCallback) {
+      ((SentryWindowCallback) current).stopTracking();
       if (((SentryWindowCallback) current).getDelegate() instanceof NoOpWindowCallback) {
         window.setCallback(null);
       } else {
@@ -86,12 +86,12 @@ public final class UserInteractionIntegration
 
   @Override
   public void onActivityResumed(@NotNull Activity activity) {
-    startTracking(activity.getWindow(), activity);
+    startTracking(activity);
   }
 
   @Override
   public void onActivityPaused(@NotNull Activity activity) {
-    stopTracking(activity.getWindow());
+    stopTracking(activity);
   }
 
   @Override

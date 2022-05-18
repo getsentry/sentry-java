@@ -1,8 +1,10 @@
 package io.sentry.android.core;
 
 import static android.content.Context.ACTIVITY_SERVICE;
+import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 import static android.os.BatteryManager.EXTRA_TEMPERATURE;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
@@ -209,13 +211,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setThreads(final @NotNull SentryEvent event) {
     if (event.getThreads() != null) {
       for (SentryThread thread : event.getThreads()) {
-        thread.setCurrent(MainThreadChecker.isMainThread(thread));
+        if (thread.isCurrent() == null) {
+          thread.setCurrent(MainThreadChecker.isMainThread(thread));
+        }
       }
     }
   }
 
   private void setPackageInfo(final @NotNull SentryBaseEvent event, final @NotNull App app) {
-    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
+    final PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, PackageManager.GET_PERMISSIONS, logger);
     if (packageInfo != null) {
       String versionCode = ContextUtils.getVersionCode(packageInfo);
 
@@ -727,10 +732,33 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return os;
   }
 
+  @SuppressLint("NewApi") // we perform an if-check for that, but lint fails to recognize
   private void setAppPackageInfo(final @NotNull App app, final @NotNull PackageInfo packageInfo) {
     app.setAppIdentifier(packageInfo.packageName);
     app.setAppVersion(packageInfo.versionName);
     app.setAppBuild(ContextUtils.getVersionCode(packageInfo));
+
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
+      final Map<String, String> permissions = new HashMap<>();
+      final String[] requestedPermissions = packageInfo.requestedPermissions;
+      final int[] requestedPermissionsFlags = packageInfo.requestedPermissionsFlags;
+
+      if (requestedPermissions != null
+          && requestedPermissions.length > 0
+          && requestedPermissionsFlags != null
+          && requestedPermissionsFlags.length > 0) {
+        for (int i = 0; i < requestedPermissions.length; i++) {
+          String permission = requestedPermissions[i];
+          permission = permission.substring(permission.lastIndexOf('.') + 1);
+
+          final boolean granted =
+              (requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED)
+                  == REQUESTED_PERMISSION_GRANTED;
+          permissions.put(permission, granted ? "granted" : "not_granted");
+        }
+      }
+      app.setPermissions(permissions);
+    }
   }
 
   /**

@@ -3,13 +3,18 @@ package io.sentry.android.core.internal.gestures;
 import static io.sentry.TypeCheckHint.ANDROID_MOTION_EVENT;
 import static io.sentry.TypeCheckHint.ANDROID_VIEW;
 
+import android.app.Activity;
+import android.content.res.Resources;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
+import io.sentry.ITransaction;
+import io.sentry.Scope;
 import io.sentry.SentryLevel;
+import io.sentry.SpanStatus;
 import io.sentry.android.core.SentryAndroidOptions;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -18,23 +23,30 @@ import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
 public final class SentryGestureListener implements GestureDetector.OnGestureListener {
 
-  private final @NotNull WeakReference<Window> windowRef;
+  static final String UI_ACTION = "ui.action";
+
+  private final @NotNull WeakReference<Activity> activityRef;
   private final @NotNull IHub hub;
   private final @NotNull SentryAndroidOptions options;
   private final boolean isAndroidXAvailable;
 
+  private @Nullable WeakReference<View> activeView = null;
+  private @Nullable ITransaction activeTransaction = null;
+  private @Nullable String activeEventType = null;
+
   private final ScrollState scrollState = new ScrollState();
 
   public SentryGestureListener(
-      final @NotNull WeakReference<Window> windowRef,
+      final @NotNull Activity currentActivity,
       final @NotNull IHub hub,
       final @NotNull SentryAndroidOptions options,
       final boolean isAndroidXAvailable) {
-    this.windowRef = windowRef;
+    this.activityRef = new WeakReference<>(currentActivity);
     this.hub = hub;
     this.options = options;
     this.isAndroidXAvailable = isAndroidXAvailable;
@@ -60,6 +72,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         scrollState.type,
         Collections.singletonMap("direction", direction),
         motionEvent);
+    startTracing(scrollTarget, scrollState.type);
     scrollState.reset();
   }
 
@@ -97,6 +110,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     addBreadcrumb(target, "click", Collections.emptyMap(), motionEvent);
+    startTracing(target, "click");
     return false;
   }
 
@@ -178,12 +192,133 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(
-            eventType, ViewUtils.getResourceId(target), className, additionalData),
+            eventType, ViewUtils.getResourceIdWithFallback(target), className, additionalData),
         hintMap);
   }
 
+  private void startTracing(final @NotNull View target, final @NotNull String eventType) {
+    if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
+      return;
+    }
+
+    final Activity activity = activityRef.get();
+    if (activity == null) {
+      options.getLogger().log(SentryLevel.DEBUG, "Activity is null, no transaction captured.");
+      return;
+    }
+
+    final String viewId;
+    try {
+      viewId = ViewUtils.getResourceId(target);
+    } catch (Resources.NotFoundException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "View id cannot be retrieved from Resources, no transaction captured.");
+      return;
+    }
+
+    final View view = (activeView != null) ? activeView.get() : null;
+    if (activeTransaction != null) {
+      if (target.equals(view)
+          && eventType.equals(activeEventType)
+          && !activeTransaction.isFinished()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The view with id: "
+                    + viewId
+                    + " already has an ongoing transaction assigned. Rescheduling finish");
+
+        final Long idleTimeout = options.getIdleTimeout();
+        if (idleTimeout != null) {
+          // reschedule the finish task for the idle transaction, so it keeps running for the same
+          // view
+          activeTransaction.scheduleFinish(idleTimeout);
+        }
+        return;
+      } else {
+        // as we allow a single UI transaction running on the bound Scope, we finish the previous
+        // one, if it's a new view
+        stopTracing(SpanStatus.OK);
+      }
+    }
+
+    // we can only bind to the scope if there's no running transaction
+    final String name = getActivityName(activity) + "." + viewId;
+    final String op = UI_ACTION + "." + eventType;
+    final ITransaction transaction =
+        hub.startTransaction(name, op, true, options.getIdleTimeout(), true);
+
+    hub.configureScope(
+        scope -> {
+          applyScope(scope, transaction);
+        });
+
+    activeTransaction = transaction;
+    activeView = new WeakReference<>(target);
+    activeEventType = eventType;
+  }
+
+  void stopTracing(final @NotNull SpanStatus status) {
+    if (activeTransaction != null) {
+      activeTransaction.finish(status);
+    }
+    hub.configureScope(
+        scope -> {
+          clearScope(scope);
+        });
+    activeTransaction = null;
+    if (activeView != null) {
+      activeView.clear();
+    }
+    activeEventType = null;
+  }
+
+  @VisibleForTesting
+  void clearScope(final @NotNull Scope scope) {
+    scope.withTransaction(
+        transaction -> {
+          if (transaction == activeTransaction) {
+            scope.clearTransaction();
+          }
+        });
+  }
+
+  @VisibleForTesting
+  void applyScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+    scope.withTransaction(
+        scopeTransaction -> {
+          // we'd not like to overwrite existent transactions bound to the Scope manually
+          if (scopeTransaction == null) {
+            scope.setTransaction(transaction);
+          } else {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Transaction '%s' won't be bound to the Scope since there's one already in there.",
+                    transaction.getName());
+          }
+        });
+  }
+
+  private @NotNull String getActivityName(final @NotNull Activity activity) {
+    return activity.getClass().getSimpleName();
+  }
+
   private @Nullable View ensureWindowDecorView(final @NotNull String caller) {
-    final Window window = windowRef.get();
+    final Activity activity = activityRef.get();
+    if (activity == null) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Activity is null in " + caller + ". No breadcrumb captured.");
+      return null;
+    }
+
+    final Window window = activity.getWindow();
     if (window == null) {
       options
           .getLogger()

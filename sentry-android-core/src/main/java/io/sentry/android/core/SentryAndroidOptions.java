@@ -87,6 +87,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Interval for profiling traces in milliseconds. Defaults to 100 times per second */
   private int profilingTracesIntervalMillis = 1_000 / 100;
 
+  /** Enables the Auto instrumentation for user interaction tracing. */
+  private boolean enableUserInteractionTracing = false;
+
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
@@ -282,5 +285,13 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setAttachScreenshot(boolean attachScreenshot) {
     this.attachScreenshot = attachScreenshot;
+  }
+
+  public boolean isEnableUserInteractionTracing() {
+    return enableUserInteractionTracing;
+  }
+
+  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
+    this.enableUserInteractionTracing = enableUserInteractionTracing;
   }
 }
