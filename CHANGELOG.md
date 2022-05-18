@@ -21,6 +21,7 @@
 ### Fixes
 
 - SentryThread.current flag will not be overridden by DefaultAndroidEventProcessor if already set ([#2050](https://github.com/getsentry/sentry-java/pull/2050))
+- Fix serialization of Long inside of Request.data ([#2051](https://github.com/getsentry/sentry-java/pull/2051))
 
 ## 6.0.0-beta.3
 
