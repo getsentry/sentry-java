@@ -5,6 +5,7 @@ import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
+import io.sentry.HubAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -42,7 +43,6 @@ public class SentryHandler extends Handler {
 
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.SEVERE;
-  private @NotNull SentryOptions options;
 
   /** Creates an instance of SentryHandler. */
   public SentryHandler() {
@@ -61,7 +61,6 @@ public class SentryHandler extends Handler {
   /** Creates an instance of SentryHandler. */
   @TestOnly
   SentryHandler(final @NotNull SentryOptions options, final boolean configureFromLogManager) {
-    this.options = options;
     setFilter(new DropSentryFilter());
     if (configureFromLogManager) {
       retrieveProperties();
@@ -202,8 +201,9 @@ public class SentryHandler extends Handler {
       mdcProperties =
           CollectionUtils.filterMapEntries(mdcProperties, entry -> entry.getValue() != null);
       if (!mdcProperties.isEmpty()) {
-        if (!options.getContextTags().isEmpty()) {
-          for (final String contextTag : options.getContextTags()) {
+        final List<String> contextTags = HubAdapter.getInstance().getOptions().getContextTags();
+        if (!contextTags.isEmpty()) {
+          for (final String contextTag : contextTags) {
             // if mdc tag is listed in SentryOptions, apply as event tag
             if (mdcProperties.containsKey(contextTag)) {
               event.setTag(contextTag, mdcProperties.get(contextTag));
