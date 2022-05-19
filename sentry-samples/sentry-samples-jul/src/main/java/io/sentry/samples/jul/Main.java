@@ -11,6 +11,9 @@ public class Main {
   private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
 
   public static void main(String[] args) throws Exception {
+    // instead of the following line you can also pass
+    // -Djava.util.logging.config.file=.../logging.properties to the
+    // java command
     LogManager.getLogManager()
         .readConfiguration(Main.class.getClassLoader().getResourceAsStream("logging.properties"));
     LOGGER.config("Hello Sentry!");
