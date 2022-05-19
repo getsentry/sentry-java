@@ -3,6 +3,7 @@ package io.sentry.uitest.android.benchmark
 import android.view.Choreographer
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Sentry
@@ -10,6 +11,7 @@ import io.sentry.android.core.SentryAndroid
 import io.sentry.uitest.android.benchmark.util.BenchmarkOperation
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.assertTrue
@@ -21,7 +23,7 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
 
     @BeforeTest
     fun setUp() {
-//        IdlingRegistry.getInstance().register(BenchmarkActivity.scrollingIdlingResource)
+        IdlingRegistry.getInstance().register(BenchmarkActivity.activityStartedIdlingResource)
         // Must run on the main thread to get the main thread choreographer.
         runner.runOnMainSync {
             choreographer = Choreographer.getInstance()
@@ -30,44 +32,52 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
 
     @AfterTest
     fun cleanup() {
-//        IdlingRegistry.getInstance().unregister(BenchmarkActivity.scrollingIdlingResource)
+        IdlingRegistry.getInstance().unregister(BenchmarkActivity.activityStartedIdlingResource)
     }
 
     @Test
     fun benchmarkSdkInit() {
 
-        // We compare two operation that are the same. We expect the increases to be negligible, as the results
-        // should be very similar.
-        val op1 = BenchmarkOperation(choreographer) {
-            runner.runOnMainSync {  }
-            val benchmarkScenario = launchActivity<BenchmarkActivity>()
-            benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
-        }
-        val op2 = BenchmarkOperation(
-            choreographer,
-            op = {
-                runner.runOnMainSync {
-                    SentryAndroid.init(context) {
-                        it.dsn = "https://key@host/proj"
-                    }
-                }
-                val benchmarkScenario = launchActivity<BenchmarkActivity>()
-                benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
-            },
-            after = {
-                Sentry.close()
+        // We compare starting an activity with and without the sdk init, to measure its impact on startup time.
+        val opNoSdk = getOperation()
+        val opSimpleSdk = getOperation {
+            SentryAndroid.init(context) {
+                it.dsn = "https://key@host/proj"
             }
-        )
-        val comparisonResult = BenchmarkOperation.compare(op1, "Nothing", op2, "Init")
+        }
+        val opNoSdk2 = getOperation()
+        val opPerfProfilingSdk = getOperation {
+            SentryAndroid.init(context) {
+                it.dsn = "https://key@host/proj"
+                it.isProfilingEnabled = true
+                it.isEnableAutoActivityLifecycleTracing = true
+                it.tracesSampleRate = 1.0
+            }
+        }
+        val simpleSdkResult = BenchmarkOperation.compare(opNoSdk, "No Sdk", opSimpleSdk, "Simple Sdk")
+        val perfProfilingSdkResult = BenchmarkOperation.compare(opNoSdk2, "No Sdk", opPerfProfilingSdk, "Sdk with perf and profiling")
 
-        assertTrue { comparisonResult.durationIncreaseNanos > 0 }
-//        assertTrue { comparisonResult.durationIncrease < 1 }
-        assertTrue { comparisonResult.cpuTimeIncreaseMillis > 0 }
-//        assertTrue { comparisonResult.cpuTimeIncrease < 1 }
-//        assertTrue { comparisonResult.fpsDecrease >= -2 }
-//        assertTrue { comparisonResult.fpsDecrease < 2 }
-//        assertTrue { comparisonResult.droppedFramesIncrease > 0 }
-//        assertTrue { comparisonResult.droppedFramesIncrease < 1 }
+        val threshold = TimeUnit.MILLISECONDS.toNanos(100)
+        assertTrue { simpleSdkResult.durationIncreaseNanos in 0..threshold }
+        assertTrue { simpleSdkResult.cpuTimeIncreaseMillis in 0..threshold }
+        assertTrue { perfProfilingSdkResult.durationIncreaseNanos in simpleSdkResult.durationIncreaseNanos..threshold }
+        assertTrue { perfProfilingSdkResult.cpuTimeIncreaseMillis in simpleSdkResult.cpuTimeIncreaseMillis..threshold }
     }
+
+    private fun getOperation(init: (() -> Unit)? = null) = BenchmarkOperation(
+        choreographer,
+        before = { BenchmarkActivity.activityStartedIdlingResource.setIdle(false) },
+        op = {
+            runner.runOnMainSync {
+                init?.invoke()
+            }
+            val benchmarkScenario = launchActivity<BenchmarkActivity>()
+            Espresso.onIdle()
+            benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
+        },
+        after = {
+            Sentry.close()
+        }
+    )
 
 }

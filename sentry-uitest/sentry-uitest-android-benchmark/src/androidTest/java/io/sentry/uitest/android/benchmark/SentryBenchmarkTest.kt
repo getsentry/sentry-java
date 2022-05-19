@@ -66,7 +66,7 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
 
         // We compare the same operation with and without profiled transaction.
         // We expect the profiled transaction operation to be slower, but not slower than 5%.
-        val benchmarkOperationNoTransaction = BenchmarkOperation(choreographer, op = getOperation(runner) { null })
+        val benchmarkOperationNoTransaction = BenchmarkOperation(choreographer, op = getOperation(runner))
         val benchmarkOperationProfiled = BenchmarkOperation(
             choreographer,
             before = {

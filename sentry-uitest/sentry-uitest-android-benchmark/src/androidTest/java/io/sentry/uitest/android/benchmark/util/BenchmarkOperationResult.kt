@@ -10,7 +10,7 @@ internal data class BenchmarkOperationResult(
     val avgFramesPerSecond: Int,
     val operationName: String
 ) {
-    /** Compare two [BenchmarkOperationResult], calculating increases of each parameter. */
+    /** Compare two [BenchmarkOperation], calculating increases of each parameter. */
     fun compare(other: BenchmarkOperationResult): BenchmarkResult {
 
         // Measure average duration

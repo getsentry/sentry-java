@@ -83,7 +83,7 @@ internal class BenchmarkOperation(
     /** Run the operation and measure it, updating sentry-uitest-android-benchmark data. */
     private fun iterate() {
         before?.invoke()
-        Thread.sleep(500)
+        Thread.sleep(200)
         val startRealtimeNs = SystemClock.elapsedRealtimeNanos()
         val startCpuTimeMs = Process.getElapsedCpuTime()
 

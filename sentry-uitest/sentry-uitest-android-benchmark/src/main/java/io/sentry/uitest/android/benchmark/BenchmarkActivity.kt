@@ -13,7 +13,10 @@ class BenchmarkActivity : AppCompatActivity() {
     companion object {
 
         /** The activity will set this when scrolling. */
-        val scrollingIdlingResource = BooleanIdlingResource("sentry-uitest-android-benchmark-activity")
+        val scrollingIdlingResource = BooleanIdlingResource("sentry-uitest-android-benchmark-activityScrolling")
+
+        /** The activity will set this after setting the layout. */
+        val activityStartedIdlingResource = BooleanIdlingResource("sentry-uitest-android-benchmark-activityStarted")
     }
 
     /**
@@ -29,6 +32,7 @@ class BenchmarkActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_benchmark)
+        activityStartedIdlingResource.setIdle(true)
 
         // We show a simple list that changes the idling resource
         findViewById<RecyclerView>(R.id.benchmark_transaction_list).apply {
