@@ -79,7 +79,7 @@ internal data class BenchmarkOperationResult(
         println("Dropped frames are calculated based on a target of 60 frames per second ($totalExpectedFrames total frames).")
         println("[${other.operationName}] Average dropped frames: ${other.avgDroppedFrames}")
         println("[$operationName] Average dropped frames: $avgDroppedFrames")
-        println("Frame drop increase: %.2f%%(%.2f)".format(droppedFramesIncreasePercentage, droppedFramesIncrease))
+        println("Frame drop increase: %.2f%% (%.2f)".format(droppedFramesIncreasePercentage, droppedFramesIncrease))
         if (droppedFramesIncreasePercentage <= 0) {
             println("No measurable frame drop increase detected.")
         }
