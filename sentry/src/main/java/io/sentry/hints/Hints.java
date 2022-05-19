@@ -10,6 +10,20 @@ import org.jetbrains.annotations.Nullable;
 
 public final class Hints {
 
+  private static final @NotNull Map<String, Class<?>> PRIMITIVE_MAPPINGS;
+
+  static {
+    PRIMITIVE_MAPPINGS = new HashMap<>();
+    PRIMITIVE_MAPPINGS.put("boolean", Boolean.class);
+    PRIMITIVE_MAPPINGS.put("char", Character.class);
+    PRIMITIVE_MAPPINGS.put("byte", Byte.class);
+    PRIMITIVE_MAPPINGS.put("short", Short.class);
+    PRIMITIVE_MAPPINGS.put("int", Integer.class);
+    PRIMITIVE_MAPPINGS.put("long", Long.class);
+    PRIMITIVE_MAPPINGS.put("float", Float.class);
+    PRIMITIVE_MAPPINGS.put("double", Double.class);
+  }
+
   private final @NotNull Map<String, Object> internalStorage = new HashMap<String, Object>();
   private final @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
   private @Nullable Attachment screenshot = null;
@@ -24,18 +38,6 @@ public final class Hints {
     @NotNull final Hints hints = new Hints();
     hints.addAttachments(attachments);
     return hints;
-  }
-
-  public Hints() {
-    primitiveMappings = new HashMap<>();
-    primitiveMappings.put("boolean", Boolean.class);
-    primitiveMappings.put("char", Character.class);
-    primitiveMappings.put("byte", Byte.class);
-    primitiveMappings.put("short", Short.class);
-    primitiveMappings.put("int", Integer.class);
-    primitiveMappings.put("long", Long.class);
-    primitiveMappings.put("float", Float.class);
-    primitiveMappings.put("double", Double.class);
   }
 
   public void set(@NotNull String name, @Nullable Object hint) {
@@ -96,10 +98,8 @@ public final class Hints {
     return screenshot;
   }
 
-  private final Map<String, Class<?>> primitiveMappings;
-
   private boolean isCastablePrimitive(@Nullable Object hintValue, @NotNull Class<?> clazz) {
-    Class<?> nonPrimitiveClass = primitiveMappings.get(clazz.getCanonicalName());
+    Class<?> nonPrimitiveClass = PRIMITIVE_MAPPINGS.get(clazz.getCanonicalName());
     return hintValue != null
         && clazz.isPrimitive()
         && nonPrimitiveClass != null
