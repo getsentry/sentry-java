@@ -1,10 +1,10 @@
 package io.sentry.hints;
 
 import io.sentry.Attachment;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +25,7 @@ public final class Hints {
   }
 
   private final @NotNull Map<String, Object> internalStorage = new HashMap<String, Object>();
-  private final @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
+  private final @NotNull List<Attachment> attachments = new ArrayList<>();
   private @Nullable Attachment screenshot = null;
 
   public static @NotNull Hints withAttachment(@Nullable Attachment attachment) {
@@ -78,7 +78,7 @@ public final class Hints {
   }
 
   public @NotNull List<Attachment> getAttachments() {
-    return new CopyOnWriteArrayList<>(attachments);
+    return new ArrayList<>(attachments);
   }
 
   public void replaceAttachments(@Nullable List<Attachment> attachments) {
