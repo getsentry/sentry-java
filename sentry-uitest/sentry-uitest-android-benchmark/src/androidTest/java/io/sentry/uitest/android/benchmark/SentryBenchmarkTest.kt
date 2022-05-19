@@ -96,10 +96,10 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
             "ProfiledTransaction"
         )
 
-        assertTrue { comparisonResult.durationIncreasePercentage in -1F..5F }
-        assertTrue { comparisonResult.cpuTimeIncreasePercentage in -1F..5F }
-        assertTrue { comparisonResult.fpsDecreasePercentage in -1F..5F }
-        assertTrue { comparisonResult.droppedFramesIncreasePercentage in -1F..5F }
+        assertTrue { comparisonResult.durationIncreasePercentage in 0F..5F }
+        assertTrue { comparisonResult.cpuTimeIncreasePercentage in 0F..5F }
+        assertTrue { comparisonResult.fpsDecreasePercentage in 0F..5F }
+        assertTrue { comparisonResult.droppedFramesIncreasePercentage in 0F..5F }
     }
 
     /**
