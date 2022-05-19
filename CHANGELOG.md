@@ -12,6 +12,7 @@
 - Allow setting native Android SDK name during build ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
 - Include application permissions in Android events ([#2018](https://github.com/getsentry/sentry-java/pull/2018))
 - Automatically create transactions for UI events ([#1975](https://github.com/getsentry/sentry-java/pull/1975))
+- Calling Sentry.init and specifying contextTags now has an effect on the jul SentryAppender ([#2057](https://github.com/getsentry/sentry-java/pull/2057))
 
 ### Fixes
 
