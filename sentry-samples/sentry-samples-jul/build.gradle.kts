@@ -8,7 +8,6 @@ plugins {
 
 application {
     mainClass.set("io.sentry.samples.jul.Main")
-    applicationDefaultJvmArgs = mutableListOf("-Djava.util.logging.config.file=${project.projectDir}/src/main/resources/logging.properties")
 }
 
 configure<JavaPluginExtension> {
@@ -18,5 +17,5 @@ configure<JavaPluginExtension> {
 
 dependencies {
     implementation(projects.sentryJul)
-    implementation(Config.Libs.logbackClassic)
+    implementation(Config.Libs.slf4jJdk14)
 }
