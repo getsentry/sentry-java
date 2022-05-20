@@ -19,20 +19,4 @@ public final class LogUtils {
         sentrySdkHint != null ? sentrySdkHint.getClass().getCanonicalName() : "Hint",
         expectedClass.getCanonicalName());
   }
-
-  //  public static void logIfNotFlushable(
-  //      final @NotNull ILogger logger, final @Nullable Object sentrySdkHint) {
-  //    logger.log(
-  //        SentryLevel.DEBUG,
-  //        "%s is not Flushable",
-  //        sentrySdkHint != null ? sentrySdkHint.getClass().getCanonicalName() : "Hint");
-  //  }
-  //
-  //  public static void logIfNotRetryable(
-  //      final @NotNull ILogger logger, final @Nullable Object sentrySdkHint) {
-  //    logger.log(
-  //        SentryLevel.DEBUG,
-  //        "%s is not Retryable",
-  //        sentrySdkHint != null ? sentrySdkHint.getClass().getCanonicalName() : "Hint");
-  //  }
 }
