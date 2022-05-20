@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+* Upgrade gson to 2.9.0 to avoid CVE-2022-25647 ([#2062](https://github.com/getsentry/sentry-java/pull/2062))
+
 ## 5.7.4
 
 ### Fixes
