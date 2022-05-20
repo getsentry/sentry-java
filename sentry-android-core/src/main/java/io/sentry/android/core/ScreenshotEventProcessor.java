@@ -1,7 +1,6 @@
 package io.sentry.android.core;
 
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
-import static io.sentry.TypeCheckHint.SENTRY_SCREENSHOT;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -93,9 +92,7 @@ public final class ScreenshotEventProcessor
 
             if (byteArrayOutputStream.size() > 0) {
               // screenshot png is around ~100-150 kb
-              hints.set(
-                  SENTRY_SCREENSHOT,
-                  Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
+              hints.setScreenshot(Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
               hints.set(ANDROID_ACTIVITY, activity);
             } else {
               this.options

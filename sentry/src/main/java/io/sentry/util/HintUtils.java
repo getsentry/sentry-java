@@ -10,7 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Util class for Applying or not scope's data to an event */
+/** Util class dealing with Hints as not to pollute the Hints API with internal functionality */
 @ApiStatus.Internal
 public final class HintUtils {
 

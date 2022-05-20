@@ -14,7 +14,6 @@ import io.sentry.Attachment
 import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
-import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
 import io.sentry.hints.Hints
 import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
@@ -103,7 +102,7 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(getEvent(), hints)
         sut.process(event, hints)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hints.screenshot)
     }
 
     @Test
@@ -116,7 +115,7 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(SentryEvent(), hints)
         sut.process(event, hints)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hints.screenshot)
     }
 
     @Test
@@ -127,7 +126,7 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(getEvent(), hints)
         sut.process(event, hints)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hints.screenshot)
     }
 
     @Test
@@ -141,7 +140,7 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(getEvent(), hints)
         sut.process(event, hints)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hints.screenshot)
     }
 
     @Test
@@ -156,7 +155,7 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(getEvent(), hints)
         sut.process(event, hints)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hints.screenshot)
     }
 
     @Test
@@ -169,7 +168,7 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(getEvent(), hints)
         sut.process(event, hints)
 
-        val screenshot = hints[SENTRY_SCREENSHOT]
+        val screenshot = hints.screenshot
         assertTrue(screenshot is Attachment)
         assertEquals("screenshot.png", screenshot.filename)
         assertEquals("image/png", screenshot.contentType)
@@ -188,7 +187,7 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(getEvent(), hints)
         sut.process(event, hints)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hints.screenshot)
     }
 
     private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))
