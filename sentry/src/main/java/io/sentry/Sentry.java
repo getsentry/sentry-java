@@ -2,7 +2,7 @@ package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.FileUtils;
@@ -281,12 +281,12 @@ public final class Sentry {
    * Captures the event.
    *
    * @param event the event
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Hints hints) {
-    return getCurrentHub().captureEvent(event, hints);
+      final @NotNull SentryEvent event, final @Nullable Hint hint) {
+    return getCurrentHub().captureEvent(event, hint);
   }
 
   /**
@@ -325,12 +325,12 @@ public final class Sentry {
    * Captures the exception.
    *
    * @param throwable The exception.
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Hints hints) {
-    return getCurrentHub().captureException(throwable, hints);
+      final @NotNull Throwable throwable, final @Nullable Hint hint) {
+    return getCurrentHub().captureException(throwable, hint);
   }
 
   /**
@@ -346,11 +346,11 @@ public final class Sentry {
    * Adds a breadcrumb to the current Scope
    *
    * @param breadcrumb the breadcrumb
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    */
   public static void addBreadcrumb(
-      final @NotNull Breadcrumb breadcrumb, final @Nullable Hints hints) {
-    getCurrentHub().addBreadcrumb(breadcrumb, hints);
+      final @NotNull Breadcrumb breadcrumb, final @Nullable Hint hint) {
+    getCurrentHub().addBreadcrumb(breadcrumb, hint);
   }
 
   /**

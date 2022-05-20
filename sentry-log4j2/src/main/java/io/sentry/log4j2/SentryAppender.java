@@ -13,7 +13,7 @@ import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
@@ -139,16 +139,16 @@ public class SentryAppender extends AbstractAppender {
   @Override
   public void append(final @NotNull LogEvent eventObject) {
     if (eventObject.getLevel().isMoreSpecificThan(minimumEventLevel)) {
-      final Hints hints = new Hints();
-      hints.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
+      final Hint hint = new Hint();
+      hint.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
 
-      hub.captureEvent(createEvent(eventObject), hints);
+      hub.captureEvent(createEvent(eventObject), hint);
     }
     if (eventObject.getLevel().isMoreSpecificThan(minimumBreadcrumbLevel)) {
-      final Hints hints = new Hints();
-      hints.set(LOG4J_LOG_EVENT, eventObject);
+      final Hint hint = new Hint();
+      hint.set(LOG4J_LOG_EVENT, eventObject);
 
-      hub.addBreadcrumb(createBreadcrumb(eventObject), hints);
+      hub.addBreadcrumb(createBreadcrumb(eventObject), hint);
     }
   }
 

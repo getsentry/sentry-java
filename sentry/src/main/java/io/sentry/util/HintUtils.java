@@ -5,63 +5,63 @@ import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 import io.sentry.ILogger;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Cached;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Util class dealing with Hints as not to pollute the Hints API with internal functionality */
+/** Util class dealing with Hint as not to pollute the Hint API with internal functionality */
 @ApiStatus.Internal
 public final class HintUtils {
 
   private HintUtils() {}
 
   @ApiStatus.Internal
-  public static Hints createWithTypeCheckHint(Object hint) {
-    Hints hints = new Hints();
-    setTypeCheckHint(hints, hint);
-    return hints;
+  public static Hint createWithTypeCheckHint(Object typeCheckHint) {
+    Hint hint = new Hint();
+    setTypeCheckHint(hint, typeCheckHint);
+    return hint;
   }
 
   @ApiStatus.Internal
-  public static void setTypeCheckHint(@NotNull Hints hints, Object hint) {
-    hints.set(SENTRY_TYPE_CHECK_HINT, hint);
+  public static void setTypeCheckHint(@NotNull Hint hint, Object typeCheckHint) {
+    hint.set(SENTRY_TYPE_CHECK_HINT, typeCheckHint);
   }
 
   @ApiStatus.Internal
-  public static @Nullable Object getSentrySdkHint(@NotNull Hints hints) {
-    return hints.get(SENTRY_TYPE_CHECK_HINT);
+  public static @Nullable Object getSentrySdkHint(@NotNull Hint hint) {
+    return hint.get(SENTRY_TYPE_CHECK_HINT);
   }
 
   @ApiStatus.Internal
-  public static boolean hasType(@NotNull Hints hints, @NotNull Class<?> clazz) {
-    final Object sentrySdkHint = getSentrySdkHint(hints);
+  public static boolean hasType(@NotNull Hint hint, @NotNull Class<?> clazz) {
+    final Object sentrySdkHint = getSentrySdkHint(hint);
     return clazz.isInstance(sentrySdkHint);
   }
 
   @ApiStatus.Internal
   public static <T> void runIfDoesNotHaveType(
-      @NotNull Hints hints, @NotNull Class<T> clazz, SentryNullableConsumer<Object> lambda) {
+      @NotNull Hint hint, @NotNull Class<T> clazz, SentryNullableConsumer<Object> lambda) {
     runIfHasType(
-        hints,
+        hint,
         clazz,
         (ignored) -> {},
-        (hint, clazz2) -> {
-          lambda.accept(hint);
+        (value, clazz2) -> {
+          lambda.accept(value);
         });
   }
 
   @ApiStatus.Internal
   public static <T> void runIfHasType(
-      @NotNull Hints hints, @NotNull Class<T> clazz, SentryConsumer<T> lambda) {
-    runIfHasType(hints, clazz, lambda, (hint, clazz2) -> {});
+      @NotNull Hint hint, @NotNull Class<T> clazz, SentryConsumer<T> lambda) {
+    runIfHasType(hint, clazz, lambda, (value, clazz2) -> {});
   }
 
   @ApiStatus.Internal
   public static <T> void runIfHasTypeLogIfNot(
-      @NotNull Hints hints, @NotNull Class<T> clazz, ILogger logger, SentryConsumer<T> lambda) {
+      @NotNull Hint hint, @NotNull Class<T> clazz, ILogger logger, SentryConsumer<T> lambda) {
     runIfHasType(
-        hints,
+        hint,
         clazz,
         lambda,
         (sentrySdkHint, expectedClass) -> {
@@ -72,12 +72,12 @@ public final class HintUtils {
   @SuppressWarnings("unchecked")
   @ApiStatus.Internal
   public static <T> void runIfHasType(
-      @NotNull Hints hints,
+      @NotNull Hint hint,
       @NotNull Class<T> clazz,
       SentryConsumer<T> lambda,
       SentryFallbackConsumer fallbackLambda) {
-    Object sentrySdkHint = getSentrySdkHint(hints);
-    if (hasType(hints, clazz) && sentrySdkHint != null) {
+    Object sentrySdkHint = getSentrySdkHint(hint);
+    if (hasType(hint, clazz) && sentrySdkHint != null) {
       lambda.accept((T) sentrySdkHint);
     } else {
       fallbackLambda.accept(sentrySdkHint, clazz);
@@ -91,8 +91,8 @@ public final class HintUtils {
    * @return true if it should apply scope's data or false otherwise
    */
   @ApiStatus.Internal
-  public static boolean shouldApplyScopeData(@NotNull Hints hints) {
-    return !hasType(hints, Cached.class) || hasType(hints, ApplyScopeData.class);
+  public static boolean shouldApplyScopeData(@NotNull Hint hint) {
+    return !hasType(hint, Cached.class) || hasType(hint, ApplyScopeData.class);
   }
 
   @FunctionalInterface

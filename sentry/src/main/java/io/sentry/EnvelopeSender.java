@@ -2,7 +2,7 @@ package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.Flushable;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.hints.Retryable;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -34,7 +34,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   }
 
   @Override
-  protected void processFile(final @NotNull File file, final @NotNull Hints hints) {
+  protected void processFile(final @NotNull File file, final @NotNull Hint hint) {
     if (!file.isFile()) {
       logger.log(SentryLevel.DEBUG, "'%s' is not a file.", file.getAbsolutePath());
       return;
@@ -60,11 +60,11 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
         logger.log(
             SentryLevel.ERROR, "Failed to deserialize cached envelope %s", file.getAbsolutePath());
       } else {
-        hub.captureEnvelope(envelope, hints);
+        hub.captureEnvelope(envelope, hint);
       }
 
       HintUtils.runIfHasTypeLogIfNot(
-          hints,
+          hint,
           Flushable.class,
           logger,
           (flushable) -> {
@@ -80,7 +80,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       logger.log(
           SentryLevel.ERROR, e, "Failed to capture cached envelope %s", file.getAbsolutePath());
       HintUtils.runIfHasTypeLogIfNot(
-          hints,
+          hint,
           Retryable.class,
           logger,
           (retryable) -> {
@@ -90,7 +90,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     } finally {
       // Unless the transport marked this to be retried, it'll be deleted.
       HintUtils.runIfHasTypeLogIfNot(
-          hints,
+          hint,
           Retryable.class,
           logger,
           (retryable) -> {
@@ -113,10 +113,10 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   }
 
   @Override
-  public void processEnvelopeFile(final @NotNull String path, final @NotNull Hints hints) {
+  public void processEnvelopeFile(final @NotNull String path, final @NotNull Hint hint) {
     Objects.requireNonNull(path, "Path is required.");
 
-    processFile(new File(path), hints);
+    processFile(new File(path), hint);
   }
 
   private void safeDelete(final @NotNull File file, final @NotNull String errorMessageSuffix) {

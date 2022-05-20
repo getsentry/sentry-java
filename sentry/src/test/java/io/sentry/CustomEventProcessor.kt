@@ -1,7 +1,7 @@
 package io.sentry
 
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 
 class CustomEventProcessor : EventProcessor {
-    override fun process(event: SentryEvent, hints: Hints): SentryEvent? = null
+    override fun process(event: SentryEvent, hint: Hint): SentryEvent? = null
 }

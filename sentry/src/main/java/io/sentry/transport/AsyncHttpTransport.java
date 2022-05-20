@@ -9,7 +9,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
@@ -65,18 +65,18 @@ public final class AsyncHttpTransport implements ITransport {
   }
 
   @Override
-  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hints hints)
+  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
       throws IOException {
     // For now no caching on envelopes
     IEnvelopeCache currentEnvelopeCache = envelopeCache;
     boolean cached = false;
-    if (HintUtils.hasType(hints, Cached.class)) {
+    if (HintUtils.hasType(hint, Cached.class)) {
       currentEnvelopeCache = NoOpEnvelopeCache.getInstance();
       cached = true;
       options.getLogger().log(SentryLevel.DEBUG, "Captured Envelope is already cached");
     }
 
-    final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hints);
+    final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
 
     if (filteredEnvelope == null) {
       if (cached) {
@@ -84,7 +84,7 @@ public final class AsyncHttpTransport implements ITransport {
       }
     } else {
       SentryEnvelope envelopeThatMayIncludeClientReport;
-      if (HintUtils.hasType(hints, DiskFlushNotification.class)) {
+      if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
         envelopeThatMayIncludeClientReport =
             options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope);
       } else {
@@ -93,7 +93,7 @@ public final class AsyncHttpTransport implements ITransport {
 
       final Future<?> future =
           executor.submit(
-              new EnvelopeSender(envelopeThatMayIncludeClientReport, hints, currentEnvelopeCache));
+              new EnvelopeSender(envelopeThatMayIncludeClientReport, hint, currentEnvelopeCache));
 
       if (future != null && future.isCancelled()) {
         options
@@ -118,11 +118,11 @@ public final class AsyncHttpTransport implements ITransport {
           if (r instanceof EnvelopeSender) {
             final EnvelopeSender envelopeSender = (EnvelopeSender) r;
 
-            if (!HintUtils.hasType(envelopeSender.hints, Cached.class)) {
-              envelopeCache.store(envelopeSender.envelope, envelopeSender.hints);
+            if (!HintUtils.hasType(envelopeSender.hint, Cached.class)) {
+              envelopeCache.store(envelopeSender.envelope, envelopeSender.hint);
             }
 
-            markHintWhenSendingFailed(envelopeSender.hints, true);
+            markHintWhenSendingFailed(envelopeSender.hint, true);
             logger.log(SentryLevel.WARNING, "Envelope rejected");
           }
         };
@@ -156,12 +156,12 @@ public final class AsyncHttpTransport implements ITransport {
   /**
    * It marks the hints when sending has failed, so it's not necessary to wait the timeout
    *
-   * @param hints the Hints
+   * @param hint the Hints
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(final @NotNull Hints hints, final boolean retry) {
-    HintUtils.runIfHasType(hints, SubmissionResult.class, result -> result.setResult(false));
-    HintUtils.runIfHasType(hints, Retryable.class, retryable -> retryable.setRetry(retry));
+  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
+    HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
+    HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
   }
 
   private static final class AsyncConnectionThreadFactory implements ThreadFactory {
@@ -177,16 +177,16 @@ public final class AsyncHttpTransport implements ITransport {
 
   private final class EnvelopeSender implements Runnable {
     private final @NotNull SentryEnvelope envelope;
-    private final @NotNull Hints hints;
+    private final @NotNull Hint hint;
     private final @NotNull IEnvelopeCache envelopeCache;
     private final TransportResult failedResult = TransportResult.error();
 
     EnvelopeSender(
         final @NotNull SentryEnvelope envelope,
-        final @NotNull Hints hints,
+        final @NotNull Hint hint,
         final @NotNull IEnvelopeCache envelopeCache) {
       this.envelope = Objects.requireNonNull(envelope, "Envelope is required.");
-      this.hints = hints;
+      this.hint = hint;
       this.envelopeCache = Objects.requireNonNull(envelopeCache, "EnvelopeCache is required.");
     }
 
@@ -202,7 +202,7 @@ public final class AsyncHttpTransport implements ITransport {
       } finally {
         final TransportResult finalResult = result;
         HintUtils.runIfHasType(
-            hints,
+            hint,
             SubmissionResult.class,
             (submissionResult) -> {
               options
@@ -219,10 +219,10 @@ public final class AsyncHttpTransport implements ITransport {
     private @NotNull TransportResult flush() {
       TransportResult result = this.failedResult;
 
-      envelopeCache.store(envelope, hints);
+      envelopeCache.store(envelope, hint);
 
       HintUtils.runIfHasType(
-          hints,
+          hint,
           DiskFlushNotification.class,
           (diskFlushNotification) -> {
             diskFlushNotification.markFlushed();
@@ -246,7 +246,7 @@ public final class AsyncHttpTransport implements ITransport {
             // ignore e.g. 429 as we're not the ones actively dropping
             if (result.getResponseCode() >= 400 && result.getResponseCode() != 429) {
               HintUtils.runIfDoesNotHaveType(
-                  hints,
+                  hint,
                   Retryable.class,
                   (hint) -> {
                     options
@@ -260,7 +260,7 @@ public final class AsyncHttpTransport implements ITransport {
         } catch (IOException e) {
           // Failure due to IO is allowed to retry the event
           HintUtils.runIfHasType(
-              hints,
+              hint,
               Retryable.class,
               (retryable) -> {
                 retryable.setRetry(true);
@@ -276,7 +276,7 @@ public final class AsyncHttpTransport implements ITransport {
       } else {
         // If transportGate is blocking from sending, allowed to retry
         HintUtils.runIfHasType(
-            hints,
+            hint,
             Retryable.class,
             (retryable) -> {
               retryable.setRetry(true);

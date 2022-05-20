@@ -11,7 +11,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.SentryAndroidOptions;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
@@ -172,14 +172,14 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       className = target.getClass().getSimpleName();
     }
 
-    final Hints hints = new Hints();
-    hints.set(ANDROID_MOTION_EVENT, motionEvent);
-    hints.set(ANDROID_VIEW, target);
+    final Hint hint = new Hint();
+    hint.set(ANDROID_MOTION_EVENT, motionEvent);
+    hint.set(ANDROID_VIEW, target);
 
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(
             eventType, ViewUtils.getResourceId(target), className, additionalData),
-        hints);
+        hint);
   }
 
   private @Nullable View ensureWindowDecorView(final @NotNull String caller) {

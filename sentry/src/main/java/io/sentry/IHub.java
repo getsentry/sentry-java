@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -24,11 +24,11 @@ public interface IHub {
    * Captures the event.
    *
    * @param event the event
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hints hints);
+  SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint);
 
   /**
    * Captures the event.
@@ -64,11 +64,11 @@ public interface IHub {
    * Captures an envelope.
    *
    * @param envelope the SentryEnvelope to send.
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hints hints);
+  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
 
   /**
    * Captures an envelope.
@@ -77,18 +77,18 @@ public interface IHub {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope) {
-    return captureEnvelope(envelope, new Hints());
+    return captureEnvelope(envelope, new Hint());
   }
 
   /**
    * Captures the exception.
    *
    * @param throwable The exception.
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  SentryId captureException(@NotNull Throwable throwable, @Nullable Hints hints);
+  SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint);
 
   /**
    * Captures the exception.
@@ -120,9 +120,9 @@ public interface IHub {
    * Adds a breadcrumb to the current Scope
    *
    * @param breadcrumb the breadcrumb
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    */
-  void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hints hints);
+  void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint);
 
   /**
    * Adds a breadcrumb to the current Scope
@@ -130,7 +130,7 @@ public interface IHub {
    * @param breadcrumb the breadcrumb
    */
   default void addBreadcrumb(@NotNull Breadcrumb breadcrumb) {
-    addBreadcrumb(breadcrumb, new Hints());
+    addBreadcrumb(breadcrumb, new Hint());
   }
 
   /**
@@ -272,7 +272,7 @@ public interface IHub {
    *
    * @param transaction the transaction
    * @param traceState the trace state
-   * @param hints the hints
+   * @param hint the hints
    * @param profilingTraceData the profiling trace data
    * @return transaction's id
    */
@@ -281,7 +281,7 @@ public interface IHub {
   SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
-      @Nullable Hints hints,
+      @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData);
 
   /**
@@ -289,7 +289,7 @@ public interface IHub {
    *
    * @param transaction the transaction
    * @param traceState the trace state
-   * @param hints the hints
+   * @param hint the hints
    * @return transaction's id
    */
   @ApiStatus.Internal
@@ -297,15 +297,14 @@ public interface IHub {
   default SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
-      @Nullable Hints hints) {
-    return captureTransaction(transaction, traceState, hints, null);
+      @Nullable Hint hint) {
+    return captureTransaction(transaction, traceState, hint, null);
   }
 
   @ApiStatus.Internal
   @NotNull
-  default SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable Hints hints) {
-    return captureTransaction(transaction, null, hints);
+  default SentryId captureTransaction(@NotNull SentryTransaction transaction, @Nullable Hint hint) {
+    return captureTransaction(transaction, null, hint);
   }
 
   /**

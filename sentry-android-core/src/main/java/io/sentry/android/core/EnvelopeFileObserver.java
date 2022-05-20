@@ -9,7 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Cached;
 import io.sentry.hints.Flushable;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
@@ -57,11 +57,11 @@ final class EnvelopeFileObserver extends FileObserver {
 
     // TODO: Only some event types should be pass through?
 
-    final CachedEnvelopeHint hint = new CachedEnvelopeHint(flushTimeoutMillis, logger);
+    final CachedEnvelopeHint cachedHint = new CachedEnvelopeHint(flushTimeoutMillis, logger);
 
-    final Hints hints = HintUtils.createWithTypeCheckHint(hint);
+    final Hint hint = HintUtils.createWithTypeCheckHint(cachedHint);
 
-    envelopeSender.processEnvelopeFile(this.rootPath + File.separator + relativePath, hints);
+    envelopeSender.processEnvelopeFile(this.rootPath + File.separator + relativePath, hint);
   }
 
   private static final class CachedEnvelopeHint

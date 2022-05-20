@@ -22,7 +22,7 @@ import io.sentry.TransactionContext
 import io.sentry.UserFeedback
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -64,7 +64,7 @@ class RateLimiterTest {
 
         rateLimiter.updateRetryAfterLimits("50:transaction:key, 1:default;error;security:organization", null, 1)
 
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
         assertNotNull(result)
         assertEquals(1, result.items.count())
     }
@@ -80,7 +80,7 @@ class RateLimiterTest {
 
         rateLimiter.updateRetryAfterLimits("50:transaction:key, 2700:default;error;security:organization", null, 1)
 
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
         assertNull(result)
     }
 
@@ -95,7 +95,7 @@ class RateLimiterTest {
 
         rateLimiter.updateRetryAfterLimits("1:transaction:key, 1:default;error;security:organization", null, 1)
 
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
         assertNotNull(result)
         assertEquals(2, result.items.count())
     }
@@ -109,7 +109,7 @@ class RateLimiterTest {
 
         rateLimiter.updateRetryAfterLimits("50::key", null, 1)
 
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
         assertNull(result)
     }
 
@@ -122,7 +122,7 @@ class RateLimiterTest {
 
         rateLimiter.updateRetryAfterLimits("1::key, 60:default;error;security:organization", null, 1)
 
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
         assertNull(result)
     }
 
@@ -135,7 +135,7 @@ class RateLimiterTest {
 
         rateLimiter.updateRetryAfterLimits("60:error:key, 1:error:organization", null, 1)
 
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
         assertNull(result)
     }
 
@@ -148,7 +148,7 @@ class RateLimiterTest {
 
         rateLimiter.updateRetryAfterLimits("1:error:key, 5:error:organization", null, 1)
 
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
         assertNull(result)
     }
 
@@ -161,7 +161,7 @@ class RateLimiterTest {
 
         rateLimiter.updateRetryAfterLimits(null, null, 429)
 
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
         assertNull(result)
     }
 
@@ -186,7 +186,7 @@ class RateLimiterTest {
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem))
 
         rateLimiter.updateRetryAfterLimits(null, null, 429)
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
 
         assertNull(result)
 
@@ -218,7 +218,7 @@ class RateLimiterTest {
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem))
 
         rateLimiter.updateRetryAfterLimits("60:error:key, 1:error:organization", null, 1)
-        val result = rateLimiter.filter(envelope, Hints())
+        val result = rateLimiter.filter(envelope, Hint())
 
         assertNotNull(result)
         assertEquals(3, result.items.toList().size)

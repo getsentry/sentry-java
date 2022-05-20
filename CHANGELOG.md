@@ -6,8 +6,8 @@
 
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
 - Allow setting native Android SDK name during build ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
-- Hints are now used via a Hints object and passed into beforeSend and EventProcessor as @NotNull Hints object ([#2045](https://github.com/getsentry/sentry-java/pull/2045))
-- Attachments can be manipulated via hints ([#2046](https://github.com/getsentry/sentry-java/pull/2046))
+- Hints are now used via a Hint object and passed into beforeSend and EventProcessor as @NotNull Hint object ([#2045](https://github.com/getsentry/sentry-java/pull/2045))
+- Attachments can be manipulated via hint ([#2046](https://github.com/getsentry/sentry-java/pull/2046))
 
 ## 6.0.0-beta.3
 

@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -27,7 +27,7 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hints hints) {
+  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -37,13 +37,12 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEnvelope(
-      @NotNull SentryEnvelope envelope, @Nullable Hints hints) {
+  public @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hints hints) {
+  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -60,7 +59,7 @@ public final class NoOpHub implements IHub {
   public void close() {}
 
   @Override
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hints hints) {}
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {}
 
   @Override
   public void setLevel(@Nullable SentryLevel level) {}
@@ -121,7 +120,7 @@ public final class NoOpHub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Hints hints,
+      final @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
     return SentryId.EMPTY_ID;
   }

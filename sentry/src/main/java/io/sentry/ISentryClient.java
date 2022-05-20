@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -23,11 +23,11 @@ public interface ISentryClient {
    *
    * @param event the event
    * @param scope An optional scope to be applied to the event.
-   * @param hints SDK specific but provides high level information about the origin of the event.
+   * @param hint SDK specific but provides high level information about the origin of the event.
    * @return The Id (SentryId object) of the event.
    */
   @NotNull
-  SentryId captureEvent(@NotNull SentryEvent event, @Nullable Scope scope, @Nullable Hints hints);
+  SentryId captureEvent(@NotNull SentryEvent event, @Nullable Scope scope, @Nullable Hint hint);
 
   /** Flushes out the queue for up to timeout seconds and disable the client. */
   void close();
@@ -64,11 +64,11 @@ public interface ISentryClient {
    * Capture the event
    *
    * @param event the event
-   * @param hints SDK specific but provides high level information about the origin of the event.
+   * @param hint SDK specific but provides high level information about the origin of the event.
    * @return The Id (SentryId object) of the event.
    */
-  default @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hints hints) {
-    return captureEvent(event, null, hints);
+  default @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
+    return captureEvent(event, null, hint);
   }
 
   /**
@@ -115,25 +115,25 @@ public interface ISentryClient {
    * Captures the exception.
    *
    * @param throwable The exception.
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @param scope An optional scope to be applied to the event.
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureException(
-      @NotNull Throwable throwable, @Nullable Scope scope, @Nullable Hints hints) {
+      @NotNull Throwable throwable, @Nullable Scope scope, @Nullable Hint hint) {
     SentryEvent event = new SentryEvent(throwable);
-    return captureEvent(event, scope, hints);
+    return captureEvent(event, scope, hint);
   }
 
   /**
    * Captures the exception.
    *
    * @param throwable The exception.
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
-  default @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hints hints) {
-    return captureException(throwable, null, hints);
+  default @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint) {
+    return captureException(throwable, null, hint);
   }
 
   /**
@@ -158,10 +158,10 @@ public interface ISentryClient {
    * Captures a session. This method transform a session to an envelope and forwards to
    * captureEnvelope
    *
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @param session the Session
    */
-  void captureSession(@NotNull Session session, @Nullable Hints hints);
+  void captureSession(@NotNull Session session, @Nullable Hint hint);
 
   /**
    * Captures a session. This method transform a session to an envelope and forwards to
@@ -177,11 +177,11 @@ public interface ISentryClient {
    * Captures an envelope.
    *
    * @param envelope the SentryEnvelope to send.
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
   @Nullable
-  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hints hints);
+  SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
 
   /**
    * Captures an envelope.
@@ -198,13 +198,13 @@ public interface ISentryClient {
    *
    * @param transaction the {@link ITransaction} to send
    * @param scope An optional scope to be applied to the event.
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
   @NotNull
   default SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Hints hints) {
-    return captureTransaction(transaction, null, scope, hints);
+      @NotNull SentryTransaction transaction, @Nullable Scope scope, @Nullable Hint hint) {
+    return captureTransaction(transaction, null, scope, hint);
   }
 
   /**
@@ -213,7 +213,7 @@ public interface ISentryClient {
    * @param transaction the {@link ITransaction} to send
    * @param traceState the trace state
    * @param scope An optional scope to be applied to the event.
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
   @NotNull
@@ -222,8 +222,8 @@ public interface ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       @Nullable Scope scope,
-      @Nullable Hints hints) {
-    return captureTransaction(transaction, traceState, scope, hints, null);
+      @Nullable Hint hint) {
+    return captureTransaction(transaction, traceState, scope, hint, null);
   }
 
   /**
@@ -232,7 +232,7 @@ public interface ISentryClient {
    * @param transaction the {@link ITransaction} to send
    * @param traceState the trace state
    * @param scope An optional scope to be applied to the event.
-   * @param hints SDK specific but provides high level information about the origin of the event
+   * @param hint SDK specific but provides high level information about the origin of the event
    * @param profilingTraceData An optional profiling trace data captured during the transaction
    * @return The Id (SentryId object) of the event
    */
@@ -242,7 +242,7 @@ public interface ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       @Nullable Scope scope,
-      @Nullable Hints hints,
+      @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData);
 
   /**

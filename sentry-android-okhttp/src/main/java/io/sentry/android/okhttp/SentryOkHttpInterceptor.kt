@@ -8,7 +8,7 @@ import io.sentry.SpanStatus
 import io.sentry.TracingOrigins
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
@@ -63,16 +63,17 @@ class SentryOkHttpInterceptor(
                 breadcrumb.setData("request_body_size", it)
             }
 
-            val hints = Hints().also { it.set(OKHTTP_REQUEST, request) }
+            val hint = Hint()
+                .also { it.set(OKHTTP_REQUEST, request) }
             response?.let {
                 it.body?.contentLength().ifHasValidLength { responseBodySize ->
                     breadcrumb.setData("response_body_size", responseBodySize)
                 }
 
-                hints[OKHTTP_RESPONSE] = it
+                hint[OKHTTP_RESPONSE] = it
             }
 
-            hub.addBreadcrumb(breadcrumb, hints)
+            hub.addBreadcrumb(breadcrumb, hint)
         }
     }
 

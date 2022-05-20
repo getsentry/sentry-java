@@ -4,7 +4,7 @@ import com.nhaarman.mockitokotlin2.mock
 import io.sentry.CustomCachedApplyScopeDataHint
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -19,7 +19,7 @@ class HintUtilsTest {
 
     @Test
     fun `if event is not Cached, it should apply scopes data`() {
-        assertTrue(HintUtils.shouldApplyScopeData(Hints()))
+        assertTrue(HintUtils.shouldApplyScopeData(Hint()))
     }
 
     @Test

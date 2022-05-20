@@ -11,7 +11,7 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.DeviceOrientations;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.Device;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -99,10 +99,10 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setData("position", orientation);
       breadcrumb.setLevel(SentryLevel.INFO);
 
-      final Hints hints = new Hints();
-      hints.set(ANDROID_CONFIGURATION, newConfig);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_CONFIGURATION, newConfig);
 
-      hub.addBreadcrumb(breadcrumb, hints);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 

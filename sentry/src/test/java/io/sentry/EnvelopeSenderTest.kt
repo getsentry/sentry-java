@@ -8,7 +8,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.cache.EnvelopeCache
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import io.sentry.hints.Retryable
 import io.sentry.util.HintUtils
 import io.sentry.util.noFlushTimeout
@@ -112,7 +112,7 @@ class EnvelopeSenderTest {
         val sut = fixture.getSut()
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", EnvelopeCache.SUFFIX_ENVELOPE_FILE).toUri())
         testFile.deleteOnExit()
-        sut.processFile(testFile, Hints())
+        sut.processFile(testFile, Hint())
         verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached envelope %s"), eq(testFile.absolutePath))
         verifyNoMoreInteractions(fixture.hub)
     }

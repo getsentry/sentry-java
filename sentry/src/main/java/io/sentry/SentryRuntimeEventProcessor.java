@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryRuntime;
 import io.sentry.protocol.SentryTransaction;
 import org.jetbrains.annotations.NotNull;
@@ -22,14 +22,13 @@ final class SentryRuntimeEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Hints hints) {
+  public @NotNull SentryEvent process(final @NotNull SentryEvent event, final @Nullable Hint hint) {
     return process(event);
   }
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @Nullable Hints hints) {
+      final @NotNull SentryTransaction transaction, final @Nullable Hint hint) {
     return process(transaction);
   }
 

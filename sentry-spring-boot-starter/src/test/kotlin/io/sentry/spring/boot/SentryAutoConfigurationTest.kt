@@ -19,7 +19,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryExceptionResolver
@@ -662,7 +662,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
-        override fun execute(event: SentryEvent, hints: Hints): SentryEvent? = null
+        override fun execute(event: SentryEvent, hint: Hint): SentryEvent? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -673,7 +673,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeBreadcrumbCallback : SentryOptions.BeforeBreadcrumbCallback {
-        override fun execute(breadcrumb: Breadcrumb, hints: Hints): Breadcrumb? = null
+        override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -684,7 +684,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomEventProcessor : EventProcessor {
-        override fun process(event: SentryEvent, hints: Hints) = null
+        override fun process(event: SentryEvent, hint: Hint) = null
     }
 
     @Configuration(proxyBeanMethods = false)

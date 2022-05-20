@@ -15,7 +15,7 @@ import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
@@ -63,16 +63,16 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   @Override
   protected void append(@NotNull ILoggingEvent eventObject) {
     if (eventObject.getLevel().isGreaterOrEqual(minimumEventLevel)) {
-      final Hints hints = new Hints();
-      hints.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
+      final Hint hint = new Hint();
+      hint.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
 
-      Sentry.captureEvent(createEvent(eventObject), hints);
+      Sentry.captureEvent(createEvent(eventObject), hint);
     }
     if (eventObject.getLevel().isGreaterOrEqual(minimumBreadcrumbLevel)) {
-      final Hints hints = new Hints();
-      hints.set(LOGBACK_LOGGING_EVENT, eventObject);
+      final Hint hint = new Hint();
+      hint.set(LOGBACK_LOGGING_EVENT, eventObject);
 
-      Sentry.addBreadcrumb(createBreadcrumb(eventObject), hints);
+      Sentry.addBreadcrumb(createBreadcrumb(eventObject), hint);
     }
   }
 

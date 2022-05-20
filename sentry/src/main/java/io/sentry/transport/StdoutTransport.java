@@ -2,7 +2,7 @@ package io.sentry.transport;
 
 import io.sentry.ISerializer;
 import io.sentry.SentryEnvelope;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +16,7 @@ public final class StdoutTransport implements ITransport {
   }
 
   @Override
-  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hints hints)
+  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
       throws IOException {
     Objects.requireNonNull(envelope, "SentryEnvelope is required");
 

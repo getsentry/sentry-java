@@ -10,7 +10,7 @@ import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TracingOrigins;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -76,12 +76,12 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
             request.method().name(),
             response != null ? response.rawStatusCode() : null);
 
-    final Hints hints = new Hints();
-    hints.set(SPRING_EXCHANGE_FILTER_REQUEST, request);
+    final Hint hint = new Hint();
+    hint.set(SPRING_EXCHANGE_FILTER_REQUEST, request);
     if (response != null) {
-      hints.set(SPRING_EXCHANGE_FILTER_RESPONSE, response);
+      hint.set(SPRING_EXCHANGE_FILTER_RESPONSE, response);
     }
 
-    hub.addBreadcrumb(breadcrumb, hints);
+    hub.addBreadcrumb(breadcrumb, hint);
   }
 }

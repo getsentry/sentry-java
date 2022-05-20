@@ -16,7 +16,7 @@ import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -66,7 +66,7 @@ public final class ScreenshotEventProcessor
 
   @SuppressWarnings("NullAway")
   @Override
-  public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hints hints) {
+  public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hint hint) {
     if (options.isAttachScreenshot() && event.isErrored() && currentActivity != null) {
       final Activity activity = currentActivity.get();
       if (isActivityValid(activity)
@@ -92,8 +92,8 @@ public final class ScreenshotEventProcessor
 
             if (byteArrayOutputStream.size() > 0) {
               // screenshot png is around ~100-150 kb
-              hints.setScreenshot(Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
-              hints.set(ANDROID_ACTIVITY, activity);
+              hint.setScreenshot(Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
+              hint.set(ANDROID_ACTIVITY, activity);
             } else {
               this.options
                   .getLogger()

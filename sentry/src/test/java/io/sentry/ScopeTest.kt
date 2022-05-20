@@ -5,7 +5,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import io.sentry.protocol.Request
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
@@ -859,7 +859,7 @@ class ScopeTest {
 
     private fun eventProcessor(): EventProcessor {
         return object : EventProcessor {
-            override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
+            override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
                 return event
             }
         }

@@ -13,7 +13,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.RequestSize;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.spring.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
@@ -62,11 +62,11 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final HttpServletRequest request = resolveHttpServletRequest(servletRequest);
       hub.pushScope();
       try {
-        final Hints hints = new Hints();
-        hints.set(SPRING_REQUEST_FILTER_REQUEST, servletRequest);
-        hints.set(SPRING_REQUEST_FILTER_RESPONSE, response);
+        final Hint hint = new Hint();
+        hint.set(SPRING_REQUEST_FILTER_REQUEST, servletRequest);
+        hint.set(SPRING_REQUEST_FILTER_RESPONSE, response);
 
-        hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()), hints);
+        hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()), hint);
         configureScope(request);
         filterChain.doFilter(request, response);
       } finally {
@@ -148,7 +148,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
     }
 
     @Override
-    public @NotNull SentryEvent process(@NotNull SentryEvent event, @NotNull Hints hints) {
+    public @NotNull SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
       if (event.getRequest() != null) {
         event.getRequest().setData(requestPayloadExtractor.extract(request, options));
       }

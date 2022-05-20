@@ -6,7 +6,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.hints.ApplyScopeData
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
@@ -65,7 +65,7 @@ class MainEventProcessorTest {
 
         val crashedThread = Thread.currentThread()
         var event = generateCrashedEvent(crashedThread)
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertNotNull(event.exceptions) {
             assertSame(crashedThread.id, it.first().threadId)
@@ -86,7 +86,7 @@ class MainEventProcessorTest {
 
         val crashedThread = Thread()
         var event = generateCrashedEvent(crashedThread)
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertNotNull(event.threads) { threads ->
             assertTrue(threads.any { it.isCrashed == true })
@@ -98,7 +98,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut()
         val crashedThread = Thread.currentThread()
         var event = generateCrashedEvent(crashedThread)
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertEquals("release", event.release)
         assertEquals("environment", event.environment)
@@ -135,7 +135,7 @@ class MainEventProcessorTest {
         event.release = "eventRelease"
         event.serverName = "eventServerName"
 
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertEquals("eventRelease", event.release)
         assertEquals("eventEnvironment", event.environment)
@@ -182,7 +182,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
 
         var event = SentryEvent()
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertNull(event.threads)
     }
@@ -192,7 +192,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut()
 
         var event = SentryEvent()
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertNotNull(event.threads)
     }
@@ -202,7 +202,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(attachThreads = false, attachStackTrace = true)
 
         var event = SentryEvent()
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertNotNull(event.threads) {
             assertEquals(1, it.count())
@@ -214,7 +214,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(attachThreads = false, attachStackTrace = true)
 
         var event = SentryEvent(RuntimeException("error"))
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertNull(event.threads)
     }
@@ -223,7 +223,7 @@ class MainEventProcessorTest {
     fun `sets sdkVersion in the event`() {
         val sut = fixture.getSut()
         val event = SentryEvent()
-        sut.process(event, Hints())
+        sut.process(event, Hint())
         assertNotNull(event.sdk) {
             assertEquals(it.name, "test")
             assertEquals(it.version, "1.2.3")
@@ -234,7 +234,7 @@ class MainEventProcessorTest {
     fun `when event and SentryOptions do not have environment set, sets production as environment`() {
         val sut = fixture.getSut(environment = null)
         val event = SentryEvent()
-        sut.process(event, Hints())
+        sut.process(event, Hint())
         assertEquals("production", event.environment)
     }
 
@@ -242,7 +242,7 @@ class MainEventProcessorTest {
     fun `when event does not have ip address set and sendDefaultPii is set to true, sets {{auto}} as the ip address`() {
         val sut = fixture.getSut(sendDefaultPii = true)
         val event = SentryEvent()
-        sut.process(event, Hints())
+        sut.process(event, Hint())
         assertNotNull(event.user) {
             assertEquals("{{auto}}", it.ipAddress)
         }
@@ -255,7 +255,7 @@ class MainEventProcessorTest {
         event.user = User().apply {
             ipAddress = "192.168.0.1"
         }
-        sut.process(event, Hints())
+        sut.process(event, Hint())
         assertNotNull(event.user) {
             assertEquals("192.168.0.1", it.ipAddress)
         }
@@ -266,7 +266,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(sendDefaultPii = false)
         val event = SentryEvent()
         event.user = User()
-        sut.process(event, Hints())
+        sut.process(event, Hint())
         assertNotNull(event.user) {
             assertNull(it.ipAddress)
         }
@@ -277,7 +277,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(environment = null)
         val event = SentryEvent()
         event.environment = "staging"
-        sut.process(event, Hints())
+        sut.process(event, Hint())
         assertEquals("staging", event.environment)
     }
 
@@ -285,7 +285,7 @@ class MainEventProcessorTest {
     fun `when event does not have environment set and SentryOptions have environment set, uses environment from SentryOptions`() {
         val sut = fixture.getSut(environment = "custom")
         val event = SentryEvent()
-        sut.process(event, Hints())
+        sut.process(event, Hint())
         assertEquals("custom", event.environment)
     }
 
@@ -293,7 +293,7 @@ class MainEventProcessorTest {
     fun `sets tags from SentryOptions`() {
         val sut = fixture.getSut(tags = mapOf("tag1" to "value1", "tag2" to "value2"))
         val event = SentryEvent()
-        sut.process(event, Hints())
+        sut.process(event, Hint())
         assertNotNull(event.tags) {
             assertEquals("value1", it["tag1"])
             assertEquals("value2", it["tag2"])
@@ -305,7 +305,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(tags = mapOf("tag1" to "value1", "tag2" to "value2"))
         val event = SentryEvent()
         event.setTag("tag2", "event-tag-value")
-        sut.process(event, Hints())
+        sut.process(event, Hint())
         assertNotNull(event.tags) {
             assertEquals("value1", it["tag1"])
             assertEquals("event-tag-value", it["tag2"])
@@ -316,7 +316,7 @@ class MainEventProcessorTest {
     fun `sets servername retrieved from the local address`() {
         val processor = fixture.getSut(serverName = null, host = "aHost")
         val event = SentryEvent()
-        processor.process(event, Hints())
+        processor.process(event, Hint())
         assertEquals("aHost", event.serverName)
     }
 
@@ -324,7 +324,7 @@ class MainEventProcessorTest {
     fun `sets servername to null if retrieving takes longer time`() {
         val processor = fixture.getSut(serverName = null, host = "aHost", resolveHostDelay = 2000)
         val event = SentryEvent()
-        processor.process(event, Hints())
+        processor.process(event, Hint())
         assertNull(event.serverName)
     }
 
@@ -332,10 +332,10 @@ class MainEventProcessorTest {
     fun `uses cache to retrieve servername for subsequent events`() {
         val processor = fixture.getSut(serverName = null, host = "aHost", hostnameCacheDuration = 1000)
         val firstEvent = SentryEvent()
-        processor.process(firstEvent, Hints())
+        processor.process(firstEvent, Hint())
         assertEquals("aHost", firstEvent.serverName)
         val secondEvent = SentryEvent()
-        processor.process(secondEvent, Hints())
+        processor.process(secondEvent, Hint())
         assertEquals("aHost", secondEvent.serverName)
         verify(fixture.getLocalhost, times(1)).canonicalHostName
     }
@@ -344,7 +344,7 @@ class MainEventProcessorTest {
     fun `when cache expires, retrieves new host name from the local address`() {
         val processor = fixture.getSut(serverName = null, host = "aHost")
         val firstEvent = SentryEvent()
-        processor.process(firstEvent, Hints())
+        processor.process(firstEvent, Hint())
         assertEquals("aHost", firstEvent.serverName)
 
         reset(fixture.getLocalhost)
@@ -352,7 +352,7 @@ class MainEventProcessorTest {
 
         await.untilAsserted {
             val secondEvent = SentryEvent()
-            processor.process(secondEvent, Hints())
+            processor.process(secondEvent, Hint())
             assertEquals("newHost", secondEvent.serverName)
         }
     }
@@ -362,7 +362,7 @@ class MainEventProcessorTest {
         val processor = fixture.getSut(serverName = null, host = "aHost")
         val event = SentryEvent()
         event.serverName = "eventHost"
-        processor.process(event, Hints())
+        processor.process(event, Hint())
         assertEquals("eventHost", event.serverName)
     }
 
@@ -370,7 +370,7 @@ class MainEventProcessorTest {
     fun `does not set serverName on events if serverName is set on SentryOptions`() {
         val processor = fixture.getSut(serverName = "optionsHost", host = "aHost")
         val event = SentryEvent()
-        processor.process(event, Hints())
+        processor.process(event, Hint())
         assertEquals("optionsHost", event.serverName)
     }
 
@@ -379,7 +379,7 @@ class MainEventProcessorTest {
         val processor = fixture.getSut(serverName = "optionsHost")
 
         var transaction = SentryTransaction(fixture.sentryTracer)
-        transaction = processor.process(transaction, Hints())
+        transaction = processor.process(transaction, Hint())
 
         assertEquals("optionsHost", transaction.serverName)
     }
@@ -389,7 +389,7 @@ class MainEventProcessorTest {
         val processor = fixture.getSut()
 
         var transaction = SentryTransaction(fixture.sentryTracer)
-        transaction = processor.process(transaction, Hints())
+        transaction = processor.process(transaction, Hint())
 
         assertEquals("dist", transaction.dist)
     }
@@ -399,7 +399,7 @@ class MainEventProcessorTest {
         val processor = fixture.getSut(sendDefaultPii = true)
 
         var transaction = SentryTransaction(fixture.sentryTracer)
-        transaction = processor.process(transaction, Hints())
+        transaction = processor.process(transaction, Hint())
 
         assertNotNull(transaction.user)
     }
@@ -421,7 +421,7 @@ class MainEventProcessorTest {
         val sut = fixture.getSut(proguardUuid = "id1")
 
         var event = SentryEvent()
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertNotNull(event.debugMeta) {
             assertNotNull(it.images) { images ->
@@ -437,7 +437,7 @@ class MainEventProcessorTest {
 
         var event = SentryEvent()
         event.debugMeta = DebugMeta()
-        event = sut.process(event, Hints())
+        event = sut.process(event, Hint())
 
         assertNotNull(event.debugMeta) {
             assertNotNull(it.images) { images ->

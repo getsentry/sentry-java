@@ -3,7 +3,7 @@ package io.sentry.spring;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.EventProcessor;
 import io.sentry.SentryEvent;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
 import javax.servlet.http.HttpServletRequest;
@@ -24,8 +24,7 @@ public class SentryRequestHttpServletRequestProcessor implements EventProcessor 
   }
 
   @Override
-  public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @NotNull Hints hints) {
+  public @NotNull SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
     if (event.getTransaction() == null) {
       event.setTransaction(transactionNameProvider.provideTransactionName(request));
     }

@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.User;
@@ -289,15 +289,15 @@ public final class Scope {
    *
    * @param callback the BeforeBreadcrumb callback
    * @param breadcrumb the breadcrumb
-   * @param hints the hints
+   * @param hint the hints
    * @return the mutated breadcrumb or null if dropped
    */
   private @Nullable Breadcrumb executeBeforeBreadcrumb(
       final @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
       @NotNull Breadcrumb breadcrumb,
-      final @NotNull Hints hints) {
+      final @NotNull Hint hint) {
     try {
-      breadcrumb = callback.execute(breadcrumb, hints);
+      breadcrumb = callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
       options
           .getLogger()
@@ -318,19 +318,19 @@ public final class Scope {
    * set
    *
    * @param breadcrumb the breadcrumb
-   * @param hints the hint
+   * @param hint the hint
    */
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hints hints) {
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
     if (breadcrumb == null) {
       return;
     }
-    if (hints == null) {
-      hints = new Hints();
+    if (hint == null) {
+      hint = new Hint();
     }
 
     SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();
     if (callback != null) {
-      breadcrumb = executeBeforeBreadcrumb(callback, breadcrumb, hints);
+      breadcrumb = executeBeforeBreadcrumb(callback, breadcrumb, hint);
     }
     if (breadcrumb != null) {
       this.breadcrumbs.add(breadcrumb);

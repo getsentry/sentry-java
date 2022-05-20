@@ -7,7 +7,7 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.hints.Retryable;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
@@ -66,10 +66,10 @@ public final class ApacheHttpClientTransport implements ITransport {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hints hints)
+  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
       throws IOException {
     if (isSchedulingAllowed()) {
-      final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hints);
+      final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
 
       if (filteredEnvelope != null) {
         final SentryEnvelope envelopeWithClientReport =
@@ -110,7 +110,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                           .log(ERROR, "Request failed, API returned %s", response.getCode());
 
                       if (response.getCode() >= 400 && response.getCode() != 429) {
-                        if (!HintUtils.hasType(hints, Retryable.class)) {
+                        if (!HintUtils.hasType(hint, Retryable.class)) {
                           options
                               .getClientReportRecorder()
                               .recordLostEnvelope(
@@ -132,7 +132,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                   @Override
                   public void failed(Exception ex) {
                     options.getLogger().log(ERROR, "Error while sending an envelope", ex);
-                    if (!HintUtils.hasType(hints, Retryable.class)) {
+                    if (!HintUtils.hasType(hint, Retryable.class)) {
                       options
                           .getClientReportRecorder()
                           .recordLostEnvelope(
@@ -144,7 +144,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                   @Override
                   public void cancelled() {
                     options.getLogger().log(WARNING, "Request cancelled");
-                    if (!HintUtils.hasType(hints, Retryable.class)) {
+                    if (!HintUtils.hasType(hint, Retryable.class)) {
                       options
                           .getClientReportRecorder()
                           .recordLostEnvelope(
@@ -155,7 +155,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                 });
           } catch (Throwable e) {
             options.getLogger().log(ERROR, "Error when sending envelope", e);
-            if (!HintUtils.hasType(hints, Retryable.class)) {
+            if (!HintUtils.hasType(hint, Retryable.class)) {
               options
                   .getClientReportRecorder()
                   .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);

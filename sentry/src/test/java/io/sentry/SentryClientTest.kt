@@ -22,7 +22,7 @@ import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
@@ -788,7 +788,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             exceptions = createNonHandledException()
         }
-        fixture.getSut().updateSessionData(event, Hints(), scope)
+        fixture.getSut().updateSessionData(event, Hint(), scope)
         scope.withSession {
             assertEquals(Session.State.Crashed, it!!.status)
         }
@@ -802,7 +802,10 @@ class SentryClientTest {
             val session = it.current
             val level = session.status
             val event = SentryEvent()
-            fixture.getSut().updateSessionData(event, Hints(), scope)
+            fixture.getSut().updateSessionData(
+                event,
+                Hint(), scope
+            )
             assertEquals(level, session.status)
         }
     }
@@ -814,7 +817,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             exceptions = createNonHandledException()
         }
-        fixture.getSut().updateSessionData(event, Hints(), scope)
+        fixture.getSut().updateSessionData(event, Hint(), scope)
         scope.withSession {
             assertEquals(1, it!!.errorCount())
         }
@@ -829,7 +832,7 @@ class SentryClientTest {
         val event = SentryEvent().apply {
             setExceptions(exceptions)
         }
-        fixture.getSut().updateSessionData(event, Hints(), scope)
+        fixture.getSut().updateSessionData(event, Hint(), scope)
         scope.withSession {
             assertEquals(1, it!!.errorCount())
         }
@@ -843,7 +846,10 @@ class SentryClientTest {
             val session = it.current
             val errorCount = session.errorCount()
             val event = SentryEvent()
-            fixture.getSut().updateSessionData(event, Hints(), scope)
+            fixture.getSut().updateSessionData(
+                event,
+                Hint(), scope
+            )
             assertEquals(errorCount, session.errorCount())
         }
     }
@@ -858,7 +864,10 @@ class SentryClientTest {
                     headers = mutableMapOf("user-agent" to "jamesBond")
                 }
             }
-            fixture.getSut().updateSessionData(event, Hints(), scope)
+            fixture.getSut().updateSessionData(
+                event,
+                Hint(), scope
+            )
             scope.withSession {
                 assertEquals("jamesBond", it!!.userAgent)
             }
@@ -877,7 +886,10 @@ class SentryClientTest {
                     headers = mutableMapOf()
                 }
             }
-            fixture.getSut().updateSessionData(event, Hints(), scope)
+            fixture.getSut().updateSessionData(
+                event,
+                Hint(), scope
+            )
             assertEquals(userAgent, session.userAgent)
         }
     }
@@ -886,7 +898,7 @@ class SentryClientTest {
     fun `When capture an event and there's no session, do nothing`() {
         val scope = Scope(fixture.sentryOptions)
         val event = SentryEvent()
-        fixture.getSut().updateSessionData(event, Hints(), scope)
+        fixture.getSut().updateSessionData(event, Hint(), scope)
         scope.withSession {
             assertNull(it)
         }
@@ -1283,9 +1295,9 @@ class SentryClientTest {
     fun `screenshot is added to the envelope from the hint`() {
         val sut = fixture.getSut()
         val attachment = Attachment.fromScreenshot(byteArrayOf())
-        val hints = Hints().also { it.screenshot = attachment }
+        val hint = Hint().also { it.screenshot = attachment }
 
-        sut.captureEvent(SentryEvent(), hints)
+        sut.captureEvent(SentryEvent(), hint)
 
         verify(fixture.transport).send(
             check { envelope ->
@@ -1303,9 +1315,9 @@ class SentryClientTest {
         fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
         val sut = fixture.getSut()
         val attachment = Attachment.fromScreenshot(byteArrayOf())
-        val hints = Hints().also { it.screenshot = attachment }
+        val hint = Hint().also { it.screenshot = attachment }
 
-        sut.captureEvent(SentryEvent(), hints)
+        sut.captureEvent(SentryEvent(), hint)
 
         verify(fixture.transport).send(
             check { envelope ->
@@ -1597,7 +1609,7 @@ class SentryClientTest {
     fun `can pass an attachment via hints`() {
         val sut = fixture.getSut()
 
-        sut.captureException(IllegalStateException(), Hints.withAttachment(fixture.attachment))
+        sut.captureException(IllegalStateException(), Hint.withAttachment(fixture.attachment))
 
         thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 0, attachmentCount = 1)
     }
@@ -1608,7 +1620,7 @@ class SentryClientTest {
 
         val scope = givenScopeWithStartedSession()
         scope.addAttachment(fixture.attachment2)
-        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+        sut.captureException(IllegalStateException(), scope, Hint.withAttachment(fixture.attachment))
 
         thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 2)
     }
@@ -1625,7 +1637,7 @@ class SentryClientTest {
 
         val scope = givenScopeWithStartedSession()
         scope.addAttachment(fixture.attachment2)
-        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+        sut.captureException(IllegalStateException(), scope, Hint.withAttachment(fixture.attachment))
 
         thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 3)
     }
@@ -1641,7 +1653,7 @@ class SentryClientTest {
 
         val scope = givenScopeWithStartedSession()
         scope.addAttachment(fixture.attachment2)
-        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+        sut.captureException(IllegalStateException(), scope, Hint.withAttachment(fixture.attachment))
 
         thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 1)
     }
@@ -1650,15 +1662,15 @@ class SentryClientTest {
     fun `can add to attachments in eventProcessor`() {
         val sut = fixture.getSut { options ->
             options.addEventProcessor(object : EventProcessor {
-                override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
-                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachments)
-                    hints.addAttachment(fixture.attachment3)
+                override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
+                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hint.attachments)
+                    hint.addAttachment(fixture.attachment3)
                     return event
                 }
 
                 override fun process(
                     transaction: SentryTransaction,
-                    hints: Hints
+                    hint: Hint
                 ): SentryTransaction? {
                     return transaction
                 }
@@ -1667,7 +1679,7 @@ class SentryClientTest {
 
         val scope = givenScopeWithStartedSession()
         scope.addAttachment(fixture.attachment2)
-        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+        sut.captureException(IllegalStateException(), scope, Hint.withAttachment(fixture.attachment))
 
         thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 3)
     }
@@ -1676,14 +1688,14 @@ class SentryClientTest {
     fun `can replace attachments in eventProcessor`() {
         val sut = fixture.getSut { options ->
             options.addEventProcessor(object : EventProcessor {
-                override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
-                    hints.replaceAttachments(listOf(fixture.attachment))
+                override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
+                    hint.replaceAttachments(listOf(fixture.attachment))
                     return event
                 }
 
                 override fun process(
                     transaction: SentryTransaction,
-                    hints: Hints
+                    hint: Hint
                 ): SentryTransaction? {
                     return transaction
                 }
@@ -1692,7 +1704,7 @@ class SentryClientTest {
 
         val scope = givenScopeWithStartedSession()
         scope.addAttachment(fixture.attachment2)
-        sut.captureException(IllegalStateException(), scope, Hints.withAttachment(fixture.attachment))
+        sut.captureException(IllegalStateException(), scope, Hint.withAttachment(fixture.attachment))
 
         thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1, attachmentCount = 1)
     }
@@ -1705,7 +1717,7 @@ class SentryClientTest {
         sut.captureTransaction(
             SentryTransaction(fixture.sentryTracer),
             scope,
-            Hints.withAttachment(fixture.attachment)
+            Hint.withAttachment(fixture.attachment)
         )
 
         thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 0, attachmentCount = 1, transactionCount = 1)
@@ -1721,7 +1733,7 @@ class SentryClientTest {
         sut.captureTransaction(
             SentryTransaction(fixture.sentryTracer),
             scope,
-            Hints.withAttachment(fixture.attachment)
+            Hint.withAttachment(fixture.attachment)
         )
 
         thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 0, attachmentCount = 2, transactionCount = 1)
@@ -1731,16 +1743,16 @@ class SentryClientTest {
     fun `can add to attachments in eventProcessor for transactions`() {
         val sut = fixture.getSut { options ->
             options.addEventProcessor(object : EventProcessor {
-                override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
+                override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
                     return event
                 }
 
                 override fun process(
                     transaction: SentryTransaction,
-                    hints: Hints
+                    hint: Hint
                 ): SentryTransaction? {
-                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hints.attachments)
-                    hints.addAttachment(fixture.attachment3)
+                    assertEquals(listOf(fixture.attachment, fixture.attachment2), hint.attachments)
+                    hint.addAttachment(fixture.attachment3)
                     return transaction
                 }
             })
@@ -1752,7 +1764,7 @@ class SentryClientTest {
         sut.captureTransaction(
             SentryTransaction(fixture.sentryTracer),
             scope,
-            Hints.withAttachment(fixture.attachment)
+            Hint.withAttachment(fixture.attachment)
         )
 
         thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 0, attachmentCount = 3, transactionCount = 1)
@@ -1762,15 +1774,15 @@ class SentryClientTest {
     fun `can replace attachments in eventProcessor for transactions`() {
         val sut = fixture.getSut { options ->
             options.addEventProcessor(object : EventProcessor {
-                override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
+                override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
                     return event
                 }
 
                 override fun process(
                     transaction: SentryTransaction,
-                    hints: Hints
+                    hint: Hint
                 ): SentryTransaction? {
-                    hints.replaceAttachments(listOf(fixture.attachment))
+                    hint.replaceAttachments(listOf(fixture.attachment))
                     return transaction
                 }
             })
@@ -1782,7 +1794,7 @@ class SentryClientTest {
         sut.captureTransaction(
             SentryTransaction(fixture.sentryTracer),
             scope,
-            Hints.withAttachment(fixture.attachment)
+            Hint.withAttachment(fixture.attachment)
         )
 
         thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 0, attachmentCount = 1, transactionCount = 1)
@@ -1797,7 +1809,7 @@ class SentryClientTest {
         }
 
         val scope = givenScopeWithStartedSession()
-        scope.addBreadcrumb(Breadcrumb.info("hello from breadcrumb"), Hints.withAttachment(fixture.attachment))
+        scope.addBreadcrumb(Breadcrumb.info("hello from breadcrumb"), Hint.withAttachment(fixture.attachment))
 
         sut.captureException(IllegalStateException(), scope)
 
@@ -1871,8 +1883,8 @@ class SentryClientTest {
     }
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
-        override fun execute(event: SentryEvent, hints: Hints): SentryEvent? {
-            hints.screenshot = null
+        override fun execute(event: SentryEvent, hint: Hint): SentryEvent? {
+            hint.screenshot = null
 
             return event
         }
@@ -2034,7 +2046,7 @@ class SentryClientTest {
 
     private fun eventProcessorThrows(): EventProcessor {
         return object : EventProcessor {
-            override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
+            override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
                 throw Throwable()
             }
         }

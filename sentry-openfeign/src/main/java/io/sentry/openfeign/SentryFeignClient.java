@@ -11,7 +11,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.Collection;
@@ -92,13 +92,13 @@ public final class SentryFeignClient implements Client {
       breadcrumb.setData("response_body_size", response.body().length());
     }
 
-    final Hints hints = new Hints();
-    hints.set(OPEN_FEIGN_REQUEST, request);
+    final Hint hint = new Hint();
+    hint.set(OPEN_FEIGN_REQUEST, request);
     if (response != null) {
-      hints.set(OPEN_FEIGN_RESPONSE, response);
+      hint.set(OPEN_FEIGN_RESPONSE, response);
     }
 
-    hub.addBreadcrumb(breadcrumb, hints);
+    hub.addBreadcrumb(breadcrumb, hint);
   }
 
   static final class RequestWrapper {

@@ -14,7 +14,7 @@ import io.sentry.Session
 import io.sentry.UserFeedback
 import io.sentry.dsnString
 import io.sentry.hints.DiskFlushNotification
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
@@ -150,13 +150,13 @@ class ClientReportTest {
 
 class DropEverythingEventProcessor : EventProcessor {
 
-    override fun process(event: SentryEvent, hints: Hints): SentryEvent? {
+    override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
         return null
     }
 
     override fun process(
         transaction: SentryTransaction,
-        hints: Hints
+        hint: Hint
     ): SentryTransaction? {
         return null
     }

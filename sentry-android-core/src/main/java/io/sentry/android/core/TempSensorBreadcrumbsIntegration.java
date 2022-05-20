@@ -13,7 +13,7 @@ import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -106,10 +106,10 @@ public final class TempSensorBreadcrumbsIntegration
       breadcrumb.setLevel(SentryLevel.INFO);
       breadcrumb.setData("degree", event.values[0]); // Celsius
 
-      final Hints hints = new Hints();
-      hints.set(ANDROID_SENSOR_EVENT, event);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_SENSOR_EVENT, event);
 
-      hub.addBreadcrumb(breadcrumb, hints);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 

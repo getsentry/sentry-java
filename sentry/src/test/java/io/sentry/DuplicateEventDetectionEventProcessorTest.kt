@@ -1,7 +1,7 @@
 package io.sentry
 
 import io.sentry.exception.ExceptionMechanismException
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import io.sentry.protocol.Mechanism
 import java.lang.RuntimeException
 import kotlin.test.Test
@@ -26,9 +26,12 @@ class DuplicateEventDetectionEventProcessorTest {
     @Test
     fun `does not drop event if no previous event with same exception was processed`() {
         val processor = fixture.getSut()
-        processor.process(SentryEvent(), Hints())
+        processor.process(SentryEvent(), Hint())
 
-        val result = processor.process(SentryEvent(RuntimeException()), Hints())
+        val result = processor.process(
+            SentryEvent(RuntimeException()),
+            Hint()
+        )
 
         assertNotNull(result)
     }
@@ -37,9 +40,9 @@ class DuplicateEventDetectionEventProcessorTest {
     fun `drops event with the same exception`() {
         val processor = fixture.getSut()
         val event = SentryEvent(RuntimeException())
-        processor.process(event, Hints())
+        processor.process(event, Hint())
 
-        val result = processor.process(event, Hints())
+        val result = processor.process(event, Hint())
         assertNull(result)
     }
 
@@ -47,9 +50,12 @@ class DuplicateEventDetectionEventProcessorTest {
     fun `drops event with mechanism exception having an exception that has already been processed`() {
         val processor = fixture.getSut()
         val event = SentryEvent(RuntimeException())
-        processor.process(event, Hints())
+        processor.process(event, Hint())
 
-        val result = processor.process(SentryEvent(ExceptionMechanismException(Mechanism(), event.throwable!!, Thread.currentThread())), Hints())
+        val result = processor.process(
+            SentryEvent(ExceptionMechanismException(Mechanism(), event.throwable!!, Thread.currentThread())),
+            Hint()
+        )
         assertNull(result)
     }
 
@@ -57,9 +63,12 @@ class DuplicateEventDetectionEventProcessorTest {
     fun `drops event with exception that has already been processed with event with mechanism exception`() {
         val processor = fixture.getSut()
         val sentryEvent = SentryEvent(ExceptionMechanismException(Mechanism(), RuntimeException(), Thread.currentThread()))
-        processor.process(sentryEvent, Hints())
+        processor.process(sentryEvent, Hint())
 
-        val result = processor.process(SentryEvent((sentryEvent.throwable as ExceptionMechanismException).throwable), Hints())
+        val result = processor.process(
+            SentryEvent((sentryEvent.throwable as ExceptionMechanismException).throwable),
+            Hint()
+        )
 
         assertNull(result)
     }
@@ -68,9 +77,12 @@ class DuplicateEventDetectionEventProcessorTest {
     fun `drops event with the cause equal to exception in already processed event`() {
         val processor = fixture.getSut()
         val event = SentryEvent(RuntimeException())
-        processor.process(event, Hints())
+        processor.process(event, Hint())
 
-        val result = processor.process(SentryEvent(RuntimeException(event.throwable)), Hints())
+        val result = processor.process(
+            SentryEvent(RuntimeException(event.throwable)),
+            Hint()
+        )
 
         assertNull(result)
     }
@@ -79,9 +91,12 @@ class DuplicateEventDetectionEventProcessorTest {
     fun `drops event with any of the causes has been already processed`() {
         val processor = fixture.getSut()
         val event = SentryEvent(RuntimeException())
-        processor.process(event, Hints())
+        processor.process(event, Hint())
 
-        val result = processor.process(SentryEvent(RuntimeException(RuntimeException(event.throwable))), Hints())
+        val result = processor.process(
+            SentryEvent(RuntimeException(RuntimeException(event.throwable))),
+            Hint()
+        )
 
         assertNull(result)
     }
@@ -90,7 +105,7 @@ class DuplicateEventDetectionEventProcessorTest {
     fun `does not deduplicate is deduplication is disabled`() {
         val processor = fixture.getSut(enableDeduplication = false)
         val event = SentryEvent(RuntimeException())
-        assertNotNull(processor.process(event, Hints()))
-        assertNotNull(processor.process(event, Hints()))
+        assertNotNull(processor.process(event, Hint()))
+        assertNotNull(processor.process(event, Hint()))
     }
 }

@@ -7,7 +7,7 @@ import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,10 +33,10 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   @SuppressWarnings("deprecation")
   public DataFetcherExceptionHandlerResult onException(
       final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
-    final Hints hints = new Hints();
-    hints.set(GRAPHQL_HANDLER_PARAMETERS, handlerParameters);
+    final Hint hint = new Hint();
+    hint.set(GRAPHQL_HANDLER_PARAMETERS, handlerParameters);
 
-    hub.captureException(handlerParameters.getException(), hints);
+    hub.captureException(handlerParameters.getException(), hint);
     return delegate.onException(handlerParameters);
   }
 }

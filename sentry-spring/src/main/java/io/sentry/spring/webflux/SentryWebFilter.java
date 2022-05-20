@@ -5,7 +5,7 @@ import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_RESPONSE;
 
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -43,12 +43,12 @@ public final class SentryWebFilter implements WebFilter {
               final ServerHttpRequest request = serverWebExchange.getRequest();
               final ServerHttpResponse response = serverWebExchange.getResponse();
 
-              final Hints hints = new Hints();
-              hints.set(WEBFLUX_FILTER_REQUEST, request);
-              hints.set(WEBFLUX_FILTER_RESPONSE, response);
+              final Hint hint = new Hint();
+              hint.set(WEBFLUX_FILTER_REQUEST, request);
+              hint.set(WEBFLUX_FILTER_RESPONSE, response);
 
               hub.addBreadcrumb(
-                  Breadcrumb.http(request.getURI().toString(), request.getMethodValue()), hints);
+                  Breadcrumb.http(request.getURI().toString(), request.getMethodValue()), hint);
               hub.configureScope(
                   scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
             });

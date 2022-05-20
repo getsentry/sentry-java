@@ -2,7 +2,7 @@ package io.sentry;
 
 import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
@@ -76,7 +76,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Hints hints) {
+      final @NotNull SentryEvent event, final @Nullable Hint hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -89,7 +89,7 @@ public final class Hub implements IHub {
       try {
         assignTraceContext(event);
         final StackItem item = stack.peek();
-        sentryId = item.getClient().captureEvent(event, item.getScope(), hints);
+        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
         this.lastEventId = sentryId;
       } catch (Throwable e) {
         options
@@ -128,7 +128,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(
-      final @NotNull SentryEnvelope envelope, final @Nullable Hints hints) {
+      final @NotNull SentryEnvelope envelope, final @Nullable Hint hint) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -141,7 +141,7 @@ public final class Hub implements IHub {
     } else {
       try {
         final SentryId capturedEnvelopeId =
-            stack.peek().getClient().captureEnvelope(envelope, hints);
+            stack.peek().getClient().captureEnvelope(envelope, hint);
         if (capturedEnvelopeId != null) {
           sentryId = capturedEnvelopeId;
         }
@@ -154,7 +154,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Hints hints) {
+      final @NotNull Throwable throwable, final @Nullable Hint hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -169,7 +169,7 @@ public final class Hub implements IHub {
         final StackItem item = stack.peek();
         final SentryEvent event = new SentryEvent(throwable);
         assignTraceContext(event);
-        sentryId = item.getClient().captureEvent(event, item.getScope(), hints);
+        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
       } catch (Throwable e) {
         options
             .getLogger()
@@ -236,14 +236,14 @@ public final class Hub implements IHub {
         // single envelope
         // Or create the envelope here with both items and call `captureEnvelope`
         if (pair.getPrevious() != null) {
-          final Hints hints = HintUtils.createWithTypeCheckHint(new SessionEndHint());
+          final Hint hint = HintUtils.createWithTypeCheckHint(new SessionEndHint());
 
-          item.getClient().captureSession(pair.getPrevious(), hints);
+          item.getClient().captureSession(pair.getPrevious(), hint);
         }
 
-        final Hints hints = HintUtils.createWithTypeCheckHint(new SessionStartHint());
+        final Hint hint = HintUtils.createWithTypeCheckHint(new SessionStartHint());
 
-        item.getClient().captureSession(pair.getCurrent(), hints);
+        item.getClient().captureSession(pair.getCurrent(), hint);
       } else {
         options.getLogger().log(SentryLevel.WARNING, "Session could not be started.");
       }
@@ -260,9 +260,9 @@ public final class Hub implements IHub {
       final StackItem item = this.stack.peek();
       final Session previousSession = item.getScope().endSession();
       if (previousSession != null) {
-        final Hints hints = HintUtils.createWithTypeCheckHint(new SessionEndHint());
+        final Hint hint = HintUtils.createWithTypeCheckHint(new SessionEndHint());
 
-        item.getClient().captureSession(previousSession, hints);
+        item.getClient().captureSession(previousSession, hint);
       }
     }
   }
@@ -294,7 +294,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Hints hints) {
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Hint hint) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -304,7 +304,7 @@ public final class Hub implements IHub {
     } else if (breadcrumb == null) {
       options.getLogger().log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
     } else {
-      stack.peek().getScope().addBreadcrumb(breadcrumb, hints);
+      stack.peek().getScope().addBreadcrumb(breadcrumb, hint);
     }
   }
 
@@ -547,7 +547,7 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Hints hints,
+      final @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "transaction is required");
 
@@ -584,7 +584,7 @@ public final class Hub implements IHub {
             sentryId =
                 item.getClient()
                     .captureTransaction(
-                        transaction, traceState, item.getScope(), hints, profilingTraceData);
+                        transaction, traceState, item.getScope(), hint, profilingTraceData);
           } catch (Throwable e) {
             options
                 .getLogger()

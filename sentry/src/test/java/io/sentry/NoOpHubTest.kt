@@ -1,7 +1,7 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
-import io.sentry.hints.Hints
+import io.sentry.hints.Hint
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,7 +30,7 @@ class NoOpHubTest {
 
     @Test
     fun `captureTransaction returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Hints>()))
+        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Hint>()))
 
     @Test
     fun `captureException returns empty SentryId`() =

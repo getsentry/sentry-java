@@ -4,7 +4,7 @@ import static io.sentry.SentryLevel.ERROR;
 
 import io.sentry.hints.Cached;
 import io.sentry.hints.Flushable;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
@@ -63,18 +63,19 @@ abstract class DirectoryProcessor {
 
         logger.log(SentryLevel.DEBUG, "Processing file: %s", file.getAbsolutePath());
 
-        final SendCachedEnvelopeHint hint = new SendCachedEnvelopeHint(flushTimeoutMillis, logger);
+        final SendCachedEnvelopeHint cachedHint =
+            new SendCachedEnvelopeHint(flushTimeoutMillis, logger);
 
-        final Hints hints = HintUtils.createWithTypeCheckHint(hint);
+        final Hint hint = HintUtils.createWithTypeCheckHint(cachedHint);
 
-        processFile(file, hints);
+        processFile(file, hint);
       }
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
     }
   }
 
-  protected abstract void processFile(final @NotNull File file, final @NotNull Hints hints);
+  protected abstract void processFile(final @NotNull File file, final @NotNull Hint hint);
 
   protected abstract boolean isRelevantFileName(String fileName);
 

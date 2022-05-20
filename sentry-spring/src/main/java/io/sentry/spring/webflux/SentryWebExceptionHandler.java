@@ -7,7 +7,7 @@ import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.exception.ExceptionMechanismException;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.Mechanism;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
@@ -43,11 +43,11 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
       event.setLevel(SentryLevel.FATAL);
       event.setTransaction(TransactionNameProvider.provideTransactionName(serverWebExchange));
 
-      final Hints hints = new Hints();
-      hints.set(WEBFLUX_EXCEPTION_HANDLER_REQUEST, serverWebExchange.getRequest());
-      hints.set(WEBFLUX_EXCEPTION_HANDLER_RESPONSE, serverWebExchange.getResponse());
+      final Hint hint = new Hint();
+      hint.set(WEBFLUX_EXCEPTION_HANDLER_REQUEST, serverWebExchange.getRequest());
+      hint.set(WEBFLUX_EXCEPTION_HANDLER_RESPONSE, serverWebExchange.getResponse());
 
-      hub.captureEvent(event, hints);
+      hub.captureEvent(event, hint);
     }
     return Mono.error(ex);
   }

@@ -19,7 +19,7 @@ import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -126,10 +126,10 @@ public final class ActivityLifecycleIntegration
       breadcrumb.setCategory("ui.lifecycle");
       breadcrumb.setLevel(SentryLevel.INFO);
 
-      final Hints hints = new Hints();
-      hints.set(ANDROID_ACTIVITY, activity);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_ACTIVITY, activity);
 
-      hub.addBreadcrumb(breadcrumb, hints);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 

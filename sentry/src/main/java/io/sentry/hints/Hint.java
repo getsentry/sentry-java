@@ -8,7 +8,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Hints {
+public final class Hint {
 
   private static final @NotNull Map<String, Class<?>> PRIMITIVE_MAPPINGS;
 
@@ -28,16 +28,16 @@ public final class Hints {
   private final @NotNull List<Attachment> attachments = new ArrayList<>();
   private @Nullable Attachment screenshot = null;
 
-  public static @NotNull Hints withAttachment(@Nullable Attachment attachment) {
-    @NotNull final Hints hints = new Hints();
-    hints.addAttachment(attachment);
-    return hints;
+  public static @NotNull Hint withAttachment(@Nullable Attachment attachment) {
+    @NotNull final Hint hint = new Hint();
+    hint.addAttachment(attachment);
+    return hint;
   }
 
-  public static @NotNull Hints withAttachments(@Nullable List<Attachment> attachments) {
-    @NotNull final Hints hints = new Hints();
-    hints.addAttachments(attachments);
-    return hints;
+  public static @NotNull Hint withAttachments(@Nullable List<Attachment> attachments) {
+    @NotNull final Hint hint = new Hint();
+    hint.addAttachments(attachments);
+    return hint;
   }
 
   public void set(@NotNull String name, @Nullable Object hint) {

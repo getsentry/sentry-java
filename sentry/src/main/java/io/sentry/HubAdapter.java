@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.hints.Hints;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -26,8 +26,8 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hints hints) {
-    return Sentry.captureEvent(event, hints);
+  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
+    return Sentry.captureEvent(event, hint);
   }
 
   @Override
@@ -37,14 +37,13 @@ public final class HubAdapter implements IHub {
 
   @ApiStatus.Internal
   @Override
-  public @NotNull SentryId captureEnvelope(
-      @NotNull SentryEnvelope envelope, @Nullable Hints hints) {
-    return Sentry.getCurrentHub().captureEnvelope(envelope, hints);
+  public @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
+    return Sentry.getCurrentHub().captureEnvelope(envelope, hint);
   }
 
   @Override
-  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hints hints) {
-    return Sentry.captureException(throwable, hints);
+  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint) {
+    return Sentry.captureException(throwable, hint);
   }
 
   @Override
@@ -68,8 +67,8 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hints hints) {
-    Sentry.addBreadcrumb(breadcrumb, hints);
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
+    Sentry.addBreadcrumb(breadcrumb, hint);
   }
 
   @Override
@@ -161,10 +160,10 @@ public final class HubAdapter implements IHub {
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
-      @Nullable Hints hints,
+      @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData) {
     return Sentry.getCurrentHub()
-        .captureTransaction(transaction, traceState, hints, profilingTraceData);
+        .captureTransaction(transaction, traceState, hint, profilingTraceData);
   }
 
   @Override
