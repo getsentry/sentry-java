@@ -29,6 +29,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
@@ -120,6 +121,18 @@ public class SentryAutoConfiguration {
       options.getIgnoredExceptionsForType().removeIf(it -> !Throwable.class.isAssignableFrom(it));
       Sentry.init(options);
       return HubAdapter.getInstance();
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(MDC.class)
+    @Open
+    static class ContextTagsEventProcessorConfiguration {
+
+      @Bean
+      public @NotNull ContextTagsEventProcessor contextTagsEventProcessor(
+          final @NotNull SentryOptions sentryOptions) {
+        return new ContextTagsEventProcessor(sentryOptions);
+      }
     }
 
     /** Registers beans specific to Spring MVC. */

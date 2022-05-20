@@ -31,6 +31,7 @@ import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
+import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
@@ -614,6 +615,27 @@ class SentryAutoConfigurationTest {
                 assertThat(it.getBean(SentryOptions::class.java).transportFactory)
                     .isNotInstanceOf(ApacheHttpClientTransportFactory::class.java)
                     .isNotInstanceOf(NoOpTransportFactory::class.java)
+            }
+    }
+
+    @Test
+    fun `when MDC is on the classpath, creates ContextTagsEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it).hasSingleBean(ContextTagsEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).anyMatch { processor -> processor.javaClass == ContextTagsEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when MDC is not on the classpath, does not create ContextTagsEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(MDC::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(ContextTagsEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == ContextTagsEventProcessor::class.java }
             }
     }
 
