@@ -1646,7 +1646,7 @@ class SentryClientTest {
     fun `can replace attachments in beforeSend`() {
         val sut = fixture.getSut { options ->
             options.setBeforeSend { event, hints ->
-                hints.replaceAttachments(listOf(fixture.attachment))
+                hints.replaceAttachments(listOf(fixture.attachment3))
                 event
             }
         }
@@ -1689,7 +1689,7 @@ class SentryClientTest {
         val sut = fixture.getSut { options ->
             options.addEventProcessor(object : EventProcessor {
                 override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
-                    hint.replaceAttachments(listOf(fixture.attachment))
+                    hint.replaceAttachments(listOf(fixture.attachment3))
                     return event
                 }
 
@@ -1782,7 +1782,7 @@ class SentryClientTest {
                     transaction: SentryTransaction,
                     hint: Hint
                 ): SentryTransaction? {
-                    hint.replaceAttachments(listOf(fixture.attachment))
+                    hint.replaceAttachments(listOf(fixture.attachment3))
                     return transaction
                 }
             })
