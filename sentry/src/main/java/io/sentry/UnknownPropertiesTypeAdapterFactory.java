@@ -44,6 +44,7 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
         (TypeAdapter<IUnknownPropertiesConsumer>) gson.getDelegateAdapter(this, typeToken);
     // Excluder is necessary to check if the field can be processed
     // Basically it's not required, but it makes the check more complete
+    @SuppressWarnings("deprecation")
     final Excluder excluder = gson.excluder();
     // This is crucial to map fields and JSON object properties since Gson supports name remapping
     final FieldNamingStrategy fieldNamingStrategy = gson.fieldNamingStrategy();
@@ -107,7 +108,9 @@ final class UnknownPropertiesTypeAdapterFactory implements TypeAdapterFactory {
     public @Nullable T read(final JsonReader in) {
       // In its simplest solution, we can just collect a JSON tree because its much easier to
       // process
+      @SuppressWarnings("deprecation")
       JsonParser parser = new JsonParser();
+      @SuppressWarnings("deprecation")
       JsonElement jsonElement = parser.parse(in);
 
       if (jsonElement == null || jsonElement.isJsonNull()) {

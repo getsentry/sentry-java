@@ -45,7 +45,8 @@ object Config {
         val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
         val okhttp = "com.squareup.okhttp3:okhttp"
         // only bump gson if https://github.com/google/gson/issues/1597 is fixed
-        private val gsonVersion = "2.8.5"
+        // upgraded anyways due to CVE-2022-25647 (#2059)
+        private val gsonVersion = "2.9.0"
         val gsonDep = "com.google.code.gson:gson"
         val gson = "$gsonDep:$gsonVersion"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
