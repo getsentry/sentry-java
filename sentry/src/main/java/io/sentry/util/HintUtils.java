@@ -75,7 +75,7 @@ public final class HintUtils {
       @NotNull Hint hint,
       @NotNull Class<T> clazz,
       SentryConsumer<T> lambda,
-      SentryFallbackConsumer fallbackLambda) {
+      SentryHintFallback fallbackLambda) {
     Object sentrySdkHint = getSentrySdkHint(hint);
     if (hasType(hint, clazz) && sentrySdkHint != null) {
       lambda.accept((T) sentrySdkHint);
@@ -106,7 +106,7 @@ public final class HintUtils {
   }
 
   @FunctionalInterface
-  public interface SentryFallbackConsumer {
+  public interface SentryHintFallback {
     void accept(@Nullable Object sentrySdkHint, @NotNull Class<?> clazz);
   }
 }
