@@ -17,6 +17,5 @@
 # To ensure that stack traces is unambiguous
 # https://developer.android.com/studio/build/shrink-code#decode-stack-trace
 -keepattributes LineNumberTable,SourceFile
--renamesourcefileattribute SourceFile
 
 ##---------------End: proguard configuration for android-core  ----------

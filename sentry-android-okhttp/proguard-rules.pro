@@ -3,7 +3,6 @@
 # To ensure that stack traces is unambiguous
 # https://developer.android.com/studio/build/shrink-code#decode-stack-trace
 -keepattributes LineNumberTable,SourceFile
--renamesourcefileattribute SourceFile
 
 # https://square.github.io/okhttp/features/r8_proguard/
 # If you use OkHttp as a dependency in an Android project which uses R8 as a default compiler you
