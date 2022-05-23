@@ -1,16 +1,15 @@
 package io.sentry.cache;
 
 import io.sentry.SentryEnvelope;
-import java.util.Map;
+import io.sentry.hints.Hint;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public interface IEnvelopeCache extends Iterable<SentryEnvelope> {
 
-  void store(@NotNull SentryEnvelope envelope, @Nullable Map<String, Object> hint);
+  void store(@NotNull SentryEnvelope envelope, @NotNull Hint hint);
 
   default void store(@NotNull SentryEnvelope envelope) {
-    store(envelope, null);
+    store(envelope, new Hint());
   }
 
   void discard(@NotNull SentryEnvelope envelope);

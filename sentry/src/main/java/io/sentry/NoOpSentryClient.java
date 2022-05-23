@@ -1,8 +1,8 @@
 package io.sentry;
 
+import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +23,7 @@ final class NoOpSentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureEvent(
-      @NotNull SentryEvent event, @Nullable Scope scope, @Nullable Map<String, Object> hint) {
+      @NotNull SentryEvent event, @Nullable Scope scope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -37,11 +37,10 @@ final class NoOpSentryClient implements ISentryClient {
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 
   @Override
-  public void captureSession(@NotNull Session session, @Nullable Map<String, Object> hint) {}
+  public void captureSession(@NotNull Session session, @Nullable Hint hint) {}
 
   @Override
-  public SentryId captureEnvelope(
-      @NotNull SentryEnvelope envelope, @Nullable Map<String, Object> hint) {
+  public SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -50,7 +49,7 @@ final class NoOpSentryClient implements ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       @Nullable Scope scope,
-      @Nullable Map<String, Object> hint,
+      @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData) {
     return SentryId.EMPTY_ID;
   }

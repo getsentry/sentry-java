@@ -16,9 +16,9 @@ import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.hints.Hint;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -186,14 +186,14 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       className = target.getClass().getSimpleName();
     }
 
-    final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put(ANDROID_MOTION_EVENT, motionEvent);
-    hintMap.put(ANDROID_VIEW, target);
+    final Hint hint = new Hint();
+    hint.set(ANDROID_MOTION_EVENT, motionEvent);
+    hint.set(ANDROID_VIEW, target);
 
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(
             eventType, ViewUtils.getResourceIdWithFallback(target), className, additionalData),
-        hintMap);
+        hint);
   }
 
   private void startTracing(final @NotNull View target, final @NotNull String eventType) {

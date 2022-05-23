@@ -7,6 +7,7 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 import io.sentry.EventProcessor;
 import io.sentry.SentryEvent;
 import io.sentry.SpanContext;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
@@ -42,7 +43,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
    */
   @Override
   @Nullable
-  public SentryEvent process(@NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
+  public SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
     // that's only necessary because on newer versions of Unity, if not overriding this method, it's
     // throwing 'java.lang.AbstractMethodError: abstract method' and the reason is probably
     // compilation mismatch.
@@ -52,7 +53,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   @SuppressWarnings("NullAway")
   @Override
   public synchronized @NotNull SentryTransaction process(
-      @NotNull SentryTransaction transaction, @Nullable Map<String, Object> hint) {
+      @NotNull SentryTransaction transaction, @NotNull Hint hint) {
 
     if (!options.isTracingEnabled()) {
       return transaction;

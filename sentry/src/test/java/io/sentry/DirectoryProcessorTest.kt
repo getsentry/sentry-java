@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.hints.ApplyScopeData
 import io.sentry.protocol.User
+import io.sentry.util.HintUtils
 import io.sentry.util.noFlushTimeout
 import java.io.File
 import java.nio.file.Files
@@ -66,7 +67,7 @@ class DirectoryProcessorTest {
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
 
         fixture.getSut().processDirectory(file)
-        verify(fixture.hub).captureEvent(any(), argWhere { it !is ApplyScopeData })
+        verify(fixture.hub).captureEvent(any(), argWhere { !HintUtils.hasType(it, ApplyScopeData::class.java) })
     }
 
     @Test

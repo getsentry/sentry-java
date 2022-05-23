@@ -19,6 +19,7 @@ import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
+import io.sentry.hints.Hint
 import java.util.concurrent.Executor
 
 class SentryApolloInterceptor(
@@ -115,8 +116,11 @@ class SentryApolloInterceptor(
                     breadcrumb.setData("response_body_size", contentLength)
                 }
 
-                val hintsMap = mutableMapOf(APOLLO_REQUEST to httpRequest, APOLLO_RESPONSE to httpResponse)
-                hub.addBreadcrumb(breadcrumb, hintsMap)
+                val hint = Hint().also {
+                    it.set(APOLLO_REQUEST, httpRequest)
+                    it.set(APOLLO_RESPONSE, httpResponse)
+                }
+                hub.addBreadcrumb(breadcrumb, hint)
             }
         }
     }

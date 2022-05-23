@@ -6,9 +6,8 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
-import java.util.HashMap;
-import java.util.Map;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
@@ -45,11 +44,11 @@ public class SentryServletRequestListener implements ServletRequestListener {
     if (servletRequest instanceof HttpServletRequest) {
       final HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
 
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(SERVLET_REQUEST, httpRequest);
+      final Hint hint = new Hint();
+      hint.set(SERVLET_REQUEST, httpRequest);
 
       hub.addBreadcrumb(
-          Breadcrumb.http(httpRequest.getRequestURI(), httpRequest.getMethod()), hintMap);
+          Breadcrumb.http(httpRequest.getRequestURI(), httpRequest.getMethod()), hint);
 
       hub.configureScope(
           scope -> {

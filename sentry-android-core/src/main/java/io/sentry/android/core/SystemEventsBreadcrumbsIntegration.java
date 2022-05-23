@@ -43,6 +43,7 @@ import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -215,10 +216,10 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       }
       breadcrumb.setLevel(SentryLevel.INFO);
 
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(ANDROID_INTENT, intent);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_INTENT, intent);
 
-      hub.addBreadcrumb(breadcrumb, hintMap);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 }

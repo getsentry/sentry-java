@@ -19,11 +19,11 @@ import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -126,10 +126,10 @@ public final class ActivityLifecycleIntegration
       breadcrumb.setCategory("ui.lifecycle");
       breadcrumb.setLevel(SentryLevel.INFO);
 
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(ANDROID_ACTIVITY, activity);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_ACTIVITY, activity);
 
-      hub.addBreadcrumb(breadcrumb, hintMap);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 

@@ -14,7 +14,7 @@ import io.sentry.Attachment
 import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
-import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
+import io.sentry.hints.Hint
 import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -95,99 +95,99 @@ class ScreenshotEventProcessorTest {
     @Test
     fun `when process is called and attachScreenshot is disabled, does nothing`() {
         val sut = fixture.getSut(false)
-        val hints = mutableMapOf<String, Any>()
+        val hint = Hint()
 
         sut.onActivityCreated(fixture.activity, null)
 
-        val event = fixture.mainProcessor.process(getEvent(), hints)
-        sut.process(event, hints)
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hint.screenshot)
     }
 
     @Test
     fun `when event is not errored, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hint = Hint()
 
         sut.onActivityCreated(fixture.activity, null)
 
-        val event = fixture.mainProcessor.process(SentryEvent(), hints)
-        sut.process(event, hints)
+        val event = fixture.mainProcessor.process(SentryEvent(), hint)
+        sut.process(event, hint)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hint.screenshot)
     }
 
     @Test
     fun `when there is not activity, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hint = Hint()
 
-        val event = fixture.mainProcessor.process(getEvent(), hints)
-        sut.process(event, hints)
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hint.screenshot)
     }
 
     @Test
     fun `when activity is finishing, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hint = Hint()
 
         whenever(fixture.activity.isFinishing).thenReturn(true)
         sut.onActivityCreated(fixture.activity, null)
 
-        val event = fixture.mainProcessor.process(getEvent(), hints)
-        sut.process(event, hints)
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hint.screenshot)
     }
 
     @Test
     fun `when view is zeroed, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hint = Hint()
 
         whenever(fixture.rootView.width).thenReturn(0)
         whenever(fixture.rootView.height).thenReturn(0)
         sut.onActivityCreated(fixture.activity, null)
 
-        val event = fixture.mainProcessor.process(getEvent(), hints)
-        sut.process(event, hints)
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hint.screenshot)
     }
 
     @Test
     fun `when process is called and attachScreenshot is enabled, add attachment to hints`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hint = Hint()
 
         sut.onActivityCreated(fixture.activity, null)
 
-        val event = fixture.mainProcessor.process(getEvent(), hints)
-        sut.process(event, hints)
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
 
-        val screenshot = hints[SENTRY_SCREENSHOT]
+        val screenshot = hint.screenshot
         assertTrue(screenshot is Attachment)
         assertEquals("screenshot.png", screenshot.filename)
         assertEquals("image/png", screenshot.contentType)
 
-        assertSame(fixture.activity, hints[ANDROID_ACTIVITY])
+        assertSame(fixture.activity, hint[ANDROID_ACTIVITY])
     }
 
     @Test
     fun `when activity is destroyed, does nothing`() {
         val sut = fixture.getSut(true)
-        val hints = mutableMapOf<String, Any>()
+        val hint = Hint()
 
         sut.onActivityCreated(fixture.activity, null)
         sut.onActivityDestroyed(fixture.activity)
 
-        val event = fixture.mainProcessor.process(getEvent(), hints)
-        sut.process(event, hints)
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
 
-        assertNull(hints[SENTRY_SCREENSHOT])
+        assertNull(hint.screenshot)
     }
 
     private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))

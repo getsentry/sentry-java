@@ -11,13 +11,12 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.DeviceOrientations;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.Device;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,10 +99,10 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setData("position", orientation);
       breadcrumb.setLevel(SentryLevel.INFO);
 
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(ANDROID_CONFIGURATION, newConfig);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_CONFIGURATION, newConfig);
 
-      hub.addBreadcrumb(breadcrumb, hintMap);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 
