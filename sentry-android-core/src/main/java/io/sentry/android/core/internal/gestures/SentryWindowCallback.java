@@ -6,6 +6,7 @@ import android.view.Window;
 import androidx.core.view.GestureDetectorCompat;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SpanStatus;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -69,6 +70,10 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
     if (action == MotionEvent.ACTION_UP) {
       gestureListener.onUp(motionEvent);
     }
+  }
+
+  public void stopTracking() {
+    gestureListener.stopTracing(SpanStatus.CANCELLED);
   }
 
   public @NotNull Window.Callback getDelegate() {

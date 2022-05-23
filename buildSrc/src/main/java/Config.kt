@@ -8,7 +8,7 @@ object Config {
     val kotlinCompatibleLanguageVersion = "1.4"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.1.2"
+        val androidGradle = "com.android.tools.build:gradle:7.2.0"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -52,6 +52,7 @@ object Config {
         val androidxRecylerView = "androidx.recyclerview:recyclerview:1.2.1"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
+        val slf4jJdk14 = "org.slf4j:slf4j-jdk14:1.7.30"
         val logbackVersion = "1.2.9"
         val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
 

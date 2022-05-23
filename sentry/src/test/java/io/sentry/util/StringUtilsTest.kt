@@ -1,5 +1,6 @@
 package io.sentry.util
 
+import com.nhaarman.mockitokotlin2.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -95,5 +96,23 @@ class StringUtilsTest {
         assertEquals("-100.1 MB", StringUtils.byteCountToString(-100_124_500))
 
         assertEquals("999.9 MB", StringUtils.byteCountToString(999_945_018))
+    }
+
+    @Test
+    fun `calculates SHA1 hash of the given string`() {
+        val hash = StringUtils.calculateStringHash("http://key@localhost/proj", mock())
+
+        assertEquals("22be31f64088988d5caeb9d19470bc38a0aa0a78", hash)
+    }
+
+    @Test
+    fun `returns null if the given string is null or empty when calculating hash`() {
+        val hashNull = StringUtils.calculateStringHash(null, mock())
+
+        assertNull(hashNull)
+
+        val hashEmpty = StringUtils.calculateStringHash("", mock())
+
+        assertNull(hashEmpty)
     }
 }

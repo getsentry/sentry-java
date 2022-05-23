@@ -1,11 +1,11 @@
 package io.sentry;
 
+import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,8 +27,7 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEvent(
-      @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
+  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -38,14 +37,12 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEnvelope(
-      @NotNull SentryEnvelope envelope, @Nullable Map<String, Object> hint) {
+  public @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public @NotNull SentryId captureException(
-      @NotNull Throwable throwable, @Nullable Map<String, Object> hint) {
+  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -62,7 +59,7 @@ public final class NoOpHub implements IHub {
   public void close() {}
 
   @Override
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Map<String, Object> hint) {}
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {}
 
   @Override
   public void setLevel(@Nullable SentryLevel level) {}
@@ -123,7 +120,7 @@ public final class NoOpHub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Map<String, Object> hint,
+      final @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
     return SentryId.EMPTY_ID;
   }
@@ -157,6 +154,8 @@ public final class NoOpHub implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp,
       boolean waitForChildren,
+      @Nullable Long idleTimeout,
+      boolean trimEnd,
       @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return NoOpTransaction.getInstance();
   }

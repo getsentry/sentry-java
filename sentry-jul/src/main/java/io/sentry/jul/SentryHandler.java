@@ -9,13 +9,13 @@ import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.ErrorManager;
@@ -81,16 +81,16 @@ public class SentryHandler extends Handler {
     }
     try {
       if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
-        final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put(SENTRY_SYNTHETIC_EXCEPTION, record);
+        final Hint hint = new Hint();
+        hint.set(SENTRY_SYNTHETIC_EXCEPTION, record);
 
-        Sentry.captureEvent(createEvent(record), hintMap);
+        Sentry.captureEvent(createEvent(record), hint);
       }
       if (record.getLevel().intValue() >= minimumBreadcrumbLevel.intValue()) {
-        final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put(JUL_LOG_RECORD, record);
+        final Hint hint = new Hint();
+        hint.set(JUL_LOG_RECORD, record);
 
-        Sentry.addBreadcrumb(createBreadcrumb(record), hintMap);
+        Sentry.addBreadcrumb(createBreadcrumb(record), hint);
       }
     } catch (RuntimeException e) {
       reportError(

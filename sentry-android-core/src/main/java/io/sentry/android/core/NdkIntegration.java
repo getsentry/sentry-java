@@ -40,7 +40,7 @@ public final class NdkIntegration implements Integration, Closeable {
     // up by another integration (EnvelopeFileObserverIntegration).
     if (enabled && sentryNdkClass != null) {
       final String cachedDir = this.options.getCacheDirPath();
-      if (cachedDir == null || cachedDir.isEmpty()) {
+      if (cachedDir == null) {
         this.options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
         disableNdkIntegration(this.options);
         return;

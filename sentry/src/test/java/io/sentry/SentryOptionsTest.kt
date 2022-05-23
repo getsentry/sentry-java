@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.util.StringUtils
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -211,6 +212,8 @@ class SentryOptionsTest {
         externalOptions.addTracingOrigin("api.foo.com")
         externalOptions.addContextTag("userId")
         externalOptions.addContextTag("requestId")
+        externalOptions.proguardUuid = "1234"
+        externalOptions.idleTimeout = 1500L
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -230,6 +233,8 @@ class SentryOptionsTest {
         assertEquals(listOf("io.off"), options.inAppExcludes)
         assertEquals(listOf("localhost", "api.foo.com"), options.tracingOrigins)
         assertEquals(listOf("userId", "requestId"), options.contextTags)
+        assertEquals("1234", options.proguardUuid)
+        assertEquals(1500L, options.idleTimeout)
     }
 
     @Test
@@ -262,5 +267,22 @@ class SentryOptionsTest {
     @Test
     fun `when options are initialized, maxAttachmentSize is 20`() {
         assertEquals((20 * 1024 * 1024).toLong(), SentryOptions().maxAttachmentSize)
+    }
+
+    @Test
+    fun `when setting dsn, calculates hash and add as subfolder of caching dirs`() {
+        val dsn = "http://key@localhost/proj"
+        val hash = StringUtils.calculateStringHash(dsn, mock())
+        val options = SentryOptions().apply {
+            setDsn(dsn)
+            cacheDirPath = "${File.separator}test"
+        }
+
+        assertEquals("${File.separator}test${File.separator}${hash}${File.separator}outbox", options.outboxPath)
+        assertEquals("${File.separator}test${File.separator}${hash}${File.separator}profiling_traces", options.profilingTracesDirPath)
+    }
+
+    fun `when options are initialized, idleTimeout is 3000`() {
+        assertEquals(3000L, SentryOptions().idleTimeout)
     }
 }

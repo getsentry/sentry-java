@@ -19,8 +19,19 @@ final class ContextUtils {
    */
   @Nullable
   static PackageInfo getPackageInfo(final @NotNull Context context, final @NotNull ILogger logger) {
+    return getPackageInfo(context, 0, logger);
+  }
+
+  /**
+   * Return the Application's PackageInfo with the specified flags if possible, or null.
+   *
+   * @return the Application's PackageInfo if possible, or null
+   */
+  @Nullable
+  static PackageInfo getPackageInfo(
+      final @NotNull Context context, final int flags, final @NotNull ILogger logger) {
     try {
-      return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+      return context.getPackageManager().getPackageInfo(context.getPackageName(), flags);
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting package info.", e);
       return null;

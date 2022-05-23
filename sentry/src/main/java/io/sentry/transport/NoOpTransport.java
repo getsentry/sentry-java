@@ -1,11 +1,10 @@
 package io.sentry.transport;
 
 import io.sentry.SentryEnvelope;
+import io.sentry.hints.Hint;
 import java.io.IOException;
-import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class NoOpTransport implements ITransport {
@@ -19,7 +18,7 @@ public final class NoOpTransport implements ITransport {
   private NoOpTransport() {}
 
   @Override
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint)
+  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
       throws IOException {}
 
   @Override

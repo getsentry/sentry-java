@@ -110,7 +110,7 @@ public final class io/sentry/android/core/ScreenshotEventProcessor : android/app
 	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onActivityStopped (Landroid/app/Activity;)V
-	public fun process (Lio/sentry/SentryEvent;Ljava/util/Map;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/hints/Hint;)Lio/sentry/SentryEvent;
 }
 
 public final class io/sentry/android/core/SentryAndroid {
@@ -136,6 +136,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableUserInteractionBreadcrumbs ()Z
+	public fun isEnableUserInteractionTracing ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
@@ -148,6 +149,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableUserInteractionBreadcrumbs (Z)V
+	public fun setEnableUserInteractionTracing (Z)V
 	public fun setProfilingTracesIntervalMillis (I)V
 }
 

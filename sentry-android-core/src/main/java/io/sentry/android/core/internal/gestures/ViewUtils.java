@@ -101,17 +101,29 @@ final class ViewUtils {
    * @param view - the view that the id is being retrieved for.
    * @return human-readable view id
    */
-  static String getResourceId(final @NotNull View view) {
+  static String getResourceIdWithFallback(final @NotNull View view) {
+    final int viewId = view.getId();
+    try {
+      return getResourceId(view);
+    } catch (Resources.NotFoundException e) {
+      // fall back to hex representation of the id
+      return "0x" + Integer.toString(viewId, 16);
+    }
+  }
+
+  /**
+   * Retrieves the human-readable view id based on {@code view.getContext().getResources()}.
+   *
+   * @param view - the view whose id is being retrieved
+   * @return human-readable view id
+   * @throws Resources.NotFoundException in case the view id was not found
+   */
+  static String getResourceId(final @NotNull View view) throws Resources.NotFoundException {
     final int viewId = view.getId();
     final Resources resources = view.getContext().getResources();
     String resourceId = "";
-    try {
-      if (resources != null) {
-        resourceId = resources.getResourceEntryName(viewId);
-      }
-    } catch (Resources.NotFoundException e) {
-      // fall back to hex representation of the id
-      resourceId = "0x" + Integer.toString(viewId, 16);
+    if (resources != null) {
+      resourceId = resources.getResourceEntryName(viewId);
     }
     return resourceId;
   }

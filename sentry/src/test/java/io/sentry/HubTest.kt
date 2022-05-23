@@ -14,11 +14,11 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.cache.EnvelopeCache
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
+import io.sentry.hints.Hint
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
@@ -26,6 +26,7 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
 import io.sentry.util.HintUtils
+import io.sentry.util.StringUtils
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
@@ -265,7 +266,7 @@ class HubTest {
         sut.close()
 
         sut.captureEvent(SentryEvent())
-        verify(mockClient, never()).captureEvent(any(), any<Map<String, Any?>>())
+        verify(mockClient, never()).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -273,9 +274,9 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
-        sut.captureEvent(event, hintsMap)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureEvent(event, hints)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hints))
     }
 
     @Test
@@ -283,11 +284,11 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         whenever(mockClient.captureEvent(any(), any(), anyOrNull())).thenReturn(SentryId(UUID.randomUUID()))
         val event = SentryEvent()
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
-        sut.captureEvent(event, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureEvent(event, hints)
         val lastEventId = sut.lastEventId
         sut.close()
-        sut.captureEvent(event, hintsMap)
+        sut.captureEvent(event, hints)
         assertEquals(lastEventId, sut.lastEventId)
     }
 
@@ -296,9 +297,9 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
-        sut.captureEvent(event, hintsMap)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureEvent(event, hints)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hints))
         verify(mockClient, never()).captureSession(any(), any())
     }
 
@@ -307,9 +308,9 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         val event = SentryEvent()
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
-        sut.captureEvent(event, hintsMap)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureEvent(event, hints)
+        verify(mockClient).captureEvent(eq(event), any(), eq(hints))
         verify(mockClient, never()).captureSession(any(), any())
     }
 
@@ -323,10 +324,10 @@ class HubTest {
 
         val event = SentryEvent(exception)
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
-        sut.captureEvent(event, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureEvent(event, hints)
         assertEquals(span.spanContext, event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hints))
     }
 
     @Test
@@ -339,10 +340,10 @@ class HubTest {
 
         val event = SentryEvent(RuntimeException(rootCause))
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
-        sut.captureEvent(event, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureEvent(event, hints)
         assertEquals(span.spanContext, event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hints))
     }
 
     @Test
@@ -356,10 +357,10 @@ class HubTest {
 
         val event = SentryEvent(RuntimeException(exceptionAssignedToSpan))
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
-        sut.captureEvent(event, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureEvent(event, hints)
         assertEquals(span.spanContext, event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hints))
     }
 
     @Test
@@ -374,10 +375,10 @@ class HubTest {
         val originalSpanContext = SpanContext("op")
         event.contexts.trace = originalSpanContext
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
-        sut.captureEvent(event, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureEvent(event, hints)
         assertEquals(originalSpanContext, event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hints))
     }
 
     @Test
@@ -386,10 +387,10 @@ class HubTest {
 
         val event = SentryEvent(RuntimeException())
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to { })
-        sut.captureEvent(event, hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureEvent(event, hints)
         assertNull(event.contexts.trace)
-        verify(mockClient).captureEvent(eq(event), any(), eq(hintsMap))
+        verify(mockClient).captureEvent(eq(event), any(), eq(hints))
     }
     //endregion
 
@@ -455,8 +456,8 @@ class HubTest {
     fun `when captureException is called with a valid argument and hint, captureEvent on the client should be called`() {
         val (sut, mockClient) = getEnabledHub()
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
-        sut.captureException(Throwable(), hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint({})
+        sut.captureException(Throwable(), hints)
         verify(mockClient).captureEvent(any(), any(), any())
     }
 
@@ -973,7 +974,7 @@ class HubTest {
         sut.bindClient(mockClient)
 
         sut.startSession()
-        verify(mockClient).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionStartHint })
+        verify(mockClient).captureSession(any(), argWhere { HintUtils.hasType(it, SessionStartHint::class.java) })
     }
 
     @Test
@@ -989,8 +990,8 @@ class HubTest {
 
         sut.startSession()
         sut.startSession()
-        verify(mockClient).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionEndHint })
-        verify(mockClient, times(2)).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionStartHint })
+        verify(mockClient).captureSession(any(), argWhere { HintUtils.hasType(it, SessionEndHint::class.java) })
+        verify(mockClient, times(2)).captureSession(any(), argWhere { HintUtils.hasType(it, SessionStartHint::class.java) })
     }
     //endregion
 
@@ -1039,8 +1040,8 @@ class HubTest {
 
         sut.startSession()
         sut.endSession()
-        verify(mockClient).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionStartHint })
-        verify(mockClient).captureSession(any(), argWhere { HintUtils.getSentrySdkHint(it) is SessionEndHint })
+        verify(mockClient).captureSession(any(), argWhere { HintUtils.hasType(it, SessionStartHint::class.java) })
+        verify(mockClient).captureSession(any(), argWhere { HintUtils.hasType(it, SessionEndHint::class.java) })
     }
 
     @Test
@@ -1358,7 +1359,7 @@ class HubTest {
 
     @Test
     fun `isCrashedLastRun does not delete native marker if auto session is enabled`() {
-        val nativeMarker = File(file.absolutePath, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
+        val nativeMarker = File(hashedFolder(), EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
         nativeMarker.mkdirs()
         nativeMarker.createNewFile()
         val hub = generateHub() as Hub
@@ -1369,7 +1370,7 @@ class HubTest {
 
     @Test
     fun `isCrashedLastRun deletes the native marker if auto session is disabled`() {
-        val nativeMarker = File(file.absolutePath, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
+        val nativeMarker = File(hashedFolder(), EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
         nativeMarker.mkdirs()
         nativeMarker.createNewFile()
         val hub = generateHub {
@@ -1380,9 +1381,11 @@ class HubTest {
         assertFalse(nativeMarker.exists())
     }
 
+    private val dsnTest = "https://key@sentry.io/proj"
+
     private fun generateHub(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IHub {
         val options = SentryOptions().apply {
-            dsn = "https://key@sentry.io/proj"
+            dsn = dsnTest
             cacheDirPath = file.absolutePath
             setSerializer(mock())
             tracesSampleRate = 1.0
@@ -1401,5 +1404,11 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
         return Pair(sut, mockClient)
+    }
+
+    private fun hashedFolder(): String {
+        val hash = StringUtils.calculateStringHash(dsnTest, mock())
+        val fileHashFolder = File(file.absolutePath, hash!!)
+        return fileHashFolder.absolutePath
     }
 }

@@ -8,11 +8,10 @@ import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
+import io.sentry.hints.Hint;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Main {
 
@@ -137,9 +136,9 @@ public class Main {
       SentryEvent event = new SentryEvent();
       event.setMessage(message);
 
-      final Map<String, Object> hintsMap = new HashMap<>();
-      hintsMap.put("level", SentryLevel.DEBUG);
-      Sentry.captureEvent(event, hintsMap);
+      final Hint hint = new Hint();
+      hint.set("level", SentryLevel.DEBUG);
+      Sentry.captureEvent(event, hint);
     }
 
     // Performance feature
@@ -171,7 +170,7 @@ public class Main {
 
   private static class SomeEventProcessor implements EventProcessor {
     @Override
-    public SentryEvent process(SentryEvent event, Map<String, Object> hint) {
+    public SentryEvent process(SentryEvent event, Hint hint) {
       // Here you can modify the event as you need
       if (event.getLevel() != null && event.getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
         event.addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));

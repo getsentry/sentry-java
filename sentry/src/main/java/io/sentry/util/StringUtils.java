@@ -1,5 +1,11 @@
 package io.sentry.util;
 
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.Locale;
@@ -9,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class StringUtils {
+
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private StringUtils() {}
 
@@ -71,5 +79,46 @@ public final class StringUtils {
       ci.next();
     }
     return String.format(Locale.ROOT, "%.1f %cB", bytes / 1000.0, ci.current());
+  }
+
+  /**
+   * Calculates the SHA-1 String hash
+   *
+   * @param str the String
+   * @param logger the Logger
+   * @return The hashed String or null otherwise
+   */
+  public static @Nullable String calculateStringHash(
+      final @Nullable String str, final @NotNull ILogger logger) {
+    if (str == null || str.isEmpty()) {
+      return null;
+    }
+
+    try {
+      // getInstance() method is called with algorithm SHA-1
+      final MessageDigest md = MessageDigest.getInstance("SHA-1");
+
+      // digest() method is called
+      // to calculate message digest of the input string
+      // returned as array of byte
+      final byte[] messageDigest = md.digest(str.getBytes(UTF_8));
+
+      // Convert byte array into signum representation
+      final BigInteger no = new BigInteger(1, messageDigest);
+
+      // Convert message digest into hex value
+      final StringBuilder stringBuilder = new StringBuilder(no.toString(16));
+
+      // return the HashText
+      return stringBuilder.toString();
+    }
+
+    // For specifying wrong message digest algorithms
+    catch (NoSuchAlgorithmException e) {
+      logger.log(SentryLevel.INFO, "SHA-1 isn't available to calculate the hash.", e);
+    } catch (Throwable e) {
+      logger.log(SentryLevel.INFO, "string: %s could not calculate its hash", e, str);
+    }
+    return null;
   }
 }
