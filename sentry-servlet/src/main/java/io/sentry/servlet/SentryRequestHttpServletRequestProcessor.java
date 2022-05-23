@@ -1,8 +1,8 @@
 package io.sentry.servlet;
 
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.SentryEvent;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.Request;
 import io.sentry.util.Objects;
 import java.util.Arrays;

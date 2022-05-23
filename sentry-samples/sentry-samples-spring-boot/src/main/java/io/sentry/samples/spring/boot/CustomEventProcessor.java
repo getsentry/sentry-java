@@ -1,8 +1,8 @@
 package io.sentry.samples.spring.boot;
 
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.SentryEvent;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryRuntime;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.SpringBootVersion;

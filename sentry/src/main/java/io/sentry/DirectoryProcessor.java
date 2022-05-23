@@ -4,7 +4,6 @@ import static io.sentry.SentryLevel.ERROR;
 
 import io.sentry.hints.Cached;
 import io.sentry.hints.Flushable;
-import io.sentry.hints.Hint;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;

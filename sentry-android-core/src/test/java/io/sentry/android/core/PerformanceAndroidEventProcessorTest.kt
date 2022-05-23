@@ -3,11 +3,11 @@ package io.sentry.android.core
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
-import io.sentry.hints.Hint
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentryTransaction
 import java.util.Date

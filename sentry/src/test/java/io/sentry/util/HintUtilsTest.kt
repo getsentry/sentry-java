@@ -2,9 +2,9 @@ package io.sentry.util
 
 import com.nhaarman.mockitokotlin2.mock
 import io.sentry.CustomCachedApplyScopeDataHint
+import io.sentry.Hint
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
-import io.sentry.hints.Hint
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

@@ -1,6 +1,5 @@
-package io.sentry.hints;
+package io.sentry;
 
-import io.sentry.Attachment;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

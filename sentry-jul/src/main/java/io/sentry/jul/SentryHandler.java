@@ -5,11 +5,11 @@ import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;

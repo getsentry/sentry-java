@@ -8,7 +8,6 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.cache.EnvelopeCache
-import io.sentry.hints.Hint
 import io.sentry.hints.Retryable
 import io.sentry.util.HintUtils
 import io.sentry.util.noFlushTimeout

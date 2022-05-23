@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import org.jetbrains.annotations.NotNull;

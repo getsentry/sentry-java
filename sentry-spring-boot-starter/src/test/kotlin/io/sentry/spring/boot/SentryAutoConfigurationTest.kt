@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
+import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Integration
@@ -19,7 +20,6 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
-import io.sentry.hints.Hint
 import io.sentry.protocol.User
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryExceptionResolver

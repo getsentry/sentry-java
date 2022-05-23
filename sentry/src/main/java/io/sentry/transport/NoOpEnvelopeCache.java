@@ -1,8 +1,8 @@
 package io.sentry.transport;
 
+import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
 import io.sentry.cache.IEnvelopeCache;
-import io.sentry.hints.Hint;
 import java.util.ArrayList;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;

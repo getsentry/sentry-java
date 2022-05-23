@@ -11,10 +11,10 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Attachment
+import io.sentry.Hint
 import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
-import io.sentry.hints.Hint
 import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test

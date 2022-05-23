@@ -12,6 +12,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.DiagnosticLogger
+import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
@@ -22,7 +23,6 @@ import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
 import io.sentry.android.core.DefaultAndroidEventProcessor.SIDE_LOADED
-import io.sentry.hints.Hint
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryThread

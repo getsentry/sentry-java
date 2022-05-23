@@ -4,9 +4,9 @@ import static io.sentry.TypeCheckHint.SERVLET_REQUEST;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
-import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletRequestEvent;

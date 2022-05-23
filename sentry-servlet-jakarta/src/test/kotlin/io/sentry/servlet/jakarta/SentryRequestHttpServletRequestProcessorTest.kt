@@ -3,9 +3,9 @@ package io.sentry.servlet.jakarta
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.Hint
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
-import io.sentry.hints.Hint
 import jakarta.servlet.http.HttpServletRequest
 import java.net.URI
 import java.util.Collections

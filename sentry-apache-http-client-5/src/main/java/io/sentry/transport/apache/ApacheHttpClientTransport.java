@@ -2,12 +2,12 @@ package io.sentry.transport.apache;
 
 import static io.sentry.SentryLevel.*;
 
+import io.sentry.Hint;
 import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
-import io.sentry.hints.Hint;
 import io.sentry.hints.Retryable;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;

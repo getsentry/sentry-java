@@ -5,7 +5,6 @@ import static io.sentry.SentryLevel.ERROR;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Flushable;
-import io.sentry.hints.Hint;
 import io.sentry.hints.SessionEnd;
 import io.sentry.protocol.Mechanism;
 import io.sentry.util.HintUtils;
