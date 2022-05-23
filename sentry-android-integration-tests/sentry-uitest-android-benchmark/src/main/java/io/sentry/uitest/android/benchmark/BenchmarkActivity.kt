@@ -18,7 +18,7 @@ class BenchmarkActivity : AppCompatActivity() {
     }
 
     /**
-     * Each background thread will run non-stop calculations during the sentry-uitest-android-benchmark.
+     * Each background thread will run non-stop calculations during the benchmark.
      * One such thread seems enough to represent a busy application.
      * This number can be increased to mimic busier applications.
      */

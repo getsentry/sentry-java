@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 private const val FRAME_DURATION_60FPS_NS: Double = 1_000_000_000 / 60.0
 
 /**
- * Class that allows to sentry-uitest-android-benchmark some operations.
+ * Class that allows to benchmark some operations.
  * Create two [BenchmarkOperation] objects and compare them using [BenchmarkOperation.compare] to get
  * a [BenchmarkResult] with relative measured overheads.
  */
@@ -22,7 +22,7 @@ internal class BenchmarkOperation(private val choreographer: Choreographer, priv
          * first operation to always be slower, so comparing two different operations on equal terms is not possible.
          * This method runs [op1] and [op2] in an alternating sequence.
          * When [op1] and [op2] are the same, we get (nearly) identical results, as expected.
-         * You can adjust [warmupIterations] and [measuredIterations]. The lower they are, the faster the sentry-uitest-android-benchmark,
+         * You can adjust [warmupIterations] and [measuredIterations]. The lower they are, the faster the benchmark,
          *  but accuracy decreases.
          */
         fun compare(

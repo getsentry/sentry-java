@@ -1,7 +1,6 @@
 package io.sentry.uitest.android.benchmark
 
 import android.content.Context
-import android.content.pm.ApplicationInfo
 import android.view.Choreographer
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
@@ -23,7 +22,6 @@ import org.junit.runner.RunWith
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
