@@ -24,7 +24,7 @@ android {
         targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersionNdk // NDK requires a higher API level than core.
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
         externalNativeBuild {
             cmake {

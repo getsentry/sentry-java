@@ -4,19 +4,19 @@ import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import io.sentry.uitest.android.benchmark.databinding.BenchmarkItemListBinding
 import kotlin.random.Random
 
 /** Simple [RecyclerView.Adapter] that generates a bitmap and a text to show for each item. */
 internal class BenchmarkTransactionListAdapter : RecyclerView.Adapter<ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.benchmark_item_list, parent, false)
-        return ViewHolder(view)
+        val binding = BenchmarkItemListBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -41,7 +41,7 @@ internal class BenchmarkTransactionListAdapter : RecyclerView.Adapter<ViewHolder
     override fun getItemCount(): Int = 200
 }
 
-internal class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-    val imageView: ImageView = view.findViewById(R.id.benchmark_item_list_image)
-    val textView: TextView = view.findViewById(R.id.benchmark_item_list_text)
+internal class ViewHolder(binding: BenchmarkItemListBinding) : RecyclerView.ViewHolder(binding.root) {
+    val imageView: ImageView = binding.benchmarkItemListImage
+    val textView: TextView = binding.benchmarkItemListText
 }

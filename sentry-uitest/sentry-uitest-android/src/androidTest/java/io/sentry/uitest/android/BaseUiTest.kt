@@ -25,15 +25,14 @@ abstract class BaseUiTest {
         // The mockDsn cannot be changed. If a custom dsn needs to be used, it can be set in the options as usual
         private set
     /**
-     * Idling resource that will be checked by the relay server (if [relayWaitForRequests] is true).
+     * Idling resource that will be checked by the relay server (if [initSentry] param relayWaitForRequests is true).
      * This should be increased to match any envelope that will be sent during the test,
      * so that they can later be checked.
      */
     protected val relayIdlingResource = CountingIdlingResource("relay-requests")
-    /** Whether relay should wait for requests when asserting envelopes. Enable usage of [relayIdlingResource]. */
-    private var relayWaitForRequests: Boolean = false
+
     /** Mock relay server that receives all envelopes sent during the test. */
-    protected val relay = MockRelay(relayWaitForRequests, relayIdlingResource)
+    protected val relay = MockRelay(false, relayIdlingResource)
 
     @BeforeTest
     fun baseSetUp() {
@@ -46,9 +45,7 @@ abstract class BaseUiTest {
 
     @AfterTest
     fun baseFinish() {
-        if (relayWaitForRequests) {
-            IdlingRegistry.getInstance().unregister(relayIdlingResource)
-        }
+        IdlingRegistry.getInstance().unregister(relayIdlingResource)
         relay.shutdown()
         Sentry.close()
     }
@@ -63,7 +60,6 @@ abstract class BaseUiTest {
         relayWaitForRequests: Boolean = false,
         optionsConfiguration: ((options: SentryOptions) -> Unit)? = null
     ) {
-        this.relayWaitForRequests = relayWaitForRequests
         relay.waitForRequests = relayWaitForRequests
         if (relayWaitForRequests) {
             IdlingRegistry.getInstance().register(relayIdlingResource)

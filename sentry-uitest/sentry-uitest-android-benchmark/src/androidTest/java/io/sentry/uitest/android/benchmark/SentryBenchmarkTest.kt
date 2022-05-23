@@ -1,6 +1,7 @@
 package io.sentry.uitest.android.benchmark
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.view.Choreographer
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
@@ -18,10 +19,11 @@ import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroid
 import io.sentry.uitest.android.benchmark.util.BenchmarkOperation
-import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -57,15 +59,11 @@ class SentryBenchmarkTest {
         val op2 = BenchmarkOperation(choreographer, getOperation(runner))
         val comparisonResult = BenchmarkOperation.compare(op1, "Op1", op2, "Op2")
 
-        assertTrue { comparisonResult.durationIncrease in -1F..1F }
-        assertTrue { comparisonResult.cpuTimeIncrease in -1F..1F }
-        // The fps decrease is skipped for the moment, due to approximation:
-        // if an operation runs at 59.49 fps and the other at 59.51, they are considered 59 and 60 fps respectively.
-        // Their difference would be 1 / 60 * 100 = 1.66666%
-        // On slow devices, a difference of 1 fps on an average of 20 fps would account for 5% decrease.
-        // On even slower devices the difference would be even higher. Let's skip for now, as it's not important anyway.
-//        assertTrue { comparisonResult.fpsDecrease in -2F..2F }
-        assertTrue { comparisonResult.droppedFramesIncrease in -1F..1F }
+        assertTrue(comparisonResult.durationIncrease in -1F..1F)
+        assertTrue(comparisonResult.cpuTimeIncrease in -1F..1F)
+        // The fps decrease comparison is skipped, due to approximation: 59.51 and 59.49 fps are considered 60 and 59,
+        // respectively. Also, if the average fps is 20 or 60, a difference of 1 fps becomes 5% or 1.66% respectively.
+        assertTrue(comparisonResult.droppedFramesIncrease in -1F..1F)
     }
 
     @Test
@@ -74,9 +72,7 @@ class SentryBenchmarkTest {
         runner.runOnMainSync {
             SentryAndroid.init(context) { options: SentryOptions ->
                 options.dsn = "https://key@uri/1234567"
-                options.isEnableAutoSessionTracking = false
                 options.tracesSampleRate = 1.0
-                options.isTraceSampling = true
                 options.isProfilingEnabled = true
             }
         }
@@ -97,10 +93,14 @@ class SentryBenchmarkTest {
             "ProfiledTransaction"
         )
 
-        assertTrue { comparisonResult.durationIncrease in 0F..5F }
-        assertTrue { comparisonResult.cpuTimeIncrease in 0F..5F }
-        assertTrue { comparisonResult.fpsDecrease in 0F..5F }
-        assertTrue { comparisonResult.droppedFramesIncrease in 0F..5F }
+        runner.runOnMainSync {
+            Sentry.close()
+        }
+
+        assertTrue(comparisonResult.durationIncrease in 0F..5F)
+        assertTrue(comparisonResult.cpuTimeIncrease in 0F..5F)
+        assertTrue(comparisonResult.fpsDecrease in 0F..5F)
+        assertTrue(comparisonResult.droppedFramesIncrease in 0F..5F)
     }
 
     /**

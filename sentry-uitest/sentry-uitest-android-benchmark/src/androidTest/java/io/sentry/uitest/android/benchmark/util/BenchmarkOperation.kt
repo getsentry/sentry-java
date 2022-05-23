@@ -13,7 +13,6 @@ private const val FRAME_DURATION_60FPS_NS: Double = 1_000_000_000 / 60.0
  * Create two [BenchmarkOperation] objects and compare them using [BenchmarkOperation.compare] to get
  * a [BenchmarkResult] with relative measured overheads.
  */
-
 internal class BenchmarkOperation(private val choreographer: Choreographer, private val op: () -> Unit) {
 
     companion object {

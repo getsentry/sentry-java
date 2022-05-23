@@ -3,35 +3,33 @@ import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
-    id("com.android.application")
+    id("com.android.library")
     kotlin("android")
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 android {
     compileSdk = Config.Android.compileSdkVersion
 
     defaultConfig {
-        applicationId = "io.sentry.uitest.android"
         minSdk = Config.Android.minSdkVersionNdk
         targetSdk = Config.Android.targetSdkVersion
-        versionCode = 1
-        versionName = "1.0.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
         // Runs each test in its own instance of Instrumentation. This way they are isolated from
         // one another and get their own Application instance.
         // https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner#enable-gradle
         // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
         // Check the readme for more info.
 //        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+    }
+
+    buildFeatures {
+        // Determines whether to support View Binding.
+        // Note that the viewBinding.enabled property is now deprecated.
+        viewBinding = true
     }
 
     testOptions {
@@ -51,12 +49,12 @@ android {
 
     buildTypes {
         getByName("debug") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
@@ -110,6 +108,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
+        option("NullAway:UnannotatedSubPackages", "io.sentry.uitest.android.databinding")
     }
 }
 

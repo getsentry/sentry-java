@@ -6,8 +6,8 @@ import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryTransaction
-import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -36,9 +36,7 @@ class EnvelopeTests : BaseUiTest() {
     fun checkEnvelopeProfiledTransaction() {
 
         initSentry(true) { options: SentryOptions ->
-            options.isEnableAutoSessionTracking = false
             options.tracesSampleRate = 1.0
-            options.isTraceSampling = true
             options.isProfilingEnabled = true
         }
         relayIdlingResource.increment()

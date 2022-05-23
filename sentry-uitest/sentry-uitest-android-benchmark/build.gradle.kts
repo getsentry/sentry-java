@@ -10,11 +10,6 @@ plugins {
     id(Config.QualityPlugins.detektPlugin)
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 android {
     compileSdk = Config.Android.compileSdkVersion
 
@@ -25,13 +20,19 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
         // Runs each test in its own instance of Instrumentation. This way they are isolated from
         // one another and get their own Application instance.
         // https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner#enable-gradle
         // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
         // Check the readme for more info.
 //        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+    }
+
+    buildFeatures {
+        // Determines whether to support View Binding.
+        // Note that the viewBinding.enabled property is now deprecated.
+        viewBinding = true
     }
 
     testOptions {
@@ -53,12 +54,10 @@ android {
         getByName("debug") {
             isDebuggable = false
             isMinifyEnabled = true
-            isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
         }
         getByName("release") {
-            isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
@@ -114,6 +113,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
+        option("NullAway:UnannotatedSubPackages", "io.sentry.uitest.android.benchmark.databinding")
     }
 }
 

@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import io.sentry.uitest.android.benchmark.databinding.ActivityBenchmarkBinding
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -24,14 +25,16 @@ class BenchmarkActivity : AppCompatActivity() {
     private val backgroundThreadPoolSize = 1
     private val executor: ExecutorService = Executors.newFixedThreadPool(backgroundThreadPoolSize)
     private var resumed = false
+    private lateinit var binding: ActivityBenchmarkBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_benchmark)
+        binding = ActivityBenchmarkBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         // We show a simple list that changes the idling resource
-        findViewById<RecyclerView>(R.id.benchmark_transaction_list).apply {
+        binding.benchmarkTransactionList.apply {
             layoutManager = LinearLayoutManager(this@BenchmarkActivity)
             adapter = BenchmarkTransactionListAdapter()
             addOnScrollListener(object : RecyclerView.OnScrollListener() {

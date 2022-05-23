@@ -114,6 +114,7 @@ object Config {
         private val androidxTestVersion = "1.4.0"
         private val espressoVersion = "3.4.0"
 
+        val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
         val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
