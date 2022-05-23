@@ -220,23 +220,23 @@ public final class Sentry {
     // eg release, distinctId, sentryClientName
 
     // this should be after setting serializers
-    if (options.getOutboxPath() != null) {
-      final File outboxDir = new File(options.getOutboxPath());
+    final String outboxPath = options.getOutboxPath();
+    if (outboxPath != null) {
+      final File outboxDir = new File(outboxPath);
       outboxDir.mkdirs();
     } else {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
 
-    if (options.getCacheDirPath() != null && !options.getCacheDirPath().isEmpty()) {
-      final File cacheDir = new File(options.getCacheDirPath());
+    final String cacheDirPath = options.getCacheDirPath();
+    if (cacheDirPath != null) {
+      final File cacheDir = new File(cacheDirPath);
       cacheDir.mkdirs();
       options.setEnvelopeDiskCache(EnvelopeCache.create(options));
     }
 
     final String profilingTracesDirPath = options.getProfilingTracesDirPath();
-    if (options.isProfilingEnabled()
-        && profilingTracesDirPath != null
-        && !profilingTracesDirPath.isEmpty()) {
+    if (options.isProfilingEnabled() && profilingTracesDirPath != null) {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
       profilingTracesDir.mkdirs();
@@ -697,6 +697,8 @@ public final class Sentry {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return getCurrentHub()
         .startTransaction(
@@ -705,6 +707,8 @@ public final class Sentry {
             bindToScope,
             startTimestamp,
             waitForChildren,
+            idleTimeout,
+            trimEnd,
             transactionFinishedCallback);
   }
 

@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.content.Context
+import android.os.Build
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -9,6 +10,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.DiagnosticLogger
 import io.sentry.ILogger
 import io.sentry.SentryEvent
@@ -45,7 +47,8 @@ class DefaultAndroidEventProcessorTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.DefaultAndroidEventProcessor"
-    private val ctorTypes = arrayOf(Context::class.java, ILogger::class.java, BuildInfoProvider::class.java)
+    private val ctorTypes =
+        arrayOf(Context::class.java, ILogger::class.java, BuildInfoProvider::class.java)
 
     init {
         Locale.setDefault(Locale.US)
@@ -105,11 +108,28 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `When Event and hint is not Cached, data should be applied`() {
+        whenever(fixture.buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
         val sut = fixture.getSut(context)
 
         assertNotNull(sut.process(SentryEvent(), Hint())) {
             assertNotNull(it.contexts.app)
             assertNotNull(it.dist)
+
+            // assert adds permissions as unknown
+            val permissions = it.contexts.app!!.permissions
+            assertNotNull(permissions)
+        }
+    }
+
+    @Test
+    fun `when Android version is below JELLY_BEAN, does not add permissions`() {
+        whenever(fixture.buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        val sut = fixture.getSut(context)
+
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
+            // assert adds permissions
+            val unknown = it.contexts.app!!.permissions
+            assertNull(unknown)
         }
     }
 
@@ -161,6 +181,26 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.threads) { threads ->
                 assertFalse(threads.first().isCurrent == true)
+            }
+        }
+    }
+
+    @Test
+    fun `Current should remain true`() {
+        val sut = fixture.getSut(context)
+
+        val event = SentryEvent().apply {
+            threads = mutableListOf(
+                SentryThread().apply {
+                    id = 10L
+                    isCurrent = true
+                }
+            )
+        }
+
+        assertNotNull(sut.process(event, Hint())) {
+            assertNotNull(it.threads) { threads ->
+                assertTrue(threads.first().isCurrent == true)
             }
         }
     }
@@ -257,17 +297,24 @@ class DefaultAndroidEventProcessorTest {
 
         sut.process(SentryEvent(), Hint())
 
-        verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(
+            (fixture.options.logger as DiagnosticLogger).logger,
+            never()
+        )!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
     @Test
     fun `Processor won't throw exception when theres a hint`() {
-        val processor = DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
+        val processor =
+            DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
 
         val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
         processor.process(SentryEvent(), hints)
 
-        verify((fixture.options.logger as DiagnosticLogger).logger, never())!!.log(eq(SentryLevel.ERROR), any<String>(), any())
+        verify(
+            (fixture.options.logger as DiagnosticLogger).logger,
+            never()
+        )!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
     @Test

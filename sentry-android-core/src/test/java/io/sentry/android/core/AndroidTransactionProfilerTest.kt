@@ -128,7 +128,7 @@ class AndroidTransactionProfilerTest {
     @Test
     fun `profiler evaluates profilingTracesDirPath options only on first transaction profiling`() {
         fixture.options.apply {
-            profilingTracesDirPath = ""
+            cacheDirPath = null
         }
 
         // We create the profiler, and nothing goes wrong
@@ -174,7 +174,7 @@ class AndroidTransactionProfilerTest {
     @Test
     fun `profiler on tracesDirPath null`() {
         fixture.options.apply {
-            profilingTracesDirPath = null
+            cacheDirPath = null
         }
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
@@ -185,7 +185,7 @@ class AndroidTransactionProfilerTest {
     @Test
     fun `profiler on tracesDirPath empty`() {
         fixture.options.apply {
-            profilingTracesDirPath = ""
+            cacheDirPath = null
         }
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)

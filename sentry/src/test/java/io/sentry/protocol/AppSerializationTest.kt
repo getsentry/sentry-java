@@ -25,6 +25,10 @@ class AppSerializationTest {
             appName = "873656fd-f620-4edf-bb7a-a0d13325dba0"
             appVersion = "801aab22-ad4b-44fb-995c-bacb5387e20c"
             appBuild = "660f0cde-eedb-49dc-a973-8aa1c04f4a28"
+            permissions = mapOf(
+                "WRITE_EXTERNAL_STORAGE" to "not_granted",
+                "CAMERA" to "granted"
+            )
         }
     }
     private val fixture = Fixture()

@@ -153,6 +153,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getEnableDeduplication ()Ljava/lang/Boolean;
 	public fun getEnableUncaughtExceptionHandler ()Ljava/lang/Boolean;
 	public fun getEnvironment ()Ljava/lang/String;
+	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
@@ -172,6 +173,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnvironment (Ljava/lang/String;)V
+	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
@@ -219,7 +221,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -261,7 +263,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -320,13 +322,14 @@ public abstract interface class io/sentry/IHub {
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
 	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Z)Lio/sentry/ITransaction;
+	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Long;Z)Lio/sentry/ITransaction;
 	public abstract fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public abstract fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -418,6 +421,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getSpans ()Ljava/util/List;
 	public abstract fun isSampled ()Ljava/lang/Boolean;
+	public abstract fun scheduleFinish (Ljava/lang/Long;)V
 	public abstract fun setName (Ljava/lang/String;)V
 }
 
@@ -550,7 +554,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -606,6 +610,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
+	public fun scheduleFinish (Ljava/lang/Long;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
@@ -858,7 +863,7 @@ public final class io/sentry/Sentry {
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Z)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
@@ -1144,6 +1149,7 @@ public class io/sentry/SentryOptions {
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getFlushTimeoutMillis ()J
 	public fun getHostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
+	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
@@ -1220,6 +1226,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setFlushTimeoutMillis (J)V
 	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
+	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
@@ -1231,7 +1238,6 @@ public class io/sentry/SentryOptions {
 	public fun setMaxTraceFileSize (J)V
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfilingEnabled (Z)V
-	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
@@ -1325,6 +1331,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun isFinished ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
+	public fun scheduleFinish (Ljava/lang/Long;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;)V
@@ -1802,6 +1809,7 @@ public abstract interface class io/sentry/config/PropertiesProvider {
 	public fun getBooleanProperty (Ljava/lang/String;)Ljava/lang/Boolean;
 	public fun getDoubleProperty (Ljava/lang/String;)Ljava/lang/Double;
 	public fun getList (Ljava/lang/String;)Ljava/util/List;
+	public fun getLongProperty (Ljava/lang/String;)Ljava/lang/Long;
 	public abstract fun getMap (Ljava/lang/String;)Ljava/util/Map;
 	public abstract fun getProperty (Ljava/lang/String;)Ljava/lang/String;
 	public fun getProperty (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
@@ -1953,6 +1961,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun getAppVersion ()Ljava/lang/String;
 	public fun getBuildType ()Ljava/lang/String;
 	public fun getDeviceAppHash ()Ljava/lang/String;
+	public fun getPermissions ()Ljava/util/Map;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAppBuild (Ljava/lang/String;)V
@@ -1962,6 +1971,7 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun setAppVersion (Ljava/lang/String;)V
 	public fun setBuildType (Ljava/lang/String;)V
 	public fun setDeviceAppHash (Ljava/lang/String;)V
+	public fun setPermissions (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -1975,6 +1985,7 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public static final field APP_BUILD Ljava/lang/String;
 	public static final field APP_IDENTIFIER Ljava/lang/String;
 	public static final field APP_NAME Ljava/lang/String;
+	public static final field APP_PERMISSIONS Ljava/lang/String;
 	public static final field APP_START_TIME Ljava/lang/String;
 	public static final field APP_VERSION Ljava/lang/String;
 	public static final field BUILD_TYPE Ljava/lang/String;
@@ -2985,6 +2996,7 @@ public final class io/sentry/util/Platform {
 
 public final class io/sentry/util/StringUtils {
 	public static fun byteCountToString (J)Ljava/lang/String;
+	public static fun calculateStringHash (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/String;
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;

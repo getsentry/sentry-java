@@ -51,7 +51,7 @@ class ActivityLifecycleIntegrationTest {
 
         fun getSut(apiVersion: Int = 29, importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND): ActivityLifecycleIntegration {
             whenever(hub.options).thenReturn(options)
-            whenever(hub.startTransaction(any(), any(), anyOrNull(), any(), any())).thenReturn(transaction)
+            whenever(hub.startTransaction(any(), any(), anyOrNull(), any(), any<TransactionFinishedCallback>())).thenReturn(transaction)
             whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
 
             whenever(application.getSystemService(any())).thenReturn(am)
@@ -251,7 +251,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub, never()).startTransaction(any(), any(), anyOrNull(), any(), any())
+        verify(fixture.hub, never()).startTransaction(any(), any(), anyOrNull(), any(), any<TransactionFinishedCallback>())
     }
 
     @Test
@@ -264,7 +264,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), any(), anyOrNull(), any(), any())
+        verify(fixture.hub).startTransaction(any(), any(), anyOrNull(), any(), any<TransactionFinishedCallback>())
     }
 
     @Test
@@ -283,7 +283,7 @@ class ActivityLifecycleIntegrationTest {
             check {
                 assertEquals("ui.load", it)
             },
-            anyOrNull(), any(), any()
+            anyOrNull(), any(), any<TransactionFinishedCallback>()
         )
     }
 
@@ -314,7 +314,7 @@ class ActivityLifecycleIntegrationTest {
             check {
                 assertEquals("Activity", it)
             },
-            any(), anyOrNull(), any(), any()
+            any(), anyOrNull(), any(), any<TransactionFinishedCallback>()
         )
     }
 
@@ -532,7 +532,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
 
-        verify(fixture.hub).startTransaction(any(), any(), anyOrNull(), any(), any())
+        verify(fixture.hub).startTransaction(any(), any(), anyOrNull(), any(), any<TransactionFinishedCallback>())
     }
 
     @Test
@@ -739,6 +739,28 @@ class ActivityLifecycleIntegrationTest {
 
         val nullDate: Date? = null
         verify(fixture.hub).startTransaction(any(), any(), eq(nullDate), any(), any())
+    }
+
+    @Test
+    fun `When transaction is finished, it gets removed from scope`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        whenever(fixture.hub.configureScope(any())).thenAnswer {
+            val scope = Scope(fixture.options)
+
+            scope.transaction = fixture.transaction
+
+            sut.clearScope(scope, fixture.transaction)
+
+            assertNull(scope.transaction)
+        }
+
+        sut.onActivityDestroyed(activity)
     }
 
     private fun setAppStartTime(date: Date = Date(0)) {

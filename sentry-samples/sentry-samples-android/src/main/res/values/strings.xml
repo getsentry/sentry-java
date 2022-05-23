@@ -17,6 +17,7 @@
   <string name="open_sample_fragment">Open Sample Fragment</string>
   <string name="open_third_fragment">Open Third Fragment</string>
   <string name="open_gestures_activity">Open Gestures Activity</string>
+  <string name="open_permissions_activity">Open Permissions Activity</string>
   <string name="test_timber_integration">Test Timber</string>
   <string name="back_main">Back to Main Activity</string>
   <string name="tap_me">text</string>
@@ -30,4 +31,6 @@ Aliquam pharetra, velit eu vulputate tempus, sapien purus accumsan orci, non ult
 
 Nulla interdum gravida augue, vel fringilla lorem bibendum vel. In hac habitasse platea dictumst. Praesent dapibus congue velit, vel mollis eros mattis vel. Maecenas mattis sapien lacus, ut interdum dui vulputate a. Vivamus dapibus, est ac maximus aliquam, mauris lorem vehicula nisl, eget viverra metus nunc ut libero. Quisque aliquet, dolor sit amet pellentesque semper, nisi nunc ornare velit, id porta nibh magna sit amet tortor. Curabitur finibus, lectus at convallis elementum, est sem malesuada massa, vel varius lorem justo a libero. Donec a nulla consequat, dignissim tortor id, ultrices dolor. Ut auctor vel ante sed faucibus. Ut ac dolor vel lacus facilisis bibendum.
   </string>
+  <string name="camera_permission">Camera Permission</string>
+  <string name="write_permission">Write External Storage Permission</string>
 </resources>

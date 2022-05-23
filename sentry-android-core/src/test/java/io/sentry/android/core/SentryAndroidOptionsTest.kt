@@ -96,6 +96,13 @@ class SentryAndroidOptionsTest {
         assertFalse(sentryOptions.isAttachScreenshot)
     }
 
+    @Test
+    fun `user interaction tracing disabled by default for Android`() {
+        val sentryOptions = SentryAndroidOptions()
+
+        assertFalse(sentryOptions.isEnableUserInteractionTracing)
+    }
+
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
         override fun clearDebugImages() {}

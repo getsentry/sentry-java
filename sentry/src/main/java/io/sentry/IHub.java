@@ -422,6 +422,8 @@ public interface IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp,
       boolean waitForChildren,
+      @Nullable Long idleTimeout,
+      boolean trimEnd,
       @Nullable TransactionFinishedCallback transactionFinishedCallback);
 
   /**
@@ -451,7 +453,27 @@ public interface IHub {
         false,
         startTimestamp,
         waitForChildren,
+        null,
+        false,
         transactionFinishedCallback);
+  }
+
+  @ApiStatus.Internal
+  default @NotNull ITransaction startTransaction(
+      final @NotNull String name,
+      final @NotNull String operation,
+      final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd) {
+    return startTransaction(
+        new TransactionContext(name, operation),
+        null,
+        false,
+        null,
+        waitForChildren,
+        idleTimeout,
+        trimEnd,
+        null);
   }
 
   /**

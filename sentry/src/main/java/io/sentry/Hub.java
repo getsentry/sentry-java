@@ -605,7 +605,7 @@ public final class Hub implements IHub {
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, null, false, null);
+        transactionContext, customSamplingContext, bindToScope, null, false, null, false, null);
   }
 
   @ApiStatus.Internal
@@ -616,7 +616,14 @@ public final class Hub implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, startTimestamp, false, null);
+        transactionContext,
+        customSamplingContext,
+        bindToScope,
+        startTimestamp,
+        false,
+        null,
+        false,
+        null);
   }
 
   @ApiStatus.Internal
@@ -627,6 +634,8 @@ public final class Hub implements IHub {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return createTransaction(
         transactionContexts,
@@ -634,6 +643,8 @@ public final class Hub implements IHub {
         bindToScope,
         startTimestamp,
         waitForChildren,
+        idleTimeout,
+        trimEnd,
         transactionFinishedCallback);
   }
 
@@ -643,6 +654,8 @@ public final class Hub implements IHub {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
@@ -672,6 +685,8 @@ public final class Hub implements IHub {
               this,
               startTimestamp,
               waitForChildren,
+              idleTimeout,
+              trimEnd,
               transactionFinishedCallback);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
