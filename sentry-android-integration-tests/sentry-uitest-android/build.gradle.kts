@@ -94,6 +94,7 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     errorprone(Config.CompileOnly.errorProneNullAway)
 
+    androidTestImplementation(projects.sentryTestSupport)
     androidTestImplementation(Config.TestLibs.kotlinTestJunit)
     androidTestImplementation(Config.TestLibs.espressoCore)
     androidTestImplementation(Config.TestLibs.androidxRunner)

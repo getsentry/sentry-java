@@ -1,7 +1,7 @@
 package io.sentry.uitest.android.mockservers
 
-import io.sentry.Sentry
 import io.sentry.SentryEnvelope
+import io.sentry.assertEnvelopeItem
 import okhttp3.mockwebserver.MockResponse
 
 /**
@@ -10,20 +10,15 @@ import okhttp3.mockwebserver.MockResponse
  */
 class EnvelopeAsserter(val envelope: SentryEnvelope, val response: MockResponse) {
     /** List of items to assert. */
-    private val unassertedItems = envelope.items.toMutableList()
+    val unassertedItems = envelope.items.toMutableList()
 
     /**
-     * Asserts an envelope item that can be deserialized as an instance of [clazz] exists and returns the first one.
+     * Asserts an envelope item of [T] exists and returns the first one.
      * The asserted item is then removed from internal list of unasserted items.
      */
-    fun <T> assertItem(clazz: Class<T>): T {
-        val item = unassertedItems.mapIndexed { index, it ->
-            val deserialized = Sentry.getCurrentHub().options.serializer.deserialize(it.data.inputStream().reader(), clazz)
-            deserialized?.let { Pair(index, it) }
-        }.filterNotNull().firstOrNull()
-            ?: throw AssertionError("No item found of type: ${clazz.name}")
-        unassertedItems.removeAt(item.first)
-        return item.second
+    inline fun <reified T> assertItem(): T = assertEnvelopeItem(unassertedItems) { index, item ->
+        unassertedItems.removeAt(index)
+        return item
     }
 
     /** Asserts there are no other items in the envelope. */

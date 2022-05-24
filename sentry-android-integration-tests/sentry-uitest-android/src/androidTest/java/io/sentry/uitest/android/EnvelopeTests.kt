@@ -23,7 +23,7 @@ class EnvelopeTests : BaseUiTest() {
 
         relay.assert {
             assertEnvelope {
-                val event = it.assertItem(SentryEvent::class.java)
+                val event: SentryEvent = it.assertItem()
                 it.assertNoOtherItems()
                 assertTrue(event.message?.formatted == "Message captured during test")
             }
@@ -45,8 +45,8 @@ class EnvelopeTests : BaseUiTest() {
         transaction.finish()
         relay.assert {
             assertEnvelope {
-                val transactionItem = it.assertItem(SentryTransaction::class.java)
-                val profilingTraceData = it.assertItem(ProfilingTraceData::class.java)
+                val transactionItem: SentryTransaction = it.assertItem()
+                val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
                 assertTrue(transactionItem.transaction == "e2etests")
                 assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
