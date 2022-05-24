@@ -5,6 +5,7 @@
 ### Fixes
 
 - No longer close OutputStream that is passed into JsonSerializer (#2029)
+- Fix setting context tags on events captured by Spring (#2060)
 
 ### Features
 
