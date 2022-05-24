@@ -17,6 +17,13 @@ public interface ISerializer {
 
   <T> void serialize(@NotNull T entity, @NotNull Writer writer) throws IOException;
 
+  /**
+   * Serializes an envelope
+   *
+   * @param envelope an envelope
+   * @param outputStream which will not be closed automatically
+   * @throws Exception an exception
+   */
   void serialize(@NotNull SentryEnvelope envelope, @NotNull OutputStream outputStream)
       throws Exception;
 

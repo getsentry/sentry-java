@@ -1,5 +1,6 @@
 package io.sentry.transport;
 
+import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
@@ -15,13 +16,11 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * {@link ITransport} implementation that executes request asynchronously in a blocking manner using
@@ -66,19 +65,18 @@ public final class AsyncHttpTransport implements ITransport {
   }
 
   @Override
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint)
+  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
       throws IOException {
     // For now no caching on envelopes
     IEnvelopeCache currentEnvelopeCache = envelopeCache;
     boolean cached = false;
-    Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-    if (sentrySdkHint instanceof Cached) {
+    if (HintUtils.hasType(hint, Cached.class)) {
       currentEnvelopeCache = NoOpEnvelopeCache.getInstance();
       cached = true;
       options.getLogger().log(SentryLevel.DEBUG, "Captured Envelope is already cached");
     }
 
-    final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, sentrySdkHint);
+    final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
 
     if (filteredEnvelope == null) {
       if (cached) {
@@ -86,7 +84,7 @@ public final class AsyncHttpTransport implements ITransport {
       }
     } else {
       SentryEnvelope envelopeThatMayIncludeClientReport;
-      if (sentrySdkHint instanceof DiskFlushNotification) {
+      if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
         envelopeThatMayIncludeClientReport =
             options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope);
       } else {
@@ -120,12 +118,11 @@ public final class AsyncHttpTransport implements ITransport {
           if (r instanceof EnvelopeSender) {
             final EnvelopeSender envelopeSender = (EnvelopeSender) r;
 
-            Object sentrySdkHint = HintUtils.getSentrySdkHint(envelopeSender.hint);
-            if (!(sentrySdkHint instanceof Cached)) {
+            if (!HintUtils.hasType(envelopeSender.hint, Cached.class)) {
               envelopeCache.store(envelopeSender.envelope, envelopeSender.hint);
             }
 
-            markHintWhenSendingFailed(sentrySdkHint, true);
+            markHintWhenSendingFailed(envelopeSender.hint, true);
             logger.log(SentryLevel.WARNING, "Envelope rejected");
           }
         };
@@ -159,17 +156,12 @@ public final class AsyncHttpTransport implements ITransport {
   /**
    * It marks the hints when sending has failed, so it's not necessary to wait the timeout
    *
-   * @param sentrySdkHint the Hint
+   * @param hint the Hints
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(
-      final @Nullable Object sentrySdkHint, final boolean retry) {
-    if (sentrySdkHint instanceof SubmissionResult) {
-      ((SubmissionResult) sentrySdkHint).setResult(false);
-    }
-    if (sentrySdkHint instanceof Retryable) {
-      ((Retryable) sentrySdkHint).setRetry(retry);
-    }
+  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
+    HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
+    HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
   }
 
   private static final class AsyncConnectionThreadFactory implements ThreadFactory {
@@ -185,13 +177,13 @@ public final class AsyncHttpTransport implements ITransport {
 
   private final class EnvelopeSender implements Runnable {
     private final @NotNull SentryEnvelope envelope;
-    private final @Nullable Map<String, Object> hint;
+    private final @NotNull Hint hint;
     private final @NotNull IEnvelopeCache envelopeCache;
     private final TransportResult failedResult = TransportResult.error();
 
     EnvelopeSender(
         final @NotNull SentryEnvelope envelope,
-        final @Nullable Map<String, Object> hint,
+        final @NotNull Hint hint,
         final @NotNull IEnvelopeCache envelopeCache) {
       this.envelope = Objects.requireNonNull(envelope, "Envelope is required.");
       this.hint = hint;
@@ -208,13 +200,19 @@ public final class AsyncHttpTransport implements ITransport {
         options.getLogger().log(SentryLevel.ERROR, e, "Envelope submission failed");
         throw e;
       } finally {
-        Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-        if (sentrySdkHint instanceof SubmissionResult) {
-          options
-              .getLogger()
-              .log(SentryLevel.DEBUG, "Marking envelope submission result: %s", result.isSuccess());
-          ((SubmissionResult) sentrySdkHint).setResult(result.isSuccess());
-        }
+        final TransportResult finalResult = result;
+        HintUtils.runIfHasType(
+            hint,
+            SubmissionResult.class,
+            (submissionResult) -> {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.DEBUG,
+                      "Marking envelope submission result: %s",
+                      finalResult.isSuccess());
+              submissionResult.setResult(finalResult.isSuccess());
+            });
       }
     }
 
@@ -223,11 +221,13 @@ public final class AsyncHttpTransport implements ITransport {
 
       envelopeCache.store(envelope, hint);
 
-      Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-      if (sentrySdkHint instanceof DiskFlushNotification) {
-        ((DiskFlushNotification) sentrySdkHint).markFlushed();
-        options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
-      }
+      HintUtils.runIfHasType(
+          hint,
+          DiskFlushNotification.class,
+          (diskFlushNotification) -> {
+            diskFlushNotification.markFlushed();
+            options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+          });
 
       if (transportGate.isConnected()) {
         final SentryEnvelope envelopeWithClientReport =
@@ -245,37 +245,48 @@ public final class AsyncHttpTransport implements ITransport {
 
             // ignore e.g. 429 as we're not the ones actively dropping
             if (result.getResponseCode() >= 400 && result.getResponseCode() != 429) {
-              if (!(sentrySdkHint instanceof Retryable)) {
-                options
-                    .getClientReportRecorder()
-                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
-              }
+              HintUtils.runIfDoesNotHaveType(
+                  hint,
+                  Retryable.class,
+                  (hint) -> {
+                    options
+                        .getClientReportRecorder()
+                        .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+                  });
             }
 
             throw new IllegalStateException(message);
           }
         } catch (IOException e) {
           // Failure due to IO is allowed to retry the event
-          if (sentrySdkHint instanceof Retryable) {
-            ((Retryable) sentrySdkHint).setRetry(true);
-          } else {
-            LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
-            options
-                .getClientReportRecorder()
-                .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
-          }
+          HintUtils.runIfHasType(
+              hint,
+              Retryable.class,
+              (retryable) -> {
+                retryable.setRetry(true);
+              },
+              (hint, clazz) -> {
+                LogUtils.logNotInstanceOf(clazz, hint, options.getLogger());
+                options
+                    .getClientReportRecorder()
+                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+              });
           throw new IllegalStateException("Sending the event failed.", e);
         }
       } else {
         // If transportGate is blocking from sending, allowed to retry
-        if (sentrySdkHint instanceof Retryable) {
-          ((Retryable) sentrySdkHint).setRetry(true);
-        } else {
-          LogUtils.logIfNotRetryable(options.getLogger(), sentrySdkHint);
-          options
-              .getClientReportRecorder()
-              .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope);
-        }
+        HintUtils.runIfHasType(
+            hint,
+            Retryable.class,
+            (retryable) -> {
+              retryable.setRetry(true);
+            },
+            (hint, clazz) -> {
+              LogUtils.logNotInstanceOf(clazz, hint, options.getLogger());
+              options
+                  .getClientReportRecorder()
+                  .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope);
+            });
       }
       return result;
     }

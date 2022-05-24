@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
@@ -118,9 +119,10 @@ class SentryFragmentLifecycleCallbacks(
             level = INFO
         }
 
-        val hintsMap = mutableMapOf<String, Any>(ANDROID_FRAGMENT to fragment)
+        val hint = Hint()
+            .also { it.set(ANDROID_FRAGMENT, fragment) }
 
-        hub.addBreadcrumb(breadcrumb, hintsMap)
+        hub.addBreadcrumb(breadcrumb, hint)
     }
 
     private fun getFragmentName(fragment: Fragment): String {

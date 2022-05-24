@@ -74,7 +74,7 @@ class EnvelopeFileObserverTest {
 
         verify(fixture.envelopeSender).processEnvelopeFile(
             eq(fixture.path + File.separator + fixture.fileName),
-            check { it is ApplyScopeData }
+            check { HintUtils.hasType(it, ApplyScopeData::class.java) }
         )
     }
 
@@ -84,7 +84,7 @@ class EnvelopeFileObserverTest {
 
         verify(fixture.envelopeSender).processEnvelopeFile(
             eq(fixture.path + File.separator + fixture.fileName),
-            check { it is Resettable }
+            check { HintUtils.hasType(it, Resettable::class.java) }
         )
     }
 
@@ -94,15 +94,14 @@ class EnvelopeFileObserverTest {
 
         verify(fixture.envelopeSender).processEnvelopeFile(
             eq(fixture.path + File.separator + fixture.fileName),
-            check {
-                val hint = HintUtils.getSentrySdkHint(it)
-                (hint as SubmissionResult).setResult(true)
-                (hint as Retryable).isRetry = true
+            check { hints ->
+                HintUtils.runIfHasType(hints, SubmissionResult::class.java) { it.setResult(true) }
+                HintUtils.runIfHasType(hints, Retryable::class.java) { it.isRetry = true }
 
-                (hint as Resettable).reset()
+                HintUtils.runIfHasType(hints, Resettable::class.java) { it.reset() }
 
-                assertFalse(hint.isRetry)
-                assertFalse(hint.isSuccess)
+                assertFalse((HintUtils.getSentrySdkHint(hints) as Retryable).isRetry)
+                assertFalse((HintUtils.getSentrySdkHint(hints) as SubmissionResult).isSuccess)
             }
         )
     }

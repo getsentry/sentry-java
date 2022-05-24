@@ -299,9 +299,7 @@ final class AndroidOptionsInitializer {
   private static void initializeCacheDirs(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     final File cacheDir = new File(context.getCacheDir(), "sentry");
-    final File profilingTracesDir = new File(cacheDir, "profiling_traces");
     options.setCacheDirPath(cacheDir.getAbsolutePath());
-    options.setProfilingTracesDirPath(profilingTracesDir.getAbsolutePath());
   }
 
   private static boolean isNdkAvailable(final @NotNull BuildInfoProvider buildInfoProvider) {

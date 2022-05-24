@@ -2,12 +2,23 @@
 
 ## Unreleased
 
+### Fixes
+
+- No longer close OutputStream that is passed into JsonSerializer (#2029)
+- Fix setting context tags on events captured by Spring (#2060)
+
 ### Features
 
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
 - Allow setting native Android SDK name during build ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
 - Include application permissions in Android events ([#2018](https://github.com/getsentry/sentry-java/pull/2018))
 - Automatically create transactions for UI events ([#1975](https://github.com/getsentry/sentry-java/pull/1975))
+- Hints are now used via a Hint object and passed into beforeSend and EventProcessor as @NotNull Hint object ([#2045](https://github.com/getsentry/sentry-java/pull/2045))
+- Attachments can be manipulated via hint ([#2046](https://github.com/getsentry/sentry-java/pull/2046))
+
+### Fixes
+
+- Isolate cached events with hashed DSN subfolder ([#2038](https://github.com/getsentry/sentry-java/pull/2038))
 
 ### Changed
 
@@ -17,6 +28,7 @@
 ### Fixes
 
 - SentryThread.current flag will not be overridden by DefaultAndroidEventProcessor if already set ([#2050](https://github.com/getsentry/sentry-java/pull/2050))
+- Fix serialization of Long inside of Request.data ([#2051](https://github.com/getsentry/sentry-java/pull/2051))
 - Calling Sentry.init and specifying contextTags now has an effect on the Log4j SentryAppender ([#2054](https://github.com/getsentry/sentry-java/pull/2054))
 
 ## 6.0.0-beta.3
