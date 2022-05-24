@@ -115,7 +115,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         CollectionUtils.filterMapEntries(
             loggingEvent.getMDCPropertyMap(), entry -> entry.getValue() != null);
     if (!mdcProperties.isEmpty()) {
-      // get tags from HubAdapter options to allow getting the correct tags if Sentry has been initialized somewhere else
+      // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
+      // initialized somewhere else
       final List<String> contextTags = HubAdapter.getInstance().getOptions().getContextTags();
       if (!contextTags.isEmpty()) {
         for (final String contextTag : contextTags) {
