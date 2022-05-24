@@ -201,6 +201,8 @@ public class SentryHandler extends Handler {
       mdcProperties =
           CollectionUtils.filterMapEntries(mdcProperties, entry -> entry.getValue() != null);
       if (!mdcProperties.isEmpty()) {
+        // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
+        // initialized somewhere else
         final List<String> contextTags = HubAdapter.getInstance().getOptions().getContextTags();
         if (!contextTags.isEmpty()) {
           for (final String contextTag : contextTags) {
