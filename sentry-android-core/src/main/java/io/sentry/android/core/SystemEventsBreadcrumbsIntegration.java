@@ -38,6 +38,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
@@ -215,10 +216,10 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       }
       breadcrumb.setLevel(SentryLevel.INFO);
 
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(ANDROID_INTENT, intent);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_INTENT, intent);
 
-      hub.addBreadcrumb(breadcrumb, hintMap);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 }

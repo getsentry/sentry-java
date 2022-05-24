@@ -288,13 +288,13 @@ public final class Scope {
    *
    * @param callback the BeforeBreadcrumb callback
    * @param breadcrumb the breadcrumb
-   * @param hint the hint
+   * @param hint the hints
    * @return the mutated breadcrumb or null if dropped
    */
   private @Nullable Breadcrumb executeBeforeBreadcrumb(
       final @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
       @NotNull Breadcrumb breadcrumb,
-      final @Nullable Map<String, Object> hint) {
+      final @NotNull Hint hint) {
     try {
       breadcrumb = callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
@@ -319,10 +319,12 @@ public final class Scope {
    * @param breadcrumb the breadcrumb
    * @param hint the hint
    */
-  public void addBreadcrumb(
-      @NotNull Breadcrumb breadcrumb, final @Nullable Map<String, Object> hint) {
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
     if (breadcrumb == null) {
       return;
+    }
+    if (hint == null) {
+      hint = new Hint();
     }
 
     SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();

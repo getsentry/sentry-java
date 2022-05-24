@@ -1,9 +1,9 @@
 package io.sentry.android.core;
 
 import static io.sentry.SentryLevel.ERROR;
-import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import android.os.FileObserver;
+import io.sentry.Hint;
 import io.sentry.IEnvelopeSender;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -13,10 +13,9 @@ import io.sentry.hints.Flushable;
 import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -58,12 +57,11 @@ final class EnvelopeFileObserver extends FileObserver {
 
     // TODO: Only some event types should be pass through?
 
-    final CachedEnvelopeHint hint = new CachedEnvelopeHint(flushTimeoutMillis, logger);
+    final CachedEnvelopeHint cachedHint = new CachedEnvelopeHint(flushTimeoutMillis, logger);
 
-    final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put(SENTRY_TYPE_CHECK_HINT, hint);
+    final Hint hint = HintUtils.createWithTypeCheckHint(cachedHint);
 
-    envelopeSender.processEnvelopeFile(this.rootPath + File.separator + relativePath, hintMap);
+    envelopeSender.processEnvelopeFile(this.rootPath + File.separator + relativePath, hint);
   }
 
   private static final class CachedEnvelopeHint

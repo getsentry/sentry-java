@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
+import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Integration
@@ -20,6 +21,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.protocol.User
+import io.sentry.spring.ContextTagsEventProcessor
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryExceptionResolver
 import io.sentry.spring.SentryUserFilter
@@ -31,6 +33,7 @@ import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
+import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
@@ -617,6 +620,27 @@ class SentryAutoConfigurationTest {
             }
     }
 
+    @Test
+    fun `when MDC is on the classpath, creates ContextTagsEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it).hasSingleBean(ContextTagsEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).anyMatch { processor -> processor.javaClass == ContextTagsEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when MDC is not on the classpath, does not create ContextTagsEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(MDC::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(ContextTagsEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == ContextTagsEventProcessor::class.java }
+            }
+    }
+
     @Configuration(proxyBeanMethods = false)
     open class CustomOptionsConfigurationConfiguration {
 
@@ -661,7 +685,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
-        override fun execute(event: SentryEvent, hint: Map<String, Any?>?): SentryEvent? = null
+        override fun execute(event: SentryEvent, hint: Hint): SentryEvent? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -672,7 +696,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeBreadcrumbCallback : SentryOptions.BeforeBreadcrumbCallback {
-        override fun execute(breadcrumb: Breadcrumb, hint: Map<String, Any?>?): Breadcrumb? = null
+        override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -683,7 +707,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomEventProcessor : EventProcessor {
-        override fun process(event: SentryEvent, hint: Map<String, Any?>?) = null
+        override fun process(event: SentryEvent, hint: Hint) = null
     }
 
     @Configuration(proxyBeanMethods = false)

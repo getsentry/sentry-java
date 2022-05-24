@@ -73,7 +73,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       options.getLogger().log(SentryLevel.INFO, "Profiling is disabled in options.");
       return;
     }
-    if (tracesFilesDirPath == null || tracesFilesDirPath.isEmpty()) {
+    if (tracesFilesDirPath == null) {
       options
           .getLogger()
           .log(
