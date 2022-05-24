@@ -5,14 +5,13 @@ import static io.sentry.TypeCheckHint.SPRING_EXCHANGE_FILTER_RESPONSE;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TracingOrigins;
 import io.sentry.util.Objects;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.reactive.function.client.ClientRequest;
@@ -77,12 +76,12 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
             request.method().name(),
             response != null ? response.rawStatusCode() : null);
 
-    final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put(SPRING_EXCHANGE_FILTER_REQUEST, request);
+    final Hint hint = new Hint();
+    hint.set(SPRING_EXCHANGE_FILTER_REQUEST, request);
     if (response != null) {
-      hintMap.put(SPRING_EXCHANGE_FILTER_RESPONSE, response);
+      hint.set(SPRING_EXCHANGE_FILTER_RESPONSE, response);
     }
 
-    hub.addBreadcrumb(breadcrumb, hintMap);
+    hub.addBreadcrumb(breadcrumb, hint);
   }
 }

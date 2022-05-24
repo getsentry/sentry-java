@@ -12,6 +12,7 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
@@ -115,8 +116,11 @@ class SentryApolloInterceptor(
                     breadcrumb.setData("response_body_size", contentLength)
                 }
 
-                val hintsMap = mutableMapOf(APOLLO_REQUEST to httpRequest, APOLLO_RESPONSE to httpResponse)
-                hub.addBreadcrumb(breadcrumb, hintsMap)
+                val hint = Hint().also {
+                    it.set(APOLLO_REQUEST, httpRequest)
+                    it.set(APOLLO_RESPONSE, httpResponse)
+                }
+                hub.addBreadcrumb(breadcrumb, hint)
             }
         }
     }

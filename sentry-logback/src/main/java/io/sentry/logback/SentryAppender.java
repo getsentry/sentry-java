@@ -10,6 +10,7 @@ import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
+import io.sentry.Hint;
 import io.sentry.ITransportFactory;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
@@ -20,7 +21,6 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -63,16 +63,16 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   @Override
   protected void append(@NotNull ILoggingEvent eventObject) {
     if (eventObject.getLevel().isGreaterOrEqual(minimumEventLevel)) {
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
+      final Hint hint = new Hint();
+      hint.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
 
-      Sentry.captureEvent(createEvent(eventObject), hintMap);
+      Sentry.captureEvent(createEvent(eventObject), hint);
     }
     if (eventObject.getLevel().isGreaterOrEqual(minimumBreadcrumbLevel)) {
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(LOGBACK_LOGGING_EVENT, eventObject);
+      final Hint hint = new Hint();
+      hint.set(LOGBACK_LOGGING_EVENT, eventObject);
 
-      Sentry.addBreadcrumb(createBreadcrumb(eventObject), hintMap);
+      Sentry.addBreadcrumb(createBreadcrumb(eventObject), hint);
     }
   }
 

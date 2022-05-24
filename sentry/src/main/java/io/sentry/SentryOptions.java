@@ -1624,11 +1624,11 @@ public class SentryOptions {
      * Mutates or drop an event before being sent
      *
      * @param event the event
-     * @param hint the hint, usually the source of the event
+     * @param hint the hints
      * @return the original event or the mutated event or null if event was dropped
      */
     @Nullable
-    SentryEvent execute(@NotNull SentryEvent event, @Nullable Map<String, Object> hint);
+    SentryEvent execute(@NotNull SentryEvent event, @NotNull Hint hint);
   }
 
   /** The BeforeBreadcrumb callback */
@@ -1638,11 +1638,11 @@ public class SentryOptions {
      * Mutates or drop a callback before being added
      *
      * @param breadcrumb the breadcrumb
-     * @param hint the hint, usually the source of the breadcrumb
+     * @param hint the hints, usually the source of the breadcrumb
      * @return the original breadcrumb or the mutated breadcrumb of null if breadcrumb was dropped
      */
     @Nullable
-    Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @Nullable Map<String, Object> hint);
+    Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @NotNull Hint hint);
   }
 
   /** The traces sampler callback. */

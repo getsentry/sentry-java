@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
+import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Integration
@@ -684,7 +685,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
-        override fun execute(event: SentryEvent, hint: Map<String, Any?>?): SentryEvent? = null
+        override fun execute(event: SentryEvent, hint: Hint): SentryEvent? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -695,7 +696,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeBreadcrumbCallback : SentryOptions.BeforeBreadcrumbCallback {
-        override fun execute(breadcrumb: Breadcrumb, hint: Map<String, Any?>?): Breadcrumb? = null
+        override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -706,7 +707,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomEventProcessor : EventProcessor {
-        override fun process(event: SentryEvent, hint: Map<String, Any?>?) = null
+        override fun process(event: SentryEvent, hint: Hint) = null
     }
 
     @Configuration(proxyBeanMethods = false)

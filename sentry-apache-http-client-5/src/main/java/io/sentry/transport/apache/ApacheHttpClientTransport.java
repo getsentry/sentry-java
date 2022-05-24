@@ -2,6 +2,7 @@ package io.sentry.transport.apache;
 
 import static io.sentry.SentryLevel.*;
 
+import io.sentry.Hint;
 import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
@@ -28,7 +29,6 @@ import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.io.CloseMode;
 import org.apache.hc.core5.util.TimeValue;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * {@link ITransport} implementation that executes request asynchronously in a non-blocking manner
@@ -66,11 +66,10 @@ public final class ApacheHttpClientTransport implements ITransport {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint)
+  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
       throws IOException {
     if (isSchedulingAllowed()) {
-      Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-      final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, sentrySdkHint);
+      final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
 
       if (filteredEnvelope != null) {
         final SentryEnvelope envelopeWithClientReport =
@@ -111,7 +110,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                           .log(ERROR, "Request failed, API returned %s", response.getCode());
 
                       if (response.getCode() >= 400 && response.getCode() != 429) {
-                        if (!(sentrySdkHint instanceof Retryable)) {
+                        if (!HintUtils.hasType(hint, Retryable.class)) {
                           options
                               .getClientReportRecorder()
                               .recordLostEnvelope(
@@ -133,7 +132,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                   @Override
                   public void failed(Exception ex) {
                     options.getLogger().log(ERROR, "Error while sending an envelope", ex);
-                    if (!(sentrySdkHint instanceof Retryable)) {
+                    if (!HintUtils.hasType(hint, Retryable.class)) {
                       options
                           .getClientReportRecorder()
                           .recordLostEnvelope(
@@ -145,7 +144,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                   @Override
                   public void cancelled() {
                     options.getLogger().log(WARNING, "Request cancelled");
-                    if (!(sentrySdkHint instanceof Retryable)) {
+                    if (!HintUtils.hasType(hint, Retryable.class)) {
                       options
                           .getClientReportRecorder()
                           .recordLostEnvelope(
@@ -156,7 +155,7 @@ public final class ApacheHttpClientTransport implements ITransport {
                 });
           } catch (Throwable e) {
             options.getLogger().log(ERROR, "Error when sending envelope", e);
-            if (!(sentrySdkHint instanceof Retryable)) {
+            if (!HintUtils.hasType(hint, Retryable.class)) {
               options
                   .getClientReportRecorder()
                   .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);

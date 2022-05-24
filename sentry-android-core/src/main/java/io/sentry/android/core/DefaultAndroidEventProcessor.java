@@ -22,6 +22,7 @@ import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
@@ -118,8 +119,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
+  public @NotNull SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
     final boolean applyScopeData = shouldApplyScopeData(event, hint);
     if (applyScopeData) {
       // we only set memory data if it's not a hard crash, when it's a hard crash the event is
@@ -145,7 +145,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private boolean shouldApplyScopeData(
-      final @NotNull SentryBaseEvent event, final @Nullable Map<String, Object> hint) {
+      final @NotNull SentryBaseEvent event, final @NotNull Hint hint) {
     if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
@@ -885,7 +885,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @Nullable Map<String, Object> hint) {
+      final @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
     final boolean applyScopeData = shouldApplyScopeData(transaction, hint);
 
     if (applyScopeData) {
