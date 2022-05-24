@@ -10,8 +10,8 @@ sauce:
       - benchmarks
       - android
 espresso:
-  app: ./sentry-uitest/sentry-uitest-android-benchmark/build/outputs/apk/release/sentry-uitest-android-benchmark-release.apk
-  testApp: ./sentry-uitest/sentry-uitest-android-benchmark/build/outputs/apk/androidTest/release/sentry-uitest-android-benchmark-release-androidTest.apk
+  app: ./sentry-android-integration-tests/sentry-uitest-android-benchmark/build/outputs/apk/release/sentry-uitest-android-benchmark-release.apk
+  testApp: ./sentry-android-integration-tests/sentry-uitest-android-benchmark/build/outputs/apk/androidTest/release/sentry-uitest-android-benchmark-release-androidTest.apk
 suites:
   name: "Android Benchmarks"
   devices:

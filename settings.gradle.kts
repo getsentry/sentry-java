@@ -37,8 +37,8 @@ include(
     "sentry-samples:sentry-samples-spring-boot",
     "sentry-samples:sentry-samples-spring-boot-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
-    "sentry-uitest:sentry-uitest-android-benchmark",
-    "sentry-uitest:sentry-uitest-android"
+    "sentry-android-integration-tests:sentry-uitest-android-benchmark",
+    "sentry-android-integration-tests:sentry-uitest-android"
 )
 
 gradle.beforeProject {

@@ -88,7 +88,7 @@ allprojects {
 }
 
 subprojects {
-    if (!this.name.contains("sample") && !this.name.contains("uitest") && this.name != "sentry-test-support") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
 
         val sep = File.separator
@@ -167,7 +167,7 @@ gradle.projectsEvaluated {
             "https://docs.spring.io/spring-boot/docs/current/api/"
         )
         subprojects
-            .filter { !it.name.contains("sample") && !it.name.contains("uitest") }
+            .filter { !it.name.contains("sample") && !it.name.contains("integration-tests") }
             .forEach { proj ->
                 proj.tasks.withType<Javadoc>().forEach { javadocTask ->
                     source += javadocTask.source
