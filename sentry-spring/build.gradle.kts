@@ -37,6 +37,7 @@ dependencies {
     compileOnly(Config.Libs.springSecurityWeb)
     compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApi)
+    compileOnly(Config.Libs.slf4jApi)
 
     compileOnly(Config.Libs.springWebflux)
 
