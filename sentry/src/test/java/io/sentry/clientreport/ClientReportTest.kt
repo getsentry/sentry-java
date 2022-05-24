@@ -4,6 +4,7 @@ import io.sentry.Attachment
 import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.EventProcessor
+import io.sentry.Hint
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -14,7 +15,6 @@ import io.sentry.Session
 import io.sentry.UserFeedback
 import io.sentry.dsnString
 import io.sentry.hints.DiskFlushNotification
-import io.sentry.hints.Hint
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction

@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.hints.Hint;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.User;

@@ -5,9 +5,9 @@ import static io.sentry.TypeCheckHint.GRAPHQL_HANDLER_PARAMETERS;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
+import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
-import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 

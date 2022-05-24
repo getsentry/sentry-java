@@ -7,6 +7,7 @@ import static io.sentry.SentryLevel.WARNING;
 import static java.lang.String.format;
 
 import io.sentry.DateUtils;
+import io.sentry.Hint;
 import io.sentry.SentryCrashLastRunState;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
@@ -15,7 +16,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
 import io.sentry.hints.DiskFlushNotification;
-import io.sentry.hints.Hint;
 import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;

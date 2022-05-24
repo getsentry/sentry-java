@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.FileUtils;

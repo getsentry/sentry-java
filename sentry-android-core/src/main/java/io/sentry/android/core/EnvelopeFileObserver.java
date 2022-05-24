@@ -3,13 +3,13 @@ package io.sentry.android.core;
 import static io.sentry.SentryLevel.ERROR;
 
 import android.os.FileObserver;
+import io.sentry.Hint;
 import io.sentry.IEnvelopeSender;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Cached;
 import io.sentry.hints.Flushable;
-import io.sentry.hints.Hint;
 import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;

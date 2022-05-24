@@ -5,7 +5,6 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;

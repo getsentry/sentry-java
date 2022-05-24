@@ -1,7 +1,6 @@
 package io.sentry
 
 import com.nhaarman.mockitokotlin2.mock
-import io.sentry.hints.Hint
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Attachment
+import io.sentry.Hint
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.SentryEnvelope
@@ -22,7 +23,6 @@ import io.sentry.TransactionContext
 import io.sentry.UserFeedback
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
-import io.sentry.hints.Hint
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User

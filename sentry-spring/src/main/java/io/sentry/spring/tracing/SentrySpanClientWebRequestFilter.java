@@ -5,12 +5,12 @@ import static io.sentry.TypeCheckHint.SPRING_EXCHANGE_FILTER_RESPONSE;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TracingOrigins;
-import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

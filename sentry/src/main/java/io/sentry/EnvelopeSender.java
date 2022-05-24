@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.Flushable;
-import io.sentry.hints.Hint;
 import io.sentry.hints.Retryable;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;

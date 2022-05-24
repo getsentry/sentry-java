@@ -22,7 +22,6 @@ import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
-import io.sentry.hints.Hint
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion

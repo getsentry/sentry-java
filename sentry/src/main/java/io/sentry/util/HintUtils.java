@@ -2,10 +2,10 @@ package io.sentry.util;
 
 import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
+import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Cached;
-import io.sentry.hints.Hint;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
