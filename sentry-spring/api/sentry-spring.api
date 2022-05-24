@@ -5,7 +5,7 @@ public final class io/sentry/spring/BuildConfig {
 
 public final class io/sentry/spring/ContextTagsEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun process (Lio/sentry/SentryEvent;Ljava/util/Map;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
 public abstract interface annotation class io/sentry/spring/EnableSentry : java/lang/annotation/Annotation {

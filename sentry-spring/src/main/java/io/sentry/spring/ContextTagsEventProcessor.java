@@ -1,6 +1,7 @@
 package io.sentry.spring;
 
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
 import io.sentry.util.CollectionUtils;
@@ -21,8 +22,7 @@ public final class ContextTagsEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(
-      @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
+  public @NotNull SentryEvent process(@NotNull SentryEvent event, @Nullable Hint hint) {
     final Map<String, String> contextMap = MDC.getCopyOfContextMap();
     if (contextMap != null) {
       final Map<String, String> mdcProperties =
