@@ -13,6 +13,10 @@
 
 # don't warn jetbrains annotations
 -dontwarn org.jetbrains.annotations.**
+# don't warn about missing classes (mainly for Guardsquare's proguard).
+# We are checking for their presence at runtime
+-dontwarn io.sentry.android.timber.SentryTimberIntegration
+-dontwarn io.sentry.android.fragment.FragmentLifecycleIntegration
 
 # To ensure that stack traces is unambiguous
 # https://developer.android.com/studio/build/shrink-code#decode-stack-trace
