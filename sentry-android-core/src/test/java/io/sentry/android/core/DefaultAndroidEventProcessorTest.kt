@@ -12,13 +12,13 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.DiagnosticLogger
+import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
-import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
 import io.sentry.android.core.DefaultAndroidEventProcessor.KERNEL_VERSION
 import io.sentry.android.core.DefaultAndroidEventProcessor.ROOTED
@@ -29,6 +29,7 @@ import io.sentry.protocol.SentryThread
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.getCtor
+import io.sentry.util.HintUtils
 import org.junit.runner.RunWith
 import java.util.Locale
 import kotlin.test.BeforeTest
@@ -110,7 +111,7 @@ class DefaultAndroidEventProcessorTest {
         whenever(fixture.buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryEvent(), null)) {
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
             assertNotNull(it.contexts.app)
             assertNotNull(it.dist)
 
@@ -125,7 +126,7 @@ class DefaultAndroidEventProcessorTest {
         whenever(fixture.buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryEvent(), null)) {
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
             // assert adds permissions
             val unknown = it.contexts.app!!.permissions
             assertNull(unknown)
@@ -136,7 +137,12 @@ class DefaultAndroidEventProcessorTest {
     fun `When Transaction and hint is not Cached, data should be applied`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), null)) {
+        assertNotNull(
+            sut.process(
+                SentryTransaction(fixture.sentryTracer),
+                Hint()
+            )
+        ) {
             assertNotNull(it.contexts.app)
             assertNotNull(it.dist)
         }
@@ -153,7 +159,7 @@ class DefaultAndroidEventProcessorTest {
             threads = mutableListOf(sentryThread)
         }
 
-        assertNotNull(sut.process(event, null)) {
+        assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.threads) { threads ->
                 assertTrue(threads.first().isCurrent == true)
             }
@@ -172,7 +178,7 @@ class DefaultAndroidEventProcessorTest {
             )
         }
 
-        assertNotNull(sut.process(event, null)) {
+        assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.threads) { threads ->
                 assertFalse(threads.first().isCurrent == true)
             }
@@ -192,7 +198,7 @@ class DefaultAndroidEventProcessorTest {
             )
         }
 
-        assertNotNull(sut.process(event, null)) {
+        assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.threads) { threads ->
                 assertTrue(threads.first().isCurrent == true)
             }
@@ -203,8 +209,8 @@ class DefaultAndroidEventProcessorTest {
     fun `When Event and hint is Cached, data should not be applied`() {
         val sut = fixture.getSut(context)
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
-        assertNotNull(sut.process(SentryEvent(), hintsMap)) {
+        val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
+        assertNotNull(sut.process(SentryEvent(), hints)) {
             assertNull(it.contexts.app)
             assertNull(it.debugMeta)
             assertNull(it.dist)
@@ -215,8 +221,8 @@ class DefaultAndroidEventProcessorTest {
     fun `When Transaction and hint is Cached, data should not be applied`() {
         val sut = fixture.getSut(context)
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
-        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), hintsMap)) {
+        val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
+        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), hints)) {
             assertNull(it.contexts.app)
             assertNull(it.dist)
         }
@@ -225,9 +231,8 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `When Event and hint is Cached, userId is applied anyway`() {
         val sut = fixture.getSut(context)
-
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
-        assertNotNull(sut.process(SentryEvent(), hintsMap)) {
+        val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
+        assertNotNull(sut.process(SentryEvent(), hints)) {
             assertNotNull(it.user)
         }
     }
@@ -236,8 +241,8 @@ class DefaultAndroidEventProcessorTest {
     fun `When Transaction and hint is Cached, userId is applied anyway`() {
         val sut = fixture.getSut(context)
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
-        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), hintsMap)) {
+        val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
+        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), hints)) {
             assertNotNull(it.user)
         }
     }
@@ -253,7 +258,7 @@ class DefaultAndroidEventProcessorTest {
             setUser(user)
         }
 
-        assertNotNull(sut.process(event, null)) {
+        assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.user)
             assertSame(user, it.user)
         }
@@ -267,7 +272,7 @@ class DefaultAndroidEventProcessorTest {
             user = User()
         }
 
-        assertNotNull(sut.process(event, null)) {
+        assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.user)
             assertNotNull(it.user!!.id)
         }
@@ -290,7 +295,7 @@ class DefaultAndroidEventProcessorTest {
     fun `Processor won't throw exception`() {
         val sut = fixture.getSut(context)
 
-        sut.process(SentryEvent(), null)
+        sut.process(SentryEvent(), Hint())
 
         verify(
             (fixture.options.logger as DiagnosticLogger).logger,
@@ -303,8 +308,8 @@ class DefaultAndroidEventProcessorTest {
         val processor =
             DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
-        processor.process(SentryEvent(), hintsMap)
+        val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
+        processor.process(SentryEvent(), hints)
 
         verify(
             (fixture.options.logger as DiagnosticLogger).logger,
@@ -316,7 +321,7 @@ class DefaultAndroidEventProcessorTest {
     fun `When event is processed, sideLoaded info should be set`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryEvent(), null)) {
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
             assertNotNull(it.getTag("isSideLoaded"))
         }
     }
@@ -332,7 +337,7 @@ class DefaultAndroidEventProcessorTest {
             contexts.setOperatingSystem(osLinux)
         }
 
-        assertNotNull(sut.process(event, null)) {
+        assertNotNull(sut.process(event, Hint())) {
             assertSame(osLinux, (it.contexts["os_linux"] as OperatingSystem))
             assertEquals("Android", it.contexts.operatingSystem!!.name)
         }
@@ -349,7 +354,7 @@ class DefaultAndroidEventProcessorTest {
             contexts.setOperatingSystem(osNoName)
         }
 
-        assertNotNull(sut.process(event, null)) {
+        assertNotNull(sut.process(event, Hint())) {
             assertSame(osNoName, (it.contexts["os_1"] as OperatingSystem))
             assertEquals("Android", it.contexts.operatingSystem!!.name)
         }
@@ -359,8 +364,8 @@ class DefaultAndroidEventProcessorTest {
     fun `When hint is Cached, memory data should not be applied`() {
         val sut = fixture.getSut(context)
 
-        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CachedEvent())
-        assertNotNull(sut.process(SentryEvent(), hintsMap)) {
+        val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
+        assertNotNull(sut.process(SentryEvent(), hints)) {
             assertNull(it.contexts.device!!.freeMemory)
             assertNull(it.contexts.device!!.isLowMemory)
         }
@@ -370,7 +375,7 @@ class DefaultAndroidEventProcessorTest {
     fun `When hint is not Cached, memory data should be applied`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryEvent(), null)) {
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
             assertNotNull(it.contexts.device!!.freeMemory)
             assertNotNull(it.contexts.device!!.isLowMemory)
         }
@@ -380,7 +385,12 @@ class DefaultAndroidEventProcessorTest {
     fun `Device's context is set on transactions`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), null)) {
+        assertNotNull(
+            sut.process(
+                SentryTransaction(fixture.sentryTracer),
+                Hint()
+            )
+        ) {
             assertNotNull(it.contexts.device)
         }
     }
@@ -389,7 +399,12 @@ class DefaultAndroidEventProcessorTest {
     fun `Device's OS is set on transactions`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), null)) {
+        assertNotNull(
+            sut.process(
+                SentryTransaction(fixture.sentryTracer),
+                Hint()
+            )
+        ) {
             assertNotNull(it.contexts.operatingSystem)
         }
     }
@@ -398,7 +413,12 @@ class DefaultAndroidEventProcessorTest {
     fun `Transaction do not set device's context that requires heavy work`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryTransaction(fixture.sentryTracer), null)) {
+        assertNotNull(
+            sut.process(
+                SentryTransaction(fixture.sentryTracer),
+                Hint()
+            )
+        ) {
             val device = it.contexts.device!!
             assertNull(device.batteryLevel)
             assertNull(device.isCharging)
@@ -418,7 +438,7 @@ class DefaultAndroidEventProcessorTest {
     fun `Event sets device's context that requires heavy work`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryEvent(), null)) {
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
             val device = it.contexts.device!!
             assertNotNull(device.freeMemory)
             assertNotNull(device.isLowMemory)
@@ -440,7 +460,7 @@ class DefaultAndroidEventProcessorTest {
     fun `Event sets language and locale`() {
         val sut = fixture.getSut(context)
 
-        assertNotNull(sut.process(SentryEvent(), null)) {
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
             val device = it.contexts.device!!
             assertEquals("en", device.language)
             assertEquals("en_US", device.locale)

@@ -9,6 +9,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
@@ -16,8 +17,6 @@ import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -107,10 +106,10 @@ public final class TempSensorBreadcrumbsIntegration
       breadcrumb.setLevel(SentryLevel.INFO);
       breadcrumb.setData("degree", event.values[0]); // Celsius
 
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(ANDROID_SENSOR_EVENT, event);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_SENSOR_EVENT, event);
 
-      hub.addBreadcrumb(breadcrumb, hintMap);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 

@@ -4,6 +4,7 @@ import io.sentry.Attachment
 import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.EventProcessor
+import io.sentry.Hint
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -11,7 +12,6 @@ import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.Session
-import io.sentry.TypeCheckHint
 import io.sentry.UserFeedback
 import io.sentry.dsnString
 import io.sentry.hints.DiskFlushNotification
@@ -19,6 +19,7 @@ import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.util.HintUtils
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -149,13 +150,13 @@ class ClientReportTest {
 
 class DropEverythingEventProcessor : EventProcessor {
 
-    override fun process(event: SentryEvent, hint: MutableMap<String, Any>?): SentryEvent? {
+    override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
         return null
     }
 
     override fun process(
         transaction: SentryTransaction,
-        hint: MutableMap<String, Any>?
+        hint: Hint
     ): SentryTransaction? {
         return null
     }
@@ -193,9 +194,9 @@ class ClientReportTestHelper(val options: SentryOptions) {
     }
 
     companion object {
-        fun retryableHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestRetryable())
-        fun diskFlushNotificationHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestDiskFlushNotification())
-        fun retryableDiskFlushNotificationHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestRetryableDiskFlushNotification())
+        fun retryableHint() = HintUtils.createWithTypeCheckHint(TestRetryable())
+        fun diskFlushNotificationHint() = HintUtils.createWithTypeCheckHint(TestDiskFlushNotification())
+        fun retryableDiskFlushNotificationHint() = HintUtils.createWithTypeCheckHint(TestRetryableDiskFlushNotification())
 
         fun assertClientReport(clientReportRecorder: IClientReportRecorder, expectedEvents: List<DiscardedEvent>) {
             val recorder = clientReportRecorder as ClientReportRecorder

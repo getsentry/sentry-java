@@ -29,7 +29,7 @@ class NoOpHubTest {
 
     @Test
     fun `captureTransaction returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Map<String, Any>>()))
+        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Hint>()))
 
     @Test
     fun `captureException returns empty SentryId`() =

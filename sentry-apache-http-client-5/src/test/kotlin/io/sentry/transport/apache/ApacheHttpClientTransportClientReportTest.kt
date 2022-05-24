@@ -18,12 +18,12 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
-import io.sentry.TypeCheckHint
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.hints.Retryable
 import io.sentry.transport.RateLimiter
 import io.sentry.transport.ReusableCountLatch
+import io.sentry.util.HintUtils
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient
 import org.apache.hc.core5.concurrent.FutureCallback
@@ -209,7 +209,7 @@ class ApacheHttpClientTransportClientReportTest {
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
-    private fun retryableHint() = mutableMapOf<String, Any?>(TypeCheckHint.SENTRY_TYPE_CHECK_HINT to TestRetryable())
+    private fun retryableHint() = HintUtils.createWithTypeCheckHint(TestRetryable())
 }
 
 class TestRetryable : Retryable {
