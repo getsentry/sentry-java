@@ -9,6 +9,7 @@ import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.spring.ContextTagsEventProcessor;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
 import io.sentry.spring.SentrySpringFilter;

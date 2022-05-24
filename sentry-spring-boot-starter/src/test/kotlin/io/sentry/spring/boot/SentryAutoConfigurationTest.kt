@@ -20,6 +20,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.protocol.User
+import io.sentry.spring.ContextTagsEventProcessor
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryExceptionResolver
 import io.sentry.spring.SentryUserFilter
