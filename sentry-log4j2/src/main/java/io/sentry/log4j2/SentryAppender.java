@@ -187,6 +187,8 @@ public class SentryAppender extends AbstractAppender {
         CollectionUtils.filterMapEntries(
             loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
+      // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
+      // initialized somewhere else
       final List<String> contextTags = hub.getOptions().getContextTags();
       if (contextTags != null && !contextTags.isEmpty()) {
         for (final String contextTag : contextTags) {
