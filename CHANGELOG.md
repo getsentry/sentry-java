@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-rc.1
 
 ### Features
 - Allow optimization and obfuscation of the SDK by reducing proguard rules ([#2031](https://github.com/getsentry/sentry-java/pull/2031))
