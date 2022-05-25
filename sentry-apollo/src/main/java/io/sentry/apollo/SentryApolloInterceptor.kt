@@ -12,6 +12,7 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
@@ -19,7 +20,6 @@ import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
-import io.sentry.hints.Hint
 import java.util.concurrent.Executor
 
 class SentryApolloInterceptor(

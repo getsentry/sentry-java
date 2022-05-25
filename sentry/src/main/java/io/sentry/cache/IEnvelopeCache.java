@@ -1,7 +1,7 @@
 package io.sentry.cache;
 
+import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
-import io.sentry.hints.Hint;
 import org.jetbrains.annotations.NotNull;
 
 public interface IEnvelopeCache extends Iterable<SentryEnvelope> {

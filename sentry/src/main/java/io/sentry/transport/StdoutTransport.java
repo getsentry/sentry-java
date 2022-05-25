@@ -1,8 +1,8 @@
 package io.sentry.transport;
 
+import io.sentry.Hint;
 import io.sentry.ISerializer;
 import io.sentry.SentryEnvelope;
-import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;

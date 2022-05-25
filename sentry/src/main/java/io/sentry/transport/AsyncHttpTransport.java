@@ -1,5 +1,6 @@
 package io.sentry.transport;
 
+import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
@@ -9,7 +10,6 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
-import io.sentry.hints.Hint;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;

@@ -3,11 +3,11 @@ package io.sentry.spring.webflux;
 import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_REQUEST;
 import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_RESPONSE;
 
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.exception.ExceptionMechanismException;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.Mechanism;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;

@@ -5,9 +5,9 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SpanContext;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;

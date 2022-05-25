@@ -1,7 +1,7 @@
 package io.sentry.transport;
 
+import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
-import io.sentry.hints.Hint;
 import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;

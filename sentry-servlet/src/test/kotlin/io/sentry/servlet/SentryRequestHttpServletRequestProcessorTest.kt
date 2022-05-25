@@ -1,8 +1,8 @@
 package io.sentry.servlet
 
+import io.sentry.Hint
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
-import io.sentry.hints.Hint
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import java.net.URI

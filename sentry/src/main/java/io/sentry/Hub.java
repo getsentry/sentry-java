@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.Stack.StackItem;
 import io.sentry.clientreport.DiscardReason;
-import io.sentry.hints.Hint;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;

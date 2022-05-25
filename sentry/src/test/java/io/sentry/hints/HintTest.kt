@@ -1,6 +1,7 @@
 package io.sentry.hints
 
 import io.sentry.Attachment
+import io.sentry.Hint
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

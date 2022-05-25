@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.hints.Hint;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;

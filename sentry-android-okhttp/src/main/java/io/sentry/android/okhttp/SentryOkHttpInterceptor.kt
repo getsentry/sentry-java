@@ -1,6 +1,7 @@
 package io.sentry.android.okhttp
 
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
@@ -8,7 +9,6 @@ import io.sentry.SpanStatus
 import io.sentry.TracingOrigins
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
-import io.sentry.hints.Hint
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response

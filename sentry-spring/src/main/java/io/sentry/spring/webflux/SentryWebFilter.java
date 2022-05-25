@@ -4,8 +4,8 @@ import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_REQUEST;
 import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_RESPONSE;
 
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
-import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;

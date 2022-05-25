@@ -2,13 +2,13 @@ package io.sentry.samples.console;
 
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;

@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.DiskFlushNotification;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;

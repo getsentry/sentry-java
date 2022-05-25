@@ -1,7 +1,6 @@
 package io.sentry
 
 import io.sentry.exception.ExceptionMechanismException
-import io.sentry.hints.Hint
 import io.sentry.protocol.Mechanism
 import java.lang.RuntimeException
 import kotlin.test.Test

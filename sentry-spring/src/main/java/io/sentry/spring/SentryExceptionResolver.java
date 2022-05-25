@@ -4,11 +4,11 @@ import static io.sentry.TypeCheckHint.SPRING_RESOLVER_REQUEST;
 import static io.sentry.TypeCheckHint.SPRING_RESOLVER_RESPONSE;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.exception.ExceptionMechanismException;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.Mechanism;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;

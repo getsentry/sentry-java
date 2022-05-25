@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.hints.ApplyScopeData
-import io.sentry.hints.Hint
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction

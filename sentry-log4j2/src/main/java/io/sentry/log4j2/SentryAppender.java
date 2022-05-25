@@ -6,6 +6,7 @@ import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
+import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransportFactory;
@@ -13,7 +14,6 @@ import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.hints.Hint;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
@@ -187,6 +187,9 @@ public class SentryAppender extends AbstractAppender {
         CollectionUtils.filterMapEntries(
             loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
+      // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
+      // initialized somewhere else
+      final List<String> contextTags = hub.getOptions().getContextTags();
       if (contextTags != null && !contextTags.isEmpty()) {
         for (final String contextTag : contextTags) {
           // if mdc tag is listed in SentryOptions, apply as event tag

@@ -4,7 +4,6 @@ import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
 
 import io.sentry.hints.Flushable;
-import io.sentry.hints.Hint;
 import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;

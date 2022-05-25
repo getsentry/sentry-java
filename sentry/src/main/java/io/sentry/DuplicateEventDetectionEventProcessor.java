@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.hints.Hint;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;

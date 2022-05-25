@@ -2,8 +2,8 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.SentryEvent;
-import io.sentry.hints.Hint;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
 import javax.servlet.http.HttpServletRequest;
