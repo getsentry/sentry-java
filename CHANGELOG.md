@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Calling Sentry.init and specifying contextTags now has an effect on the Logback SentryAppender ([#2052](https://github.com/getsentry/sentry-java/pull/2052))
+
 ## 6.0.0-beta.4
 
 ### Fixes

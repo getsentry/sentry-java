@@ -11,6 +11,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
+import io.sentry.HubAdapter;
 import io.sentry.ITransportFactory;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 /** Appender for logback in charge of sending the logged events to a Sentry server. */
 @Open
 public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+  // WARNING: Do not use these options in here, they are only to be used for startup
   private @NotNull SentryOptions options = new SentryOptions();
   private @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
@@ -40,6 +42,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   @Override
   public void start() {
+    // NOTE: logback.xml properties will only be applied if the SDK has not yet been initialized
     if (!Sentry.isEnabled()) {
       if (options.getDsn() == null || !options.getDsn().endsWith("_IS_UNDEFINED")) {
         options.setEnableExternalConfiguration(true);
@@ -112,8 +115,11 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         CollectionUtils.filterMapEntries(
             loggingEvent.getMDCPropertyMap(), entry -> entry.getValue() != null);
     if (!mdcProperties.isEmpty()) {
-      if (!options.getContextTags().isEmpty()) {
-        for (final String contextTag : options.getContextTags()) {
+      // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
+      // initialized somewhere else
+      final List<String> contextTags = HubAdapter.getInstance().getOptions().getContextTags();
+      if (!contextTags.isEmpty()) {
+        for (final String contextTag : contextTags) {
           // if mdc tag is listed in SentryOptions, apply as event tag
           if (mdcProperties.containsKey(contextTag)) {
             event.setTag(contextTag, mdcProperties.get(contextTag));
