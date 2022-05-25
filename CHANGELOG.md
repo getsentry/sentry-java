@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Calling Sentry.init and specifying contextTags now has an effect on the jul SentryAppender ([#2057](https://github.com/getsentry/sentry-java/pull/2057))
+
 ## 6.0.0-beta.4
 
 ### Fixes
@@ -15,7 +21,6 @@
 - Automatically create transactions for UI events ([#1975](https://github.com/getsentry/sentry-java/pull/1975))
 - Hints are now used via a Hint object and passed into beforeSend and EventProcessor as @NotNull Hint object ([#2045](https://github.com/getsentry/sentry-java/pull/2045))
 - Attachments can be manipulated via hint ([#2046](https://github.com/getsentry/sentry-java/pull/2046))
-- Calling Sentry.init and specifying contextTags now has an effect on the jul SentryAppender ([#2057](https://github.com/getsentry/sentry-java/pull/2057))
 
 ### Fixes
 
