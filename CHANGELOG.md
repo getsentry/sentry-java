@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Features
+- Allow optimization and obfuscation of the SDK by reducing proguard rules ([#2031](https://github.com/getsentry/sentry-java/pull/2031))
+
 ### Fixes
 
 - Calling Sentry.init and specifying contextTags now has an effect on the Logback SentryAppender ([#2052](https://github.com/getsentry/sentry-java/pull/2052))
@@ -21,7 +24,6 @@
 ### Features
 
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
-- Allow optimization and obfuscation of the SDK by reducing proguard rules ([#2031](https://github.com/getsentry/sentry-java/pull/2031))
 - Allow setting native Android SDK name during build ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
 - Include application permissions in Android events ([#2018](https://github.com/getsentry/sentry-java/pull/2018))
 - Automatically create transactions for UI events ([#1975](https://github.com/getsentry/sentry-java/pull/1975))
