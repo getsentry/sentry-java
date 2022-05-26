@@ -9,11 +9,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
 import io.sentry.uitest.android.benchmark.util.BenchmarkOperation
-import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Test
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -58,10 +58,10 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
         val perfProfilingSdkResult = BenchmarkOperation.compare(opNoSdk2, "No Sdk", opPerfProfilingSdk, "Sdk with perf and profiling")
 
         val threshold = TimeUnit.MILLISECONDS.toNanos(100)
-        assertTrue { simpleSdkResult.durationIncreaseNanos in 0..threshold }
-        assertTrue { simpleSdkResult.cpuTimeIncreaseMillis in 0..threshold }
-        assertTrue { perfProfilingSdkResult.durationIncreaseNanos in simpleSdkResult.durationIncreaseNanos..threshold }
-        assertTrue { perfProfilingSdkResult.cpuTimeIncreaseMillis in simpleSdkResult.cpuTimeIncreaseMillis..threshold }
+        assertTrue(simpleSdkResult.durationIncreaseNanos in 0..threshold)
+        assertTrue(simpleSdkResult.cpuTimeIncreaseMillis in 0..threshold)
+        assertTrue(perfProfilingSdkResult.durationIncreaseNanos in simpleSdkResult.durationIncreaseNanos..threshold)
+        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseMillis in simpleSdkResult.cpuTimeIncreaseMillis..threshold)
     }
 
     private fun getOperation(init: (() -> Unit)? = null) = BenchmarkOperation(
@@ -79,5 +79,4 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
             Sentry.close()
         }
     )
-
 }

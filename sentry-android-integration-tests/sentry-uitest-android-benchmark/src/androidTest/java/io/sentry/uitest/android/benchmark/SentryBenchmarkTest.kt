@@ -1,6 +1,5 @@
 package io.sentry.uitest.android.benchmark
 
-import android.content.Context
 import android.view.Choreographer
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
@@ -50,11 +49,11 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         val op2 = BenchmarkOperation(choreographer, op = getOperation(runner))
         val comparisonResult = BenchmarkOperation.compare(op1, "Op1", op2, "Op2")
 
-        assertTrue { comparisonResult.durationIncreasePercentage in -1F..1F }
-        assertTrue { comparisonResult.cpuTimeIncreasePercentage in -1F..1F }
+        assertTrue(comparisonResult.durationIncreasePercentage in -1F..1F)
+        assertTrue(comparisonResult.cpuTimeIncreasePercentage in -1F..1F)
         // The fps decrease comparison is skipped, due to approximation: 59.51 and 59.49 fps are considered 60 and 59,
         // respectively. Also, if the average fps is 20 or 60, a difference of 1 fps becomes 5% or 1.66% respectively.
-        assertTrue { comparisonResult.droppedFramesIncreasePercentage in -1F..1F }
+        assertTrue(comparisonResult.droppedFramesIncreasePercentage in -1F..1F)
     }
 
     @Test
@@ -90,10 +89,10 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
             "ProfiledTransaction"
         )
 
-        assertTrue { comparisonResult.durationIncreasePercentage in 0F..5F }
-        assertTrue { comparisonResult.cpuTimeIncreasePercentage in 0F..5F }
-        assertTrue { comparisonResult.fpsDecreasePercentage in 0F..5F }
-        assertTrue { comparisonResult.droppedFramesIncreasePercentage in 0F..5F }
+        assertTrue(comparisonResult.durationIncreasePercentage in 0F..5F)
+        assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5F)
+        assertTrue(comparisonResult.fpsDecreasePercentage in 0F..5F)
+        assertTrue(comparisonResult.droppedFramesIncreasePercentage in 0F..5F)
     }
 
     /**

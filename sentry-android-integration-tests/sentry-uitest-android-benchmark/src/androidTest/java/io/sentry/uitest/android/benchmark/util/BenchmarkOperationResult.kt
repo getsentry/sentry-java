@@ -18,10 +18,12 @@ internal data class BenchmarkOperationResult(
         val durationIncreasePercentage = durationIncreaseNanos * 100.0 / other.avgDurationNanos
         println("[${other.operationName}] Average duration: ${other.avgDurationNanos} ns")
         println("[$operationName] Average duration: $avgDurationNanos ns")
-        println("Duration increase: %.2f%% (%d ns = %d ms)".format(
-            durationIncreasePercentage,
-            durationIncreaseNanos,
-            TimeUnit.NANOSECONDS.toMillis(durationIncreaseNanos))
+        println(
+            "Duration increase: %.2f%% (%d ns = %d ms)".format(
+                durationIncreasePercentage,
+                durationIncreaseNanos,
+                TimeUnit.NANOSECONDS.toMillis(durationIncreaseNanos)
+            )
         )
         if (durationIncreasePercentage <= 0) {
             println("No measurable duration increase detected.")
