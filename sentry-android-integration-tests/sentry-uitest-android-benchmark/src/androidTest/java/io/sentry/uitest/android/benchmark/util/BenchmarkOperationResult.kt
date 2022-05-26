@@ -16,10 +16,6 @@ internal data class BenchmarkOperationResult(
         // Measure average duration
         val durationIncreaseNanos = avgDurationNanos - other.avgDurationNanos
         val durationIncreasePercentage = durationIncreaseNanos * 100.0 / other.avgDurationNanos
-        println(
-            "Measuring the duration increase of the operation in the transaction. If it's low enough, " +
-                "no end user will ever realize it"
-        )
         println("[${other.operationName}] Average duration: ${other.avgDurationNanos} ns")
         println("[$operationName] Average duration: $avgDurationNanos ns")
         println("Duration increase: %.2f%% (%d ns = %d ms)".format(
@@ -38,10 +34,6 @@ internal data class BenchmarkOperationResult(
         val cpuTimeIncreaseMillis = (avgCpuTimeMillis - other.avgCpuTimeMillis) / cores
         val cpuTimeOverheadPercentage = cpuTimeIncreaseMillis * 100.0 / other.avgCpuTimeMillis
         // Cpu time spent profiling is weighted based on available threads, as profiling runs on 1 thread only.
-        println(
-            "Measuring the increased cpu time. It has no direct impact on performance of the app, " +
-                "but it has on battery usage, as the cpu is 'awaken' longer."
-        )
         println("The weighted difference of cpu times is $cpuTimeIncreaseMillis ms (over $cores available cores).")
         println("[${other.operationName}] Cpu time: ${other.avgCpuTimeMillis} ms")
         println("[$operationName] Cpu time: $avgCpuTimeMillis ms")
@@ -55,10 +47,6 @@ internal data class BenchmarkOperationResult(
         // Measure average fps
         val fpsDecrease = other.avgFramesPerSecond - avgFramesPerSecond
         val fpsDecreasePercentage = fpsDecrease * 100.0 / other.avgFramesPerSecond
-        println(
-            "Measuring the decreased fps. Not really important, as even if fps are the same, the cpu could be " +
-                "doing more work in the frame window, and it could be hidden by checking average fps only."
-        )
         println("[${other.operationName}] Average FPS: ${other.avgFramesPerSecond}")
         println("[$operationName] Average FPS: $avgFramesPerSecond")
         println("FPS decrease: %.2f%% (%d fps)".format(fpsDecreasePercentage, fpsDecrease))
@@ -72,10 +60,6 @@ internal data class BenchmarkOperationResult(
         val droppedFramesIncrease = avgDroppedFrames - other.avgDroppedFrames
         val totalExpectedFrames = TimeUnit.NANOSECONDS.toMillis(other.avgDurationNanos) * 60 / 1000
         val droppedFramesIncreasePercentage = droppedFramesIncrease * 100 / (totalExpectedFrames - other.avgDroppedFrames)
-        println(
-            "Measuring the increased fps drop rate. Very important, as it weights dropped frames based on the " +
-                "time passed between each frame. This is the metric end users can perceive as 'performance' in app usage."
-        )
         println("Dropped frames are calculated based on a target of 60 frames per second ($totalExpectedFrames total frames).")
         println("[${other.operationName}] Average dropped frames: ${other.avgDroppedFrames}")
         println("[$operationName] Average dropped frames: $avgDroppedFrames")
@@ -99,19 +83,28 @@ internal data class BenchmarkOperationResult(
 
 /** Result of the [BenchmarkOperation] comparison. */
 internal data class BenchmarkResult(
-    /** Increase of cpu time in milliseconds. */
+    /**
+     * Increase of cpu time in milliseconds.
+     * It has no direct impact on performance of the app, but it has on battery usage, as the cpu is 'awaken' longer.
+     */
     val cpuTimeIncreaseMillis: Long,
     /** Increase of cpu time in percentage. */
     val cpuTimeIncreasePercentage: Double,
-    /** Increase of dropped frames. */
+    /**
+     * Increase of dropped frames.Very important, as it weights dropped frames based on the time
+     * passed between each frame. This is the metric end users can perceive as 'performance' in app usage.
+     */
     val droppedFramesIncrease: Double,
     /** Increase of dropped frames in percentage. */
     val droppedFramesIncreasePercentage: Double,
-    /** Increase of duration in nanoseconds. */
-    val durationIncreaseNanos: Long,
+    /** Increase of duration in nanoseconds. If it's low enough, no end user will ever realize it. */
+    val durationIncreaseNanos: Double,
     /** Increase of duration in percentage. */
     val durationIncreasePercentage: Double,
-    /** Decrease of fps. */
+    /**
+     * Decrease of fps. Not really important, as even if fps are the same, the cpu could be
+     * doing more work in the frame window, and it could be hidden by checking average fps only.
+     */
     val fpsDecrease: Int,
     /** Decrease of fps in percentage. */
     val fpsDecreasePercentage: Double
