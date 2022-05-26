@@ -98,7 +98,7 @@ internal data class BenchmarkResult(
     /** Increase of dropped frames in percentage. */
     val droppedFramesIncreasePercentage: Double,
     /** Increase of duration in nanoseconds. If it's low enough, no end user will ever realize it. */
-    val durationIncreaseNanos: Double,
+    val durationIncreaseNanos: Long,
     /** Increase of duration in percentage. */
     val durationIncreasePercentage: Double,
     /**
