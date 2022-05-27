@@ -36,12 +36,22 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @NotNull SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level, @Nullable ScopeCallback callback) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
   public @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
   public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint, @Nullable ScopeCallback callback) {
     return SentryId.EMPTY_ID;
   }
 

@@ -1,19 +1,6 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.argWhere
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.doAnswer
-import com.nhaarman.mockitokotlin2.doThrow
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.isNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import io.sentry.cache.EnvelopeCache
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
@@ -428,6 +415,45 @@ class HubTest {
         sut.captureMessage("test")
         verify(mockClient).captureMessage(eq("test"), eq(SentryLevel.INFO), any())
     }
+
+    @Test
+    fun `when captureMessage is called with a ScopeCallback then the modified scope is sent to the client`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        sut.captureMessage("test") {
+            it.setTag("test", "test")
+        }
+
+        verify(mockClient).captureMessage(
+            any(),
+            any(),
+            check {
+                assertNotNull(it.tags["test"])
+            }
+        )
+    }
+
+    @Test
+    fun `when captureMessage is called with a ScopeCallback then subsequent calls to captureMessage send the unmodified Scope to the client`() {
+        val (sut, mockClient) = getEnabledHub()
+        val argumentCaptor = argumentCaptor<Scope>()
+
+        sut.captureMessage("test") {
+            it.setTag("test", "test")
+        }
+
+        sut.captureMessage("test", null)
+
+        verify(mockClient, times(2)).captureMessage(
+            any(),
+            any(),
+            argumentCaptor.capture(),
+        )
+
+        assertNotNull(argumentCaptor.allValues[0].tags["test"])
+        assertNull(argumentCaptor.allValues[1].tags["test"])
+    }
+
     //endregion
 
     //region captureException tests
@@ -496,11 +522,50 @@ class HubTest {
         sut.captureException(Throwable())
         verify(mockClient).captureEvent(
             check {
-                assertNull(it.contexts.trace)
+                assertNotNull(it.contexts.trace)
             },
             any(), anyOrNull()
         )
     }
+
+    @Test
+    fun `when captureException is called with a ScopeCallback then the modified scope is sent to the client`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        sut.captureException(Throwable(), null) {
+            it.setTag("test", "test")
+        }
+
+        verify(mockClient).captureEvent(
+            any(),
+            check {
+                assertNotNull(it.tags["test"])
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when captureException is called with a ScopeCallback then subsequent calls to captureException send the unmodified Scope to the client`() {
+        val (sut, mockClient) = getEnabledHub()
+        val argumentCaptor = argumentCaptor<Scope>()
+
+        sut.captureException(Throwable(), null) {
+            it.setTag("test", "test")
+        }
+
+        sut.captureException(Throwable(), null, null)
+
+        verify(mockClient, times(2)).captureEvent(
+            any(),
+            argumentCaptor.capture(),
+            anyOrNull()
+        )
+
+        assertNotNull(argumentCaptor.allValues[0].tags["test"])
+        assertNull(argumentCaptor.allValues[1].tags["test"])
+    }
+
     //endregion
 
     //region captureUserFeedback tests

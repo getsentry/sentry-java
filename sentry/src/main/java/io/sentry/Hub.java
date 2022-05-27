@@ -102,7 +102,13 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureMessage(
-      final @NotNull String message, final @NotNull SentryLevel level) {
+    final @NotNull String message, final @NotNull SentryLevel level) {
+    return captureMessage(message, level, null);
+  }
+
+  @Override
+  public @NotNull SentryId captureMessage(
+      final @NotNull String message, final @NotNull SentryLevel level, final @Nullable ScopeCallback callback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -115,7 +121,8 @@ public final class Hub implements IHub {
     } else {
       try {
         final StackItem item = stack.peek();
-        sentryId = item.getClient().captureMessage(message, level, item.getScope());
+        Scope scope = chooseScope(callback, item);
+        sentryId = item.getClient().captureMessage(message, level, scope);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
       }
@@ -154,13 +161,19 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureException(
       final @NotNull Throwable throwable, final @Nullable Hint hint) {
+      return captureException(throwable, hint, null);
+  }
+
+  @Override
+  public @NotNull SentryId captureException(
+    final @NotNull Throwable throwable, final @Nullable Hint hint, final @Nullable ScopeCallback callback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureException' call is a no-op.");
+        .getLogger()
+        .log(
+          SentryLevel.WARNING,
+          "Instance is disabled and this 'captureException' call is a no-op.");
     } else if (throwable == null) {
       options.getLogger().log(SentryLevel.WARNING, "captureException called with null parameter.");
     } else {
@@ -168,12 +181,13 @@ public final class Hub implements IHub {
         final StackItem item = stack.peek();
         final SentryEvent event = new SentryEvent(throwable);
         assignTraceContext(event);
-        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
+        Scope scope = chooseScope(callback, item);
+        sentryId = item.getClient().captureEvent(event, scope, hint);
       } catch (Throwable e) {
         options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR, "Error while capturing exception: " + throwable.getMessage(), e);
+          .getLogger()
+          .log(
+            SentryLevel.ERROR, "Error while capturing exception: " + throwable.getMessage(), e);
       }
     }
     this.lastEventId = sentryId;
@@ -760,5 +774,14 @@ public final class Hub implements IHub {
       }
     }
     return null;
+  }
+
+  private Scope chooseScope(@Nullable ScopeCallback callback, StackItem item) {
+    Scope scope = item.getScope();
+    if (callback != null) {
+      scope = new Scope(scope);
+      callback.run(scope);
+    }
+    return scope;
   }
 }

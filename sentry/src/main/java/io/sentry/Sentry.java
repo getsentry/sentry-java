@@ -302,12 +302,36 @@ public final class Sentry {
    * Captures the message.
    *
    * @param message The message to send.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureMessage(final @NotNull String message, final @NotNull ScopeCallback callback) {
+    return getCurrentHub().captureMessage(message, callback);
+  }
+
+  /**
+   * Captures the message.
+   *
+   * @param message The message to send.
    * @param level The message level.
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureMessage(
       final @NotNull String message, final @NotNull SentryLevel level) {
     return getCurrentHub().captureMessage(message, level);
+  }
+
+  /**
+   * Captures the message.
+   *
+   * @param message The message to send.
+   * @param level The message level.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureMessage(
+    final @NotNull String message, final @NotNull SentryLevel level, final @NotNull ScopeCallback callback) {
+    return getCurrentHub().captureMessage(message, level, callback);
   }
 
   /**
@@ -324,12 +348,36 @@ public final class Sentry {
    * Captures the exception.
    *
    * @param throwable The exception.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureException(final @NotNull Throwable throwable, final @NotNull ScopeCallback callback) {
+    return getCurrentHub().captureException(throwable, callback);
+  }
+
+  /**
+   * Captures the exception.
+   *
+   * @param throwable The exception.
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureException(
       final @NotNull Throwable throwable, final @Nullable Hint hint) {
     return getCurrentHub().captureException(throwable, hint);
+  }
+
+  /**
+   * Captures the exception.
+   *
+   * @param throwable The exception.
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureException(
+    final @NotNull Throwable throwable, final @Nullable Hint hint, final @NotNull ScopeCallback callback) {
+    return getCurrentHub().captureException(throwable, hint, callback);
   }
 
   /**

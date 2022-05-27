@@ -60,6 +60,28 @@ public interface IHub {
   SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level);
 
   /**
+   * Captures the message.
+   *
+   * @param message The message to send.
+   * @param level The message level.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull
+  SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level, @Nullable ScopeCallback callback);
+
+  /**
+   * Captures the message.
+   *
+   * @param message The message to send.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  default @NotNull SentryId captureMessage(@NotNull String message, @Nullable ScopeCallback callback) {
+    return captureMessage(message, SentryLevel.INFO, callback);
+  }
+
+  /**
    * Captures an envelope.
    *
    * @param envelope the SentryEnvelope to send.
@@ -96,8 +118,30 @@ public interface IHub {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureException(@NotNull Throwable throwable) {
-    return captureException(throwable, null);
+    return captureException(throwable, null, null);
   }
+
+  /**
+   * Captures the exception.
+   *
+   * @param throwable The exception.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  default @NotNull SentryId captureException(@NotNull Throwable throwable, final @Nullable ScopeCallback callback) {
+    return captureException(throwable, null, callback);
+  }
+
+  /**
+   * Captures the exception.
+   *
+   * @param throwable The exception.
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull SentryId captureException(
+    final @NotNull Throwable throwable, final @Nullable Hint hint, final @Nullable ScopeCallback callback);
 
   /**
    * Captures a manually created user feedback and sends it to Sentry.
