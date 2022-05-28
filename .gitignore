@@ -15,3 +15,4 @@ target/
 bin/
 distributions/
 /Sentry/A1F16C4F5D23B2A1D281EE471D6F836BDEA23CB4/
+*.vscode/
