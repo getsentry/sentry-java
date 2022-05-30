@@ -283,7 +283,8 @@ public final class Sentry {
    * @param callback The callback to configure the scope for a single invocation.
    * @return The Id (SentryId object) of the event
    */
-  public static @NotNull SentryId captureEvent(final @NotNull SentryEvent event, final @Nullable ScopeCallback callback) {
+  public static @NotNull SentryId captureEvent(
+      final @NotNull SentryEvent event, final @Nullable ScopeCallback callback) {
     return getCurrentHub().captureEvent(event, callback);
   }
 
@@ -308,7 +309,9 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureEvent(
-    final @NotNull SentryEvent event, final @Nullable Hint hint, final @Nullable ScopeCallback callback) {
+      final @NotNull SentryEvent event,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback callback) {
     return getCurrentHub().captureEvent(event, hint, callback);
   }
 
@@ -329,7 +332,8 @@ public final class Sentry {
    * @param callback The callback to configure the scope for a single invocation.
    * @return The Id (SentryId object) of the event
    */
-  public static @NotNull SentryId captureMessage(final @NotNull String message, final @Nullable ScopeCallback callback) {
+  public static @NotNull SentryId captureMessage(
+      final @NotNull String message, final @Nullable ScopeCallback callback) {
     return getCurrentHub().captureMessage(message, callback);
   }
 
@@ -354,7 +358,9 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureMessage(
-    final @NotNull String message, final @NotNull SentryLevel level, final @Nullable ScopeCallback callback) {
+      final @NotNull String message,
+      final @NotNull SentryLevel level,
+      final @Nullable ScopeCallback callback) {
     return getCurrentHub().captureMessage(message, level, callback);
   }
 
@@ -375,7 +381,8 @@ public final class Sentry {
    * @param callback The callback to configure the scope for a single invocation.
    * @return The Id (SentryId object) of the event
    */
-  public static @NotNull SentryId captureException(final @NotNull Throwable throwable, final @Nullable ScopeCallback callback) {
+  public static @NotNull SentryId captureException(
+      final @NotNull Throwable throwable, final @Nullable ScopeCallback callback) {
     return getCurrentHub().captureException(throwable, callback);
   }
 
@@ -400,7 +407,9 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureException(
-    final @NotNull Throwable throwable, final @Nullable Hint hint, final @Nullable ScopeCallback callback) {
+      final @NotNull Throwable throwable,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback callback) {
     return getCurrentHub().captureException(throwable, hint, callback);
   }
 

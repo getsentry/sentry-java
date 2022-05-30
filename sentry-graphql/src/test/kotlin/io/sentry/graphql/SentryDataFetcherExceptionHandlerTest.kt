@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherExceptionHandlerParameters
+import io.sentry.Hint
 import io.sentry.IHub
 import kotlin.test.Test
 
@@ -21,7 +22,7 @@ class SentryDataFetcherExceptionHandlerTest {
         val parameters = DataFetcherExceptionHandlerParameters.newExceptionParameters().exception(exception).build()
         handler.onException(parameters)
 
-        verify(hub).captureException(eq(exception), anyOrNull())
+        verify(hub).captureException(eq(exception), anyOrNull<Hint>())
         verify(delegate).onException(parameters)
     }
 }

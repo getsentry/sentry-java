@@ -46,7 +46,8 @@ public interface IHub {
    * @param callback The callback to configure the scope for a single invocation.
    * @return The Id (SentryId object) of the event
    */
-  default @NotNull SentryId captureEvent(@NotNull SentryEvent event, final @Nullable ScopeCallback callback) {
+  default @NotNull SentryId captureEvent(
+      @NotNull SentryEvent event, final @Nullable ScopeCallback callback) {
     return captureEvent(event, null, callback);
   }
 
@@ -58,9 +59,11 @@ public interface IHub {
    * @param callback The callback to configure the scope for a single invocation.
    * @return The Id (SentryId object) of the event
    */
-  @NotNull SentryId captureEvent(
-    final @NotNull SentryEvent event, final @Nullable Hint hint, final @Nullable ScopeCallback callback);
-
+  @NotNull
+  SentryId captureEvent(
+      final @NotNull SentryEvent event,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback callback);
 
   /**
    * Captures the message.
@@ -91,7 +94,8 @@ public interface IHub {
    * @return The Id (SentryId object) of the event
    */
   @NotNull
-  SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level, @Nullable ScopeCallback callback);
+  SentryId captureMessage(
+      @NotNull String message, @NotNull SentryLevel level, @Nullable ScopeCallback callback);
 
   /**
    * Captures the message.
@@ -100,7 +104,8 @@ public interface IHub {
    * @param callback The callback to configure the scope for a single invocation.
    * @return The Id (SentryId object) of the event
    */
-  default @NotNull SentryId captureMessage(@NotNull String message, @Nullable ScopeCallback callback) {
+  default @NotNull SentryId captureMessage(
+      @NotNull String message, @Nullable ScopeCallback callback) {
     return captureMessage(message, SentryLevel.INFO, callback);
   }
 
@@ -151,7 +156,8 @@ public interface IHub {
    * @param callback The callback to configure the scope for a single invocation.
    * @return The Id (SentryId object) of the event
    */
-  default @NotNull SentryId captureException(@NotNull Throwable throwable, final @Nullable ScopeCallback callback) {
+  default @NotNull SentryId captureException(
+      @NotNull Throwable throwable, final @Nullable ScopeCallback callback) {
     return captureException(throwable, null, callback);
   }
 
@@ -163,8 +169,11 @@ public interface IHub {
    * @param callback The callback to configure the scope for a single invocation.
    * @return The Id (SentryId object) of the event
    */
-  @NotNull SentryId captureException(
-    final @NotNull Throwable throwable, final @Nullable Hint hint, final @Nullable ScopeCallback callback);
+  @NotNull
+  SentryId captureException(
+      final @NotNull Throwable throwable,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback callback);
 
   /**
    * Captures a manually created user feedback and sends it to Sentry.

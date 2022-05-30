@@ -31,7 +31,8 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint, @Nullable ScopeCallback callback) {
+  public @NotNull SentryId captureEvent(
+      @NotNull SentryEvent event, @Nullable Hint hint, @Nullable ScopeCallback callback) {
     return SentryId.EMPTY_ID;
   }
 
@@ -41,7 +42,8 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level, @Nullable ScopeCallback callback) {
+  public @NotNull SentryId captureMessage(
+      @NotNull String message, @NotNull SentryLevel level, @Nullable ScopeCallback callback) {
     return SentryId.EMPTY_ID;
   }
 
@@ -56,7 +58,8 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint, @Nullable ScopeCallback callback) {
+  public @NotNull SentryId captureException(
+      @NotNull Throwable throwable, @Nullable Hint hint, @Nullable ScopeCallback callback) {
     return SentryId.EMPTY_ID;
   }
 

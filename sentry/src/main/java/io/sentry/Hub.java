@@ -75,13 +75,15 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureEvent(
-    final @NotNull SentryEvent event, final @Nullable Hint hint) {
+      final @NotNull SentryEvent event, final @Nullable Hint hint) {
     return captureEvent(event, hint, null);
   }
 
   @Override
   public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Hint hint, final @Nullable ScopeCallback callback) {
+      final @NotNull SentryEvent event,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback callback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -109,13 +111,15 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureMessage(
-    final @NotNull String message, final @NotNull SentryLevel level) {
+      final @NotNull String message, final @NotNull SentryLevel level) {
     return captureMessage(message, level, null);
   }
 
   @Override
   public @NotNull SentryId captureMessage(
-      final @NotNull String message, final @NotNull SentryLevel level, final @Nullable ScopeCallback callback) {
+      final @NotNull String message,
+      final @NotNull SentryLevel level,
+      final @Nullable ScopeCallback callback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -168,19 +172,21 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureException(
       final @NotNull Throwable throwable, final @Nullable Hint hint) {
-      return captureException(throwable, hint, null);
+    return captureException(throwable, hint, null);
   }
 
   @Override
   public @NotNull SentryId captureException(
-    final @NotNull Throwable throwable, final @Nullable Hint hint, final @Nullable ScopeCallback callback) {
+      final @NotNull Throwable throwable,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback callback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.WARNING,
-          "Instance is disabled and this 'captureException' call is a no-op.");
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureException' call is a no-op.");
     } else if (throwable == null) {
       options.getLogger().log(SentryLevel.WARNING, "captureException called with null parameter.");
     } else {
@@ -192,9 +198,9 @@ public final class Hub implements IHub {
         sentryId = item.getClient().captureEvent(event, scope, hint);
       } catch (Throwable e) {
         options
-          .getLogger()
-          .log(
-            SentryLevel.ERROR, "Error while capturing exception: " + throwable.getMessage(), e);
+            .getLogger()
+            .log(
+                SentryLevel.ERROR, "Error while capturing exception: " + throwable.getMessage(), e);
       }
     }
     this.lastEventId = sentryId;
