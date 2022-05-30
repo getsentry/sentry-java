@@ -15,9 +15,29 @@ espresso:
 suites:
   name: "Android Benchmarks"
   devices:
-    - name: "Google Pixel 2"
-      platformVersion: 11
-    - id: Google_Pixel_2_real_us
+    # Devices are chosen so that there is a high-end and a low-end device for each api level
+    - id: Google_Pixel_6_Pro_12L_real_us # Google Pixel 6 Pro - api 32 (12)
+    - id: Google_Pixel_6_Pro_real_us # Google Pixel 6 Pro - api 31 (12)
+    - id: Google_Pixel_3_12_real_us # Google Pixel 3 - api 31 (12)
+    - id: OnePlus_9_Pro_real_us # OnePlus 9 Pro - api 30 (11)
+    - id: Google_Pixel_2_real_us # Google Pixel 2 - api 30 (11)
+    - id: Google_Pixel_4_XL_real_us1 # Google Pixel 4 XL - api 29 (10)
+    - id: Motorola_Moto_G_Power_real_us # Motorola Moto G Power (2021) - api 29 (10)
+    - id: Samsung_Galaxy_S8_plus_real_us # Samsung Galaxy S8+ - api 28 (9)
+    - id: LG_G8_ThinQ_real_us # LG G8 ThinQ - api 28 (9)
+    - id: OnePlus_5_real_us # OnePlus 5 - api 27 (8.1.0)
+    - id: LG_K30_real_us1 # LG K30 - api 27 (8.1.0)
+    - id: HTC_10_real_us # HTC 10 - api 26 (8.0.0)
+    - id: Samsung_A3_real # Samsung Galaxy A3 2017 - api 26 (8.0.0)
+    - id: ZTE_Axon_7_real2_us # ZTE Axon 7 - api 25 (7.1.1)
+    - id: Motorola_Moto_X_Play_real # Motorola Moto X Play - api 25 (7.1.1)
+    - id: Samsung_note_5_real_us # Samsung Galaxy Note 5 - api 24 (7.0)
+    - id: LG_K10_real # LG K10 - api 24 (7.0)
+    - id: Samsung_Galaxy_S6_Edge_Plus_real # Samsung Galaxy S6 Edge+ - api 23 (6.0.1)
+    - id: Samsung_Tab_E_real_us # Samsung Tab E - api 23 (6.0.1)
+    - id: Samsung_Galaxy_Note_4_5_real # Samsung Galaxy Note 4 - api 22 (5.1.1)
+    - id: Sony_Xperia_Z1_real # Sony Xperia Z1 - api 22 (5.1.1)
+
   testOptions:
     useTestOrchestrator: true
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.

@@ -70,6 +70,7 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
                         options.dsn = "https://key@uri/1234567"
                         options.tracesSampleRate = 1.0
                         options.isProfilingEnabled = true
+                        options.isEnableAutoSessionTracking = false
                     }
                 }
             },
