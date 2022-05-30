@@ -36,8 +36,31 @@ public interface IHub {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureEvent(@NotNull SentryEvent event) {
-    return captureEvent(event, null);
+    return captureEvent(event, (Hint) null);
   }
+
+  /**
+   * Captures the event.
+   *
+   * @param event the event
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  default @NotNull SentryId captureEvent(@NotNull SentryEvent event, final @Nullable ScopeCallback callback) {
+    return captureEvent(event, null, callback);
+  }
+
+  /**
+   * Captures the event.
+   *
+   * @param event the event
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull SentryId captureEvent(
+    final @NotNull SentryEvent event, final @Nullable Hint hint, final @Nullable ScopeCallback callback);
+
 
   /**
    * Captures the message.

@@ -75,7 +75,13 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Hint hint) {
+    final @NotNull SentryEvent event, final @Nullable Hint hint) {
+    return captureEvent(event, hint, null);
+  }
+
+  @Override
+  public @NotNull SentryId captureEvent(
+      final @NotNull SentryEvent event, final @Nullable Hint hint, final @Nullable ScopeCallback callback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -88,7 +94,8 @@ public final class Hub implements IHub {
       try {
         assignTraceContext(event);
         final StackItem item = stack.peek();
-        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
+        Scope scope = chooseScope(callback, item);
+        sentryId = item.getClient().captureEvent(event, scope, hint);
         this.lastEventId = sentryId;
       } catch (Throwable e) {
         options

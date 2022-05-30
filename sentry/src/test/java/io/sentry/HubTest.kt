@@ -378,6 +378,44 @@ class HubTest {
         assertNull(event.contexts.trace)
         verify(mockClient).captureEvent(eq(event), any(), eq(hints))
     }
+
+    @Test
+    fun `when captureEvent is called with a ScopeCallback then the modified scope is sent to the client`() {
+        val (sut, mockClient) = getEnabledHub()
+
+        sut.captureEvent(SentryEvent(), null) {
+            it.setTag("test", "test")
+        }
+
+        verify(mockClient).captureEvent(
+            any(),
+            check {
+                assertNotNull(it.tags["test"])
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when captureEvent is called with a ScopeCallback then subsequent calls to captureEvent send the unmodified Scope to the client`() {
+        val (sut, mockClient) = getEnabledHub()
+        val argumentCaptor = argumentCaptor<Scope>()
+
+        sut.captureEvent(SentryEvent(), null) {
+            it.setTag("test", "test")
+        }
+
+        sut.captureEvent(SentryEvent(), null, null)
+
+        verify(mockClient, times(2)).captureEvent(
+            any(),
+            argumentCaptor.capture(),
+            anyOrNull()
+        )
+
+        assertNotNull(argumentCaptor.allValues[0].tags["test"])
+        assertNull(argumentCaptor.allValues[1].tags["test"])
+    }
     //endregion
 
     //region captureMessage tests
@@ -522,7 +560,7 @@ class HubTest {
         sut.captureException(Throwable())
         verify(mockClient).captureEvent(
             check {
-                assertNotNull(it.contexts.trace)
+                assertNull(it.contexts.trace)
             },
             any(), anyOrNull()
         )
