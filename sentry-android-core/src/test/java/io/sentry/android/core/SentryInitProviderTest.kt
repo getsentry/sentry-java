@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.pm.ProviderInfo
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.mock
-import io.sentry.ILogger
 import io.sentry.Sentry
 import io.sentry.test.callMethod
 import org.junit.runner.RunWith
@@ -129,13 +127,12 @@ class SentryInitProviderTest {
     @Test
     fun `when applicationId is defined, ndk in meta-data is set to false, NDK doesnt initialize`() {
         val sentryOptions = SentryAndroidOptions()
-        val mockLogger = mock<ILogger>()
 
         val metaData = Bundle()
         val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
         metaData.putBoolean(ManifestMetadataReader.NDK_ENABLE, false)
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext, mockLogger)
+        AndroidOptionsInitializer.init(sentryOptions, mockContext)
 
         assertFalse(sentryOptions.isEnableNdk)
     }

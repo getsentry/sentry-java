@@ -34,7 +34,7 @@ import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
-import io.sentry.util.ApplyScopeUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
@@ -64,7 +64,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @TestOnly final Future<Map<String, Object>> contextData;
 
-  private final @NotNull IBuildInfoProvider buildInfoProvider;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull RootChecker rootChecker;
 
   private final @NotNull ILogger logger;
@@ -72,14 +72,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   public DefaultAndroidEventProcessor(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider) {
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this(context, logger, buildInfoProvider, new RootChecker(context, buildInfoProvider, logger));
   }
 
   DefaultAndroidEventProcessor(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull RootChecker rootChecker) {
     this.context = Objects.requireNonNull(context, "The application context is required.");
     this.logger = Objects.requireNonNull(logger, "The Logger is required.");
@@ -105,7 +105,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     // its not IO, but it has been cached in the old version as well
-    map.put(EMULATOR, isEmulator());
+    map.put(EMULATOR, buildInfoProvider.isEmulator());
 
     final Map<String, String> sideLoadedInfo = getSideLoadedInfo();
     if (sideLoadedInfo != null) {
@@ -117,7 +117,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
     final boolean applyScopeData = shouldApplyScopeData(event, hint);
     if (applyScopeData) {
       // we only set memory data if it's not a hard crash, when it's a hard crash the event is
@@ -143,8 +143,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private boolean shouldApplyScopeData(
-      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      final @NotNull SentryBaseEvent event, final @Nullable Map<String, Object> hint) {
+    if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
       logger.log(
@@ -524,37 +524,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   /**
-   * Check whether the application is running in an emulator.
-   * https://github.com/flutter/plugins/blob/master/packages/device_info/android/src/main/java/io/flutter/plugins/deviceinfo/DeviceInfoPlugin.java#L105
-   *
-   * @return true if the application is running in an emulator, false otherwise
-   */
-  private @Nullable Boolean isEmulator() {
-    try {
-      return (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
-          || Build.FINGERPRINT.startsWith("generic")
-          || Build.FINGERPRINT.startsWith("unknown")
-          || Build.HARDWARE.contains("goldfish")
-          || Build.HARDWARE.contains("ranchu")
-          || Build.MODEL.contains("google_sdk")
-          || Build.MODEL.contains("Emulator")
-          || Build.MODEL.contains("Android SDK built for x86")
-          || Build.MANUFACTURER.contains("Genymotion")
-          || Build.PRODUCT.contains("sdk_google")
-          || Build.PRODUCT.contains("google_sdk")
-          || Build.PRODUCT.contains("sdk")
-          || Build.PRODUCT.contains("sdk_x86")
-          || Build.PRODUCT.contains("vbox86p")
-          || Build.PRODUCT.contains("emulator")
-          || Build.PRODUCT.contains("simulator");
-    } catch (Throwable e) {
-      logger.log(
-          SentryLevel.ERROR, "Error checking whether application is running in an emulator.", e);
-      return null;
-    }
-  }
-
-  /**
    * Get the total amount of internal storage, in bytes.
    *
    * @return the total amount of internal storage, in bytes
@@ -888,7 +857,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction, final @Nullable Map<String, Object> hint) {
     final boolean applyScopeData = shouldApplyScopeData(transaction, hint);
 
     if (applyScopeData) {

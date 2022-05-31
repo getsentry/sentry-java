@@ -32,10 +32,12 @@ public final class ExternalOptions {
   private final @NotNull List<String> inAppExcludes = new CopyOnWriteArrayList<>();
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
   private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+  private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
   private @Nullable Boolean printUncaughtStackTrace;
+  private @Nullable Boolean sendClientReports;
 
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
@@ -53,6 +55,7 @@ public final class ExternalOptions {
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
+    options.setSendClientReports(propertiesProvider.getBooleanProperty("send-client-reports"));
     final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
     if (maxRequestBodySize != null) {
       options.setMaxRequestBodySize(
@@ -80,6 +83,9 @@ public final class ExternalOptions {
     }
     for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
       options.addTracingOrigin(tracingOrigin);
+    }
+    for (final String contextTag : propertiesProvider.getList("context-tags")) {
+      options.addContextTag(contextTag);
     }
     options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
 
@@ -212,6 +218,10 @@ public final class ExternalOptions {
     return inAppIncludes;
   }
 
+  public @NotNull List<String> getContextTags() {
+    return contextTags;
+  }
+
   public @Nullable String getProguardUuid() {
     return proguardUuid;
   }
@@ -236,6 +246,10 @@ public final class ExternalOptions {
     this.tracingOrigins.add(tracingOrigin);
   }
 
+  public void addContextTag(final @NotNull String contextTag) {
+    this.contextTags.add(contextTag);
+  }
+
   public void addIgnoredExceptionForType(final @NotNull Class<? extends Throwable> exceptionType) {
     this.ignoredExceptionsForType.add(exceptionType);
   }
@@ -250,5 +264,13 @@ public final class ExternalOptions {
 
   public void setPrintUncaughtStackTrace(final @Nullable Boolean printUncaughtStackTrace) {
     this.printUncaughtStackTrace = printUncaughtStackTrace;
+  }
+
+  public @Nullable Boolean getSendClientReports() {
+    return sendClientReports;
+  }
+
+  public void setSendClientReports(final @Nullable Boolean sendClientReports) {
+    this.sendClientReports = sendClientReports;
   }
 }

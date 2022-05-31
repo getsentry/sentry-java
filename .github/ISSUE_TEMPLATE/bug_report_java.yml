@@ -1,0 +1,78 @@
+name: 🐞 Bug Report - Java
+description: Tell us about something that's not working the way we (probably) intend.
+labels: ["Platform: Java", "Type: Bug"]
+body:
+  - type: dropdown
+    id: integration
+    attributes:
+      description: Integration
+      label: Integration
+      options:
+        - sentry
+        - sentry-jul
+        - sentry-jdbc
+        - sentry-apollo
+        - sentry-kotlin-extensions
+        - sentry-servlet
+        - sentry-servlet-jakarta
+        - sentry-spring-boot-starter
+        - sentry-spring
+        - sentry-logback
+        - sentry-log4j2
+        - sentry-graphql
+        - sentry-openfeign
+        - sentry-apache-http-client-5
+        - other
+    validations:
+      required: true
+
+  - type: input
+    id: java_version
+    attributes:
+      description: Java Version
+      placeholder: 8 ← should look like this
+      label: Java Version
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Sentry SDK Version
+      placeholder: 6.0.0 ← should look like this
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce
+      description: How can we see what you're seeing? Specific is terrific.
+      placeholder: |-
+        1. foo
+        2. bar
+        3. baz
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Result
+      description: Logs? Screenshots? Yes, please.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |-
+        ## Thanks 🙏
+        Check our [triage docs](https://open.sentry.io/triage/) for what to expect next.

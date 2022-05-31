@@ -3,6 +3,7 @@ package io.sentry.samples.spring.boot;
 import io.sentry.EventProcessor;
 import io.sentry.SentryEvent;
 import io.sentry.protocol.SentryRuntime;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.SpringBootVersion;
@@ -25,7 +26,8 @@ public class CustomEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryEvent process(
+      @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
     final SentryRuntime runtime = new SentryRuntime();
     runtime.setVersion(springBootVersion);
     runtime.setName("Spring Boot");

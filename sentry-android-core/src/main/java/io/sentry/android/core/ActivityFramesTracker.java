@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
+import io.sentry.ILogger;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
@@ -12,7 +13,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-final class ActivityFramesTracker {
+/**
+ * A class that tracks slow and frozen frames using the FrameMetricsAggregator class from
+ * androidx.core package. It also checks if the FrameMetricsAggregator class is available at
+ * runtime.
+ */
+public final class ActivityFramesTracker {
 
   private @Nullable FrameMetricsAggregator frameMetricsAggregator = null;
   private boolean androidXAvailable = true;
@@ -20,11 +26,16 @@ final class ActivityFramesTracker {
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
       activityMeasurements = new ConcurrentHashMap<>();
 
-  ActivityFramesTracker(final @NotNull LoadClass loadClass) {
-    androidXAvailable = checkAndroidXAvailability(loadClass);
+  public ActivityFramesTracker(final @NotNull LoadClass loadClass, final @Nullable ILogger logger) {
+    androidXAvailable =
+        loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", logger);
     if (androidXAvailable) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
+  }
+
+  public ActivityFramesTracker(final @NotNull LoadClass loadClass) {
+    this(loadClass, null);
   }
 
   @TestOnly
@@ -32,22 +43,12 @@ final class ActivityFramesTracker {
     this.frameMetricsAggregator = frameMetricsAggregator;
   }
 
-  private static boolean checkAndroidXAvailability(final @NotNull LoadClass loadClass) {
-    try {
-      loadClass.loadClass("androidx.core.app.FrameMetricsAggregator");
-      return true;
-    } catch (ClassNotFoundException ignored) {
-      // androidx.core isn't available.
-      return false;
-    }
-  }
-
   private boolean isFrameMetricsAggregatorAvailable() {
     return androidXAvailable && frameMetricsAggregator != null;
   }
 
   @SuppressWarnings("NullAway")
-  synchronized void addActivity(final @NotNull Activity activity) {
+  public synchronized void addActivity(final @NotNull Activity activity) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
@@ -55,7 +56,8 @@ final class ActivityFramesTracker {
   }
 
   @SuppressWarnings("NullAway")
-  synchronized void setMetrics(final @NotNull Activity activity, final @NotNull SentryId sentryId) {
+  public synchronized void setMetrics(
+      final @NotNull Activity activity, final @NotNull SentryId sentryId) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
@@ -112,7 +114,7 @@ final class ActivityFramesTracker {
   }
 
   @Nullable
-  synchronized Map<String, @NotNull MeasurementValue> takeMetrics(
+  public synchronized Map<String, @NotNull MeasurementValue> takeMetrics(
       final @NotNull SentryId sentryId) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return null;
@@ -125,7 +127,7 @@ final class ActivityFramesTracker {
   }
 
   @SuppressWarnings("NullAway")
-  synchronized void stop() {
+  public synchronized void stop() {
     if (isFrameMetricsAggregatorAvailable()) {
       frameMetricsAggregator.stop();
     }

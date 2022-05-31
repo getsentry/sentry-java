@@ -8,6 +8,7 @@ import android.util.DisplayMetrics
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -16,8 +17,8 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hub
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.core.internal.gestures.SentryWindowCallback
-import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.Test
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -33,7 +34,11 @@ class UserInteractionIntegrationTest {
         val window = mock<Window>()
         val loadClass = mock<LoadClass>()
 
-        fun getSut(callback: Window.Callback? = null): UserInteractionIntegration {
+        fun getSut(
+            callback: Window.Callback? = null,
+            isAndroidXAvailable: Boolean = true
+        ): UserInteractionIntegration {
+            whenever(loadClass.isClassAvailable(any(), anyOrNull<SentryAndroidOptions>())).thenReturn(isAndroidXAvailable)
             whenever(hub.options).thenReturn(options)
             whenever(window.callback).thenReturn(callback)
             whenever(activity.window).thenReturn(window)
@@ -87,8 +92,7 @@ class UserInteractionIntegrationTest {
 
     @Test
     fun `when androidx is unavailable doesn't register a callback`() {
-        whenever(fixture.loadClass.loadClass(any())).thenThrow(ClassNotFoundException())
-        val sut = fixture.getSut()
+        val sut = fixture.getSut(isAndroidXAvailable = false)
 
         sut.register(fixture.hub, fixture.options)
 

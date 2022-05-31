@@ -3,10 +3,12 @@ package io.sentry.transport;
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.SentryLevel.INFO;
 
-import io.sentry.ILogger;
+import io.sentry.DataCategory;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.StringUtils;
@@ -21,46 +23,26 @@ import org.jetbrains.annotations.Nullable;
 /** Controls retry limits on different category types sent to Sentry. */
 public final class RateLimiter {
 
-  private enum DataCategory {
-    All("__all__"),
-    Default("default"), // same as Error
-    Error("error"),
-    Session("session"),
-    Attachment("attachment"),
-    Transaction("transaction"),
-    Security("security"),
-    Unknown("unknown");
-
-    private final String category;
-
-    DataCategory(final @NotNull String category) {
-      this.category = category;
-    }
-
-    public String getCategory() {
-      return category;
-    }
-  }
-
   private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
   private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
 
   public RateLimiter(
-      final @NotNull ICurrentDateProvider currentDateProvider, final @NotNull ILogger logger) {
+      final @NotNull ICurrentDateProvider currentDateProvider,
+      final @NotNull SentryOptions options) {
     this.currentDateProvider = currentDateProvider;
-    this.logger = logger;
+    this.options = options;
   }
 
-  public RateLimiter(@NotNull ILogger logger) {
-    this(CurrentDateProvider.getInstance(), logger);
+  public RateLimiter(final @NotNull SentryOptions options) {
+    this(CurrentDateProvider.getInstance(), options);
   }
 
   public @Nullable SentryEnvelope filter(
-      final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
+      final @NotNull SentryEnvelope envelope, final @Nullable Object sentrySdkHint) {
     // Optimize for/No allocations if no items are under 429
     List<SentryEnvelopeItem> dropItems = null;
     for (SentryEnvelopeItem item : envelope.getItems()) {
@@ -69,12 +51,18 @@ public final class RateLimiter {
         if (dropItems == null) {
           dropItems = new ArrayList<>();
         }
+
         dropItems.add(item);
+        options
+            .getClientReportRecorder()
+            .recordLostEnvelopeItem(DiscardReason.RATELIMIT_BACKOFF, item);
       }
     }
 
     if (dropItems != null) {
-      logger.log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
+      options
+          .getLogger()
+          .log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
 
       //       Need a new envelope
       List<SentryEnvelopeItem> toSend = new ArrayList<>();
@@ -86,9 +74,9 @@ public final class RateLimiter {
 
       // no reason to continue
       if (toSend.isEmpty()) {
-        logger.log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
+        options.getLogger().log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
 
-        markHintWhenSendingFailed(hint, false);
+        markHintWhenSendingFailed(sentrySdkHint, false);
         return null;
       }
 
@@ -100,15 +88,16 @@ public final class RateLimiter {
   /**
    * It marks the hints when sending has failed, so it's not necessary to wait the timeout
    *
-   * @param hint the Hint
+   * @param sentrySdkHint the Hint
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(final @Nullable Object hint, final boolean retry) {
-    if (hint instanceof SubmissionResult) {
-      ((SubmissionResult) hint).setResult(false);
+  private static void markHintWhenSendingFailed(
+      final @Nullable Object sentrySdkHint, final boolean retry) {
+    if (sentrySdkHint instanceof SubmissionResult) {
+      ((SubmissionResult) sentrySdkHint).setResult(false);
     }
-    if (hint instanceof Retryable) {
-      ((Retryable) hint).setRetry(retry);
+    if (sentrySdkHint instanceof Retryable) {
+      ((Retryable) sentrySdkHint).setRetry(retry);
     }
   }
 
@@ -208,10 +197,10 @@ public final class RateLimiter {
                   if (catItemCapitalized != null) {
                     dataCategory = DataCategory.valueOf(catItemCapitalized);
                   } else {
-                    logger.log(ERROR, "Couldn't capitalize: %s", catItem);
+                    options.getLogger().log(ERROR, "Couldn't capitalize: %s", catItem);
                   }
                 } catch (IllegalArgumentException e) {
-                  logger.log(INFO, e, "Unknown category: %s", catItem);
+                  options.getLogger().log(INFO, e, "Unknown category: %s", catItem);
                 }
                 // we dont apply rate limiting for unknown categories
                 if (DataCategory.Unknown.equals(dataCategory)) {

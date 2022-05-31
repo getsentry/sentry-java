@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +31,7 @@ public final class ServerSessionManager implements SessionTracker, SessionUpdate
 
   @Override
   public @Nullable Session updateSessionData(
-      @NotNull SentryEvent event, @Nullable Object hint, @Nullable Scope scope) {
+      @NotNull SentryEvent event, @Nullable Map<String, Object> hint, @Nullable Scope scope) {
     // If the status is still just 'null' or 'Exited'
     // perhaps promote it to errored or crashed:
     if (status != Status.Crashed) {

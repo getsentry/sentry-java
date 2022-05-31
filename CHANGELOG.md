@@ -2,12 +2,47 @@
 
 ## Unreleased
 
-* Fix: Do not include stacktrace frames into Timber message (#1898)
-* Fix: Potential memory leaks (#1909)
 
-Breaking changes:
-`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
-Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
+## 6.0.0-beta.3
+
+### Fix
+
+* Change order of event filtering mechanisms (#2001)
+* Only send session update for dropped events if state changed (#2002)
+
+## 6.0.0-beta.2
+
+* Fix: Android profiling initializes on first profile start (#2009)
+
+## 6.0.0-beta.1
+
+* Fix: Profiling rate decreased from 300hz to 100hz (#1997)
+* Fix: Allow disabling sending of client reports via Android Manifest and external options (#2007)
+* Ref: Upgrade Spring Boot dependency to 2.5.13 (#2011)
+
+### Sentry Self-hosted Compatibility
+
+- Starting with version `6.6.0` of `sentry`, [Sentry's version >= v21.9.0](https://github.com/getsentry/self-hosted/releases) is required or you have to manually disable sending client reports via the `sendClientReports` option. This only applies to self-hosted Sentry. If you are using [sentry.io](https://sentry.io), no action is needed.
+
+## 6.0.0-alpha.6
+
+* Feat: Add sentry-servlet-jakarta module (#1987)
+* Ref: Make options.printUncaughtStackTrace primitive type (#1995)
+* Feat: Add client reports (#1982)
+
+## 6.0.0-alpha.5
+
+* Feat: Screenshot is taken when there is an error (#1967)
+* Feat: Add Android profiling traces (#1897) (#1959) and its tests (#1949)
+
+## 6.0.0-alpha.4
+
+* Ref: Remove not needed interface abstractions on Android (#1953)
+
+## 6.0.0-alpha.3
+
+* Ref: Make hints Map<String, Object> instead of only Object (#1929)
+* Feat: Enable enableScopeSync by default for Android (#1928)
 
 ## 6.0.0-alpha.2
 
@@ -47,6 +82,59 @@ Breaking changes:
     * Remove `gson` dependency.
     * Remove `IUnknownPropertiesConsumer`
 * Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber (#1815)
+
+## 5.7.3
+
+* Fix: Sentry Timber integration throws an exception when using args (#1986)
+
+## 5.7.2
+
+* Fix: bring back support for `Timber.tag` ([#1974](https://github.com/getsentry/sentry-java/pull/1974))
+
+## 5.7.1
+
+* Fix: Sentry Timber integration does not submit msg.formatted breadcrumbs (#1957)
+* Fix: ANR WatchDog won't crash on SecurityException ([#1962](https://github.com/getsentry/sentry-java/pull/1962))
+* Feat: Pass MDC tags as Sentry tags (#1954)
+
+## 5.7.0
+
+* Feat: Automatically enable `Timber` and `Fragment` integrations if they are present on the classpath (#1936)
+
+## 5.6.3
+
+* Fix: If transaction or span is finished, do not allow to mutate (#1940)
+* Fix: Keep used AndroidX classes from obfuscation (Fixes UI breadcrumbs and Slow/Frozen frames) (#1942)
+
+## 5.6.2
+
+* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
+* Bump: AGP to 7.1.2 (#1930)
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
+* Fix: Do not include stacktrace frames into Timber message (#1898)
+* Fix: Potential memory leaks (#1909)
+
+Breaking changes:
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events. 
+Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
+
+## 5.6.2-beta.3
+
+* Ref: Make ActivityFramesTracker public to be used by Hybrid SDKs (#1931)
+* Bump: AGP to 7.1.2 (#1930)
+
+## 5.6.2-beta.2
+
+* Fix: NPE while adding "response_body_size" breadcrumb, when response body length is unknown (#1908)
+
+## 5.6.2-beta.1
+
+* Fix: Do not include stacktrace frames into Timber message (#1898)
+* Fix: Potential memory leaks (#1909)
+
+Breaking changes:
+`Timber.tag` is no longer supported by our [Timber integration](https://docs.sentry.io/platforms/android/configuration/integrations/timber/) and will not appear on Sentry for error events.
+Please vote on this [issue](https://github.com/getsentry/sentry-java/issues/1900), if you'd like us to provide support for that.
 
 ## 5.6.1
 

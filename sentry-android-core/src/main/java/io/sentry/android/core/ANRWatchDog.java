@@ -21,7 +21,7 @@ final class ANRWatchDog extends Thread {
 
   private final boolean reportInDebug;
   private final ANRListener anrListener;
-  private final IHandler uiHandler;
+  private final MainLooperHandler uiHandler;
   private final long timeoutIntervalMillis;
   private final @NotNull ILogger logger;
   private final AtomicLong tick = new AtomicLong(0);
@@ -51,7 +51,7 @@ final class ANRWatchDog extends Thread {
       boolean reportInDebug,
       @NotNull ANRListener listener,
       @NotNull ILogger logger,
-      @NotNull IHandler uiHandler,
+      @NotNull MainLooperHandler uiHandler,
       final @NotNull Context context) {
     super();
     this.reportInDebug = reportInDebug;
@@ -77,7 +77,15 @@ final class ANRWatchDog extends Thread {
       try {
         Thread.sleep(interval);
       } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
+        try {
+          Thread.currentThread().interrupt();
+        } catch (SecurityException ignored) {
+          logger.log(
+              SentryLevel.WARNING,
+              "Failed to interrupt due to SecurityException: %s",
+              e.getMessage());
+          return;
+        }
         logger.log(SentryLevel.WARNING, "Interrupted: %s", e.getMessage());
         return;
       }

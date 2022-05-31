@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.Stack.StackItem;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -62,6 +63,7 @@ public final class Hub implements IHub {
       final @NotNull SessionTracker sessionTracker,
       final @Nullable SessionAggregates sessionAggregates,
       final @Nullable SessionsFlusher sessionFlusher) {
+    validateOptions(options);
     this.options = options;
     this.stack = stack;
     this.tracesSampler = new TracesSampler(options);
@@ -110,7 +112,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(options, "SentryOptions is required.");
     if (options.getDsn() == null || options.getDsn().isEmpty()) {
       throw new IllegalArgumentException(
-          "Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.");
+          "Hub requires a DSN to be instantiated. Considering using the NoOpHub if no DSN is available.");
     }
     if (options.getSessionMode() == SentryOptions.SessionMode.SERVER
         && options.getRelease() == null) {
@@ -125,7 +127,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -177,7 +179,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(
-      final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
+      final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -203,7 +205,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Object hint) {
+      final @NotNull Throwable throwable, final @Nullable Map<String, Object> hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -324,7 +326,8 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
+  public void addBreadcrumb(
+      final @NotNull Breadcrumb breadcrumb, final @Nullable Map<String, Object> hint) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -577,7 +580,8 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Object hint) {
+      final @Nullable Map<String, Object> hint,
+      final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -603,12 +607,17 @@ public final class Hub implements IHub {
                   SentryLevel.DEBUG,
                   "Transaction %s was dropped due to sampling decision.",
                   transaction.getEventId());
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
         } else {
           StackItem item = null;
           try {
             item = stack.peek();
             sentryId =
-                item.getClient().captureTransaction(transaction, traceState, item.getScope(), hint);
+                item.getClient()
+                    .captureTransaction(
+                        transaction, traceState, item.getScope(), hint, profilingTraceData);
           } catch (Throwable e) {
             options
                 .getLogger()
@@ -697,6 +706,13 @@ public final class Hub implements IHub {
               startTimestamp,
               waitForChildren,
               transactionFinishedCallback);
+
+      // The listener is called only if the transaction exists, as the transaction is needed to
+      // stop it
+      if (samplingDecision && options.isProfilingEnabled()) {
+        final ITransactionProfiler transactionListener = options.getTransactionProfiler();
+        transactionListener.onTransactionStart(transaction);
+      }
     }
     if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));

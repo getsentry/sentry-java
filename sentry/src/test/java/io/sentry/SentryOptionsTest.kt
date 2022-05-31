@@ -173,6 +173,16 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options is initialized, profilingEnabled is false`() {
+        assertFalse(SentryOptions().isProfilingEnabled)
+    }
+
+    @Test
+    fun `when options is initialized, transactionProfiler is noop`() {
+        assert(SentryOptions().transactionProfiler == NoOpTransactionProfiler.getInstance())
+    }
+
+    @Test
     fun `when adds scope observer, observer list has it`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {
@@ -199,6 +209,8 @@ class SentryOptionsTest {
         externalOptions.addInAppExclude("io.off")
         externalOptions.addTracingOrigin("localhost")
         externalOptions.addTracingOrigin("api.foo.com")
+        externalOptions.addContextTag("userId")
+        externalOptions.addContextTag("requestId")
         val options = SentryOptions()
 
         options.merge(externalOptions)
@@ -217,6 +229,7 @@ class SentryOptionsTest {
         assertEquals(listOf("com.app"), options.inAppIncludes)
         assertEquals(listOf("io.off"), options.inAppExcludes)
         assertEquals(listOf("localhost", "api.foo.com"), options.tracingOrigins)
+        assertEquals(listOf("userId", "requestId"), options.contextTags)
     }
 
     @Test

@@ -4,10 +4,12 @@ import io.sentry.cache.EnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.FileUtils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -189,6 +191,7 @@ public final class Sentry {
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static boolean initConfigurations(final @NotNull SentryOptions options) {
     if (options.isEnableExternalConfiguration()) {
       options.merge(ExternalOptions.from(PropertiesProviderFactory.create(), options.getLogger()));
@@ -230,6 +233,28 @@ public final class Sentry {
       options.setEnvelopeDiskCache(EnvelopeCache.create(options));
     }
 
+    final String profilingTracesDirPath = options.getProfilingTracesDirPath();
+    if (options.isProfilingEnabled()
+        && profilingTracesDirPath != null
+        && !profilingTracesDirPath.isEmpty()) {
+
+      final File profilingTracesDir = new File(profilingTracesDirPath);
+      profilingTracesDir.mkdirs();
+      final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                if (oldTracesDirContent == null) return;
+                // Method trace files are normally deleted at the end of traces, but if that fails
+                // for some reason we try to clear any old files here.
+                for (File f : oldTracesDirContent) {
+                  FileUtils.deleteRecursively(f);
+                }
+              });
+    }
+
     return true;
   }
 
@@ -260,7 +285,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
     return getCurrentHub().captureEvent(event, hint);
   }
 
@@ -304,7 +329,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Object hint) {
+      final @NotNull Throwable throwable, final @Nullable Map<String, Object> hint) {
     return getCurrentHub().captureException(throwable, hint);
   }
 
@@ -324,7 +349,7 @@ public final class Sentry {
    * @param hint SDK specific but provides high level information about the origin of the event
    */
   public static void addBreadcrumb(
-      final @NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
+      final @NotNull Breadcrumb breadcrumb, final @Nullable Map<String, Object> hint) {
     getCurrentHub().addBreadcrumb(breadcrumb, hint);
   }
 

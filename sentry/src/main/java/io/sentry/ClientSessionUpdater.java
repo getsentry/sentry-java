@@ -1,8 +1,9 @@
 package io.sentry;
 
 import io.sentry.hints.DiskFlushNotification;
-import io.sentry.util.ApplyScopeUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,10 +17,12 @@ final class ClientSessionUpdater implements SessionUpdater {
   @Nullable
   @Override
   public Session updateSessionData(
-      final @NotNull SentryEvent event, final @Nullable Object hint, final @Nullable Scope scope) {
+      final @NotNull SentryEvent event,
+      final @Nullable Map<String, Object> hint,
+      final @Nullable Scope scope) {
     Session clonedSession = null;
 
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+    if (HintUtils.shouldApplyScopeData(hint)) {
       if (scope != null) {
         clonedSession =
             scope.withSession(

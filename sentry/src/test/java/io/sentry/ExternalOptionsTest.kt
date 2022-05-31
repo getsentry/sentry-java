@@ -123,6 +123,15 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with sendClientReports using external properties`() {
+        withPropertiesFile("send-client-reports=false") {
+            assertNotNull(it.sendClientReports) {
+                assertFalse(it)
+            }
+        }
+    }
+
+    @Test
     fun `creates options with maxRequestBodySize using external properties`() {
         withPropertiesFile("max-request-body-size=small") {
             assertEquals(SentryOptions.RequestSize.SMALL, it.maxRequestBodySize)
@@ -133,6 +142,13 @@ class ExternalOptionsTest {
     fun `creates options with tracing origins using external properties`() {
         withPropertiesFile("""tracing-origins=localhost,^(http|https)://api\\..*$""") {
             assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracingOrigins)
+        }
+    }
+
+    @Test
+    fun `creates options with context tags using external properties`() {
+        withPropertiesFile("context-tags=userId,xxx") {
+            assertEquals(listOf("userId", "xxx"), it.contextTags)
         }
     }
 

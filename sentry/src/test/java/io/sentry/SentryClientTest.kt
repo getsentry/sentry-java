@@ -2,15 +2,24 @@ package io.sentry
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.check
+import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.isNull
+import com.nhaarman.mockitokotlin2.inOrder
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.TypeCheckHint.SENTRY_SCREENSHOT
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
+import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
+import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.DiscardedEvent
+import io.sentry.clientreport.DropEverythingEventProcessor
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Cached
@@ -28,15 +37,16 @@ import io.sentry.transport.ITransportGate
 import org.junit.Assert.assertArrayEquals
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
-import java.lang.IllegalArgumentException
-import java.lang.IllegalStateException
 import java.nio.charset.Charset
+import java.nio.file.Files
 import java.util.Arrays
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -58,7 +68,7 @@ class SentryClientTest {
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             sdkVersion = SdkVersion("test", "1.2.3")
-            setDebug(true)
+            isDebug = true
             setDiagnosticLevel(SentryLevel.DEBUG)
             setSerializer(JsonSerializer(this))
             setLogger(mock())
@@ -74,8 +84,14 @@ class SentryClientTest {
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
+        val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
+        var profilingTraceData = ProfilingTraceData(profilingTraceFile, sentryTracer)
+        var profilingNonExistingTraceData = ProfilingTraceData(File("non_existent.trace"), sentryTracer)
 
-        fun getSut() = SentryClient(sentryOptions, sessionUpdater)
+        fun getSut(optionsCallback: ((SentryOptions) -> Unit)? = null): SentryClient {
+            optionsCallback?.invoke(sentryOptions)
+            return SentryClient(sentryOptions, sessionUpdater)
+        }
     }
 
     private val fixture = Fixture()
@@ -147,6 +163,11 @@ class SentryClientTest {
         val event = SentryEvent()
         sut.captureEvent(event)
         verify(fixture.transport, never()).send(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1))
+        )
     }
 
     @Test
@@ -191,9 +212,10 @@ class SentryClientTest {
         val event = SentryEvent()
         fixture.sentryOptions.environment = "not to be applied"
         val sut = fixture.getSut()
-        val expectedHint = Object()
-        sut.captureEvent(event, expectedHint)
-        verify(fixture.transport).send(any(), eq(expectedHint))
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
+        sut.captureEvent(event, hintsMap)
+        verify(fixture.transport).send(any(), eq(hintsMap))
     }
 
     @Test
@@ -411,6 +433,19 @@ class SentryClientTest {
     }
 
     @Test
+    fun `events dropped by sampling are recorded as lost`() {
+        fixture.sentryOptions.sampleRate = 0.000000001
+        val sut = fixture.getSut()
+
+        sut.captureEvent(SentryEvent())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 1))
+        )
+    }
+
+    @Test
     fun `when captureEvent without sampling, all events are captured`() {
         fixture.sentryOptions.sampleRate = null
         val sut = fixture.getSut()
@@ -496,7 +531,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, mock<Cached>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Cached>())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertNotEquals(scope.level, event.level)
     }
@@ -508,7 +545,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, Object())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to Object())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
     }
@@ -520,7 +559,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, mock<ApplyScopeData>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<ApplyScopeData>())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
     }
@@ -532,7 +573,9 @@ class SentryClientTest {
         val event = SentryEvent()
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.FATAL
-        sut.captureEvent(event, scope, mock<CustomCachedApplyScopeDataHint>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to CustomCachedApplyScopeDataHint())
+        sut.captureEvent(event, scope, hintsMap)
 
         assertEquals(scope.level, event.level)
     }
@@ -633,6 +676,70 @@ class SentryClientTest {
     }
 
     @Test
+    fun `transaction dropped by global event processor is recorded`() {
+        fixture.sentryOptions.addEventProcessor(DropEverythingEventProcessor())
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceState())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1))
+        )
+    }
+
+    @Test
+    fun `transaction dropped by scope event processor is recorded`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        val scope = createScope()
+        scope.addEventProcessor(DropEverythingEventProcessor())
+
+        val sut = fixture.getSut()
+
+        sut.captureTransaction(transaction, scope, null)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1))
+        )
+    }
+
+    @Test
+    fun `event dropped by global event processor is recorded`() {
+        fixture.sentryOptions.addEventProcessor(DropEverythingEventProcessor())
+
+        val event = SentryEvent()
+
+        fixture.getSut().captureEvent(event)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
+        )
+    }
+
+    @Test
+    fun `event dropped by scope event processor is recorded`() {
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 0))
+        )
+        val event = SentryEvent()
+        val scope = createScope()
+        scope.addEventProcessor(DropEverythingEventProcessor())
+
+        val sut = fixture.getSut()
+
+        sut.captureEvent(event, scope)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
+        )
+    }
+
+    @Test
     fun `when captureSession and no release is set, do nothing`() {
         fixture.getSut().captureSession(createSession(""))
         verify(fixture.transport, never()).send(any(), anyOrNull())
@@ -671,6 +778,126 @@ class SentryClientTest {
         val sentryId = fixture.getSut().captureEnvelope(envelope)
         assertEquals(expectedSentryId, sentryId)
     }
+
+    // TODO this test should be separated out into ClientSessionUpdaterTest
+//    @Test
+//    fun `When event is non handled, mark session as Crashed`() {
+//        val scope = Scope(fixture.sentryOptions)
+//        scope.startSession()
+//
+//        val event = SentryEvent().apply {
+//            exceptions = createNonHandledException()
+//        }
+//        fixture.getSut().updateSessionData(event, null, scope)
+//        scope.withSession {
+//            assertEquals(Session.State.Crashed, it!!.status)
+//        }
+//    }
+
+    // TODO this test should be separated out into ClientSessionUpdaterTest
+//    @Test
+//    fun `When event is handled, keep level as it is`() {
+//        val scope = Scope(fixture.sentryOptions)
+//        val sessionPair = scope.startSession()
+//        assertNotNull(sessionPair) {
+//            val session = it.current
+//            val level = session.status
+//            val event = SentryEvent()
+//            fixture.getSut().updateSessionData(event, null, scope)
+//            assertEquals(level, session.status)
+//        }
+//    }
+
+    // TODO this test should be separated out into ClientSessionUpdaterTest
+//    @Test
+//    fun `When event is non handled, increase errorCount`() {
+//        val scope = Scope(fixture.sentryOptions)
+//        scope.startSession()
+//        val event = SentryEvent().apply {
+//            exceptions = createNonHandledException()
+//        }
+//        fixture.getSut().updateSessionData(event, null, scope)
+//        scope.withSession {
+//            assertEquals(1, it!!.errorCount())
+//        }
+//    }
+
+    // TODO this test should be separated out into ClientSessionUpdaterTest
+//    @Test
+//    fun `When event is Errored, increase errorCount`() {
+//        val scope = Scope(fixture.sentryOptions)
+//        scope.startSession()
+//        val exceptions = mutableListOf<SentryException>()
+//        exceptions.add(SentryException())
+//        val event = SentryEvent().apply {
+//            setExceptions(exceptions)
+//        }
+//        fixture.getSut().updateSessionData(event, null, scope)
+//        scope.withSession {
+//            assertEquals(1, it!!.errorCount())
+//        }
+//    }
+
+    // TODO this test should be separated out into ClientSessionUpdaterTest
+//    @Test
+//    fun `When event is handled and not errored, do not increase errorsCount`() {
+//        val scope = Scope(fixture.sentryOptions)
+//        val sessionPair = scope.startSession()
+//        assertNotNull(sessionPair) {
+//            val session = it.current
+//            val errorCount = session.errorCount()
+//            val event = SentryEvent()
+//            fixture.getSut().updateSessionData(event, null, scope)
+//            assertEquals(errorCount, session.errorCount())
+//        }
+//    }
+
+    // TODO this test should be separated out into ClientSessionUpdaterTest
+//    @Test
+//    fun `When event has userAgent, set it into session`() {
+//        val scope = Scope(fixture.sentryOptions)
+//        val sessionPair = scope.startSession()
+//        assertNotNull(sessionPair) {
+//            val event = SentryEvent().apply {
+//                request = Request().apply {
+//                    headers = mutableMapOf("user-agent" to "jamesBond")
+//                }
+//            }
+//            fixture.getSut().updateSessionData(event, null, scope)
+//            scope.withSession {
+//                assertEquals("jamesBond", it!!.userAgent)
+//            }
+//        }
+//    }
+
+    // TODO this test should be separated out into ClientSessionUpdaterTest
+//    @Test
+//    fun `When event has no userAgent, keep as it is`() {
+//        val scope = Scope(fixture.sentryOptions)
+//        val sessionPair = scope.startSession()
+//        assertNotNull(sessionPair) {
+//            val session = it.current
+//            val userAgent = session.userAgent
+//            val event = SentryEvent().apply {
+//                request = Request().apply {
+//                    headers = mutableMapOf()
+//                }
+//            }
+//            fixture.getSut().updateSessionData(event, null, scope)
+//            assertEquals(userAgent, session.userAgent)
+//        }
+//    }
+
+    // TODO this test should be separated out into ClientSessionUpdaterTest
+//    @Test
+//    fun `When capture an event and there's no session, do nothing`() {
+//        val scope = Scope(fixture.sentryOptions)
+//        val event = SentryEvent()
+//        fixture.getSut().updateSessionData(event, null, scope)
+//        scope.withSession {
+//            assertNull(it)
+//        }
+//    }
 
     @Test
     fun `when captureEvent with sampling, session is still updated`() {
@@ -792,7 +1019,7 @@ class SentryClientTest {
                 assertNotNull(transaction)
                 assertEquals("a-transaction", transaction.transaction)
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
@@ -802,6 +1029,31 @@ class SentryClientTest {
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
 
         verifyAttachmentsInEnvelope(transaction.eventId)
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+    }
+
+    @Test
+    fun `when captureTransaction with attachments and profiling data`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingTraceData)
+        verifyAttachmentsInEnvelope(transaction.eventId)
+        verifyProfilingTraceInEnvelope(transaction.eventId)
+    }
+
+    @Test
+    fun `when captureTransaction with profiling data`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+        assertFails { verifyAttachmentsInEnvelope(transaction.eventId) }
+        verifyProfilingTraceInEnvelope(transaction.eventId)
+    }
+
+    @Test
+    fun `when captureTransaction with non existing profiling trace file, profiling trace data is not sent`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingNonExistingTraceData)
+        verifyAttachmentsInEnvelope(transaction.eventId)
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
     }
 
     @Test
@@ -843,7 +1095,7 @@ class SentryClientTest {
                     assertEquals("b", it.getExtra("a"))
                 }
             },
-            eq(null)
+            anyOrNull()
         )
     }
 
@@ -1041,8 +1293,377 @@ class SentryClientTest {
         )
     }
 
-    private fun createScope(): Scope {
-        return Scope(SentryOptions()).apply {
+    @Test
+    fun `screenshot is added to the envelope from the hint`() {
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                val screenshot = envelope.items.last()
+                assertNotNull(screenshot) {
+                    assertEquals(attachment.filename, screenshot.header.fileName)
+                }
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `screenshot is dropped from hint via before send`() {
+        fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+        val sut = fixture.getSut()
+        val attachment = Attachment.fromScreenshot(byteArrayOf())
+        val hints = mutableMapOf<String, Any>(SENTRY_SCREENSHOT to attachment)
+
+        sut.captureEvent(SentryEvent(), hints)
+
+        verify(fixture.transport).send(
+            check { envelope ->
+                assertEquals(1, envelope.items.count())
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `capturing an error updates session and sends event + session`() {
+        val sut = fixture.getSut()
+        val scope = givenScopeWithStartedSession()
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsErrored(scope)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1)
+    }
+
+    @Test
+    fun `dropping a captured error from beforeSend has no effect on session and does not send anything`() {
+        val sut = fixture.getSut { options ->
+            options.beforeSend = SentryOptions.BeforeSendCallback { _, _ -> null }
+        }
+        val scope = givenScopeWithStartedSession()
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsStillOK(scope)
+        thenNothingIsSent()
+    }
+
+    @Test
+    fun `dropping a captured error from eventProcessor has no effect on session and does not send anything`() {
+        val sut = fixture.getSut { options ->
+            options.addEventProcessor(DropEverythingEventProcessor())
+        }
+        val scope = givenScopeWithStartedSession()
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsStillOK(scope)
+        thenNothingIsSent()
+    }
+
+    @Test
+    fun `dropping a captured error via sampling updates the session and only sends the session for a new session`() {
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+        }
+        val scope = givenScopeWithStartedSession()
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsErrored(scope)
+        thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 1)
+    }
+
+    @Test
+    fun `dropping a captured error via sampling updates the session and does not send anything for an errored session`() {
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+        }
+        val scope = givenScopeWithStartedSession(errored = true)
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsErrored(scope)
+        thenNothingIsSent()
+    }
+
+    @Test
+    fun `dropping a captured error via sampling updates the session and does not send anything for a crashed session`() {
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+        }
+        val scope = givenScopeWithStartedSession(crashed = true)
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsCrashed(scope)
+        thenNothingIsSent()
+    }
+
+    @Test
+    fun `dropping a captured crash via sampling updates the session and only sends the session for a new session`() {
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+        }
+        val scope = givenScopeWithStartedSession()
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createNonHandledException() }, scope)
+
+        thenSessionIsCrashed(scope)
+        thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 1)
+    }
+
+    @Test
+    fun `dropping a captured crash via sampling updates the session and sends the session for an errored session`() {
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+        }
+        val scope = givenScopeWithStartedSession(errored = true)
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createNonHandledException() }, scope)
+
+        thenSessionIsCrashed(scope)
+        thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 1)
+    }
+
+    @Test
+    fun `dropping a captured crash via sampling updates the session and does not send anything for a crashed session`() {
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+        }
+        val scope = givenScopeWithStartedSession(crashed = true)
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createNonHandledException() }, scope)
+
+        thenSessionIsCrashed(scope)
+        thenNothingIsSent()
+    }
+
+    @Test
+    fun `ignored exceptions are checked before other filter mechanisms`() {
+        val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+        val scopedEventProcessorMock = mock<EventProcessor>()
+        val globalEventProcessorMock = mock<EventProcessor>()
+
+        whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).thenReturn(null)
+        whenever(globalEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).thenReturn(null)
+        whenever(beforeSendMock.execute(any(), anyOrNull())).thenReturn(null)
+
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+            options.addIgnoredExceptionForType(NegativeArraySizeException::class.java)
+            options.beforeSend = beforeSendMock
+            options.addEventProcessor(globalEventProcessorMock)
+        }
+        val scope = givenScopeWithStartedSession()
+        scope.addEventProcessor(scopedEventProcessorMock)
+
+        sut.captureException(NegativeArraySizeException(), scope)
+
+        verify(scopedEventProcessorMock, never()).process(any<SentryEvent>(), anyOrNull())
+        verify(globalEventProcessorMock, never()).process(any<SentryEvent>(), anyOrNull())
+        verify(beforeSendMock, never()).execute(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
+        )
+    }
+
+    @Test
+    fun `sampling is last filter mechanism`() {
+        val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+        val scopedEventProcessorMock = mock<EventProcessor>()
+        val globalEventProcessorMock = mock<EventProcessor>()
+
+        whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer { it.arguments.first() as SentryEvent }
+        whenever(globalEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer { it.arguments.first() as SentryEvent }
+        whenever(beforeSendMock.execute(any(), anyOrNull())).doAnswer { it.arguments.first() as SentryEvent }
+
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+            options.addIgnoredExceptionForType(NegativeArraySizeException::class.java)
+            options.beforeSend = beforeSendMock
+            options.addEventProcessor(globalEventProcessorMock)
+        }
+        val scope = givenScopeWithStartedSession()
+        scope.addEventProcessor(scopedEventProcessorMock)
+
+        sut.captureException(IllegalStateException(), scope)
+
+        val order = inOrder(scopedEventProcessorMock, globalEventProcessorMock, beforeSendMock)
+
+        order.verify(scopedEventProcessorMock, times(1)).process(any<SentryEvent>(), anyOrNull())
+        order.verify(globalEventProcessorMock, times(1)).process(any<SentryEvent>(), anyOrNull())
+        order.verify(beforeSendMock, times(1)).execute(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 1))
+        )
+    }
+
+    @Test
+    fun `filter mechanism order check for beforeSend`() {
+        val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+        val scopedEventProcessorMock = mock<EventProcessor>()
+        val globalEventProcessorMock = mock<EventProcessor>()
+
+        whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer { it.arguments.first() as SentryEvent }
+        whenever(globalEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer { it.arguments.first() as SentryEvent }
+        whenever(beforeSendMock.execute(any(), anyOrNull())).thenReturn(null)
+
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+            options.addIgnoredExceptionForType(NegativeArraySizeException::class.java)
+            options.beforeSend = beforeSendMock
+            options.addEventProcessor(globalEventProcessorMock)
+        }
+        val scope = givenScopeWithStartedSession()
+        scope.addEventProcessor(scopedEventProcessorMock)
+
+        sut.captureException(IllegalStateException(), scope)
+
+        val order = inOrder(scopedEventProcessorMock, globalEventProcessorMock, beforeSendMock)
+
+        order.verify(scopedEventProcessorMock, times(1)).process(any<SentryEvent>(), anyOrNull())
+        order.verify(globalEventProcessorMock, times(1)).process(any<SentryEvent>(), anyOrNull())
+        order.verify(beforeSendMock, times(1)).execute(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1))
+        )
+    }
+
+    @Test
+    fun `filter mechanism order check for scoped eventProcessor`() {
+        val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+        val scopedEventProcessorMock = mock<EventProcessor>()
+        val globalEventProcessorMock = mock<EventProcessor>()
+
+        whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).thenReturn(null)
+        whenever(globalEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).thenReturn(null)
+        whenever(beforeSendMock.execute(any(), anyOrNull())).thenReturn(null)
+
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+            options.addIgnoredExceptionForType(NegativeArraySizeException::class.java)
+            options.beforeSend = beforeSendMock
+            options.addEventProcessor(globalEventProcessorMock)
+        }
+        val scope = givenScopeWithStartedSession()
+        scope.addEventProcessor(scopedEventProcessorMock)
+
+        sut.captureException(IllegalStateException(), scope)
+
+        val order = inOrder(scopedEventProcessorMock, globalEventProcessorMock, beforeSendMock)
+
+        order.verify(scopedEventProcessorMock, times(1)).process(any<SentryEvent>(), anyOrNull())
+        order.verify(globalEventProcessorMock, never()).process(any<SentryEvent>(), anyOrNull())
+        order.verify(beforeSendMock, never()).execute(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
+        )
+    }
+
+    @Test
+    fun `filter mechanism order check for global eventProcessor`() {
+        val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+        val scopedEventProcessorMock = mock<EventProcessor>()
+        val globalEventProcessorMock = mock<EventProcessor>()
+
+        whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer { it.arguments.first() as SentryEvent }
+        whenever(globalEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).thenReturn(null)
+        whenever(beforeSendMock.execute(any(), anyOrNull())).thenReturn(null)
+
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+            options.addIgnoredExceptionForType(NegativeArraySizeException::class.java)
+            options.beforeSend = beforeSendMock
+            options.addEventProcessor(globalEventProcessorMock)
+        }
+        val scope = givenScopeWithStartedSession()
+        scope.addEventProcessor(scopedEventProcessorMock)
+
+        sut.captureException(IllegalStateException(), scope)
+
+        val order = inOrder(scopedEventProcessorMock, globalEventProcessorMock, beforeSendMock)
+
+        order.verify(scopedEventProcessorMock, times(1)).process(any<SentryEvent>(), anyOrNull())
+        order.verify(globalEventProcessorMock, times(1)).process(any<SentryEvent>(), anyOrNull())
+        order.verify(beforeSendMock, never()).execute(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
+        )
+    }
+
+    private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): Scope {
+        val scope = createScope(fixture.sentryOptions)
+        scope.startSession()
+
+        if (errored) {
+            scope.withSession { it?.update(Session.State.Ok, true) }
+        }
+
+        if (crashed) {
+            scope.withSession { it?.update(Session.State.Crashed, true) }
+        }
+
+        return scope
+    }
+
+    private fun thenNothingIsSent() {
+        verify(fixture.transport, never()).send(anyOrNull(), anyOrNull())
+    }
+
+    private fun thenEnvelopeIsSentWith(eventCount: Int, sessionCount: Int) {
+        val argumentCaptor = argumentCaptor<SentryEnvelope>()
+        verify(fixture.transport, times(1)).send(argumentCaptor.capture(), anyOrNull())
+
+        val envelope = argumentCaptor.firstValue
+        val envelopeItemTypes = envelope.items.map { it.header.type }
+        assertEquals(eventCount, envelopeItemTypes.count { it == SentryItemType.Event })
+        assertEquals(sessionCount, envelopeItemTypes.count { it == SentryItemType.Session })
+    }
+
+    private fun thenSessionIsStillOK(scope: Scope) {
+        val sessionAfterCapture = scope.withSession { }!!
+        assertEquals(0, sessionAfterCapture.errorCount())
+        assertEquals(Session.State.Ok, sessionAfterCapture.status)
+    }
+
+    private fun thenSessionIsErrored(scope: Scope) {
+        val sessionAfterCapture = scope.withSession { }!!
+        assertTrue(sessionAfterCapture.errorCount() > 0)
+        assertEquals(Session.State.Ok, sessionAfterCapture.status)
+    }
+
+    private fun thenSessionIsCrashed(scope: Scope) {
+        val sessionAfterCapture = scope.withSession { }!!
+        assertTrue(sessionAfterCapture.errorCount() > 0)
+        assertEquals(Session.State.Crashed, sessionAfterCapture.status)
+    }
+
+    class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
+        override fun execute(event: SentryEvent, hint: MutableMap<String, Any?>?): SentryEvent? {
+            hint?.remove(SENTRY_SCREENSHOT)
+
+            return event
+        }
+    }
+
+    private fun createScope(options: SentryOptions = SentryOptions()): Scope {
+        return Scope(options).apply {
             addBreadcrumb(
                 Breadcrumb().apply {
                     message = "message"
@@ -1126,6 +1747,10 @@ class SentryClientTest {
         return listOf(exception)
     }
 
+    private fun createHandledException(): List<SentryException> {
+        return listOf(SentryException())
+    }
+
     private fun getEventFromData(data: ByteArray): SentryEvent {
         val inputStream = InputStreamReader(ByteArrayInputStream(data))
         return fixture.sentryOptions.serializer.deserialize(inputStream, SentryEvent::class.java)!!
@@ -1146,7 +1771,7 @@ class SentryClientTest {
 
                 assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
 
-                assertEquals(4, actual.items.count())
+                assertEquals(4, actual.items.filter { it.header.type != SentryItemType.Profile }.count())
                 val attachmentItems = actual.items
                     .filter { item -> item.header.type == SentryItemType.Attachment }
                     .toList()
@@ -1169,11 +1794,23 @@ class SentryClientTest {
                     attachmentItemTooBig.data
                 }
             },
-            isNull()
+            anyOrNull()
         )
     }
 
-    internal class CustomCachedApplyScopeDataHint : Cached, ApplyScopeData
+    private fun verifyProfilingTraceInEnvelope(eventId: SentryId?) {
+        verify(fixture.transport).send(
+            check { actual ->
+                assertEquals(eventId, actual.header.eventId)
+
+                val profilingTraceItem = actual.items.firstOrNull { item ->
+                    item.header.type == SentryItemType.Profile
+                }
+                assertNotNull(profilingTraceItem?.data)
+            },
+            anyOrNull()
+        )
+    }
 
     internal class DiskFlushNotificationHint : DiskFlushNotification {
         override fun markFlushed() {}
@@ -1181,7 +1818,7 @@ class SentryClientTest {
 
     private fun eventProcessorThrows(): EventProcessor {
         return object : EventProcessor {
-            override fun process(event: SentryEvent, hint: Any?): SentryEvent? {
+            override fun process(event: SentryEvent, hint: Map<String, Any?>?): SentryEvent? {
                 throw Throwable()
             }
         }

@@ -180,6 +180,31 @@ class SentryTest {
         assertTrue(Sentry.isCrashedLastRun()!!)
     }
 
+    @Test
+    fun `profilingTracesDirPath should be created and cleared at initialization when profiling is enabled`() {
+        val tracesDirPath = getTempPath()
+        Sentry.init {
+            it.dsn = dsn
+            it.isProfilingEnabled = true
+            it.profilingTracesDirPath = tracesDirPath
+        }
+
+        assertTrue(File(tracesDirPath).exists())
+        assertTrue(File(tracesDirPath).list()!!.isEmpty())
+    }
+
+    @Test
+    fun `profilingTracesDirPath should not be created and cleared when profiling is disabled`() {
+        val tracesDirPath = getTempPath()
+        Sentry.init {
+            it.dsn = dsn
+            it.isProfilingEnabled = false
+            it.profilingTracesDirPath = tracesDirPath
+        }
+
+        assertFalse(File(tracesDirPath).exists())
+    }
+
     private fun getTempPath(): String {
         val tempFile = Files.createTempDirectory("cache").toFile()
         tempFile.delete()

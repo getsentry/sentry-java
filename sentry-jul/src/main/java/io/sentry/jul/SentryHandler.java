@@ -1,5 +1,8 @@
 package io.sentry.jul;
 
+import static io.sentry.TypeCheckHint.JUL_LOG_RECORD;
+import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Sentry;
@@ -12,6 +15,7 @@ import io.sentry.util.CollectionUtils;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.ErrorManager;
@@ -38,6 +42,7 @@ public class SentryHandler extends Handler {
 
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.SEVERE;
+  private @NotNull SentryOptions options;
 
   /** Creates an instance of SentryHandler. */
   public SentryHandler() {
@@ -56,6 +61,7 @@ public class SentryHandler extends Handler {
   /** Creates an instance of SentryHandler. */
   @TestOnly
   SentryHandler(final @NotNull SentryOptions options, final boolean configureFromLogManager) {
+    this.options = options;
     setFilter(new DropSentryFilter());
     if (configureFromLogManager) {
       retrieveProperties();
@@ -75,10 +81,16 @@ public class SentryHandler extends Handler {
     }
     try {
       if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
-        Sentry.captureEvent(createEvent(record));
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put(SENTRY_SYNTHETIC_EXCEPTION, record);
+
+        Sentry.captureEvent(createEvent(record), hintMap);
       }
       if (record.getLevel().intValue() >= minimumBreadcrumbLevel.intValue()) {
-        Sentry.addBreadcrumb(createBreadcrumb(record));
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put(JUL_LOG_RECORD, record);
+
+        Sentry.addBreadcrumb(createBreadcrumb(record), hintMap);
       }
     } catch (RuntimeException e) {
       reportError(
@@ -190,7 +202,20 @@ public class SentryHandler extends Handler {
       mdcProperties =
           CollectionUtils.filterMapEntries(mdcProperties, entry -> entry.getValue() != null);
       if (!mdcProperties.isEmpty()) {
-        event.getContexts().put("MDC", mdcProperties);
+        if (!options.getContextTags().isEmpty()) {
+          for (final String contextTag : options.getContextTags()) {
+            // if mdc tag is listed in SentryOptions, apply as event tag
+            if (mdcProperties.containsKey(contextTag)) {
+              event.setTag(contextTag, mdcProperties.get(contextTag));
+              // remove from all tags applied to logging event
+              mdcProperties.remove(contextTag);
+            }
+          }
+        }
+        // put the rest of mdc tags in contexts
+        if (!mdcProperties.isEmpty()) {
+          event.getContexts().put("MDC", mdcProperties);
+        }
       }
     }
     event.setExtra(THREAD_ID, record.getThreadID());

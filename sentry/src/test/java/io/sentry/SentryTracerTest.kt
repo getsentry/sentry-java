@@ -118,8 +118,32 @@ class SentryTracerTest {
             check {
                 assertEquals(it.transaction, tracer.name)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `when transaction is finished and profiling is disabled, transactionProfiler is not called`() {
+        val transactionProfiler = mock<ITransactionProfiler>()
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.isProfilingEnabled = false
+            it.setTransactionProfiler(transactionProfiler)
+        })
+        tracer.finish()
+        verify(transactionProfiler, never()).onTransactionFinish(any())
+    }
+
+    @Test
+    fun `when transaction is finished and sampled and profiling is enabled, transactionProfiler is called`() {
+        val transactionProfiler = mock<ITransactionProfiler>()
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.isProfilingEnabled = true
+            it.setTransactionProfiler(transactionProfiler)
+        }, sampled = true)
+        tracer.finish()
+        verify(transactionProfiler).onTransactionFinish(any())
     }
 
     @Test
@@ -153,6 +177,8 @@ class SentryTracerTest {
                     assertEquals(emptyMap(), it.tags)
                 }
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -169,6 +195,8 @@ class SentryTracerTest {
                 assertEquals(1, it.spans.size)
                 assertEquals("op1", it.spans.first().op)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -300,6 +328,8 @@ class SentryTracerTest {
                     assertEquals(SpanStatus.OK, it.status)
                 }
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
 
@@ -323,6 +353,38 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when span is finished, do nothing`() {
+        val transaction = fixture.getSut()
+        transaction.description = "desc"
+        transaction.setTag("myTag", "myValue")
+        transaction.setData("myData", "myValue")
+        val ex = RuntimeException()
+        transaction.throwable = ex
+
+        transaction.finish(SpanStatus.OK)
+        assertTrue(transaction.isFinished)
+
+        assertEquals(NoOpSpan.getInstance(), transaction.startChild("op", "desc"))
+
+        transaction.finish(SpanStatus.UNKNOWN_ERROR)
+        transaction.operation = "newOp"
+        transaction.description = "newDesc"
+        transaction.status = SpanStatus.ABORTED
+        transaction.setTag("myTag", "myNewValue")
+        transaction.throwable = RuntimeException()
+        transaction.setData("myData", "myNewValue")
+        transaction.name = "newName"
+
+        assertEquals(SpanStatus.OK, transaction.status)
+        assertEquals("op", transaction.operation)
+        assertEquals("desc", transaction.description)
+        assertEquals("myValue", transaction.getTag("myTag"))
+        assertEquals("myValue", transaction.getData("myData"))
+        assertEquals("name", transaction.name)
+        assertEquals(ex, transaction.throwable)
+    }
+
+    @Test
     fun `when startTimestamp is given, use it as startTimestamp`() {
         val date = Date(0)
         val transaction = fixture.getSut(startTimestamp = date)
@@ -342,7 +404,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         transaction.startChild("op")
         transaction.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -351,7 +413,7 @@ class SentryTracerTest {
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
-        verify(fixture.hub).captureTransaction(any(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceState>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -372,7 +434,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         child.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -380,12 +442,14 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
-        verify(fixture.hub, never()).captureTransaction(any(), any())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull(), anyOrNull())
         child.finish()
         verify(fixture.hub, times(1)).captureTransaction(
             check {
                 assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -404,6 +468,8 @@ class SentryTracerTest {
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[0].status)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -472,6 +538,8 @@ class SentryTracerTest {
             check {
                 assertEquals("val", it.getExtra("key"))
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -489,6 +557,8 @@ class SentryTracerTest {
                     assertEquals("val", it["key"])
                 }
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }

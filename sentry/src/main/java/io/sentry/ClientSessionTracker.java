@@ -1,8 +1,12 @@
 package io.sentry;
 
+import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
+
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 final class ClientSessionTracker implements SessionTracker {
@@ -23,10 +27,16 @@ final class ClientSessionTracker implements SessionTracker {
       // single envelope
       // Or create the envelope here with both items and call `captureEnvelope`
       if (pair.getPrevious() != null) {
-        item.getClient().captureSession(pair.getPrevious(), new SessionEndHint());
+        final Map<String, Object> hintMap = new HashMap<>();
+        hintMap.put(SENTRY_TYPE_CHECK_HINT, new SessionEndHint());
+
+        item.getClient().captureSession(pair.getPrevious(), hintMap);
       }
 
-      item.getClient().captureSession(pair.getCurrent(), new SessionStartHint());
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put(SENTRY_TYPE_CHECK_HINT, new SessionStartHint());
+
+      item.getClient().captureSession(pair.getCurrent(), hintMap);
     } else {
       options.getLogger().log(SentryLevel.WARNING, "Session could not be started.");
     }
@@ -37,7 +47,10 @@ final class ClientSessionTracker implements SessionTracker {
     final Stack.StackItem item = this.stack.peek();
     final Session previousSession = item.getScope().endSession();
     if (previousSession != null) {
-      item.getClient().captureSession(previousSession, new SessionEndHint());
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put(SENTRY_TYPE_CHECK_HINT, new SessionEndHint());
+
+      item.getClient().captureSession(previousSession, hintMap);
     }
   }
 }

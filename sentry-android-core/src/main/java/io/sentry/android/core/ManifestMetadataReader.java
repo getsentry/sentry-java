@@ -55,12 +55,17 @@ final class ManifestMetadataReader {
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
       "io.sentry.traces.activity.auto-finish.enable";
 
+  static final String TRACES_PROFILING_ENABLE = "io.sentry.traces.profiling.enable";
+
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
 
   static final String TRACING_ORIGINS = "io.sentry.traces.tracing-origins";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
   static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
+
+  static final String ATTACH_SCREENSHOT = "io.sentry.attach-screenshot";
+  static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -194,6 +199,12 @@ final class ManifestMetadataReader {
         options.setAttachThreads(
             readBool(metadata, logger, ATTACH_THREADS, options.isAttachThreads()));
 
+        options.setAttachScreenshot(
+            readBool(metadata, logger, ATTACH_SCREENSHOT, options.isAttachScreenshot()));
+
+        options.setSendClientReports(
+            readBool(metadata, logger, CLIENT_REPORTS_ENABLE, options.isSendClientReports()));
+
         if (options.getTracesSampleRate() == null) {
           final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
           if (tracesSampleRate != -1) {
@@ -217,6 +228,9 @@ final class ManifestMetadataReader {
                 logger,
                 TRACES_ACTIVITY_AUTO_FINISH_ENABLE,
                 options.isEnableActivityLifecycleTracingAutoFinish()));
+
+        options.setProfilingEnabled(
+            readBool(metadata, logger, TRACES_PROFILING_ENABLE, options.isProfilingEnabled()));
 
         final List<String> tracingOrigins = readList(metadata, logger, TRACING_ORIGINS);
         if (tracingOrigins != null) {

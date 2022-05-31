@@ -1,4 +1,4 @@
-minVersion: 0.28.1
+minVersion: 0.29.3
 changelogPolicy: auto
 targets:
   - name: symbol-collector
@@ -24,6 +24,7 @@ targets:
       maven:io.sentry:sentry-spring:
       maven:io.sentry:sentry-spring-boot-starter:
       maven:io.sentry:sentry-servlet:
+      maven:io.sentry:sentry-servlet-jakarta:
       maven:io.sentry:sentry-logback:
       maven:io.sentry:sentry-log4j2:
       maven:io.sentry:sentry-jul:

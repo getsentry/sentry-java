@@ -4,13 +4,11 @@ object Config {
     val kotlinVersion = "1.5.31"
     val kotlinStdLib = "stdlib-jdk8"
 
-    val springBootVersion = "2.4.4"
-    // Spring is currently not compatible with Kotlin 1.4
-    val springKotlinCompatibleLanguageVersion = "1.3"
+    val springBootVersion = "2.5.13"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.1.0"
+        val androidGradle = "com.android.tools.build:gradle:7.1.2"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -76,6 +74,7 @@ object Config {
         val springAop = "org.springframework:spring-aop"
         val aspectj = "org.aspectj:aspectjweaver"
         val servletApi = "javax.servlet:javax.servlet-api:3.1.0"
+        val servletApiJakarta = "jakarta.servlet:jakarta.servlet-api:5.0.0"
 
         val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.4"
 
@@ -124,7 +123,7 @@ object Config {
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
-        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.28.0"
+        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
     }
 

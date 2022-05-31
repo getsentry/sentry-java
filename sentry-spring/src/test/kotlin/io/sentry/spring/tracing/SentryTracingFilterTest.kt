@@ -15,6 +15,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanId
 import io.sentry.SpanStatus
+import io.sentry.TraceState
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryId
 import org.assertj.core.api.Assertions.assertThat
@@ -83,6 +84,8 @@ class SentryTracingFilterTest {
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
                 assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -97,6 +100,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -111,6 +116,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.contexts.trace!!.status).isNull()
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -125,6 +132,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.contexts.trace!!.parentSpanId).isNull()
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -140,6 +149,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -171,6 +182,8 @@ class SentryTracingFilterTest {
             check {
                 assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
+            anyOrNull<TraceState>(),
+            anyOrNull(),
             anyOrNull()
         )
     }

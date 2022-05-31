@@ -21,6 +21,7 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.io.StringReader
 import java.io.StringWriter
+import java.nio.file.Files
 import java.util.Date
 import java.util.TimeZone
 import java.util.UUID
@@ -38,6 +39,7 @@ class JsonSerializerTest {
         val logger: ILogger = mock()
         val serializer: ISerializer
         val hub = mock<IHub>()
+        val traceFile = Files.createTempFile("test", "here").toFile()
 
         init {
             val options = SentryOptions()
@@ -494,6 +496,109 @@ class JsonSerializerTest {
     }
 
     @Test
+    fun `serializes profilingTraceData`() {
+        val profilingTraceData = ProfilingTraceData(fixture.traceFile, NoOpTransaction.getInstance())
+        profilingTraceData.androidApiLevel = 21
+        profilingTraceData.deviceLocale = "deviceLocale"
+        profilingTraceData.deviceManufacturer = "deviceManufacturer"
+        profilingTraceData.deviceModel = "deviceModel"
+        profilingTraceData.deviceOsBuildNumber = "deviceOsBuildNumber"
+        profilingTraceData.deviceOsVersion = "11"
+        profilingTraceData.isDeviceIsEmulator = true
+        profilingTraceData.deviceCpuFrequencies = listOf(1, 2, 3, 4)
+        profilingTraceData.devicePhysicalMemoryBytes = "2000000"
+        profilingTraceData.buildId = "buildId"
+        profilingTraceData.transactionName = "transactionName"
+        profilingTraceData.durationNs = "100"
+        profilingTraceData.versionName = "versionName"
+        profilingTraceData.versionCode = "versionCode"
+        profilingTraceData.transactionId = "transactionId"
+        profilingTraceData.traceId = "traceId"
+        profilingTraceData.profileId = "profileId"
+        profilingTraceData.environment = "environment"
+        profilingTraceData.sampledProfile = "sampled profile in base 64"
+
+        val stringWriter = StringWriter()
+        fixture.serializer.serialize(profilingTraceData, stringWriter)
+
+        val reader = StringReader(stringWriter.toString())
+        val objectReader = JsonObjectReader(reader)
+        val element = JsonObjectDeserializer().deserialize(objectReader) as Map<*, *>
+
+        assertEquals(21, element["android_api_level"] as Int)
+        assertEquals("deviceLocale", element["device_locale"] as String)
+        assertEquals("deviceManufacturer", element["device_manufacturer"] as String)
+        assertEquals("deviceModel", element["device_model"] as String)
+        assertEquals("deviceOsBuildNumber", element["device_os_build_number"] as String)
+        assertEquals("android", element["device_os_name"] as String)
+        assertEquals("11", element["device_os_version"] as String)
+        assertEquals(true, element["device_is_emulator"] as Boolean)
+        assertEquals(listOf(1, 2, 3, 4), element["device_cpu_frequencies"] as List<Int>)
+        assertEquals("2000000", element["device_physical_memory_bytes"] as String)
+        assertEquals("android", element["platform"] as String)
+        assertEquals("buildId", element["build_id"] as String)
+        assertEquals("transactionName", element["transaction_name"] as String)
+        assertEquals("100", element["duration_ns"] as String)
+        assertEquals("versionName", element["version_name"] as String)
+        assertEquals("versionCode", element["version_code"] as String)
+        assertEquals("transactionId", element["transaction_id"] as String)
+        assertEquals("traceId", element["trace_id"] as String)
+        assertEquals("profileId", element["profile_id"] as String)
+        assertEquals("environment", element["environment"] as String)
+        assertEquals("sampled profile in base 64", element["sampled_profile"] as String)
+    }
+
+    @Test
+    fun `deserializes profilingTraceData`() {
+        val json = """{
+                            "android_api_level":21,
+                            "device_locale":"deviceLocale",
+                            "device_manufacturer":"deviceManufacturer",
+                            "device_model":"deviceModel",
+                            "device_os_build_number":"deviceOsBuildNumber",
+                            "device_os_name":"android",
+                            "device_os_version":"11",
+                            "device_is_emulator":true,
+                            "device_cpu_frequencies":[1, 2, 3, 4],
+                            "device_physical_memory_bytes":"2000000",
+                            "platform":"android",
+                            "build_id":"buildId",
+                            "transaction_name":"transactionName",
+                            "duration_ns":"100",
+                            "version_name":"versionName",
+                            "version_code":"versionCode",
+                            "transaction_id":"transactionId",
+                            "trace_id":"traceId",
+                            "profile_id":"profileId",
+                            "environment":"environment",
+                            "sampled_profile":"sampled profile in base 64"
+                            }"""
+        val profilingTraceData = fixture.serializer.deserialize(StringReader(json), ProfilingTraceData::class.java)
+        assertNotNull(profilingTraceData)
+        assertEquals(21, profilingTraceData.androidApiLevel)
+        assertEquals("deviceLocale", profilingTraceData.deviceLocale)
+        assertEquals("deviceManufacturer", profilingTraceData.deviceManufacturer)
+        assertEquals("deviceModel", profilingTraceData.deviceModel)
+        assertEquals("deviceOsBuildNumber", profilingTraceData.deviceOsBuildNumber)
+        assertEquals("android", profilingTraceData.deviceOsName)
+        assertEquals("11", profilingTraceData.deviceOsVersion)
+        assertEquals(true, profilingTraceData.isDeviceIsEmulator)
+        assertEquals(listOf(1, 2, 3, 4), profilingTraceData.deviceCpuFrequencies)
+        assertEquals("2000000", profilingTraceData.devicePhysicalMemoryBytes)
+        assertEquals("android", profilingTraceData.platform)
+        assertEquals("buildId", profilingTraceData.buildId)
+        assertEquals("transactionName", profilingTraceData.transactionName)
+        assertEquals("100", profilingTraceData.durationNs)
+        assertEquals("versionName", profilingTraceData.versionName)
+        assertEquals("versionCode", profilingTraceData.versionCode)
+        assertEquals("transactionId", profilingTraceData.transactionId)
+        assertEquals("traceId", profilingTraceData.traceId)
+        assertEquals("profileId", profilingTraceData.profileId)
+        assertEquals("environment", profilingTraceData.environment)
+        assertEquals("sampled profile in base 64", profilingTraceData.sampledProfile)
+    }
+
+    @Test
     fun `serializes transaction`() {
         val trace = TransactionContext("transaction-name", "http")
         trace.description = "some request"
@@ -515,7 +620,7 @@ class JsonSerializerTest {
 
         assertEquals("transaction-name", element["transaction"] as String)
         assertEquals("transaction", element["type"] as String)
-        assertNotNull(element["start_timestamp"] as Double)
+        assertNotNull(element["start_timestamp"] as Number)
         assertNotNull(element["event_id"] as String)
         assertNotNull(element["spans"] as List<*>)
         assertEquals("myValue", (element["tags"] as Map<*, *>)["myTag"] as String)

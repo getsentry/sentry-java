@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.clientreport.ClientReport;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Browser;
 import io.sentry.protocol.Contexts;
@@ -76,6 +77,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(Mechanism.class, new Mechanism.Deserializer());
     deserializersByClass.put(Message.class, new Message.Deserializer());
     deserializersByClass.put(OperatingSystem.class, new OperatingSystem.Deserializer());
+    deserializersByClass.put(ProfilingTraceData.class, new ProfilingTraceData.Deserializer());
     deserializersByClass.put(Request.class, new Request.Deserializer());
     deserializersByClass.put(SdkInfo.class, new SdkInfo.Deserializer());
     deserializersByClass.put(SdkVersion.class, new SdkVersion.Deserializer());
@@ -99,6 +101,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SpanStatus.class, new SpanStatus.Deserializer());
     deserializersByClass.put(User.class, new User.Deserializer());
     deserializersByClass.put(UserFeedback.class, new UserFeedback.Deserializer());
+    deserializersByClass.put(ClientReport.class, new ClientReport.Deserializer());
     deserializersByClass.put(Sessions.Aggregate.class, new Sessions.Aggregate.Deserializer());
     deserializersByClass.put(Sessions.Attributes.class, new Sessions.Attributes.Deserializer());
     deserializersByClass.put(Sessions.class, new Sessions.Deserializer());

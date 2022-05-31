@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
@@ -60,7 +61,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
         assertFalse(File(path).exists())
         // Additionally make sure we have a error logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -74,7 +77,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         verify(fixture.hub).captureEvent(eq(expected), any())
         assertFalse(File(path).exists())
@@ -88,6 +93,7 @@ class OutboxSenderTest {
         fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         whenever(fixture.options.maxSpans).thenReturn(1000)
         whenever(fixture.hub.options).thenReturn(fixture.options)
+        whenever(fixture.options.transactionProfiler).thenReturn(NoOpTransactionProfiler.getInstance())
 
         val transactionContext = TransactionContext("fixture-name", "http")
         transactionContext.description = "fixture-request"
@@ -108,7 +114,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope(fileName = "envelope-transaction.txt")
         assertTrue(File(path).exists())
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         verify(fixture.hub).captureTransaction(
             check {
@@ -135,7 +143,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         verify(fixture.hub).captureEvent(any(), any())
         assertFalse(File(path).exists())
@@ -151,7 +161,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope(fileName = "envelope_attachment.txt")
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         verify(fixture.hub).captureEnvelope(any(), any())
         assertFalse(File(path).exists())
@@ -167,7 +179,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -183,7 +197,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Retryable>())
+        sut.processEnvelopeFile(path, hintsMap)
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -194,7 +210,9 @@ class OutboxSenderTest {
     @Test
     fun `when processEnvelopeFile is called with a invalid path, logs error`() {
         val sut = fixture.getSut()
-        sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt", mock<Retryable>())
+
+        val hintsMap = mutableMapOf<String, Any>(SENTRY_TYPE_CHECK_HINT to mock<Retryable>())
+        sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt", hintsMap)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), argWhere { it is FileNotFoundException })
     }
 

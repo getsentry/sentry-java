@@ -6,7 +6,7 @@ import android.view.View
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ViewUtilsTest {

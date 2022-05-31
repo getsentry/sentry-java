@@ -15,6 +15,7 @@ import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Resettable
 import io.sentry.hints.Retryable
 import io.sentry.hints.SubmissionResult
+import io.sentry.util.HintUtils
 import org.junit.runner.RunWith
 import java.io.File
 import kotlin.test.Test
@@ -94,13 +95,14 @@ class EnvelopeFileObserverTest {
         verify(fixture.envelopeSender).processEnvelopeFile(
             eq(fixture.path + File.separator + fixture.fileName),
             check {
-                (it as SubmissionResult).setResult(true)
-                (it as Retryable).isRetry = true
+                val hint = HintUtils.getSentrySdkHint(it)
+                (hint as SubmissionResult).setResult(true)
+                (hint as Retryable).isRetry = true
 
-                (it as Resettable).reset()
+                (hint as Resettable).reset()
 
-                assertFalse(it.isRetry)
-                assertFalse(it.isSuccess)
+                assertFalse(hint.isRetry)
+                assertFalse(hint.isSuccess)
             }
         )
     }

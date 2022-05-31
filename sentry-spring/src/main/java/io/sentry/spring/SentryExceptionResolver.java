@@ -1,5 +1,8 @@
 package io.sentry.spring;
 
+import static io.sentry.TypeCheckHint.SPRING_RESOLVER_REQUEST;
+import static io.sentry.TypeCheckHint.SPRING_RESOLVER_RESPONSE;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
@@ -8,6 +11,8 @@ import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +59,12 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
     final SentryEvent event = new SentryEvent(throwable);
     event.setLevel(SentryLevel.FATAL);
     event.setTransaction(transactionNameProvider.provideTransactionName(request));
-    hub.captureEvent(event);
+
+    final Map<String, Object> hintMap = new HashMap<>();
+    hintMap.put(SPRING_RESOLVER_REQUEST, request);
+    hintMap.put(SPRING_RESOLVER_RESPONSE, response);
+
+    hub.captureEvent(event, hintMap);
 
     // null = run other HandlerExceptionResolvers to actually handle the exception
     return null;

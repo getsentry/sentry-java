@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.clientreport.ClientReport;
 import io.sentry.protocol.SentryTransaction;
 import java.io.IOException;
 import java.util.Locale;
@@ -14,6 +15,8 @@ public enum SentryItemType implements JsonSerializable {
   UserFeedback("user_report"), // Sentry backend still uses user_report
   Attachment("attachment"),
   Transaction("transaction"),
+  Profile("profile"),
+  ClientReport("client_report"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
   private final String itemType;
@@ -25,6 +28,8 @@ public enum SentryItemType implements JsonSerializable {
       return Transaction;
     } else if (item instanceof Session) {
       return Session;
+    } else if (item instanceof ClientReport) {
+      return ClientReport;
     } else {
       return Attachment;
     }

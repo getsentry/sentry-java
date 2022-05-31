@@ -11,8 +11,11 @@ public class Main {
   public static void main(String[] args) {
     LOGGER.debug("Hello Sentry!");
 
-    // MDC parameters are converted to Sentry Event tags
+    // MDC tags listed in logback.xml are converted to Sentry Event tags
     MDC.put("userId", UUID.randomUUID().toString());
+    MDC.put("requestId", UUID.randomUUID().toString());
+    // MDC tag not listed in logback.xml
+    MDC.put("context-tag", "context-tag-value");
 
     // logging arguments are converted to Sentry Event parameters
     LOGGER.info("User has made a purchase of product: {}", 445);

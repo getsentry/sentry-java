@@ -1,5 +1,8 @@
 package io.sentry.logback;
 
+import static io.sentry.TypeCheckHint.LOGBACK_LOGGING_EVENT;
+import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
@@ -17,6 +20,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,10 +63,16 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   @Override
   protected void append(@NotNull ILoggingEvent eventObject) {
     if (eventObject.getLevel().isGreaterOrEqual(minimumEventLevel)) {
-      Sentry.captureEvent(createEvent(eventObject));
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
+
+      Sentry.captureEvent(createEvent(eventObject), hintMap);
     }
     if (eventObject.getLevel().isGreaterOrEqual(minimumBreadcrumbLevel)) {
-      Sentry.addBreadcrumb(createBreadcrumb(eventObject));
+      final Map<String, Object> hintMap = new HashMap<>();
+      hintMap.put(LOGBACK_LOGGING_EVENT, eventObject);
+
+      Sentry.addBreadcrumb(createBreadcrumb(eventObject), hintMap);
     }
   }
 
@@ -102,7 +112,20 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         CollectionUtils.filterMapEntries(
             loggingEvent.getMDCPropertyMap(), entry -> entry.getValue() != null);
     if (!mdcProperties.isEmpty()) {
-      event.getContexts().put("MDC", mdcProperties);
+      if (!options.getContextTags().isEmpty()) {
+        for (final String contextTag : options.getContextTags()) {
+          // if mdc tag is listed in SentryOptions, apply as event tag
+          if (mdcProperties.containsKey(contextTag)) {
+            event.setTag(contextTag, mdcProperties.get(contextTag));
+            // remove from all tags applied to logging event
+            mdcProperties.remove(contextTag);
+          }
+        }
+      }
+      // put the rest of mdc tags in contexts
+      if (!mdcProperties.isEmpty()) {
+        event.getContexts().put("MDC", mdcProperties);
+      }
     }
 
     return event;
