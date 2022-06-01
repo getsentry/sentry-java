@@ -31,7 +31,7 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @NotNull SentryId captureEvent(
-      @NotNull SentryEvent event, @Nullable Hint hint, @Nullable ScopeCallback callback) {
+      @NotNull SentryEvent event, @Nullable Hint hint, @NotNull ScopeCallback callback) {
     return Sentry.captureEvent(event, hint, callback);
   }
 
@@ -42,7 +42,7 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @NotNull SentryId captureMessage(
-      @NotNull String message, @NotNull SentryLevel level, @Nullable ScopeCallback callback) {
+      @NotNull String message, @NotNull SentryLevel level, @NotNull ScopeCallback callback) {
     return Sentry.captureMessage(message, level, callback);
   }
 
@@ -59,7 +59,7 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @NotNull SentryId captureException(
-      @NotNull Throwable throwable, @Nullable Hint hint, @Nullable ScopeCallback callback) {
+      @NotNull Throwable throwable, @Nullable Hint hint, @NotNull ScopeCallback callback) {
     return Sentry.captureException(throwable, hint, callback);
   }
 

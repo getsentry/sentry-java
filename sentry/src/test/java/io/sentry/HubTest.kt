@@ -8,7 +8,6 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
@@ -398,13 +397,13 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         sut.captureEvent(SentryEvent(), null) {
-            it.setTag("test", "test")
+            it.setTag("test", "testValue")
         }
 
         verify(mockClient).captureEvent(
             any(),
             check {
-                assertNotNull(it.tags["test"])
+                assertEquals("testValue", it.tags["test"])
             },
             anyOrNull()
         )
@@ -416,10 +415,10 @@ class HubTest {
         val argumentCaptor = argumentCaptor<Scope>()
 
         sut.captureEvent(SentryEvent(), null) {
-            it.setTag("test", "test")
+            it.setTag("test", "testValue")
         }
 
-        sut.captureEvent(SentryEvent(), null, null)
+        sut.captureEvent(SentryEvent())
 
         verify(mockClient, times(2)).captureEvent(
             any(),
@@ -427,7 +426,7 @@ class HubTest {
             anyOrNull()
         )
 
-        assertNotNull(argumentCaptor.allValues[0].tags["test"])
+        assertEquals("testValue", argumentCaptor.allValues[0].tags["test"])
         assertNull(argumentCaptor.allValues[1].tags["test"])
     }
     //endregion
@@ -473,14 +472,14 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         sut.captureMessage("test") {
-            it.setTag("test", "test")
+            it.setTag("test", "testValue")
         }
 
         verify(mockClient).captureMessage(
             any(),
             any(),
             check {
-                assertNotNull(it.tags["test"])
+                assertEquals("testValue", it.tags["test"])
             }
         )
     }
@@ -490,11 +489,11 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
         val argumentCaptor = argumentCaptor<Scope>()
 
-        sut.captureMessage("test") {
-            it.setTag("test", "test")
+        sut.captureMessage("testMessage") {
+            it.setTag("test", "testValue")
         }
 
-        sut.captureMessage("test", null)
+        sut.captureMessage("test", SentryLevel.INFO)
 
         verify(mockClient, times(2)).captureMessage(
             any(),
@@ -502,7 +501,7 @@ class HubTest {
             argumentCaptor.capture(),
         )
 
-        assertNotNull(argumentCaptor.allValues[0].tags["test"])
+        assertEquals("testValue", argumentCaptor.allValues[0].tags["test"])
         assertNull(argumentCaptor.allValues[1].tags["test"])
     }
 
@@ -543,7 +542,7 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         sut.captureException(Throwable())
-        verify(mockClient).captureEvent(any(), any(), isNull())
+        verify(mockClient).captureEvent(any(), any(), any())
     }
 
     @Test
@@ -585,13 +584,13 @@ class HubTest {
         val (sut, mockClient) = getEnabledHub()
 
         sut.captureException(Throwable(), null) {
-            it.setTag("test", "test")
+            it.setTag("test", "testValue")
         }
 
         verify(mockClient).captureEvent(
             any(),
             check {
-                assertNotNull(it.tags["test"])
+                assertEquals("testValue", it.tags["test"])
             },
             anyOrNull()
         )
@@ -603,10 +602,10 @@ class HubTest {
         val argumentCaptor = argumentCaptor<Scope>()
 
         sut.captureException(Throwable(), null) {
-            it.setTag("test", "test")
+            it.setTag("test", "testValue")
         }
 
-        sut.captureException(Throwable(), null, null)
+        sut.captureException(Throwable())
 
         verify(mockClient, times(2)).captureEvent(
             any(),
@@ -614,7 +613,7 @@ class HubTest {
             anyOrNull()
         )
 
-        assertNotNull(argumentCaptor.allValues[0].tags["test"])
+        assertEquals("testValue", argumentCaptor.allValues[0].tags["test"])
         assertNull(argumentCaptor.allValues[1].tags["test"])
     }
 

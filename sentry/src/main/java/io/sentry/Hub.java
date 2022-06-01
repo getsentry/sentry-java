@@ -76,14 +76,21 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureEvent(
       final @NotNull SentryEvent event, final @Nullable Hint hint) {
-    return captureEvent(event, hint, null);
+    return captureEventInternal(event, hint, null);
   }
 
   @Override
   public @NotNull SentryId captureEvent(
       final @NotNull SentryEvent event,
       final @Nullable Hint hint,
-      final @Nullable ScopeCallback callback) {
+      final @NotNull ScopeCallback callback) {
+    return captureEventInternal(event, hint, callback);
+  }
+
+  private @NotNull SentryId captureEventInternal(
+      final @NotNull SentryEvent event,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -96,7 +103,9 @@ public final class Hub implements IHub {
       try {
         assignTraceContext(event);
         final StackItem item = stack.peek();
-        Scope scope = chooseScope(callback, item);
+
+        Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+
         sentryId = item.getClient().captureEvent(event, scope, hint);
         this.lastEventId = sentryId;
       } catch (Throwable e) {
@@ -112,14 +121,21 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureMessage(
       final @NotNull String message, final @NotNull SentryLevel level) {
-    return captureMessage(message, level, null);
+    return captureMessageInternal(message, level, null);
   }
 
   @Override
   public @NotNull SentryId captureMessage(
       final @NotNull String message,
       final @NotNull SentryLevel level,
-      final @Nullable ScopeCallback callback) {
+      final @NotNull ScopeCallback callback) {
+    return captureMessageInternal(message, level, callback);
+  }
+
+  private @NotNull SentryId captureMessageInternal(
+      final @NotNull String message,
+      final @NotNull SentryLevel level,
+      final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -132,7 +148,9 @@ public final class Hub implements IHub {
     } else {
       try {
         final StackItem item = stack.peek();
-        Scope scope = chooseScope(callback, item);
+
+        Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+
         sentryId = item.getClient().captureMessage(message, level, scope);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
@@ -172,14 +190,22 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureException(
       final @NotNull Throwable throwable, final @Nullable Hint hint) {
-    return captureException(throwable, hint, null);
+    return captureExceptionInternal(throwable, hint, null);
   }
 
   @Override
   public @NotNull SentryId captureException(
       final @NotNull Throwable throwable,
       final @Nullable Hint hint,
-      final @Nullable ScopeCallback callback) {
+      final @NotNull ScopeCallback callback) {
+
+    return captureExceptionInternal(throwable, hint, callback);
+  }
+
+  private @NotNull SentryId captureExceptionInternal(
+      final @NotNull Throwable throwable,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -194,7 +220,9 @@ public final class Hub implements IHub {
         final StackItem item = stack.peek();
         final SentryEvent event = new SentryEvent(throwable);
         assignTraceContext(event);
-        Scope scope = chooseScope(callback, item);
+
+        Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+
         sentryId = item.getClient().captureEvent(event, scope, hint);
       } catch (Throwable e) {
         options
@@ -789,11 +817,12 @@ public final class Hub implements IHub {
     return null;
   }
 
-  private Scope chooseScope(@Nullable ScopeCallback callback, StackItem item) {
-    Scope scope = item.getScope();
+  private Scope buildLocalScope(
+      final @NotNull Scope scope, final @Nullable ScopeCallback callback) {
     if (callback != null) {
-      scope = new Scope(scope);
-      callback.run(scope);
+      Scope localScope = new Scope(scope);
+      callback.run(localScope);
+      return localScope;
     }
     return scope;
   }
