@@ -1,12 +1,16 @@
 # Changelog
 
-## Unreleased
+## 6.0.0-rc.1
+
+### Features
+- Allow optimization and obfuscation of the SDK by reducing proguard rules ([#2031](https://github.com/getsentry/sentry-java/pull/2031))
 
 ### Fixes
 
 - Calling Sentry.init and specifying contextTags now has an effect on the Logback SentryAppender ([#2052](https://github.com/getsentry/sentry-java/pull/2052))
 - Calling Sentry.init and specifying contextTags now has an effect on the Log4j SentryAppender ([#2054](https://github.com/getsentry/sentry-java/pull/2054))
 - Calling Sentry.init and specifying contextTags now has an effect on the jul SentryAppender ([#2057](https://github.com/getsentry/sentry-java/pull/2057))
+- Update Spring Boot dependency to 2.6.8 and fix the CVE-2022-22970 ([#2068](https://github.com/getsentry/sentry-java/pull/2068))
 
 ## 6.0.0-beta.4
 
