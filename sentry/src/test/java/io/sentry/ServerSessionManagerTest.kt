@@ -68,7 +68,7 @@ class ServerSessionManagerTest {
     private fun executeSession(sessionManager: ServerSessionManager, event: SentryEvent? = null) {
         sessionManager.startSession()
         event?.let {
-            sessionManager.updateSessionData(it, null, null)
+            sessionManager.updateSessionData(it, Hint(), null)
         }
         sessionManager.endSession()
     }

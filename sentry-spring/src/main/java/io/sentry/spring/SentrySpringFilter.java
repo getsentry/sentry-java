@@ -7,6 +7,7 @@ import static io.sentry.TypeCheckHint.SPRING_REQUEST_FILTER_RESPONSE;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
@@ -17,14 +18,11 @@ import io.sentry.spring.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -67,11 +65,11 @@ public class SentrySpringFilter extends OncePerRequestFilter {
         hub.startSession();
       }
       try {
-        final Map<String, Object> hintMap = new HashMap<>();
-        hintMap.put(SPRING_REQUEST_FILTER_REQUEST, servletRequest);
-        hintMap.put(SPRING_REQUEST_FILTER_RESPONSE, response);
+        final Hint hint = new Hint();
+        hint.set(SPRING_REQUEST_FILTER_REQUEST, servletRequest);
+        hint.set(SPRING_REQUEST_FILTER_RESPONSE, response);
 
-        hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()), hintMap);
+        hub.addBreadcrumb(Breadcrumb.http(request.getRequestURI(), request.getMethod()), hint);
         configureScope(request);
         filterChain.doFilter(request, response);
       } finally {
@@ -156,8 +154,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
     }
 
     @Override
-    public @NotNull SentryEvent process(
-        @NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
+    public @NotNull SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
       if (event.getRequest() != null) {
         event.getRequest().setData(requestPayloadExtractor.extract(request, options));
       }

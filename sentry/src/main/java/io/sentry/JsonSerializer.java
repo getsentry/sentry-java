@@ -153,16 +153,24 @@ public final class JsonSerializer implements ISerializer {
     writer.flush();
   }
 
+  /**
+   * Serializes an envelope to an OutputStream
+   *
+   * @param envelope the envelope
+   * @param outputStream will not be closed automatically
+   * @throws Exception an exception
+   */
   @Override
   public void serialize(@NotNull SentryEnvelope envelope, @NotNull OutputStream outputStream)
       throws Exception {
     Objects.requireNonNull(envelope, "The SentryEnvelope object is required.");
     Objects.requireNonNull(outputStream, "The Stream object is required.");
 
-    try (final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
-        final Writer writer =
-            new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8))) {
+    // we do not want to close these as we would also close the stream that was passed in
+    final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+    final Writer writer = new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8));
 
+    try {
       envelope
           .getHeader()
           .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
@@ -187,6 +195,7 @@ public final class JsonSerializer implements ISerializer {
               .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
         }
       }
+    } finally {
       writer.flush();
     }
   }

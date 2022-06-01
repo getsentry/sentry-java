@@ -36,6 +36,8 @@ public final class App implements JsonUnknown, JsonSerializable {
   private @Nullable String appVersion;
   /** Internal build ID as it appears on the platform. */
   private @Nullable String appBuild;
+  /** Application permissions in the form of "permission_name" : "granted|not_granted" */
+  private @Nullable Map<String, String> permissions;
 
   public App() {}
 
@@ -47,6 +49,7 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.appVersion = app.appVersion;
     this.buildType = app.buildType;
     this.deviceAppHash = app.deviceAppHash;
+    this.permissions = CollectionUtils.newConcurrentHashMap(app.permissions);
     this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
   }
 
@@ -111,6 +114,14 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.appBuild = appBuild;
   }
 
+  public @Nullable Map<String, String> getPermissions() {
+    return permissions;
+  }
+
+  public void setPermissions(@Nullable Map<String, String> permissions) {
+    this.permissions = permissions;
+  }
+
   // region json
 
   @Nullable
@@ -132,6 +143,7 @@ public final class App implements JsonUnknown, JsonSerializable {
     public static final String APP_NAME = "app_name";
     public static final String APP_VERSION = "app_version";
     public static final String APP_BUILD = "app_build";
+    public static final String APP_PERMISSIONS = "permissions";
   }
 
   @Override
@@ -159,6 +171,9 @@ public final class App implements JsonUnknown, JsonSerializable {
     if (appBuild != null) {
       writer.name(JsonKeys.APP_BUILD).value(appBuild);
     }
+    if (permissions != null && !permissions.isEmpty()) {
+      writer.name(JsonKeys.APP_PERMISSIONS).value(logger, permissions);
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -169,6 +184,7 @@ public final class App implements JsonUnknown, JsonSerializable {
   }
 
   public static final class Deserializer implements JsonDeserializer<App> {
+    @SuppressWarnings("unchecked")
     @Override
     public @NotNull App deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
         throws Exception {
@@ -198,6 +214,11 @@ public final class App implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.APP_BUILD:
             app.appBuild = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_PERMISSIONS:
+            app.permissions =
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, String>) reader.nextObjectOrNull());
             break;
           default:
             if (unknown == null) {

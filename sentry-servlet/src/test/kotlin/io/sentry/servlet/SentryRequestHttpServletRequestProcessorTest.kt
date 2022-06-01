@@ -1,5 +1,6 @@
 package io.sentry.servlet
 
+import io.sentry.Hint
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import org.springframework.mock.web.MockServletContext
@@ -24,7 +25,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
-        eventProcessor.process(event, null)
+        eventProcessor.process(event, Hint())
 
         assertNotNull(event.request)
         val eventRequest = event.request!!
@@ -50,7 +51,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
-        eventProcessor.process(event, null)
+        eventProcessor.process(event, Hint())
 
         assertNotNull(event.request) {
             assertEquals(
@@ -73,7 +74,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
-        eventProcessor.process(event, null)
+        eventProcessor.process(event, Hint())
 
         assertNotNull(event.request) {
             assertNull(it.cookies)
@@ -95,7 +96,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
-        eventProcessor.process(event, null)
+        eventProcessor.process(event, Hint())
 
         assertNotNull(event.request) { req ->
             assertNotNull(req.headers) {

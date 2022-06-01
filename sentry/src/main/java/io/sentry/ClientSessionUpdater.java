@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,12 +13,17 @@ final class ClientSessionUpdater implements SessionUpdater {
     this.options = Objects.requireNonNull(options, "options is required");
   }
 
+  /**
+   * Updates the session data based on the event, hint and scope data
+   *
+   * @param event the SentryEvent
+   * @param hint the hint or null
+   * @param scope the Scope or null
+   */
   @Nullable
   @Override
   public Session updateSessionData(
-      final @NotNull SentryEvent event,
-      final @Nullable Map<String, Object> hint,
-      final @Nullable Scope scope) {
+      final @NotNull SentryEvent event, final @NotNull Hint hint, final @Nullable Scope scope) {
     Session clonedSession = null;
 
     if (HintUtils.shouldApplyScopeData(hint)) {
@@ -38,10 +42,17 @@ final class ClientSessionUpdater implements SessionUpdater {
                       crashedOrErrored = true;
                     }
 
+                    String userAgent = null;
+                    if (event.getRequest() != null && event.getRequest().getHeaders() != null) {
+                      if (event.getRequest().getHeaders().containsKey("user-agent")) {
+                        userAgent = event.getRequest().getHeaders().get("user-agent");
+                      }
+                    }
+
                     if (session.update(status, crashedOrErrored)) {
                       // if hint is DiskFlushNotification, it means we have an uncaughtException
                       // and we can end the session.
-                      if (hint instanceof DiskFlushNotification) {
+                      if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
                         session.end();
                       }
                     }
@@ -52,9 +63,7 @@ final class ClientSessionUpdater implements SessionUpdater {
                   }
                 });
       } else {
-        options
-            .getLogger()
-            .log(SentryLevel.INFO, "Scope is null on sessionUpdater.updateSessionData");
+        options.getLogger().log(SentryLevel.INFO, "Scope is null on client.captureEvent");
       }
     }
     return clonedSession;

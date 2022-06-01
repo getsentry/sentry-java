@@ -3,6 +3,11 @@ public final class io/sentry/spring/BuildConfig {
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
+public final class io/sentry/spring/ContextTagsEventProcessor : io/sentry/EventProcessor {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
 public abstract interface annotation class io/sentry/spring/EnableSentry : java/lang/annotation/Annotation {
 	public abstract fun dsn ()Ljava/lang/String;
 	public abstract fun exceptionResolverOrder ()I
@@ -36,7 +41,7 @@ public class io/sentry/spring/SentryInitBeanPostProcessor : org/springframework/
 
 public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/spring/tracing/TransactionNameProvider;Ljavax/servlet/http/HttpServletRequest;)V
-	public fun process (Lio/sentry/SentryEvent;Ljava/util/Map;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
 public class io/sentry/spring/SentryRequestResolver {

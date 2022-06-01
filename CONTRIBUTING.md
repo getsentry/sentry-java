@@ -1,13 +1,13 @@
 # Contributing to sentry-java
 
-We love pull requests from everyone. 
+We love pull requests from everyone.
 We suggest opening an issue to discuss bigger changes before investing on a big PR.
 
 # Requirements
 
-The project currently requires you run JDK version `1.8.x`.
+The project currently requires you run JDK 11.
 
-## Android 
+## Android
 
 This repository is a monorepo which includes Java and Android libraries.
 If you'd like to contribute to Java and don't have an Android SDK with NDK installed,

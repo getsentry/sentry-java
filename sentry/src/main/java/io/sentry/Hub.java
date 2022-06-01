@@ -127,7 +127,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Map<String, Object> hint) {
+      final @NotNull SentryEvent event, final @Nullable Hint hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -179,7 +179,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(
-      final @NotNull SentryEnvelope envelope, final @Nullable Map<String, Object> hint) {
+      final @NotNull SentryEnvelope envelope, final @Nullable Hint hint) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -205,7 +205,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Map<String, Object> hint) {
+      final @NotNull Throwable throwable, final @Nullable Hint hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -326,8 +326,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(
-      final @NotNull Breadcrumb breadcrumb, final @Nullable Map<String, Object> hint) {
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Hint hint) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -580,7 +579,7 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Map<String, Object> hint,
+      final @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "transaction is required");
 
@@ -638,7 +637,7 @@ public final class Hub implements IHub {
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, null, false, null);
+        transactionContext, customSamplingContext, bindToScope, null, false, null, false, null);
   }
 
   @ApiStatus.Internal
@@ -649,7 +648,14 @@ public final class Hub implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, startTimestamp, false, null);
+        transactionContext,
+        customSamplingContext,
+        bindToScope,
+        startTimestamp,
+        false,
+        null,
+        false,
+        null);
   }
 
   @ApiStatus.Internal
@@ -660,6 +666,8 @@ public final class Hub implements IHub {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return createTransaction(
         transactionContexts,
@@ -667,6 +675,8 @@ public final class Hub implements IHub {
         bindToScope,
         startTimestamp,
         waitForChildren,
+        idleTimeout,
+        trimEnd,
         transactionFinishedCallback);
   }
 
@@ -676,6 +686,8 @@ public final class Hub implements IHub {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
@@ -705,6 +717,8 @@ public final class Hub implements IHub {
               this,
               startTimestamp,
               waitForChildren,
+              idleTimeout,
+              trimEnd,
               transactionFinishedCallback);
 
       // The listener is called only if the transaction exists, as the transaction is needed to

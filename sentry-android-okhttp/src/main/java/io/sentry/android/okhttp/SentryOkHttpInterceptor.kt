@@ -1,6 +1,7 @@
 package io.sentry.android.okhttp
 
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
@@ -62,16 +63,17 @@ class SentryOkHttpInterceptor(
                 breadcrumb.setData("request_body_size", it)
             }
 
-            val hintsMap = mutableMapOf<String, Any>(OKHTTP_REQUEST to request)
+            val hint = Hint()
+                .also { it.set(OKHTTP_REQUEST, request) }
             response?.let {
                 it.body?.contentLength().ifHasValidLength { responseBodySize ->
                     breadcrumb.setData("response_body_size", responseBodySize)
                 }
 
-                hintsMap[OKHTTP_RESPONSE] = it
+                hint[OKHTTP_RESPONSE] = it
             }
 
-            hub.addBreadcrumb(breadcrumb, hintsMap)
+            hub.addBreadcrumb(breadcrumb, hint)
         }
     }
 

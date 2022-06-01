@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
@@ -23,7 +24,6 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -126,10 +126,10 @@ public final class ActivityLifecycleIntegration
       breadcrumb.setCategory("ui.lifecycle");
       breadcrumb.setLevel(SentryLevel.INFO);
 
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(ANDROID_ACTIVITY, activity);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_ACTIVITY, activity);
 
-      hub.addBreadcrumb(breadcrumb, hintMap);
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 
@@ -216,6 +216,16 @@ public final class ActivityLifecycleIntegration
         });
   }
 
+  @VisibleForTesting
+  void clearScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+    scope.withTransaction(
+        scopeTransaction -> {
+          if (scopeTransaction == transaction) {
+            scope.clearTransaction();
+          }
+        });
+  }
+
   private boolean isRunningTransaction(final @NotNull Activity activity) {
     return activitiesWithOngoingTransactions.containsKey(activity);
   }
@@ -241,6 +251,14 @@ public final class ActivityLifecycleIntegration
         status = SpanStatus.OK;
       }
       transaction.finish(status);
+      if (hub != null) {
+        // make sure to remove the transaction from scope, as it may contain running children,
+        // therefore `finish` method will not remove it from scope
+        hub.configureScope(
+            scope -> {
+              clearScope(scope, transaction);
+            });
+      }
     }
   }
 

@@ -105,6 +105,12 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:text="@string/test_timber_integration"/>
+
+    <Button
+      android:id="@+id/open_permissions_activity"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/open_permissions_activity"/>
   </LinearLayout>
 
 </ScrollView>

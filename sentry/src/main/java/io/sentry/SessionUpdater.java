@@ -1,6 +1,5 @@
 package io.sentry;
 
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +14,5 @@ interface SessionUpdater {
    */
   @Nullable
   Session updateSessionData(
-      final @NotNull SentryEvent event,
-      final @Nullable Map<String, Object> hint,
-      final @Nullable Scope scope);
+      final @NotNull SentryEvent event, final @NotNull Hint hint, final @Nullable Scope scope);
 }

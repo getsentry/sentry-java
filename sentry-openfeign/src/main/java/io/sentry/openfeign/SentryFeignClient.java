@@ -7,6 +7,7 @@ import feign.Client;
 import feign.Request;
 import feign.Response;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
@@ -15,7 +16,6 @@ import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -92,13 +92,13 @@ public final class SentryFeignClient implements Client {
       breadcrumb.setData("response_body_size", response.body().length());
     }
 
-    final Map<String, Object> hintMap = new HashMap<>();
-    hintMap.put(OPEN_FEIGN_REQUEST, request);
+    final Hint hint = new Hint();
+    hint.set(OPEN_FEIGN_REQUEST, request);
     if (response != null) {
-      hintMap.put(OPEN_FEIGN_RESPONSE, response);
+      hint.set(OPEN_FEIGN_RESPONSE, response);
     }
 
-    hub.addBreadcrumb(breadcrumb, hintMap);
+    hub.addBreadcrumb(breadcrumb, hint);
   }
 
   static final class RequestWrapper {
