@@ -158,7 +158,7 @@ public interface IHub {
    */
   default @NotNull SentryId captureException(
       @NotNull Throwable throwable, final @NotNull ScopeCallback callback) {
-    return captureException(throwable, null, callback);
+    return captureException(throwable, new Hint(), callback);
   }
 
   /**
