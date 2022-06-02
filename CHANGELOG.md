@@ -4,7 +4,7 @@
 
 ### Features
 
-* Feat: Release Health - server side session tracking ([#1572](https://github.com/getsentry/sentry-java/pull/1572))
+* Release Health - server side session tracking ([#1572](https://github.com/getsentry/sentry-java/pull/1572))
 
 ## 6.0.0-rc.1
 
