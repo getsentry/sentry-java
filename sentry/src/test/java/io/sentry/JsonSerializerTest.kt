@@ -4,10 +4,12 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.Device
+import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentrySpan
@@ -18,6 +20,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.io.StringReader
 import java.io.StringWriter
@@ -620,7 +623,7 @@ class JsonSerializerTest {
 
         assertEquals("transaction-name", element["transaction"] as String)
         assertEquals("transaction", element["type"] as String)
-        assertNotNull(element["start_timestamp"] as Double)
+        assertNotNull(element["start_timestamp"] as Number)
         assertNotNull(element["event_id"] as String)
         assertNotNull(element["spans"] as List<*>)
         assertEquals("myValue", (element["tags"] as Map<*, *>)["myTag"] as String)
@@ -845,6 +848,50 @@ class JsonSerializerTest {
     }
 
     @Test
+    fun `Long can be serialized inside request data`() {
+        val request = Request()
+
+        data class LongContainer(val longValue: Long)
+
+        request.data = LongContainer(10)
+
+        val serialized = serializeToString(request)
+        val deserialized = fixture.serializer.deserialize(StringReader(serialized), Request::class.java)
+
+        val deserializedData = deserialized?.data as? Map<String, Any>
+        assertNotNull(deserializedData)
+        assertEquals(10, deserializedData["longValue"])
+    }
+
+    @Test
+    fun `Primitives can be serialized inside request data`() {
+        val request = Request()
+
+        request.data = JsonReflectionObjectSerializerTest.ClassWithPrimitiveFields(
+            17,
+            3,
+            'x',
+            9001,
+            0.9f,
+            0.99,
+            true
+        )
+
+        val serialized = serializeToString(request)
+        val deserialized = fixture.serializer.deserialize(StringReader(serialized), Request::class.java)
+
+        val deserializedData = deserialized?.data as? Map<String, Any>
+        assertNotNull(deserializedData)
+        assertEquals(17, deserializedData["byte"])
+        assertEquals(3, deserializedData["short"])
+        assertEquals("x", deserializedData["char"])
+        assertEquals(9001, deserializedData["integer"])
+        assertEquals(0.9, deserializedData["float"])
+        assertEquals(0.99, deserializedData["double"])
+        assertEquals(true, deserializedData["boolean"])
+    }
+
+    @Test
     fun `json serializer uses logger set on SentryOptions`() {
         val logger = mock<ILogger>()
         val options = SentryOptions()
@@ -860,6 +907,14 @@ class JsonSerializerTest {
             },
             any<Any>()
         )
+    }
+
+    @Test
+    fun `json serializer does not close the stream that is passed in`() {
+        val stream = mock<OutputStream>()
+        JsonSerializer(SentryOptions()).serialize(SentryEnvelope.from(fixture.serializer, SentryEvent(), null), stream)
+
+        verify(stream, never()).close()
     }
 
     private fun assertSessionData(expectedSession: Session?) {

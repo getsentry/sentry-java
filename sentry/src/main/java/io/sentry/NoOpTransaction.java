@@ -63,6 +63,9 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
+  public void scheduleFinish(@NotNull Long idleTimeout) {}
+
+  @Override
   public boolean isFinished() {
     return true;
   }

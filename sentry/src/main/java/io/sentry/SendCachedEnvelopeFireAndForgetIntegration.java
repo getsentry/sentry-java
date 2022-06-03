@@ -24,7 +24,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
     SendFireAndForget create(@NotNull IHub hub, @NotNull SentryOptions options);
 
     default boolean hasValidPath(final @Nullable String dirPath, final @NotNull ILogger logger) {
-      if (dirPath == null || dirPath.isEmpty()) {
+      if (dirPath == null) {
         logger.log(SentryLevel.INFO, "No cached dir path is defined in options.");
         return false;
       }

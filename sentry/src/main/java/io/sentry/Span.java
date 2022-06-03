@@ -44,7 +44,7 @@ public final class Span implements ISpan {
 
   private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
-  private final @Nullable SpanFinishedCallback spanFinishedCallback;
+  private @Nullable SpanFinishedCallback spanFinishedCallback;
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
 
@@ -155,9 +155,7 @@ public final class Span implements ISpan {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    if (finish(status, DateUtils.dateToSeconds(DateUtils.getCurrentDateTime()))) {
-      this.endNanos = System.nanoTime();
-    }
+    finish(status, DateUtils.dateToSeconds(DateUtils.getCurrentDateTime()), null);
   }
 
   /**
@@ -165,12 +163,14 @@ public final class Span implements ISpan {
    *
    * @param status - status to finish span with
    * @param timestamp - the root span timestamp.
-   * @return true if finishing was successful, false if span has been already finished
    */
-  boolean finish(@Nullable SpanStatus status, @NotNull Double timestamp) {
+  void finish(
+      final @Nullable SpanStatus status,
+      final @NotNull Double timestamp,
+      final @Nullable Long endNanos) {
     // the span can be finished only once
     if (!finished.compareAndSet(false, true)) {
-      return false;
+      return;
     }
 
     this.context.setStatus(status);
@@ -181,7 +181,7 @@ public final class Span implements ISpan {
     if (spanFinishedCallback != null) {
       spanFinishedCallback.execute(this);
     }
-    return true;
+    this.endNanos = endNanos == null ? System.nanoTime() : endNanos;
   }
 
   @Override
@@ -303,14 +303,28 @@ public final class Span implements ISpan {
     return data.get(key);
   }
 
+  @Nullable
+  Long getEndNanos() {
+    return endNanos;
+  }
+
+  void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {
+    this.spanFinishedCallback = callback;
+  }
+
+  public @Nullable Double getHighPrecisionTimestamp() {
+    return getHighPrecisionTimestamp(endNanos);
+  }
+
   /**
    * Returns high precision span finish time represented as {@link Double}.
    *
    * @return high precision span finish time
    */
   @SuppressWarnings("JavaUtilDate")
-  public @Nullable Double getHighPrecisionTimestamp() {
-    final Double duration = getDurationInMillis();
+  @Nullable
+  Double getHighPrecisionTimestamp(final @Nullable Long endNanos) {
+    final Double duration = getDurationInMillis(endNanos);
     if (duration != null) {
       return DateUtils.millisToSeconds(startTimestamp.getTime() + duration);
     } else if (timestamp != null) {
@@ -325,7 +339,7 @@ public final class Span implements ISpan {
    *
    * @return span duration in milliseconds
    */
-  private @Nullable Double getDurationInMillis() {
+  private @Nullable Double getDurationInMillis(final @Nullable Long endNanos) {
     if (startNanos != null && endNanos != null) {
       return DateUtils.nanosToMillis(endNanos - startNanos);
     } else {

@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryTransaction;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +17,7 @@ public interface EventProcessor {
    * @return the event itself, a mutated SentryEvent or null
    */
   @Nullable
-  default SentryEvent process(@NotNull SentryEvent event, @Nullable Map<String, Object> hint) {
+  default SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
     return event;
   }
 
@@ -30,8 +29,7 @@ public interface EventProcessor {
    * @return the event itself, a mutated SentryTransaction or null
    */
   @Nullable
-  default SentryTransaction process(
-      @NotNull SentryTransaction transaction, @Nullable Map<String, Object> hint) {
+  default SentryTransaction process(@NotNull SentryTransaction transaction, @NotNull Hint hint) {
     return transaction;
   }
 }

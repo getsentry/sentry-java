@@ -34,6 +34,7 @@ public final class ExternalOptions {
   private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
+  private @Nullable Long idleTimeout;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
   private @Nullable Boolean printUncaughtStackTrace;
@@ -88,6 +89,7 @@ public final class ExternalOptions {
       options.addContextTag(contextTag);
     }
     options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
+    options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -264,6 +266,14 @@ public final class ExternalOptions {
 
   public void setPrintUncaughtStackTrace(final @Nullable Boolean printUncaughtStackTrace) {
     this.printUncaughtStackTrace = printUncaughtStackTrace;
+  }
+
+  public @Nullable Long getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  public void setIdleTimeout(final @Nullable Long idleTimeout) {
+    this.idleTimeout = idleTimeout;
   }
 
   public @Nullable Boolean getSendClientReports() {

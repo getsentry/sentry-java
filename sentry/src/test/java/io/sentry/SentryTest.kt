@@ -28,7 +28,7 @@ class SentryTest {
     }
 
     @Test
-    fun `outboxDir should be created at initialization`() {
+    fun `outboxPath should be created at initialization`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
@@ -42,7 +42,7 @@ class SentryTest {
     }
 
     @Test
-    fun `envelopesDir should be created at initialization`() {
+    fun `cacheDirPath should be created at initialization`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
@@ -182,27 +182,31 @@ class SentryTest {
 
     @Test
     fun `profilingTracesDirPath should be created and cleared at initialization when profiling is enabled`() {
-        val tracesDirPath = getTempPath()
+        val tempPath = getTempPath()
+        var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
             it.isProfilingEnabled = true
-            it.profilingTracesDirPath = tracesDirPath
+            it.cacheDirPath = tempPath
+            sentryOptions = it
         }
 
-        assertTrue(File(tracesDirPath).exists())
-        assertTrue(File(tracesDirPath).list()!!.isEmpty())
+        assertTrue(File(sentryOptions?.profilingTracesDirPath!!).exists())
+        assertTrue(File(sentryOptions?.profilingTracesDirPath!!).list()!!.isEmpty())
     }
 
     @Test
     fun `profilingTracesDirPath should not be created and cleared when profiling is disabled`() {
-        val tracesDirPath = getTempPath()
+        val tempPath = getTempPath()
+        var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
             it.isProfilingEnabled = false
-            it.profilingTracesDirPath = tracesDirPath
+            it.cacheDirPath = tempPath
+            sentryOptions = it
         }
 
-        assertFalse(File(tracesDirPath).exists())
+        assertFalse(File(sentryOptions?.profilingTracesDirPath!!).exists())
     }
 
     private fun getTempPath(): String {

@@ -10,6 +10,10 @@
     <!-- extra recommended permission, we'd be able to collect device ringing breadcrumbs (PhoneStateBreadcrumbsIntegration) -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
+    <!-- Just some random permissions to showcase the permission context sent to Sentry -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
     <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
     <uses-sdk
         tools:overrideLibrary="io.sentry.android"/>
@@ -41,8 +45,12 @@
             android:name=".ThirdActivityFragment"
             android:exported="false" />
 
-      <activity
+        <activity
             android:name=".GesturesActivity"
+            android:exported="false" />
+
+      <activity
+            android:name=".PermissionsActivity"
             android:exported="false" />
 
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
@@ -95,6 +103,9 @@
 
         <!--    how to disable the Activity auto instrumentation automatically finished on onActivityPostPaused-->
         <meta-data android:name="io.sentry.traces.activity.auto-finish.enable" android:value="false" />
+
+        <!-- how to enable the UI auto instrumentation for tracing -->
+        <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="true" />
 
         <!--    how to enable and set a sampleRate (anything between 0.01 and 1.0), it's disabled by default-->
         <!--    <meta-data android:name="io.sentry.sample-rate" android:value="0.5" />-->

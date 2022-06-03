@@ -6,6 +6,7 @@ import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
+import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransportFactory;
@@ -18,7 +19,6 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -139,16 +139,16 @@ public class SentryAppender extends AbstractAppender {
   @Override
   public void append(final @NotNull LogEvent eventObject) {
     if (eventObject.getLevel().isMoreSpecificThan(minimumEventLevel)) {
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
+      final Hint hint = new Hint();
+      hint.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
 
-      hub.captureEvent(createEvent(eventObject), hintMap);
+      hub.captureEvent(createEvent(eventObject), hint);
     }
     if (eventObject.getLevel().isMoreSpecificThan(minimumBreadcrumbLevel)) {
-      final Map<String, Object> hintMap = new HashMap<>();
-      hintMap.put(LOG4J_LOG_EVENT, eventObject);
+      final Hint hint = new Hint();
+      hint.set(LOG4J_LOG_EVENT, eventObject);
 
-      hub.addBreadcrumb(createBreadcrumb(eventObject), hintMap);
+      hub.addBreadcrumb(createBreadcrumb(eventObject), hint);
     }
   }
 
@@ -187,6 +187,9 @@ public class SentryAppender extends AbstractAppender {
         CollectionUtils.filterMapEntries(
             loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
+      // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
+      // initialized somewhere else
+      final List<String> contextTags = hub.getOptions().getContextTags();
       if (contextTags != null && !contextTags.isEmpty()) {
         for (final String contextTag : contextTags) {
           // if mdc tag is listed in SentryOptions, apply as event tag

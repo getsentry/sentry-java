@@ -4,6 +4,7 @@ import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.SentryLevel.INFO;
 
 import io.sentry.DataCategory;
+import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
@@ -11,6 +12,7 @@ import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.util.HintUtils;
 import io.sentry.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,7 +44,7 @@ public final class RateLimiter {
   }
 
   public @Nullable SentryEnvelope filter(
-      final @NotNull SentryEnvelope envelope, final @Nullable Object sentrySdkHint) {
+      final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     // Optimize for/No allocations if no items are under 429
     List<SentryEnvelopeItem> dropItems = null;
     for (SentryEnvelopeItem item : envelope.getItems()) {
@@ -76,7 +78,7 @@ public final class RateLimiter {
       if (toSend.isEmpty()) {
         options.getLogger().log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
 
-        markHintWhenSendingFailed(sentrySdkHint, false);
+        markHintWhenSendingFailed(hint, false);
         return null;
       }
 
@@ -86,19 +88,14 @@ public final class RateLimiter {
   }
 
   /**
-   * It marks the hints when sending has failed, so it's not necessary to wait the timeout
+   * It marks the hint when sending has failed, so it's not necessary to wait the timeout
    *
-   * @param sentrySdkHint the Hint
+   * @param hint the Hints
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(
-      final @Nullable Object sentrySdkHint, final boolean retry) {
-    if (sentrySdkHint instanceof SubmissionResult) {
-      ((SubmissionResult) sentrySdkHint).setResult(false);
-    }
-    if (sentrySdkHint instanceof Retryable) {
-      ((Retryable) sentrySdkHint).setRetry(retry);
-    }
+  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
+    HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
+    HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
   }
 
   /**

@@ -71,7 +71,35 @@ public interface PropertiesProvider {
    */
   @Nullable
   default Double getDoubleProperty(final @NotNull String property) {
-    final String result = getProperty(property);
-    return result != null ? Double.valueOf(result) : null;
+    final String prop = getProperty(property);
+    Double result = null;
+    if (prop != null) {
+      try {
+        result = Double.valueOf(prop);
+      } catch (NumberFormatException e) {
+        // ignored
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Resolves a {@link Long} property given by it's name.
+   *
+   * @param property - the property name
+   * @return property value or the default value if not found.
+   */
+  @Nullable
+  default Long getLongProperty(final @NotNull String property) {
+    final String prop = getProperty(property);
+    Long result = null;
+    if (prop != null) {
+      try {
+        result = Long.valueOf(prop);
+      } catch (NumberFormatException e) {
+        // ignored
+      }
+    }
+    return result;
   }
 }

@@ -1,5 +1,6 @@
 package io.sentry.android.core.internal.gestures
 
+import android.app.Activity
 import android.content.Context
 import android.content.res.Resources
 import android.view.MotionEvent
@@ -19,12 +20,12 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
-import java.lang.ref.WeakReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryGestureListenerClickTest {
     class Fixture {
+        val activity = mock<Activity>()
         val window = mock<Window>()
         val context = mock<Context>()
         val resources = mock<Resources>()
@@ -71,8 +72,9 @@ class SentryGestureListenerClickTest {
             resources.mockForTarget(this.target, resourceName)
             whenever(context.resources).thenReturn(resources)
             whenever(this.target.context).thenReturn(context)
+            whenever(activity.window).thenReturn(window)
             return SentryGestureListener(
-                WeakReference(window),
+                activity,
                 hub,
                 options,
                 true
