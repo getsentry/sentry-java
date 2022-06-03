@@ -38,6 +38,9 @@ internal class BenchmarkOperation(
             warmupIterations: Int = 3,
             measuredIterations: Int = 15
         ): BenchmarkResult {
+            // Android pushes the "installed app" event to othrt apps and the system itself.
+            // Let's give it time to do whatever it wants before starting measuring the operations.
+            Thread.sleep(2000)
             // The first operations are the slowest, as the device is still doing things like filling the cache.
             repeat(warmupIterations) {
                 op1.warmup()
