@@ -1,0 +1,31 @@
+apiVersion: v1alpha
+kind: espresso
+sauce:
+  region: us-west-1
+  # Controls how many suites are executed at the same time (sauce test env only).
+  concurrency: 1
+  metadata:
+    name: Android end2end tests with Espresso
+    tags:
+      - e2e
+      - android
+espresso:
+  app: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
+  testApp: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
+suites:
+  name: "Android End2end"
+  emulators:
+    - name: "Android GoogleApi Emulator"
+      orientation: portrait
+      platformVersions:
+        - "11.0"
+        - "10.0"
+  testOptions:
+    useTestOrchestrator: true
+# Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
+artifacts:
+  download:
+    when: always
+    match:
+      - junit.xml
+    directory: ./artifacts/
