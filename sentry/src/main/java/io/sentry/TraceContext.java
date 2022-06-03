@@ -11,27 +11,27 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Experimental
-public final class TraceState implements JsonUnknown, JsonSerializable {
+public final class TraceContext implements JsonUnknown, JsonSerializable {
   private @NotNull SentryId traceId;
   private @NotNull String publicKey;
   private @Nullable String release;
   private @Nullable String environment;
-  private @Nullable TraceState.TraceStateUser user;
+  private @Nullable TraceContext.TraceContextUser user;
   private @Nullable String transaction;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 
-  TraceState(@NotNull SentryId traceId, @NotNull String publicKey) {
+  TraceContext(@NotNull SentryId traceId, @NotNull String publicKey) {
     this(traceId, publicKey, null, null, null, null);
   }
 
-  TraceState(
+  TraceContext(
       @NotNull SentryId traceId,
       @NotNull String publicKey,
       @Nullable String release,
       @Nullable String environment,
-      @Nullable TraceState.TraceStateUser user,
+      @Nullable TraceContext.TraceContextUser user,
       @Nullable String transaction) {
     this.traceId = traceId;
     this.publicKey = publicKey;
@@ -41,7 +41,7 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
     this.transaction = transaction;
   }
 
-  TraceState(
+  TraceContext(
       final @NotNull ITransaction transaction,
       final @Nullable User user,
       final @NotNull SentryOptions sentryOptions) {
@@ -50,7 +50,7 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
         new Dsn(sentryOptions.getDsn()).getPublicKey(),
         sentryOptions.getRelease(),
         sentryOptions.getEnvironment(),
-        user != null ? new TraceStateUser(user) : null,
+        user != null ? new TraceContextUser(user) : null,
         transaction.getName());
   }
 
@@ -70,7 +70,7 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
     return environment;
   }
 
-  public @Nullable TraceStateUser getUser() {
+  public @Nullable TraceContextUser getUser() {
     return user;
   }
 
@@ -78,19 +78,37 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
     return transaction;
   }
 
-  public static final class TraceStateUser implements JsonUnknown, JsonSerializable {
+  public @NotNull Baggage toBaggage(@NotNull ILogger logger) {
+    Baggage baggage = new Baggage(logger);
+
+    baggage.setTraceId(traceId.toString());
+    baggage.setPublicKey(publicKey);
+    baggage.setRelease(release);
+    baggage.setEnvironment(environment);
+    baggage.setTransaction(transaction);
+
+    final TraceContextUser user = this.user;
+    if (user != null) {
+      baggage.setUserId(user.id);
+      baggage.setUserSegment(user.segment);
+    }
+
+    return baggage;
+  }
+
+  public static final class TraceContextUser implements JsonUnknown, JsonSerializable {
     private @Nullable String id;
     private @Nullable String segment;
 
     @SuppressWarnings("unused")
     private @Nullable Map<String, @NotNull Object> unknown;
 
-    TraceStateUser(final @Nullable String id, final @Nullable String segment) {
+    TraceContextUser(final @Nullable String id, final @Nullable String segment) {
       this.id = id;
       this.segment = segment;
     }
 
-    public TraceStateUser(final @Nullable User protocolUser) {
+    public TraceContextUser(final @Nullable User protocolUser) {
       if (protocolUser != null) {
         this.id = protocolUser.getId();
         this.segment = getSegment(protocolUser);
@@ -137,10 +155,10 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
         throws IOException {
       writer.beginObject();
       if (id != null) {
-        writer.name(TraceStateUser.JsonKeys.ID).value(id);
+        writer.name(TraceContextUser.JsonKeys.ID).value(id);
       }
       if (segment != null) {
-        writer.name(TraceStateUser.JsonKeys.SEGMENT).value(segment);
+        writer.name(TraceContextUser.JsonKeys.SEGMENT).value(segment);
       }
       if (unknown != null) {
         for (String key : unknown.keySet()) {
@@ -152,9 +170,9 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
       writer.endObject();
     }
 
-    public static final class Deserializer implements JsonDeserializer<TraceStateUser> {
+    public static final class Deserializer implements JsonDeserializer<TraceContextUser> {
       @Override
-      public @NotNull TraceStateUser deserialize(
+      public @NotNull TraceContextUser deserialize(
           @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
         reader.beginObject();
 
@@ -164,10 +182,10 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
         while (reader.peek() == JsonToken.NAME) {
           final String nextName = reader.nextName();
           switch (nextName) {
-            case TraceStateUser.JsonKeys.ID:
+            case TraceContextUser.JsonKeys.ID:
               id = reader.nextStringOrNull();
               break;
-            case TraceStateUser.JsonKeys.SEGMENT:
+            case TraceContextUser.JsonKeys.SEGMENT:
               segment = reader.nextStringOrNull();
               break;
             default:
@@ -178,7 +196,7 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
               break;
           }
         }
-        TraceStateUser traceStateUser = new TraceStateUser(id, segment);
+        TraceContextUser traceStateUser = new TraceContextUser(id, segment);
         traceStateUser.setUnknown(unknown);
         reader.endObject();
         return traceStateUser;
@@ -214,21 +232,21 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(TraceState.JsonKeys.TRACE_ID).value(logger, traceId);
-    writer.name(TraceState.JsonKeys.PUBLIC_KEY).value(publicKey);
+    writer.name(TraceContext.JsonKeys.TRACE_ID).value(logger, traceId);
+    writer.name(TraceContext.JsonKeys.PUBLIC_KEY).value(publicKey);
     if (release != null) {
-      writer.name(TraceState.JsonKeys.RELEASE).value(release);
+      writer.name(TraceContext.JsonKeys.RELEASE).value(release);
     }
     if (environment != null) {
-      writer.name(TraceState.JsonKeys.ENVIRONMENT).value(environment);
+      writer.name(TraceContext.JsonKeys.ENVIRONMENT).value(environment);
     }
     if (user != null) {
       if (user.id != null || user.segment != null || user.unknown != null) {
-        writer.name(TraceState.JsonKeys.USER).value(logger, user);
+        writer.name(TraceContext.JsonKeys.USER).value(logger, user);
       }
     }
     if (transaction != null) {
-      writer.name(TraceState.JsonKeys.TRANSACTION).value(transaction);
+      writer.name(TraceContext.JsonKeys.TRANSACTION).value(transaction);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -240,9 +258,9 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
     writer.endObject();
   }
 
-  public static final class Deserializer implements JsonDeserializer<TraceState> {
+  public static final class Deserializer implements JsonDeserializer<TraceContext> {
     @Override
-    public @NotNull TraceState deserialize(
+    public @NotNull TraceContext deserialize(
         @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
 
@@ -250,29 +268,29 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
       String publicKey = null;
       String release = null;
       String environment = null;
-      TraceStateUser user = null;
+      TraceContextUser user = null;
       String transaction = null;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
-          case TraceState.JsonKeys.TRACE_ID:
+          case TraceContext.JsonKeys.TRACE_ID:
             traceId = new SentryId.Deserializer().deserialize(reader, logger);
             break;
-          case TraceState.JsonKeys.PUBLIC_KEY:
+          case TraceContext.JsonKeys.PUBLIC_KEY:
             publicKey = reader.nextString();
             break;
-          case TraceState.JsonKeys.RELEASE:
+          case TraceContext.JsonKeys.RELEASE:
             release = reader.nextStringOrNull();
             break;
-          case TraceState.JsonKeys.ENVIRONMENT:
+          case TraceContext.JsonKeys.ENVIRONMENT:
             environment = reader.nextStringOrNull();
             break;
-          case TraceState.JsonKeys.USER:
-            user = reader.nextOrNull(logger, new TraceStateUser.Deserializer());
+          case TraceContext.JsonKeys.USER:
+            user = reader.nextOrNull(logger, new TraceContextUser.Deserializer());
             break;
-          case TraceState.JsonKeys.TRANSACTION:
+          case TraceContext.JsonKeys.TRANSACTION:
             transaction = reader.nextStringOrNull();
             break;
           default:
@@ -284,13 +302,13 @@ public final class TraceState implements JsonUnknown, JsonSerializable {
         }
       }
       if (traceId == null) {
-        throw missingRequiredFieldException(TraceState.JsonKeys.TRACE_ID, logger);
+        throw missingRequiredFieldException(TraceContext.JsonKeys.TRACE_ID, logger);
       }
       if (publicKey == null) {
-        throw missingRequiredFieldException(TraceState.JsonKeys.PUBLIC_KEY, logger);
+        throw missingRequiredFieldException(TraceContext.JsonKeys.PUBLIC_KEY, logger);
       }
-      TraceState traceStateUser =
-          new TraceState(traceId, publicKey, release, environment, user, transaction);
+      TraceContext traceStateUser =
+          new TraceContext(traceId, publicKey, release, environment, user, transaction);
       traceStateUser.setUnknown(unknown);
       reader.endObject();
       return traceStateUser;

@@ -671,7 +671,7 @@ class SentryClientTest {
 
         val transaction = SentryTransaction(fixture.sentryTracer)
 
-        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceState())
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
         verify(processor).process(eq(transaction), anyOrNull())
     }
 
@@ -681,7 +681,7 @@ class SentryClientTest {
 
         val transaction = SentryTransaction(fixture.sentryTracer)
 
-        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceState())
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
 
         assertClientReport(
             fixture.sentryOptions.clientReportRecorder,
@@ -1156,7 +1156,7 @@ class SentryClientTest {
         sut.captureEvent(event, scope)
         verify(fixture.transport).send(
             check {
-                assertNotNull(it.header.trace) {
+                assertNotNull(it.header.traceContext) {
                     assertEquals(transaction.spanContext.traceId, it.traceId)
                 }
             },
@@ -1170,7 +1170,7 @@ class SentryClientTest {
         sut.captureEvent(SentryEvent(), createScope())
         verify(fixture.transport).send(
             check {
-                assertNull(it.header.trace)
+                assertNull(it.header.traceContext)
             },
             anyOrNull()
         )
@@ -1180,11 +1180,11 @@ class SentryClientTest {
     fun `when transaction is captured, trace state is set on the envelope`() {
         val sut = fixture.getSut()
         val transaction = SentryTransaction(fixture.sentryTracer)
-        val traceState = fixture.sentryTracer.traceState()
-        sut.captureTransaction(transaction, traceState)
+        val traceContext = fixture.sentryTracer.traceContext()
+        sut.captureTransaction(transaction, traceContext)
         verify(fixture.transport).send(
             check {
-                assertEquals(traceState, it.header.trace)
+                assertEquals(traceContext, it.header.traceContext)
             },
             anyOrNull()
         )
@@ -1196,7 +1196,7 @@ class SentryClientTest {
         fixture.sentryOptions.environment = "optionsEnvironment"
         val sut = fixture.getSut()
         val transaction = SentryTransaction(fixture.sentryTracer)
-        sut.captureTransaction(transaction, fixture.sentryTracer.traceState())
+        sut.captureTransaction(transaction, fixture.sentryTracer.traceContext())
         assertEquals("optionsRelease", transaction.release)
         assertEquals("optionsEnvironment", transaction.environment)
     }
@@ -1210,7 +1210,7 @@ class SentryClientTest {
         val transaction = SentryTransaction(sentryTracer)
         transaction.release = "transactionRelease"
         transaction.environment = "transactionEnvironment"
-        sut.captureTransaction(transaction, sentryTracer.traceState())
+        sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals("transactionRelease", transaction.release)
         assertEquals("transactionEnvironment", transaction.environment)
     }
@@ -1221,7 +1221,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
         val transaction = SentryTransaction(sentryTracer)
-        sut.captureTransaction(transaction, sentryTracer.traceState())
+        sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals(fixture.sentryOptions.sdkVersion, transaction.sdk)
     }
 
@@ -1233,7 +1233,7 @@ class SentryClientTest {
         val transaction = SentryTransaction(sentryTracer)
         val sdkVersion = SdkVersion("transaction.sdk.name", "version")
         transaction.sdk = sdkVersion
-        sut.captureTransaction(transaction, sentryTracer.traceState())
+        sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals(sdkVersion, transaction.sdk)
     }
 
@@ -1243,7 +1243,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
         val transaction = SentryTransaction(sentryTracer)
-        sut.captureTransaction(transaction, sentryTracer.traceState())
+        sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals(mapOf("tag1" to "value1"), transaction.tags)
     }
 
@@ -1256,7 +1256,7 @@ class SentryClientTest {
         val transaction = SentryTransaction(sentryTracer)
         transaction.setTag("tag3", "value3")
         transaction.setTag("tag2", "transaction-tag")
-        sut.captureTransaction(transaction, sentryTracer.traceState())
+        sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals(
             mapOf("tag1" to "value1", "tag2" to "transaction-tag", "tag3" to "value3"),
             transaction.tags
@@ -1268,7 +1268,7 @@ class SentryClientTest {
         val sut = fixture.getSut()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
         val transaction = SentryTransaction(sentryTracer)
-        sut.captureTransaction(transaction, sentryTracer.traceState())
+        sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals("java", transaction.platform)
     }
 
@@ -1278,7 +1278,7 @@ class SentryClientTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
         val transaction = SentryTransaction(sentryTracer)
         transaction.platform = "abc"
-        sut.captureTransaction(transaction, sentryTracer.traceState())
+        sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals("abc", transaction.platform)
     }
 

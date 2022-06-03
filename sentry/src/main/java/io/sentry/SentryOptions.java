@@ -293,8 +293,11 @@ public class SentryOptions {
    */
   private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
 
-  /** Controls if the `tracestate` header is attached to envelopes and HTTP client integrations. */
-  private boolean traceSampling;
+  /**
+   * Controls if the `baggage` header is attached HTTP client integrations and if the `trace` header
+   * is attached to envelopes.
+   */
+  private boolean traceSampling = false;
 
   /** Control if profiling is enabled or not for transactions */
   private boolean profilingEnabled = false;
@@ -1427,14 +1430,19 @@ public class SentryOptions {
     this.maxRequestBodySize = maxRequestBodySize;
   }
 
-  /** Note: this is an experimental API and will be removed without notice. */
-  @ApiStatus.Experimental
+  /**
+   * Returns whether the `baggage` header is attached HTTP client integrations and the `trace`
+   * header is attached to envelopes.
+   *
+   * @return true if enabled
+   */
   public boolean isTraceSampling() {
     return traceSampling;
   }
 
   /**
-   * Note: this is an experimental API and will be removed without notice.
+   * Controls if the `baggage` header is attached HTTP client integrations and if the `trace` header
+   * is attached to envelopes. Defaults to false.
    *
    * @param traceSampling - if trace sampling should be enabled
    */

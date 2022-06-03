@@ -70,7 +70,7 @@ public final class SentryTracer implements ITransaction {
       new SpanByTimestampComparator();
   private final @NotNull AtomicBoolean isFinishTimerRunning = new AtomicBoolean(false);
 
-  private @Nullable TraceState traceState;
+  private @Nullable TraceContext traceContext;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -337,23 +337,23 @@ public final class SentryTracer implements ITransaction {
         // if it's an idle transaction which has no children, we drop it to save user's quota
         return;
       }
-      hub.captureTransaction(transaction, this.traceState(), null, profilingTraceData);
+      hub.captureTransaction(transaction, this.traceContext, null, profilingTraceData);
     }
   }
 
   @Override
-  public @Nullable TraceState traceState() {
+  public @Nullable TraceContext traceContext() {
     if (hub.getOptions().isTraceSampling()) {
       synchronized (this) {
-        if (traceState == null) {
+        if (traceContext == null) {
           final AtomicReference<User> userAtomicReference = new AtomicReference<>();
           hub.configureScope(
               scope -> {
                 userAtomicReference.set(scope.getUser());
               });
-          this.traceState = new TraceState(this, userAtomicReference.get(), hub.getOptions());
+          this.traceContext = new TraceContext(this, userAtomicReference.get(), hub.getOptions());
         }
-        return this.traceState;
+        return this.traceContext;
       }
     } else {
       return null;
@@ -361,11 +361,11 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @Nullable TraceStateHeader toTraceStateHeader() {
-    final TraceState traceState = traceState();
-    if (hub.getOptions().isTraceSampling() && traceState != null) {
-      return TraceStateHeader.fromTraceState(
-          traceState, hub.getOptions().getSerializer(), hub.getOptions().getLogger());
+  public @Nullable BaggageHeader toBaggageHeader() {
+    final TraceContext traceContext = traceContext();
+    if (hub.getOptions().isTraceSampling() && traceContext != null) {
+      final Baggage baggage = traceContext.toBaggage(hub.getOptions().getLogger());
+      return new BaggageHeader(baggage);
     } else {
       return null;
     }

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Replace `tracestate` header with `baggage` header ([]())
+
 ## 6.0.0-rc.1
 
 ### Features

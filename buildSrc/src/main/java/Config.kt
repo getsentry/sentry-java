@@ -126,6 +126,7 @@ object Config {
         val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
+        val javaFaker = "com.github.javafaker:javafaker:1.0.2"
     }
 
     object QualityPlugins {

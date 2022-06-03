@@ -40,24 +40,20 @@ public interface ISpan {
   SentryTraceHeader toSentryTrace();
 
   /**
-   * Returns the trace state information. @see <a
-   * href="https://develop.sentry.dev/sdk/trace-context/">Trace Context</a>.
+   * Returns the trace context.
    *
-   * @return a trace state or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
+   * @return a trace context or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
    */
   @Nullable
-  @ApiStatus.Experimental
-  TraceState traceState();
+  TraceContext traceContext();
 
   /**
-   * Returns the trace state that can be sent as a "tracestate" header.
+   * Returns the baggage that can be sent as "baggage" header.
    *
-   * @return TraceStateHeader or {@code null} if {@link SentryOptions#isTraceSampling()} is
-   *     disabled.
+   * @return BaggageHeader or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
    */
   @Nullable
-  @ApiStatus.Experimental
-  TraceStateHeader toTraceStateHeader();
+  BaggageHeader toBaggageHeader();
 
   /** Sets span timestamp marking this span as finished. */
   void finish();
