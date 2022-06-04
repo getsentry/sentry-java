@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.event.Level;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.Set;
+
 /** Configuration for Sentry integration. */
 @ConfigurationProperties("sentry")
 @Open
@@ -35,6 +37,9 @@ public class SentryProperties extends SentryOptions {
 
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
+
+  /** Property for creating Sentry tags from MDC-tags*/
+  private @Nullable Set<String> mdcToTags;
 
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
@@ -88,6 +93,14 @@ public class SentryProperties extends SentryOptions {
 
   public void setLogging(@NotNull Logging logging) {
     this.logging = logging;
+  }
+
+  public @Nullable Set<String> getMdcToTags() {
+    return mdcToTags;
+  }
+
+  public void setMdcToTags(Set<String> mdcToTags) {
+    this.mdcToTags = mdcToTags;
   }
 
   @Open

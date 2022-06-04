@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,6 +35,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
+  private @NotNull Set<String> mdcToTags = new HashSet<>();
 
   @Override
   public void start() {
@@ -103,6 +106,13 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             loggingEvent.getMDCPropertyMap(), entry -> entry.getValue() != null);
     if (!mdcProperties.isEmpty()) {
       event.getContexts().put("MDC", mdcProperties);
+
+      mdcToTags.forEach(mdcName -> {
+        String mdcValue = mdcProperties.get(mdcName);
+        if (mdcValue != null) {
+          event.setTag(mdcName, mdcValue);
+        }
+      });
     }
 
     return event;
@@ -192,5 +202,13 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   @ApiStatus.Internal
   void setTransportFactory(final @Nullable ITransportFactory transportFactory) {
     this.transportFactory = transportFactory;
+  }
+
+  public @NotNull Set<String> getMdcToTags() {
+    return new HashSet<>(mdcToTags);
+  }
+
+  public void setMdcToTags(@NotNull Set<String> mdcToTags) {
+    this.mdcToTags = new HashSet<>(mdcToTags);
   }
 }

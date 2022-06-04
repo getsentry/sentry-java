@@ -45,7 +45,12 @@ class SentryLogbackAppenderAutoConfigurationTest {
 
     @Test
     fun `sets SentryAppender properties`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.minimum-event-level=info", "sentry.logging.minimum-breadcrumb-level=debug")
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+            "sentry.logging.minimum-event-level=info",
+            "sentry.logging.minimum-breadcrumb-level=debug",
+            "sentry.mdc-to-tags=process,user"
+        )
             .run {
                 val appenders = rootLogger.getAppenders(SentryAppender::class.java)
                 assertThat(appenders).hasSize(1)
@@ -53,6 +58,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
 
                 assertThat(sentryAppender.minimumBreadcrumbLevel).isEqualTo(Level.DEBUG)
                 assertThat(sentryAppender.minimumEventLevel).isEqualTo(Level.INFO)
+                assertThat(sentryAppender.mdcToTags).containsExactlyInAnyOrderElementsOf(hashSetOf("process","user"))
             }
     }
 

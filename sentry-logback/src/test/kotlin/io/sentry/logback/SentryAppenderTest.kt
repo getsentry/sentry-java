@@ -31,7 +31,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryAppenderTest {
-    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null) {
+    private class Fixture(
+        dsn: String? = "http://key@localhost/proj",
+        minimumBreadcrumbLevel: Level? = null,
+        minimumEventLevel: Level? = null,
+        mdcToTags: Set<String> = hashSetOf()
+    ) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
         val transportFactory = mock<ITransportFactory>()
@@ -48,6 +53,7 @@ class SentryAppenderTest {
             appender.setMinimumEventLevel(minimumEventLevel)
             appender.context = loggerContext
             appender.setTransportFactory(transportFactory)
+            appender.mdcToTags = mdcToTags
             val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
             rootLogger.level = Level.TRACE
             rootLogger.addAppender(appender)
@@ -212,6 +218,34 @@ class SentryAppenderTest {
         verify(fixture.transport).send(
             checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `convert some MDC value to sentry tag`() {
+        fixture = Fixture(minimumEventLevel = Level.WARN, mdcToTags = hashSetOf("process"))
+        MDC.put("process", "controller")
+        fixture.logger.warn("testing convert MDC tags to Sentry tag")
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(mapOf("process" to "controller"), event.tags)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `ignore create Sentry tag from MDC if properties is empty`() {
+        fixture = Fixture(minimumEventLevel = Level.WARN, mdcToTags = hashSetOf())
+        MDC.put("process", "controller")
+        fixture.logger.warn("tes ignore convert MDC tags to Sentry tag if not exists in property")
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNull(event.tags)
             },
             anyOrNull()
         )
