@@ -16,7 +16,7 @@ android {
         targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersion
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
         buildConfigField("String", "SENTRY_ANDROID_SDK_NAME", "\"${Config.Sentry.SENTRY_ANDROID_SDK_NAME}\"")
 
