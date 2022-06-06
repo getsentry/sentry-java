@@ -57,11 +57,11 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
         val simpleSdkResult = BenchmarkOperation.compare(opNoSdk, "No Sdk", opSimpleSdk, "Simple Sdk")
         val perfProfilingSdkResult = BenchmarkOperation.compare(opNoSdk2, "No Sdk", opPerfProfilingSdk, "Sdk with perf and profiling")
 
-        val threshold = TimeUnit.MILLISECONDS.toNanos(100)
-        assertTrue(simpleSdkResult.durationIncreaseNanos in 0..threshold)
-        assertTrue(simpleSdkResult.cpuTimeIncreaseMillis in 0..threshold)
-        assertTrue(perfProfilingSdkResult.durationIncreaseNanos in simpleSdkResult.durationIncreaseNanos..threshold)
-        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseMillis in simpleSdkResult.cpuTimeIncreaseMillis..threshold)
+        val maxDurationThreshold = TimeUnit.MILLISECONDS.toNanos(100)
+        assertTrue(simpleSdkResult.durationIncreaseNanos in 0..maxDurationThreshold)
+        assertTrue(simpleSdkResult.cpuTimeIncreaseMillis in 0..100)
+        assertTrue(perfProfilingSdkResult.durationIncreaseNanos in simpleSdkResult.durationIncreaseNanos..maxDurationThreshold)
+        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseMillis in simpleSdkResult.cpuTimeIncreaseMillis..100)
     }
 
     private fun getOperation(init: (() -> Unit)? = null) = BenchmarkOperation(
