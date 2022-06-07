@@ -1289,6 +1289,55 @@ class SentryClientTest {
         sut.captureException(IllegalStateException())
         verify(fixture.transport, never()).send(any(), anyOrNull())
     }
+    @Test
+    fun `capturing an error updates session and sends event + session`() {
+        val sut = fixture.getSut()
+        val scope = givenScopeWithStartedSession()
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsErrored(scope)
+        thenEnvelopeIsSentWith(eventCount = 1, sessionCount = 1)
+    }
+
+    @Test
+    fun `dropping a captured error from beforeSend has no effect on session and does not send anything`() {
+        val sut = fixture.getSut { options ->
+            options.beforeSend = SentryOptions.BeforeSendCallback { _, _ -> null }
+        }
+        val scope = givenScopeWithStartedSession()
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsStillOK(scope)
+        thenNothingIsSent()
+    }
+
+    @Test
+    fun `dropping a captured error from eventProcessor has no effect on session and does not send anything`() {
+        val sut = fixture.getSut { options ->
+            options.addEventProcessor(DropEverythingEventProcessor())
+        }
+        val scope = givenScopeWithStartedSession()
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsStillOK(scope)
+        thenNothingIsSent()
+    }
+
+    @Test
+    fun `dropping a captured error via sampling updates the session and only sends the session for a new session`() {
+        val sut = fixture.getSut { options ->
+            options.sampleRate = 0.000000000001
+        }
+        val scope = givenScopeWithStartedSession()
+
+        sut.captureEvent(SentryEvent().apply { exceptions = createHandledException() }, scope)
+
+        thenSessionIsErrored(scope)
+        thenEnvelopeIsSentWith(eventCount = 0, sessionCount = 1)
+    }
 
     @Test
     fun `screenshot is added to the envelope from the hint`() {
@@ -2049,5 +2098,19 @@ class SentryClientTest {
                 throw Throwable()
             }
         }
+    }
+}
+
+class DropEverythingEventProcessor : EventProcessor {
+
+    override fun process(event: SentryEvent, hint: Any?): SentryEvent? {
+        return null
+    }
+
+    override fun process(
+        transaction: SentryTransaction,
+        hint: Any?
+    ): SentryTransaction? {
+        return null
     }
 }
