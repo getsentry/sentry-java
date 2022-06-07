@@ -4,7 +4,7 @@
 
 ### Features
 
-- Implement local scope by adding overloads to the capture methods that accept a ScopeCallback ([#2075](https://github.com/getsentry/sentry-java/pull/2075))
+- Implement local scope by adding overloads to the capture methods that accept a ScopeCallback ([#2084](https://github.com/getsentry/sentry-java/pull/2084))
 
 ## 6.0.0
 
