@@ -1,0 +1,28 @@
+public final class io/sentry/apollo3/ExtensionsKt {
+	public static final fun getHttpInfo (Lcom/apollographql/apollo3/api/ApolloResponse;)Lcom/apollographql/apollo3/network/http/HttpInfo;
+	public static final fun getScalarAdapters (Lcom/apollographql/apollo3/api/ApolloRequest;)Lcom/apollographql/apollo3/api/CustomScalarAdapters;
+	public static final fun headersContentLength (Lcom/apollographql/apollo3/api/http/HttpResponse;)J
+	public static final fun toLongOrDefault (Ljava/lang/String;J)J
+}
+
+public final class io/sentry/apollo3/SentryApollo3HttpInterceptor : com/apollographql/apollo3/network/http/HttpInterceptor {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IHub;)V
+	public synthetic fun <init> (Lio/sentry/IHub;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun dispose ()V
+	public fun intercept (Lcom/apollographql/apollo3/api/http/HttpRequest;Lcom/apollographql/apollo3/network/http/HttpInterceptorChain;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/sentry/apollo3/SentryApollo3Interceptor : com/apollographql/apollo3/interceptor/ApolloInterceptor {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IHub;)V
+	public fun <init> (Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3Interceptor$BeforeSpanCallback;)V
+	public synthetic fun <init> (Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3Interceptor$BeforeSpanCallback;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/apollo3/SentryApollo3Interceptor$BeforeSpanCallback;)V
+	public fun intercept (Lcom/apollographql/apollo3/api/ApolloRequest;Lcom/apollographql/apollo3/interceptor/ApolloInterceptorChain;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public abstract interface class io/sentry/apollo3/SentryApollo3Interceptor$BeforeSpanCallback {
+	public abstract fun execute (Lio/sentry/ISpan;Lcom/apollographql/apollo3/api/ApolloRequest;Lcom/apollographql/apollo3/api/ApolloResponse;)Lio/sentry/ISpan;
+}
+
