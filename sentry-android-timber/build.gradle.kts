@@ -17,7 +17,7 @@ android {
         targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersion
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")

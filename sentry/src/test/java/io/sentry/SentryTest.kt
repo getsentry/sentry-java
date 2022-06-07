@@ -14,8 +14,8 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-
 class SentryTest {
 
     private val dsn = "http://key@localhost/proj"
@@ -207,6 +207,30 @@ class SentryTest {
         }
 
         assertFalse(File(sentryOptions?.profilingTracesDirPath!!).exists())
+    }
+
+    @Test
+    fun `using sentry before calling init creates NoOpHub but after init Sentry uses a new clone`() {
+        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+        Sentry.captureMessage("noop caused")
+
+        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+
+        // init Sentry in another thread
+        val thread = Thread() {
+            Sentry.init {
+                it.dsn = dsn
+                it.isDebug = true
+            }
+        }
+        thread.start()
+        thread.join()
+
+        Sentry.captureMessage("should work now")
+
+        val hub = Sentry.getCurrentHub()
+        assertNotNull(hub)
+        assertFalse(hub is NoOpHub)
     }
 
     private fun getTempPath(): String {
