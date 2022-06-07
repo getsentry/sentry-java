@@ -150,4 +150,29 @@ class BaggageTest {
 
         assertEquals("sentry-environment=production,sentry-publickey=$publicKey,sentry-release=1.0-rc.1,sentry-traceid=$traceId,sentry-transaction=TX,sentry-userid=$userId,sentry-usersegment=segmentA", baggage.toHeaderString())
     }
+
+    @Test
+    fun `duplicate entries are lost`() {
+        val baggage = Baggage.fromHeader("duplicate=a,duplicate=b", logger)
+        assertEquals("duplicate=b", baggage.toHeaderString())
+    }
+
+    @Test
+    fun `setting a value multiple times only keeps the last`() {
+        val baggage = Baggage.fromHeader("sentry-traceid=a", logger)
+
+        baggage.setTraceId("b")
+        baggage.setTraceId("c")
+
+        assertEquals("sentry-traceid=c", baggage.toHeaderString())
+    }
+
+    @Test
+    fun `value may contain = sign`() {
+        val baggage = Baggage(logger)
+
+        baggage.setTransaction("a=b")
+
+        assertEquals("sentry-transaction=a%3Db", baggage.toHeaderString())
+    }
 }
