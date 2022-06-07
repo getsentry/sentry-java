@@ -1,5 +1,6 @@
 package io.sentry.spring.boot
 
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -147,7 +148,8 @@ class SentrySpanRestTemplateCustomizerTest {
                 assertEquals(fixture.url, it.data["url"])
                 assertEquals("POST", it.data["method"])
                 assertEquals(7, it.data["request_body_size"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -163,7 +165,8 @@ class SentrySpanRestTemplateCustomizerTest {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
                 assertEquals("GET", it.data["method"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -176,7 +179,8 @@ class SentrySpanRestTemplateCustomizerTest {
                 assertEquals(fixture.url, it.data["url"])
                 assertEquals("POST", it.data["method"])
                 assertEquals(7, it.data["request_body_size"])
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -192,7 +196,8 @@ class SentrySpanRestTemplateCustomizerTest {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
                 assertEquals("GET", it.data["method"])
-            }
+            },
+            anyOrNull()
         )
     }
 }

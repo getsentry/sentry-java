@@ -84,13 +84,25 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableActivityLifecycleTracingAutoFinish = true;
 
+  /** Interval for profiling traces in milliseconds. Defaults to 100 times per second */
+  private int profilingTracesIntervalMillis = 1_000 / 100;
+
+  /** Enables the Auto instrumentation for user interaction tracing. */
+  private boolean enableUserInteractionTracing = false;
+
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
+
+  /** Enables or disables the attach screenshot feature when an error happened. */
+  private boolean attachScreenshot;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
     setAttachServerName(false);
+
+    // enable scope sync for Android by default
+    setEnableScopeSync(true);
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -214,6 +226,24 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
+   * Returns the interval for profiling traces in milliseconds.
+   *
+   * @return the interval for profiling traces in milliseconds.
+   */
+  public int getProfilingTracesIntervalMillis() {
+    return profilingTracesIntervalMillis;
+  }
+
+  /**
+   * Sets the interval for profiling traces in milliseconds.
+   *
+   * @param profilingTracesIntervalMillis - the interval for profiling traces in milliseconds.
+   */
+  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {
+    this.profilingTracesIntervalMillis = profilingTracesIntervalMillis;
+  }
+
+  /**
    * Returns the Debug image loader
    *
    * @return the image loader
@@ -247,5 +277,21 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setEnableActivityLifecycleTracingAutoFinish(
       boolean enableActivityLifecycleTracingAutoFinish) {
     this.enableActivityLifecycleTracingAutoFinish = enableActivityLifecycleTracingAutoFinish;
+  }
+
+  public boolean isAttachScreenshot() {
+    return attachScreenshot;
+  }
+
+  public void setAttachScreenshot(boolean attachScreenshot) {
+    this.attachScreenshot = attachScreenshot;
+  }
+
+  public boolean isEnableUserInteractionTracing() {
+    return enableUserInteractionTracing;
+  }
+
+  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
+    this.enableUserInteractionTracing = enableUserInteractionTracing;
   }
 }

@@ -1,8 +1,15 @@
 package io.sentry.protocol;
 
-import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.ILogger;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>```json { "exception": { "values": [ {"type": "Exception": "value": "random boring invariant
  * was not met!"}, {"type": "ValueError", "value": "something went wrong, help!"}, ] } } ```
  */
-public final class SentryException implements IUnknownPropertiesConsumer {
+public final class SentryException implements JsonUnknown, JsonSerializable {
   /**
    * Exception type, e.g. `ValueError`.
    *
@@ -154,9 +161,105 @@ public final class SentryException implements IUnknownPropertiesConsumer {
     this.mechanism = mechanism;
   }
 
-  @ApiStatus.Internal
+  // JsonKeys
+
+  public static final class JsonKeys {
+    public static final String TYPE = "type";
+    public static final String VALUE = "value";
+    public static final String MODULE = "module";
+    public static final String THREAD_ID = "thread_id";
+    public static final String STACKTRACE = "stacktrace";
+    public static final String MECHANISM = "mechanism";
+  }
+
+  // JsonUnknown
+
   @Override
-  public void acceptUnknownProperties(final @NotNull Map<String, Object> unknown) {
+  public @Nullable Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  // JsonSerializable
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (type != null) {
+      writer.name(JsonKeys.TYPE).value(type);
+    }
+    if (value != null) {
+      writer.name(JsonKeys.VALUE).value(value);
+    }
+    if (module != null) {
+      writer.name(JsonKeys.MODULE).value(module);
+    }
+    if (threadId != null) {
+      writer.name(JsonKeys.THREAD_ID).value(threadId);
+    }
+    if (stacktrace != null) {
+      writer.name(JsonKeys.STACKTRACE).value(logger, stacktrace);
+    }
+    if (mechanism != null) {
+      writer.name(JsonKeys.MECHANISM).value(logger, mechanism);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  // JsonDeserializer
+
+  public static final class Deserializer implements JsonDeserializer<SentryException> {
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull SentryException deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      SentryException sentryException = new SentryException();
+      Map<String, Object> unknown = null;
+      reader.beginObject();
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.TYPE:
+            sentryException.type = reader.nextStringOrNull();
+            break;
+          case JsonKeys.VALUE:
+            sentryException.value = reader.nextStringOrNull();
+            break;
+          case JsonKeys.MODULE:
+            sentryException.module = reader.nextStringOrNull();
+            break;
+          case JsonKeys.THREAD_ID:
+            sentryException.threadId = reader.nextLongOrNull();
+            break;
+          case JsonKeys.STACKTRACE:
+            sentryException.stacktrace =
+                reader.nextOrNull(logger, new SentryStackTrace.Deserializer());
+            break;
+          case JsonKeys.MECHANISM:
+            sentryException.mechanism = reader.nextOrNull(logger, new Mechanism.Deserializer());
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      reader.endObject();
+      sentryException.setUnknown(unknown);
+      return sentryException;
+    }
   }
 }

@@ -1,11 +1,15 @@
 package io.sentry.cache
 
 import com.nhaarman.mockitokotlin2.mock
+import io.sentry.DataCategory
 import io.sentry.DateUtils
-import io.sentry.GsonSerializer
+import io.sentry.JsonSerializer
 import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.Session
+import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
+import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.DiscardedEvent
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
@@ -97,7 +101,7 @@ class CacheStrategyTest {
     @Test
     fun `move init flag if state is ok`() {
         val options = SentryOptions().apply {
-            setSerializer(GsonSerializer(this))
+            setSerializer(JsonSerializer(this))
         }
         val sut = fixture.getSUT(3, options)
 
@@ -120,6 +124,17 @@ class CacheStrategyTest {
         val expectedSession = getSessionFromFile(files[1], sut)
 
         assertTrue(expectedSession.init!!)
+
+        assertClientReport(
+            options.clientReportRecorder,
+            listOf(
+                DiscardedEvent(
+                    DiscardReason.CACHE_OVERFLOW.reason,
+                    DataCategory.Session.category,
+                    1
+                )
+            )
+        )
     }
 
     @AfterTest
@@ -177,7 +192,7 @@ class CacheStrategyTest {
 
     private fun getOptionsWithRealSerializer(): SentryOptions {
         return SentryOptions().apply {
-            setSerializer(GsonSerializer(this))
+            setSerializer(JsonSerializer(this))
         }
     }
 }

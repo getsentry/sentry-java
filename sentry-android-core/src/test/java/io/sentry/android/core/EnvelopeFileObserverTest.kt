@@ -15,6 +15,7 @@ import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Resettable
 import io.sentry.hints.Retryable
 import io.sentry.hints.SubmissionResult
+import io.sentry.util.HintUtils
 import org.junit.runner.RunWith
 import java.io.File
 import kotlin.test.Test
@@ -73,7 +74,7 @@ class EnvelopeFileObserverTest {
 
         verify(fixture.envelopeSender).processEnvelopeFile(
             eq(fixture.path + File.separator + fixture.fileName),
-            check { it is ApplyScopeData }
+            check { HintUtils.hasType(it, ApplyScopeData::class.java) }
         )
     }
 
@@ -83,7 +84,7 @@ class EnvelopeFileObserverTest {
 
         verify(fixture.envelopeSender).processEnvelopeFile(
             eq(fixture.path + File.separator + fixture.fileName),
-            check { it is Resettable }
+            check { HintUtils.hasType(it, Resettable::class.java) }
         )
     }
 
@@ -93,14 +94,14 @@ class EnvelopeFileObserverTest {
 
         verify(fixture.envelopeSender).processEnvelopeFile(
             eq(fixture.path + File.separator + fixture.fileName),
-            check {
-                (it as SubmissionResult).setResult(true)
-                (it as Retryable).isRetry = true
+            check { hints ->
+                HintUtils.runIfHasType(hints, SubmissionResult::class.java) { it.setResult(true) }
+                HintUtils.runIfHasType(hints, Retryable::class.java) { it.isRetry = true }
 
-                (it as Resettable).reset()
+                HintUtils.runIfHasType(hints, Resettable::class.java) { it.reset() }
 
-                assertFalse(it.isRetry)
-                assertFalse(it.isSuccess)
+                assertFalse((HintUtils.getSentrySdkHint(hints) as Retryable).isRetry)
+                assertFalse((HintUtils.getSentrySdkHint(hints) as SubmissionResult).isSuccess)
             }
         )
     }

@@ -10,6 +10,7 @@ import io.sentry.hints.SubmissionResult;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -51,7 +52,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   }
 
   @Override
-  protected void processFile(final @NotNull File file, @Nullable Object hint) {
+  protected void processFile(final @NotNull File file, @NotNull Hint hint) {
     Objects.requireNonNull(file, "File is required.");
 
     if (!isRelevantFileName(file.getName())) {
@@ -73,19 +74,21 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
     } finally {
-      if (hint instanceof Retryable) {
-        if (!((Retryable) hint).isRetry()) {
-          try {
-            if (!file.delete()) {
-              logger.log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+      HintUtils.runIfHasTypeLogIfNot(
+          hint,
+          Retryable.class,
+          logger,
+          (retryable) -> {
+            if (!retryable.isRetry()) {
+              try {
+                if (!file.delete()) {
+                  logger.log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+                }
+              } catch (RuntimeException e) {
+                logger.log(SentryLevel.ERROR, e, "Failed to delete: %s", file.getAbsolutePath());
+              }
             }
-          } catch (RuntimeException e) {
-            logger.log(SentryLevel.ERROR, e, "Failed to delete: %s", file.getAbsolutePath());
-          }
-        }
-      } else {
-        LogUtils.logIfNotRetryable(logger, hint);
-      }
+          });
     }
   }
 
@@ -97,13 +100,13 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   }
 
   @Override
-  public void processEnvelopeFile(@NotNull String path, @Nullable Object hint) {
+  public void processEnvelopeFile(@NotNull String path, @NotNull Hint hint) {
     Objects.requireNonNull(path, "Path is required.");
 
     processFile(new File(path), hint);
   }
 
-  private void processEnvelope(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+  private void processEnvelope(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
       throws IOException {
     logger.log(
         SentryLevel.DEBUG,
@@ -195,8 +198,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         }
       }
 
-      if (hint instanceof SubmissionResult) {
-        if (!((SubmissionResult) hint).isSuccess()) {
+      final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+      if (sentrySdkHint instanceof SubmissionResult) {
+        if (!((SubmissionResult) sentrySdkHint).isSuccess()) {
           // Failed to send an item of the envelope: Stop attempting to send the rest (an attachment
           // without the event that created it isn't useful)
           logger.log(
@@ -208,9 +212,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       }
 
       // reset the Hint to its initial state as we use it multiple times.
-      if (hint instanceof Resettable) {
-        ((Resettable) hint).reset();
-      }
+      HintUtils.runIfHasType(hint, Resettable.class, (resettable) -> resettable.reset());
     }
   }
 
@@ -240,11 +242,12 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
     logger.log(SentryLevel.WARNING, "Timed out waiting for event id submission: %s", eventId);
   }
 
-  private boolean waitFlush(final @Nullable Object hint) {
-    if (hint instanceof Flushable) {
-      return ((Flushable) hint).waitFlush();
+  private boolean waitFlush(final @NotNull Hint hint) {
+    @Nullable Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+    if (sentrySdkHint instanceof Flushable) {
+      return ((Flushable) sentrySdkHint).waitFlush();
     } else {
-      LogUtils.logIfNotFlushable(logger, hint);
+      LogUtils.logNotInstanceOf(Flushable.class, sentrySdkHint, logger);
     }
     return true;
   }

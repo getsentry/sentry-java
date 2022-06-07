@@ -1,23 +1,26 @@
 package io.sentry.transport;
 
+import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * {@link ITransport} implementation that executes request asynchronously in a blocking manner using
@@ -62,13 +65,12 @@ public final class AsyncHttpTransport implements ITransport {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
-  public void send(final @NotNull SentryEnvelope envelope, final @Nullable Object hint)
+  public void send(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
       throws IOException {
     // For now no caching on envelopes
     IEnvelopeCache currentEnvelopeCache = envelopeCache;
     boolean cached = false;
-    if (hint instanceof Cached) {
+    if (HintUtils.hasType(hint, Cached.class)) {
       currentEnvelopeCache = NoOpEnvelopeCache.getInstance();
       cached = true;
       options.getLogger().log(SentryLevel.DEBUG, "Captured Envelope is already cached");
@@ -81,7 +83,23 @@ public final class AsyncHttpTransport implements ITransport {
         envelopeCache.discard(envelope);
       }
     } else {
-      executor.submit(new EnvelopeSender(filteredEnvelope, hint, currentEnvelopeCache));
+      SentryEnvelope envelopeThatMayIncludeClientReport;
+      if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
+        envelopeThatMayIncludeClientReport =
+            options.getClientReportRecorder().attachReportToEnvelope(filteredEnvelope);
+      } else {
+        envelopeThatMayIncludeClientReport = filteredEnvelope;
+      }
+
+      final Future<?> future =
+          executor.submit(
+              new EnvelopeSender(envelopeThatMayIncludeClientReport, hint, currentEnvelopeCache));
+
+      if (future != null && future.isCancelled()) {
+        options
+            .getClientReportRecorder()
+            .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelopeThatMayIncludeClientReport);
+      }
     }
   }
 
@@ -100,7 +118,7 @@ public final class AsyncHttpTransport implements ITransport {
           if (r instanceof EnvelopeSender) {
             final EnvelopeSender envelopeSender = (EnvelopeSender) r;
 
-            if (!(envelopeSender.hint instanceof Cached)) {
+            if (!HintUtils.hasType(envelopeSender.hint, Cached.class)) {
               envelopeCache.store(envelopeSender.envelope, envelopeSender.hint);
             }
 
@@ -138,16 +156,12 @@ public final class AsyncHttpTransport implements ITransport {
   /**
    * It marks the hints when sending has failed, so it's not necessary to wait the timeout
    *
-   * @param hint the Hint
+   * @param hint the Hints
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(final @Nullable Object hint, final boolean retry) {
-    if (hint instanceof SubmissionResult) {
-      ((SubmissionResult) hint).setResult(false);
-    }
-    if (hint instanceof Retryable) {
-      ((Retryable) hint).setRetry(retry);
-    }
+  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
+    HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
+    HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
   }
 
   private static final class AsyncConnectionThreadFactory implements ThreadFactory {
@@ -163,13 +177,13 @@ public final class AsyncHttpTransport implements ITransport {
 
   private final class EnvelopeSender implements Runnable {
     private final @NotNull SentryEnvelope envelope;
-    private final @Nullable Object hint;
+    private final @NotNull Hint hint;
     private final @NotNull IEnvelopeCache envelopeCache;
     private final TransportResult failedResult = TransportResult.error();
 
     EnvelopeSender(
         final @NotNull SentryEnvelope envelope,
-        final @Nullable Object hint,
+        final @NotNull Hint hint,
         final @NotNull IEnvelopeCache envelopeCache) {
       this.envelope = Objects.requireNonNull(envelope, "Envelope is required.");
       this.hint = hint;
@@ -186,12 +200,19 @@ public final class AsyncHttpTransport implements ITransport {
         options.getLogger().log(SentryLevel.ERROR, e, "Envelope submission failed");
         throw e;
       } finally {
-        if (hint instanceof SubmissionResult) {
-          options
-              .getLogger()
-              .log(SentryLevel.DEBUG, "Marking envelope submission result: %s", result.isSuccess());
-          ((SubmissionResult) hint).setResult(result.isSuccess());
-        }
+        final TransportResult finalResult = result;
+        HintUtils.runIfHasType(
+            hint,
+            SubmissionResult.class,
+            (submissionResult) -> {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.DEBUG,
+                      "Marking envelope submission result: %s",
+                      finalResult.isSuccess());
+              submissionResult.setResult(finalResult.isSuccess());
+            });
       }
     }
 
@@ -200,14 +221,19 @@ public final class AsyncHttpTransport implements ITransport {
 
       envelopeCache.store(envelope, hint);
 
-      if (hint instanceof DiskFlushNotification) {
-        ((DiskFlushNotification) hint).markFlushed();
-        options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
-      }
+      HintUtils.runIfHasType(
+          hint,
+          DiskFlushNotification.class,
+          (diskFlushNotification) -> {
+            diskFlushNotification.markFlushed();
+            options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+          });
 
       if (transportGate.isConnected()) {
+        final SentryEnvelope envelopeWithClientReport =
+            options.getClientReportRecorder().attachReportToEnvelope(envelope);
         try {
-          result = connection.send(envelope);
+          result = connection.send(envelopeWithClientReport);
           if (result.isSuccess()) {
             envelopeCache.discard(envelope);
           } else {
@@ -217,24 +243,50 @@ public final class AsyncHttpTransport implements ITransport {
 
             options.getLogger().log(SentryLevel.ERROR, message);
 
+            // ignore e.g. 429 as we're not the ones actively dropping
+            if (result.getResponseCode() >= 400 && result.getResponseCode() != 429) {
+              HintUtils.runIfDoesNotHaveType(
+                  hint,
+                  Retryable.class,
+                  (hint) -> {
+                    options
+                        .getClientReportRecorder()
+                        .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+                  });
+            }
+
             throw new IllegalStateException(message);
           }
         } catch (IOException e) {
           // Failure due to IO is allowed to retry the event
-          if (hint instanceof Retryable) {
-            ((Retryable) hint).setRetry(true);
-          } else {
-            LogUtils.logIfNotRetryable(options.getLogger(), hint);
-          }
+          HintUtils.runIfHasType(
+              hint,
+              Retryable.class,
+              (retryable) -> {
+                retryable.setRetry(true);
+              },
+              (hint, clazz) -> {
+                LogUtils.logNotInstanceOf(clazz, hint, options.getLogger());
+                options
+                    .getClientReportRecorder()
+                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+              });
           throw new IllegalStateException("Sending the event failed.", e);
         }
       } else {
         // If transportGate is blocking from sending, allowed to retry
-        if (hint instanceof Retryable) {
-          ((Retryable) hint).setRetry(true);
-        } else {
-          LogUtils.logIfNotRetryable(options.getLogger(), hint);
-        }
+        HintUtils.runIfHasType(
+            hint,
+            Retryable.class,
+            (retryable) -> {
+              retryable.setRetry(true);
+            },
+            (hint, clazz) -> {
+              LogUtils.logNotInstanceOf(clazz, hint, options.getLogger());
+              options
+                  .getClientReportRecorder()
+                  .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope);
+            });
       }
       return result;
     }

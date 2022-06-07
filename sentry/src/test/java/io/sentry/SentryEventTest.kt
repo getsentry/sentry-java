@@ -104,15 +104,6 @@ class SentryEventTest {
     }
 
     @Test
-    fun `when getOriginThrowable is called, fallback to getThrowable`() {
-        val event = SentryEvent()
-        val ex = RuntimeException()
-        val exceptionMechanism = ExceptionMechanismException(Mechanism(), ex, Thread.currentThread())
-        event.throwable = exceptionMechanism
-        assertEquals(event.getThrowable(), event.originThrowable)
-    }
-
-    @Test
     fun `when setBreadcrumbs receives immutable list as an argument, its still possible to add more breadcrumbs to the event`() {
         val event = SentryEvent().apply {
             breadcrumbs = listOf(Breadcrumb("a"), Breadcrumb("b"))

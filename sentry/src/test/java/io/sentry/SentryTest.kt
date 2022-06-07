@@ -14,8 +14,8 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-
 class SentryTest {
 
     private val dsn = "http://key@localhost/proj"
@@ -28,7 +28,7 @@ class SentryTest {
     }
 
     @Test
-    fun `outboxDir should be created at initialization`() {
+    fun `outboxPath should be created at initialization`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
@@ -42,7 +42,7 @@ class SentryTest {
     }
 
     @Test
-    fun `envelopesDir should be created at initialization`() {
+    fun `cacheDirPath should be created at initialization`() {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
@@ -178,6 +178,59 @@ class SentryTest {
         SentryCrashLastRunState.getInstance().setCrashedLastRun(true)
 
         assertTrue(Sentry.isCrashedLastRun()!!)
+    }
+
+    @Test
+    fun `profilingTracesDirPath should be created and cleared at initialization when profiling is enabled`() {
+        val tempPath = getTempPath()
+        var sentryOptions: SentryOptions? = null
+        Sentry.init {
+            it.dsn = dsn
+            it.isProfilingEnabled = true
+            it.cacheDirPath = tempPath
+            sentryOptions = it
+        }
+
+        assertTrue(File(sentryOptions?.profilingTracesDirPath!!).exists())
+        assertTrue(File(sentryOptions?.profilingTracesDirPath!!).list()!!.isEmpty())
+    }
+
+    @Test
+    fun `profilingTracesDirPath should not be created and cleared when profiling is disabled`() {
+        val tempPath = getTempPath()
+        var sentryOptions: SentryOptions? = null
+        Sentry.init {
+            it.dsn = dsn
+            it.isProfilingEnabled = false
+            it.cacheDirPath = tempPath
+            sentryOptions = it
+        }
+
+        assertFalse(File(sentryOptions?.profilingTracesDirPath!!).exists())
+    }
+
+    @Test
+    fun `using sentry before calling init creates NoOpHub but after init Sentry uses a new clone`() {
+        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+        Sentry.captureMessage("noop caused")
+
+        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+
+        // init Sentry in another thread
+        val thread = Thread() {
+            Sentry.init {
+                it.dsn = dsn
+                it.isDebug = true
+            }
+        }
+        thread.start()
+        thread.join()
+
+        Sentry.captureMessage("should work now")
+
+        val hub = Sentry.getCurrentHub()
+        assertNotNull(hub)
+        assertFalse(hub is NoOpHub)
     }
 
     private fun getTempPath(): String {

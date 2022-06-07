@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static android.content.Context.SENSOR_SERVICE;
+import static io.sentry.TypeCheckHint.ANDROID_SENSOR_EVENT;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -8,6 +9,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
@@ -103,7 +105,11 @@ public final class TempSensorBreadcrumbsIntegration
       breadcrumb.setData("timestamp", event.timestamp);
       breadcrumb.setLevel(SentryLevel.INFO);
       breadcrumb.setData("degree", event.values[0]); // Celsius
-      hub.addBreadcrumb(breadcrumb);
+
+      final Hint hint = new Hint();
+      hint.set(ANDROID_SENSOR_EVENT, event);
+
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 

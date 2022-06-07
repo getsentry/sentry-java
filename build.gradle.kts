@@ -56,6 +56,8 @@ apiValidation {
             "sentry-samples-spring-boot",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-netflix-dgs",
+            "sentry-uitest-android",
+            "sentry-uitest-android-benchmark",
         )
     )
 }
@@ -86,7 +88,7 @@ allprojects {
 }
 
 subprojects {
-    if (!this.name.contains("sample") && this.name != "sentry-test-support") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
 
         val sep = File.separator
@@ -137,7 +139,7 @@ spotless {
         target("**/*.java")
         removeUnusedImports()
         googleJavaFormat()
-        targetExclude("**/generated/**")
+        targetExclude("**/generated/**", "**/vendor/**")
     }
 
     kotlin {
@@ -165,7 +167,7 @@ gradle.projectsEvaluated {
             "https://docs.spring.io/spring-boot/docs/current/api/"
         )
         subprojects
-            .filter { !it.name.contains("sample") }
+            .filter { !it.name.contains("sample") && !it.name.contains("integration-tests") }
             .forEach { proj ->
                 proj.tasks.withType<Javadoc>().forEach { javadocTask ->
                     source += javadocTask.source

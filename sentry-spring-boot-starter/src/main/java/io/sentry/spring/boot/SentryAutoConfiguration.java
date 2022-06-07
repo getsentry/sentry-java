@@ -9,6 +9,7 @@ import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.spring.ContextTagsEventProcessor;
 import io.sentry.spring.SentryExceptionResolver;
 import io.sentry.spring.SentryRequestResolver;
 import io.sentry.spring.SentrySpringFilter;
@@ -20,6 +21,8 @@ import io.sentry.spring.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
 import io.sentry.spring.tracing.SentryTransactionPointcutConfiguration;
+import io.sentry.spring.tracing.SpringMvcTransactionNameProvider;
+import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
 import java.util.List;
@@ -27,6 +30,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
@@ -120,6 +124,18 @@ public class SentryAutoConfiguration {
       return HubAdapter.getInstance();
     }
 
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(MDC.class)
+    @Open
+    static class ContextTagsEventProcessorConfiguration {
+
+      @Bean
+      public @NotNull ContextTagsEventProcessor contextTagsEventProcessor(
+          final @NotNull SentryOptions sentryOptions) {
+        return new ContextTagsEventProcessor(sentryOptions);
+      }
+    }
+
     /** Registers beans specific to Spring MVC. */
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -185,11 +201,20 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
+      @ConditionalOnMissingBean(TransactionNameProvider.class)
+      public @NotNull TransactionNameProvider transactionNameProvider() {
+        return new SpringMvcTransactionNameProvider();
+      }
+
+      @Bean
       @ConditionalOnMissingBean(name = "sentrySpringFilter")
       public @NotNull FilterRegistrationBean<SentrySpringFilter> sentrySpringFilter(
-          final @NotNull IHub hub, final @NotNull SentryRequestResolver requestResolver) {
+          final @NotNull IHub hub,
+          final @NotNull SentryRequestResolver requestResolver,
+          final @NotNull TransactionNameProvider transactionNameProvider) {
         FilterRegistrationBean<SentrySpringFilter> filter =
-            new FilterRegistrationBean<>(new SentrySpringFilter(hub, requestResolver));
+            new FilterRegistrationBean<>(
+                new SentrySpringFilter(hub, requestResolver, transactionNameProvider));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE);
         return filter;
       }
@@ -198,9 +223,9 @@ public class SentryAutoConfiguration {
       @Conditional(SentryTracingCondition.class)
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
-          final @NotNull IHub hub) {
+          final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
         FilterRegistrationBean<SentryTracingFilter> filter =
-            new FilterRegistrationBean<>(new SentryTracingFilter(hub));
+            new FilterRegistrationBean<>(new SentryTracingFilter(hub, transactionNameProvider));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE + 1); // must run after SentrySpringFilter
         return filter;
       }
@@ -209,8 +234,11 @@ public class SentryAutoConfiguration {
       @ConditionalOnMissingBean
       @ConditionalOnClass(HandlerExceptionResolver.class)
       public @NotNull SentryExceptionResolver sentryExceptionResolver(
-          final @NotNull IHub sentryHub, final @NotNull SentryProperties options) {
-        return new SentryExceptionResolver(sentryHub, options.getExceptionResolverOrder());
+          final @NotNull IHub sentryHub,
+          final @NotNull TransactionNameProvider transactionNameProvider,
+          final @NotNull SentryProperties options) {
+        return new SentryExceptionResolver(
+            sentryHub, transactionNameProvider, options.getExceptionResolverOrder());
       }
     }
 
@@ -287,10 +315,6 @@ public class SentryAutoConfiguration {
     public SentryTracingCondition() {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
-
-    @ConditionalOnProperty(name = "sentry.enable-tracing", havingValue = "true")
-    @SuppressWarnings("UnusedNestedClass")
-    private static class SentryTracingEnabled {}
 
     @ConditionalOnProperty(name = "sentry.traces-sample-rate")
     @SuppressWarnings("UnusedNestedClass")

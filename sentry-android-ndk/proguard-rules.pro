@@ -1,6 +1,10 @@
 ##---------------Begin: proguard configuration for NDK  ----------
 
--keep class io.sentry.android.ndk.** { *; }
+# The Android SDK checks at runtime if this class is available via Class.forName
+-keep class io.sentry.android.ndk.SentryNdk { *; }
+# The JNI layer uses this classes through reflection
+-keep class io.sentry.android.core.SentryAndroidOptions { *; }
+-keep class io.sentry.protocol.DebugImage { *; }
 
 # For native methods, see http://proguard.sourceforge.net/manual/examples.html#native
 -keepclasseswithmembernames,includedescriptorclasses class * {

@@ -8,7 +8,7 @@ public final class io/sentry/android/core/ActivityFramesTracker {
 }
 
 public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/IBuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;)V
+	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
@@ -58,10 +58,14 @@ public final class io/sentry/android/core/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/android/core/BuildInfoProvider : io/sentry/android/core/IBuildInfoProvider {
-	public fun <init> ()V
+public final class io/sentry/android/core/BuildInfoProvider {
+	public fun <init> (Lio/sentry/ILogger;)V
 	public fun getBuildTags ()Ljava/lang/String;
+	public fun getManufacturer ()Ljava/lang/String;
+	public fun getModel ()Ljava/lang/String;
 	public fun getSdkInfoVersion ()I
+	public fun getVersionRelease ()Ljava/lang/String;
+	public fun isEmulator ()Ljava/lang/Boolean;
 }
 
 public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : io/sentry/Integration, java/io/Closeable {
@@ -69,11 +73,6 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 	public fun close ()V
 	public static fun getOutboxFileObserver ()Lio/sentry/android/core/EnvelopeFileObserverIntegration;
 	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
-}
-
-public abstract interface class io/sentry/android/core/IBuildInfoProvider {
-	public abstract fun getBuildTags ()Ljava/lang/String;
-	public abstract fun getSdkInfoVersion ()I
 }
 
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {
@@ -101,6 +100,19 @@ public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/core/ScreenshotEventProcessor : android/app/Application$ActivityLifecycleCallbacks, io/sentry/EventProcessor, java/io/Closeable {
+	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun close ()V
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
+	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
 public final class io/sentry/android/core/SentryAndroid {
 	public static fun init (Landroid/content/Context;)V
 	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;)V
@@ -113,8 +125,10 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun enableAllAutoBreadcrumbs (Z)V
 	public fun getAnrTimeoutIntervalMillis ()J
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
+	public fun getProfilingTracesIntervalMillis ()I
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
+	public fun isAttachScreenshot ()Z
 	public fun isEnableActivityLifecycleBreadcrumbs ()Z
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
 	public fun isEnableAppComponentBreadcrumbs ()Z
@@ -122,9 +136,11 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableUserInteractionBreadcrumbs ()Z
+	public fun isEnableUserInteractionTracing ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
+	public fun setAttachScreenshot (Z)V
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
 	public fun setEnableActivityLifecycleTracingAutoFinish (Z)V
@@ -133,6 +149,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableUserInteractionBreadcrumbs (Z)V
+	public fun setEnableUserInteractionTracing (Z)V
+	public fun setProfilingTracesIntervalMillis (I)V
 }
 
 public final class io/sentry/android/core/SentryInitProvider : android/content/ContentProvider {

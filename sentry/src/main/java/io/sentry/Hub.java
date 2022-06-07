@@ -1,12 +1,14 @@
 package io.sentry;
 
 import io.sentry.Stack.StackItem;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.ExceptionUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.io.Closeable;
@@ -55,7 +57,7 @@ public final class Hub implements IHub {
     Objects.requireNonNull(options, "SentryOptions is required.");
     if (options.getDsn() == null || options.getDsn().isEmpty()) {
       throw new IllegalArgumentException(
-          "Hub requires a DSN to be instantiated. Considering using the NoOpHub is no DSN is available.");
+          "Hub requires a DSN to be instantiated. Considering using the NoOpHub if no DSN is available.");
     }
   }
 
@@ -73,7 +75,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Hint hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -125,7 +127,7 @@ public final class Hub implements IHub {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureEnvelope(
-      final @NotNull SentryEnvelope envelope, final @Nullable Object hint) {
+      final @NotNull SentryEnvelope envelope, final @Nullable Hint hint) {
     Objects.requireNonNull(envelope, "SentryEnvelope is required.");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -151,7 +153,7 @@ public final class Hub implements IHub {
 
   @Override
   public @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Object hint) {
+      final @NotNull Throwable throwable, final @Nullable Hint hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -233,10 +235,14 @@ public final class Hub implements IHub {
         // single envelope
         // Or create the envelope here with both items and call `captureEnvelope`
         if (pair.getPrevious() != null) {
-          item.getClient().captureSession(pair.getPrevious(), new SessionEndHint());
+          final Hint hint = HintUtils.createWithTypeCheckHint(new SessionEndHint());
+
+          item.getClient().captureSession(pair.getPrevious(), hint);
         }
 
-        item.getClient().captureSession(pair.getCurrent(), new SessionStartHint());
+        final Hint hint = HintUtils.createWithTypeCheckHint(new SessionStartHint());
+
+        item.getClient().captureSession(pair.getCurrent(), hint);
       } else {
         options.getLogger().log(SentryLevel.WARNING, "Session could not be started.");
       }
@@ -253,7 +259,9 @@ public final class Hub implements IHub {
       final StackItem item = this.stack.peek();
       final Session previousSession = item.getScope().endSession();
       if (previousSession != null) {
-        item.getClient().captureSession(previousSession, new SessionEndHint());
+        final Hint hint = HintUtils.createWithTypeCheckHint(new SessionEndHint());
+
+        item.getClient().captureSession(previousSession, hint);
       }
     }
   }
@@ -271,7 +279,7 @@ public final class Hub implements IHub {
             ((Closeable) integration).close();
           }
         }
-        options.getExecutorService().close(options.getShutdownTimeout());
+        options.getExecutorService().close(options.getShutdownTimeoutMillis());
 
         // Close the top-most client
         final StackItem item = stack.peek();
@@ -285,7 +293,7 @@ public final class Hub implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
+  public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Hint hint) {
     if (!isEnabled()) {
       options
           .getLogger()
@@ -538,7 +546,8 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Object hint) {
+      final @Nullable Hint hint,
+      final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -564,12 +573,17 @@ public final class Hub implements IHub {
                   SentryLevel.DEBUG,
                   "Transaction %s was dropped due to sampling decision.",
                   transaction.getEventId());
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Transaction);
         } else {
           StackItem item = null;
           try {
             item = stack.peek();
             sentryId =
-                item.getClient().captureTransaction(transaction, traceState, item.getScope(), hint);
+                item.getClient()
+                    .captureTransaction(
+                        transaction, traceState, item.getScope(), hint, profilingTraceData);
           } catch (Throwable e) {
             options
                 .getLogger()
@@ -590,7 +604,7 @@ public final class Hub implements IHub {
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, null, false, null);
+        transactionContext, customSamplingContext, bindToScope, null, false, null, false, null);
   }
 
   @ApiStatus.Internal
@@ -601,7 +615,14 @@ public final class Hub implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp) {
     return createTransaction(
-        transactionContext, customSamplingContext, bindToScope, startTimestamp, false, null);
+        transactionContext,
+        customSamplingContext,
+        bindToScope,
+        startTimestamp,
+        false,
+        null,
+        false,
+        null);
   }
 
   @ApiStatus.Internal
@@ -612,6 +633,8 @@ public final class Hub implements IHub {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return createTransaction(
         transactionContexts,
@@ -619,6 +642,8 @@ public final class Hub implements IHub {
         bindToScope,
         startTimestamp,
         waitForChildren,
+        idleTimeout,
+        trimEnd,
         transactionFinishedCallback);
   }
 
@@ -628,6 +653,8 @@ public final class Hub implements IHub {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
 
@@ -657,7 +684,16 @@ public final class Hub implements IHub {
               this,
               startTimestamp,
               waitForChildren,
+              idleTimeout,
+              trimEnd,
               transactionFinishedCallback);
+
+      // The listener is called only if the transaction exists, as the transaction is needed to
+      // stop it
+      if (samplingDecision && options.isProfilingEnabled()) {
+        final ITransactionProfiler transactionProfiler = options.getTransactionProfiler();
+        transactionProfiler.onTransactionStart(transaction);
+      }
     }
     if (bindToScope) {
       configureScope(scope -> scope.setTransaction(transaction));

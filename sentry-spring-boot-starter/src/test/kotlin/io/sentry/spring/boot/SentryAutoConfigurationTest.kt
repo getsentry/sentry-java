@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
+import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Integration
@@ -20,6 +21,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.protocol.User
+import io.sentry.spring.ContextTagsEventProcessor
 import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryExceptionResolver
 import io.sentry.spring.SentryUserFilter
@@ -31,6 +33,7 @@ import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
+import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
@@ -145,7 +148,6 @@ class SentryAutoConfigurationTest {
             "sentry.proxy.port=8090",
             "sentry.proxy.user=proxy-user",
             "sentry.proxy.pass=proxy-pass",
-            "sentry.enable-tracing=true",
             "sentry.traces-sample-rate=0.3",
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
@@ -154,7 +156,7 @@ class SentryAutoConfigurationTest {
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
-            assertThat(options.shutdownTimeout).isEqualTo(20)
+            assertThat(options.shutdownTimeoutMillis).isEqualTo(20)
             assertThat(options.flushTimeoutMillis).isEqualTo(30)
             assertThat(options.isDebug).isTrue()
             assertThat(options.diagnosticLevel).isEqualTo(SentryLevel.INFO)
@@ -174,7 +176,6 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.port).isEqualTo("8090")
             assertThat(options.proxy!!.user).isEqualTo("proxy-user")
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
-            assertThat(options.isEnableTracing).isTrue()
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
@@ -185,11 +186,9 @@ class SentryAutoConfigurationTest {
     @Test
     fun `when traces sample rate is set to null and tracing is enabled, traces sample rate should be set to 0`() {
         contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.enable-tracing=true"
+            "sentry.dsn=http://key@localhost/proj"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
-            assertThat(options.isEnableTracing).isTrue()
             assertThat(options.tracesSampleRate).isNotNull().isEqualTo(0.0)
         }
     }
@@ -198,11 +197,9 @@ class SentryAutoConfigurationTest {
     fun `when traces sample rate is set to a value and tracing is enabled, traces sample rate should not be overwritten`() {
         contextRunner.withPropertyValues(
             "sentry.dsn=http://key@localhost/proj",
-            "sentry.enable-tracing=true",
             "sentry.traces-sample-rate=0.3"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
-            assertThat(options.isEnableTracing).isTrue()
             assertThat(options.tracesSampleRate).isNotNull().isEqualTo(0.3)
         }
     }
@@ -375,7 +372,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled, creates tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasBean("sentryTracingFilter")
             }
@@ -391,7 +388,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when enable tracing is set to false and traces sample rate is set, creates tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=false", "sentry.traces-sample-rate=0.2")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=0.2")
             .run {
                 assertThat(it).hasBean("sentryTracingFilter")
             }
@@ -424,7 +421,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is disabled, does not create tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=false")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 assertThat(it).doesNotHaveBean("sentryTracingFilter")
             }
@@ -432,7 +429,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and sentryTracingFilter already exists, does not create tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withUserConfiguration(CustomSentryTracingFilter::class.java)
             .run {
                 assertThat(it).hasBean("sentryTracingFilter")
@@ -448,7 +445,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled creates AOP beans to support @SentryTransaction`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasSentryTransactionBeans()
             }
@@ -473,7 +470,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is disabled, does not create AOP beans to support @SentryTransaction`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=false")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 assertThat(it).doesNotHaveSentryTransactionBeans()
             }
@@ -481,7 +478,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when Spring AOP is not on the classpath, does not create AOP beans to support @SentryTransaction`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
             .run {
                 assertThat(it).doesNotHaveSentryTransactionBeans()
@@ -490,7 +487,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and custom sentryTransactionPointcut is provided, sentryTransactionPointcut bean is not created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withUserConfiguration(CustomSentryPerformancePointcutConfiguration::class.java)
             .run {
                 assertThat(it).hasBean("sentryTransactionPointcut")
@@ -501,7 +498,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled creates AOP beans to support @SentrySpan`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasSentrySpanBeans()
             }
@@ -526,7 +523,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is disabled, does not create AOP beans to support @Span`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=false")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 assertThat(it).doesNotHaveSentrySpanBeans()
             }
@@ -534,7 +531,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when Spring AOP is not on the classpath, does not create AOP beans to support @SentrySpan`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
             .run {
                 assertThat(it).doesNotHaveSentrySpanBeans()
@@ -543,7 +540,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and custom sentrySpanPointcut is provided, sentrySpanPointcut bean is not created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withUserConfiguration(CustomSentryPerformancePointcutConfiguration::class.java)
             .run {
                 assertThat(it).hasBean("sentrySpanPointcut")
@@ -554,7 +551,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and RestTemplate is on the classpath, SentrySpanRestTemplateCustomizer bean is created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasSingleBean(SentrySpanRestTemplateCustomizer::class.java)
             }
@@ -562,7 +559,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and RestTemplate is not on the classpath, SentrySpanRestTemplateCustomizer bean is not created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withClassLoader(FilteredClassLoader(RestTemplate::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentrySpanRestTemplateCustomizer::class.java)
@@ -571,7 +568,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and WebClient is on the classpath, SentrySpanWebClientCustomizer bean is created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .run {
                 assertThat(it).hasSingleBean(SentrySpanWebClientCustomizer::class.java)
             }
@@ -579,7 +576,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when tracing is enabled and WebClient is not on the classpath, SentrySpanWebClientCustomizer bean is not created`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-tracing=true")
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
             .withClassLoader(FilteredClassLoader(WebClient::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentrySpanWebClientCustomizer::class.java)
@@ -620,6 +617,27 @@ class SentryAutoConfigurationTest {
                 assertThat(it.getBean(SentryOptions::class.java).transportFactory)
                     .isNotInstanceOf(ApacheHttpClientTransportFactory::class.java)
                     .isNotInstanceOf(NoOpTransportFactory::class.java)
+            }
+    }
+
+    @Test
+    fun `when MDC is on the classpath, creates ContextTagsEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it).hasSingleBean(ContextTagsEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).anyMatch { processor -> processor.javaClass == ContextTagsEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when MDC is not on the classpath, does not create ContextTagsEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(MDC::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(ContextTagsEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == ContextTagsEventProcessor::class.java }
             }
     }
 
@@ -667,7 +685,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
-        override fun execute(event: SentryEvent, hint: Any?): SentryEvent? = null
+        override fun execute(event: SentryEvent, hint: Hint): SentryEvent? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -678,7 +696,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomBeforeBreadcrumbCallback : SentryOptions.BeforeBreadcrumbCallback {
-        override fun execute(breadcrumb: Breadcrumb, hint: Any?): Breadcrumb? = null
+        override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? = null
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -689,7 +707,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomEventProcessor : EventProcessor {
-        override fun process(event: SentryEvent, hint: Any?) = null
+        override fun process(event: SentryEvent, hint: Hint) = null
     }
 
     @Configuration(proxyBeanMethods = false)

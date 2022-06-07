@@ -1,11 +1,14 @@
 package io.sentry.android.okhttp
 
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SpanStatus
 import io.sentry.TracingOrigins
+import io.sentry.TypeCheckHint.OKHTTP_REQUEST
+import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
@@ -59,10 +62,18 @@ class SentryOkHttpInterceptor(
             request.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("request_body_size", it)
             }
-            response?.body?.contentLength().ifHasValidLength {
-                breadcrumb.setData("response_body_size", it)
+
+            val hint = Hint()
+                .also { it.set(OKHTTP_REQUEST, request) }
+            response?.let {
+                it.body?.contentLength().ifHasValidLength { responseBodySize ->
+                    breadcrumb.setData("response_body_size", responseBodySize)
+                }
+
+                hint[OKHTTP_RESPONSE] = it
             }
-            hub.addBreadcrumb(breadcrumb)
+
+            hub.addBreadcrumb(breadcrumb, hint)
         }
     }
 

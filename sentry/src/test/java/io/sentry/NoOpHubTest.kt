@@ -17,22 +17,26 @@ class NoOpHubTest {
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
 
     @Test
-    fun `addBreadcrumb is doesn't throw on null breadcrumb`() =
+    fun `addBreadcrumb doesn't throw on null breadcrumb`() =
         sut.addBreadcrumb("breadcrumb")
 
     @Test
     fun `hub is always disabled`() = assertFalse(sut.isEnabled)
 
     @Test
-    fun `hub is returns empty SentryId`() =
+    fun `captureEvent returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.captureEvent(SentryEvent()))
 
     @Test
-    fun `captureException is returns empty SentryId`() =
+    fun `captureTransaction returns empty SentryId`() =
+        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Hint>()))
+
+    @Test
+    fun `captureException returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.captureException(RuntimeException()))
 
     @Test
-    fun `captureMessage is returns empty SentryId`() =
+    fun `captureMessage returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.captureMessage("message"))
 
     @Test

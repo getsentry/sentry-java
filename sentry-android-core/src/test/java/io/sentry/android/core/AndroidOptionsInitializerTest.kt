@@ -76,8 +76,8 @@ class AndroidOptionsInitializerTest {
             )
         }
 
-        private fun createBuildInfo(minApi: Int = 16): IBuildInfoProvider {
-            val buildInfo = mock<IBuildInfoProvider>()
+        private fun createBuildInfo(minApi: Int = 16): BuildInfoProvider {
+            val buildInfo = mock<BuildInfoProvider>()
             whenever(buildInfo.sdkInfoVersion).thenReturn(minApi)
             return buildInfo
         }
@@ -133,6 +133,14 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `ScreenshotEventProcessor added to processors list`() {
+        fixture.initSut()
+        val actual =
+            fixture.sentryOptions.eventProcessors.any { it is ScreenshotEventProcessor }
+        assertNotNull(actual)
+    }
+
+    @Test
     fun `envelopesDir should be set at initialization`() {
         fixture.initSut()
 
@@ -141,6 +149,18 @@ class AndroidOptionsInitializerTest {
                 "${File.separator}cache${File.separator}sentry"
             )!!
         )
+    }
+
+    @Test
+    fun `profilingTracesDirPath should be set at initialization`() {
+        fixture.initSut()
+
+        assertTrue(
+            fixture.sentryOptions.profilingTracesDirPath?.endsWith(
+                "${File.separator}cache${File.separator}sentry${File.separator}profiling_traces"
+            )!!
+        )
+        assertFalse(File(fixture.sentryOptions.profilingTracesDirPath!!).exists())
     }
 
     @Test
@@ -216,6 +236,14 @@ class AndroidOptionsInitializerTest {
 
         assertNotNull(fixture.sentryOptions.transportGate)
         assertTrue(fixture.sentryOptions.transportGate is AndroidTransportGate)
+    }
+
+    @Test
+    fun `init should set Android transaction profiler`() {
+        fixture.initSut()
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
     }
 
     @Test

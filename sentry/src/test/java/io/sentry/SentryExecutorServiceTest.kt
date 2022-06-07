@@ -6,8 +6,8 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import org.awaitility.kotlin.await
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -16,15 +16,23 @@ class SentryExecutorServiceTest {
 
     @Test
     fun `SentryExecutorService forwards submit call to ExecutorService`() {
-        val executor = mock<ExecutorService>()
+        val executor = mock<ScheduledExecutorService>()
         val sentryExecutor = SentryExecutorService(executor)
         sentryExecutor.submit {}
         verify(executor).submit(any())
     }
 
     @Test
+    fun `SentryExecutorService forwards schedule call to ExecutorService`() {
+        val executor = mock<ScheduledExecutorService>()
+        val sentryExecutor = SentryExecutorService(executor)
+        sentryExecutor.schedule({}, 0L)
+        verify(executor).schedule(any(), any(), any())
+    }
+
+    @Test
     fun `SentryExecutorService forwards close call to ExecutorService`() {
-        val executor = mock<ExecutorService>()
+        val executor = mock<ScheduledExecutorService>()
         val sentryExecutor = SentryExecutorService(executor)
         whenever(executor.isShutdown).thenReturn(false)
         whenever(executor.awaitTermination(any(), any())).thenReturn(true)
@@ -34,7 +42,7 @@ class SentryExecutorServiceTest {
 
     @Test
     fun `SentryExecutorService forwards close and call shutdownNow if not enough time`() {
-        val executor = mock<ExecutorService>()
+        val executor = mock<ScheduledExecutorService>()
         val sentryExecutor = SentryExecutorService(executor)
         whenever(executor.isShutdown).thenReturn(false)
         whenever(executor.awaitTermination(any(), any())).thenReturn(false)
@@ -44,7 +52,7 @@ class SentryExecutorServiceTest {
 
     @Test
     fun `SentryExecutorService forwards close and call shutdownNow if await throws`() {
-        val executor = mock<ExecutorService>()
+        val executor = mock<ScheduledExecutorService>()
         val sentryExecutor = SentryExecutorService(executor)
         whenever(executor.isShutdown).thenReturn(false)
         whenever(executor.awaitTermination(any(), any())).thenThrow(InterruptedException())
@@ -54,7 +62,7 @@ class SentryExecutorServiceTest {
 
     @Test
     fun `SentryExecutorService forwards close but do not shutdown if its already closed`() {
-        val executor = mock<ExecutorService>()
+        val executor = mock<ScheduledExecutorService>()
         val sentryExecutor = SentryExecutorService(executor)
         whenever(executor.isShutdown).thenReturn(true)
         sentryExecutor.close(15000)
@@ -63,7 +71,7 @@ class SentryExecutorServiceTest {
 
     @Test
     fun `SentryExecutorService forwards close call to ExecutorService and close it`() {
-        val executor = Executors.newSingleThreadExecutor()
+        val executor = Executors.newSingleThreadScheduledExecutor()
         val sentryExecutor = SentryExecutorService(executor)
         sentryExecutor.close(15000)
         assertTrue(executor.isShutdown)

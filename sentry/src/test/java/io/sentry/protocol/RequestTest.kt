@@ -47,7 +47,7 @@ class RequestTest {
         request.others!!["others"] = "newOthers"
         request.others!!["anotherOne"] = "anotherOne"
         val newUnknown = mapOf(Pair("unknown", "newUnknown"), Pair("otherUnknown", "otherUnknown"))
-        request.acceptUnknownProperties(newUnknown)
+        request.setUnknown(newUnknown)
 
         assertEquals("get", clone.method)
         assertEquals("http://localhost:8080", clone.url)
@@ -110,7 +110,7 @@ class RequestTest {
             val others = mutableMapOf(Pair("others", "others"))
             setOthers(others)
             val unknown = mapOf(Pair("unknown", "unknown"))
-            acceptUnknownProperties(unknown)
+            setUnknown(unknown)
         }
     }
 }

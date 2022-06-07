@@ -1,7 +1,12 @@
 package io.sentry.jul;
 
+import static io.sentry.TypeCheckHint.JUL_LOG_RECORD;
+import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
+import io.sentry.HubAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -75,10 +80,16 @@ public class SentryHandler extends Handler {
     }
     try {
       if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
-        Sentry.captureEvent(createEvent(record));
+        final Hint hint = new Hint();
+        hint.set(SENTRY_SYNTHETIC_EXCEPTION, record);
+
+        Sentry.captureEvent(createEvent(record), hint);
       }
       if (record.getLevel().intValue() >= minimumBreadcrumbLevel.intValue()) {
-        Sentry.addBreadcrumb(createBreadcrumb(record));
+        final Hint hint = new Hint();
+        hint.set(JUL_LOG_RECORD, record);
+
+        Sentry.addBreadcrumb(createBreadcrumb(record), hint);
       }
     } catch (RuntimeException e) {
       reportError(
@@ -190,7 +201,23 @@ public class SentryHandler extends Handler {
       mdcProperties =
           CollectionUtils.filterMapEntries(mdcProperties, entry -> entry.getValue() != null);
       if (!mdcProperties.isEmpty()) {
-        event.getContexts().put("MDC", mdcProperties);
+        // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
+        // initialized somewhere else
+        final List<String> contextTags = HubAdapter.getInstance().getOptions().getContextTags();
+        if (!contextTags.isEmpty()) {
+          for (final String contextTag : contextTags) {
+            // if mdc tag is listed in SentryOptions, apply as event tag
+            if (mdcProperties.containsKey(contextTag)) {
+              event.setTag(contextTag, mdcProperties.get(contextTag));
+              // remove from all tags applied to logging event
+              mdcProperties.remove(contextTag);
+            }
+          }
+        }
+        // put the rest of mdc tags in contexts
+        if (!mdcProperties.isEmpty()) {
+          event.getContexts().put("MDC", mdcProperties);
+        }
       }
     }
     event.setExtra(THREAD_ID, record.getThreadID());

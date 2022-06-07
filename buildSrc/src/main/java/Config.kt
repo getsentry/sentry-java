@@ -1,15 +1,14 @@
 import java.math.BigDecimal
 
 object Config {
-    val kotlinVersion = "1.4.32"
+    val kotlinVersion = "1.5.31"
     val kotlinStdLib = "stdlib-jdk8"
 
-    val springBootVersion = "2.4.4"
-    // Spring is currently not compatible with Kotlin 1.4
-    val springKotlinCompatibleLanguageVersion = "1.3"
+    val springBootVersion = "2.6.8"
+    val kotlinCompatibleLanguageVersion = "1.4"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.1.2"
+        val androidGradle = "com.android.tools.build:gradle:7.2.0"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -40,15 +39,12 @@ object Config {
 
     object Libs {
         val okHttpVersion = "4.9.2"
-        val appCompat = "androidx.appcompat:appcompat:1.2.0"
+        val appCompat = "androidx.appcompat:appcompat:1.3.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
         val okhttp = "com.squareup.okhttp3:okhttp"
-        // only bump gson if https://github.com/google/gson/issues/1597 is fixed
-        private val gsonVersion = "2.8.5"
-        val gsonDep = "com.google.code.gson:gson"
-        val gson = "$gsonDep:$gsonVersion"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
+        val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.3"
 
         private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
@@ -57,6 +53,7 @@ object Config {
         val androidxRecylerView = "androidx.recyclerview:recyclerview:1.2.1"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
+        val slf4jJdk14 = "org.slf4j:slf4j-jdk14:1.7.30"
         val logbackVersion = "1.2.9"
         val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
 
@@ -79,6 +76,7 @@ object Config {
         val springAop = "org.springframework:spring-aop"
         val aspectj = "org.aspectj:aspectjweaver"
         val servletApi = "javax.servlet:javax.servlet-api:3.1.0"
+        val servletApiJakarta = "jakarta.servlet:jakarta.servlet-api:5.0.0"
 
         val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.4"
 
@@ -114,12 +112,19 @@ object Config {
     }
 
     object TestLibs {
-        private val androidxTestVersion = "1.4.0-rc01"
+        private val androidxTestVersion = "1.4.0"
+        private val espressoVersion = "3.4.0"
 
+        val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
         val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxJunit = "androidx.test.ext:junit:1.1.3-rc01"
+        val androidxTestCoreKtx = "androidx.test:core-ktx:$androidxTestVersion"
+        val androidxTestRules = "androidx.test:rules:$androidxTestVersion"
+        val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
+        val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
+        val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.1"
+        val androidxJunit = "androidx.test.ext:junit:1.1.3"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val robolectric = "org.robolectric:robolectric:4.7.3"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"

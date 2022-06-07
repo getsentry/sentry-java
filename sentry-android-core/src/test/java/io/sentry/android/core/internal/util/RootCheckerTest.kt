@@ -9,7 +9,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
-import io.sentry.android.core.IBuildInfoProvider
+import io.sentry.android.core.BuildInfoProvider
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
@@ -24,7 +24,7 @@ class RootCheckerTest {
     private class Fixture {
         val context = mock<Context>()
         val logger = mock<ILogger>()
-        val buildInfoProvider = mock<IBuildInfoProvider>()
+        val buildInfoProvider = mock<BuildInfoProvider>()
         val packageManager = mock<PackageManager>()
         val runtime = mock<Runtime>()
 

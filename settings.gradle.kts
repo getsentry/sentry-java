@@ -18,6 +18,7 @@ include(
     "sentry-logback",
     "sentry-jul",
     "sentry-servlet",
+    "sentry-servlet-jakarta",
     "sentry-apache-http-client-5",
     "sentry-spring",
     "sentry-spring-boot-starter",
@@ -35,7 +36,9 @@ include(
     "sentry-samples:sentry-samples-spring",
     "sentry-samples:sentry-samples-spring-boot",
     "sentry-samples:sentry-samples-spring-boot-webflux",
-    "sentry-samples:sentry-samples-netflix-dgs"
+    "sentry-samples:sentry-samples-netflix-dgs",
+    "sentry-android-integration-tests:sentry-uitest-android-benchmark",
+    "sentry-android-integration-tests:sentry-uitest-android"
 )
 
 gradle.beforeProject {

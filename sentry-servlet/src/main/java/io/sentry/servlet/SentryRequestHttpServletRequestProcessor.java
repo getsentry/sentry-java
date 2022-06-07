@@ -1,6 +1,7 @@
 package io.sentry.servlet;
 
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.protocol.Request;
 import io.sentry.util.Objects;
@@ -29,7 +30,7 @@ final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
   // httpRequest.getRequestURL() returns StringBuffer which is considered an obsolete class.
   @SuppressWarnings("JdkObsolete")
   @Override
-  public @NotNull SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
     final Request sentryRequest = new Request();
     sentryRequest.setMethod(httpRequest.getMethod());
     sentryRequest.setQueryString(httpRequest.getQueryString());

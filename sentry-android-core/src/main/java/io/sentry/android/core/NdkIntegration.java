@@ -40,9 +40,9 @@ public final class NdkIntegration implements Integration, Closeable {
     // up by another integration (EnvelopeFileObserverIntegration).
     if (enabled && sentryNdkClass != null) {
       final String cachedDir = this.options.getCacheDirPath();
-      if (cachedDir == null || cachedDir.isEmpty()) {
+      if (cachedDir == null) {
         this.options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
-        this.options.setEnableNdk(false);
+        disableNdkIntegration(this.options);
         return;
       }
 
@@ -54,17 +54,22 @@ public final class NdkIntegration implements Integration, Closeable {
 
         this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
       } catch (NoSuchMethodException e) {
-        this.options.setEnableNdk(false);
+        disableNdkIntegration(this.options);
         this.options
             .getLogger()
             .log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.init method.", e);
       } catch (Throwable e) {
-        this.options.setEnableNdk(false);
+        disableNdkIntegration(this.options);
         this.options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
       }
     } else {
-      this.options.setEnableNdk(false);
+      disableNdkIntegration(this.options);
     }
+  }
+
+  private void disableNdkIntegration(final @NotNull SentryOptions options) {
+    options.setEnableNdk(false);
+    options.setEnableScopeSync(false);
   }
 
   @TestOnly
@@ -88,7 +93,7 @@ public final class NdkIntegration implements Integration, Closeable {
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Failed to close SentryNdk.", e);
       } finally {
-        this.options.setEnableNdk(false);
+        disableNdkIntegration(this.options);
       }
     }
   }

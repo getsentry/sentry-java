@@ -19,13 +19,13 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
 
   private @Nullable SentryAndroidOptions options;
 
-  private final @NotNull IHandler handler;
+  private final @NotNull MainLooperHandler handler;
 
   public AppLifecycleIntegration() {
     this(new MainLooperHandler());
   }
 
-  AppLifecycleIntegration(final @NotNull IHandler handler) {
+  AppLifecycleIntegration(final @NotNull MainLooperHandler handler) {
     this.handler = handler;
   }
 

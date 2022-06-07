@@ -16,7 +16,7 @@ class DeviceTest {
         device.bootTime = Date()
         device.timezone = TimeZone.getDefault()
         val unknown = mapOf(Pair("unknown", "unknown"))
-        device.acceptUnknownProperties(unknown)
+        device.setUnknown(unknown)
 
         val clone = Device(device)
 
@@ -61,8 +61,9 @@ class DeviceTest {
         device.language = "language"
         device.connectionType = "connection type"
         device.batteryTemperature = 30f
+        device.locale = "en-US"
         val unknown = mapOf(Pair("unknown", "unknown"))
-        device.acceptUnknownProperties(unknown)
+        device.setUnknown(unknown)
 
         val clone = Device(device)
 
@@ -98,6 +99,7 @@ class DeviceTest {
         assertEquals("language", clone.language)
         assertEquals("connection type", clone.connectionType)
         assertEquals(30f, clone.batteryTemperature)
+        assertEquals("en-US", clone.locale)
         assertNotNull(clone.unknown) {
             assertEquals("unknown", it["unknown"])
         }

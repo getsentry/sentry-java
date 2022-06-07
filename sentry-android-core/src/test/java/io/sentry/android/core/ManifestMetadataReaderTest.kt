@@ -549,16 +549,46 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads enableScopeSync to options`() {
+    fun `applyMetadata reads SDK name from metadata`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.NDK_SCOPE_SYNC_ENABLE to true)
+        val expectedValue = "custom.sdk"
+
+        val bundle = bundleOf(ManifestMetadataReader.SDK_NAME to expectedValue)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(fixture.options.isEnableScopeSync)
+        assertEquals(expectedValue, fixture.options.sdkVersion?.name)
+    }
+
+    @Test
+    fun `applyMetadata reads SDK version from metadata`() {
+        // Arrange
+        val expectedValue = "1.2.3-alpha.0"
+
+        val bundle = bundleOf(ManifestMetadataReader.SDK_VERSION to expectedValue)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(expectedValue, fixture.options.sdkVersion?.version)
+    }
+
+    @Test
+    fun `applyMetadata reads enableScopeSync to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.NDK_SCOPE_SYNC_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isEnableScopeSync)
     }
 
     @Test
@@ -570,7 +600,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(fixture.options.isEnableScopeSync)
+        assertTrue(fixture.options.isEnableScopeSync)
     }
 
     @Test
@@ -690,6 +720,31 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads enableTracesProfiling to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACES_PROFILING_ENABLE to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isProfilingEnabled)
+    }
+
+    @Test
+    fun `applyMetadata reads enableTracesProfiling to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isProfilingEnabled)
+    }
+
+    @Test
     fun `applyMetadata reads tracingOrigins to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """localhost,^(http|https)://api\..*$""")
@@ -762,5 +817,106 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertTrue(fixture.options.isEnableUserInteractionBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads attach screenshots to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ATTACH_SCREENSHOT to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isAttachScreenshot)
+    }
+
+    @Test
+    fun `applyMetadata reads attach screenshots and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isAttachScreenshot)
+    }
+
+    @Test
+    fun `applyMetadata reads send client reports to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.CLIENT_REPORTS_ENABLE to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isSendClientReports)
+    }
+
+    @Test
+    fun `applyMetadata reads send client reports and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isSendClientReports)
+    }
+
+    @Test
+    fun `applyMetadata reads user interaction tracing to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACES_UI_ENABLE to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.isEnableUserInteractionTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads user interaction tracing and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertFalse(fixture.options.isEnableUserInteractionTracing)
+    }
+
+    @Test
+    fun `applyMetadata reads idleTimeout from metadata`() {
+        // Arrange
+        val expectedIdleTimeout = 1500
+        val bundle = bundleOf(ManifestMetadataReader.IDLE_TIMEOUT to expectedIdleTimeout)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(expectedIdleTimeout.toLong(), fixture.options.idleTimeout)
+    }
+
+    @Test
+    fun `applyMetadata without specifying idleTimeout, stays default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(3000L, fixture.options.idleTimeout)
     }
 }

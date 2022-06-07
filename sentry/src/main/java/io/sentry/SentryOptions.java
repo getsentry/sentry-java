@@ -2,18 +2,20 @@ package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.cache.IEnvelopeCache;
-import io.sentry.config.PropertiesProvider;
+import io.sentry.clientreport.ClientReportRecorder;
+import io.sentry.clientreport.IClientReportRecorder;
+import io.sentry.clientreport.NoOpClientReportRecorder;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
+import io.sentry.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,9 +33,6 @@ public class SentryOptions {
 
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
-
-  /** The default HTTP proxy port to use if an HTTP Proxy hostname is set but port is not. */
-  private static final String PROXY_PORT_DEFAULT = "80";
 
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
@@ -57,12 +56,15 @@ public class SentryOptions {
    */
   private @Nullable String dsn;
 
+  /** dsnHash is used as a subfolder of cacheDirPath to isolate events when rotating DSNs */
+  private @Nullable String dsnHash;
+
   /**
    * Controls how many seconds to wait before shutting down. Sentry SDKs send events from a
    * background queue and this queue is given a certain amount to drain pending events Default is
    * 2000 = 2s
    */
-  private long shutdownTimeout = 2000; // 2s
+  private long shutdownTimeoutMillis = 2000; // 2s
 
   /**
    * Controls how many seconds to wait before flushing down. Sentry SDKs cache events from a
@@ -75,7 +77,7 @@ public class SentryOptions {
    * Turns debug mode on or off. If debug is enabled SDK will attempt to print out useful debugging
    * information if something goes wrong. Default is disabled.
    */
-  private @Nullable Boolean debug;
+  private boolean debug;
 
   /** Turns NDK on or off. Default is enabled. */
   private boolean enableNdk = true;
@@ -87,10 +89,13 @@ public class SentryOptions {
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
   /** Envelope reader interface */
-  private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader();
+  private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader(new JsonSerializer(this));
 
   /** Serializer interface to serialize/deserialize json events */
-  private @NotNull ISerializer serializer = new GsonSerializer(this);
+  private @NotNull ISerializer serializer = new JsonSerializer(this);
+
+  /** Max depth when serializing object graphs with reflection. * */
+  private int maxDepth = 100;
 
   /**
    * Sentry client name used for the HTTP authHeader and userAgent eg
@@ -215,16 +220,14 @@ public class SentryOptions {
   /** Automatically resolve server name. */
   private boolean attachServerName = true;
 
-  /*
-  When enabled, Sentry installs UncaughtExceptionHandlerIntegration.
-   */
-  private @Nullable Boolean enableUncaughtExceptionHandler = true;
+  /** When enabled, Sentry installs UncaughtExceptionHandlerIntegration. */
+  private boolean enableUncaughtExceptionHandler = true;
 
   /*
    * When enabled, UncaughtExceptionHandler will print exceptions (same as java would normally do),
    * if no other UncaughtExceptionHandler was registered before.
    */
-  private @Nullable Boolean printUncaughtStackTrace = false;
+  private boolean printUncaughtStackTrace = false;
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
@@ -253,7 +256,10 @@ public class SentryOptions {
   /** list of scope observers */
   private final @NotNull List<IScopeObserver> observers = new ArrayList<>();
 
-  /** Enable the Java to NDK Scope sync */
+  /**
+   * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
+   * for sentry-android.
+   */
   private boolean enableScopeSync;
 
   /**
@@ -273,7 +279,7 @@ public class SentryOptions {
    * deduplication prevents from receiving the same exception multiple times when there is more than
    * one framework active that captures errors, for example Logback and Spring Boot.
    */
-  private @Nullable Boolean enableDeduplication = true;
+  private boolean enableDeduplication = true;
 
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
@@ -290,6 +296,15 @@ public class SentryOptions {
   /** Controls if the `tracestate` header is attached to envelopes and HTTP client integrations. */
   private boolean traceSampling;
 
+  /** Control if profiling is enabled or not for transactions */
+  private boolean profilingEnabled = false;
+
+  /** Max trace file size in bytes. */
+  private long maxTraceFileSize = 5 * 1024 * 1024;
+
+  /** Listener interface to perform operations when a transaction is started or ended */
+  private @NotNull ITransactionProfiler transactionProfiler = NoOpTransactionProfiler.getInstance();
+
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
@@ -299,80 +314,26 @@ public class SentryOptions {
   private @Nullable String proguardUuid;
 
   /**
-   * Creates {@link SentryOptions} from properties provided by a {@link PropertiesProvider}.
+   * The idle time, measured in ms, to wait until the transaction will be finished. The transaction
+   * will use the end timestamp of the last finished span as the endtime for the transaction.
    *
-   * @param propertiesProvider the properties provider
-   * @return the sentry options
+   * <p>When set to {@code null} the transaction must be finished manually.
+   *
+   * <p>The default is 3 seconds.
    */
-  @SuppressWarnings("unchecked")
-  public static @NotNull SentryOptions from(
-      final @NotNull PropertiesProvider propertiesProvider, final @NotNull ILogger logger) {
-    final SentryOptions options = new SentryOptions();
-    options.setDsn(propertiesProvider.getProperty("dsn"));
-    options.setEnvironment(propertiesProvider.getProperty("environment"));
-    options.setRelease(propertiesProvider.getProperty("release"));
-    options.setDist(propertiesProvider.getProperty("dist"));
-    options.setServerName(propertiesProvider.getProperty("servername"));
-    options.setEnableUncaughtExceptionHandler(
-        propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
-    options.setPrintUncaughtStackTrace(
-        propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
-    options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
-    options.setDebug(propertiesProvider.getBooleanProperty("debug"));
-    options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
-    final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
-    if (maxRequestBodySize != null) {
-      options.setMaxRequestBodySize(
-          RequestSize.valueOf(maxRequestBodySize.toUpperCase(Locale.ROOT)));
-    }
-    final Map<String, String> tags = propertiesProvider.getMap("tags");
-    for (final Map.Entry<String, String> tag : tags.entrySet()) {
-      options.setTag(tag.getKey(), tag.getValue());
-    }
+  private @Nullable Long idleTimeout = 3000L;
 
-    final String proxyHost = propertiesProvider.getProperty("proxy.host");
-    final String proxyUser = propertiesProvider.getProperty("proxy.user");
-    final String proxyPass = propertiesProvider.getProperty("proxy.pass");
-    final String proxyPort = propertiesProvider.getProperty("proxy.port", PROXY_PORT_DEFAULT);
+  /**
+   * Contains a list of context tags names (for example from MDC) that are meant to be applied as
+   * Sentry tags to events.
+   */
+  private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
 
-    if (proxyHost != null) {
-      options.setProxy(new Proxy(proxyHost, proxyPort, proxyUser, proxyPass));
-    }
+  /** Whether to send client reports containing information about number of dropped events. */
+  private boolean sendClientReports = true;
 
-    for (final String inAppInclude : propertiesProvider.getList("in-app-includes")) {
-      options.addInAppInclude(inAppInclude);
-    }
-    for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
-      options.addInAppExclude(inAppExclude);
-    }
-    for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
-      options.addTracingOrigin(tracingOrigin);
-    }
-    options.setProguardUuid(propertiesProvider.getProperty("proguard-uuid"));
-
-    for (final String ignoredExceptionType :
-        propertiesProvider.getList("ignored-exceptions-for-type")) {
-      try {
-        Class<?> clazz = Class.forName(ignoredExceptionType);
-        if (Throwable.class.isAssignableFrom(clazz)) {
-          options.addIgnoredExceptionForType((Class<? extends Throwable>) clazz);
-        } else {
-          logger.log(
-              SentryLevel.WARNING,
-              "Skipping setting %s as ignored-exception-for-type. Reason: %s does not extend Throwable",
-              ignoredExceptionType,
-              ignoredExceptionType);
-        }
-      } catch (ClassNotFoundException e) {
-        logger.log(
-            SentryLevel.WARNING,
-            "Skipping setting %s as ignored-exception-for-type. Reason: %s class is not found",
-            ignoredExceptionType,
-            ignoredExceptionType);
-      }
-    }
-    return options;
-  }
+  /** ClientReportRecorder to track count of lost events / transactions / ... * */
+  @NotNull IClientReportRecorder clientReportRecorder = new ClientReportRecorder(this);
 
   /**
    * Adds an event processor
@@ -424,8 +385,10 @@ public class SentryOptions {
    *
    * @param dsn the DSN
    */
-  public void setDsn(@Nullable String dsn) {
+  public void setDsn(final @Nullable String dsn) {
     this.dsn = dsn;
+
+    dsnHash = StringUtils.calculateStringHash(this.dsn, logger);
   }
 
   /**
@@ -434,7 +397,7 @@ public class SentryOptions {
    * @return true if ON or false otherwise
    */
   public boolean isDebug() {
-    return Boolean.TRUE.equals(debug);
+    return debug;
   }
 
   /**
@@ -442,17 +405,8 @@ public class SentryOptions {
    *
    * @param debug true if ON or false otherwise
    */
-  public void setDebug(final @Nullable Boolean debug) {
+  public void setDebug(final boolean debug) {
     this.debug = debug;
-  }
-
-  /**
-   * Check if debug mode is ON, OFF or not set.
-   *
-   * @return true if ON or false otherwise
-   */
-  private @Nullable Boolean getDebug() {
-    return debug;
   }
 
   /**
@@ -509,6 +463,24 @@ public class SentryOptions {
     this.serializer = serializer != null ? serializer : NoOpSerializer.getInstance();
   }
 
+  /**
+   * Returns the max depth for when serializing object graphs using reflection.
+   *
+   * @return the max depth
+   */
+  public int getMaxDepth() {
+    return maxDepth;
+  }
+
+  /**
+   * Set the max depth for when serializing object graphs using reflection.
+   *
+   * @param maxDepth the max depth
+   */
+  public void setMaxDepth(int maxDepth) {
+    this.maxDepth = maxDepth;
+  }
+
   public @NotNull IEnvelopeReader getEnvelopeReader() {
     return envelopeReader;
   }
@@ -539,10 +511,34 @@ public class SentryOptions {
   /**
    * Returns the shutdown timeout in Millis
    *
+   * @deprecated use {{@link SentryOptions#getShutdownTimeoutMillis()} }
    * @return the timeout in Millis
    */
+  @ApiStatus.ScheduledForRemoval
+  @Deprecated
   public long getShutdownTimeout() {
-    return shutdownTimeout;
+    return shutdownTimeoutMillis;
+  }
+
+  /**
+   * Returns the shutdown timeout in Millis
+   *
+   * @return the timeout in Millis
+   */
+  public long getShutdownTimeoutMillis() {
+    return shutdownTimeoutMillis;
+  }
+
+  /**
+   * Sets the shutdown timeout in Millis Default is 2000 = 2s
+   *
+   * @deprecated use {{@link SentryOptions#setShutdownTimeoutMillis(long)} }
+   * @param shutdownTimeoutMillis the shutdown timeout in millis
+   */
+  @ApiStatus.ScheduledForRemoval
+  @Deprecated
+  public void setShutdownTimeout(long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**
@@ -550,8 +546,8 @@ public class SentryOptions {
    *
    * @param shutdownTimeoutMillis the shutdown timeout in millis
    */
-  public void setShutdownTimeout(long shutdownTimeoutMillis) {
-    this.shutdownTimeout = shutdownTimeoutMillis;
+  public void setShutdownTimeoutMillis(long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**
@@ -614,7 +610,11 @@ public class SentryOptions {
    * @return the cache dir. path or null if not set
    */
   public @Nullable String getCacheDirPath() {
-    return cacheDirPath;
+    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+      return null;
+    }
+
+    return dsnHash != null ? new File(cacheDirPath, dsnHash).getAbsolutePath() : cacheDirPath;
   }
 
   /**
@@ -623,10 +623,11 @@ public class SentryOptions {
    * @return the outbox path or null if not set
    */
   public @Nullable String getOutboxPath() {
-    if (cacheDirPath == null || cacheDirPath.isEmpty()) {
+    final String cacheDirPath = getCacheDirPath();
+    if (cacheDirPath == null) {
       return null;
     }
-    return cacheDirPath + File.separator + "outbox";
+    return new File(cacheDirPath, "outbox").getAbsolutePath();
   }
 
   /**
@@ -634,30 +635,8 @@ public class SentryOptions {
    *
    * @param cacheDirPath the cache dir. path
    */
-  public void setCacheDirPath(@Nullable String cacheDirPath) {
+  public void setCacheDirPath(final @Nullable String cacheDirPath) {
     this.cacheDirPath = cacheDirPath;
-  }
-
-  /**
-   * Returns the cache dir. size Default is 30
-   *
-   * @deprecated use {{@link SentryOptions#getMaxCacheItems()} }
-   * @return the cache dir. size
-   */
-  @Deprecated
-  public int getCacheDirSize() {
-    return maxCacheItems;
-  }
-
-  /**
-   * Sets the cache dir. size Default is 30
-   *
-   * @deprecated use {{@link SentryOptions#setCacheDirSize(int)} }
-   * @param cacheDirSize the cache dir. size
-   */
-  @Deprecated
-  public void setCacheDirSize(int cacheDirSize) {
-    maxCacheItems = cacheDirSize;
   }
 
   /**
@@ -943,21 +922,6 @@ public class SentryOptions {
     this.enableAutoSessionTracking = enableAutoSessionTracking;
   }
 
-  /** @deprecated use {@link SentryOptions#isEnableAutoSessionTracking()} */
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  public boolean isEnableSessionTracking() {
-    return enableAutoSessionTracking;
-  }
-
-  /** @deprecated use {@link SentryOptions#setEnableAutoSessionTracking(boolean)} */
-  @Deprecated
-  @ApiStatus.ScheduledForRemoval
-  @SuppressWarnings("InlineMeSuggester")
-  public void setEnableSessionTracking(final boolean enableSessionTracking) {
-    setEnableAutoSessionTracking(enableSessionTracking);
-  }
-
   /**
    * Gets the default server name to be used in Sentry events.
    *
@@ -1056,15 +1020,6 @@ public class SentryOptions {
    * @return true if enabled or false otherwise.
    */
   public boolean isEnableUncaughtExceptionHandler() {
-    return Boolean.TRUE.equals(enableUncaughtExceptionHandler);
-  }
-
-  /**
-   * Checks if the default UncaughtExceptionHandlerIntegration is enabled or disabled or not set.
-   *
-   * @return true if enabled, false otherwise or null if not set.
-   */
-  public @Nullable Boolean getEnableUncaughtExceptionHandler() {
     return enableUncaughtExceptionHandler;
   }
 
@@ -1073,8 +1028,7 @@ public class SentryOptions {
    *
    * @param enableUncaughtExceptionHandler true if enabled or false otherwise.
    */
-  public void setEnableUncaughtExceptionHandler(
-      final @Nullable Boolean enableUncaughtExceptionHandler) {
+  public void setEnableUncaughtExceptionHandler(final boolean enableUncaughtExceptionHandler) {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
@@ -1084,15 +1038,6 @@ public class SentryOptions {
    * @return true if enabled or false otherwise.
    */
   public boolean isPrintUncaughtStackTrace() {
-    return Boolean.TRUE.equals(printUncaughtStackTrace);
-  }
-
-  /**
-   * Checks if printing exceptions by UncaughtExceptionHandler is enabled or disabled.
-   *
-   * @return true if enabled, false otherwise or null if not set.
-   */
-  public @Nullable Boolean getPrintUncaughtStackTrace() {
     return printUncaughtStackTrace;
   }
 
@@ -1101,7 +1046,7 @@ public class SentryOptions {
    *
    * @param printUncaughtStackTrace true if enabled or false otherwise.
    */
-  public void setPrintUncaughtStackTrace(final @Nullable Boolean printUncaughtStackTrace) {
+  public void setPrintUncaughtStackTrace(final boolean printUncaughtStackTrace) {
     this.printUncaughtStackTrace = printUncaughtStackTrace;
   }
 
@@ -1110,8 +1055,9 @@ public class SentryOptions {
    *
    * @return the SentryExecutorService
    */
+  @ApiStatus.Internal
   @NotNull
-  ISentryExecutorService getExecutorService() {
+  public ISentryExecutorService getExecutorService() {
     return executorService;
   }
 
@@ -1365,15 +1311,6 @@ public class SentryOptions {
    * @return if event deduplication is turned on.
    */
   public boolean isEnableDeduplication() {
-    return Boolean.TRUE.equals(enableDeduplication);
-  }
-
-  /**
-   * Returns if event deduplication is turned on or of or {@code null} if not specified.
-   *
-   * @return if event deduplication is turned on or of or {@code null} if not specified.
-   */
-  private @Nullable Boolean getEnableDeduplication() {
     return enableDeduplication;
   }
 
@@ -1382,7 +1319,7 @@ public class SentryOptions {
    *
    * @param enableDeduplication true if enabled false otherwise
    */
-  public void setEnableDeduplication(final @Nullable Boolean enableDeduplication) {
+  public void setEnableDeduplication(final boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
   }
 
@@ -1507,6 +1444,74 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the maximum trace file size for each envelope item in bytes.
+   *
+   * @return the maximum attachment size in bytes.
+   */
+  public long getMaxTraceFileSize() {
+    return maxTraceFileSize;
+  }
+
+  /**
+   * Sets the max trace file size for each envelope item in bytes. Default is 5 Mb.
+   *
+   * @param maxTraceFileSize the max trace file size in bytes.
+   */
+  public void setMaxTraceFileSize(long maxTraceFileSize) {
+    this.maxTraceFileSize = maxTraceFileSize;
+  }
+
+  /**
+   * Returns the listener interface to perform operations when a transaction is started or ended.
+   *
+   * @return the listener interface to perform operations when a transaction is started or ended.
+   */
+  public @NotNull ITransactionProfiler getTransactionProfiler() {
+    return transactionProfiler;
+  }
+
+  /**
+   * Sets the listener interface to perform operations when a transaction is started or ended.
+   *
+   * @param transactionProfiler - the listener for operations when a transaction is started or ended
+   */
+  public void setTransactionProfiler(final @Nullable ITransactionProfiler transactionProfiler) {
+    this.transactionProfiler =
+        transactionProfiler != null ? transactionProfiler : NoOpTransactionProfiler.getInstance();
+  }
+
+  /**
+   * Returns if profiling is enabled for transactions.
+   *
+   * @return if profiling is enabled for transactions.
+   */
+  public boolean isProfilingEnabled() {
+    return profilingEnabled;
+  }
+
+  /**
+   * Sets whether profiling is enabled for transactions.
+   *
+   * @param profilingEnabled - whether profiling is enabled for transactions
+   */
+  public void setProfilingEnabled(boolean profilingEnabled) {
+    this.profilingEnabled = profilingEnabled;
+  }
+
+  /**
+   * Returns the profiling traces dir. path if set
+   *
+   * @return the profiling traces dir. path or null if not set
+   */
+  public @Nullable String getProfilingTracesDirPath() {
+    final String cacheDirPath = getCacheDirPath();
+    if (cacheDirPath == null) {
+      return null;
+    }
+    return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
+  }
+
+  /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
    * @return the list of origins
@@ -1542,6 +1547,76 @@ public class SentryOptions {
     this.proguardUuid = proguardUuid;
   }
 
+  /**
+   * Returns Context tags names applied to Sentry events as Sentry tags.
+   *
+   * @return context tags
+   */
+  public @NotNull List<String> getContextTags() {
+    return contextTags;
+  }
+
+  /**
+   * Adds context tag name that is applied to Sentry events as Sentry tag.
+   *
+   * @param contextTag - the context tag
+   */
+  public void addContextTag(final @NotNull String contextTag) {
+    this.contextTags.add(contextTag);
+  }
+
+  /**
+   * Returns the idle timeout.
+   *
+   * @return the idle timeout in millis or null.
+   */
+  public @Nullable Long getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  /**
+   * Sets the idle timeout.
+   *
+   * @param idleTimeout the idle timeout in millis or null.
+   */
+  public void setIdleTimeout(final @Nullable Long idleTimeout) {
+    this.idleTimeout = idleTimeout;
+  }
+
+  /**
+   * Returns whether sending of client reports has been enabled.
+   *
+   * @return true if enabled; false if disabled
+   */
+  public boolean isSendClientReports() {
+    return sendClientReports;
+  }
+
+  /**
+   * Enables / disables sending of client reports.
+   *
+   * @param sendClientReports true enables client reports; false disables them
+   */
+  public void setSendClientReports(boolean sendClientReports) {
+    this.sendClientReports = sendClientReports;
+
+    if (sendClientReports) {
+      clientReportRecorder = new ClientReportRecorder(this);
+    } else {
+      clientReportRecorder = new NoOpClientReportRecorder();
+    }
+  }
+
+  /**
+   * Returns a ClientReportRecorder or a NoOp if sending of client reports has been disabled.
+   *
+   * @return a client report recorder or NoOp
+   */
+  @ApiStatus.Internal
+  public @NotNull IClientReportRecorder getClientReportRecorder() {
+    return clientReportRecorder;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -1549,11 +1624,11 @@ public class SentryOptions {
      * Mutates or drop an event before being sent
      *
      * @param event the event
-     * @param hint the hint, usually the source of the event
+     * @param hint the hints
      * @return the original event or the mutated event or null if event was dropped
      */
     @Nullable
-    SentryEvent execute(@NotNull SentryEvent event, @Nullable Object hint);
+    SentryEvent execute(@NotNull SentryEvent event, @NotNull Hint hint);
   }
 
   /** The BeforeBreadcrumb callback */
@@ -1563,11 +1638,11 @@ public class SentryOptions {
      * Mutates or drop a callback before being added
      *
      * @param breadcrumb the breadcrumb
-     * @param hint the hint, usually the source of the breadcrumb
+     * @param hint the hints, usually the source of the breadcrumb
      * @return the original breadcrumb or the mutated breadcrumb of null if breadcrumb was dropped
      */
     @Nullable
-    Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @Nullable Object hint);
+    Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @NotNull Hint hint);
   }
 
   /** The traces sampler callback. */
@@ -1635,7 +1710,7 @@ public class SentryOptions {
    *
    * @param options options loaded from external locations
    */
-  void merge(final @NotNull SentryOptions options) {
+  void merge(final @NotNull ExternalOptions options) {
     if (options.getDsn() != null) {
       setDsn(options.getDsn());
     }
@@ -1669,6 +1744,9 @@ public class SentryOptions {
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
     }
+    if (options.getSendClientReports() != null) {
+      setSendClientReports(options.getSendClientReports());
+    }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
       this.tags.put(tag.getKey(), tag.getValue());
@@ -1689,8 +1767,15 @@ public class SentryOptions {
     for (final String tracingOrigin : tracingOrigins) {
       addTracingOrigin(tracingOrigin);
     }
+    final List<String> contextTags = new ArrayList<>(options.getContextTags());
+    for (final String contextTag : contextTags) {
+      addContextTag(contextTag);
+    }
     if (options.getProguardUuid() != null) {
       setProguardUuid(options.getProguardUuid());
+    }
+    if (options.getIdleTimeout() != null) {
+      setIdleTimeout(options.getIdleTimeout());
     }
   }
 

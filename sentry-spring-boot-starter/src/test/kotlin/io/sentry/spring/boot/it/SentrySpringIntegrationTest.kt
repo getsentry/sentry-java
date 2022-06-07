@@ -15,8 +15,6 @@ import io.sentry.checkTransaction
 import io.sentry.spring.tracing.SentrySpan
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Before
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -49,12 +47,14 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import java.lang.RuntimeException
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     classes = [App::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.enable-tracing=true", "sentry.traces-sample-rate=1.0", "sentry.max-request-body-size=medium"]
+    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.traces-sample-rate=1.0", "sentry.max-request-body-size=medium"]
 )
 class SentrySpringIntegrationTest {
 
@@ -67,7 +67,7 @@ class SentrySpringIntegrationTest {
     @LocalServerPort
     var port: Int? = null
 
-    @Before
+    @BeforeTest
     fun reset() {
         reset(transport)
     }
@@ -201,6 +201,7 @@ class SentrySpringIntegrationTest {
 
         verify(transport).send(
             checkTransaction { transaction ->
+                assertThat(transaction.transaction).isEqualTo("GET /performance")
                 assertThat(transaction.user).isNotNull()
                 assertThat(transaction.user!!.username).isEqualTo("user")
             },

@@ -22,7 +22,7 @@ final class NoOpSentryClient implements ISentryClient {
 
   @Override
   public @NotNull SentryId captureEvent(
-      @NotNull SentryEvent event, @Nullable Scope scope, @Nullable Object hint) {
+      @NotNull SentryEvent event, @Nullable Scope scope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -36,10 +36,10 @@ final class NoOpSentryClient implements ISentryClient {
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 
   @Override
-  public void captureSession(@NotNull Session session, @Nullable Object hint) {}
+  public void captureSession(@NotNull Session session, @Nullable Hint hint) {}
 
   @Override
-  public SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Object hint) {
+  public SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -48,7 +48,8 @@ final class NoOpSentryClient implements ISentryClient {
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
       @Nullable Scope scope,
-      @Nullable Object hint) {
+      @Nullable Hint hint,
+      @Nullable ProfilingTraceData profilingTraceData) {
     return SentryId.EMPTY_ID;
   }
 }

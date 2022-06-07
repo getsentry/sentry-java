@@ -13,6 +13,7 @@ import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
+import io.sentry.util.HintUtils
 import java.io.File
 import java.io.FileNotFoundException
 import java.nio.file.Files
@@ -60,7 +61,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(path, hints)
         assertFalse(File(path).exists())
         // Additionally make sure we have a error logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -68,13 +71,15 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer returns SentryEvent, event captured, file is deleted `() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         val expected = SentryEvent(SentryId(UUID.fromString("9ec79c33-ec99-42ab-8353-589fcb2e04dc")), Date())
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(expected)
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(path, hints)
 
         verify(fixture.hub).captureEvent(eq(expected), any())
         assertFalse(File(path).exists())
@@ -85,9 +90,10 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer return SentryTransaction, transaction captured, transactions sampled, file is deleted`() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         whenever(fixture.options.maxSpans).thenReturn(1000)
         whenever(fixture.hub.options).thenReturn(fixture.options)
+        whenever(fixture.options.transactionProfiler).thenReturn(NoOpTransactionProfiler.getInstance())
 
         val transactionContext = TransactionContext("fixture-name", "http")
         transactionContext.description = "fixture-request"
@@ -108,7 +114,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope(fileName = "envelope-transaction.txt")
         assertTrue(File(path).exists())
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(path, hints)
 
         verify(fixture.hub).captureTransaction(
             check {
@@ -126,7 +134,7 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer returns SentryEnvelope, event captured, file is deleted `() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
 
         val event = SentryEvent(SentryId("9ec79c33ec9942ab8353589fcb2e04dc"), Date())
         val expected = SentryEnvelope(SentryId("9ec79c33ec9942ab8353589fcb2e04dc"), null, setOf())
@@ -135,7 +143,9 @@ class OutboxSenderTest {
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(path, hints)
 
         verify(fixture.hub).captureEvent(any(), any())
         assertFalse(File(path).exists())
@@ -146,12 +156,14 @@ class OutboxSenderTest {
 
     @Test
     fun `when envelope has unknown item type, create and capture an envelope`() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
 
         val sut = fixture.getSut()
         val path = getTempEnvelope(fileName = "envelope_attachment.txt")
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(path, hints)
 
         verify(fixture.hub).captureEnvelope(any(), any())
         assertFalse(File(path).exists())
@@ -162,12 +174,14 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer returns a null event, file error logged, no event captured `() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(null)
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(path, hints)
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -177,13 +191,15 @@ class OutboxSenderTest {
 
     @Test
     fun `when parser is EnvelopeReader and serializer returns a null envelope, file error logged, no event captured `() {
-        fixture.envelopeReader = EnvelopeReader()
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
         whenever(fixture.serializer.deserializeEnvelope(any())).thenReturn(null)
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(null)
         val sut = fixture.getSut()
         val path = getTempEnvelope()
         assertTrue(File(path).exists()) // sanity check
-        sut.processEnvelopeFile(path, mock<Retryable>())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(path, hints)
 
         // Additionally make sure we have no errors logged
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -194,7 +210,9 @@ class OutboxSenderTest {
     @Test
     fun `when processEnvelopeFile is called with a invalid path, logs error`() {
         val sut = fixture.getSut()
-        sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt", mock<Retryable>())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(File.separator + "i-hope-it-doesnt-exist" + File.separator + "file.txt", hints)
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), argWhere { it is FileNotFoundException })
     }
 

@@ -7,11 +7,13 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryLevel.INFO
 import io.sentry.SpanStatus
+import io.sentry.TypeCheckHint.ANDROID_FRAGMENT
 import java.util.WeakHashMap
 
 @Suppress("TooManyFunctions")
@@ -116,7 +118,11 @@ class SentryFragmentLifecycleCallbacks(
             category = "ui.fragment.lifecycle"
             level = INFO
         }
-        hub.addBreadcrumb(breadcrumb)
+
+        val hint = Hint()
+            .also { it.set(ANDROID_FRAGMENT, fragment) }
+
+        hub.addBreadcrumb(breadcrumb, hint)
     }
 
     private fun getFragmentName(fragment: Fragment): String {

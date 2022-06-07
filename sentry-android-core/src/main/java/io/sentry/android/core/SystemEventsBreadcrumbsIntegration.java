@@ -30,6 +30,7 @@ import static android.content.Intent.ACTION_SCREEN_ON;
 import static android.content.Intent.ACTION_SHUTDOWN;
 import static android.content.Intent.ACTION_TIMEZONE_CHANGED;
 import static android.content.Intent.ACTION_TIME_CHANGED;
+import static io.sentry.TypeCheckHint.ANDROID_INTENT;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -37,6 +38,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
@@ -213,7 +215,11 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         breadcrumb.setData("extras", newExtras);
       }
       breadcrumb.setLevel(SentryLevel.INFO);
-      hub.addBreadcrumb(breadcrumb);
+
+      final Hint hint = new Hint();
+      hint.set(ANDROID_INTENT, intent);
+
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 }

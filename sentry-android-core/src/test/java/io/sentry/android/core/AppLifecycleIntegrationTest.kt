@@ -16,7 +16,7 @@ class AppLifecycleIntegrationTest {
 
     private class Fixture {
         val hub = mock<IHub>()
-        val handler = mock<IHandler>()
+        val handler = mock<MainLooperHandler>()
         val options = SentryAndroidOptions()
 
         fun getSut(): AppLifecycleIntegration {

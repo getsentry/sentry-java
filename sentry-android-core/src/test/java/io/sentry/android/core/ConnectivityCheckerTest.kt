@@ -28,7 +28,7 @@ class ConnectivityCheckerTest {
     private lateinit var contextMock: Context
     private lateinit var connectivityManager: ConnectivityManager
     private lateinit var networkInfo: NetworkInfo
-    private lateinit var buildInfo: IBuildInfoProvider
+    private lateinit var buildInfo: BuildInfoProvider
     private lateinit var network: Network
     private lateinit var networkCapabilities: NetworkCapabilities
 
@@ -100,7 +100,7 @@ class ConnectivityCheckerTest {
 
     @Test
     fun `When sdkInfoVersion is not min Marshmallow, return null for getConnectionType`() {
-        val buildInfo = mock<IBuildInfoProvider>()
+        val buildInfo = mock<BuildInfoProvider>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 
         assertNull(ConnectivityChecker.getConnectionType(mock(), mock(), buildInfo))

@@ -1,9 +1,13 @@
 package io.sentry.openfeign;
 
+import static io.sentry.TypeCheckHint.OPEN_FEIGN_REQUEST;
+import static io.sentry.TypeCheckHint.OPEN_FEIGN_RESPONSE;
+
 import feign.Client;
 import feign.Request;
 import feign.Response;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
@@ -87,7 +91,14 @@ public final class SentryFeignClient implements Client {
     if (response != null && response.body() != null && response.body().length() != null) {
       breadcrumb.setData("response_body_size", response.body().length());
     }
-    hub.addBreadcrumb(breadcrumb);
+
+    final Hint hint = new Hint();
+    hint.set(OPEN_FEIGN_REQUEST, request);
+    if (response != null) {
+      hint.set(OPEN_FEIGN_RESPONSE, response);
+    }
+
+    hub.addBreadcrumb(breadcrumb, hint);
   }
 
   static final class RequestWrapper {

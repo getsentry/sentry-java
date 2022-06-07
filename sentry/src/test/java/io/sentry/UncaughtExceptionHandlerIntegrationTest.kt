@@ -106,7 +106,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     @Test
     fun `When defaultUncaughtExceptionHandler is disabled, should not install Sentry UncaughtExceptionHandler`() {
         val options = SentryOptions()
-        options.enableUncaughtExceptionHandler = false
+        options.isEnableUncaughtExceptionHandler = false
         val hub = mock<IHub>()
         val handlerMock = mock<UncaughtExceptionHandler>()
         val integration = UncaughtExceptionHandlerIntegration(handlerMock)
@@ -162,7 +162,7 @@ class UncaughtExceptionHandlerIntegrationTest {
 
             val handlerMock = mock<UncaughtExceptionHandler>()
             val options = SentryOptions().noFlushTimeout()
-            options.printUncaughtStackTrace = true
+            options.isPrintUncaughtStackTrace = true
             val sut = UncaughtExceptionHandlerIntegration(handlerMock)
             sut.register(mock<IHub>(), options)
             sut.uncaughtException(mock<Thread>(), RuntimeException("This should be printed!"))

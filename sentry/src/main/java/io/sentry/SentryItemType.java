@@ -1,15 +1,21 @@
 package io.sentry;
 
+import io.sentry.clientreport.ClientReport;
 import io.sentry.protocol.SentryTransaction;
+import java.io.IOException;
+import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public enum SentryItemType {
+public enum SentryItemType implements JsonSerializable {
   Session("session"),
   Event("event"), // DataCategory.Error
   UserFeedback("user_report"), // Sentry backend still uses user_report
   Attachment("attachment"),
   Transaction("transaction"),
+  Profile("profile"),
+  ClientReport("client_report"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
   private final String itemType;
@@ -21,6 +27,8 @@ public enum SentryItemType {
       return Transaction;
     } else if (item instanceof Session) {
       return Session;
+    } else if (item instanceof ClientReport) {
+      return ClientReport;
     } else {
       return Attachment;
     }
@@ -32,5 +40,29 @@ public enum SentryItemType {
 
   public String getItemType() {
     return itemType;
+  }
+
+  public static @NotNull SentryItemType valueOfLabel(String itemType) {
+    for (SentryItemType sentryItemType : values()) {
+      if (sentryItemType.itemType.equals(itemType)) {
+        return sentryItemType;
+      }
+    }
+    return Unknown;
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.value(itemType);
+  }
+
+  static final class Deserializer implements JsonDeserializer<SentryItemType> {
+
+    @Override
+    public @NotNull SentryItemType deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      return SentryItemType.valueOfLabel(reader.nextString().toLowerCase(Locale.ROOT));
+    }
   }
 }

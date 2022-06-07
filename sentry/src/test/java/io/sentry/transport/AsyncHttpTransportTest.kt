@@ -15,9 +15,12 @@ import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
+import io.sentry.clientreport.NoOpClientReportRecorder
 import io.sentry.dsnString
 import io.sentry.protocol.User
+import io.sentry.util.HintUtils
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,6 +37,7 @@ class AsyncHttpTransportTest {
             setSerializer(mock())
             setEnvelopeDiskCache(mock())
         }
+        var clientReportRecorder = NoOpClientReportRecorder()
 
         init {
             // this is an executor service running immediately in the current thread. Of course this defeats the
@@ -43,6 +47,7 @@ class AsyncHttpTransportTest {
         }
 
         fun getSUT(): AsyncHttpTransport {
+            SentryOptionsManipulator.setClientReportRecorder(sentryOptions, clientReportRecorder)
             return AsyncHttpTransport(executor, sentryOptions, rateLimiter, transportGate, connection)
         }
     }
@@ -179,7 +184,8 @@ class AsyncHttpTransportTest {
         whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
 
         // when
-        fixture.getSUT().send(envelope, CachedEvent())
+        val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
+        fixture.getSUT().send(envelope, hints)
 
         // then
         verify(fixture.sentryOptions.envelopeDiskCache).discard(any())
@@ -236,7 +242,8 @@ class AsyncHttpTransportTest {
         val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, ev, null)
 
         // when
-        fixture.getSUT().send(envelope, CachedEvent())
+        val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
+        fixture.getSUT().send(envelope, hints)
 
         // then
         verify(fixture.sentryOptions.envelopeDiskCache).discard(any())

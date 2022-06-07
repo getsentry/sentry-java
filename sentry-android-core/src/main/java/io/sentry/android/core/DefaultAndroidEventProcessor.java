@@ -1,8 +1,10 @@
 package io.sentry.android.core;
 
 import static android.content.Context.ACTIVITY_SERVICE;
+import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 import static android.os.BatteryManager.EXTRA_TEMPERATURE;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +22,7 @@ import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
@@ -34,7 +37,7 @@ import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
-import io.sentry.util.ApplyScopeUtils;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
 import java.io.File;
@@ -64,7 +67,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @TestOnly final Future<Map<String, Object>> contextData;
 
-  private final @NotNull IBuildInfoProvider buildInfoProvider;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull RootChecker rootChecker;
 
   private final @NotNull ILogger logger;
@@ -72,14 +75,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   public DefaultAndroidEventProcessor(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider) {
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this(context, logger, buildInfoProvider, new RootChecker(context, buildInfoProvider, logger));
   }
 
   DefaultAndroidEventProcessor(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull RootChecker rootChecker) {
     this.context = Objects.requireNonNull(context, "The application context is required.");
     this.logger = Objects.requireNonNull(logger, "The Logger is required.");
@@ -105,7 +108,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     }
 
     // its not IO, but it has been cached in the old version as well
-    map.put(EMULATOR, isEmulator());
+    map.put(EMULATOR, buildInfoProvider.isEmulator());
 
     final Map<String, String> sideLoadedInfo = getSideLoadedInfo();
     if (sideLoadedInfo != null) {
@@ -116,8 +119,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+  public @NotNull SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
     final boolean applyScopeData = shouldApplyScopeData(event, hint);
     if (applyScopeData) {
       // we only set memory data if it's not a hard crash, when it's a hard crash the event is
@@ -143,8 +145,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private boolean shouldApplyScopeData(
-      final @NotNull SentryBaseEvent event, final @Nullable Object hint) {
-    if (ApplyScopeUtils.shouldApplyScopeData(hint)) {
+      final @NotNull SentryBaseEvent event, final @NotNull Hint hint) {
+    if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
       logger.log(
@@ -209,13 +211,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setThreads(final @NotNull SentryEvent event) {
     if (event.getThreads() != null) {
       for (SentryThread thread : event.getThreads()) {
-        thread.setCurrent(MainThreadChecker.isMainThread(thread));
+        if (thread.isCurrent() == null) {
+          thread.setCurrent(MainThreadChecker.isMainThread(thread));
+        }
       }
     }
   }
 
   private void setPackageInfo(final @NotNull SentryBaseEvent event, final @NotNull App app) {
-    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, logger);
+    final PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, PackageManager.GET_PERMISSIONS, logger);
     if (packageInfo != null) {
       String versionCode = ContextUtils.getVersionCode(packageInfo);
 
@@ -524,37 +529,6 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   /**
-   * Check whether the application is running in an emulator.
-   * https://github.com/flutter/plugins/blob/master/packages/device_info/android/src/main/java/io/flutter/plugins/deviceinfo/DeviceInfoPlugin.java#L105
-   *
-   * @return true if the application is running in an emulator, false otherwise
-   */
-  private @Nullable Boolean isEmulator() {
-    try {
-      return (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
-          || Build.FINGERPRINT.startsWith("generic")
-          || Build.FINGERPRINT.startsWith("unknown")
-          || Build.HARDWARE.contains("goldfish")
-          || Build.HARDWARE.contains("ranchu")
-          || Build.MODEL.contains("google_sdk")
-          || Build.MODEL.contains("Emulator")
-          || Build.MODEL.contains("Android SDK built for x86")
-          || Build.MANUFACTURER.contains("Genymotion")
-          || Build.PRODUCT.contains("sdk_google")
-          || Build.PRODUCT.contains("google_sdk")
-          || Build.PRODUCT.contains("sdk")
-          || Build.PRODUCT.contains("sdk_x86")
-          || Build.PRODUCT.contains("vbox86p")
-          || Build.PRODUCT.contains("emulator")
-          || Build.PRODUCT.contains("simulator");
-    } catch (Throwable e) {
-      logger.log(
-          SentryLevel.ERROR, "Error checking whether application is running in an emulator.", e);
-      return null;
-    }
-  }
-
-  /**
    * Get the total amount of internal storage, in bytes.
    *
    * @return the total amount of internal storage, in bytes
@@ -758,10 +732,33 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return os;
   }
 
+  @SuppressLint("NewApi") // we perform an if-check for that, but lint fails to recognize
   private void setAppPackageInfo(final @NotNull App app, final @NotNull PackageInfo packageInfo) {
     app.setAppIdentifier(packageInfo.packageName);
     app.setAppVersion(packageInfo.versionName);
     app.setAppBuild(ContextUtils.getVersionCode(packageInfo));
+
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
+      final Map<String, String> permissions = new HashMap<>();
+      final String[] requestedPermissions = packageInfo.requestedPermissions;
+      final int[] requestedPermissionsFlags = packageInfo.requestedPermissionsFlags;
+
+      if (requestedPermissions != null
+          && requestedPermissions.length > 0
+          && requestedPermissionsFlags != null
+          && requestedPermissionsFlags.length > 0) {
+        for (int i = 0; i < requestedPermissions.length; i++) {
+          String permission = requestedPermissions[i];
+          permission = permission.substring(permission.lastIndexOf('.') + 1);
+
+          final boolean granted =
+              (requestedPermissionsFlags[i] & REQUESTED_PERMISSION_GRANTED)
+                  == REQUESTED_PERMISSION_GRANTED;
+          permissions.put(permission, granted ? "granted" : "not_granted");
+        }
+      }
+      app.setPermissions(permissions);
+    }
   }
 
   /**
@@ -888,7 +885,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
     final boolean applyScopeData = shouldApplyScopeData(transaction, hint);
 
     if (applyScopeData) {

@@ -17,8 +17,8 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hub
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.core.internal.gestures.SentryWindowCallback
-import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.Test
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -163,5 +163,15 @@ class UserInteractionIntegrationTest {
         sut.onActivityPaused(fixture.activity)
 
         verify(fixture.window).callback = delegate
+    }
+
+    @Test
+    fun `stops tracing on activity paused`() {
+        val callback = mock<SentryWindowCallback>()
+        val sut = fixture.getSut(callback)
+
+        sut.onActivityPaused(fixture.activity)
+
+        verify(callback).stopTracking()
     }
 }

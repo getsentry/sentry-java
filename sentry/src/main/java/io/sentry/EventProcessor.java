@@ -17,7 +17,7 @@ public interface EventProcessor {
    * @return the event itself, a mutated SentryEvent or null
    */
   @Nullable
-  default SentryEvent process(@NotNull SentryEvent event, @Nullable Object hint) {
+  default SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
     return event;
   }
 
@@ -29,7 +29,7 @@ public interface EventProcessor {
    * @return the event itself, a mutated SentryTransaction or null
    */
   @Nullable
-  default SentryTransaction process(@NotNull SentryTransaction transaction, @Nullable Object hint) {
+  default SentryTransaction process(@NotNull SentryTransaction transaction, @NotNull Hint hint) {
     return transaction;
   }
 }

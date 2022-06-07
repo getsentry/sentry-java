@@ -4,6 +4,8 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -12,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 @Open
-public class SpanContext {
+public class SpanContext implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "trace";
 
   /** Determines which trace the Span belongs to. */
@@ -41,6 +43,8 @@ public class SpanContext {
 
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
+
+  private @Nullable Map<String, Object> unknown;
 
   public SpanContext(final @NotNull String operation, final @Nullable Boolean sampled) {
     this(new SentryId(), new SpanId(), operation, null, sampled);
@@ -158,5 +162,142 @@ public class SpanContext {
   @ApiStatus.Internal
   public void setSampled(final @Nullable Boolean sampled) {
     this.sampled = sampled;
+  }
+
+  // region JsonSerializable
+
+  public static final class JsonKeys {
+    public static final String TRACE_ID = "trace_id";
+    public static final String SPAN_ID = "span_id";
+    public static final String PARENT_SPAN_ID = "parent_span_id";
+    public static final String OP = "op";
+    public static final String DESCRIPTION = "description";
+    public static final String STATUS = "status";
+    public static final String TAGS = "tags";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    writer.name(JsonKeys.TRACE_ID);
+    traceId.serialize(writer, logger);
+    writer.name(JsonKeys.SPAN_ID);
+    spanId.serialize(writer, logger);
+    if (parentSpanId != null) {
+      writer.name(JsonKeys.PARENT_SPAN_ID);
+      parentSpanId.serialize(writer, logger);
+    }
+    writer.name(JsonKeys.OP).value(op);
+    if (description != null) {
+      writer.name(JsonKeys.DESCRIPTION).value(description);
+    }
+    if (status != null) {
+      writer.name(JsonKeys.STATUS).value(logger, status);
+    }
+    if (!tags.isEmpty()) {
+      writer.name(JsonKeys.TAGS).value(logger, tags);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  @Nullable
+  @Override
+  public Map<String, Object> getUnknown() {
+    return unknown;
+  }
+
+  @Override
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class Deserializer implements JsonDeserializer<SpanContext> {
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull SpanContext deserialize(
+        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+      reader.beginObject();
+      SentryId traceId = null;
+      SpanId spanId = null;
+      SpanId parentSpanId = null;
+      String op = null;
+      String description = null;
+      SpanStatus status = null;
+      Map<String, String> tags = null;
+
+      Map<String, Object> unknown = null;
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.TRACE_ID:
+            traceId = new SentryId.Deserializer().deserialize(reader, logger);
+            break;
+          case JsonKeys.SPAN_ID:
+            spanId = new SpanId.Deserializer().deserialize(reader, logger);
+            break;
+          case JsonKeys.PARENT_SPAN_ID:
+            parentSpanId = reader.nextOrNull(logger, new SpanId.Deserializer());
+            break;
+          case JsonKeys.OP:
+            op = reader.nextString();
+            break;
+          case JsonKeys.DESCRIPTION:
+            description = reader.nextString();
+            break;
+          case JsonKeys.STATUS:
+            status = reader.nextOrNull(logger, new SpanStatus.Deserializer());
+            break;
+          case JsonKeys.TAGS:
+            tags =
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, String>) reader.nextObjectOrNull());
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+
+      if (traceId == null) {
+        String message = "Missing required field \"" + JsonKeys.TRACE_ID + "\"";
+        Exception exception = new IllegalStateException(message);
+        logger.log(SentryLevel.ERROR, message, exception);
+        throw exception;
+      }
+
+      if (spanId == null) {
+        String message = "Missing required field \"" + JsonKeys.SPAN_ID + "\"";
+        Exception exception = new IllegalStateException(message);
+        logger.log(SentryLevel.ERROR, message, exception);
+        throw exception;
+      }
+
+      if (op == null) {
+        String message = "Missing required field \"" + JsonKeys.OP + "\"";
+        Exception exception = new IllegalStateException(message);
+        logger.log(SentryLevel.ERROR, message, exception);
+        throw exception;
+      }
+
+      SpanContext spanContext = new SpanContext(traceId, spanId, op, parentSpanId, null);
+      spanContext.setDescription(description);
+      spanContext.setStatus(status);
+      if (tags != null) {
+        spanContext.tags = tags;
+      }
+      spanContext.setUnknown(unknown);
+      reader.endObject();
+      return spanContext;
+    }
   }
 }

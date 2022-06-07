@@ -9,17 +9,14 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class LogUtils {
 
-  public static void logIfNotFlushable(final @NotNull ILogger logger, final @Nullable Object hint) {
+  public static void logNotInstanceOf(
+      final @NotNull Class<?> expectedClass,
+      final @Nullable Object sentrySdkHint,
+      final @NotNull ILogger logger) {
     logger.log(
         SentryLevel.DEBUG,
-        "%s is not Flushable",
-        hint != null ? hint.getClass().getCanonicalName() : "Hint");
-  }
-
-  public static void logIfNotRetryable(final @NotNull ILogger logger, final @Nullable Object hint) {
-    logger.log(
-        SentryLevel.DEBUG,
-        "%s is not Retryable",
-        hint != null ? hint.getClass().getCanonicalName() : "Hint");
+        "%s is not %s",
+        sentrySdkHint != null ? sentrySdkHint.getClass().getCanonicalName() : "Hint",
+        expectedClass.getCanonicalName());
   }
 }

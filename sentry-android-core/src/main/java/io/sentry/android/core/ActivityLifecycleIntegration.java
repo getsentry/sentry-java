@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -10,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
@@ -60,7 +62,7 @@ public final class ActivityLifecycleIntegration
 
   public ActivityLifecycleIntegration(
       final @NotNull Application application,
-      final @NotNull IBuildInfoProvider buildInfoProvider,
+      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
     this.application = Objects.requireNonNull(application, "Application is required");
     Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
@@ -123,7 +125,11 @@ public final class ActivityLifecycleIntegration
       breadcrumb.setData("screen", getActivityName(activity));
       breadcrumb.setCategory("ui.lifecycle");
       breadcrumb.setLevel(SentryLevel.INFO);
-      hub.addBreadcrumb(breadcrumb);
+
+      final Hint hint = new Hint();
+      hint.set(ANDROID_ACTIVITY, activity);
+
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 
@@ -210,6 +216,16 @@ public final class ActivityLifecycleIntegration
         });
   }
 
+  @VisibleForTesting
+  void clearScope(final @NotNull Scope scope, final @NotNull ITransaction transaction) {
+    scope.withTransaction(
+        scopeTransaction -> {
+          if (scopeTransaction == transaction) {
+            scope.clearTransaction();
+          }
+        });
+  }
+
   private boolean isRunningTransaction(final @NotNull Activity activity) {
     return activitiesWithOngoingTransactions.containsKey(activity);
   }
@@ -235,6 +251,14 @@ public final class ActivityLifecycleIntegration
         status = SpanStatus.OK;
       }
       transaction.finish(status);
+      if (hub != null) {
+        // make sure to remove the transaction from scope, as it may contain running children,
+        // therefore `finish` method will not remove it from scope
+        hub.configureScope(
+            scope -> {
+              clearScope(scope, transaction);
+            });
+      }
     }
   }
 

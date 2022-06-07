@@ -47,13 +47,6 @@ public class SentryInitBeanPostProcessor
 
       if (applicationContext != null) {
         applicationContext
-            .getBeanProvider(SentryUserProvider.class)
-            .orderedStream()
-            .forEach(
-                sentryUserProvider ->
-                    options.addEventProcessor(
-                        new SentryUserProviderEventProcessor(options, sentryUserProvider)));
-        applicationContext
             .getBeanProvider(TracesSamplerCallback.class)
             .ifAvailable(options::setTracesSampler);
         applicationContext

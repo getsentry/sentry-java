@@ -7,6 +7,7 @@ import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.SessionEnd;
 import io.sentry.protocol.Mechanism;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.util.concurrent.CountDownLatch;
@@ -88,14 +89,17 @@ public final class UncaughtExceptionHandlerIntegration
       options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
 
       try {
-        final UncaughtExceptionHint hint =
+        final UncaughtExceptionHint exceptionHint =
             new UncaughtExceptionHint(options.getFlushTimeoutMillis(), options.getLogger());
         final Throwable throwable = getUnhandledThrowable(thread, thrown);
         final SentryEvent event = new SentryEvent(throwable);
         event.setLevel(SentryLevel.FATAL);
+
+        final Hint hint = HintUtils.createWithTypeCheckHint(exceptionHint);
+
         hub.captureEvent(event, hint);
         // Block until the event is flushed to disk
-        if (!hint.waitFlush()) {
+        if (!exceptionHint.waitFlush()) {
           options
               .getLogger()
               .log(

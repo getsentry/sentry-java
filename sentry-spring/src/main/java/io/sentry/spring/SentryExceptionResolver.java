@@ -1,6 +1,10 @@
 package io.sentry.spring;
 
+import static io.sentry.TypeCheckHint.SPRING_RESOLVER_REQUEST;
+import static io.sentry.TypeCheckHint.SPRING_RESOLVER_RESPONSE;
+
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -26,12 +30,16 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
   public static final String MECHANISM_TYPE = "HandlerExceptionResolver";
 
   private final @NotNull IHub hub;
-  private final @NotNull TransactionNameProvider transactionNameProvider =
-      new TransactionNameProvider();
+  private final @NotNull TransactionNameProvider transactionNameProvider;
   private final int order;
 
-  public SentryExceptionResolver(final @NotNull IHub hub, final int order) {
+  public SentryExceptionResolver(
+      final @NotNull IHub hub,
+      final @NotNull TransactionNameProvider transactionNameProvider,
+      final int order) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.transactionNameProvider =
+        Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
     this.order = order;
   }
 
@@ -50,7 +58,12 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
     final SentryEvent event = new SentryEvent(throwable);
     event.setLevel(SentryLevel.FATAL);
     event.setTransaction(transactionNameProvider.provideTransactionName(request));
-    hub.captureEvent(event);
+
+    final Hint hint = new Hint();
+    hint.set(SPRING_RESOLVER_REQUEST, request);
+    hint.set(SPRING_RESOLVER_RESPONSE, response);
+
+    hub.captureEvent(event, hint);
 
     // null = run other HandlerExceptionResolvers to actually handle the exception
     return null;

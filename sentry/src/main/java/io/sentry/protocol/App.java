@@ -1,16 +1,21 @@
 package io.sentry.protocol;
 
-import io.sentry.IUnknownPropertiesConsumer;
+import io.sentry.ILogger;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.util.CollectionUtils;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
-public final class App implements IUnknownPropertiesConsumer {
+public final class App implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "app";
 
   /** Version-independent application identifier, often a dotted bundle ID. */
@@ -31,6 +36,8 @@ public final class App implements IUnknownPropertiesConsumer {
   private @Nullable String appVersion;
   /** Internal build ID as it appears on the platform. */
   private @Nullable String appBuild;
+  /** Application permissions in the form of "permission_name" : "granted|not_granted" */
+  private @Nullable Map<String, String> permissions;
 
   public App() {}
 
@@ -42,6 +49,7 @@ public final class App implements IUnknownPropertiesConsumer {
     this.appVersion = app.appVersion;
     this.buildType = app.buildType;
     this.deviceAppHash = app.deviceAppHash;
+    this.permissions = CollectionUtils.newConcurrentHashMap(app.permissions);
     this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
   }
 
@@ -106,15 +114,123 @@ public final class App implements IUnknownPropertiesConsumer {
     this.appBuild = appBuild;
   }
 
-  @TestOnly
+  public @Nullable Map<String, String> getPermissions() {
+    return permissions;
+  }
+
+  public void setPermissions(@Nullable Map<String, String> permissions) {
+    this.permissions = permissions;
+  }
+
+  // region json
+
   @Nullable
-  Map<String, Object> getUnknown() {
+  @Override
+  public Map<String, Object> getUnknown() {
     return unknown;
   }
 
-  @ApiStatus.Internal
   @Override
-  public void acceptUnknownProperties(@NotNull Map<String, Object> unknown) {
-    this.unknown = new ConcurrentHashMap<>(unknown);
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
+
+  public static final class JsonKeys {
+    public static final String APP_IDENTIFIER = "app_identifier";
+    public static final String APP_START_TIME = "app_start_time";
+    public static final String DEVICE_APP_HASH = "device_app_hash";
+    public static final String BUILD_TYPE = "build_type";
+    public static final String APP_NAME = "app_name";
+    public static final String APP_VERSION = "app_version";
+    public static final String APP_BUILD = "app_build";
+    public static final String APP_PERMISSIONS = "permissions";
+  }
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    if (appIdentifier != null) {
+      writer.name(JsonKeys.APP_IDENTIFIER).value(appIdentifier);
+    }
+    if (appStartTime != null) {
+      writer.name(JsonKeys.APP_START_TIME).value(logger, appStartTime);
+    }
+    if (deviceAppHash != null) {
+      writer.name(JsonKeys.DEVICE_APP_HASH).value(deviceAppHash);
+    }
+    if (buildType != null) {
+      writer.name(JsonKeys.BUILD_TYPE).value(buildType);
+    }
+    if (appName != null) {
+      writer.name(JsonKeys.APP_NAME).value(appName);
+    }
+    if (appVersion != null) {
+      writer.name(JsonKeys.APP_VERSION).value(appVersion);
+    }
+    if (appBuild != null) {
+      writer.name(JsonKeys.APP_BUILD).value(appBuild);
+    }
+    if (permissions != null && !permissions.isEmpty()) {
+      writer.name(JsonKeys.APP_PERMISSIONS).value(logger, permissions);
+    }
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  public static final class Deserializer implements JsonDeserializer<App> {
+    @SuppressWarnings("unchecked")
+    @Override
+    public @NotNull App deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      reader.beginObject();
+      App app = new App();
+      Map<String, Object> unknown = null;
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.APP_IDENTIFIER:
+            app.appIdentifier = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_START_TIME:
+            app.appStartTime = reader.nextDateOrNull(logger);
+            break;
+          case JsonKeys.DEVICE_APP_HASH:
+            app.deviceAppHash = reader.nextStringOrNull();
+            break;
+          case JsonKeys.BUILD_TYPE:
+            app.buildType = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_NAME:
+            app.appName = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_VERSION:
+            app.appVersion = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_BUILD:
+            app.appBuild = reader.nextStringOrNull();
+            break;
+          case JsonKeys.APP_PERMISSIONS:
+            app.permissions =
+                CollectionUtils.newConcurrentHashMap(
+                    (Map<String, String>) reader.nextObjectOrNull());
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new ConcurrentHashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      app.setUnknown(unknown);
+      reader.endObject();
+      return app;
+    }
   }
 }

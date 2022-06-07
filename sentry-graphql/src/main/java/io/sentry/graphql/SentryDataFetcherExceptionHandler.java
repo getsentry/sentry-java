@@ -1,8 +1,11 @@
 package io.sentry.graphql;
 
+import static io.sentry.TypeCheckHint.GRAPHQL_HANDLER_PARAMETERS;
+
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
+import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.util.Objects;
@@ -30,7 +33,10 @@ public final class SentryDataFetcherExceptionHandler implements DataFetcherExcep
   @SuppressWarnings("deprecation")
   public DataFetcherExceptionHandlerResult onException(
       final @NotNull DataFetcherExceptionHandlerParameters handlerParameters) {
-    hub.captureException(handlerParameters.getException(), handlerParameters);
+    final Hint hint = new Hint();
+    hint.set(GRAPHQL_HANDLER_PARAMETERS, handlerParameters);
+
+    hub.captureException(handlerParameters.getException(), hint);
     return delegate.onException(handlerParameters);
   }
 }

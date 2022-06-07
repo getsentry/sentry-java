@@ -26,7 +26,7 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -36,13 +36,12 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEnvelope(
-      @NotNull SentryEnvelope envelope, @Nullable Object hint) {
+  public @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
   @Override
-  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint) {
+  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
@@ -59,7 +58,7 @@ public final class NoOpHub implements IHub {
   public void close() {}
 
   @Override
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint) {}
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {}
 
   @Override
   public void setLevel(@Nullable SentryLevel level) {}
@@ -120,7 +119,8 @@ public final class NoOpHub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceState traceState,
-      final @Nullable Object hint) {
+      final @Nullable Hint hint,
+      final @Nullable ProfilingTraceData profilingTraceData) {
     return SentryId.EMPTY_ID;
   }
 
@@ -153,6 +153,8 @@ public final class NoOpHub implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp,
       boolean waitForChildren,
+      @Nullable Long idleTimeout,
+      boolean trimEnd,
       @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return NoOpTransaction.getInstance();
   }

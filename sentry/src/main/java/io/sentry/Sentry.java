@@ -4,6 +4,7 @@ import io.sentry.cache.EnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.FileUtils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
@@ -40,7 +41,7 @@ public final class Sentry {
       return mainHub;
     }
     IHub hub = currentHub.get();
-    if (hub == null) {
+    if (hub == null || hub instanceof NoOpHub) {
       hub = mainHub.clone();
       currentHub.set(hub);
     }
@@ -189,9 +190,10 @@ public final class Sentry {
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static boolean initConfigurations(final @NotNull SentryOptions options) {
     if (options.isEnableExternalConfiguration()) {
-      options.merge(SentryOptions.from(PropertiesProviderFactory.create(), options.getLogger()));
+      options.merge(ExternalOptions.from(PropertiesProviderFactory.create(), options.getLogger()));
     }
 
     final String dsn = options.getDsn();
@@ -217,17 +219,39 @@ public final class Sentry {
     // eg release, distinctId, sentryClientName
 
     // this should be after setting serializers
-    if (options.getOutboxPath() != null) {
-      final File outboxDir = new File(options.getOutboxPath());
+    final String outboxPath = options.getOutboxPath();
+    if (outboxPath != null) {
+      final File outboxDir = new File(outboxPath);
       outboxDir.mkdirs();
     } else {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
 
-    if (options.getCacheDirPath() != null && !options.getCacheDirPath().isEmpty()) {
-      final File cacheDir = new File(options.getCacheDirPath());
+    final String cacheDirPath = options.getCacheDirPath();
+    if (cacheDirPath != null) {
+      final File cacheDir = new File(cacheDirPath);
       cacheDir.mkdirs();
       options.setEnvelopeDiskCache(EnvelopeCache.create(options));
+    }
+
+    final String profilingTracesDirPath = options.getProfilingTracesDirPath();
+    if (options.isProfilingEnabled() && profilingTracesDirPath != null) {
+
+      final File profilingTracesDir = new File(profilingTracesDirPath);
+      profilingTracesDir.mkdirs();
+      final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                if (oldTracesDirContent == null) return;
+                // Method trace files are normally deleted at the end of traces, but if that fails
+                // for some reason we try to clear any old files here.
+                for (File f : oldTracesDirContent) {
+                  FileUtils.deleteRecursively(f);
+                }
+              });
     }
 
     return true;
@@ -260,7 +284,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureEvent(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+      final @NotNull SentryEvent event, final @Nullable Hint hint) {
     return getCurrentHub().captureEvent(event, hint);
   }
 
@@ -304,7 +328,7 @@ public final class Sentry {
    * @return The Id (SentryId object) of the event
    */
   public static @NotNull SentryId captureException(
-      final @NotNull Throwable throwable, final @Nullable Object hint) {
+      final @NotNull Throwable throwable, final @Nullable Hint hint) {
     return getCurrentHub().captureException(throwable, hint);
   }
 
@@ -324,7 +348,7 @@ public final class Sentry {
    * @param hint SDK specific but provides high level information about the origin of the event
    */
   public static void addBreadcrumb(
-      final @NotNull Breadcrumb breadcrumb, final @Nullable Object hint) {
+      final @NotNull Breadcrumb breadcrumb, final @Nullable Hint hint) {
     getCurrentHub().addBreadcrumb(breadcrumb, hint);
   }
 
@@ -672,6 +696,8 @@ public final class Sentry {
       final boolean bindToScope,
       final @Nullable Date startTimestamp,
       final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return getCurrentHub()
         .startTransaction(
@@ -680,6 +706,8 @@ public final class Sentry {
             bindToScope,
             startTimestamp,
             waitForChildren,
+            idleTimeout,
+            trimEnd,
             transactionFinishedCallback);
   }
 

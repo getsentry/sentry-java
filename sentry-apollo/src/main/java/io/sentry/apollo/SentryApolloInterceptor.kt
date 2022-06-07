@@ -12,11 +12,14 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
+import io.sentry.TypeCheckHint.APOLLO_REQUEST
+import io.sentry.TypeCheckHint.APOLLO_RESPONSE
 import java.util.concurrent.Executor
 
 class SentryApolloInterceptor(
@@ -112,7 +115,12 @@ class SentryApolloInterceptor(
                 httpResponse.body()?.contentLength().ifHasValidLength { contentLength ->
                     breadcrumb.setData("response_body_size", contentLength)
                 }
-                hub.addBreadcrumb(breadcrumb)
+
+                val hint = Hint().also {
+                    it.set(APOLLO_REQUEST, httpRequest)
+                    it.set(APOLLO_RESPONSE, httpResponse)
+                }
+                hub.addBreadcrumb(breadcrumb, hint)
             }
         }
     }

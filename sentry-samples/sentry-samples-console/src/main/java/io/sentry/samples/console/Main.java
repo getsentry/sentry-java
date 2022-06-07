@@ -2,6 +2,7 @@ package io.sentry.samples.console;
 
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
+import io.sentry.Hint;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
@@ -49,7 +50,7 @@ public class Main {
 
           // Configure the background worker which sends events to sentry:
           // Wait up to 5 seconds before shutdown while there are events to send.
-          options.setShutdownTimeout(5000);
+          options.setShutdownTimeoutMillis(5000);
 
           // Enable SDK logging with Debug level
           options.setDebug(true);
@@ -134,7 +135,10 @@ public class Main {
       message.setFormatted(String.format(messageContent, i, count));
       SentryEvent event = new SentryEvent();
       event.setMessage(message);
-      Sentry.captureEvent(event, SentryLevel.DEBUG);
+
+      final Hint hint = new Hint();
+      hint.set("level", SentryLevel.DEBUG);
+      Sentry.captureEvent(event, hint);
     }
 
     // Performance feature
@@ -166,7 +170,7 @@ public class Main {
 
   private static class SomeEventProcessor implements EventProcessor {
     @Override
-    public SentryEvent process(SentryEvent event, Object hint) {
+    public SentryEvent process(SentryEvent event, Hint hint) {
       // Here you can modify the event as you need
       if (event.getLevel() != null && event.getLevel().ordinal() > SentryLevel.INFO.ordinal()) {
         event.addBreadcrumb(new Breadcrumb("Processed by " + SomeEventProcessor.class));

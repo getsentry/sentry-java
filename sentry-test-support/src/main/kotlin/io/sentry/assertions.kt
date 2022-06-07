@@ -9,7 +9,7 @@ import org.mockito.Mockito
  */
 fun checkEvent(predicate: (SentryEvent) -> Unit): SentryEnvelope {
     return check {
-        val event: SentryEvent? = it.items.first().getEvent(GsonSerializer(SentryOptions.empty()))
+        val event: SentryEvent? = it.items.first().getEvent(JsonSerializer(SentryOptions.empty()))
         if (event != null) {
             predicate(event)
         } else {
@@ -20,13 +20,26 @@ fun checkEvent(predicate: (SentryEvent) -> Unit): SentryEnvelope {
 
 fun checkTransaction(predicate: (SentryTransaction) -> Unit): SentryEnvelope {
     return check {
-        val transaction = it.items.first().getTransaction(GsonSerializer(SentryOptions.empty()))
+        val transaction = it.items.first().getTransaction(JsonSerializer(SentryOptions.empty()))
         if (transaction != null) {
             predicate(transaction)
         } else {
             throw SkipError("transaction is null")
         }
     }
+}
+
+/**
+ * Asserts an envelope item of [T] exists in [items] and returns the first one. Otherwise it throws an [AssertionError].
+ */
+inline fun <reified T> assertEnvelopeItem(items: List<SentryEnvelopeItem>, predicate: (index: Int, item: T) -> Unit): T {
+    val item = items.mapIndexedNotNull { index, it ->
+        val deserialized = JsonSerializer(SentryOptions()).deserialize(it.data.inputStream().reader(), T::class.java)
+        deserialized?.let { Pair(index, it) }
+    }.firstOrNull()
+        ?: throw AssertionError("No item found of type: ${T::class.java.name}")
+    predicate(item.first, item.second)
+    return item.second
 }
 
 /**

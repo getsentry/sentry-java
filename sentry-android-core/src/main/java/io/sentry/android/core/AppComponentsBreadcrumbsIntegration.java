@@ -1,9 +1,12 @@
 package io.sentry.android.core;
 
+import static io.sentry.TypeCheckHint.ANDROID_CONFIGURATION;
+
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.res.Configuration;
 import io.sentry.Breadcrumb;
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
@@ -95,7 +98,11 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setCategory("device.orientation");
       breadcrumb.setData("position", orientation);
       breadcrumb.setLevel(SentryLevel.INFO);
-      hub.addBreadcrumb(breadcrumb);
+
+      final Hint hint = new Hint();
+      hint.set(ANDROID_CONFIGURATION, newConfig);
+
+      hub.addBreadcrumb(breadcrumb, hint);
     }
   }
 

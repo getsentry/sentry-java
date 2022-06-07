@@ -35,6 +35,7 @@ class NdkIntegrationTest {
 
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
         assertTrue(options.isEnableNdk)
+        assertTrue(options.isEnableScopeSync)
     }
 
     @Test
@@ -46,11 +47,13 @@ class NdkIntegrationTest {
         integration.register(fixture.hub, options)
 
         assertTrue(options.isEnableNdk)
+        assertTrue(options.isEnableScopeSync)
 
         integration.close()
 
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
         assertFalse(options.isEnableNdk)
+        assertFalse(options.isEnableScopeSync)
     }
 
     @Test
@@ -64,6 +67,7 @@ class NdkIntegrationTest {
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
 
         assertFalse(options.isEnableNdk)
+        assertFalse(options.isEnableScopeSync)
     }
 
     @Test
@@ -77,6 +81,7 @@ class NdkIntegrationTest {
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
 
         assertFalse(options.isEnableNdk)
+        assertFalse(options.isEnableScopeSync)
     }
 
     @Test
@@ -90,6 +95,7 @@ class NdkIntegrationTest {
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), any())
 
         assertFalse(options.isEnableNdk)
+        assertFalse(options.isEnableScopeSync)
     }
 
     @Test
@@ -101,11 +107,13 @@ class NdkIntegrationTest {
         integration.register(fixture.hub, options)
 
         assertTrue(options.isEnableNdk)
+        assertTrue(options.isEnableScopeSync)
 
         integration.close()
 
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), any())
         assertFalse(options.isEnableNdk)
+        assertFalse(options.isEnableScopeSync)
     }
 
     @Test
@@ -119,6 +127,7 @@ class NdkIntegrationTest {
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), any())
 
         assertFalse(options.isEnableNdk)
+        assertFalse(options.isEnableScopeSync)
     }
 
     @Test
@@ -132,6 +141,7 @@ class NdkIntegrationTest {
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any())
 
         assertFalse(options.isEnableNdk)
+        assertFalse(options.isEnableScopeSync)
     }
 
     @Test
@@ -145,12 +155,13 @@ class NdkIntegrationTest {
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any())
 
         assertFalse(options.isEnableNdk)
+        assertFalse(options.isEnableScopeSync)
     }
 
     private fun getOptions(enableNdk: Boolean = true, cacheDir: String? = "abc"): SentryAndroidOptions {
         return SentryAndroidOptions().apply {
             setLogger(fixture.logger)
-            setDebug(true)
+            isDebug = true
             isEnableNdk = enableNdk
             cacheDirPath = cacheDir
         }

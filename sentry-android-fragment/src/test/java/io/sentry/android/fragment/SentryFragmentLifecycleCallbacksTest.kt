@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
@@ -19,7 +20,7 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryFragmentLifecycleCallbacksTest {
@@ -268,7 +269,8 @@ class SentryFragmentLifecycleCallbacksTest {
                 assertEquals(INFO, breadcrumb.level)
                 assertEquals(expectedState, breadcrumb.getData("state"))
                 assertEquals(fixture.fragment.javaClass.simpleName, breadcrumb.getData("screen"))
-            }
+            },
+            anyOrNull()
         )
     }
 }

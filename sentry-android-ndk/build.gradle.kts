@@ -9,6 +9,7 @@ plugins {
 }
 
 var sentryNativeSrc: String = "sentry-native"
+val sentryAndroidSdkName: String by project
 
 android {
     compileSdk = Config.Android.compileSdkVersion
@@ -24,12 +25,13 @@ android {
         targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersionNdk // NDK requires a higher API level than core.
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
         externalNativeBuild {
             cmake {
                 arguments.add(0, "-DANDROID_STL=c++_static")
                 arguments.add(0, "-DSENTRY_NATIVE_SRC=$sentryNativeSrc")
+                arguments.add(0, "-DSENTRY_SDK_NAME=$sentryAndroidSdkName")
             }
         }
 

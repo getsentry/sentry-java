@@ -1,6 +1,7 @@
 package io.sentry.spring
 
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.mock
@@ -74,7 +75,8 @@ class SentrySpringFilterTest {
                 Assertions.assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
                 Assertions.assertThat(it.getData("method")).isEqualTo("POST")
                 Assertions.assertThat(it.type).isEqualTo("http")
-            }
+            },
+            anyOrNull()
         )
     }
 

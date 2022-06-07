@@ -1,5 +1,9 @@
 package io.sentry.spring.webflux;
 
+import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_REQUEST;
+import static io.sentry.TypeCheckHint.WEBFLUX_EXCEPTION_HANDLER_RESPONSE;
+
+import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -38,7 +42,12 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
       final SentryEvent event = new SentryEvent(throwable);
       event.setLevel(SentryLevel.FATAL);
       event.setTransaction(TransactionNameProvider.provideTransactionName(serverWebExchange));
-      hub.captureEvent(event);
+
+      final Hint hint = new Hint();
+      hint.set(WEBFLUX_EXCEPTION_HANDLER_REQUEST, serverWebExchange.getRequest());
+      hint.set(WEBFLUX_EXCEPTION_HANDLER_RESPONSE, serverWebExchange.getResponse());
+
+      hub.captureEvent(event, hint);
     }
     return Mono.error(ex);
   }

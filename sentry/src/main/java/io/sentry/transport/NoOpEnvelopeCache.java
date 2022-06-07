@@ -1,11 +1,11 @@
 package io.sentry.transport;
 
+import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
 import io.sentry.cache.IEnvelopeCache;
 import java.util.ArrayList;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public final class NoOpEnvelopeCache implements IEnvelopeCache {
   private static final NoOpEnvelopeCache instance = new NoOpEnvelopeCache();
@@ -15,7 +15,7 @@ public final class NoOpEnvelopeCache implements IEnvelopeCache {
   }
 
   @Override
-  public void store(@NotNull SentryEnvelope envelope, @Nullable Object hint) {}
+  public void store(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {}
 
   @Override
   public void discard(@NotNull SentryEnvelope envelope) {}

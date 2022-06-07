@@ -19,5 +19,10 @@ final class NoOpSentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
+  public @NotNull Future<?> schedule(@NotNull Runnable runnable, long delayMillis) {
+    return new FutureTask<>(() -> null);
+  }
+
+  @Override
   public void close(long timeoutMillis) {}
 }

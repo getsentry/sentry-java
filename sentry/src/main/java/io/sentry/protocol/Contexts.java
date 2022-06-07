@@ -1,13 +1,22 @@
 package io.sentry.protocol;
 
+import io.sentry.ILogger;
+import io.sentry.JsonDeserializer;
+import io.sentry.JsonObjectReader;
+import io.sentry.JsonObjectWriter;
+import io.sentry.JsonSerializable;
 import io.sentry.SpanContext;
 import io.sentry.util.Objects;
+import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Contexts extends ConcurrentHashMap<String, Object> {
+public final class Contexts extends ConcurrentHashMap<String, Object> implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
 
   public Contexts() {}
@@ -99,4 +108,69 @@ public final class Contexts extends ConcurrentHashMap<String, Object> {
   public void setGpu(final @NotNull Gpu gpu) {
     this.put(Gpu.TYPE, gpu);
   }
+
+  // region json
+
+  @Override
+  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+      throws IOException {
+    writer.beginObject();
+    // Serialize in alphabetical order to keep determinism.
+    List<String> sortedKeys = Collections.list(keys());
+    java.util.Collections.sort(sortedKeys);
+    for (String key : sortedKeys) {
+      Object value = get(key);
+      if (value != null) {
+        writer.name(key).value(logger, value);
+      }
+    }
+    writer.endObject();
+  }
+
+  public static final class Deserializer implements JsonDeserializer<Contexts> {
+
+    @Override
+    public @NotNull Contexts deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
+      Contexts contexts = new Contexts();
+      reader.beginObject();
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case App.TYPE:
+            contexts.setApp(new App.Deserializer().deserialize(reader, logger));
+            break;
+          case Browser.TYPE:
+            contexts.setBrowser(new Browser.Deserializer().deserialize(reader, logger));
+            break;
+          case Device.TYPE:
+            contexts.setDevice(new Device.Deserializer().deserialize(reader, logger));
+            break;
+          case Gpu.TYPE:
+            contexts.setGpu(new Gpu.Deserializer().deserialize(reader, logger));
+            break;
+          case OperatingSystem.TYPE:
+            contexts.setOperatingSystem(
+                new OperatingSystem.Deserializer().deserialize(reader, logger));
+            break;
+          case SentryRuntime.TYPE:
+            contexts.setRuntime(new SentryRuntime.Deserializer().deserialize(reader, logger));
+            break;
+          case SpanContext.TYPE:
+            contexts.setTrace(new SpanContext.Deserializer().deserialize(reader, logger));
+            break;
+          default:
+            Object object = reader.nextObjectOrNull();
+            if (object != null) {
+              contexts.put(nextName, object);
+            }
+            break;
+        }
+      }
+      reader.endObject();
+      return contexts;
+    }
+  }
+
+  // endregion
 }

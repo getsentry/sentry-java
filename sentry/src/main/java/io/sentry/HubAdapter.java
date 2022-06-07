@@ -25,7 +25,7 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Object hint) {
+  public @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
     return Sentry.captureEvent(event, hint);
   }
 
@@ -36,13 +36,12 @@ public final class HubAdapter implements IHub {
 
   @ApiStatus.Internal
   @Override
-  public @NotNull SentryId captureEnvelope(
-      @NotNull SentryEnvelope envelope, @Nullable Object hint) {
+  public @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
     return Sentry.getCurrentHub().captureEnvelope(envelope, hint);
   }
 
   @Override
-  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Object hint) {
+  public @NotNull SentryId captureException(@NotNull Throwable throwable, @Nullable Hint hint) {
     return Sentry.captureException(throwable, hint);
   }
 
@@ -67,7 +66,7 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Object hint) {
+  public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
     Sentry.addBreadcrumb(breadcrumb, hint);
   }
 
@@ -160,8 +159,10 @@ public final class HubAdapter implements IHub {
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceState traceState,
-      @Nullable Object hint) {
-    return Sentry.getCurrentHub().captureTransaction(transaction, traceState, hint);
+      @Nullable Hint hint,
+      @Nullable ProfilingTraceData profilingTraceData) {
+    return Sentry.getCurrentHub()
+        .captureTransaction(transaction, traceState, hint, profilingTraceData);
   }
 
   @Override
@@ -196,6 +197,8 @@ public final class HubAdapter implements IHub {
       boolean bindToScope,
       @Nullable Date startTimestamp,
       boolean waitForChildren,
+      @Nullable Long idleTimeout,
+      boolean trimEnd,
       @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     return Sentry.startTransaction(
         transactionContexts,
@@ -203,6 +206,8 @@ public final class HubAdapter implements IHub {
         bindToScope,
         startTimestamp,
         waitForChildren,
+        idleTimeout,
+        trimEnd,
         transactionFinishedCallback);
   }
 

@@ -21,14 +21,13 @@ final class SentryRuntimeEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(
-      final @NotNull SentryEvent event, final @Nullable Object hint) {
+  public @NotNull SentryEvent process(final @NotNull SentryEvent event, final @Nullable Hint hint) {
     return process(event);
   }
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @Nullable Object hint) {
+      final @NotNull SentryTransaction transaction, final @Nullable Hint hint) {
     return process(transaction);
   }
 
