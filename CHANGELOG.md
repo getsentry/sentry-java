@@ -13,6 +13,7 @@
 - Starting with version `6.0.0` of the `sentry` package, [Sentry's self hosted version >= v21.9.0](https://github.com/getsentry/self-hosted/releases) is required or you have to manually disable sending client reports via the `sendClientReports` option. This only applies to self-hosted Sentry. If you are using [sentry.io](https://sentry.io), no action is needed.
 
 ### Features
+
 - Allow optimization and obfuscation of the SDK by reducing proguard rules ([#2031](https://github.com/getsentry/sentry-java/pull/2031))
 - Relax TransactionNameProvider ([#1861](https://github.com/getsentry/sentry-java/pull/1861))
 - Use float instead of Date for protocol types for higher precision ([#1737](https://github.com/getsentry/sentry-java/pull/1737))

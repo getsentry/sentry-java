@@ -104,7 +104,7 @@ public final class Hub implements IHub {
         assignTraceContext(event);
         final StackItem item = stack.peek();
 
-        Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+        final Scope scope = buildLocalScope(item.getScope(), scopeCallback);
 
         sentryId = item.getClient().captureEvent(event, scope, hint);
         this.lastEventId = sentryId;
@@ -149,7 +149,7 @@ public final class Hub implements IHub {
       try {
         final StackItem item = stack.peek();
 
-        Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+        final Scope scope = buildLocalScope(item.getScope(), scopeCallback);
 
         sentryId = item.getClient().captureMessage(message, level, scope);
       } catch (Throwable e) {
@@ -221,7 +221,7 @@ public final class Hub implements IHub {
         final SentryEvent event = new SentryEvent(throwable);
         assignTraceContext(event);
 
-        Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+        final Scope scope = buildLocalScope(item.getScope(), scopeCallback);
 
         sentryId = item.getClient().captureEvent(event, scope, hint);
       } catch (Throwable e) {
@@ -820,7 +820,7 @@ public final class Hub implements IHub {
   private Scope buildLocalScope(
       final @NotNull Scope scope, final @Nullable ScopeCallback callback) {
     if (callback != null) {
-      Scope localScope = new Scope(scope);
+      final Scope localScope = new Scope(scope);
       callback.run(localScope);
       return localScope;
     }
