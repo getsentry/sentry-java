@@ -2,138 +2,26 @@
 
 ## Unreleased
 
-### Features
+### Sentry Self-hosted Compatibility
 
-* Release Health - server side session tracking ([#1572](https://github.com/getsentry/sentry-java/pull/1572))
-
-## 6.0.0-rc.1
+- Starting with version `6.0.0` of the `sentry` package, [Sentry's self hosted version >= v21.9.0](https://github.com/getsentry/self-hosted/releases) is required or you have to manually disable sending client reports via the `sendClientReports` option. This only applies to self-hosted Sentry. If you are using [sentry.io](https://sentry.io), no action is needed.
 
 ### Features
+
 - Allow optimization and obfuscation of the SDK by reducing proguard rules ([#2031](https://github.com/getsentry/sentry-java/pull/2031))
-
-### Fixes
-
-- Calling Sentry.init and specifying contextTags now has an effect on the Logback SentryAppender ([#2052](https://github.com/getsentry/sentry-java/pull/2052))
-- Calling Sentry.init and specifying contextTags now has an effect on the Log4j SentryAppender ([#2054](https://github.com/getsentry/sentry-java/pull/2054))
-- Calling Sentry.init and specifying contextTags now has an effect on the jul SentryAppender ([#2057](https://github.com/getsentry/sentry-java/pull/2057))
-- Update Spring Boot dependency to 2.6.8 and fix the CVE-2022-22970 ([#2068](https://github.com/getsentry/sentry-java/pull/2068))
-
-## 6.0.0-beta.4
-
-### Fixes
-
-- No longer close OutputStream that is passed into JsonSerializer ([#2029](https://github.com/getsentry/sentry-java/pull/2029))
-- Fix setting context tags on events captured by Spring ([#2060](https://github.com/getsentry/sentry-java/pull/2060))
-- Isolate cached events with hashed DSN subfolder ([#2038](https://github.com/getsentry/sentry-java/pull/2038))
-- SentryThread.current flag will not be overridden by DefaultAndroidEventProcessor if already set ([#2050](https://github.com/getsentry/sentry-java/pull/2050))
-- Fix serialization of Long inside of Request.data ([#2051](https://github.com/getsentry/sentry-java/pull/2051))
-
-### Features
-
+- Relax TransactionNameProvider ([#1861](https://github.com/getsentry/sentry-java/pull/1861))
+- Use float instead of Date for protocol types for higher precision ([#1737](https://github.com/getsentry/sentry-java/pull/1737))
 - Allow setting SDK info (name & version) in manifest ([#2016](https://github.com/getsentry/sentry-java/pull/2016))
 - Allow setting native Android SDK name during build ([#2035](https://github.com/getsentry/sentry-java/pull/2035))
 - Include application permissions in Android events ([#2018](https://github.com/getsentry/sentry-java/pull/2018))
 - Automatically create transactions for UI events ([#1975](https://github.com/getsentry/sentry-java/pull/1975))
 - Hints are now used via a Hint object and passed into beforeSend and EventProcessor as @NotNull Hint object ([#2045](https://github.com/getsentry/sentry-java/pull/2045))
 - Attachments can be manipulated via hint ([#2046](https://github.com/getsentry/sentry-java/pull/2046))
-
-### Changed
-
-- Update sentry-native to 0.4.17 ([#2033](https://github.com/getsentry/sentry-java/pull/2033))
-- Update Gradle to 7.4.2 and AGP to 7.2 ([#2042](https://github.com/getsentry/sentry-java/pull/2042))
-
-## 6.0.0-beta.3
-
-### Fixes
-
-- Change order of event filtering mechanisms ([#2001](https://github.com/getsentry/sentry-java/pull/2001))
-- Only send session update for dropped events if state changed ([#2002](https://github.com/getsentry/sentry-java/pull/2002))
-
-## 6.0.0-beta.2
-
-### Fixes
-
-- Android profiling initializes on first profile start ([#2009](https://github.com/getsentry/sentry-java/pull/2009))
-
-## 6.0.0-beta.1
-
-### Fixes
-
-- Profiling rate decreased from 300hz to 100hz ([#1997](https://github.com/getsentry/sentry-java/pull/1997))
-- Allow disabling sending of client reports via Android Manifest and external options ([#2007](https://github.com/getsentry/sentry-java/pull/2007))
-- Ref: Upgrade Spring Boot dependency to 2.5.13 ([#2011](https://github.com/getsentry/sentry-java/pull/2011))
-
-### Sentry Self-hosted Compatibility
-
-- Starting with version `6.6.0` of `sentry`, [Sentry's version >= v21.9.0](https://github.com/getsentry/self-hosted/releases) is required or you have to manually disable sending client reports via the `sendClientReports` option. This only applies to self-hosted Sentry. If you are using [sentry.io](https://sentry.io), no action is needed.
-
-## 6.0.0-alpha.6
-
-### Features
-
 - Add sentry-servlet-jakarta module ([#1987](https://github.com/getsentry/sentry-java/pull/1987))
 - Add client reports ([#1982](https://github.com/getsentry/sentry-java/pull/1982))
-
-### Fixes
-
-- Ref: Make options.printUncaughtStackTrace primitive type ([#1995](https://github.com/getsentry/sentry-java/pull/1995))
-
-## 6.0.0-alpha.5
-
-### Features
-
 - Screenshot is taken when there is an error ([#1967](https://github.com/getsentry/sentry-java/pull/1967))
 - Add Android profiling traces ([#1897](https://github.com/getsentry/sentry-java/pull/1897)) ([#1959](https://github.com/getsentry/sentry-java/pull/1959)) and its tests ([#1949](https://github.com/getsentry/sentry-java/pull/1949))
-
-## 6.0.0-alpha.4
-
-### Fixes
-
-- Ref: Remove not needed interface abstractions on Android ([#1953](https://github.com/getsentry/sentry-java/pull/1953))
-
-## 6.0.0-alpha.3
-
-### Features
-
 - Enable enableScopeSync by default for Android ([#1928](https://github.com/getsentry/sentry-java/pull/1928))
-
-### Fixes
-
-- Ref: Make hints Map<String, Object> instead of only Object ([#1929](https://github.com/getsentry/sentry-java/pull/1929))
-
-## 6.0.0-alpha.2
-
-### Features
-
-- Relax TransactionNameProvider ([#1861](https://github.com/getsentry/sentry-java/pull/1861))
-
-### Fixes
-
-- Ref: Simplify DateUtils with ISO8601Utils ([#1837](https://github.com/getsentry/sentry-java/pull/1837))
-
-Breaking changes:
-
-- Ref: Remove deprecated and scheduled fields ([#1875](https://github.com/getsentry/sentry-java/pull/1875))
-- Ref: Add shutdownTimeoutMillis in favor of shutdownTimeout ([#1873](https://github.com/getsentry/sentry-java/pull/1873))
-- Ref: Remove Attachment ContentType since the Server infers it ([#1874](https://github.com/getsentry/sentry-java/pull/1874))
-
-## 6.0.0-alpha.1
-
-### Features
-
-- Use float instead of Date for protocol types for higher precision ([#1737](https://github.com/getsentry/sentry-java/pull/1737))
-
-### Fixes
-
-- Ref: Bind external properties to a dedicated class. ([#1750](https://github.com/getsentry/sentry-java/pull/1750))
-- Ref: Debug log serializable objects ([#1795](https://github.com/getsentry/sentry-java/pull/1795))
-- Ref: catch Throwable instead of Exception to suppress internal SDK errors ([#1812](https://github.com/getsentry/sentry-java/pull/1812))
-
-Breaking changes:
-
-- `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
-- Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
-- `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
 - Feat: Vendor JSON ([#1554](https://github.com/getsentry/sentry-java/pull/1554))
     - Introduce `JsonSerializable` and `JsonDeserializer` interfaces for manual json
       serialization/deserialization.
@@ -148,7 +36,48 @@ Breaking changes:
             - Call `toString()` where object graphs exceed max depth.
     - Remove `gson` dependency.
     - Remove `IUnknownPropertiesConsumer`
+- Release Health - server side session tracking ([#1572](https://github.com/getsentry/sentry-java/pull/1572))
+
+### Fixes
+
+- Calling Sentry.init and specifying contextTags now has an effect on the Logback SentryAppender ([#2052](https://github.com/getsentry/sentry-java/pull/2052))
+- Calling Sentry.init and specifying contextTags now has an effect on the Log4j SentryAppender ([#2054](https://github.com/getsentry/sentry-java/pull/2054))
+- Calling Sentry.init and specifying contextTags now has an effect on the jul SentryAppender ([#2057](https://github.com/getsentry/sentry-java/pull/2057))
+- Update Spring Boot dependency to 2.6.8 and fix the CVE-2022-22970 ([#2068](https://github.com/getsentry/sentry-java/pull/2068))
+- Sentry can now self heal after a Thread had its currentHub set to a NoOpHub ([#2076](https://github.com/getsentry/sentry-java/pull/2076))
+- No longer close OutputStream that is passed into JsonSerializer ([#2029](https://github.com/getsentry/sentry-java/pull/2029))
+- Fix setting context tags on events captured by Spring ([#2060](https://github.com/getsentry/sentry-java/pull/2060))
+- Isolate cached events with hashed DSN subfolder ([#2038](https://github.com/getsentry/sentry-java/pull/2038))
+- SentryThread.current flag will not be overridden by DefaultAndroidEventProcessor if already set ([#2050](https://github.com/getsentry/sentry-java/pull/2050))
+- Fix serialization of Long inside of Request.data ([#2051](https://github.com/getsentry/sentry-java/pull/2051))
+- Update sentry-native to 0.4.17 ([#2033](https://github.com/getsentry/sentry-java/pull/2033))
+- Update Gradle to 7.4.2 and AGP to 7.2 ([#2042](https://github.com/getsentry/sentry-java/pull/2042))
+- Change order of event filtering mechanisms ([#2001](https://github.com/getsentry/sentry-java/pull/2001))
+- Only send session update for dropped events if state changed ([#2002](https://github.com/getsentry/sentry-java/pull/2002))
+- Android profiling initializes on first profile start ([#2009](https://github.com/getsentry/sentry-java/pull/2009))
+- Profiling rate decreased from 300hz to 100hz ([#1997](https://github.com/getsentry/sentry-java/pull/1997))
+- Allow disabling sending of client reports via Android Manifest and external options ([#2007](https://github.com/getsentry/sentry-java/pull/2007))
+- Ref: Upgrade Spring Boot dependency to 2.5.13 ([#2011](https://github.com/getsentry/sentry-java/pull/2011))
+- Ref: Make options.printUncaughtStackTrace primitive type ([#1995](https://github.com/getsentry/sentry-java/pull/1995))
+- Ref: Remove not needed interface abstractions on Android ([#1953](https://github.com/getsentry/sentry-java/pull/1953))
+- Ref: Make hints Map<String, Object> instead of only Object ([#1929](https://github.com/getsentry/sentry-java/pull/1929))
+- Ref: Simplify DateUtils with ISO8601Utils ([#1837](https://github.com/getsentry/sentry-java/pull/1837))
+- Ref: Remove deprecated and scheduled fields ([#1875](https://github.com/getsentry/sentry-java/pull/1875))
+- Ref: Add shutdownTimeoutMillis in favor of shutdownTimeout ([#1873](https://github.com/getsentry/sentry-java/pull/1873))
+- Ref: Remove Attachment ContentType since the Server infers it ([#1874](https://github.com/getsentry/sentry-java/pull/1874))
+- Ref: Bind external properties to a dedicated class. ([#1750](https://github.com/getsentry/sentry-java/pull/1750))
+- Ref: Debug log serializable objects ([#1795](https://github.com/getsentry/sentry-java/pull/1795))
+- Ref: catch Throwable instead of Exception to suppress internal SDK errors ([#1812](https://github.com/getsentry/sentry-java/pull/1812))
+- `SentryOptions` can merge properties from `ExternalOptions` instead of another instance of `SentryOptions`
+- Following boolean properties from `SentryOptions` that allowed `null` values are now not nullable - `debug`, `enableUncaughtExceptionHandler`, `enableDeduplication`
+- `SentryOptions` cannot be created anymore using `PropertiesProvider` with `SentryOptions#from` method. Use `ExternalOptions#from` instead and merge created object with `SentryOptions#merge`
 - Bump: Kotlin to 1.5 and compatibility to 1.4 for sentry-android-timber ([#1815](https://github.com/getsentry/sentry-java/pull/1815))
+
+## 5.7.4
+
+### Fixes
+
+* Change order of event filtering mechanisms and only send session update for dropped events if session state changed (#2028)
 
 ## 5.7.3
 
