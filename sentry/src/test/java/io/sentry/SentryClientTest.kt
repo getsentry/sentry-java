@@ -2051,3 +2051,17 @@ class SentryClientTest {
         }
     }
 }
+
+class DropEverythingEventProcessor : EventProcessor {
+
+    override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
+        return null
+    }
+
+    override fun process(
+        transaction: SentryTransaction,
+        hint: Hint
+    ): SentryTransaction? {
+        return null
+    }
+}

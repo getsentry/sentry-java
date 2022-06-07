@@ -41,7 +41,7 @@ public final class Sentry {
       return mainHub;
     }
     IHub hub = currentHub.get();
-    if (hub == null) {
+    if (hub == null || hub instanceof NoOpHub) {
       hub = mainHub.clone();
       currentHub.set(hub);
     }
