@@ -39,11 +39,12 @@ object Config {
 
     object Libs {
         val okHttpVersion = "4.9.2"
-        val appCompat = "androidx.appcompat:appcompat:1.2.0"
+        val appCompat = "androidx.appcompat:appcompat:1.3.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val okhttpBom = "com.squareup.okhttp3:okhttp-bom:$okHttpVersion"
         val okhttp = "com.squareup.okhttp3:okhttp"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
+        val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.3"
 
         private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
@@ -111,12 +112,19 @@ object Config {
     }
 
     object TestLibs {
-        private val androidxTestVersion = "1.4.0-rc01"
+        private val androidxTestVersion = "1.4.0"
+        private val espressoVersion = "3.4.0"
 
+        val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
         val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxJunit = "androidx.test.ext:junit:1.1.3-rc01"
+        val androidxTestCoreKtx = "androidx.test:core-ktx:$androidxTestVersion"
+        val androidxTestRules = "androidx.test:rules:$androidxTestVersion"
+        val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
+        val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
+        val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.1"
+        val androidxJunit = "androidx.test.ext:junit:1.1.3"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val robolectric = "org.robolectric:robolectric:4.7.3"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
