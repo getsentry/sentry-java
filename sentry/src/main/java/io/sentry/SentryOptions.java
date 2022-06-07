@@ -1434,8 +1434,11 @@ public class SentryOptions {
    * Returns whether the `baggage` header is attached HTTP client integrations and the `trace`
    * header is attached to envelopes.
    *
+   * <p>Note: this is an experimental API and will be removed without notice.
+   *
    * @return true if enabled
    */
+  @ApiStatus.Experimental
   public boolean isTraceSampling() {
     return traceSampling;
   }
@@ -1443,6 +1446,8 @@ public class SentryOptions {
   /**
    * Controls if the `baggage` header is attached HTTP client integrations and if the `trace` header
    * is attached to envelopes. Defaults to false.
+   *
+   * <p>Note: this is an experimental API and will be removed without notice.
    *
    * @param traceSampling - if trace sampling should be enabled
    */

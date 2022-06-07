@@ -45,6 +45,7 @@ public interface ISpan {
    * @return a trace context or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
    */
   @Nullable
+  @ApiStatus.Experimental
   TraceContext traceContext();
 
   /**
@@ -53,6 +54,7 @@ public interface ISpan {
    * @return BaggageHeader or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
    */
   @Nullable
+  @ApiStatus.Experimental
   BaggageHeader toBaggageHeader();
 
   /** Sets span timestamp marking this span as finished. */

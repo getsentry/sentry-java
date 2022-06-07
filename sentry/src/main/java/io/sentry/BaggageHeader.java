@@ -1,7 +1,9 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Experimental
 public final class BaggageHeader {
   public static final @NotNull String BAGGAGE_HEADER = "baggage";
 
