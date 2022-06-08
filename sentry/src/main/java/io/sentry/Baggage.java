@@ -22,9 +22,6 @@ public final class Baggage {
   final @NotNull Map<String, String> keyValues;
   final @NotNull ILogger logger;
 
-  @SuppressWarnings("unused")
-  private @Nullable Map<String, @NotNull Object> unknown;
-
   public static Baggage fromHeader(@Nullable List<String> headerValues, @NotNull ILogger logger) {
     final Map<String, String> keyValues = new HashMap<>();
 
