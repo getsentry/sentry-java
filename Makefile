@@ -1,8 +1,8 @@
 .PHONY: all clean compile dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease
 
 all: stop clean checkFormat compile dryRelease
-assembleBenchmarks: stop clean compile assembleBenchmarkTestRelease
-assembleUiTests: stop clean compile assembleUiTestRelease
+assembleBenchmarks: stop clean assembleBenchmarkTestRelease
+assembleUiTests: stop clean assembleUiTestRelease
 
 # deep clean
 clean:

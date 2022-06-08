@@ -1,4 +1,4 @@
-name: "Build"
+name: "Integration Tests"
 on:
   push:
     branches:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build Job ${{ matrix.os }} - Java ${{ matrix.java }}
+    name: Benchmarks
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
