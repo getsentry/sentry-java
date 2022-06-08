@@ -111,13 +111,7 @@ public final class Baggage {
   }
 
   private String encode(String value) throws UnsupportedEncodingException {
-    return URLEncoder.encode(value, CHARSET)
-        .replaceAll("\\+", "%20")
-        .replaceAll("\\%21", "!")
-        .replaceAll("\\%27", "'")
-        .replaceAll("\\%28", "(")
-        .replaceAll("\\%29", ")")
-        .replaceAll("\\%7E", "~");
+    return URLEncoder.encode(value, CHARSET).replaceAll("\\+", "%20");
   }
 
   private static String decode(String value) throws UnsupportedEncodingException {
@@ -160,7 +154,7 @@ public final class Baggage {
     set("sentry-transaction", transaction);
   }
 
-  private void set(@NotNull String key, @Nullable String value) {
+  public void set(@NotNull String key, @Nullable String value) {
     this.keyValues.put(key, value);
   }
 }

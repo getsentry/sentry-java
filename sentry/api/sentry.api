@@ -26,6 +26,7 @@ public final class io/sentry/Baggage {
 	public static fun fromHeader (Ljava/lang/String;Lio/sentry/ILogger;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/util/List;Lio/sentry/ILogger;)Lio/sentry/Baggage;
 	public fun get (Ljava/lang/String;)Ljava/lang/String;
+	public fun set (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setPublicKey (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
