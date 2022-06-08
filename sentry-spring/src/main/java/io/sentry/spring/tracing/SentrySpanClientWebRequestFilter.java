@@ -46,6 +46,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
     if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), request.url())) {
       requestBuilder.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+      // TODO add baggage header
     }
 
     final ClientRequest clientRequestWithSentryTraceHeader = requestBuilder.build();
