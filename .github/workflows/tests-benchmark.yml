@@ -1,0 +1,45 @@
+name: "Build"
+on:
+  push:
+    branches:
+      - main
+      - release/**
+  pull_request:
+
+jobs:
+  build:
+    name: Build Job ${{ matrix.os }} - Java ${{ matrix.java }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        # Zulu Community distribution of OpenJDK
+        java: ["11"]
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v2
+
+      - name: "Set up Java: ${{ matrix.java }}"
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: "adopt"
+
+      # Clean, build and release a test apk
+      - name: Make assembleBenchmarks
+        run: make assembleBenchmarks
+
+      # We stop gradle at the end to make sure the cache folders
+      # don't contain any lock files and are free to be cached.
+      - name: Make stop
+        run: make stop
+
+      - name: Install SauceLab command line
+      - run: npm install -g saucectl
+
+      - name: Run Tests in SauceLab
+        env:
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+        run: saucectl run -c .sauce/sentry-uitest-android-benchmark.yml
