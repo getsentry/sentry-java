@@ -39,6 +39,7 @@ class SentryApolloInterceptor(
             val sentryTraceHeader = span.toSentryTrace()
 
             // we have no access to URI, no way to verify tracing origins
+            // TODO should we also add baggage header here?
             val headers = request.requestHeaders.toBuilder().addHeader(sentryTraceHeader.name, sentryTraceHeader.value).build()
             val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
             span.setData("operationId", requestWithHeader.operation.operationId())

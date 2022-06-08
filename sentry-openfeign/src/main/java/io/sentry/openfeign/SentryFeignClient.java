@@ -52,6 +52,7 @@ public final class SentryFeignClient implements Client {
       final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
       final RequestWrapper requestWrapper = new RequestWrapper(request);
       requestWrapper.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+      // TODO add baggage header here?
       try {
         response = delegate.execute(requestWrapper.build(), options);
         // handles both success and error responses
