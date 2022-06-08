@@ -36,7 +36,7 @@ jobs:
         run: make stop
 
       - name: Install SauceLab command line
-      - run: npm install -g saucectl
+        run: npm install -g saucectl
 
       - name: Run Tests in SauceLab
         env:
