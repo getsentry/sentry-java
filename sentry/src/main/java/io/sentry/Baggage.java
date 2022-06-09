@@ -91,31 +91,39 @@ public final class Baggage {
     for (final String key : keys) {
       final @Nullable String value = keyValues.get(key);
 
-      if (value != null && listMemberCount < MAX_BAGGAGE_LIST_MEMBER_COUNT) {
-        try {
-          final String encodedKey = encode(key);
-          final String encodedValue = encode(value);
-          final String encodedKeyValue = separator + encodedKey + "=" + encodedValue;
-
-          final int valueLength = encodedKeyValue.length();
-          final int totalLengthIfValueAdded = sb.length() + valueLength;
-          if (totalLengthIfValueAdded > MAX_BAGGAGE_STRING_LENGTH) {
-            logger.log(
-                SentryLevel.ERROR,
-                "Not adding baggage value %s as the total header value length would exceed the maximum of %s.",
-                key,
-                MAX_BAGGAGE_STRING_LENGTH);
-          } else {
-            listMemberCount++;
-            sb.append(encodedKeyValue);
-            separator = ",";
-          }
-        } catch (Exception e) {
+      if (value != null) {
+        if (listMemberCount >= MAX_BAGGAGE_LIST_MEMBER_COUNT) {
           logger.log(
               SentryLevel.ERROR,
-              "Unable to encode baggage key value pair (key=%s,value=%s).",
+              "Not adding baggage value %s as the total number of list members would exceed the maximum of %s.",
               key,
-              value);
+              MAX_BAGGAGE_LIST_MEMBER_COUNT);
+        } else {
+          try {
+            final String encodedKey = encode(key);
+            final String encodedValue = encode(value);
+            final String encodedKeyValue = separator + encodedKey + "=" + encodedValue;
+
+            final int valueLength = encodedKeyValue.length();
+            final int totalLengthIfValueAdded = sb.length() + valueLength;
+            if (totalLengthIfValueAdded > MAX_BAGGAGE_STRING_LENGTH) {
+              logger.log(
+                  SentryLevel.ERROR,
+                  "Not adding baggage value %s as the total header value length would exceed the maximum of %s.",
+                  key,
+                  MAX_BAGGAGE_STRING_LENGTH);
+            } else {
+              listMemberCount++;
+              sb.append(encodedKeyValue);
+              separator = ",";
+            }
+          } catch (Exception e) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Unable to encode baggage key value pair (key=%s,value=%s).",
+                key,
+                value);
+          }
         }
       }
     }
