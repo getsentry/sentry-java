@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Implement local scope by adding overloads to the capture methods that accept a ScopeCallback ([#2084](https://github.com/getsentry/sentry-java/pull/2084))
+
 ## 6.0.0
 
 ### Sentry Self-hosted Compatibility
