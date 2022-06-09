@@ -6,6 +6,7 @@ import static io.sentry.TypeCheckHint.OPEN_FEIGN_RESPONSE;
 import feign.Client;
 import feign.Request;
 import feign.Response;
+import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
@@ -50,9 +51,13 @@ public final class SentryFeignClient implements Client {
       span.setDescription(request.httpMethod().name() + " " + request.url());
 
       final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
+      final @Nullable BaggageHeader baggageHeader = span.toBaggageHeader();
       final RequestWrapper requestWrapper = new RequestWrapper(request);
       requestWrapper.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-      // TODO add baggage header here?
+      if (baggageHeader != null) {
+        requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
+      }
+
       try {
         response = delegate.execute(requestWrapper.build(), options);
         // handles both success and error responses

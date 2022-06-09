@@ -4,6 +4,7 @@ import static io.sentry.TypeCheckHint.SPRING_EXCHANGE_FILTER_REQUEST;
 import static io.sentry.TypeCheckHint.SPRING_EXCHANGE_FILTER_RESPONSE;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
@@ -41,12 +42,15 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     span.setDescription(request.method().name() + " " + request.url());
 
     final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
+    final @Nullable BaggageHeader baggageHeader = span.toBaggageHeader();
 
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
 
     if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), request.url())) {
       requestBuilder.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-      // TODO add baggage header
+      if (baggageHeader != null) {
+        requestBuilder.header(baggageHeader.getName(), baggageHeader.getValue());
+      }
     }
 
     final ClientRequest clientRequestWithSentryTraceHeader = requestBuilder.build();
