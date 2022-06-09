@@ -50,7 +50,6 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
             SentryAndroid.init(context) {
                 it.dsn = "https://key@host/proj"
                 it.isProfilingEnabled = true
-                it.isEnableAutoActivityLifecycleTracing = true
                 it.tracesSampleRate = 1.0
             }
         }

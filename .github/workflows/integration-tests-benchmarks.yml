@@ -1,4 +1,4 @@
-name: "Integration Tests"
+name: "Integration Tests - Benchmarks"
 on:
   push:
     branches:
@@ -7,23 +7,18 @@ on:
   pull_request:
 
 jobs:
-  build:
+  test:
     name: Benchmarks
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        # Zulu Community distribution of OpenJDK
-        java: ["11"]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      - name: "Set up Java: ${{ matrix.java }}"
+      - name: "Set up Java: 11"
         uses: actions/setup-java@v2
         with:
-          java-version: ${{ matrix.java }}
+          java-version: "11"
           distribution: "adopt"
 
       # Clean, build and release a test apk
@@ -35,11 +30,9 @@ jobs:
       - name: Make stop
         run: make stop
 
-      - name: Install SauceLab command line
-        run: npm install -g saucectl
-
       - name: Run Tests in SauceLab
-        env:
-          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
-          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
-        run: saucectl run -c .sauce/sentry-uitest-android-benchmark.yml
+        uses: saucelabs/saucectl-run-action@v1
+        with:
+          sauce-username: ${{ secrets.SAUCE_USERNAME }}
+          sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
+          config-file: .sauce/sentry-uitest-android-benchmark.yml
