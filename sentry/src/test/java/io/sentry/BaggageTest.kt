@@ -1,6 +1,8 @@
 package io.sentry
 
 import com.github.javafaker.Faker
+import io.sentry.Baggage.MAX_BAGGAGE_LIST_MEMBER_COUNT
+import io.sentry.Baggage.MAX_BAGGAGE_STRING_LENGTH
 import io.sentry.protocol.SentryId
 import java.util.UUID
 import kotlin.test.BeforeTest
@@ -122,7 +124,7 @@ class BaggageTest {
 
     @Test
     fun `medium size value can cause small values to be dropped`() {
-        val mediumValue = Faker.instance().random().hex(8192 - 12 - 15 - 1) // 8192 - "mediumValue=" - "otherValue=kept" - ","
+        val mediumValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH - 12 - 15 - 1) // 8192 - "mediumValue=" - "otherValue=kept" - ","
         val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=removed,otherValue=kept", logger)
 
         assertEquals("removed", baggage.get("smallValue"))
@@ -130,14 +132,14 @@ class BaggageTest {
         assertEquals("kept", baggage.get("otherValue"))
 
         val headerString = baggage.toHeaderString()
-        assertEquals(8192, headerString.length)
+        assertEquals(MAX_BAGGAGE_STRING_LENGTH, headerString.length)
         assertEquals("mediumValue=$mediumValue,otherValue=kept", headerString)
     }
 
     @Test
     fun `medium size value can cause all values to be dropped`() {
         // nothing else will fit after mediumValue as the separator + any key/value would exceed the limit
-        val mediumValue = Faker.instance().random().hex(8192 - 12 - 15) // 8192 - "mediumValue=" - "otherValue=lost"
+        val mediumValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH - 12 - 15) // 8192 - "mediumValue=" - "otherValue=lost"
         val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=stripped,otherValue=lost", logger)
 
         assertEquals("stripped", baggage.get("smallValue"))
@@ -157,7 +159,7 @@ class BaggageTest {
         for (i in 1..100) {
             val key = 100 + i
             baggage.set("a$key", "$i")
-            if (i <= 64) {
+            if (i <= MAX_BAGGAGE_LIST_MEMBER_COUNT) {
                 expectedItems.add("a$key=$i")
             }
         }

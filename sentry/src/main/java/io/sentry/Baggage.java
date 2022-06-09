@@ -50,7 +50,7 @@ public final class Baggage {
       try {
         // see https://errorprone.info/bugpattern/StringSplitter for why limit is passed
         final String[] keyValueStrings = headerValue.split(",", -1);
-        for (String keyValueString : keyValueStrings) {
+        for (final String keyValueString : keyValueStrings) {
           try {
             final String[] keyAndValue = keyValueString.split("=", -1);
             if (keyAndValue.length == 2) {
@@ -87,15 +87,15 @@ public final class Baggage {
     String separator = "";
     int listMemberCount = 0;
 
-    Set<String> keys = new TreeSet<>(keyValues.keySet());
+    final Set<String> keys = new TreeSet<>(keyValues.keySet());
     for (final String key : keys) {
-      @Nullable String value = keyValues.get(key);
+      final @Nullable String value = keyValues.get(key);
 
       if (value != null && listMemberCount < MAX_BAGGAGE_LIST_MEMBER_COUNT) {
         try {
-          String encodedKey = encode(key);
-          String encodedValue = encode(value);
-          String encodedKeyValue = separator + encodedKey + "=" + encodedValue;
+          final String encodedKey = encode(key);
+          final String encodedValue = encode(value);
+          final String encodedKeyValue = separator + encodedKey + "=" + encodedValue;
 
           final int valueLength = encodedKeyValue.length();
           final int totalLengthIfValueAdded = sb.length() + valueLength;
