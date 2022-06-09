@@ -17,7 +17,8 @@ import org.jetbrains.annotations.Nullable;
 public final class Baggage {
 
   static final @NotNull String CHARSET = StandardCharsets.UTF_8.toString();
-  static final @NotNull Integer MAX_VALUE_LENGTH = 8192;
+  static final @NotNull Integer MAX_BAGGAGE_STRING_LENGTH = 8192;
+  static final @NotNull Integer MAX_BAGGAGE_LIST_MEMBER_COUNT = 64;
 
   final @NotNull Map<String, String> keyValues;
   final @NotNull ILogger logger;
@@ -50,18 +51,23 @@ public final class Baggage {
         // see https://errorprone.info/bugpattern/StringSplitter for why limit is passed
         final String[] keyValueStrings = headerValue.split(",", -1);
         for (String keyValueString : keyValueStrings) {
-          final String[] keyAndValue = keyValueString.split("=", -1);
-          if (keyAndValue.length == 2) {
-            final String key = keyAndValue[0].trim();
-            final String keyDecoded = decode(key);
-            final String value = keyAndValue[1].trim();
-            final String valueDecoded = decode(value);
+          try {
+            final String[] keyAndValue = keyValueString.split("=", -1);
+            if (keyAndValue.length == 2) {
+              final String key = keyAndValue[0].trim();
+              final String keyDecoded = decode(key);
+              final String value = keyAndValue[1].trim();
+              final String valueDecoded = decode(value);
 
-            keyValues.put(keyDecoded, valueDecoded);
+              keyValues.put(keyDecoded, valueDecoded);
+            }
+          } catch (Exception e) {
+            logger.log(
+                SentryLevel.ERROR, e, "Unable to decode baggage key value pair %s", keyValueString);
           }
         }
       } catch (Exception e) {
-        logger.log(SentryLevel.ERROR, "Unable to decode baggage key value pair.");
+        logger.log(SentryLevel.ERROR, e, "Unable to decode baggage header %s", headerValue);
       }
     }
     return keyValues;
@@ -78,31 +84,38 @@ public final class Baggage {
 
   public @NotNull String toHeaderString() {
     final StringBuilder sb = new StringBuilder();
-    boolean isFirst = true;
+    String separator = "";
+    int listMemberCount = 0;
 
     Set<String> keys = new TreeSet<>(keyValues.keySet());
     for (final String key : keys) {
       @Nullable String value = keyValues.get(key);
 
-      if (value != null) {
-        if (value.length() > MAX_VALUE_LENGTH) {
+      if (value != null && listMemberCount < MAX_BAGGAGE_LIST_MEMBER_COUNT) {
+        try {
+          String encodedKey = encode(key);
+          String encodedValue = encode(value);
+          String encodedKeyValue = separator + encodedKey + "=" + encodedValue;
+
+          final int valueLength = encodedKeyValue.length();
+          final int totalLengthIfValueAdded = sb.length() + valueLength;
+          if (totalLengthIfValueAdded > MAX_BAGGAGE_STRING_LENGTH) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Not adding baggage value %s as the total header value length would exceed the maximum of %s.",
+                key,
+                MAX_BAGGAGE_STRING_LENGTH);
+          } else {
+            listMemberCount++;
+            sb.append(encodedKeyValue);
+            separator = ",";
+          }
+        } catch (Exception e) {
           logger.log(
               SentryLevel.ERROR,
-              "Not adding baggage value that exceeds the maximum of " + MAX_VALUE_LENGTH + ".");
-        } else {
-          if (!isFirst) {
-            sb.append(",");
-          }
-
-          try {
-            sb.append(encode(key));
-            sb.append("=");
-            sb.append(encode(value));
-          } catch (Exception e) {
-            logger.log(SentryLevel.ERROR, "Unable to encode baggage key value pair.");
-          }
-
-          isFirst = false;
+              "Unable to encode baggage key value pair (key=%s,value=%s).",
+              key,
+              value);
         }
       }
     }

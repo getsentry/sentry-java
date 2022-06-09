@@ -109,14 +109,61 @@ class BaggageTest {
     }
 
     @Test
-    fun `if value exceeds size limit key value pair is not added to header`() {
+    fun `single large value is dropped and small values are kept`() {
         val largeValue = Faker.instance().random().hex(8193)
-        val baggage = Baggage.fromHeader("smallValue=remains,largeValue=$largeValue", logger)
+        val baggage = Baggage.fromHeader("smallValue=remains,largeValue=$largeValue,otherValue=kept", logger)
 
         assertEquals("remains", baggage.get("smallValue"))
         assertNotNull(baggage.get("largeValue"))
+        assertEquals("kept", baggage.get("otherValue"))
 
-        assertEquals("smallValue=remains", baggage.toHeaderString())
+        assertEquals("otherValue=kept,smallValue=remains", baggage.toHeaderString())
+    }
+
+    @Test
+    fun `medium size value can cause small values to be dropped`() {
+        val mediumValue = Faker.instance().random().hex(8192 - 12 - 15 - 1) // 8192 - "mediumValue=" - "otherValue=kept" - ","
+        val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=removed,otherValue=kept", logger)
+
+        assertEquals("removed", baggage.get("smallValue"))
+        assertEquals(mediumValue, baggage.get("mediumValue"))
+        assertEquals("kept", baggage.get("otherValue"))
+
+        val headerString = baggage.toHeaderString()
+        assertEquals(8192, headerString.length)
+        assertEquals("mediumValue=$mediumValue,otherValue=kept", headerString)
+    }
+
+    @Test
+    fun `medium size value can cause all values to be dropped`() {
+        // nothing else will fit after mediumValue as the separator + any key/value would exceed the limit
+        val mediumValue = Faker.instance().random().hex(8192 - 12 - 15) // 8192 - "mediumValue=" - "otherValue=lost"
+        val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=stripped,otherValue=lost", logger)
+
+        assertEquals("stripped", baggage.get("smallValue"))
+        assertEquals(mediumValue, baggage.get("mediumValue"))
+        assertEquals("lost", baggage.get("otherValue"))
+
+        val headerString = baggage.toHeaderString()
+        assertEquals(8177, headerString.length)
+        assertEquals("mediumValue=$mediumValue", headerString)
+    }
+
+    @Test
+    fun `exceeding entry limit causes values to be dropped`() {
+        val baggage = Baggage(logger)
+        val expectedItems = mutableListOf<String>()
+
+        for (i in 1..100) {
+            val key = 100 + i
+            baggage.set("a$key", "$i")
+            if (i <= 64) {
+                expectedItems.add("a$key=$i")
+            }
+        }
+
+        val expectedHeaderString = expectedItems.joinToString(",")
+        assertEquals(expectedHeaderString, baggage.toHeaderString())
     }
 
     @Test
@@ -178,18 +225,21 @@ class BaggageTest {
     }
 
     @Test
-    fun `non baggage-octet characters in value are encoded`() {
-        val baggage = Baggage(logger)
+    fun `corrupted string does not throw out`() {
+        val baggage = Baggage.fromHeader("a", logger)
+        assertEquals("", baggage.toHeaderString())
+    }
 
-        baggage.setTransaction(" \",;\\ €\u0081‚ˆ")
+    @Test
+    fun `corrupted string does not throw out 2`() {
+        val baggage = Baggage.fromHeader("a=b=", logger)
+        assertEquals("", baggage.toHeaderString())
+    }
 
-        val expected =
-            "sentry-transaction=%20%22%2C%3B%5C%20%E2%82%AC%C2%81%E2%80%9A%CB%86"
-        val actualBaggageHeaderString = baggage.toHeaderString()
-        assertEquals(expected, actualBaggageHeaderString)
-
-        val reparsedBaggage = Baggage.fromHeader(actualBaggageHeaderString, logger)
-        assertEquals(expected, reparsedBaggage.toHeaderString())
+    @Test
+    fun `corrupted string can be parsed partially`() {
+        val baggage = Baggage.fromHeader("a=value,b", logger)
+        assertEquals("a=value", baggage.toHeaderString())
     }
 
     @Test
