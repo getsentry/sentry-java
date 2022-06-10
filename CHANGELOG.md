@@ -5,6 +5,7 @@
 ### Features
 
 - Implement local scope by adding overloads to the capture methods that accept a ScopeCallback ([#2084](https://github.com/getsentry/sentry-java/pull/2084))
+- SentryOptions.merge is now public and can be used to load ExternalOptions ([#2088](https://github.com/getsentry/sentry-java/pull/2088))
 
 ## 6.0.0
 
