@@ -33,11 +33,12 @@ suites:
     testOptions:
       useTestOrchestrator: true
 
-  - name: "Android 5 (api 22)"
-    devices:
-      - id: Amazon_Kindle_Fire_HD_8_real_us # Amazon Kindle Fire HD 8 - api 22 (5.1.1)
-    testOptions:
-      useTestOrchestrator: true
+# Commenting for the moment, due to the error "Cannot install test-services-1.4.1.apk on device" on low Android versions
+#  - name: "Android 5 (api 22)"
+#    devices:
+#      - id: Amazon_Kindle_Fire_HD_8_real_us # Amazon Kindle Fire HD 8 - api 22 (5.1.1)
+#    testOptions:
+#      useTestOrchestrator: true
 
 #      - id: Google_Pixel_4_XL_real_us1 # Google Pixel 4 XL - api 29 (10)
 #      - id: Motorola_Moto_G_Power_real_us # Motorola Moto G Power (2021) - api 29 (10)

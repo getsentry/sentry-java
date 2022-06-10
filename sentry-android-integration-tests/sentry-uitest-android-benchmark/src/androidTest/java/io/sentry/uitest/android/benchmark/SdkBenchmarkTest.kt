@@ -1,39 +1,18 @@
 package io.sentry.uitest.android.benchmark
 
-import android.view.Choreographer
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
-import androidx.test.espresso.Espresso
-import androidx.test.espresso.IdlingRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
 import io.sentry.uitest.android.benchmark.util.BenchmarkOperation
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class SdkBenchmarkTest : BaseBenchmarkTest() {
-
-    private lateinit var choreographer: Choreographer
-
-    @BeforeTest
-    fun setUp() {
-        IdlingRegistry.getInstance().register(BenchmarkActivity.activityStartedIdlingResource)
-        // Must run on the main thread to get the main thread choreographer.
-        runner.runOnMainSync {
-            choreographer = Choreographer.getInstance()
-        }
-    }
-
-    @AfterTest
-    fun cleanup() {
-        IdlingRegistry.getInstance().unregister(BenchmarkActivity.activityStartedIdlingResource)
-    }
 
     @Test
     fun benchmarkSdkInit() {
@@ -65,13 +44,11 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
 
     private fun getOperation(init: (() -> Unit)? = null) = BenchmarkOperation(
         choreographer,
-        before = { BenchmarkActivity.activityStartedIdlingResource.setIdle(false) },
         op = {
             runner.runOnMainSync {
                 init?.invoke()
             }
             val benchmarkScenario = launchActivity<BenchmarkActivity>()
-            Espresso.onIdle()
             benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
         },
         after = {

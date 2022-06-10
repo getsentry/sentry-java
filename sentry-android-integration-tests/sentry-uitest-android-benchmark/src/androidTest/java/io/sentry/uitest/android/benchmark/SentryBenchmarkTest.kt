@@ -1,6 +1,5 @@
 package io.sentry.uitest.android.benchmark
 
-import android.view.Choreographer
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso
@@ -24,15 +23,9 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 class SentryBenchmarkTest : BaseBenchmarkTest() {
 
-    private lateinit var choreographer: Choreographer
-
     @BeforeTest
     fun setUp() {
         IdlingRegistry.getInstance().register(BenchmarkActivity.scrollingIdlingResource)
-        // Must run on the main thread to get the main thread choreographer.
-        runner.runOnMainSync {
-            choreographer = Choreographer.getInstance()
-        }
     }
 
     @AfterTest
