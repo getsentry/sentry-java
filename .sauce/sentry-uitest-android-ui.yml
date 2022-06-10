@@ -13,15 +13,13 @@ espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
   testApp: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
 suites:
-  name: "Android Ui Tests"
-  emulators:
-    - name: "Android GoogleApi Emulator"
-      orientation: portrait
-      platformVersions:
-        - "11.0"
-        - "10.0"
-  testOptions:
-    useTestOrchestrator: true
+
+  - name: "Android 12 (api 31)"
+    devices:
+      - id: Samsung_Galaxy_S22_Ultra_5G_real_us # Samsung Galaxy S22 Ultra 5G - api 31 (12)
+    testOptions:
+      useTestOrchestrator: true
+
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
 artifacts:
   download:

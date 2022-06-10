@@ -35,8 +35,7 @@ suites:
 
   - name: "Android 5 (api 22)"
     devices:
-      - id: Samsung_Galaxy_Note_4_5_real # Samsung Galaxy Note 4 - api 22 (5.1.1)
-      - id: Sony_Xperia_Z1_real # Sony Xperia Z1 - api 22 (5.1.1)
+      - id: Amazon_Kindle_Fire_HD_8_real_us # Amazon Kindle Fire HD 8 - api 22 (5.1.1)
     testOptions:
       useTestOrchestrator: true
 
