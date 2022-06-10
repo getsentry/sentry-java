@@ -1710,7 +1710,7 @@ public class SentryOptions {
    *
    * @param options options loaded from external locations
    */
-  void merge(final @NotNull ExternalOptions options) {
+  public void merge(final @NotNull ExternalOptions options) {
     if (options.getDsn() != null) {
       setDsn(options.getDsn());
     }
