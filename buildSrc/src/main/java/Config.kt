@@ -27,6 +27,7 @@ object Config {
         val minSdkVersion = 14
         val minSdkVersionOkHttp = 21
         val minSdkVersionNdk = 16
+        val minSdkVersionCompose = 21
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
 
@@ -103,6 +104,11 @@ object Config {
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
 
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
+
+        // compose deps
+        val composeVersion = "1.1.1"
+        val composeRuntime = "androidx.compose.runtime:runtime:1.1.1"
+        val composeNavigation = "androidx.navigation:navigation-compose:2.4.2"
     }
 
     object AnnotationProcessors {
