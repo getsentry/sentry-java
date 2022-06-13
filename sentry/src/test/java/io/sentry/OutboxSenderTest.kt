@@ -81,7 +81,7 @@ class OutboxSenderTest {
         val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
         sut.processEnvelopeFile(path, hints)
 
-        verify(fixture.hub).captureEvent(eq(expected), any())
+        verify(fixture.hub).captureEvent(eq(expected), any<Hint>())
         assertFalse(File(path).exists())
         // Additionally make sure we have no errors logged
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
@@ -147,7 +147,7 @@ class OutboxSenderTest {
         val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
         sut.processEnvelopeFile(path, hints)
 
-        verify(fixture.hub).captureEvent(any(), any())
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
         assertFalse(File(path).exists())
         // Additionally make sure we have no errors logged
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
