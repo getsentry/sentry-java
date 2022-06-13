@@ -88,7 +88,6 @@ dependencies {
 
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
-    implementation(projects.sentryAndroidIntegrationTests.sentryUitestAndroid)
     implementation(projects.sentryAndroid)
     implementation(Config.Libs.appCompat)
     implementation(Config.Libs.androidxCore)
