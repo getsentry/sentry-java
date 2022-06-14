@@ -1,2 +1,3 @@
-package io.sentry.samples.spring.boot;public class Product {
-}
+package io.sentry.samples.spring.boot;
+
+public class Product {}
