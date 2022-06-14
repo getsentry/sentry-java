@@ -248,6 +248,10 @@ class BaggageTest {
     fun `baggage value encoding`() {
         // keep baggage-octet: %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E
         val values = percentEncodedValues().also {
+            /* some characters have been commented out
+             * as per baggage specification we are allowed to encode these
+             * and java.net.URLEncoder encodes them by default
+             */
 //            it["!"] = "!" // instead of %21
 //            it["#"] = "#" // instead of %23
 //            it["$"] = "$" // instead of %24
