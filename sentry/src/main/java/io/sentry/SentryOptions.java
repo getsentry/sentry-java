@@ -1444,7 +1444,7 @@ public class SentryOptions {
   }
 
   /**
-   * Controls if the `baggage` header is attached HTTP client integrations and if the `trace` header
+   * Controls if the `baggage` header is attached to HTTP client integrations and if the `trace` header
    * is attached to envelopes. Defaults to false.
    *
    * <p>Note: this is an experimental API and will be removed without notice.
