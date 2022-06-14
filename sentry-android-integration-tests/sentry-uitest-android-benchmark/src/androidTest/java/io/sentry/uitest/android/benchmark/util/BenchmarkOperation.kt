@@ -11,9 +11,14 @@ private const val FRAME_DURATION_60FPS_NS: Double = 1_000_000_000 / 60.0
 /**
  * Class that allows to benchmark some operations.
  * Create two [BenchmarkOperation] objects and compare them using [BenchmarkOperation.compare] to get
- * a [BenchmarkResult] with relative measured overheads.
+ * a [BenchmarkResult] with relative or absolute measured overheads.
  */
-internal class BenchmarkOperation(private val choreographer: Choreographer, private val op: () -> Unit) {
+internal class BenchmarkOperation(
+    private val choreographer: Choreographer,
+    private val before: (() -> Unit)? = null,
+    private val after: (() -> Unit)? = null,
+    private val op: () -> Unit
+) {
 
     companion object {
 
@@ -33,6 +38,9 @@ internal class BenchmarkOperation(private val choreographer: Choreographer, priv
             warmupIterations: Int = 3,
             measuredIterations: Int = 15
         ): BenchmarkResult {
+            // Android pushes the "installed app" event to other apps and the system itself.
+            // Let's give it time to do whatever it wants before starting measuring the operations.
+            Thread.sleep(2000)
             // The first operations are the slowest, as the device is still doing things like filling the cache.
             repeat(warmupIterations) {
                 op1.warmup()
@@ -68,12 +76,16 @@ internal class BenchmarkOperation(private val choreographer: Choreographer, priv
 
     /** Run the operation without measuring it. */
     private fun warmup() {
+        before?.invoke()
         op()
+        after?.invoke()
         isolate()
     }
 
     /** Run the operation and measure it, updating sentry-uitest-android-benchmark data. */
     private fun iterate() {
+        before?.invoke()
+        Thread.sleep(200)
         val startRealtimeNs = SystemClock.elapsedRealtimeNanos()
         val startCpuTimeMs = Process.getElapsedCpuTime()
 
@@ -87,6 +99,7 @@ internal class BenchmarkOperation(private val choreographer: Choreographer, priv
         cpuDurationMillis += Process.getElapsedCpuTime() - startCpuTimeMs
         durationNanos += SystemClock.elapsedRealtimeNanos() - startRealtimeNs
 
+        after?.invoke()
         isolate()
     }
 

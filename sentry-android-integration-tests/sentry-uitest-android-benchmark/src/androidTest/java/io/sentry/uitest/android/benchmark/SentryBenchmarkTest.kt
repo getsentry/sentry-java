@@ -1,9 +1,6 @@
 package io.sentry.uitest.android.benchmark
 
-import android.content.Context
-import android.view.Choreographer
 import androidx.lifecycle.Lifecycle
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
@@ -11,7 +8,6 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnitRunner
 import io.sentry.ITransaction
 import io.sentry.Sentry
@@ -25,22 +21,11 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
-class SentryBenchmarkTest {
-
-    private lateinit var runner: AndroidJUnitRunner
-    private lateinit var context: Context
-    private lateinit var choreographer: Choreographer
+class SentryBenchmarkTest : BaseBenchmarkTest() {
 
     @BeforeTest
     fun setUp() {
-        runner = InstrumentationRegistry.getInstrumentation() as AndroidJUnitRunner
-        context = ApplicationProvider.getApplicationContext()
-        context.cacheDir.deleteRecursively()
         IdlingRegistry.getInstance().register(BenchmarkActivity.scrollingIdlingResource)
-        // Must run on the main thread to get the main thread choreographer.
-        runner.runOnMainSync {
-            choreographer = Choreographer.getInstance()
-        }
     }
 
     @AfterTest
@@ -53,35 +38,42 @@ class SentryBenchmarkTest {
 
         // We compare two operation that are the same. We expect the increases to be negligible, as the results
         // should be very similar.
-        val op1 = BenchmarkOperation(choreographer, getOperation(runner))
-        val op2 = BenchmarkOperation(choreographer, getOperation(runner))
+        val op1 = BenchmarkOperation(choreographer, op = getOperation(runner))
+        val op2 = BenchmarkOperation(choreographer, op = getOperation(runner))
         val comparisonResult = BenchmarkOperation.compare(op1, "Op1", op2, "Op2")
 
-        assertTrue(comparisonResult.durationIncrease in -1F..1F)
-        assertTrue(comparisonResult.cpuTimeIncrease in -1F..1F)
+        assertTrue(comparisonResult.durationIncreasePercentage in -1F..1F)
+        assertTrue(comparisonResult.cpuTimeIncreasePercentage in -1F..1F)
         // The fps decrease comparison is skipped, due to approximation: 59.51 and 59.49 fps are considered 60 and 59,
         // respectively. Also, if the average fps is 20 or 60, a difference of 1 fps becomes 5% or 1.66% respectively.
-        assertTrue(comparisonResult.droppedFramesIncrease in -1F..1F)
+        assertTrue(comparisonResult.droppedFramesIncreasePercentage in -1F..1F)
     }
 
     @Test
     fun benchmarkProfiledTransaction() {
 
-        runner.runOnMainSync {
-            SentryAndroid.init(context) { options: SentryOptions ->
-                options.dsn = "https://key@uri/1234567"
-                options.tracesSampleRate = 1.0
-                options.isProfilingEnabled = true
-            }
-        }
-
         // We compare the same operation with and without profiled transaction.
         // We expect the profiled transaction operation to be slower, but not slower than 5%.
-        val benchmarkOperationNoTransaction = BenchmarkOperation(choreographer, getOperation(runner))
+        val benchmarkOperationNoTransaction = BenchmarkOperation(choreographer, op = getOperation(runner))
         val benchmarkOperationProfiled = BenchmarkOperation(
             choreographer,
-            getOperation(runner) {
+            before = {
+                runner.runOnMainSync {
+                    SentryAndroid.init(context) { options: SentryOptions ->
+                        options.dsn = "https://key@uri/1234567"
+                        options.tracesSampleRate = 1.0
+                        options.isProfilingEnabled = true
+                        options.isEnableAutoSessionTracking = false
+                    }
+                }
+            },
+            op = getOperation(runner) {
                 Sentry.startTransaction("Benchmark", "ProfiledTransaction")
+            },
+            after = {
+                runner.runOnMainSync {
+                    Sentry.close()
+                }
             }
         )
         val comparisonResult = BenchmarkOperation.compare(
@@ -91,14 +83,10 @@ class SentryBenchmarkTest {
             "ProfiledTransaction"
         )
 
-        runner.runOnMainSync {
-            Sentry.close()
-        }
-
-        assertTrue(comparisonResult.durationIncrease in 0F..5F)
-        assertTrue(comparisonResult.cpuTimeIncrease in 0F..5F)
-        assertTrue(comparisonResult.fpsDecrease in 0F..5F)
-        assertTrue(comparisonResult.droppedFramesIncrease in 0F..5F)
+        assertTrue(comparisonResult.durationIncreasePercentage in 0F..5F)
+        assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5F)
+        assertTrue(comparisonResult.fpsDecreasePercentage in 0F..5F)
+        assertTrue(comparisonResult.droppedFramesIncreasePercentage in 0F..5F)
     }
 
     /**

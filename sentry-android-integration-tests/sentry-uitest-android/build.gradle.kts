@@ -3,7 +3,7 @@ import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
-    id("com.android.library")
+    id("com.android.application")
     kotlin("android")
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
@@ -16,6 +16,8 @@ android {
     defaultConfig {
         minSdk = Config.Android.minSdkVersionNdk
         targetSdk = Config.Android.targetSdkVersion
+        versionCode = 1
+        versionName = "1.0.0"
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
         // Runs each test in its own instance of Instrumentation. This way they are isolated from

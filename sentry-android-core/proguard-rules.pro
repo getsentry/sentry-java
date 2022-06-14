@@ -11,6 +11,10 @@
 -keep class androidx.lifecycle.ProcessLifecycleOwner { <init>(...); }
 ##---------------End: proguard configuration for androidx.lifecycle  ----------
 
+# To mitigate the issue on R8 site (https://issuetracker.google.com/issues/235733922) 
+# which comes through AGP 7.3.0-betaX and 7.4.0-alphaX
+-keepclassmembers enum io.sentry.** { *; }
+
 # don't warn jetbrains annotations
 -dontwarn org.jetbrains.annotations.**
 # don't warn about missing classes (mainly for Guardsquare's proguard).
