@@ -66,7 +66,7 @@ public final class Baggage {
                 SentryLevel.ERROR, e, "Unable to decode baggage key value pair %s", keyValueString);
           }
         }
-      } catch (Exception e) {
+      } catch (Throwable e) {
         logger.log(SentryLevel.ERROR, e, "Unable to decode baggage header %s", headerValue);
       }
     }
