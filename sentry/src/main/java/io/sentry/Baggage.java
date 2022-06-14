@@ -117,7 +117,7 @@ public final class Baggage {
               sb.append(encodedKeyValue);
               separator = ",";
             }
-          } catch (Exception e) {
+          } catch (Throwable e) {
             logger.log(
                 SentryLevel.ERROR,
                 "Unable to encode baggage key value pair (key=%s,value=%s).",
