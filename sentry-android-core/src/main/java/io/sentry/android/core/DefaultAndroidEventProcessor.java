@@ -332,16 +332,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setDeviceIO(final @NotNull Device device, final boolean applyScopeData) {
-    if (options.isCollectIpcDeviceInfo()) {
+    if (options.isCollectAdditionalContext()) {
       final Intent batteryIntent = getBatteryIntent();
       if (batteryIntent != null) {
         device.setBatteryLevel(getBatteryLevel(batteryIntent));
         device.setCharging(isCharging(batteryIntent));
         device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
       }
-    }
 
-    if (options.isCollectIpcDeviceInfo()) {
       Boolean connected;
       switch (ConnectivityChecker.getConnectionStatus(context, options.getLogger())) {
         case NOT_CONNECTED:
@@ -354,9 +352,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           connected = null;
       }
       device.setOnline(connected);
-    }
 
-    if (options.isCollectIpcDeviceInfo()) {
       final ActivityManager.MemoryInfo memInfo = getMemInfo();
       if (memInfo != null) {
         // in bytes

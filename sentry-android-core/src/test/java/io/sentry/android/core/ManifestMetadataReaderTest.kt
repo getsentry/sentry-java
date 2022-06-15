@@ -923,14 +923,14 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads collect ipc device info to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.COLLECT_IPC_DEVICE_INFO to false)
+        val bundle = bundleOf(ManifestMetadataReader.COLLECT_ADDITIONAL_CONTEXT to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(fixture.options.isCollectIpcDeviceInfo)
+        assertFalse(fixture.options.isCollectAdditionalContext)
     }
 
     @Test
@@ -942,6 +942,6 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(fixture.options.isCollectIpcDeviceInfo)
+        assertTrue(fixture.options.isCollectAdditionalContext)
     }
 }

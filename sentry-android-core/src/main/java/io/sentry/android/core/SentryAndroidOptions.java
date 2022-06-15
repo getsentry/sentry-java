@@ -100,7 +100,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Enables or disables collecting of device information which requires Inter-Process Communication
    * (IPC)
    */
-  private boolean collectIpcDeviceInfo = true;
+  private boolean collectAdditionalContext = true;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -301,11 +301,11 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableUserInteractionTracing = enableUserInteractionTracing;
   }
 
-  public boolean isCollectIpcDeviceInfo() {
-    return collectIpcDeviceInfo;
+  public boolean isCollectAdditionalContext() {
+    return collectAdditionalContext;
   }
 
-  public void setCollectIpcDeviceInfo(boolean collectIpcDeviceInfo) {
-    this.collectIpcDeviceInfo = collectIpcDeviceInfo;
+  public void setCollectAdditionalContext(boolean collectAdditionalContext) {
+    this.collectAdditionalContext = collectAdditionalContext;
   }
 }

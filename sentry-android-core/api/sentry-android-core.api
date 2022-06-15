@@ -129,7 +129,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
 	public fun isAttachScreenshot ()Z
-	public fun isCollectIpcDeviceInfo ()Z
+	public fun isCollectAdditionalContext ()Z
 	public fun isEnableActivityLifecycleBreadcrumbs ()Z
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
 	public fun isEnableAppComponentBreadcrumbs ()Z
@@ -142,7 +142,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
 	public fun setAttachScreenshot (Z)V
-	public fun setCollectIpcDeviceInfo (Z)V
+	public fun setCollectAdditionalContext (Z)V
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
 	public fun setEnableActivityLifecycleTracingAutoFinish (Z)V

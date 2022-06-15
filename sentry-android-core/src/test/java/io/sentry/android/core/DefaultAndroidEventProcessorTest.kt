@@ -464,7 +464,7 @@ class DefaultAndroidEventProcessorTest {
 
     @Test
     fun `Does not collect device info that requires IPC if disabled`() {
-        fixture.options.isCollectIpcDeviceInfo = false
+        fixture.options.isCollectAdditionalContext = false
         val sut = fixture.getSut(context)
 
         assertNotNull(sut.process(SentryEvent(), Hint())) {
