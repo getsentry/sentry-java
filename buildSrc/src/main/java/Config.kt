@@ -105,6 +105,7 @@ object Config {
 
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
 
+        val navigationRuntime = "androidx.navigation:navigation-runtime:2.4.2"
         // compose deps
         val composeVersion = "1.1.1"
         val composeRuntime = "androidx.compose.runtime:runtime:1.1.1"

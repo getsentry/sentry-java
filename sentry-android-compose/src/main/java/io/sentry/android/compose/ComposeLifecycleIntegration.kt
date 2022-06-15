@@ -40,10 +40,10 @@ internal class ComposeNavigationObserver(
 
 @Composable
 @NonRestartableComposable
-fun NavController.ObservableEffect() {
+fun NavController.withObservableEffect() {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, this) {
-        val observer = ComposeNavigationObserver(this@ObservableEffect)
+        val observer = ComposeNavigationObserver(this@withObservableEffect)
 
         lifecycle.addObserver(observer)
 
