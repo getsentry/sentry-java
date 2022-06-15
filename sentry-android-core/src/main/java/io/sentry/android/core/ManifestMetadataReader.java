@@ -71,7 +71,7 @@ final class ManifestMetadataReader {
 
   static final String ATTACH_SCREENSHOT = "io.sentry.attach-screenshot";
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
-  static final String COLLECT_IPC_DEVICE_INFO = "io.sentry.collect-ipc-device-info";
+  static final String COLLECT_IPC_DEVICE_INFO = "io.sentry.ipc-device-context";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
