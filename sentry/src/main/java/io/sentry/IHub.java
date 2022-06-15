@@ -346,7 +346,7 @@ public interface IHub {
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction
-   * @param traceState the trace state
+   * @param traceContext the trace context
    * @param hint the hints
    * @param profilingTraceData the profiling trace data
    * @return transaction's id
@@ -355,7 +355,7 @@ public interface IHub {
   @NotNull
   SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      @Nullable TraceState traceState,
+      @Nullable TraceContext traceContext,
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData);
 
@@ -363,7 +363,7 @@ public interface IHub {
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction
-   * @param traceState the trace state
+   * @param traceContext the trace context
    * @param hint the hints
    * @return transaction's id
    */
@@ -371,9 +371,9 @@ public interface IHub {
   @NotNull
   default SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      @Nullable TraceState traceState,
+      @Nullable TraceContext traceContext,
       @Nullable Hint hint) {
-    return captureTransaction(transaction, traceState, hint, null);
+    return captureTransaction(transaction, traceContext, hint, null);
   }
 
   @ApiStatus.Internal
@@ -386,13 +386,13 @@ public interface IHub {
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction
-   * @param traceState the trace state
+   * @param traceContext the trace context
    * @return transaction's id
    */
   @ApiStatus.Internal
   default @NotNull SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable TraceState traceState) {
-    return captureTransaction(transaction, traceState, null);
+      @NotNull SentryTransaction transaction, @Nullable TraceContext traceContext) {
+    return captureTransaction(transaction, traceContext, null);
   }
 
   /**

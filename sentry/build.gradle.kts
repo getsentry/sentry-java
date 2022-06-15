@@ -31,6 +31,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.TestLibs.javaFaker)
     testImplementation(projects.sentryTestSupport)
 }
 

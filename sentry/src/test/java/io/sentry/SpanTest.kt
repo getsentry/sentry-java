@@ -217,7 +217,7 @@ class SpanTest {
         val transaction = getTransaction()
         val span = transaction.startChild("operation", "description")
 
-        assertEquals(transaction.traceState(), span.traceState())
+        assertEquals(transaction.traceContext(), span.traceContext())
     }
 
     @Test
@@ -225,8 +225,8 @@ class SpanTest {
         val transaction = getTransaction()
         val span = transaction.startChild("operation", "description")
 
-        assertNotNull(transaction.toTraceStateHeader()) {
-            assertEquals(it.value, span.toTraceStateHeader()!!.value)
+        assertNotNull(transaction.toBaggageHeader()) {
+            assertEquals(it.value, span.toBaggageHeader()!!.value)
         }
     }
 
