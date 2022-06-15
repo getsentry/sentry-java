@@ -69,26 +69,35 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull RootChecker rootChecker;
+  private final @NotNull SentryAndroidOptions options;
 
   private final @NotNull ILogger logger;
 
   public DefaultAndroidEventProcessor(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
-    this(context, logger, buildInfoProvider, new RootChecker(context, buildInfoProvider, logger));
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull SentryAndroidOptions options) {
+    this(
+        context,
+        logger,
+        buildInfoProvider,
+        new RootChecker(context, buildInfoProvider, logger),
+        options);
   }
 
   DefaultAndroidEventProcessor(
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull RootChecker rootChecker) {
+      final @NotNull RootChecker rootChecker,
+      final @NotNull SentryAndroidOptions options) {
     this.context = Objects.requireNonNull(context, "The application context is required.");
     this.logger = Objects.requireNonNull(logger, "The Logger is required.");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
     this.rootChecker = Objects.requireNonNull(rootChecker, "The RootChecker is required.");
+    this.options = Objects.requireNonNull(options, "The options object is required.");
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
     // dont ref. to method reference, theres a bug on it
@@ -328,36 +337,42 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setDeviceIO(final @NotNull Device device, final boolean applyScopeData) {
-    final Intent batteryIntent = getBatteryIntent();
-    if (batteryIntent != null) {
-      device.setBatteryLevel(getBatteryLevel(batteryIntent));
-      device.setCharging(isCharging(batteryIntent));
-      device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
-    }
-
-    Boolean connected;
-    switch (ConnectivityChecker.getConnectionStatus(context, logger)) {
-      case NOT_CONNECTED:
-        connected = false;
-        break;
-      case CONNECTED:
-        connected = true;
-        break;
-      default:
-        connected = null;
-    }
-    device.setOnline(connected);
-
-    final ActivityManager.MemoryInfo memInfo = getMemInfo();
-    if (memInfo != null) {
-      // in bytes
-      device.setMemorySize(getMemorySize(memInfo));
-      if (applyScopeData) {
-        device.setFreeMemory(memInfo.availMem);
-        device.setLowMemory(memInfo.lowMemory);
+    if (options.isCollectIpcDeviceInfo()) {
+      final Intent batteryIntent = getBatteryIntent();
+      if (batteryIntent != null) {
+        device.setBatteryLevel(getBatteryLevel(batteryIntent));
+        device.setCharging(isCharging(batteryIntent));
+        device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
       }
-      // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
-      // compatibility
+    }
+
+    if (options.isCollectIpcDeviceInfo()) {
+      Boolean connected;
+      switch (ConnectivityChecker.getConnectionStatus(context, logger)) {
+        case NOT_CONNECTED:
+          connected = false;
+          break;
+        case CONNECTED:
+          connected = true;
+          break;
+        default:
+          connected = null;
+      }
+      device.setOnline(connected);
+    }
+
+    if (options.isCollectIpcDeviceInfo()) {
+      final ActivityManager.MemoryInfo memInfo = getMemInfo();
+      if (memInfo != null) {
+        // in bytes
+        device.setMemorySize(getMemorySize(memInfo));
+        if (applyScopeData) {
+          device.setFreeMemory(memInfo.availMem);
+          device.setLowMemory(memInfo.lowMemory);
+        }
+        // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
+        // compatibility
+      }
     }
 
     // this way of getting the size of storage might be problematic for storages bigger than 2GB

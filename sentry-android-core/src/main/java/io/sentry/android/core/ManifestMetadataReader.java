@@ -71,6 +71,7 @@ final class ManifestMetadataReader {
 
   static final String ATTACH_SCREENSHOT = "io.sentry.attach-screenshot";
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
+  static final String COLLECT_IPC_DEVICE_INFO = "io.sentry.collect-ipc-device-info";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -209,6 +210,9 @@ final class ManifestMetadataReader {
 
         options.setSendClientReports(
             readBool(metadata, logger, CLIENT_REPORTS_ENABLE, options.isSendClientReports()));
+
+        options.setCollectIpcDeviceInfo(
+            readBool(metadata, logger, COLLECT_IPC_DEVICE_INFO, options.isCollectIpcDeviceInfo()));
 
         if (options.getTracesSampleRate() == null) {
           final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);

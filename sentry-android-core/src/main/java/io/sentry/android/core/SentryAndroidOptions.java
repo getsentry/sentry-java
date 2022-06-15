@@ -96,6 +96,12 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enables or disables the attach screenshot feature when an error happened. */
   private boolean attachScreenshot;
 
+  /**
+   * Enables or disables collecting of device information which requires Inter-Process Communication
+   * (IPC)
+   */
+  private boolean collectIpcDeviceInfo = true;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -293,5 +299,13 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
     this.enableUserInteractionTracing = enableUserInteractionTracing;
+  }
+
+  public boolean isCollectIpcDeviceInfo() {
+    return collectIpcDeviceInfo;
+  }
+
+  public void setCollectIpcDeviceInfo(boolean collectIpcDeviceInfo) {
+    this.collectIpcDeviceInfo = collectIpcDeviceInfo;
   }
 }
