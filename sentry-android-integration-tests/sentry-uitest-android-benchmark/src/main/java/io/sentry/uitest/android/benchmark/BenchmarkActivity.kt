@@ -4,8 +4,8 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.idling.CountingIdlingResource
 import io.sentry.uitest.android.benchmark.databinding.ActivityBenchmarkBinding
-import io.sentry.uitest.android.utils.BooleanIdlingResource
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -15,7 +15,7 @@ class BenchmarkActivity : AppCompatActivity() {
     companion object {
 
         /** The activity will set this when scrolling. */
-        val scrollingIdlingResource = BooleanIdlingResource("sentry-uitest-android-benchmark-activity")
+        val scrollingIdlingResource = CountingIdlingResource("sentry-uitest-android-benchmark-activityScrolling")
     }
 
     /**
@@ -41,7 +41,10 @@ class BenchmarkActivity : AppCompatActivity() {
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-                    scrollingIdlingResource.setIdle(newState == RecyclerView.SCROLL_STATE_IDLE)
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING)
+                        scrollingIdlingResource.increment()
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE)
+                        scrollingIdlingResource.decrement()
                 }
             })
         }

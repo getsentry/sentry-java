@@ -39,7 +39,12 @@ class SentryApolloInterceptor(
             val sentryTraceHeader = span.toSentryTrace()
 
             // we have no access to URI, no way to verify tracing origins
-            val headers = request.requestHeaders.toBuilder().addHeader(sentryTraceHeader.name, sentryTraceHeader.value).build()
+            val requestHeaderBuilder = request.requestHeaders.toBuilder()
+            requestHeaderBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
+            span.toBaggageHeader()?.let {
+                requestHeaderBuilder.addHeader(it.name, it.value)
+            }
+            val headers = requestHeaderBuilder.build()
             val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
             span.setData("operationId", requestWithHeader.operation.operationId())
             span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())

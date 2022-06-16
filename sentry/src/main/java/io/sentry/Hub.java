@@ -76,6 +76,21 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureEvent(
       final @NotNull SentryEvent event, final @Nullable Hint hint) {
+    return captureEventInternal(event, hint, null);
+  }
+
+  @Override
+  public @NotNull SentryId captureEvent(
+      final @NotNull SentryEvent event,
+      final @Nullable Hint hint,
+      final @NotNull ScopeCallback callback) {
+    return captureEventInternal(event, hint, callback);
+  }
+
+  private @NotNull SentryId captureEventInternal(
+      final @NotNull SentryEvent event,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -88,7 +103,10 @@ public final class Hub implements IHub {
       try {
         assignTraceContext(event);
         final StackItem item = stack.peek();
-        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
+
+        final Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+
+        sentryId = item.getClient().captureEvent(event, scope, hint);
         this.lastEventId = sentryId;
       } catch (Throwable e) {
         options
@@ -103,6 +121,21 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureMessage(
       final @NotNull String message, final @NotNull SentryLevel level) {
+    return captureMessageInternal(message, level, null);
+  }
+
+  @Override
+  public @NotNull SentryId captureMessage(
+      final @NotNull String message,
+      final @NotNull SentryLevel level,
+      final @NotNull ScopeCallback callback) {
+    return captureMessageInternal(message, level, callback);
+  }
+
+  private @NotNull SentryId captureMessageInternal(
+      final @NotNull String message,
+      final @NotNull SentryLevel level,
+      final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -115,7 +148,10 @@ public final class Hub implements IHub {
     } else {
       try {
         final StackItem item = stack.peek();
-        sentryId = item.getClient().captureMessage(message, level, item.getScope());
+
+        final Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+
+        sentryId = item.getClient().captureMessage(message, level, scope);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
       }
@@ -154,6 +190,22 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureException(
       final @NotNull Throwable throwable, final @Nullable Hint hint) {
+    return captureExceptionInternal(throwable, hint, null);
+  }
+
+  @Override
+  public @NotNull SentryId captureException(
+      final @NotNull Throwable throwable,
+      final @Nullable Hint hint,
+      final @NotNull ScopeCallback callback) {
+
+    return captureExceptionInternal(throwable, hint, callback);
+  }
+
+  private @NotNull SentryId captureExceptionInternal(
+      final @NotNull Throwable throwable,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       options
@@ -168,7 +220,10 @@ public final class Hub implements IHub {
         final StackItem item = stack.peek();
         final SentryEvent event = new SentryEvent(throwable);
         assignTraceContext(event);
-        sentryId = item.getClient().captureEvent(event, item.getScope(), hint);
+
+        final Scope scope = buildLocalScope(item.getScope(), scopeCallback);
+
+        sentryId = item.getClient().captureEvent(event, scope, hint);
       } catch (Throwable e) {
         options
             .getLogger()
@@ -545,7 +600,7 @@ public final class Hub implements IHub {
   @Override
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
-      final @Nullable TraceState traceState,
+      final @Nullable TraceContext traceContext,
       final @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "transaction is required");
@@ -583,7 +638,7 @@ public final class Hub implements IHub {
             sentryId =
                 item.getClient()
                     .captureTransaction(
-                        transaction, traceState, item.getScope(), hint, profilingTraceData);
+                        transaction, traceContext, item.getScope(), hint, profilingTraceData);
           } catch (Throwable e) {
             options
                 .getLogger()
@@ -760,5 +815,15 @@ public final class Hub implements IHub {
       }
     }
     return null;
+  }
+
+  private Scope buildLocalScope(
+      final @NotNull Scope scope, final @Nullable ScopeCallback callback) {
+    if (callback != null) {
+      final Scope localScope = new Scope(scope);
+      callback.run(localScope);
+      return localScope;
+    }
+    return scope;
   }
 }

@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Replace `tracestate` header with `baggage` header ([#2078](https://github.com/getsentry/sentry-java/pull/2078))
+
+## 6.1.0
+
+### Features
+
+- Implement local scope by adding overloads to the capture methods that accept a ScopeCallback ([#2084](https://github.com/getsentry/sentry-java/pull/2084))
+- SentryOptions#merge is now public and can be used to load ExternalOptions ([#2088](https://github.com/getsentry/sentry-java/pull/2088))
+
+### Fixes
+
+- Fix proguard rules to work R8 [issue](https://issuetracker.google.com/issues/235733922) around on AGP 7.3.0-betaX and 7.4.0-alphaX ([#2094](https://github.com/getsentry/sentry-java/pull/2094))
+
 ## 6.0.0
 
 ### Sentry Self-hosted Compatibility

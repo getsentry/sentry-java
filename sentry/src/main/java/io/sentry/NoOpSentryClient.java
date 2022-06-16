@@ -46,7 +46,7 @@ final class NoOpSentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      @Nullable TraceState traceState,
+      @Nullable TraceContext traceContext,
       @Nullable Scope scope,
       @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData) {
