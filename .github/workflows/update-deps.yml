@@ -1,0 +1,22 @@
+name: Update Dependencies
+
+on:
+  # Run every day.
+  schedule:
+    - cron: '0 3 * * *'
+  # And on on every PR merge so we get the updated dependencies ASAP, and to make sure the changelog doesn't conflict.
+  push:
+    branches:
+      - main
+
+jobs:
+  gradle-wrapper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: gradle-update/update-gradle-wrapper-action@981c551b17dbcf1940b1b4435afdb79babb7c13a
+        with:
+          # TODO custom token can be used in order for CI to get triggered
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          labels: dependencies
