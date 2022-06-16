@@ -1,9 +1,6 @@
 package io.sentry.apollo3
 
 import com.apollographql.apollo3.ApolloClient
-import com.apollographql.apollo3.api.ApolloRequest
-import com.apollographql.apollo3.api.ApolloResponse
-import com.apollographql.apollo3.api.Operation
 import com.apollographql.apollo3.exception.ApolloException
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
@@ -12,15 +9,14 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
-import io.sentry.TraceState
+import io.sentry.TraceContext
 import io.sentry.TransactionContext
-import io.sentry.apollo3.SentryApollo3Interceptor.BeforeSpanCallback
+import io.sentry.apollo3.SentryApollo3HttpInterceptor.BeforeSpanCallback
 import io.sentry.protocol.SentryTransaction
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -37,7 +33,6 @@ class SentryApollo3InterceptorTest {
     class Fixture {
         val server = MockWebServer()
         val hub = mock<IHub>()
-        private var interceptor = SentryApollo3Interceptor(hub)
         private var httpInterceptor = SentryApollo3HttpInterceptor(hub)
 
         @SuppressWarnings("LongParameterList")
@@ -71,15 +66,17 @@ class SentryApollo3InterceptorTest {
             )
 
             if (beforeSpan != null) {
-                interceptor = SentryApollo3Interceptor(hub, beforeSpan)
+                httpInterceptor = SentryApollo3HttpInterceptor(hub, beforeSpan)
             }
             val builder = ApolloClient.builder()
                 .serverUrl(server.url("/").toString())
-                .addInterceptor(interceptor)
+                .addHttpInterceptor(httpInterceptor)
+//                .addInterceptor(interceptor)
+//                .addInterceptor(CacheAndNetworkInterceptor)
 
-            if (useHttpInterceptor) {
-                builder.addHttpInterceptor(httpInterceptor)
-            }
+//            if (useHttpInterceptor) {
+//                builder.addHttpInterceptor(httpInterceptor)
+//            }
 
             return builder.build()
         }
@@ -96,7 +93,7 @@ class SentryApollo3InterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -111,7 +108,7 @@ class SentryApollo3InterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -126,7 +123,7 @@ class SentryApollo3InterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -152,15 +149,9 @@ class SentryApollo3InterceptorTest {
         executeQuery(
 
             fixture.getSut(
-                beforeSpan = object : BeforeSpanCallback {
-                    override fun <D : Operation.Data> execute(
-                        span: ISpan,
-                        request: ApolloRequest<D>,
-                        response: ApolloResponse<D>?
-                    ): ISpan {
-                        span.description = "overwritten description"
-                        return span
-                    }
+                beforeSpan = { span, request, response ->
+                    span.description = "overwritten description"
+                    span
                 }
             )
         )
@@ -171,7 +162,7 @@ class SentryApollo3InterceptorTest {
                 val httpClientSpan = it.spans.first()
                 assertEquals("overwritten description", httpClientSpan.description)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -181,14 +172,8 @@ class SentryApollo3InterceptorTest {
     fun `when customizer throws, exception is handled`() {
         executeQuery(
             fixture.getSut(
-                beforeSpan = object : BeforeSpanCallback {
-                    override fun <D : Operation.Data> execute(
-                        span: ISpan,
-                        request: ApolloRequest<D>,
-                        response: ApolloResponse<D>?
-                    ): ISpan {
-                        throw RuntimeException()
-                    }
+                beforeSpan = { _, _, _ ->
+                    throw RuntimeException()
                 }
             )
         )
@@ -197,7 +182,7 @@ class SentryApollo3InterceptorTest {
             check {
                 assertEquals(1, it.spans.size)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )

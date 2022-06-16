@@ -25,6 +25,7 @@ dependencies {
     api(projects.sentryKotlinExtensions)
 
     implementation(Config.Libs.apollo3)
+    implementation(Config.Libs.apollo3cache)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

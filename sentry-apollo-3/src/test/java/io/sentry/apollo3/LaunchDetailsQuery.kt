@@ -6,8 +6,8 @@ import com.apollographql.apollo3.api.CustomScalarAdapters
 import com.apollographql.apollo3.api.Query
 import com.apollographql.apollo3.api.json.JsonWriter
 import com.apollographql.apollo3.api.obj
-import com.example.rocketreserver.adapter.LaunchDetailsQuery_ResponseAdapter
-import com.example.rocketreserver.adapter.LaunchDetailsQuery_VariablesAdapter
+import io.sentry.apollo3.adapter.LaunchDetailsQuery_ResponseAdapter
+import io.sentry.apollo3.adapter.LaunchDetailsQuery_VariablesAdapter
 import io.sentry.apollo3.selections.LaunchDetailsQuerySelections
 import kotlin.String
 
