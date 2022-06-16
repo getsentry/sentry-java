@@ -1,0 +1,21 @@
+name: Update Dependencies
+
+on:
+  # Run every day.
+  schedule:
+    - cron: '0 3 * * *'
+  # And on on every PR merge so we get the updated dependencies ASAP, and to make sure the changelog doesn't conflict.
+  push:
+    # TODO uncomment
+    # branches:
+    #   - main
+
+jobs:
+  native:
+    uses: getsentry/github-workflows/.github/workflows/submodule-updater.yml@923a6414d7e37c07fdd743b2a6ccb40198ead7d3
+    with:
+      path: sentry-android-ndk/sentry-native
+      name: Native SDK
+    secrets:
+      # TODO provide a custom API token to have the CI triggered
+      api_token: ${{ github.token }}
