@@ -291,7 +291,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     // setting such values require IO hence we don't run for transactions
     if (errorEvent) {
-      setDeviceIO(device, applyScopeData);
+      if (options.isCollectAdditionalContext()) {
+        setDeviceIO(device, applyScopeData);
+      }
     }
 
     device.setOrientation(getOrientation());
@@ -332,42 +334,41 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setDeviceIO(final @NotNull Device device, final boolean applyScopeData) {
-    if (options.isCollectAdditionalContext()) {
-      final Intent batteryIntent = getBatteryIntent();
-      if (batteryIntent != null) {
-        device.setBatteryLevel(getBatteryLevel(batteryIntent));
-        device.setCharging(isCharging(batteryIntent));
-        device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
-      }
+    final Intent batteryIntent = getBatteryIntent();
+    if (batteryIntent != null) {
+      device.setBatteryLevel(getBatteryLevel(batteryIntent));
+      device.setCharging(isCharging(batteryIntent));
+      device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
+    }
 
-      Boolean connected;
-      switch (ConnectivityChecker.getConnectionStatus(context, options.getLogger())) {
-        case NOT_CONNECTED:
-          connected = false;
-          break;
-        case CONNECTED:
-          connected = true;
-          break;
-        default:
-          connected = null;
-      }
-      device.setOnline(connected);
+    Boolean connected;
+    switch (ConnectivityChecker.getConnectionStatus(context, options.getLogger())) {
+      case NOT_CONNECTED:
+        connected = false;
+        break;
+      case CONNECTED:
+        connected = true;
+        break;
+      default:
+        connected = null;
+    }
+    device.setOnline(connected);
 
-      final ActivityManager.MemoryInfo memInfo = getMemInfo();
-      if (memInfo != null) {
-        // in bytes
-        device.setMemorySize(getMemorySize(memInfo));
-        if (applyScopeData) {
-          device.setFreeMemory(memInfo.availMem);
-          device.setLowMemory(memInfo.lowMemory);
-        }
-        // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
-        // compatibility
+    final ActivityManager.MemoryInfo memInfo = getMemInfo();
+    if (memInfo != null) {
+      // in bytes
+      device.setMemorySize(getMemorySize(memInfo));
+      if (applyScopeData) {
+        device.setFreeMemory(memInfo.availMem);
+        device.setLowMemory(memInfo.lowMemory);
       }
+      // there are runtime.totalMemory() and runtime.freeMemory(), but I kept the same for
+      // compatibility
     }
 
     // this way of getting the size of storage might be problematic for storages bigger than 2GB
-    // check the use of https://developer.android.com/reference/java/io/File.html#getFreeSpace%28%29
+    // check the use of
+    // https://developer.android.com/reference/java/io/File.html#getFreeSpace%28%29
     final File internalStorageFile = context.getExternalFilesDir(null);
     if (internalStorageFile != null) {
       StatFs internalStorageStat = new StatFs(internalStorageFile.getPath());
