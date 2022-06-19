@@ -1,15 +1,18 @@
 public final class io/sentry/apollo3/ApolloRequestBodyContent {
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/util/Map;
-	public final fun copy (Ljava/lang/String;Ljava/util/Map;)Lio/sentry/apollo3/ApolloRequestBodyContent;
-	public static synthetic fun copy$default (Lio/sentry/apollo3/ApolloRequestBodyContent;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/apollo3/ApolloRequestBodyContent;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;)Lio/sentry/apollo3/ApolloRequestBodyContent;
+	public static synthetic fun copy$default (Lio/sentry/apollo3/ApolloRequestBodyContent;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/apollo3/ApolloRequestBodyContent;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOperationName ()Ljava/lang/String;
 	public final fun getQuery ()Ljava/lang/String;
 	public final fun getVariables ()Ljava/util/Map;
 	public fun hashCode ()I
+	public final fun setOperationName (Ljava/lang/String;)V
 	public final fun setQuery (Ljava/lang/String;)V
 	public final fun setVariables (Ljava/util/Map;)V
 	public fun toString ()Ljava/lang/String;
@@ -23,31 +26,9 @@ public final class io/sentry/apollo3/ApolloRequestBodyContent$Deserializer : io/
 
 public final class io/sentry/apollo3/ApolloRequestBodyContent$JsonKeys {
 	public static final field INSTANCE Lio/sentry/apollo3/ApolloRequestBodyContent$JsonKeys;
+	public static final field OPERATION_NAME Ljava/lang/String;
 	public static final field QUERY Ljava/lang/String;
 	public static final field VARIABLES Ljava/lang/String;
-}
-
-public final class io/sentry/apollo3/ApolloRequestBodyListContent {
-	public fun <init> (Ljava/util/List;)V
-	public final fun component1 ()Ljava/util/List;
-	public final fun copy (Ljava/util/List;)Lio/sentry/apollo3/ApolloRequestBodyListContent;
-	public static synthetic fun copy$default (Lio/sentry/apollo3/ApolloRequestBodyListContent;Ljava/util/List;ILjava/lang/Object;)Lio/sentry/apollo3/ApolloRequestBodyListContent;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getQueries ()Ljava/util/List;
-	public fun hashCode ()I
-	public final fun setQueries (Ljava/util/List;)V
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/sentry/apollo3/ApolloRequestBodyListContent$Deserializer : io/sentry/JsonDeserializer {
-	public static final field INSTANCE Lio/sentry/apollo3/ApolloRequestBodyListContent$Deserializer;
-	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/apollo3/ApolloRequestBodyListContent;
-	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
-}
-
-public final class io/sentry/apollo3/ExtensionsKt {
-	public static final fun headersContentLength (Lcom/apollographql/apollo3/api/http/HttpResponse;)J
-	public static final fun toLongOrDefault (Ljava/lang/String;J)J
 }
 
 public final class io/sentry/apollo3/SentryApollo3HttpInterceptor : com/apollographql/apollo3/network/http/HttpInterceptor {

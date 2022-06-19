@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add integration for Apollo-Kotlin 3
+
 ### Features
 
 - Replace `tracestate` header with `baggage` header ([#2078](https://github.com/getsentry/sentry-java/pull/2078))

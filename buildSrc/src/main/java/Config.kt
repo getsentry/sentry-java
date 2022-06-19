@@ -106,7 +106,6 @@ object Config {
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
 
         val apollo3 = "com.apollographql.apollo3:apollo-runtime:3.3.0"
-        val apollo3cache = "com.apollographql.apollo3:apollo-normalized-cache:3.3.0"
     }
 
     object AnnotationProcessors {

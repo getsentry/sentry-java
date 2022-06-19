@@ -53,7 +53,6 @@ class SentryApollo3InterceptorTest {
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            useHttpInterceptor: Boolean = false,
             beforeSpan: BeforeSpanCallback? = null
         ): ApolloClient {
             whenever(hub.options).thenReturn(SentryOptions())
@@ -71,12 +70,6 @@ class SentryApollo3InterceptorTest {
             val builder = ApolloClient.builder()
                 .serverUrl(server.url("/").toString())
                 .addHttpInterceptor(httpInterceptor)
-//                .addInterceptor(interceptor)
-//                .addInterceptor(CacheAndNetworkInterceptor)
-
-//            if (useHttpInterceptor) {
-//                builder.addHttpInterceptor(httpInterceptor)
-//            }
 
             return builder.build()
         }
@@ -190,7 +183,7 @@ class SentryApollo3InterceptorTest {
 
     @Test
     fun `adds breadcrumb when http calls succeeds`() {
-        executeQuery(fixture.getSut(useHttpInterceptor = true))
+        executeQuery(fixture.getSut())
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
@@ -226,6 +219,7 @@ class SentryApollo3InterceptorTest {
                 return@launch
             }
         }
+
         coroutine.join()
         tx?.finish()
     }

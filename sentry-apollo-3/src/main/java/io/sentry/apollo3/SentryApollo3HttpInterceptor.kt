@@ -80,21 +80,12 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
                 ApolloRequestBodyContent.Deserializer
             )
         } catch (e: Exception) {
-            null
-        } ?: try {
-            hub.options.serializer.deserialize(
-                reader,
-                ApolloRequestBodyListContent::class.java,
-                ApolloRequestBodyListContent.Deserializer
-            )
-        } catch (e: Exception) {
-            null
+            hub.options.logger.log(SentryLevel.ERROR, "Error deserializing Apollo Request Body.", e)
         }
 
         val span = when (content) {
             is ApolloRequestBodyContent -> createSpanFromBodyContent(activeSpan, request, content)
-            is ApolloRequestBodyListContent -> createSpanFromBodyListContent(activeSpan, content)
-            else -> activeSpan.startChild("unkown")
+            else -> activeSpan.startChild("apollo.request.unknown")
         }
 
         val operationId = request.headers.firstOrNull { it.name == "X-APOLLO-OPERATION-ID" }?.value ?: "unknown"
@@ -104,23 +95,12 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
         }
     }
 
-    private fun createSpanFromBodyListContent(activeSpan: ISpan, content: ApolloRequestBodyListContent): ISpan {
-        return activeSpan.startChild("Batched Operation").apply {
-            setData("isBatched", true)
-            content.queries?.forEachIndexed { index, item ->
-                setData("variables $index", item.variables.toString())
-                setData("variables $index", item.variables.toString())
-            }
-        }
-    }
-
     private fun createSpanFromBodyContent(activeSpan: ISpan, request: HttpRequest, content: ApolloRequestBodyContent): ISpan {
         val operationType = parseOperationType(content)
-        val operationName = request.headers.firstOrNull { it.name == "X-APOLLO-OPERATION-NAME" }?.value ?: "unknown"
+        val operationName = content.operationName ?: request.headers.firstOrNull { it.name == "X-APOLLO-OPERATION-NAME" }?.value ?: "unknown"
         val description = "$operationType $operationName"
 
         return activeSpan.startChild(operationName, description).apply {
-            setData("isBatched", false)
             setData("variables", content.variables.toString())
         }
     }
@@ -144,7 +124,7 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
                 breadcrumb.setData("request_body_size", contentLength)
             }
 
-            httpResponse.headersContentLength().ifHasValidLength { contentLength ->
+            httpResponse.body?.peek()?.readByteArray()?.size?.toLong().ifHasValidLength { contentLength ->
                 breadcrumb.setData("response_body_size", contentLength)
             }
 
