@@ -7,6 +7,7 @@
 ### Features
 
 - Replace `tracestate` header with `baggage` header ([#2078](https://github.com/getsentry/sentry-java/pull/2078))
+- Allow opting out of device info collection that requires Inter-Process Communication (IPC) ([#2100](https://github.com/getsentry/sentry-java/pull/2100))
 
 ## 6.1.0
 
