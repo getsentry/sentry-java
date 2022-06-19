@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add integration for Apollo-Kotlin 3
+- Add integration for Apollo-Kotlin 3 ([#2109](https://github.com/getsentry/sentry-java/pull/2109))
 
 ### Features
 
