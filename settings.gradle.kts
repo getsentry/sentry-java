@@ -12,7 +12,6 @@ include(
     "sentry-android-timber",
     "sentry-android-okhttp",
     "sentry-android-fragment",
-    "sentry-android-compose",
     "sentry-android-navigation",
     "sentry-apollo",
     "sentry-test-support",
