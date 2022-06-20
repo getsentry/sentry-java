@@ -177,8 +177,4 @@ gradle.projectsEvaluated {
                 }
             }
     }
-
-    tasks.named("build") {
-        dependsOn("aggregateJavadocs")
-    }
 }
