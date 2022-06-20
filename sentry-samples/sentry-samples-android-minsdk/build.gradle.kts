@@ -7,29 +7,11 @@ android {
     compileSdk = Config.Android.compileSdkVersion
 
     defaultConfig {
-        applicationId = "io.sentry.samples.android"
-        minSdk = Config.Android.minSdkVersionOkHttp
+        applicationId = "io.sentry.samples.android.minsdk"
+        minSdk = Config.Android.minSdkVersion
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 2
         versionName = "1.1.0"
-
-        externalNativeBuild {
-            val sentryNativeSrc = if (File("${project.projectDir}/../../sentry-android-ndk/sentry-native-local").exists()) {
-                "sentry-native-local"
-            } else {
-                "sentry-native"
-            }
-            println("sentry-samples-android: $sentryNativeSrc")
-
-            cmake {
-                arguments.add(0, "-DANDROID_STL=c++_static")
-                arguments.add(0, "-DSENTRY_NATIVE_SRC=$sentryNativeSrc")
-            }
-        }
-
-        ndk {
-            abiFilters.addAll(Config.Android.abiFilters)
-        }
     }
 
     buildFeatures {
@@ -45,12 +27,6 @@ android {
         includeInBundle = false
     }
 
-    externalNativeBuild {
-        cmake {
-            path("CMakeLists.txt")
-        }
-    }
-
     signingConfigs {
         getByName("debug") {
             storeFile = rootProject.file("debug.keystore")
@@ -64,8 +40,7 @@ android {
         getByName("debug") {
             addManifestPlaceholders(
                 mapOf(
-                    "sentryDebug" to true,
-                    "sentryEnvironment" to "debug"
+                    "sentryDebug" to true
                 )
             )
         }
@@ -77,8 +52,7 @@ android {
 
             addManifestPlaceholders(
                 mapOf(
-                    "sentryDebug" to false,
-                    "sentryEnvironment" to "release"
+                    "sentryDebug" to false
                 )
             )
         }
@@ -107,25 +81,10 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
-    implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
-
     implementation(projects.sentryAndroid)
-    implementation(projects.sentryAndroidOkhttp)
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
-    implementation(Config.Libs.fragment)
-
-//    how to exclude androidx if release health feature is disabled
-//    implementation(projects.sentryAndroid) {
-//        exclude(group = "androidx.lifecycle", module = "lifecycle-process")
-//        exclude(group = "androidx.lifecycle", module = "lifecycle-common-java8")
-//        exclude(group = "androidx.core", module = "core")
-//    }
+    implementation(projects.sentryApollo)
 
     implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.androidxRecylerView)
-    implementation(Config.Libs.retrofit2)
-    implementation(Config.Libs.retrofit2Gson)
-
-    debugImplementation(Config.Libs.leakCanary)
 }

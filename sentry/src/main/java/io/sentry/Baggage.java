@@ -3,6 +3,7 @@ package io.sentry;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Experimental
 public final class Baggage {
 
-  static final @NotNull String CHARSET = "UTF-8";
+  static final @NotNull String CHARSET = StandardCharsets.UTF_8.toString();
   static final @NotNull Integer MAX_BAGGAGE_STRING_LENGTH = 8192;
   static final @NotNull Integer MAX_BAGGAGE_LIST_MEMBER_COUNT = 64;
 

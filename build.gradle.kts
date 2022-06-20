@@ -46,18 +46,19 @@ apiValidation {
     ignoredProjects.addAll(
         listOf(
             "sentry-samples-android",
-            "sentry-samples-console",
-            "sentry-samples-jul",
-            "sentry-samples-log4j2",
-            "sentry-samples-logback",
-            "sentry-samples-openfeign",
-            "sentry-samples-servlet",
-            "sentry-samples-spring",
-            "sentry-samples-spring-boot",
-            "sentry-samples-spring-boot-webflux",
-            "sentry-samples-netflix-dgs",
-            "sentry-uitest-android",
-            "sentry-uitest-android-benchmark",
+            "sentry-samples-android-minsdk",
+//            "sentry-samples-console",
+//            "sentry-samples-jul",
+//            "sentry-samples-log4j2",
+//            "sentry-samples-logback",
+//            "sentry-samples-openfeign",
+//            "sentry-samples-servlet",
+//            "sentry-samples-spring",
+//            "sentry-samples-spring-boot",
+//            "sentry-samples-spring-boot-webflux",
+//            "sentry-samples-netflix-dgs",
+//            "sentry-uitest-android",
+//            "sentry-uitest-android-benchmark",
         )
     )
 }

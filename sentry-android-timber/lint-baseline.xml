@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 7.2.0" type="baseline" client="cli" dependencies="true" name="AGP (7.2.0)" variant="all" version="7.2.0">
+
+    <issue
+        id="TrulyRandom"
+        message="Potentially insecure random numbers on Android 4.3 and older. Read https://android-developers.blogspot.com/2013/08/some-securerandom-thoughts.html for more info."
+        errorLine1="    this.random = options.getSampleRate() == null ? null : new SecureRandom();"
+        errorLine2="                                                               ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/sentry/SentryClient.java"
+            line="57"
+            column="64"/>
+    </issue>
+
+</issues>

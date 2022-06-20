@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
   <string name="app_name">Sentry sample</string>
   <string name="crash_from_java">Crash from Java (UncaughtException)</string>
   <string name="send_message">Send Message</string>
@@ -21,7 +21,7 @@
   <string name="test_timber_integration">Test Timber</string>
   <string name="back_main">Back to Main Activity</string>
   <string name="tap_me">text</string>
-  <string name="lipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nibh lorem, venenatis sed nulla vel, venenatis sodales augue. Mauris varius elit eu ligula volutpat, sed tincidunt orci porttitor. Donec et dignissim lacus, sed luctus ipsum. Praesent ornare luctus tortor sit amet ultricies. Cras iaculis et diam et vulputate. Cras ut iaculis mauris, non pellentesque diam. Nunc in laoreet diam, vitae accumsan eros. Morbi non nunc ac eros molestie placerat vitae id dolor. Quisque ornare aliquam ipsum, a dapibus tortor. In eu sodales tellus.
+  <string name="lipsum" tools:ignore="Typos">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nibh lorem, venenatis sed nulla vel, venenatis sodales augue. Mauris varius elit eu ligula volutpat, sed tincidunt orci porttitor. Donec et dignissim lacus, sed luctus ipsum. Praesent ornare luctus tortor sit amet ultricies. Cras iaculis et diam et vulputate. Cras ut iaculis mauris, non pellentesque diam. Nunc in laoreet diam, vitae accumsan eros. Morbi non nunc ac eros molestie placerat vitae id dolor. Quisque ornare aliquam ipsum, a dapibus tortor. In eu sodales tellus.
 
 Aliquam tristique, nisi eu sodales rhoncus, ex arcu blandit quam, sed suscipit enim lorem at metus. Vivamus nec aliquet dolor. Nulla molestie sem eget nunc sollicitudin placerat. Duis lobortis nisi at dui scelerisque tincidunt. Aenean fringilla tempus justo vel finibus. Sed ut mi vulputate leo lobortis interdum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam tempus interdum scelerisque. Integer vitae turpis imperdiet tellus facilisis pretium.
 
@@ -33,4 +33,5 @@ Nulla interdum gravida augue, vel fringilla lorem bibendum vel. In hac habitasse
   </string>
   <string name="camera_permission">Camera Permission</string>
   <string name="write_permission">Write External Storage Permission</string>
+  <string name="getsentry">getsentry</string>
 </resources>

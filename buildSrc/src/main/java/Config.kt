@@ -154,6 +154,7 @@ object Config {
         val binaryCompatibilityValidatorVersion = "0.8.0"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
         val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
+        val androidLint = "com.android.lint"
     }
 
     object Sentry {

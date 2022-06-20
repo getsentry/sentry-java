@@ -9,7 +9,9 @@
 
     <EditText
         android:layout_width="wrap_content"
-        android:text="getsentry"
+        android:text="@string/getsentry"
+        android:inputType="text"
+        android:hint="@string/getsentry"
         android:id="@+id/edit_repo"
         android:layout_height="wrap_content"/>
 

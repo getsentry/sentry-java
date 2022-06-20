@@ -40,6 +40,8 @@ public final class SentryClient implements ISentryClient {
     return enabled;
   }
 
+  // @SuppressLint does not exist for Java projects
+  @SuppressWarnings("TrulyRandom")
   SentryClient(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;

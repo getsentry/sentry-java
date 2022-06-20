@@ -14,35 +14,36 @@ include(
     "sentry-android-fragment",
     "sentry-apollo",
     "sentry-test-support",
-    "sentry-log4j2",
-    "sentry-logback",
-    "sentry-jul",
-    "sentry-servlet",
-    "sentry-servlet-jakarta",
-    "sentry-apache-http-client-5",
-    "sentry-spring",
-    "sentry-spring-boot-starter",
+//    "sentry-log4j2",
+//    "sentry-logback",
+//    "sentry-jul",
+//    "sentry-servlet",
+//    "sentry-servlet-jakarta",
+//    "sentry-apache-http-client-5",
+//    "sentry-spring",
+//    "sentry-spring-boot-starter",
     "sentry-bom",
-    "sentry-openfeign",
-    "sentry-graphql",
-    "sentry-jdbc",
+//    "sentry-openfeign",
+//    "sentry-graphql",
+//    "sentry-jdbc",
     "sentry-samples:sentry-samples-android",
-    "sentry-samples:sentry-samples-console",
-    "sentry-samples:sentry-samples-jul",
-    "sentry-samples:sentry-samples-log4j2",
-    "sentry-samples:sentry-samples-logback",
-    "sentry-samples:sentry-samples-openfeign",
-    "sentry-samples:sentry-samples-servlet",
-    "sentry-samples:sentry-samples-spring",
-    "sentry-samples:sentry-samples-spring-boot",
-    "sentry-samples:sentry-samples-spring-boot-webflux",
-    "sentry-samples:sentry-samples-netflix-dgs",
-    "sentry-android-integration-tests:sentry-uitest-android-benchmark",
-    "sentry-android-integration-tests:sentry-uitest-android"
+    "sentry-samples:sentry-samples-android-minsdk"
+//    "sentry-samples:sentry-samples-console",
+//    "sentry-samples:sentry-samples-jul",
+//    "sentry-samples:sentry-samples-log4j2",
+//    "sentry-samples:sentry-samples-logback",
+//    "sentry-samples:sentry-samples-openfeign",
+//    "sentry-samples:sentry-samples-servlet",
+//    "sentry-samples:sentry-samples-spring",
+//    "sentry-samples:sentry-samples-spring-boot",
+//    "sentry-samples:sentry-samples-spring-boot-webflux",
+//    "sentry-samples:sentry-samples-netflix-dgs",
+//    "sentry-android-integration-tests:sentry-uitest-android-benchmark",
+//    "sentry-android-integration-tests:sentry-uitest-android"
 )
 
 gradle.beforeProject {
-    if (project.name == "sentry-android-ndk" || project.name == "sentry-samples-android") {
+    if (project.name == "sentry-android-ndk" || project.name.startsWith("sentry-samples-android")) {
         exec {
             logger.log(LogLevel.LIFECYCLE, "Initializing git submodules")
             commandLine("git", "submodule", "update", "--init", "--recursive")

@@ -8,6 +8,7 @@ plugins {
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
+    id(Config.QualityPlugins.androidLint)
 }
 
 configure<JavaPluginExtension> {

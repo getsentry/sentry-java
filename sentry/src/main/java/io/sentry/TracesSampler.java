@@ -9,6 +9,8 @@ final class TracesSampler {
   private final @NotNull SentryOptions options;
   private final @NotNull SecureRandom random;
 
+  // @SuppressLint does not exist for Java projects
+  @SuppressWarnings("TrulyRandom")
   public TracesSampler(final @NotNull SentryOptions options) {
     this(Objects.requireNonNull(options, "options are required"), new SecureRandom());
   }
