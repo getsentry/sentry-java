@@ -1,6 +1,6 @@
 io.sentry
-io.sentry.adapters
 io.sentry.cache
+io.sentry.clientreport
 io.sentry.config
 io.sentry.exception
 io.sentry.graphql
@@ -13,6 +13,7 @@ io.sentry.logback
 io.sentry.openfeign
 io.sentry.protocol
 io.sentry.servlet
+io.sentry.servlet.jakarta
 io.sentry.spring
 io.sentry.spring.boot
 io.sentry.spring.tracing
@@ -21,3 +22,4 @@ io.sentry.transport
 io.sentry.transport.apache
 io.sentry.util
 io.sentry.vendor
+io.sentry.vendor.gson.stream
