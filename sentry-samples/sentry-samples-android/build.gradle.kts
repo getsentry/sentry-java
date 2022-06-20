@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdk = Config.Android.minSdkVersionOkHttp
+        minSdk = Config.Android.minSdkVersionCompose
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 2
         versionName = "1.1.0"
@@ -36,6 +36,11 @@ android {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = Config.Libs.composeVersion
     }
 
     dependenciesInfo {
@@ -104,6 +109,7 @@ dependencies {
     implementation(projects.sentryAndroidOkhttp)
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
+    implementation(projects.sentryAndroidCompose)
     implementation(Config.Libs.fragment)
 
 //    how to exclude androidx if release health feature is disabled
@@ -117,6 +123,12 @@ dependencies {
     implementation(Config.Libs.androidxRecylerView)
     implementation(Config.Libs.retrofit2)
     implementation(Config.Libs.retrofit2Gson)
+
+    implementation(Config.Libs.composeActivity)
+    implementation(Config.Libs.composeFoundation)
+    implementation(Config.Libs.composeFoundationLayout)
+    implementation(Config.Libs.composeNavigation)
+    implementation(Config.Libs.composeMaterial)
 
     debugImplementation(Config.Libs.leakCanary)
 }

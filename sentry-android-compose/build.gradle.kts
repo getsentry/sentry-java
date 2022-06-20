@@ -74,6 +74,7 @@ kotlin {
 
 dependencies {
     api(projects.sentry)
+    api(projects.sentryAndroidNavigation)
 
     implementation(Config.Libs.composeRuntime)
     implementation(Config.Libs.composeNavigation)

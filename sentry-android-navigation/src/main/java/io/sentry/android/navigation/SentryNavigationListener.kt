@@ -4,9 +4,11 @@ import android.os.Bundle
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.SentryLevel.INFO
+import io.sentry.TypeCheckHint
 import java.lang.ref.WeakReference
 
 class SentryNavigationListener(
@@ -31,20 +33,25 @@ class SentryNavigationListener(
             type = "navigation"
             category = "navigation"
 
-            val from = fromRef?.get() ?: "/" // similar to what sentry-dart does
-            data["from"] = from
+            val from = fromRef?.get()?.route
+            from?.let { data["from"] = it }
             fromArgs?.let { args ->
-                data["from_arguments"] = args.keySet().associateWith { args[it] }
+                data["from_arguments"] = args.keySet().filter {
+                    it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
+                }.associateWith { args[it] }
             }
-            val to = destination.route ?: "/"
-            data["to"] = to
+            val to = destination.route
+            to?.let { data["to"] = it }
+            // TODO: should this be hidden behind Pii flag?
             arguments?.let { args ->
-                data["to_arguments"] = args.keySet().associateWith { args[it] }
+                data["to_arguments"] = args.keySet().filter {
+                    it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
+                }.associateWith { args[it] }
             }
             level = INFO
         }
-//    val hint = Hint()
-//    hint.set(ANDROID_ACTIVITY, activity)
+        val hint = Hint()
+        hint.set(TypeCheckHint.ANDROID_NAV_DESTINATION, destination)
         hub.addBreadcrumb(breadcrumb)
     }
 }

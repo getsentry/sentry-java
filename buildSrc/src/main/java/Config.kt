@@ -1,14 +1,14 @@
 import java.math.BigDecimal
 
 object Config {
-    val kotlinVersion = "1.5.31"
+    val kotlinVersion = "1.6.10"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.6.8"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.2.0"
+        val androidGradle = "com.android.tools.build:gradle:7.2.1"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -22,7 +22,7 @@ object Config {
     }
 
     object Android {
-        private val sdkVersion = 31
+        private val sdkVersion = 32
 
         val minSdkVersion = 14
         val minSdkVersionOkHttp = 21
@@ -108,8 +108,12 @@ object Config {
         val navigationRuntime = "androidx.navigation:navigation-runtime:2.4.2"
         // compose deps
         val composeVersion = "1.1.1"
-        val composeRuntime = "androidx.compose.runtime:runtime:1.1.1"
+        val composeRuntime = "androidx.compose.runtime:runtime:$composeVersion"
         val composeNavigation = "androidx.navigation:navigation-compose:2.4.2"
+        val composeActivity = "androidx.activity:activity-compose:1.4.0"
+        val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
+        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
+        val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
     }
 
     object AnnotationProcessors {
