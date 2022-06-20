@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Swallow error when reading ActivityManager#getProcessesInErrorState instead of crashing ([#2078](https://github.com/getsentry/sentry-java/pull/2078)) 
+
 ### Features
 
 - Replace `tracestate` header with `baggage` header ([#2078](https://github.com/getsentry/sentry-java/pull/2078))

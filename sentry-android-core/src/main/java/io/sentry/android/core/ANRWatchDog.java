@@ -106,8 +106,13 @@ final class ANRWatchDog extends Thread {
             (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
 
         if (am != null) {
-          final List<ActivityManager.ProcessErrorStateInfo> processesInErrorState =
-              am.getProcessesInErrorState();
+          List<ActivityManager.ProcessErrorStateInfo> processesInErrorState = null;
+          try {
+            // It can throw RuntimeException or OutOfMemoryError
+            processesInErrorState = am.getProcessesInErrorState();
+          } catch (Throwable e) {
+            logger.log(SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
+          }
           // if list is null, there's no process in ANR state.
           if (processesInErrorState == null) {
             continue;
