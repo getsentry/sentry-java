@@ -29,6 +29,7 @@ class BaggageTest {
 
         assertEquals("isProduction=false,serverNode=DF%2028,userId=alice", baggage.toHeaderString())
     }
+
     @Test
     fun `can parse single baggage string`() {
         val baggage = Baggage.fromHeader("userId=alice,serverNode=DF%2028,isProduction=false", logger)

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Use charset string directly as StandardCharsets is not available on earlier Android versions ([#2111](https://github.com/getsentry/sentry-java/pull/2111))
+
 ## 6.1.1
 
 ### Features
