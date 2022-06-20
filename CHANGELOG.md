@@ -1,10 +1,12 @@
 # Changelog
 
-## 6.1.1
+## Unreleased
 
 ### Fixes
 
-- Swallow error when reading ActivityManager#getProcessesInErrorState instead of crashing ([#2078](https://github.com/getsentry/sentry-java/pull/2114)) 
+- Swallow error when reading ActivityManager#getProcessesInErrorState instead of crashing ([#2078](https://github.com/getsentry/sentry-java/pull/2114))
+
+## 6.1.1
 
 ### Features
 
