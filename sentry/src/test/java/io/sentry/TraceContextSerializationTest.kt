@@ -7,17 +7,17 @@ import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
 
-class TraceStateSerializationTest {
+class TraceContextSerializationTest {
 
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = TraceState(
+        fun getSut() = TraceContext(
             SentryId("65bcd18546c942069ed957b15b4ace7c"),
             "5d593cac-f833-4845-bb23-4eabdf720da2",
             "9ee2c92c-401e-4296-b6f0-fb3b13edd9ee",
             "0666ab02-6364-4135-aa59-02e8128ce052",
-            TraceStateUserSerializationTest.Fixture().getSut(),
+            TraceContextUserSerializationTest.Fixture().getSut(),
             "0252ec25-cd0a-4230-bd2f-936a4585637e"
         )
     }
@@ -53,8 +53,8 @@ class TraceStateSerializationTest {
         return wrt.toString()
     }
 
-    private fun deserialize(json: String): TraceState {
+    private fun deserialize(json: String): TraceContext {
         val reader = JsonObjectReader(StringReader(json))
-        return TraceState.Deserializer().deserialize(reader, fixture.logger)
+        return TraceContext.Deserializer().deserialize(reader, fixture.logger)
     }
 }

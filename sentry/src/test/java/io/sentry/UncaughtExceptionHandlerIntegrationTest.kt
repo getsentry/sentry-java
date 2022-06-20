@@ -50,7 +50,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         val sut = UncaughtExceptionHandlerIntegration(handlerMock)
         sut.register(hubMock, options)
         sut.uncaughtException(threadMock, throwableMock)
-        verify(hubMock).captureEvent(any(), any())
+        verify(hubMock).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -85,7 +85,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         val sut = UncaughtExceptionHandlerIntegration(handlerMock)
         sut.register(hubMock, options)
         sut.uncaughtException(threadMock, throwableMock)
-        verify(hubMock).captureEvent(any(), any())
+        verify(hubMock).captureEvent(any(), any<Hint>())
     }
 
     @Test

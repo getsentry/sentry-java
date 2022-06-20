@@ -67,7 +67,7 @@ class DirectoryProcessorTest {
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
 
         fixture.getSut().processDirectory(file)
-        verify(fixture.hub).captureEvent(any(), argWhere { !HintUtils.hasType(it, ApplyScopeData::class.java) })
+        verify(fixture.hub).captureEvent(any(), argWhere<Hint> { !HintUtils.hasType(it, ApplyScopeData::class.java) })
     }
 
     @Test

@@ -36,8 +36,34 @@ public interface IHub {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureEvent(@NotNull SentryEvent event) {
-    return captureEvent(event, null);
+    return captureEvent(event, new Hint());
   }
+
+  /**
+   * Captures the event.
+   *
+   * @param event the event
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  default @NotNull SentryId captureEvent(
+      @NotNull SentryEvent event, final @NotNull ScopeCallback callback) {
+    return captureEvent(event, new Hint(), callback);
+  }
+
+  /**
+   * Captures the event.
+   *
+   * @param event the event
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull
+  SentryId captureEvent(
+      final @NotNull SentryEvent event,
+      final @Nullable Hint hint,
+      final @NotNull ScopeCallback callback);
 
   /**
    * Captures the message.
@@ -58,6 +84,30 @@ public interface IHub {
    */
   @NotNull
   SentryId captureMessage(@NotNull String message, @NotNull SentryLevel level);
+
+  /**
+   * Captures the message.
+   *
+   * @param message The message to send.
+   * @param level The message level.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull
+  SentryId captureMessage(
+      @NotNull String message, @NotNull SentryLevel level, @NotNull ScopeCallback callback);
+
+  /**
+   * Captures the message.
+   *
+   * @param message The message to send.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  default @NotNull SentryId captureMessage(
+      @NotNull String message, @NotNull ScopeCallback callback) {
+    return captureMessage(message, SentryLevel.INFO, callback);
+  }
 
   /**
    * Captures an envelope.
@@ -96,8 +146,34 @@ public interface IHub {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureException(@NotNull Throwable throwable) {
-    return captureException(throwable, null);
+    return captureException(throwable, new Hint());
   }
+
+  /**
+   * Captures the exception.
+   *
+   * @param throwable The exception.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  default @NotNull SentryId captureException(
+      @NotNull Throwable throwable, final @NotNull ScopeCallback callback) {
+    return captureException(throwable, new Hint(), callback);
+  }
+
+  /**
+   * Captures the exception.
+   *
+   * @param throwable The exception.
+   * @param hint SDK specific but provides high level information about the origin of the event
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull
+  SentryId captureException(
+      final @NotNull Throwable throwable,
+      final @Nullable Hint hint,
+      final @NotNull ScopeCallback callback);
 
   /**
    * Captures a manually created user feedback and sends it to Sentry.
@@ -270,7 +346,7 @@ public interface IHub {
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction
-   * @param traceState the trace state
+   * @param traceContext the trace context
    * @param hint the hints
    * @param profilingTraceData the profiling trace data
    * @return transaction's id
@@ -279,7 +355,7 @@ public interface IHub {
   @NotNull
   SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      @Nullable TraceState traceState,
+      @Nullable TraceContext traceContext,
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData);
 
@@ -287,7 +363,7 @@ public interface IHub {
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction
-   * @param traceState the trace state
+   * @param traceContext the trace context
    * @param hint the hints
    * @return transaction's id
    */
@@ -295,9 +371,9 @@ public interface IHub {
   @NotNull
   default SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      @Nullable TraceState traceState,
+      @Nullable TraceContext traceContext,
       @Nullable Hint hint) {
-    return captureTransaction(transaction, traceState, hint, null);
+    return captureTransaction(transaction, traceContext, hint, null);
   }
 
   @ApiStatus.Internal
@@ -310,13 +386,13 @@ public interface IHub {
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction
-   * @param traceState the trace state
+   * @param traceContext the trace context
    * @return transaction's id
    */
   @ApiStatus.Internal
   default @NotNull SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable TraceState traceState) {
-    return captureTransaction(transaction, traceState, null);
+      @NotNull SentryTransaction transaction, @Nullable TraceContext traceContext) {
+    return captureTransaction(transaction, traceContext, null);
   }
 
   /**

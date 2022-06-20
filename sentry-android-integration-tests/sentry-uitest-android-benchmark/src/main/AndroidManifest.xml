@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="io.sentry.uitest.android.benchmark">
+
+    <!--
+      Important: disable debugging for accurate performance results
+
+      In a com.android.library project, this flag must be disabled from this
+      manifest, as it is not possible to override this flag from Gradle.
+    -->
+    <application
+      android:theme="@style/Theme.AppCompat"
+      android:label="Sentry Benchmark"
+      android:icon="@android:mipmap/sym_def_app_icon"
+      tools:replace="android:label">
+
+      <activity android:name=".BenchmarkActivity" />
+
+      <provider
+        android:name="io.sentry.android.core.SentryInitProvider"
+        android:authorities="${applicationId}.SentryInitProvider"
+        tools:node="remove" />
+
+      <provider
+        android:name="io.sentry.android.core.SentryPerformanceProvider"
+        android:authorities="${applicationId}.SentryPerformanceProvider"
+        tools:node="remove" />
+
+    </application>
+
+</manifest>

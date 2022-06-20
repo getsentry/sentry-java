@@ -169,13 +169,14 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      final TraceState traceState =
+      final TraceContext traceContext =
           scope != null && scope.getTransaction() != null
-              ? scope.getTransaction().traceState()
+              ? scope.getTransaction().traceContext()
               : null;
       final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(hint) : null;
-      final SentryEnvelope envelope = buildEnvelope(event, attachments, session, traceState, null);
+      final SentryEnvelope envelope =
+          buildEnvelope(event, attachments, session, traceContext, null);
 
       if (envelope != null) {
         transport.send(envelope, hint);
@@ -237,7 +238,7 @@ public final class SentryClient implements ISentryClient {
       final @Nullable SentryBaseEvent event,
       final @Nullable List<Attachment> attachments,
       final @Nullable Session session,
-      final @Nullable TraceState traceState,
+      final @Nullable TraceContext traceContext,
       final @Nullable ProfilingTraceData profilingTraceData)
       throws IOException, SentryEnvelopeException {
     SentryId sentryId = null;
@@ -274,7 +275,7 @@ public final class SentryClient implements ISentryClient {
 
     if (!envelopeItems.isEmpty()) {
       final SentryEnvelopeHeader envelopeHeader =
-          new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceState);
+          new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceContext);
       return new SentryEnvelope(envelopeHeader, envelopeItems);
     }
 
@@ -494,7 +495,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      @Nullable TraceState traceState,
+      @Nullable TraceContext traceContext,
       final @Nullable Scope scope,
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
@@ -544,7 +545,7 @@ public final class SentryClient implements ISentryClient {
               transaction,
               filterForTransaction(getAttachments(hint)),
               null,
-              traceState,
+              traceContext,
               profilingTraceData);
 
       if (envelope != null) {

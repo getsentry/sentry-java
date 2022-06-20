@@ -7,13 +7,13 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
-import io.sentry.TraceStateHeader
 import io.sentry.TransactionContext
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -97,7 +97,7 @@ class SentryOkHttpInterceptorTest {
         sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
-        assertNotNull(recorderRequest.headers[TraceStateHeader.TRACE_STATE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
@@ -106,7 +106,7 @@ class SentryOkHttpInterceptorTest {
         sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
-        assertNull(recorderRequest.headers[TraceStateHeader.TRACE_STATE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
@@ -115,7 +115,7 @@ class SentryOkHttpInterceptorTest {
         sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
-        assertNull(recorderRequest.headers[TraceStateHeader.TRACE_STATE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test

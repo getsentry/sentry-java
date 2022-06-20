@@ -121,7 +121,7 @@ class SentryTracerTest {
             check {
                 assertEquals(it.transaction, tracer.name)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -180,7 +180,7 @@ class SentryTracerTest {
                     assertEquals(emptyMap(), it.tags)
                 }
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -198,7 +198,7 @@ class SentryTracerTest {
                 assertEquals(1, it.spans.size)
                 assertEquals("op1", it.spans.first().op)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -331,7 +331,7 @@ class SentryTracerTest {
                     assertEquals(SpanStatus.OK, it.status)
                 }
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -407,7 +407,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         transaction.startChild("op")
         transaction.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -416,7 +416,7 @@ class SentryTracerTest {
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceState>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -437,7 +437,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         child.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -445,13 +445,13 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
         child.finish()
         verify(fixture.hub, times(1)).captureTransaction(
             check {
                 assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -471,7 +471,7 @@ class SentryTracerTest {
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[0].status)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -488,7 +488,7 @@ class SentryTracerTest {
                 others = mapOf("segment" to "pro")
             }
         )
-        val trace = transaction.traceState()
+        val trace = transaction.traceContext()
         assertNotNull(trace) {
             assertEquals(transaction.spanContext.traceId, it.traceId)
             assertEquals("key", it.publicKey)
@@ -507,13 +507,13 @@ class SentryTracerTest {
         val transaction = fixture.getSut({
             it.isTraceSampling = true
         })
-        val traceBeforeUserSet = transaction.traceState()
+        val traceBeforeUserSet = transaction.traceContext()
         fixture.hub.setUser(
             User().apply {
                 id = "user-id"
             }
         )
-        val traceAfterUserSet = transaction.traceState()
+        val traceAfterUserSet = transaction.traceContext()
         assertNotNull(traceAfterUserSet) {
             assertEquals(it, traceBeforeUserSet)
             assertNull(it.user)
@@ -521,14 +521,32 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `returns trace state header`() {
+    fun `returns baggage header`() {
         val transaction = fixture.getSut({
             it.isTraceSampling = true
+            it.environment = "production"
+            it.release = "1.0.99-rc.7"
         })
-        val header = transaction.toTraceStateHeader()
+
+        fixture.hub.setUser(
+            User().apply {
+                id = "userId12345"
+                others = mapOf("segment" to "pro")
+            }
+        )
+
+        val header = transaction.toBaggageHeader()
         assertNotNull(header) {
-            assertEquals("tracestate", it.name)
+            assertEquals("baggage", it.name)
             assertNotNull(it.value)
+            println(it.value)
+            assertTrue(it.value.contains("sentry-traceid=[^,]+".toRegex()))
+            assertTrue(it.value.contains("sentry-publickey=key,"))
+            assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
+            assertTrue(it.value.contains("sentry-environment=production,"))
+            assertTrue(it.value.contains("sentry-transaction=name,"))
+            assertTrue(it.value.contains("sentry-userid=userId12345,"))
+            assertTrue(it.value.contains("sentry-usersegment=pro$".toRegex()))
         }
     }
 
@@ -541,7 +559,7 @@ class SentryTracerTest {
             check {
                 assertEquals("val", it.getExtra("key"))
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -560,7 +578,7 @@ class SentryTracerTest {
                     assertEquals("val", it["key"])
                 }
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )

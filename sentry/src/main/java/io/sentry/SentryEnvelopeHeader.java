@@ -18,7 +18,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
 
   private final @Nullable SdkVersion sdkVersion;
 
-  private final @Nullable TraceState trace;
+  private final @Nullable TraceContext traceContext;
 
   private @Nullable Map<String, Object> unknown;
 
@@ -30,10 +30,10 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
   public SentryEnvelopeHeader(
       final @Nullable SentryId eventId,
       final @Nullable SdkVersion sdkVersion,
-      final @Nullable TraceState trace) {
+      final @Nullable TraceContext traceContext) {
     this.eventId = eventId;
     this.sdkVersion = sdkVersion;
-    this.trace = trace;
+    this.traceContext = traceContext;
   }
 
   public SentryEnvelopeHeader(final @Nullable SentryId eventId) {
@@ -52,8 +52,8 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
     return sdkVersion;
   }
 
-  public @Nullable TraceState getTrace() {
-    return trace;
+  public @Nullable TraceContext getTraceContext() {
+    return traceContext;
   }
 
   // JsonSerializable
@@ -74,8 +74,8 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
     if (sdkVersion != null) {
       writer.name(JsonKeys.SDK).value(logger, sdkVersion);
     }
-    if (trace != null) {
-      writer.name(JsonKeys.TRACE).value(logger, trace);
+    if (traceContext != null) {
+      writer.name(JsonKeys.TRACE).value(logger, traceContext);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -95,7 +95,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
 
       SentryId eventId = null;
       SdkVersion sdkVersion = null;
-      TraceState trace = null;
+      TraceContext traceContext = null;
       Map<String, Object> unknown = null;
 
       while (reader.peek() == JsonToken.NAME) {
@@ -108,7 +108,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
             sdkVersion = reader.nextOrNull(logger, new SdkVersion.Deserializer());
             break;
           case JsonKeys.TRACE:
-            trace = reader.nextOrNull(logger, new TraceState.Deserializer());
+            traceContext = reader.nextOrNull(logger, new TraceContext.Deserializer());
             break;
           default:
             if (unknown == null) {
@@ -119,7 +119,7 @@ public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown
         }
       }
       SentryEnvelopeHeader sentryEnvelopeHeader =
-          new SentryEnvelopeHeader(eventId, sdkVersion, trace);
+          new SentryEnvelopeHeader(eventId, sdkVersion, traceContext);
       sentryEnvelopeHeader.setUnknown(unknown);
       reader.endObject();
       return sentryEnvelopeHeader;

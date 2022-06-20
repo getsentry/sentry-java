@@ -7,7 +7,7 @@ import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import io.sentry.SentryEnvelopeHeader
-import io.sentry.TraceStateSerializationTest
+import io.sentry.TraceContextSerializationTest
 import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
@@ -21,7 +21,7 @@ class SentryEnvelopeHeaderSerializationTest {
         fun getSut() = SentryEnvelopeHeader(
             SentryIdSerializationTest.Fixture().getSut(),
             SdkVersionSerializationTest.Fixture().getSut(),
-            TraceStateSerializationTest.Fixture().getSut()
+            TraceContextSerializationTest.Fixture().getSut()
         )
     }
     private val fixture = Fixture()

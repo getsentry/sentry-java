@@ -10,6 +10,7 @@ import feign.Client
 import feign.Feign
 import feign.FeignException
 import feign.RequestLine
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryOptions
@@ -19,6 +20,7 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -33,9 +35,10 @@ class SentryFeignClientTest {
         val hub = mock<IHub>()
         val server = MockWebServer()
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        val sentryOptions = SentryOptions()
 
         init {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(sentryOptions)
         }
 
         fun getSut(
@@ -67,22 +70,45 @@ class SentryFeignClientTest {
         }
     }
 
-    private val fixture = Fixture()
+    private lateinit var fixture: Fixture
+
+    @BeforeTest
+    fun setup() {
+        fixture = Fixture()
+    }
 
     @Test
     fun `when there is an active span, adds sentry trace header to the request`() {
+        fixture.sentryOptions.isTraceSampling = true
+        fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut()
         sut.getOk()
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
     fun `when there is no active span, does not add sentry trace header to the request`() {
+        fixture.sentryOptions.isTraceSampling = true
+        fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut(isSpanActive = false)
         sut.getOk()
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when request url not in tracing origins, does not add sentry trace header to the request`() {
+        fixture.sentryOptions.addTracingOrigin("http://some-other-url.sentry.io")
+        fixture.sentryOptions.isTraceSampling = true
+        fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
+        val sut = fixture.getSut()
+        sut.getOk()
+        val recorderRequest = fixture.server.takeRequest()
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
