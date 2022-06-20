@@ -111,7 +111,8 @@ final class ANRWatchDog extends Thread {
             // It can throw RuntimeException or OutOfMemoryError
             processesInErrorState = am.getProcessesInErrorState();
           } catch (Throwable e) {
-            logger.log(SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
+            logger.log(
+                SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
           }
           // if list is null, there's no process in ANR state.
           if (processesInErrorState == null) {
