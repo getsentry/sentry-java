@@ -7,6 +7,8 @@ object Config {
     val springBootVersion = "2.6.8"
     val kotlinCompatibleLanguageVersion = "1.4"
 
+    val composeVersion = "1.1.1"
+
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:7.2.1"
         val kotlinGradlePlugin = "gradle-plugin"
@@ -19,6 +21,7 @@ object Config {
         val grettyVersion = "4.0.0"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.18.0"
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
+        val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
     }
 
     object Android {
@@ -105,16 +108,11 @@ object Config {
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
 
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
+        val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
 
         val navigationRuntime = "androidx.navigation:navigation-runtime:2.4.2"
         // compose deps
-        val composeVersion = "1.1.1"
-        val composeRuntime = "androidx.compose.runtime:runtime:$composeVersion"
         val composeNavigation = "androidx.navigation:navigation-compose:2.4.2"
-        val composeActivity = "androidx.activity:activity-compose:1.4.0"
-        val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
-        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
-        val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
     }
 
     object AnnotationProcessors {

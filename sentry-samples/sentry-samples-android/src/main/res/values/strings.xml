@@ -18,7 +18,6 @@
   <string name="open_third_fragment">Open Third Fragment</string>
   <string name="open_gestures_activity">Open Gestures Activity</string>
   <string name="open_permissions_activity">Open Permissions Activity</string>
-  <string name="open_compose_activity">Open Compose Activity</string>
   <string name="test_timber_integration">Test Timber</string>
   <string name="back_main">Back to Main Activity</string>
   <string name="tap_me">text</string>

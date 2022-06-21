@@ -2,11 +2,61 @@ import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 
 plugins {
+    kotlin("multiplatform")
     id("com.android.library")
-    kotlin("android")
+    id("org.jetbrains.compose")
     jacoco
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
+    `maven-publish`
+}
+
+kotlin {
+    explicitApi()
+
+    android {
+        publishLibraryVariants("release")
+    }
+    jvm("desktop") {
+        compilations.all {
+            kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+        }
+    }
+
+    sourceSets.all {
+        // Allow all experimental APIs, since MPP projects are themselves experimental
+        languageSettings.apply {
+            optIn("kotlin.Experimental")
+            optIn("kotlin.ExperimentalMultiplatform")
+        }
+    }
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api(compose.runtime)
+                api(compose.ui)
+
+                implementation(Config.Libs.kotlinStdLib)
+            }
+        }
+        val androidMain by getting {
+            dependencies {
+                api(projects.sentry)
+                api(projects.sentryAndroidNavigation)
+
+                api(Config.Libs.composeNavigation)
+                implementation(Config.Libs.lifecycleCommonJava8)
+            }
+        }
+        val androidTest by getting {
+            dependencies {
+                implementation(Config.TestLibs.kotlinTestJunit)
+                implementation(Config.TestLibs.mockitoKotlin)
+                implementation(Config.TestLibs.mockitoInline)
+            }
+        }
+    }
 }
 
 android {
@@ -20,12 +70,8 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
 
-    buildFeatures {
-        compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = Config.Libs.composeVersion
+    sourceSets["main"].apply {
+        manifest.srcFile("src/androidMain/AndroidManifest.xml")
     }
 
     buildTypes {
@@ -33,10 +79,6 @@ android {
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
     testOptions {
@@ -66,23 +108,6 @@ tasks.withType<Test> {
     configure<JacocoTaskExtension> {
         isIncludeNoLocationClasses = false
     }
-}
-
-kotlin {
-    explicitApi()
-}
-
-dependencies {
-    api(projects.sentry)
-    api(projects.sentryAndroidNavigation)
-
-    implementation(Config.Libs.composeRuntime)
-    implementation(Config.Libs.composeNavigation)
-
-    // tests
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
 }
 
 tasks.withType<Detekt> {

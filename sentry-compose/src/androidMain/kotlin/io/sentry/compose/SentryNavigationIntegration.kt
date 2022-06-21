@@ -1,4 +1,4 @@
-package io.sentry.android.compose
+package io.sentry.compose
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -33,12 +33,13 @@ internal class SentryLifecycleObserver(
     }
 }
 
+// As described in https://developer.android.com/codelabs/jetpack-compose-advanced-state-side-effects#6
 @Composable
 @NonRestartableComposable
-fun NavHostController.withSentry(): NavHostController {
+public fun NavHostController.withObservableEffect(): NavHostController {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, this) {
-        val observer = SentryLifecycleObserver(this@withSentry)
+        val observer = SentryLifecycleObserver(this@withObservableEffect)
 
         lifecycle.addObserver(observer)
 
