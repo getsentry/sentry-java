@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 6.1.2
+
+### Fixes
+
+- Swallow error when reading ActivityManager#getProcessesInErrorState instead of crashing ([#2114](https://github.com/getsentry/sentry-java/pull/2114))
+- Use charset string directly as StandardCharsets is not available on earlier Android versions ([#2111](https://github.com/getsentry/sentry-java/pull/2111))
+
+## 6.1.1
 
 - Add integration for Apollo-Kotlin 3 ([#2109](https://github.com/getsentry/sentry-java/pull/2109))
 
