@@ -20,6 +20,9 @@ import java.io.InputStreamReader
 class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
     HttpInterceptor {
 
+    constructor(hub: IHub) : this(hub, null)
+    constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
+
     override suspend fun intercept(
         request: HttpRequest,
         chain: HttpInterceptorChain
@@ -50,7 +53,7 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
                 finish(span, modifiedRequest, httpResponse)
 
                 httpResponse
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 when (e) {
                     is ApolloNetworkException -> span.status = SpanStatus.INTERNAL_ERROR
                     else -> SpanStatus.UNKNOWN
@@ -79,7 +82,7 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
                 ApolloRequestBodyContent::class.java,
                 ApolloRequestBodyContent.Deserializer
             )
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             hub.options.logger.log(SentryLevel.ERROR, "Error deserializing Apollo Request Body.", e)
         }
 
@@ -110,7 +113,7 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
         if (beforeSpan != null) {
             try {
                 newSpan = beforeSpan.execute(span, request, response)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 hub.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
             }
         }
@@ -137,8 +140,8 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
         }
     }
 
-    private fun parseOperationType(content: ApolloRequestBodyContent?): String {
-        val operationPart = content?.query?.takeWhile { !it.isWhitespace() }
+    private fun parseOperationType(content: ApolloRequestBodyContent): String {
+        val operationPart = content.query.takeWhile { !it.isWhitespace() }
         return KNOWN_OPERATIONS.firstOrNull { it == operationPart } ?: "unknown"
     }
 

@@ -67,7 +67,7 @@ class SentryApollo3InterceptorTest {
             if (beforeSpan != null) {
                 httpInterceptor = SentryApollo3HttpInterceptor(hub, beforeSpan)
             }
-            val builder = ApolloClient.builder()
+            val builder = ApolloClient.Builder()
                 .serverUrl(server.url("/").toString())
                 .addHttpInterceptor(httpInterceptor)
 
