@@ -8,7 +8,7 @@ object Config {
     val kotlinCompatibleLanguageVersion = "1.4"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.2.0"
+        val androidGradle = "com.android.tools.build:gradle:7.2.1"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
