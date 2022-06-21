@@ -1,6 +1,6 @@
+import com.android.build.api.dsl.Lint
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import com.android.build.api.dsl.Lint
 
 plugins {
     `java-library`
