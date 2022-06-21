@@ -100,7 +100,7 @@ android {
 
         // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
         checkReleaseBuilds = false
-        baseline = file("lint-baseline.xml")
+        disable += "TrulyRandom"
     }
 }
 

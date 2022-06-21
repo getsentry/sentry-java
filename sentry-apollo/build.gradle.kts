@@ -1,5 +1,6 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.android.build.api.dsl.Lint
 
 plugins {
     `java-library`
@@ -19,6 +20,15 @@ configure<JavaPluginExtension> {
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
     kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+}
+
+configure<Lint> {
+    warningsAsErrors = true
+    checkDependencies = true
+
+    // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+    checkReleaseBuilds = false
+    disable += "TrulyRandom"
 }
 
 dependencies {
