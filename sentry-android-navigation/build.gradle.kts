@@ -67,12 +67,20 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    implementation(Config.Libs.navigationRuntime)
+    compileOnly(Config.Libs.navigationRuntime)
 
     // tests
+    testImplementation(Config.Libs.navigationRuntime)
+
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
+
+    testImplementation(Config.TestLibs.robolectric)
+    testImplementation(Config.TestLibs.androidxCore)
+    testImplementation(Config.TestLibs.androidxRunner)
+    testImplementation(Config.TestLibs.androidxJunit)
+    testImplementation(Config.TestLibs.androidxCoreKtx)
 }
 
 tasks.withType<Detekt> {
