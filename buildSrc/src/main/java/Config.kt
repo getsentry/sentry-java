@@ -10,7 +10,7 @@ object Config {
     val composeVersion = "1.1.1"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.2.1"
+        val androidGradle = "com.android.tools.build:gradle:7.2.0"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -110,9 +110,10 @@ object Config {
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
         val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
 
-        val navigationRuntime = "androidx.navigation:navigation-runtime:2.4.2"
+        private val navigationVersion = "2.4.2"
+        val navigationRuntime = "androidx.navigation:navigation-runtime:$navigationVersion"
         // compose deps
-        val composeNavigation = "androidx.navigation:navigation-compose:2.4.2"
+        val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
     }
 
     object AnnotationProcessors {
