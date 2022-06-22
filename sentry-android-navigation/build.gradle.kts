@@ -70,6 +70,8 @@ dependencies {
     compileOnly(Config.Libs.navigationRuntime)
 
     // tests
+    testImplementation(Config.Libs.navigationRuntime)
+
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
