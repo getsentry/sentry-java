@@ -11,7 +11,7 @@ import io.sentry.SentryLevel.INFO
 import io.sentry.TypeCheckHint
 import java.lang.ref.WeakReference
 
-class SentryNavigationListener(
+class SentryNavigationListener @JvmOverloads constructor(
     private val hub: IHub = HubAdapter.getInstance()
 ) : NavController.OnDestinationChangedListener {
 
