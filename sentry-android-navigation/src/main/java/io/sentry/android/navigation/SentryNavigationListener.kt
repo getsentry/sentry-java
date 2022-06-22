@@ -15,8 +15,8 @@ class SentryNavigationListener(
     private val hub: IHub = HubAdapter.getInstance()
 ) : NavController.OnDestinationChangedListener {
 
-    private var fromRef: WeakReference<NavDestination>? = null
-    private var fromArgs: Bundle? = null
+    private var previousDestinationRef: WeakReference<NavDestination>? = null
+    private var previousArgs: Bundle? = null
 
     override fun onDestinationChanged(
         controller: NavController,
@@ -24,8 +24,8 @@ class SentryNavigationListener(
         arguments: Bundle?
     ) {
         addBreadcrumb(destination, arguments)
-        fromRef = WeakReference(destination)
-        fromArgs = arguments
+        previousDestinationRef = WeakReference(destination)
+        previousArgs = arguments
     }
 
     private fun addBreadcrumb(destination: NavDestination, arguments: Bundle?) {
@@ -33,21 +33,28 @@ class SentryNavigationListener(
             type = "navigation"
             category = "navigation"
 
-            val from = fromRef?.get()?.route
+            val from = previousDestinationRef?.get()?.route
             from?.let { data["from"] = it }
-            fromArgs?.let { args ->
-                data["from_arguments"] = args.keySet().filter {
+            previousArgs?.let { args ->
+                val fromArguments = args.keySet().filter {
                     it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
                 }.associateWith { args[it] }
+                if (fromArguments.isNotEmpty()) {
+                    data["from_arguments"] = fromArguments
+                }
             }
+
             val to = destination.route
             to?.let { data["to"] = it }
-            // TODO: should this be hidden behind Pii flag?
             arguments?.let { args ->
-                data["to_arguments"] = args.keySet().filter {
+                val toArguments = args.keySet().filter {
                     it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
                 }.associateWith { args[it] }
+                if (toArguments.isNotEmpty()) {
+                    data["to_arguments"] = toArguments
+                }
             }
+
             level = INFO
         }
         val hint = Hint()
