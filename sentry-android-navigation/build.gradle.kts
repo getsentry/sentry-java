@@ -67,7 +67,7 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    implementation(Config.Libs.navigationRuntime)
+    compileOnly(Config.Libs.navigationRuntime)
 
     // tests
     testImplementation(Config.TestLibs.kotlinTestJunit)
