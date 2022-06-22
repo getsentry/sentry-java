@@ -13,11 +13,13 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [31])
 class SentryNavigationListenerTest {
 
     class Fixture {
