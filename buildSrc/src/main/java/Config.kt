@@ -110,9 +110,10 @@ object Config {
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
         val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
 
-        val navigationRuntime = "androidx.navigation:navigation-runtime:2.4.2"
+        private val navigationVersion = "2.4.2"
+        val navigationRuntime = "androidx.navigation:navigation-runtime:$navigationVersion"
         // compose deps
-        val composeNavigation = "androidx.navigation:navigation-compose:2.4.2"
+        val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
         val composeActivity = "androidx.activity:activity-compose:1.4.0"
         val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"

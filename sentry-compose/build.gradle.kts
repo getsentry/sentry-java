@@ -8,7 +8,7 @@ plugins {
     jacoco
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
-    `maven-publish`
+    `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 
 kotlin {
