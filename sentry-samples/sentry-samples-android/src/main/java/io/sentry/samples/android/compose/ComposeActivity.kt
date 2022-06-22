@@ -28,7 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.sentry.Sentry
-import io.sentry.android.compose.withSentry
+import io.sentry.compose.withObservableEffect
 import io.sentry.samples.android.GithubAPI
 import kotlinx.coroutines.launch
 
@@ -38,7 +38,7 @@ class ComposeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val navController = rememberNavController().withSentry()
+            val navController = rememberNavController().withObservableEffect()
             SampleNavigation(navController)
         }
     }
@@ -127,7 +127,7 @@ fun SampleNavigation(navController: NavHostController) {
         composable(Destination.Landing.route) {
             Landing(
                 navigateGithub = { navController.navigate("github") },
-                navigateGithubWithArgs = { navController.navigate("github/spotify?per_page=1") }
+                navigateGithubWithArgs = { navController.navigate("github/spotify?per_page=10") }
             )
         }
         composable(Destination.Github.route) {
