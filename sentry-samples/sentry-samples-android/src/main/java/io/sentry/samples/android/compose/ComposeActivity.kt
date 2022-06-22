@@ -28,7 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.sentry.Sentry
-import io.sentry.compose.withObservableEffect
+import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.GithubAPI
 import kotlinx.coroutines.launch
 
@@ -38,7 +38,7 @@ class ComposeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val navController = rememberNavController().withObservableEffect()
+            val navController = rememberNavController().withSentryObservableEffect()
             SampleNavigation(navController)
         }
     }
