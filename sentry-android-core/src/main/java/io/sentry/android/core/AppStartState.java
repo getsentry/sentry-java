@@ -13,6 +13,9 @@ public final class AppStartState {
 
   private static @NotNull AppStartState instance = new AppStartState();
 
+  /** // We filter out App starts more than 60s */
+  private static final int MAX_APP_START = 60000;
+
   private @Nullable Long appStartMillis;
 
   private @Nullable Long appStartEndMillis;
@@ -48,7 +51,16 @@ public final class AppStartState {
     if (appStartMillis == null || appStartEndMillis == null || coldStart == null) {
       return null;
     }
-    return appStartEndMillis - appStartMillis;
+    final long appStart = appStartEndMillis - appStartMillis;
+
+    // we filter out app start more than 60s.
+    // this could be due to many different reasons.
+    // we've seen app starts with hours, days and even months.
+    if (appStart >= MAX_APP_START) {
+      return null;
+    }
+
+    return appStart;
   }
 
   public @Nullable Boolean isColdStart() {

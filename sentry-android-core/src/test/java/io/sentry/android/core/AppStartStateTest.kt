@@ -77,4 +77,16 @@ class AppStartStateTest {
 
         assertEquals(400, sut.appStartInterval)
     }
+
+    @Test
+    fun `getAppStartInterval returns null if more than 60s`() {
+        val sut = AppStartState.getInstance()
+
+        val date = Date()
+        sut.setAppStartTime(100, date)
+        sut.setAppStartEnd(70000)
+        sut.setColdStart(true)
+
+        assertNull(sut.appStartInterval)
+    }
 }

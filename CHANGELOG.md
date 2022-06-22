@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Filter out app starts with more than 60s ([#2114](https://github.com/getsentry/sentry-java/pull/2114)) 
+
 ## 6.1.2
 
 ### Fixes
