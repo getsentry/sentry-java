@@ -14,7 +14,7 @@ public final class AppStartState {
   private static @NotNull AppStartState instance = new AppStartState();
 
   /** // We filter out App starts more than 60s */
-  private static final int MAX_APP_START = 60000;
+  private static final int MAX_APP_START_MILLIS = 60000;
 
   private @Nullable Long appStartMillis;
 
