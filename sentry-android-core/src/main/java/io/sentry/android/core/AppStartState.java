@@ -56,7 +56,7 @@ public final class AppStartState {
     // we filter out app start more than 60s.
     // this could be due to many different reasons.
     // we've seen app starts with hours, days and even months.
-    if (appStart >= MAX_APP_START) {
+    if (appStart >= MAX_APP_START_MILLIS) {
       return null;
     }
 
