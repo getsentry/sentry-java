@@ -67,6 +67,7 @@
             - Call `toString()` where object graphs exceed max depth.
     - Remove `gson` dependency.
     - Remove `IUnknownPropertiesConsumer`
+- Pass MDC tags as Sentry tags ([#1954](https://github.com/getsentry/sentry-java/pull/1954))
 
 ### Fixes
 
