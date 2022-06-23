@@ -14,7 +14,7 @@ public final class AppStartState {
   private static @NotNull AppStartState instance = new AppStartState();
 
   /** We filter out App starts more than 60s */
-  private static final int MAX_APP_START = 60000;
+  private static final int MAX_APP_START_MILLIS = 60000;
 
   private @Nullable Long appStartMillis;
 
@@ -61,7 +61,7 @@ public final class AppStartState {
     // If the system fork the the zygote earlier to accelerate the app start.
     // And some unknown reasons that could not be reproduced.
     // We've seen app starts with hours, days and even months.
-    if (appStart >= MAX_APP_START) {
+    if (appStart >= MAX_APP_START_MILLIS) {
       return null;
     }
 
