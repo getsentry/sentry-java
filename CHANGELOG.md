@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix thread leak due to Timer being created and never cancelled ([#2131](https://github.com/getsentry/sentry-java/pull/2131))
+
 ## 6.1.2
 
 ### Fixes
