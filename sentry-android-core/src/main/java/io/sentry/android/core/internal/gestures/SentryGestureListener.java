@@ -236,7 +236,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         if (idleTimeout != null) {
           // reschedule the finish task for the idle transaction, so it keeps running for the same
           // view
-          activeTransaction.scheduleFinish(idleTimeout);
+          activeTransaction.scheduleFinish();
         }
         return;
       } else {
