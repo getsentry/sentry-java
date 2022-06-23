@@ -58,7 +58,7 @@ public final class AppStartState {
     // If you do the manual init and init the SDK too late and it does not compute the app start end
     // in the very first Activity.
     // If the process starts but the App isn't in the foreground.
-    // If the system fork the the zygote earlier to accelerate the app start.
+    // If the system forked the zygote earlier to accelerate the app start.
     // And some unknown reasons that could not be reproduced.
     // We've seen app starts with hours, days and even months.
     if (appStart >= MAX_APP_START_MILLIS) {
