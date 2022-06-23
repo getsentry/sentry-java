@@ -1,5 +1,6 @@
 package io.sentry.android.navigation
 
+import android.content.res.Resources.NotFoundException
 import android.os.Bundle
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
@@ -7,16 +8,25 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
+import io.sentry.ITransaction
+import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
+import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
 import java.lang.ref.WeakReference
 
 class SentryNavigationListener @JvmOverloads constructor(
-    private val hub: IHub = HubAdapter.getInstance()
+    private val hub: IHub = HubAdapter.getInstance(),
+    private val enableNavigationBreadcrumbs: Boolean = true,
+    private val enableNavigationTracing: Boolean = true
 ) : NavController.OnDestinationChangedListener {
 
     private var previousDestinationRef: WeakReference<NavDestination>? = null
     private var previousArgs: Bundle? = null
+
+    private val isPerformanceEnabled get() = hub.options.isTracingEnabled && enableNavigationTracing
+
+    private var activeTransaction: ITransaction? = null
 
     override fun onDestinationChanged(
         controller: NavController,
@@ -24,14 +34,18 @@ class SentryNavigationListener @JvmOverloads constructor(
         arguments: Bundle?
     ) {
         addBreadcrumb(destination, arguments)
+        startTracing(controller, destination, arguments)
         previousDestinationRef = WeakReference(destination)
         previousArgs = arguments
     }
 
     private fun addBreadcrumb(destination: NavDestination, arguments: Bundle?) {
+        if (!enableNavigationBreadcrumbs) {
+            return
+        }
         val breadcrumb = Breadcrumb().apply {
-            type = "navigation"
-            category = "navigation"
+            type = NAVIGATION_OP
+            category = NAVIGATION_OP
 
             val from = previousDestinationRef?.get()?.route
             from?.let { data["from"] = it }
@@ -60,5 +74,63 @@ class SentryNavigationListener @JvmOverloads constructor(
         val hint = Hint()
         hint.set(TypeCheckHint.ANDROID_NAV_DESTINATION, destination)
         hub.addBreadcrumb(breadcrumb)
+    }
+
+    private fun startTracing(
+        controller: NavController,
+        destination: NavDestination,
+        arguments: Bundle?
+    ) {
+        if (!isPerformanceEnabled) {
+            return
+        }
+
+        if (destination.navigatorName == "activity") {
+            // we do not trace navigation between activities to avoid clashing with activity lifecycle tracing
+            hub.options.logger.log(
+                DEBUG,
+                "Navigating to activity destination, no transaction captured."
+            )
+            return
+        }
+
+        // we can only have one nav transaction at a time
+        if (activeTransaction != null) {
+            stopTracing()
+        }
+
+        val name = destination.route ?: try {
+            controller.context.resources.getResourceEntryName(destination.id)
+        } catch (e: NotFoundException) {
+            hub.options.logger.log(
+                DEBUG,
+                "Destination id cannot be retrieved from Resources, no transaction captured."
+            )
+            return
+        }
+
+        val transaction =
+            hub.startTransaction(name, NAVIGATION_OP, true, hub.options.idleTimeout, true)
+        activeTransaction = transaction
+    }
+
+    private fun stopTracing() {
+        val status = activeTransaction?.status ?: SpanStatus.OK
+        activeTransaction?.finish(status)
+
+        // clear transaction from scope so others can bind to it
+        hub.configureScope { scope ->
+            scope.withTransaction { tx ->
+                if (tx == activeTransaction) {
+                    scope.clearTransaction()
+                }
+            }
+        }
+
+        activeTransaction = null
+    }
+
+    companion object {
+        const val NAVIGATION_OP = "navigation"
     }
 }
