@@ -65,7 +65,7 @@ public final class SentryTracer implements ITransaction {
   private final @Nullable Long idleTimeout;
 
   private @Nullable TimerTask timerTask;
-  private final @NotNull Timer timer = new Timer(true);
+  private @Nullable Timer timer;
   private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
       new SpanByTimestampComparator();
   private final @NotNull AtomicBoolean isFinishTimerRunning = new AtomicBoolean(false);
@@ -110,25 +110,30 @@ public final class SentryTracer implements ITransaction {
     this.transactionFinishedCallback = transactionFinishedCallback;
 
     if (idleTimeout != null) {
-      scheduleFinish(idleTimeout);
+      timer = new Timer(true);
+      scheduleFinish();
+    } else {
+      timer = null;
     }
   }
 
   @Override
-  public void scheduleFinish(final @NotNull Long idleTimeout) {
+  public void scheduleFinish() {
     cancelTimer();
-    isFinishTimerRunning.set(true);
-    timerTask =
-        new TimerTask() {
-          @Override
-          public void run() {
-            final SpanStatus status = getStatus();
-            finish((status != null) ? status : SpanStatus.OK);
-            isFinishTimerRunning.set(false);
-          }
-        };
+    if (timer != null) {
+      isFinishTimerRunning.set(true);
+      timerTask =
+          new TimerTask() {
+            @Override
+            public void run() {
+              final SpanStatus status = getStatus();
+              finish((status != null) ? status : SpanStatus.OK);
+              isFinishTimerRunning.set(false);
+            }
+          };
 
-    timer.schedule(timerTask, idleTimeout);
+      timer.schedule(timerTask, idleTimeout);
+    }
   }
 
   private void cancelTimer() {
@@ -217,7 +222,7 @@ public final class SentryTracer implements ITransaction {
                 // so the transaction will either idle and finish itself, or a new child will be
                 // added and we'll wait for it again
                 if (!waitForChildren || hasAllChildrenFinished()) {
-                  scheduleFinish(idleTimeout);
+                  scheduleFinish();
                 }
               } else if (finishStatus.isFinishing) {
                 finish(finishStatus.spanStatus);
@@ -333,6 +338,12 @@ public final class SentryTracer implements ITransaction {
       if (transactionFinishedCallback != null) {
         transactionFinishedCallback.execute(this);
       }
+
+      if (timer != null) {
+        timer.cancel();
+        timer = null;
+      }
+
       if (children.isEmpty() && idleTimeout != null) {
         // if it's an idle transaction which has no children, we drop it to save user's quota
         return;
@@ -536,6 +547,12 @@ public final class SentryTracer implements ITransaction {
   @Nullable
   TimerTask getTimerTask() {
     return timerTask;
+  }
+
+  @TestOnly
+  @Nullable
+  Timer getTimer() {
+    return timer;
   }
 
   @TestOnly
