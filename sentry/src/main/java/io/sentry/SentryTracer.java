@@ -66,6 +66,7 @@ public final class SentryTracer implements ITransaction {
 
   private @Nullable TimerTask timerTask;
   private @Nullable Timer timer;
+  private final @NotNull Object timerLock = new Object();
   private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
       new SpanByTimestampComparator();
   private final @NotNull AtomicBoolean isFinishTimerRunning = new AtomicBoolean(false);
@@ -119,28 +120,32 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void scheduleFinish() {
-    cancelTimer();
-    if (timer != null) {
-      isFinishTimerRunning.set(true);
-      timerTask =
-          new TimerTask() {
-            @Override
-            public void run() {
-              final SpanStatus status = getStatus();
-              finish((status != null) ? status : SpanStatus.OK);
-              isFinishTimerRunning.set(false);
-            }
-          };
+    synchronized (timerLock) {
+      cancelTimer();
+      if (timer != null) {
+        isFinishTimerRunning.set(true);
+        timerTask =
+            new TimerTask() {
+              @Override
+              public void run() {
+                final SpanStatus status = getStatus();
+                finish((status != null) ? status : SpanStatus.OK);
+                isFinishTimerRunning.set(false);
+              }
+            };
 
-      timer.schedule(timerTask, idleTimeout);
+        timer.schedule(timerTask, idleTimeout);
+      }
     }
   }
 
   private void cancelTimer() {
-    if (timerTask != null) {
-      timerTask.cancel();
-      isFinishTimerRunning.set(false);
-      timerTask = null;
+    synchronized (timerLock) {
+      if (timerTask != null) {
+        timerTask.cancel();
+        isFinishTimerRunning.set(false);
+        timerTask = null;
+      }
     }
   }
 
@@ -340,8 +345,10 @@ public final class SentryTracer implements ITransaction {
       }
 
       if (timer != null) {
-        timer.cancel();
-        timer = null;
+        synchronized (timerLock) {
+          timer.cancel();
+          timer = null;
+        }
       }
 
       if (children.isEmpty() && idleTimeout != null) {
