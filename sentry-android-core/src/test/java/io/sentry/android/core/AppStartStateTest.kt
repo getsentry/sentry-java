@@ -84,7 +84,7 @@ class AppStartStateTest {
 
         val date = Date()
         sut.setAppStartTime(100, date)
-        sut.setAppStartEnd(70000)
+        sut.setAppStartEnd(60100)
         sut.setColdStart(true)
 
         assertNull(sut.appStartInterval)
