@@ -33,13 +33,19 @@ class SentryNavigationListener @JvmOverloads constructor(
         destination: NavDestination,
         arguments: Bundle?
     ) {
-        addBreadcrumb(destination, arguments)
-        startTracing(controller, destination, arguments)
+        val toArguments = arguments?.let { args ->
+            args.keySet().filter {
+                it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
+            }.associateWith { args[it] }
+        } ?: emptyMap()
+
+        addBreadcrumb(destination, toArguments)
+        startTracing(controller, destination, toArguments)
         previousDestinationRef = WeakReference(destination)
         previousArgs = arguments
     }
 
-    private fun addBreadcrumb(destination: NavDestination, arguments: Bundle?) {
+    private fun addBreadcrumb(destination: NavDestination, arguments: Map<String, Any?>) {
         if (!enableNavigationBreadcrumbs) {
             return
         }
@@ -60,13 +66,8 @@ class SentryNavigationListener @JvmOverloads constructor(
 
             val to = destination.route
             to?.let { data["to"] = it }
-            arguments?.let { args ->
-                val toArguments = args.keySet().filter {
-                    it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
-                }.associateWith { args[it] }
-                if (toArguments.isNotEmpty()) {
-                    data["to_arguments"] = toArguments
-                }
+            if (arguments.isNotEmpty()) {
+                data["to_arguments"] = arguments
             }
 
             level = INFO
@@ -79,10 +80,15 @@ class SentryNavigationListener @JvmOverloads constructor(
     private fun startTracing(
         controller: NavController,
         destination: NavDestination,
-        arguments: Bundle?
+        arguments: Map<String, Any?>
     ) {
         if (!isPerformanceEnabled) {
             return
+        }
+
+        // we can only have one nav transaction at a time
+        if (activeTransaction != null) {
+            stopTracing()
         }
 
         if (destination.navigatorName == "activity") {
@@ -92,11 +98,6 @@ class SentryNavigationListener @JvmOverloads constructor(
                 "Navigating to activity destination, no transaction captured."
             )
             return
-        }
-
-        // we can only have one nav transaction at a time
-        if (activeTransaction != null) {
-            stopTracing()
         }
 
         val name = destination.route ?: try {
@@ -111,6 +112,10 @@ class SentryNavigationListener @JvmOverloads constructor(
 
         val transaction =
             hub.startTransaction(name, NAVIGATION_OP, true, hub.options.idleTimeout, true)
+
+        if (arguments.isNotEmpty()) {
+            transaction.setData("arguments", arguments)
+        }
         activeTransaction = transaction
     }
 
