@@ -20,7 +20,8 @@ import org.jetbrains.annotations.TestOnly;
 /**
  * SentryPerformanceProvider is responsible for collecting data (eg appStart) as early as possible
  * as ContentProvider is the only reliable hook for libraries that works across all the supported
- * SDK versions. When minSDK is >= 24, we could use Process.getStartUptimeMillis()
+ * SDK versions. When minSDK is >= 24, we could use Process.getStartUptimeMillis() We could also use
+ * AppComponentFactory but it depends on androidx.core.app.AppComponentFactory
  */
 @ApiStatus.Internal
 public final class SentryPerformanceProvider extends ContentProvider
