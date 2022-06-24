@@ -71,11 +71,6 @@ tasks.withType<Detekt> {
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
-configure<DetektExtension> {
-    buildUponDefaultConfig = true
-    allRules = true
-}
-
 kotlin {
     explicitApi()
 }

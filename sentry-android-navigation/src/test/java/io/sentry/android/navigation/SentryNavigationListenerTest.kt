@@ -45,6 +45,7 @@ class SentryNavigationListenerTest {
 
         lateinit var transaction: SentryTracer
 
+        @Suppress("LongParameterList")
         fun getSut(
             toRoute: String? = "route",
             toId: String? = "id",

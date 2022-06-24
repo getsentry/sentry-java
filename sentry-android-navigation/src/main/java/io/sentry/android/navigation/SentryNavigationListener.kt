@@ -100,6 +100,7 @@ class SentryNavigationListener @JvmOverloads constructor(
             return
         }
 
+        @Suppress("SwallowedException") // we swallow it on purpose
         var name = destination.route ?: try {
             controller.context.resources.getResourceEntryName(destination.id)
         } catch (e: NotFoundException) {
