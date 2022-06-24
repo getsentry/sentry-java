@@ -180,6 +180,10 @@ public final class Baggage {
     set("sentry-transaction", transaction);
   }
 
+  public void setSampleRate(final @Nullable String sampleRate) {
+    set("sentry-samplerate", sampleRate);
+  }
+
   public void set(final @NotNull String key, final @Nullable String value) {
     this.keyValues.put(key, value);
   }

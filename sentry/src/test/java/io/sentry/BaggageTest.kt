@@ -198,8 +198,9 @@ class BaggageTest {
         baggage.setTransaction("TX")
         baggage.setUserId(userId)
         baggage.setUserSegment("segmentA")
+        baggage.setSampleRate((1.0 / 3.0).toString())
 
-        assertEquals("sentry-environment=production,sentry-publickey=$publicKey,sentry-release=1.0-rc.1,sentry-traceid=$traceId,sentry-transaction=TX,sentry-userid=$userId,sentry-usersegment=segmentA", baggage.toHeaderString())
+        assertEquals("sentry-environment=production,sentry-publickey=$publicKey,sentry-release=1.0-rc.1,sentry-samplerate=0.3333333333333333,sentry-traceid=$traceId,sentry-transaction=TX,sentry-userid=$userId,sentry-usersegment=segmentA", baggage.toHeaderString())
     }
 
     @Test

@@ -30,6 +30,7 @@ public final class io/sentry/Baggage {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setPublicKey (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
+	public fun setSampleRate (Ljava/lang/String;)V
 	public fun setTraceId (Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUserId (Ljava/lang/String;)V
@@ -1619,10 +1620,12 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
+	public fun getSampleRate ()Ljava/lang/String;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun getUser ()Lio/sentry/TraceContext$TraceContextUser;
+	public fun getUserId ()Ljava/lang/String;
+	public fun getUserSegment ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun toBaggage (Lio/sentry/ILogger;)Lio/sentry/Baggage;
@@ -1638,30 +1641,11 @@ public final class io/sentry/TraceContext$JsonKeys {
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field PUBLIC_KEY Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
+	public static final field SAMPLE_RATE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION Ljava/lang/String;
-	public static final field USER Ljava/lang/String;
-	public fun <init> ()V
-}
-
-public final class io/sentry/TraceContext$TraceContextUser : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/protocol/User;)V
-	public fun getId ()Ljava/lang/String;
-	public fun getSegment ()Ljava/lang/String;
-	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
-	public fun setUnknown (Ljava/util/Map;)V
-}
-
-public final class io/sentry/TraceContext$TraceContextUser$Deserializer : io/sentry/JsonDeserializer {
-	public fun <init> ()V
-	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/TraceContext$TraceContextUser;
-	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
-}
-
-public final class io/sentry/TraceContext$TraceContextUser$JsonKeys {
-	public static final field ID Ljava/lang/String;
-	public static final field SEGMENT Ljava/lang/String;
+	public static final field USER_ID Ljava/lang/String;
+	public static final field USER_SEGMENT Ljava/lang/String;
 	public fun <init> ()V
 }
 

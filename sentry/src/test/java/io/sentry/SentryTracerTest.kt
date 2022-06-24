@@ -495,10 +495,8 @@ class SentryTracerTest {
             assertEquals("environment", it.environment)
             assertEquals("release@3.0.0", it.release)
             assertEquals(transaction.name, it.transaction)
-            assertNotNull(it.user) {
-                assertEquals("user-id", it.id)
-                assertEquals("pro", it.segment)
-            }
+            assertEquals("user-id", it.userId)
+            assertEquals("pro", it.userSegment)
         }
     }
 
@@ -516,7 +514,8 @@ class SentryTracerTest {
         val traceAfterUserSet = transaction.traceContext()
         assertNotNull(traceAfterUserSet) {
             assertEquals(it, traceBeforeUserSet)
-            assertNull(it.user)
+            assertNull(it.userId)
+            assertNull(it.userSegment)
         }
     }
 
