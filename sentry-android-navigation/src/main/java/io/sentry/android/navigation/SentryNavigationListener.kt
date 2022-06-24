@@ -3,6 +3,7 @@ package io.sentry.android.navigation
 import android.content.res.Resources.NotFoundException
 import android.os.Bundle
 import androidx.navigation.NavController
+import androidx.navigation.NavDeepLink
 import androidx.navigation.NavDestination
 import io.sentry.Breadcrumb
 import io.sentry.Hint
@@ -54,7 +55,7 @@ class SentryNavigationListener @JvmOverloads constructor(
             category = NAVIGATION_OP
 
             val from = previousDestinationRef?.get()?.route
-            from?.let { data["from"] = it }
+            from?.let { data["from"] = "/$it" }
             previousArgs?.let { args ->
                 val fromArguments = args.keySet().filter {
                     it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
@@ -65,7 +66,7 @@ class SentryNavigationListener @JvmOverloads constructor(
             }
 
             val to = destination.route
-            to?.let { data["to"] = it }
+            to?.let { data["to"] = "/$it" }
             if (arguments.isNotEmpty()) {
                 data["to_arguments"] = arguments
             }
@@ -100,7 +101,7 @@ class SentryNavigationListener @JvmOverloads constructor(
             return
         }
 
-        val name = destination.route ?: try {
+        var name = destination.route ?: try {
             controller.context.resources.getResourceEntryName(destination.id)
         } catch (e: NotFoundException) {
             hub.options.logger.log(
@@ -110,11 +111,21 @@ class SentryNavigationListener @JvmOverloads constructor(
             return
         }
 
+        // we add '/' to the name to match dart and web pattern
+        name = "/" + name.substringBefore('/') // strip out arguments from the tx name
+
         val transaction =
             hub.startTransaction(name, NAVIGATION_OP, true, hub.options.idleTimeout, true)
 
         if (arguments.isNotEmpty()) {
             transaction.setData("arguments", arguments)
+        }
+        hub.configureScope { scope ->
+            scope.withTransaction { tx ->
+                if (tx == null) {
+                    scope.transaction = transaction
+                }
+            }
         }
         activeTransaction = transaction
     }
