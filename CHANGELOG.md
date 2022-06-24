@@ -6,6 +6,12 @@
 
 - Filter out app starts with more than 60s ([#2127](https://github.com/getsentry/sentry-java/pull/2127)) 
 
+## Unreleased
+
+### Features
+
+- Add sample rate to baggage as well as trace in envelope header and flatten user ([#2135](https://github.com/getsentry/sentry-java/pull/2135))
+
 ## 6.1.3
 
 ### Fixes
