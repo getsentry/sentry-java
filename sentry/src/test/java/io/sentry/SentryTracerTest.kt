@@ -690,4 +690,24 @@ class SentryTracerTest {
             anyOrNull()
         )
     }
+
+    @Test
+    fun `timer is created if idle timeout is set`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, sampled = true)
+        assertNotNull(transaction.timer)
+    }
+
+    @Test
+    fun `timer is not created if idle timeout is not set`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = null, trimEnd = true, sampled = true)
+        assertNull(transaction.timer)
+    }
+
+    @Test
+    fun `timer is cancelled on finish`() {
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, sampled = true)
+        assertNotNull(transaction.timer)
+        transaction.finish(SpanStatus.OK)
+        assertNull(transaction.timer)
+    }
 }
