@@ -34,6 +34,7 @@ buildscript {
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
         classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
+        classpath(Config.BuildPlugins.composeGradlePlugin)
     }
 }
 
