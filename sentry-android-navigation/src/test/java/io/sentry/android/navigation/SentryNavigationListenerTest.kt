@@ -12,14 +12,11 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
-import io.sentry.ISpan
-import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.Scope.IWithTransaction
 import io.sentry.ScopeCallback
@@ -59,18 +56,21 @@ class SentryNavigationListenerTest {
                 TransactionContext(
                     "/$toRoute",
                     SentryNavigationListener.NAVIGATION_OP
-                ), hub
+                ),
+                hub
             )
         ): SentryNavigationListener {
             this.transaction = transaction
 
             whenever(hub.startTransaction(any(), any(), any(), anyOrNull(), any<Boolean>()))
                 .thenReturn(transaction)
-            whenever(hub.options).thenReturn(SentryOptions().apply {
-                setTracesSampleRate(
-                    tracesSampleRate
-                )
-            })
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    setTracesSampleRate(
+                        tracesSampleRate
+                    )
+                }
+            )
             whenever(hub.configureScope(any())).thenAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }

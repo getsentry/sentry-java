@@ -3,7 +3,6 @@ package io.sentry.android.navigation
 import android.content.res.Resources.NotFoundException
 import android.os.Bundle
 import androidx.navigation.NavController
-import androidx.navigation.NavDeepLink
 import androidx.navigation.NavDestination
 import io.sentry.Breadcrumb
 import io.sentry.Hint
