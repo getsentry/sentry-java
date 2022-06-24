@@ -1,5 +1,6 @@
 package io.sentry.samples.android
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -60,6 +61,7 @@ class ScrollingFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = inflater.inflate(layout.fragment_scrolling, container, false)
 
+    @SuppressLint("NewApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<ScrollView>(R.id.scrolling_container).setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
