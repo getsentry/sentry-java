@@ -114,6 +114,10 @@ object Config {
         val navigationRuntime = "androidx.navigation:navigation-runtime:$navigationVersion"
         // compose deps
         val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
+        val composeActivity = "androidx.activity:activity-compose:1.4.0"
+        val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
+        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
+        val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
     }
 
     object AnnotationProcessors {

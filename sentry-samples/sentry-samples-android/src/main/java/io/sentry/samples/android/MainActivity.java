@@ -10,6 +10,7 @@ import io.sentry.SpanStatus;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.samples.android.compose.ComposeActivity;
 import io.sentry.samples.android.databinding.ActivityMainBinding;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -181,6 +182,11 @@ public class MainActivity extends AppCompatActivity {
     binding.openPermissionsActivity.setOnClickListener(
         view -> {
           startActivity(new Intent(this, PermissionsActivity.class));
+        });
+
+    binding.openComposeActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, ComposeActivity.class));
         });
 
     setContentView(binding.getRoot());
