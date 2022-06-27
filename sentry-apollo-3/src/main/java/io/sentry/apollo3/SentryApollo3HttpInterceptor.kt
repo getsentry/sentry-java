@@ -1,7 +1,9 @@
 package io.sentry.apollo3
 
+import com.apollographql.apollo3.api.http.HttpHeader
 import com.apollographql.apollo3.api.http.HttpRequest
 import com.apollographql.apollo3.api.http.HttpResponse
+import com.apollographql.apollo3.exception.ApolloHttpException
 import com.apollographql.apollo3.exception.ApolloNetworkException
 import com.apollographql.apollo3.network.http.HttpInterceptor
 import com.apollographql.apollo3.network.http.HttpInterceptorChain
@@ -14,14 +16,9 @@ import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TracingOrigins
 import io.sentry.TypeCheckHint
-import okio.Buffer
-import java.io.InputStreamReader
 
-class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
+class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
     HttpInterceptor {
-
-    constructor(hub: IHub) : this(hub, null)
-    constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     override suspend fun intercept(
         request: HttpRequest,
@@ -33,7 +30,11 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
         } else {
             val span = startChild(request, activeSpan)
 
-            val requestBuilder = request.newBuilder()
+            val cleanedHeaders = removeSentryInternalHeaders(request.headers)
+
+            val requestBuilder = request.newBuilder().apply {
+                headers(cleanedHeaders)
+            }
 
             if (TracingOrigins.contain(hub.options.tracingOrigins, request.url)) {
                 val sentryTraceHeader = span.toSentryTrace()
@@ -46,69 +47,64 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
             }
 
             val modifiedRequest = requestBuilder.build()
+            var httpResponse: HttpResponse? = null
+            var statusCode: Int? = null
 
-            return try {
-                val httpResponse = chain.proceed(modifiedRequest)
-                span.status = SpanStatus.fromHttpStatusCode(httpResponse.statusCode, SpanStatus.UNKNOWN)
-                finish(span, modifiedRequest, httpResponse)
-
-                httpResponse
+            try {
+                httpResponse = chain.proceed(modifiedRequest)
+                statusCode = httpResponse.statusCode
+                span.status = SpanStatus.fromHttpStatusCode(statusCode, SpanStatus.UNKNOWN)
+                return httpResponse
             } catch (e: Throwable) {
                 when (e) {
+                    is ApolloHttpException -> {
+                        statusCode = e.statusCode
+                        span.status = SpanStatus.fromHttpStatusCode(statusCode, SpanStatus.INTERNAL_ERROR)
+                    }
                     is ApolloNetworkException -> span.status = SpanStatus.INTERNAL_ERROR
-                    else -> SpanStatus.UNKNOWN
+                    else -> SpanStatus.INTERNAL_ERROR
                 }
-                finish(span, modifiedRequest)
+                span.throwable = e
                 throw e
+            } finally {
+                finish(span, modifiedRequest, httpResponse, statusCode)
             }
         }
     }
 
-    private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
-        if (this != null && this != -1L) {
-            fn.invoke(this)
-        }
+    private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> {
+        return headers.filterNot { it.name == SENTRY_APOLLO_3_VARIABLES || it.name == SENTRY_APOLLO_3_OPERATION_NAME || it.name == SENTRY_APOLLO_3_OPERATION_TYPE }
     }
 
     private fun startChild(request: HttpRequest, activeSpan: ISpan): ISpan {
-        val buffer = Buffer()
-        request.body?.writeTo(buffer)
+        val url = request.url
+        val method = request.method
 
-        val reader = InputStreamReader(buffer.inputStream())
+        val operationName = operationNameFromHeaders(request)
+        val operation = operationName ?: "apollo.client"
+        val operationType = request.valueForHeader(SENTRY_APOLLO_3_OPERATION_TYPE) ?: method
+        val operationId = request.valueForHeader("X-APOLLO-OPERATION-ID")
+        val variables = request.valueForHeader(SENTRY_APOLLO_3_VARIABLES)
+        val description = "$operationType ${operationName ?: url}"
 
-        val content = try {
-            hub.options.serializer.deserialize(
-                reader,
-                ApolloRequestBodyContent::class.java,
-                ApolloRequestBodyContent.Deserializer
-            )
-        } catch (e: Throwable) {
-            hub.options.logger.log(SentryLevel.ERROR, "Error deserializing Apollo Request Body.", e)
-        }
+        return activeSpan.startChild(operation, description).apply {
+            operationId?.let {
+                setData("operationId", it)
+            }
 
-        val span = when (content) {
-            is ApolloRequestBodyContent -> createSpanFromBodyContent(activeSpan, request, content)
-            else -> activeSpan.startChild("apollo.request.unknown")
-        }
-
-        val operationId = request.headers.firstOrNull { it.name == "X-APOLLO-OPERATION-ID" }?.value ?: "unknown"
-
-        return span.apply {
-            setData("operationId", operationId)
+            variables?.let {
+                setData("variables", it)
+            }
         }
     }
 
-    private fun createSpanFromBodyContent(activeSpan: ISpan, request: HttpRequest, content: ApolloRequestBodyContent): ISpan {
-        val operationType = parseOperationType(content)
-        val operationName = content.operationName ?: request.headers.firstOrNull { it.name == "X-APOLLO-OPERATION-NAME" }?.value ?: "unknown"
-        val description = "$operationType $operationName"
-
-        return activeSpan.startChild(operationName, description).apply {
-            setData("variables", content.variables.toString())
-        }
+    private fun operationNameFromHeaders(request: HttpRequest): String? {
+        return request.valueForHeader(SENTRY_APOLLO_3_OPERATION_NAME) ?: request.valueForHeader("X-APOLLO-OPERATION-NAME")
     }
 
-    private fun finish(span: ISpan, request: HttpRequest, response: HttpResponse? = null) {
+    private fun HttpRequest.valueForHeader(key: String) = headers.firstOrNull { it.name == key }?.value
+
+    private fun finish(span: ISpan, request: HttpRequest, response: HttpResponse? = null, statusCode: Int?) {
         var newSpan: ISpan = span
         if (beforeSpan != null) {
             try {
@@ -119,34 +115,44 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
         }
         newSpan.finish()
 
+        val breadcrumb =
+            Breadcrumb.http(request.url, request.method.name, statusCode)
+
+        request.body?.contentLength.ifHasValidLength { contentLength ->
+            breadcrumb.setData("request_body_size", contentLength)
+        }
+
+        val hint = Hint().also {
+            it.set(TypeCheckHint.APOLLO_REQUEST, request)
+        }
+
         response?.let { httpResponse ->
-            val breadcrumb =
-                Breadcrumb.http(request.url, request.method.name, httpResponse.statusCode)
-
-            request.body?.contentLength.ifHasValidLength { contentLength ->
-                breadcrumb.setData("request_body_size", contentLength)
-            }
-
-            httpResponse.body?.peek()?.readByteArray()?.size?.toLong().ifHasValidLength { contentLength ->
+            httpResponse.headersContentLength().ifHasValidLength { contentLength ->
                 breadcrumb.setData("response_body_size", contentLength)
             }
 
-            val hint = Hint().also {
-                it.set(TypeCheckHint.APOLLO_REQUEST, request)
-                it.set(TypeCheckHint.APOLLO_RESPONSE, httpResponse)
+            if (!breadcrumb.data.containsKey("response_body_size")) {
+                httpResponse.body?.buffer?.size?.ifHasValidLength { contentLength ->
+                    breadcrumb.setData("response_body_size", contentLength)
+                }
             }
 
-            hub.addBreadcrumb(breadcrumb, hint)
+            hint.set(TypeCheckHint.APOLLO_RESPONSE, httpResponse)
         }
+
+        hub.addBreadcrumb(breadcrumb, hint)
     }
 
-    private fun parseOperationType(content: ApolloRequestBodyContent): String {
-        val operationPart = content.query.takeWhile { !it.isWhitespace() }
-        return KNOWN_OPERATIONS.firstOrNull { it == operationPart } ?: "unknown"
+    // Extensions
+
+    private fun HttpResponse.headersContentLength(): Long {
+        return headers.firstOrNull { it.name == "Content-Length" }?.value?.toLongOrNull() ?: -1L
     }
 
-    companion object {
-        val KNOWN_OPERATIONS = listOf("query", "mutation", "subscription")
+    private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
+        if (this != null && this != -1L) {
+            fn.invoke(this)
+        }
     }
 
     /**
@@ -161,5 +167,11 @@ class SentryApollo3HttpInterceptor(private val hub: IHub = HubAdapter.getInstanc
          * @param response the Apollo response object
          */
         fun execute(span: ISpan, request: HttpRequest, response: HttpResponse?): ISpan
+    }
+
+    companion object {
+        const val SENTRY_APOLLO_3_VARIABLES = "SENTRY-APOLLO-3-VARIABLES"
+        const val SENTRY_APOLLO_3_OPERATION_NAME = "SENTRY-APOLLO-3-OPERATION-NAME"
+        const val SENTRY_APOLLO_3_OPERATION_TYPE = "SENTRY-APOLLO-3-OPERATION-TYPE"
     }
 }

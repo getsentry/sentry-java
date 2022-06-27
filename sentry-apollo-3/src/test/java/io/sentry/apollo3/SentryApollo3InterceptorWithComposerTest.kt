@@ -2,6 +2,7 @@ package io.sentry.apollo3
 
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
+import com.apollographql.apollo3.network.http.HttpNetworkTransport
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
@@ -27,9 +28,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
-class SentryApollo3InterceptorTest {
+class SentryApollo3InterceptorWithComposerTest {
 
     class Fixture {
         val server = MockWebServer()
@@ -69,9 +69,13 @@ class SentryApollo3InterceptorTest {
                 httpInterceptor = SentryApollo3HttpInterceptor(hub, beforeSpan)
             }
 
-            val builder = ApolloClient.Builder()
-                .serverUrl(server.url("/").toString())
-                .addHttpInterceptor(httpInterceptor)
+            val builder = ApolloClient.builder()
+                .networkTransport(
+                    HttpNetworkTransport.Builder()
+                        .httpRequestComposer(SentryApollo3RequestComposer(server.url("/").toString()))
+                        .addInterceptor(httpInterceptor)
+                        .build()
+                )
 
             return builder.build()
         }
@@ -200,9 +204,10 @@ class SentryApollo3InterceptorTest {
         assertEquals(1, it.spans.size)
         val httpClientSpan = it.spans.first()
         assertEquals("LaunchDetails", httpClientSpan.op)
-        assertTrue { httpClientSpan.description?.startsWith("Post LaunchDetails") == true }
+        assertEquals("query LaunchDetails", httpClientSpan.description)
         assertNotNull(httpClientSpan.data) {
             assertNotNull(it["operationId"])
+            assertNotNull(it["variables"])
         }
     }
 
