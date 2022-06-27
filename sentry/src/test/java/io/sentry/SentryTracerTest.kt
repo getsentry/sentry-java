@@ -539,13 +539,13 @@ class SentryTracerTest {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
             println(it.value)
-            assertTrue(it.value.contains("sentry-traceid=[^,]+".toRegex()))
-            assertTrue(it.value.contains("sentry-publickey=key,"))
+            assertTrue(it.value.contains("sentry-trace_id=[^,]+".toRegex()))
+            assertTrue(it.value.contains("sentry-public_key=key,"))
             assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
             assertTrue(it.value.contains("sentry-environment=production,"))
             assertTrue(it.value.contains("sentry-transaction=name,"))
-            assertTrue(it.value.contains("sentry-userid=userId12345,"))
-            assertTrue(it.value.contains("sentry-usersegment=pro$".toRegex()))
+            assertTrue(it.value.contains("sentry-user_id=userId12345,"))
+            assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
         }
     }
 
