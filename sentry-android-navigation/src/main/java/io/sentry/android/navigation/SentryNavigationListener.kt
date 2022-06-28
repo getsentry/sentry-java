@@ -74,7 +74,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         }
         val hint = Hint()
         hint.set(TypeCheckHint.ANDROID_NAV_DESTINATION, destination)
-        hub.addBreadcrumb(breadcrumb)
+        hub.addBreadcrumb(breadcrumb, hint)
     }
 
     private fun startTracing(
