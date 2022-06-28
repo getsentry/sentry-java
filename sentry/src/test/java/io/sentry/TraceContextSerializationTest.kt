@@ -62,7 +62,8 @@ class TraceContextSerializationTest {
                 environment = "prod"
                 release = "1.0.17"
                 tracesSampleRate = sRate
-            }
+            },
+            TracesSamplingDecision(sRate > 0.5, sRate)
         )
     }
 

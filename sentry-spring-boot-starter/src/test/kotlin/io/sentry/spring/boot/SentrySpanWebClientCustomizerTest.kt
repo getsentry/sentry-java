@@ -12,6 +12,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -34,7 +35,7 @@ class SentrySpanWebClientCustomizerTest {
         lateinit var sentryOptions: SentryOptions
         val hub = mock<IHub>()
         var mockServer = MockWebServer()
-        val transaction = SentryTracer(TransactionContext("aTransaction", "op", true), hub)
+        val transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
         private val customizer = SentrySpanWebClientCustomizer(hub)
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false, includeMockServerInTracingOrigins: Boolean = true): WebClient {

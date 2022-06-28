@@ -19,23 +19,33 @@ final class TracesSampler {
     this.random = random;
   }
 
-  boolean sample(final @NotNull SamplingContext samplingContext) {
-    if (samplingContext.getTransactionContext().getSampled() != null) {
-      return samplingContext.getTransactionContext().getSampled();
+  @NotNull
+  TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
+    TracesSamplingDecision samplingContextSamplingDecision =
+        samplingContext.getTransactionContext().getSamplingDecision();
+    if (samplingContextSamplingDecision != null) {
+      return samplingContextSamplingDecision;
     }
+
     if (options.getTracesSampler() != null) {
       final Double samplerResult = options.getTracesSampler().sample(samplingContext);
       if (samplerResult != null) {
-        return sample(samplerResult);
+        return new TracesSamplingDecision(sample(samplerResult), samplerResult);
       }
     }
-    if (samplingContext.getTransactionContext().getParentSampled() != null) {
-      return samplingContext.getTransactionContext().getParentSampled();
+
+    Boolean parentSampled = samplingContext.getTransactionContext().getParentSampled();
+    if (parentSampled != null) {
+      return new TracesSamplingDecision(parentSampled);
     }
-    if (options.getTracesSampleRate() != null) {
-      return sample(options.getTracesSampleRate());
+
+    Double tracesSampleRateFromOptions = options.getTracesSampleRate();
+    if (tracesSampleRateFromOptions != null) {
+      return new TracesSamplingDecision(
+          sample(tracesSampleRateFromOptions), tracesSampleRateFromOptions);
     }
-    return false;
+
+    return new TracesSamplingDecision(false);
   }
 
   private boolean sample(final @NotNull Double aDouble) {

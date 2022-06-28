@@ -367,7 +367,9 @@ public final class SentryTracer implements ITransaction {
               scope -> {
                 userAtomicReference.set(scope.getUser());
               });
-          this.traceContext = new TraceContext(this, userAtomicReference.get(), hub.getOptions());
+          this.traceContext =
+              new TraceContext(
+                  this, userAtomicReference.get(), hub.getOptions(), this.getSamplingDecision());
         }
         return this.traceContext;
       }
@@ -500,6 +502,11 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @Nullable Boolean isSampled() {
     return this.root.isSampled();
+  }
+
+  @Override
+  public @Nullable TracesSamplingDecision getSamplingDecision() {
+    return this.root.getSamplingDecision();
   }
 
   @Override
