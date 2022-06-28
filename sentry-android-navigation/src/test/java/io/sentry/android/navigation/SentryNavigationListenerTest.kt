@@ -48,7 +48,7 @@ class SentryNavigationListenerTest {
         @Suppress("LongParameterList")
         fun getSut(
             toRoute: String? = "route",
-            toId: String? = "id",
+            toId: String? = "destination-id-1",
             enableBreadcrumbs: Boolean = true,
             enableTracing: Boolean = true,
             tracesSampleRate: Double? = 1.0,
@@ -105,7 +105,8 @@ class SentryNavigationListenerTest {
                 assertEquals("navigation", it.category)
                 assertEquals("/route", it.data["to"])
                 assertEquals(SentryLevel.INFO, it.level)
-            }
+            },
+            any()
         )
     }
 
@@ -123,7 +124,8 @@ class SentryNavigationListenerTest {
             check<Breadcrumb> {
                 assertEquals("/route", it.data["to"])
                 assertEquals(mapOf("arg1" to "foo", "arg2" to "bar"), it.data["to_arguments"])
-            }
+            },
+            any()
         )
     }
 
@@ -141,7 +143,8 @@ class SentryNavigationListenerTest {
             check<Breadcrumb> {
                 assertEquals("/route", it.data["to"])
                 assertNull(it.data["to_arguments"])
-            }
+            },
+            any()
         )
     }
 
@@ -164,7 +167,7 @@ class SentryNavigationListenerTest {
             bundleOf("to_arg1" to "to_foo")
         )
         val captor = argumentCaptor<Breadcrumb>()
-        verify(fixture.hub, times(2)).addBreadcrumb(captor.capture())
+        verify(fixture.hub, times(2)).addBreadcrumb(captor.capture(), any())
         captor.secondValue.let {
             assertEquals("/route_from", it.data["from"])
             assertEquals(mapOf("from_arg1" to "from_foo"), it.data["from_arguments"])
@@ -276,7 +279,7 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         verify(fixture.hub).startTransaction(
-            check { assertEquals("/id", it) },
+            check { assertEquals("/destination-id-1", it) },
             any(), any(), anyOrNull(), any<Boolean>()
         )
     }

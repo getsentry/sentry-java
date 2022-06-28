@@ -33,11 +33,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         destination: NavDestination,
         arguments: Bundle?
     ) {
-        val toArguments = arguments?.let { args ->
-            args.keySet().filter {
-                it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
-            }.associateWith { args[it] }
-        } ?: emptyMap()
+        val toArguments = arguments.refined()
 
         addBreadcrumb(destination, toArguments)
         startTracing(controller, destination, toArguments)
@@ -55,13 +51,9 @@ class SentryNavigationListener @JvmOverloads constructor(
 
             val from = previousDestinationRef?.get()?.route
             from?.let { data["from"] = "/$it" }
-            previousArgs?.let { args ->
-                val fromArguments = args.keySet().filter {
-                    it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
-                }.associateWith { args[it] }
-                if (fromArguments.isNotEmpty()) {
-                    data["from_arguments"] = fromArguments
-                }
+            val fromArguments = previousArgs.refined()
+            if (fromArguments.isNotEmpty()) {
+                data["from_arguments"] = fromArguments
             }
 
             val to = destination.route
@@ -145,6 +137,13 @@ class SentryNavigationListener @JvmOverloads constructor(
 
         activeTransaction = null
     }
+
+    private fun Bundle?.refined(): Map<String, Any?> =
+        this?.let { args ->
+            args.keySet().filter {
+                it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
+            }.associateWith { args[it] }
+        } ?: emptyMap()
 
     companion object {
         const val NAVIGATION_OP = "navigation"
