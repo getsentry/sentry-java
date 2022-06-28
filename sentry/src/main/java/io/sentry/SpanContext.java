@@ -169,7 +169,11 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   @ApiStatus.Internal
   public void setSampled(final @Nullable Boolean sampled) {
-    this.setSamplingDecision(new TracesSamplingDecision(sampled == null ? false : sampled));
+    if (sampled == null) {
+      setSamplingDecision(null);
+    } else {
+      setSamplingDecision(new TracesSamplingDecision(sampled));
+    }
   }
 
   @ApiStatus.Internal

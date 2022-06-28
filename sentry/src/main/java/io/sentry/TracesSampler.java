@@ -34,9 +34,10 @@ final class TracesSampler {
       }
     }
 
-    Boolean parentSampled = samplingContext.getTransactionContext().getParentSampled();
-    if (parentSampled != null) {
-      return new TracesSamplingDecision(parentSampled);
+    TracesSamplingDecision parentSamplingDecision =
+        samplingContext.getTransactionContext().getParentSamplingDecision();
+    if (parentSamplingDecision != null) {
+      return parentSamplingDecision;
     }
 
     Double tracesSampleRateFromOptions = options.getTracesSampleRate();
