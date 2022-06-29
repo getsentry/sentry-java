@@ -161,12 +161,17 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               continue;
             }
 
+            // if there is no trace context header we also won't send it to Sentry
+            final @Nullable TraceContext traceContext = envelope.getHeader().getTraceContext();
             if (transaction.getContexts().getTrace() != null) {
-              // Hint: Set sampled in order for the transaction not to be dropped, as this is a
-              // transient property.
-              transaction.getContexts().getTrace().setSampled(true);
+              // Hint: Set sampling decision in order for the transaction not to be dropped, as this
+              // is a transient property.
+              transaction
+                  .getContexts()
+                  .getTrace()
+                  .setSamplingDecision(extractSamplingDecision(traceContext));
             }
-            hub.captureTransaction(transaction, envelope.getHeader().getTraceContext(), hint);
+            hub.captureTransaction(transaction, traceContext, hint);
             logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {
@@ -214,6 +219,36 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       // reset the Hint to its initial state as we use it multiple times.
       HintUtils.runIfHasType(hint, Resettable.class, (resettable) -> resettable.reset());
     }
+  }
+
+  private @NotNull TracesSamplingDecision extractSamplingDecision(
+      final @Nullable TraceContext traceContext) {
+    if (traceContext != null) {
+      final @Nullable String sampleRateString = traceContext.getSampleRate();
+      if (sampleRateString != null) {
+        try {
+          final Double sampleRate = Double.parseDouble(sampleRateString);
+          if (sampleRate.isInfinite()
+              || sampleRate.isNaN()
+              || sampleRate < 0.0
+              || sampleRate > 1.0) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Invalid sample rate parsed from TraceContext: %s",
+                sampleRateString);
+          } else {
+            return new TracesSamplingDecision(true, sampleRate);
+          }
+        } catch (Exception e) {
+          logger.log(
+              SentryLevel.ERROR,
+              "Unable to parse sample rate from TraceContext: %s",
+              sampleRateString);
+        }
+      }
+    }
+
+    return new TracesSamplingDecision(true);
   }
 
   private void logEnvelopeItemNull(final @NotNull SentryEnvelopeItem item, int itemIndex) {
