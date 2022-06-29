@@ -21,10 +21,10 @@ public final class io/sentry/Attachment {
 }
 
 public final class io/sentry/Baggage {
-	public fun <init> (Lio/sentry/ILogger;)V
-	public fun <init> (Ljava/util/Map;Lio/sentry/ILogger;)V
-	public static fun fromHeader (Ljava/lang/String;Lio/sentry/ILogger;)Lio/sentry/Baggage;
-	public static fun fromHeader (Ljava/util/List;Lio/sentry/ILogger;)Lio/sentry/Baggage;
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Ljava/util/Map;Lio/sentry/SentryOptions;)V
+	public static fun fromHeader (Ljava/lang/String;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
+	public static fun fromHeader (Ljava/util/List;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
 	public fun get (Ljava/lang/String;)Ljava/lang/String;
 	public fun set (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
@@ -1642,7 +1642,7 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getUserSegment ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
-	public fun toBaggage (Lio/sentry/ILogger;)Lio/sentry/Baggage;
+	public fun toBaggage (Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
 }
 
 public final class io/sentry/TraceContext$Deserializer : io/sentry/JsonDeserializer {

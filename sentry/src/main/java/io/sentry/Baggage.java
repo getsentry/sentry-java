@@ -20,31 +20,31 @@ public final class Baggage {
   static final @NotNull Integer MAX_BAGGAGE_LIST_MEMBER_COUNT = 64;
 
   final @NotNull Map<String, String> keyValues;
-  final @NotNull ILogger logger;
+  final @NotNull SentryOptions options;
 
   public static Baggage fromHeader(
-      final @Nullable List<String> headerValues, final @NotNull ILogger logger) {
+      final @Nullable List<String> headerValues, final @NotNull SentryOptions options) {
     final Map<String, String> keyValues = new HashMap<>();
 
     if (headerValues != null) {
       for (final @Nullable String headerValue : headerValues) {
         final Map<String, String> keyValuesToAdd =
-            extractKeyValuesFromBaggageString(headerValue, logger);
+            extractKeyValuesFromBaggageString(headerValue, options);
         keyValues.putAll(keyValuesToAdd);
       }
     }
 
-    return new Baggage(keyValues, logger);
+    return new Baggage(keyValues, options);
   }
 
   public static Baggage fromHeader(
-      final @Nullable String headerValue, final @NotNull ILogger logger) {
-    final Map<String, String> keyValues = extractKeyValuesFromBaggageString(headerValue, logger);
-    return new Baggage(keyValues, logger);
+      final @Nullable String headerValue, final @NotNull SentryOptions options) {
+    final Map<String, String> keyValues = extractKeyValuesFromBaggageString(headerValue, options);
+    return new Baggage(keyValues, options);
   }
 
   private static Map<String, String> extractKeyValuesFromBaggageString(
-      final @Nullable String headerValue, final @NotNull ILogger logger) {
+      final @Nullable String headerValue, final @NotNull SentryOptions options) {
     final @NotNull Map<String, String> keyValues = new HashMap<>();
 
     if (headerValue != null) {
@@ -62,28 +62,40 @@ public final class Baggage {
 
               keyValues.put(keyDecoded, valueDecoded);
             } else {
-              logger.log(
-                  SentryLevel.ERROR, "Unable to decode baggage key value pair %s", keyValueString);
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.ERROR,
+                      "Unable to decode baggage key value pair %s",
+                      keyValueString);
             }
           } catch (Throwable e) {
-            logger.log(
-                SentryLevel.ERROR, e, "Unable to decode baggage key value pair %s", keyValueString);
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.ERROR,
+                    e,
+                    "Unable to decode baggage key value pair %s",
+                    keyValueString);
           }
         }
       } catch (Throwable e) {
-        logger.log(SentryLevel.ERROR, e, "Unable to decode baggage header %s", headerValue);
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, e, "Unable to decode baggage header %s", headerValue);
       }
     }
     return keyValues;
   }
 
-  public Baggage(final @NotNull ILogger logger) {
-    this(new HashMap<>(), logger);
+  public Baggage(final @NotNull SentryOptions options) {
+    this(new HashMap<>(), options);
   }
 
-  public Baggage(final @NotNull Map<String, String> keyValues, final @NotNull ILogger logger) {
+  public Baggage(
+      final @NotNull Map<String, String> keyValues, final @NotNull SentryOptions options) {
     this.keyValues = keyValues;
-    this.logger = logger;
+    this.options = options;
   }
 
   public @NotNull String toHeaderString() {
@@ -97,11 +109,13 @@ public final class Baggage {
 
       if (value != null) {
         if (listMemberCount >= MAX_BAGGAGE_LIST_MEMBER_COUNT) {
-          logger.log(
-              SentryLevel.ERROR,
-              "Not adding baggage value %s as the total number of list members would exceed the maximum of %s.",
-              key,
-              MAX_BAGGAGE_LIST_MEMBER_COUNT);
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Not adding baggage value %s as the total number of list members would exceed the maximum of %s.",
+                  key,
+                  MAX_BAGGAGE_LIST_MEMBER_COUNT);
         } else {
           try {
             final String encodedKey = encode(key);
@@ -111,23 +125,27 @@ public final class Baggage {
             final int valueLength = encodedKeyValue.length();
             final int totalLengthIfValueAdded = sb.length() + valueLength;
             if (totalLengthIfValueAdded > MAX_BAGGAGE_STRING_LENGTH) {
-              logger.log(
-                  SentryLevel.ERROR,
-                  "Not adding baggage value %s as the total header value length would exceed the maximum of %s.",
-                  key,
-                  MAX_BAGGAGE_STRING_LENGTH);
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.ERROR,
+                      "Not adding baggage value %s as the total header value length would exceed the maximum of %s.",
+                      key,
+                      MAX_BAGGAGE_STRING_LENGTH);
             } else {
               listMemberCount++;
               sb.append(encodedKeyValue);
               separator = ",";
             }
           } catch (Throwable e) {
-            logger.log(
-                SentryLevel.ERROR,
-                e,
-                "Unable to encode baggage key value pair (key=%s,value=%s).",
-                key,
-                value);
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.ERROR,
+                    e,
+                    "Unable to encode baggage key value pair (key=%s,value=%s).",
+                    key,
+                    value);
           }
         }
       }
@@ -169,7 +187,9 @@ public final class Baggage {
   }
 
   public void setUserId(final @Nullable String userId) {
-    set("sentry-user_id", userId);
+    if (options.isSendDefaultPii()) {
+      set("sentry-user_id", userId);
+    }
   }
 
   public void setUserSegment(final @Nullable String userSegment) {

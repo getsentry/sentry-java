@@ -12,16 +12,17 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class BaggageTest {
-    lateinit var logger: ILogger
+
+    lateinit var optionsWithPiiOn: SentryOptions
 
     @BeforeTest
     fun setup() {
-        logger = NoOpLogger.getInstance()
+        optionsWithPiiOn = SentryOptions().also { it.isSendDefaultPii = true }
     }
 
     @Test
     fun `can parse single baggage string with white spaces in it`() {
-        val baggage = Baggage.fromHeader("userId =  alice   ,  serverNode = DF%2028,isProduction=false", logger)
+        val baggage = Baggage.fromHeader("userId =  alice   ,  serverNode = DF%2028,isProduction=false", optionsWithPiiOn)
 
         assertEquals("alice", baggage.get("userId"))
         assertEquals("DF 28", baggage.get("serverNode"))
@@ -32,7 +33,7 @@ class BaggageTest {
 
     @Test
     fun `can parse single baggage string`() {
-        val baggage = Baggage.fromHeader("userId=alice,serverNode=DF%2028,isProduction=false", logger)
+        val baggage = Baggage.fromHeader("userId=alice,serverNode=DF%2028,isProduction=false", optionsWithPiiOn)
 
         assertEquals("alice", baggage.get("userId"))
         assertEquals("DF 28", baggage.get("serverNode"))
@@ -43,7 +44,7 @@ class BaggageTest {
 
     @Test
     fun `keys are encoded and decoded as well`() {
-        val baggage = Baggage.fromHeader("user%2Bid=alice,server%2Bnode=DF%2028,is%2Bproduction=false", logger)
+        val baggage = Baggage.fromHeader("user%2Bid=alice,server%2Bnode=DF%2028,is%2Bproduction=false", optionsWithPiiOn)
 
         assertEquals("alice", baggage.get("user+id"))
         assertEquals("DF 28", baggage.get("server+node"))
@@ -59,7 +60,7 @@ class BaggageTest {
                 "userId=alice",
                 "serverNode=DF%2028,isProduction=false"
             ),
-            logger
+            optionsWithPiiOn
         )
 
         assertEquals("alice", baggage.get("userId"))
@@ -76,7 +77,7 @@ class BaggageTest {
                 "userId =   alice",
                 "serverNode = DF%2028, isProduction = false"
             ),
-            logger
+            optionsWithPiiOn
         )
 
         assertEquals("alice", baggage.get("userId"))
@@ -89,32 +90,32 @@ class BaggageTest {
     @Test
     fun `can parse null baggage string`() {
         val nothing: String? = null
-        val baggage = Baggage.fromHeader(nothing, logger)
+        val baggage = Baggage.fromHeader(nothing, optionsWithPiiOn)
         assertEquals("", baggage.toHeaderString())
     }
 
     @Test
     fun `can parse blank baggage string`() {
-        val baggage = Baggage.fromHeader("", logger)
+        val baggage = Baggage.fromHeader("", optionsWithPiiOn)
         assertEquals("", baggage.toHeaderString())
     }
 
     @Test
     fun `can parse whitespace only baggage string`() {
-        val baggage = Baggage.fromHeader("   ", logger)
+        val baggage = Baggage.fromHeader("   ", optionsWithPiiOn)
         assertEquals("", baggage.toHeaderString())
     }
 
     @Test
     fun `can parse whitespace only baggage strings`() {
-        val baggage = Baggage.fromHeader(listOf("   ", "   "), logger)
+        val baggage = Baggage.fromHeader(listOf("   ", "   "), optionsWithPiiOn)
         assertEquals("", baggage.toHeaderString())
     }
 
     @Test
     fun `single large value is dropped and small values are kept`() {
         val largeValue = Faker.instance().random().hex(8193)
-        val baggage = Baggage.fromHeader("smallValue=remains,largeValue=$largeValue,otherValue=kept", logger)
+        val baggage = Baggage.fromHeader("smallValue=remains,largeValue=$largeValue,otherValue=kept", optionsWithPiiOn)
 
         assertEquals("remains", baggage.get("smallValue"))
         assertNotNull(baggage.get("largeValue"))
@@ -126,7 +127,7 @@ class BaggageTest {
     @Test
     fun `medium size value can cause small values to be dropped`() {
         val mediumValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH - 12 - 15 - 1) // 8192 - "mediumValue=" - "otherValue=kept" - ","
-        val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=removed,otherValue=kept", logger)
+        val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=removed,otherValue=kept", optionsWithPiiOn)
 
         assertEquals("removed", baggage.get("smallValue"))
         assertEquals(mediumValue, baggage.get("mediumValue"))
@@ -141,7 +142,7 @@ class BaggageTest {
     fun `medium size value can cause all values to be dropped`() {
         // nothing else will fit after mediumValue as the separator + any key/value would exceed the limit
         val mediumValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH - 12 - 15) // 8192 - "mediumValue=" - "otherValue=lost"
-        val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=stripped,otherValue=lost", logger)
+        val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=stripped,otherValue=lost", optionsWithPiiOn)
 
         assertEquals("stripped", baggage.get("smallValue"))
         assertEquals(mediumValue, baggage.get("mediumValue"))
@@ -154,7 +155,7 @@ class BaggageTest {
 
     @Test
     fun `exceeding entry limit causes values to be dropped`() {
-        val baggage = Baggage(logger)
+        val baggage = Baggage(optionsWithPiiOn)
         val expectedItems = mutableListOf<String>()
 
         for (i in 1..100) {
@@ -171,7 +172,7 @@ class BaggageTest {
 
     @Test
     fun `null value is omitted from header string`() {
-        val baggage = Baggage(logger)
+        val baggage = Baggage(optionsWithPiiOn)
 
         baggage.setTraceId(null)
         baggage.setPublicKey(null)
@@ -186,7 +187,7 @@ class BaggageTest {
 
     @Test
     fun `can set values from trace context`() {
-        val baggage = Baggage(logger)
+        val baggage = Baggage(optionsWithPiiOn)
         val publicKey = Dsn(dsnString).publicKey
         val traceId = SentryId().toString()
         val userId = UUID.randomUUID().toString()
@@ -204,14 +205,33 @@ class BaggageTest {
     }
 
     @Test
+    fun `userId is skipped if sendDefaultPii is off`() {
+        val baggage = Baggage(SentryOptions())
+        val publicKey = Dsn(dsnString).publicKey
+        val traceId = SentryId().toString()
+        val userId = UUID.randomUUID().toString()
+
+        baggage.setTraceId(traceId)
+        baggage.setPublicKey(publicKey)
+        baggage.setRelease("1.0-rc.1")
+        baggage.setEnvironment("production")
+        baggage.setTransaction("TX")
+        baggage.setUserId(userId)
+        baggage.setUserSegment("segmentA")
+        baggage.setSampleRate((1.0 / 3.0).toString())
+
+        assertEquals("sentry-environment=production,sentry-public_key=$publicKey,sentry-release=1.0-rc.1,sentry-sample_rate=0.3333333333333333,sentry-trace_id=$traceId,sentry-transaction=TX,sentry-user_segment=segmentA", baggage.toHeaderString())
+    }
+
+    @Test
     fun `duplicate entries are lost`() {
-        val baggage = Baggage.fromHeader("duplicate=a,duplicate=b", logger)
+        val baggage = Baggage.fromHeader("duplicate=a,duplicate=b", optionsWithPiiOn)
         assertEquals("duplicate=b", baggage.toHeaderString())
     }
 
     @Test
     fun `setting a value multiple times only keeps the last`() {
-        val baggage = Baggage.fromHeader("sentry-trace_id=a", logger)
+        val baggage = Baggage.fromHeader("sentry-trace_id=a", optionsWithPiiOn)
 
         baggage.setTraceId("b")
         baggage.setTraceId("c")
@@ -221,7 +241,7 @@ class BaggageTest {
 
     @Test
     fun `value may contain = sign`() {
-        val baggage = Baggage(logger)
+        val baggage = Baggage(optionsWithPiiOn)
 
         baggage.setTransaction("a=b")
 
@@ -230,19 +250,19 @@ class BaggageTest {
 
     @Test
     fun `corrupted string does not throw out`() {
-        val baggage = Baggage.fromHeader("a", logger)
+        val baggage = Baggage.fromHeader("a", optionsWithPiiOn)
         assertEquals("", baggage.toHeaderString())
     }
 
     @Test
     fun `corrupted string does not throw out 2`() {
-        val baggage = Baggage.fromHeader("a=b=", logger)
+        val baggage = Baggage.fromHeader("a=b=", optionsWithPiiOn)
         assertEquals("", baggage.toHeaderString())
     }
 
     @Test
     fun `corrupted string can be parsed partially`() {
-        val baggage = Baggage.fromHeader("a=value,b", logger)
+        val baggage = Baggage.fromHeader("a=value,b", optionsWithPiiOn)
         assertEquals("a=value", baggage.toHeaderString())
     }
 
@@ -345,7 +365,7 @@ class BaggageTest {
         val failures = mutableListOf<String>()
 
         values.forEach { key, value ->
-            val baggage = Baggage(logger)
+            val baggage = Baggage(optionsWithPiiOn)
             baggage.setTransaction(key)
 
             val headerString = baggage.toHeaderString()
@@ -353,7 +373,7 @@ class BaggageTest {
                 failures.add("$key should be $value but was >$headerString<")
             }
 
-            val decodedBaggage = Baggage.fromHeader(headerString, logger)
+            val decodedBaggage = Baggage.fromHeader(headerString, optionsWithPiiOn)
             decodedBaggage.get("sentry-transaction")
         }
 
@@ -362,17 +382,17 @@ class BaggageTest {
 
     @Test
     fun `all characters defined as valid for keys can be used`() {
-        val baggage = Baggage(logger)
+        val baggage = Baggage(optionsWithPiiOn)
         val key = validTokenCharacters().joinToString("")
         baggage.set(key, "value")
 
-        val reparsedBaggage = Baggage.fromHeader(baggage.toHeaderString(), logger)
+        val reparsedBaggage = Baggage.fromHeader(baggage.toHeaderString(), optionsWithPiiOn)
         assertEquals("value", reparsedBaggage.get(key))
     }
 
     @Test
     fun `baggage key replaces invalid characters`() {
-        val baggage = Baggage(logger)
+        val baggage = Baggage(optionsWithPiiOn)
         baggage.set(invalidTokenCharacters().joinToString(""), "value")
 
         assertEquals("%22%28%29%2C%2F%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%7B%7D=value", baggage.toHeaderString())

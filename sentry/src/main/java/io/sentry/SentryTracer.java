@@ -382,7 +382,7 @@ public final class SentryTracer implements ITransaction {
   public @Nullable BaggageHeader toBaggageHeader() {
     final TraceContext traceContext = traceContext();
     if (hub.getOptions().isTraceSampling() && traceContext != null) {
-      final Baggage baggage = traceContext.toBaggage(hub.getOptions().getLogger());
+      final Baggage baggage = traceContext.toBaggage(hub.getOptions());
       return new BaggageHeader(baggage);
     } else {
       return null;

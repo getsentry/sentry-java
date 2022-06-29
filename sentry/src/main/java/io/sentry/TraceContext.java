@@ -125,8 +125,8 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     return sampleRate;
   }
 
-  public @NotNull Baggage toBaggage(@NotNull ILogger logger) {
-    Baggage baggage = new Baggage(logger);
+  public @NotNull Baggage toBaggage(@NotNull SentryOptions options) {
+    Baggage baggage = new Baggage(options);
 
     baggage.setTraceId(traceId.toString());
     baggage.setPublicKey(publicKey);

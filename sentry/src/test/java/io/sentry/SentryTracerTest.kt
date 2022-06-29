@@ -525,6 +525,7 @@ class SentryTracerTest {
             it.isTraceSampling = true
             it.environment = "production"
             it.release = "1.0.99-rc.7"
+            it.isSendDefaultPii = true
         })
 
         fixture.hub.setUser(
