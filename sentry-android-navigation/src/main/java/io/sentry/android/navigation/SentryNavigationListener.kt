@@ -11,10 +11,20 @@ import io.sentry.IHub
 import io.sentry.ITransaction
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
+import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
 import java.lang.ref.WeakReference
 
+/**
+ * A [NavController.OnDestinationChangedListener] that captures a [Breadcrumb] and starts an idle
+ * [ITransaction] and sends them to Sentry for each [onDestinationChanged] call.
+ *
+ * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
+ * navigation events.
+ * @param enableNavigationTracing Whether the integration should start a new idle [ITransaction]
+ * with [SentryOptions.idleTimeout] for navigation events.
+ */
 class SentryNavigationListener @JvmOverloads constructor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val enableNavigationBreadcrumbs: Boolean = true,

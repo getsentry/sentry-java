@@ -12,11 +12,10 @@ internal class SentryLifecycleObserverTest {
 
     class Fixture {
         val navListener = mock<SentryNavigationListener>()
-        val hub = mock<IHub>()
         val navController = mock<NavController>()
 
         fun getSut(): SentryLifecycleObserver {
-            return SentryLifecycleObserver(navController, hub, navListener)
+            return SentryLifecycleObserver(navController, navListener)
         }
     }
 
