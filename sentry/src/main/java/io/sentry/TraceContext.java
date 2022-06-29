@@ -63,7 +63,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
         user != null ? user.getId() : null,
         user != null ? getSegment(user) : null,
         transaction.getName(),
-        sampleRateToString(sampleRate(sentryOptions, samplingDecision)));
+        sampleRateToString(sampleRate(samplingDecision)));
   }
 
   private static @Nullable String getSegment(final @NotNull User user) {
@@ -75,12 +75,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     }
   }
 
-  private static @Nullable Double sampleRate(
-      @NotNull SentryOptions sentryOptions, @Nullable TracesSamplingDecision samplingDecision) {
-    // TODO does this fallback even make sense? could also just write 1.0 as
-    // options.tracesSampleRate should have been written to a sampling decision
+  private static @Nullable Double sampleRate(@Nullable TracesSamplingDecision samplingDecision) {
     if (samplingDecision == null) {
-      return sentryOptions.getTracesSampleRate();
+      return null;
     }
 
     return samplingDecision.getSampleRate();
