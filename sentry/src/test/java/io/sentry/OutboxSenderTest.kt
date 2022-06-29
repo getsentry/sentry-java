@@ -170,7 +170,17 @@ class OutboxSenderTest {
                 assertEquals(0.00000021, it.samplingDecision?.sampleRate)
                 assertTrue(it.samplingDecision!!.sampled)
             },
-            any(), any()
+            check {
+                assertEquals("b156a475de54423d9c1571df97ec7eb6", it.traceId.toString())
+                assertEquals("key", it.publicKey)
+                assertEquals("0.00000021", it.sampleRate)
+                assertEquals("1.0-beta.1", it.release)
+                assertEquals("prod", it.environment)
+                assertEquals("usr1", it.userId)
+                assertEquals("pro", it.userSegment)
+                assertEquals("tx1", it.transaction)
+            },
+            any()
         )
         assertFalse(File(path).exists())
 
