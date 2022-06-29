@@ -228,10 +228,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       if (sampleRateString != null) {
         try {
           final Double sampleRate = Double.parseDouble(sampleRateString);
-          if (sampleRate.isInfinite()
-              || sampleRate.isNaN()
-              || sampleRate < 0.0
-              || sampleRate > 1.0) {
+          if (!SampleRateUtil.isValidTracesSampleRate(sampleRate, false)) {
             logger.log(
                 SentryLevel.ERROR,
                 "Invalid sample rate parsed from TraceContext: %s",

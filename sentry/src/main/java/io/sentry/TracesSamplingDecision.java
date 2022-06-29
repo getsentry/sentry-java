@@ -8,15 +8,11 @@ import org.jetbrains.annotations.Nullable;
 public final class TracesSamplingDecision {
 
   private final @NotNull Boolean sampled;
-  private final @NotNull Double sampleRate;
+  private final @Nullable Double sampleRate;
 
   public TracesSamplingDecision(@NotNull Boolean sampled, @Nullable Double sampleRate) {
     this.sampled = sampled;
-    if (sampleRate != null) {
-      this.sampleRate = sampleRate;
-    } else {
-      this.sampleRate = sampled ? 1.0 : 0.0;
-    }
+    this.sampleRate = sampleRate;
   }
 
   public TracesSamplingDecision(@NotNull Boolean sampled) {
@@ -27,7 +23,7 @@ public final class TracesSamplingDecision {
     return sampled;
   }
 
-  public @NotNull Double getSampleRate() {
+  public @Nullable Double getSampleRate() {
     return sampleRate;
   }
 }

@@ -6,6 +6,7 @@ import java.security.SecureRandom
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TracesSamplerTest {
@@ -82,7 +83,7 @@ class TracesSamplerTest {
             )
         )
         assertTrue(samplingDecision.sampled)
-        assertEquals(1.0, samplingDecision.sampleRate)
+        assertNull(samplingDecision.sampleRate)
     }
 
     @Test
@@ -108,7 +109,7 @@ class TracesSamplerTest {
             )
         )
         assertFalse(samplingDecision.sampled)
-        assertEquals(0.0, samplingDecision.sampleRate)
+        assertNull(samplingDecision.sampleRate)
     }
 
     @Test
@@ -123,7 +124,7 @@ class TracesSamplerTest {
             )
         )
         assertFalse(samplingDecision.sampled)
-        assertEquals(0.0, samplingDecision.sampleRate)
+        assertNull(samplingDecision.sampleRate)
 
         val transactionContextParentSampled = TransactionContext("name", "op")
         transactionContextParentSampled.parentSampled = true
@@ -134,7 +135,7 @@ class TracesSamplerTest {
             )
         )
         assertTrue(samplingDecisionParentSampled.sampled)
-        assertEquals(1.0, samplingDecisionParentSampled.sampleRate)
+        assertNull(samplingDecisionParentSampled.sampleRate)
     }
 
     @Test
@@ -145,13 +146,13 @@ class TracesSamplerTest {
         val samplingDecision =
             sampler.sample(SamplingContext(transactionContextNotSampled, CustomSamplingContext()))
         assertFalse(samplingDecision.sampled)
-        assertEquals(0.0, samplingDecision.sampleRate)
+        assertNull(samplingDecision.sampleRate)
 
         val transactionContextSampled = TransactionContext("name", "op")
         transactionContextSampled.sampled = true
         val samplingDecisionContextSampled =
             sampler.sample(SamplingContext(transactionContextSampled, CustomSamplingContext()))
         assertTrue(samplingDecisionContextSampled.sampled)
-        assertEquals(1.0, samplingDecisionContextSampled.sampleRate)
+        assertNull(samplingDecisionContextSampled.sampleRate)
     }
 }

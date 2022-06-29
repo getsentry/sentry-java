@@ -67,6 +67,15 @@ class TraceContextSerializationTest {
         )
     }
 
+    @Test
+    fun `can still parse legacy JSON with non flat user`() {
+        val expectedJson = sanitizedFile("json/trace_state_no_sample_rate.json")
+        val legacyJson = sanitizedFile("json/trace_state_legacy.json")
+        val actual = deserialize(legacyJson)
+        val actualJson = serialize(actual)
+        assertEquals(expectedJson, actualJson)
+    }
+
     // Helper
 
     private fun sanitizedFile(path: String): String {
