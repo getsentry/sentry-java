@@ -5,6 +5,7 @@
 ### Fixes
 
 - Filter out app starts with more than 60s ([#2127](https://github.com/getsentry/sentry-java/pull/2127)) 
+- Only send userid in `baggage` if `sendDefaultPii` is `true` ([#2145](https://github.com/getsentry/sentry-java/pull/2145))
 
 ## Unreleased
 
