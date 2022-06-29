@@ -1,5 +1,24 @@
 # Changelog
 
+## 6.1.4
+
+### Fixes
+
+- Filter out app starts with more than 60s ([#2127](https://github.com/getsentry/sentry-java/pull/2127))
+
+## 6.1.3
+
+### Fixes
+
+- Fix thread leak due to Timer being created and never cancelled ([#2131](https://github.com/getsentry/sentry-java/pull/2131))
+
+## 6.1.2
+
+### Fixes
+
+- Swallow error when reading ActivityManager#getProcessesInErrorState instead of crashing ([#2114](https://github.com/getsentry/sentry-java/pull/2114))
+- Use charset string directly as StandardCharsets is not available on earlier Android versions ([#2111](https://github.com/getsentry/sentry-java/pull/2111))
+
 ## 6.1.1
 
 ### Features
@@ -54,6 +73,7 @@
             - Call `toString()` where object graphs exceed max depth.
     - Remove `gson` dependency.
     - Remove `IUnknownPropertiesConsumer`
+- Pass MDC tags as Sentry tags ([#1954](https://github.com/getsentry/sentry-java/pull/1954))
 
 ### Fixes
 

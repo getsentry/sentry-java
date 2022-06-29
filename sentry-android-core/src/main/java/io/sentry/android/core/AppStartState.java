@@ -13,6 +13,9 @@ public final class AppStartState {
 
   private static @NotNull AppStartState instance = new AppStartState();
 
+  /** We filter out App starts more than 60s */
+  private static final int MAX_APP_START_MILLIS = 60000;
+
   private @Nullable Long appStartMillis;
 
   private @Nullable Long appStartEndMillis;
@@ -48,7 +51,21 @@ public final class AppStartState {
     if (appStartMillis == null || appStartEndMillis == null || coldStart == null) {
       return null;
     }
-    return appStartEndMillis - appStartMillis;
+    final long appStart = appStartEndMillis - appStartMillis;
+
+    // We filter out app start more than 60s.
+    // This could be due to many different reasons.
+    // If you do the manual init and init the SDK too late and it does not compute the app start end
+    // in the very first Activity.
+    // If the process starts but the App isn't in the foreground.
+    // If the system forked the zygote earlier to accelerate the app start.
+    // And some unknown reasons that could not be reproduced.
+    // We've seen app starts with hours, days and even months.
+    if (appStart >= MAX_APP_START_MILLIS) {
+      return null;
+    }
+
+    return appStart;
   }
 
   public @Nullable Boolean isColdStart() {

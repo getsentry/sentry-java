@@ -304,7 +304,7 @@ class SentryGestureListenerTracingTest {
         // second view interaction
         sut.onSingleTapUp(fixture.event)
 
-        verify(fixture.transaction).scheduleFinish(anyOrNull())
+        verify(fixture.transaction).scheduleFinish()
     }
 
     internal open class ScrollableListView : AbsListView(mock()) {
