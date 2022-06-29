@@ -1,11 +1,13 @@
 import java.math.BigDecimal
 
 object Config {
-    val kotlinVersion = "1.5.31"
+    val kotlinVersion = "1.6.10"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.6.8"
     val kotlinCompatibleLanguageVersion = "1.4"
+
+    val composeVersion = "1.1.1"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:7.2.0"
@@ -19,14 +21,16 @@ object Config {
         val grettyVersion = "4.0.0"
         val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.18.0"
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:$kotlinVersion"
+        val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
     }
 
     object Android {
-        private val sdkVersion = 31
+        private val sdkVersion = 32
 
         val minSdkVersion = 14
         val minSdkVersionOkHttp = 21
         val minSdkVersionNdk = 16
+        val minSdkVersionCompose = 21
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
 
@@ -104,6 +108,16 @@ object Config {
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
 
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
+        val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
+
+        private val navigationVersion = "2.4.2"
+        val navigationRuntime = "androidx.navigation:navigation-runtime:$navigationVersion"
+        // compose deps
+        val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
+        val composeActivity = "androidx.activity:activity-compose:1.4.0"
+        val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
+        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
+        val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
     }
 
     object AnnotationProcessors {
