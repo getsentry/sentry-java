@@ -4,7 +4,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavController
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.IHub
 import io.sentry.android.navigation.SentryNavigationListener
 import kotlin.test.Test
 
