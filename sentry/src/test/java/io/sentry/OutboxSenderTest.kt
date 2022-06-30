@@ -133,6 +133,63 @@ class OutboxSenderTest {
     }
 
     @Test
+    fun `restores sampleRate`() {
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
+        whenever(fixture.options.maxSpans).thenReturn(1000)
+        whenever(fixture.hub.options).thenReturn(fixture.options)
+        whenever(fixture.options.transactionProfiler).thenReturn(NoOpTransactionProfiler.getInstance())
+
+        val transactionContext = TransactionContext("fixture-name", "http")
+        transactionContext.description = "fixture-request"
+        transactionContext.status = SpanStatus.OK
+        transactionContext.setTag("fixture-tag", "fixture-value")
+        transactionContext.samplingDecision = TracesSamplingDecision(true, 0.00000021)
+
+        val sentryTracer = SentryTracer(transactionContext, fixture.hub)
+        val span = sentryTracer.startChild("child")
+        span.finish(SpanStatus.OK)
+        sentryTracer.finish()
+
+        val sentryTracerSpy = spy(sentryTracer)
+        whenever(sentryTracerSpy.eventId).thenReturn(SentryId("3367f5196c494acaae85bbbd535379ac"))
+
+        val expected = SentryTransaction(sentryTracerSpy)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryTransaction::class.java))).thenReturn(expected)
+
+        val sut = fixture.getSut()
+        val path = getTempEnvelope(fileName = "envelope-transaction-with-sample-rate.txt")
+        assertTrue(File(path).exists())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(path, hints)
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(expected, it)
+                assertTrue(it.isSampled)
+                assertEquals(0.00000021, it.samplingDecision?.sampleRate)
+                assertTrue(it.samplingDecision!!.sampled)
+            },
+            check {
+                assertEquals("b156a475de54423d9c1571df97ec7eb6", it.traceId.toString())
+                assertEquals("key", it.publicKey)
+                assertEquals("0.00000021", it.sampleRate)
+                assertEquals("1.0-beta.1", it.release)
+                assertEquals("prod", it.environment)
+                assertEquals("usr1", it.userId)
+                assertEquals("pro", it.userSegment)
+                assertEquals("tx1", it.transaction)
+            },
+            any()
+        )
+        assertFalse(File(path).exists())
+
+        // Additionally make sure we have no errors logged
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+    }
+
+    @Test
     fun `when parser is EnvelopeReader and serializer returns SentryEnvelope, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
 
