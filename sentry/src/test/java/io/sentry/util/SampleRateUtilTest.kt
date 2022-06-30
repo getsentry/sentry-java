@@ -1,4 +1,4 @@
-package io.sentry
+package io.sentry.util
 
 import kotlin.test.Test
 import kotlin.test.assertFalse

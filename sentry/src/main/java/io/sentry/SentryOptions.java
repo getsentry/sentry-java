@@ -10,6 +10,7 @@ import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
+import io.sentry.util.SampleRateUtil;
 import io.sentry.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;

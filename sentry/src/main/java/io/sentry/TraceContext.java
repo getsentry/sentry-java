@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.SampleRateUtil;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.text.DecimalFormat;
