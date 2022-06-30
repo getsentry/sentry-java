@@ -17,7 +17,7 @@ import io.sentry.TypeCheckHint
 import java.lang.ref.WeakReference
 
 /**
- * A [NavController.OnDestinationChangedListener] that captures a [Breadcrumb] and starts an idle
+ * A [NavController.OnDestinationChangedListener] that captures a [Breadcrumb] and starts an
  * [ITransaction] and sends them to Sentry for each [onDestinationChanged] call.
  *
  * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
