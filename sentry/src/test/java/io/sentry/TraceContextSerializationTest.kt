@@ -62,8 +62,18 @@ class TraceContextSerializationTest {
                 environment = "prod"
                 release = "1.0.17"
                 tracesSampleRate = sRate
-            }
+            },
+            TracesSamplingDecision(sRate > 0.5, sRate)
         )
+    }
+
+    @Test
+    fun `can still parse legacy JSON with non flat user`() {
+        val expectedJson = sanitizedFile("json/trace_state_no_sample_rate.json")
+        val legacyJson = sanitizedFile("json/trace_state_legacy.json")
+        val actual = deserialize(legacyJson)
+        val actualJson = serialize(actual)
+        assertEquals(expectedJson, actualJson)
     }
 
     // Helper

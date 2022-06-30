@@ -112,7 +112,7 @@ class SpanTest {
         val span = Span(
             traceId, parentSpanId,
             SentryTracer(
-                TransactionContext("name", "op", true), fixture.hub
+                TransactionContext("name", "op", TracesSamplingDecision(true)), fixture.hub
             ),
             "op", fixture.hub
         )
