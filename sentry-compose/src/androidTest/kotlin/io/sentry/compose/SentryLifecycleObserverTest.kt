@@ -4,7 +4,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavController
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.IHub
 import io.sentry.android.navigation.SentryNavigationListener
 import kotlin.test.Test
 
@@ -12,11 +11,10 @@ internal class SentryLifecycleObserverTest {
 
     class Fixture {
         val navListener = mock<SentryNavigationListener>()
-        val hub = mock<IHub>()
         val navController = mock<NavController>()
 
         fun getSut(): SentryLifecycleObserver {
-            return SentryLifecycleObserver(navController, hub, navListener)
+            return SentryLifecycleObserver(navController, navListener)
         }
     }
 
