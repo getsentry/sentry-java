@@ -21,7 +21,7 @@ final class TracesSampler {
 
   @NotNull
   TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
-    TracesSamplingDecision samplingContextSamplingDecision =
+    final TracesSamplingDecision samplingContextSamplingDecision =
         samplingContext.getTransactionContext().getSamplingDecision();
     if (samplingContextSamplingDecision != null) {
       return samplingContextSamplingDecision;
@@ -34,13 +34,13 @@ final class TracesSampler {
       }
     }
 
-    TracesSamplingDecision parentSamplingDecision =
+    final TracesSamplingDecision parentSamplingDecision =
         samplingContext.getTransactionContext().getParentSamplingDecision();
     if (parentSamplingDecision != null) {
       return parentSamplingDecision;
     }
 
-    Double tracesSampleRateFromOptions = options.getTracesSampleRate();
+    final Double tracesSampleRateFromOptions = options.getTracesSampleRate();
     if (tracesSampleRateFromOptions != null) {
       return new TracesSamplingDecision(
           sample(tracesSampleRateFromOptions), tracesSampleRateFromOptions);

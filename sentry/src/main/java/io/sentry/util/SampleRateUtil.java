@@ -1,4 +1,4 @@
-package io.sentry;
+package io.sentry.util;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;

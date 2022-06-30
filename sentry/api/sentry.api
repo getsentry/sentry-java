@@ -795,14 +795,6 @@ public final class io/sentry/RequestDetails {
 	public fun getUrl ()Ljava/net/URL;
 }
 
-public final class io/sentry/SampleRateUtil {
-	public fun <init> ()V
-	public static fun isValidSampleRate (Ljava/lang/Double;)Z
-	public static fun isValidSampleRate (Ljava/lang/Double;Z)Z
-	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
-	public static fun isValidTracesSampleRate (Ljava/lang/Double;Z)Z
-}
-
 public final class io/sentry/SamplingContext {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)V
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
@@ -3040,6 +3032,14 @@ public final class io/sentry/util/Platform {
 	public fun <init> ()V
 	public static fun isAndroid ()Z
 	public static fun isJvm ()Z
+}
+
+public final class io/sentry/util/SampleRateUtil {
+	public fun <init> ()V
+	public static fun isValidSampleRate (Ljava/lang/Double;)Z
+	public static fun isValidSampleRate (Ljava/lang/Double;Z)Z
+	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
+	public static fun isValidTracesSampleRate (Ljava/lang/Double;Z)Z
 }
 
 public final class io/sentry/util/StringUtils {
