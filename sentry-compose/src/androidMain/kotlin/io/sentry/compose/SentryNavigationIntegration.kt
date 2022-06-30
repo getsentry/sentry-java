@@ -41,7 +41,7 @@ internal class SentryLifecycleObserver(
  *
  * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
  * navigation events.
- * @param enableNavigationTracing Whether the integration should start a new idle [ITransaction]
+ * @param enableNavigationTracing Whether the integration should start a new [ITransaction]
  * with [SentryOptions.idleTimeout] for navigation events.
  */
 @Composable
