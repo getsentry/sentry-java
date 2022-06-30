@@ -36,7 +36,7 @@ internal class SentryLifecycleObserver(
 }
 
 /**
- * A [DisposableEffect] that captures a [Breadcrumb] and starts an idle [ITransaction] and sends
+ * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
  * them to Sentry for when attached to the respective [NavHostController].
  *
  * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
