@@ -575,7 +575,7 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `returns baggage header without userId if not sendp pii`() {
+    fun `returns baggage header without userId if not send pii`() {
         val transaction = fixture.getSut({
             it.isTraceSampling = true
             it.environment = "production"
@@ -599,8 +599,34 @@ class SentryTracerTest {
             assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
             assertTrue(it.value.contains("sentry-environment=production,"))
             assertTrue(it.value.contains("sentry-transaction=name,"))
-            assertFalse(it.value.contains("sentry-user_id=userId12345,"))
+            assertFalse(it.value.contains("sentry-user_id"))
             assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
+        }
+    }
+
+    @Test
+    fun `returns baggage header without userId if send pii and null user`() {
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+            it.environment = "production"
+            it.release = "1.0.99-rc.7"
+            it.isSendDefaultPii = true
+        })
+
+        fixture.hub.setUser(null)
+
+        val header = transaction.toBaggageHeader()
+        assertNotNull(header) {
+            assertEquals("baggage", it.name)
+            assertNotNull(it.value)
+            println(it.value)
+            assertTrue(it.value.contains("sentry-trace_id=[^,]+".toRegex()))
+            assertTrue(it.value.contains("sentry-public_key=key,"))
+            assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
+            assertTrue(it.value.contains("sentry-environment=production,"))
+            assertTrue(it.value.contains("sentry-transaction=name"))
+            assertFalse(it.value.contains("sentry-user_id"))
+            assertFalse(it.value.contains("sentry-user_segment"))
         }
     }
 
