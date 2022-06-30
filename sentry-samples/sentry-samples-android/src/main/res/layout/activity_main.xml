@@ -111,6 +111,12 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:text="@string/open_permissions_activity"/>
+
+    <Button
+      android:id="@+id/open_compose_activity"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/open_compose_activity"/>
   </LinearLayout>
 
 </ScrollView>
