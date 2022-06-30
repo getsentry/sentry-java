@@ -5,10 +5,14 @@
 ### Features
 
 - Add integration for Apollo-Kotlin 3 ([#2109](https://github.com/getsentry/sentry-java/pull/2109))
+- New package `sentry-android-navigation` for AndroidX Navigation support ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
+- New package `sentry-compose` for Jetpack Compose support (Navigation) ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
+
+## 6.1.4
 
 ### Fixes
 
-- Filter out app starts with more than 60s ([#2127](https://github.com/getsentry/sentry-java/pull/2127)) 
+- Filter out app starts with more than 60s ([#2127](https://github.com/getsentry/sentry-java/pull/2127))
 
 ## 6.1.3
 
