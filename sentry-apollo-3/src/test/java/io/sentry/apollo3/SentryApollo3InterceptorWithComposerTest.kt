@@ -12,7 +12,6 @@ import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
-import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
@@ -129,65 +128,6 @@ class SentryApollo3InterceptorWithComposerTest {
     }
 
     @Test
-    fun `when there is no active span, does not add sentry trace header to the request`() {
-        executeQuery(isSpanActive = false)
-
-        val recorderRequest = fixture.server.takeRequest()
-        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
-    }
-
-    @Test
-    fun `when there is an active span, adds sentry trace headers to the request`() {
-        executeQuery()
-        val recorderRequest = fixture.server.takeRequest()
-        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
-    }
-
-    @Test
-    fun `customizer modifies span`() {
-        executeQuery(
-
-            fixture.getSut(
-                beforeSpan = { span, request, response ->
-                    span.description = "overwritten description"
-                    span
-                }
-            )
-        )
-
-        verify(fixture.hub).captureTransaction(
-            check {
-                assertEquals(1, it.spans.size)
-                val httpClientSpan = it.spans.first()
-                assertEquals("overwritten description", httpClientSpan.description)
-            },
-            anyOrNull<TraceContext>(),
-            anyOrNull(),
-            anyOrNull()
-        )
-    }
-
-    @Test
-    fun `when customizer throws, exception is handled`() {
-        executeQuery(
-            fixture.getSut(
-                beforeSpan = { _, _, _ ->
-                    throw RuntimeException()
-                }
-            )
-        )
-
-        verify(fixture.hub).captureTransaction(
-            check {
-                assertEquals(1, it.spans.size)
-            },
-            anyOrNull<TraceContext>(),
-            anyOrNull(),
-            anyOrNull()
-        )
-    }
-
-    @Test
     fun `adds breadcrumb when http calls succeeds`() {
         executeQuery(fixture.getSut())
         verify(fixture.hub).addBreadcrumb(
@@ -198,6 +138,15 @@ class SentryApollo3InterceptorWithComposerTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `internal headers are not sent over the wire`() {
+        executeQuery(fixture.getSut())
+        val recorderRequest = fixture.server.takeRequest()
+        assertNull(recorderRequest.headers[SentryApollo3HttpInterceptor.SENTRY_APOLLO_3_VARIABLES])
+        assertNull(recorderRequest.headers[SentryApollo3HttpInterceptor.SENTRY_APOLLO_3_OPERATION_NAME])
+        assertNull(recorderRequest.headers[SentryApollo3HttpInterceptor.SENTRY_APOLLO_3_VARIABLES])
     }
 
     private fun assertTransactionDetails(it: SentryTransaction) {

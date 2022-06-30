@@ -105,15 +105,18 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
     private fun HttpRequest.valueForHeader(key: String) = headers.firstOrNull { it.name == key }?.value
 
     private fun finish(span: ISpan, request: HttpRequest, response: HttpResponse? = null, statusCode: Int?) {
-        var newSpan: ISpan = span
         if (beforeSpan != null) {
             try {
-                newSpan = beforeSpan.execute(span, request, response)
+                val result = beforeSpan.execute(span, request, response)
+                if (result == null) {
+                    // Span is dropped
+                    span.spanContext.sampled = false
+                }
             } catch (e: Throwable) {
                 hub.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
             }
         }
-        newSpan.finish()
+        span.finish()
 
         val breadcrumb =
             Breadcrumb.http(request.url, request.method.name, statusCode)
@@ -127,6 +130,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         }
 
         response?.let { httpResponse ->
+            // Content-Length header is not present on batched operations
             httpResponse.headersContentLength().ifHasValidLength { contentLength ->
                 breadcrumb.setData("response_body_size", contentLength)
             }
@@ -166,7 +170,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
          * @param request the Apollo request object
          * @param response the Apollo response object
          */
-        fun execute(span: ISpan, request: HttpRequest, response: HttpResponse?): ISpan
+        fun execute(span: ISpan, request: HttpRequest, response: HttpResponse?): ISpan?
     }
 
     companion object {

@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.ITransaction
@@ -56,7 +57,12 @@ class SentryApollo3InterceptorTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: BeforeSpanCallback? = null,
         ): ApolloClient {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                    isTraceSampling = true
+                }
+            )
 
             server.enqueue(
                 MockResponse()
@@ -130,6 +136,7 @@ class SentryApollo3InterceptorTest {
 
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
@@ -137,6 +144,7 @@ class SentryApollo3InterceptorTest {
         executeQuery()
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
@@ -156,6 +164,24 @@ class SentryApollo3InterceptorTest {
                 assertEquals(1, it.spans.size)
                 val httpClientSpan = it.spans.first()
                 assertEquals("overwritten description", httpClientSpan.description)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `returning null in beforeSpan callback drops span`() {
+        executeQuery(
+            fixture.getSut(
+                beforeSpan = { _, _, _ -> null }
+            )
+        )
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(0, it.spans.size)
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
