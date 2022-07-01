@@ -9,6 +9,7 @@ import io.sentry.JsonSerializable
 import io.sentry.SpanContext
 import io.sentry.SpanId
 import io.sentry.SpanStatus
+import io.sentry.TracesSamplingDecision
 import org.junit.Test
 import java.io.StringReader
 import java.io.StringWriter
@@ -26,7 +27,7 @@ class SpanContextSerializationTest {
             SpanId("bf6b582d-8ce3-412b-a334-f4c5539b9602"),
             "e481581d-35a4-4e97-8a1c-b554bf49f23e",
             SpanId("c7500f2a-d4e6-4f5f-a0f4-6bb67e98d5a2"),
-            false
+            TracesSamplingDecision(false)
         ).apply {
             description = "c204b6c7-9753-4d45-927d-b19789bfc9a5"
             status = SpanStatus.RESOURCE_EXHAUSTED

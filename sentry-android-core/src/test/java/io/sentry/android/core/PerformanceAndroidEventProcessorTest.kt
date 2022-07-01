@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.SentryTracer
+import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.protocol.MeasurementValue
@@ -21,7 +22,7 @@ class PerformanceAndroidEventProcessorTest {
         val options = SentryAndroidOptions()
 
         val hub = mock<IHub>()
-        val context = TransactionContext("name", "op", true)
+        val context = TransactionContext("name", "op", TracesSamplingDecision(true))
         val tracer = SentryTracer(context, hub)
         val activityFramesTracker = mock<ActivityFramesTracker>()
 

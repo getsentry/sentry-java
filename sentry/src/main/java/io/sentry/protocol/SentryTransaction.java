@@ -12,6 +12,7 @@ import io.sentry.SentryTracer;
 import io.sentry.Span;
 import io.sentry.SpanContext;
 import io.sentry.SpanStatus;
+import io.sentry.TracesSamplingDecision;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -73,7 +74,7 @@ public final class SentryTransaction extends SentryBaseEvent
             tracerContext.getParentSpanId(),
             tracerContext.getOperation(),
             tracerContext.getDescription(),
-            tracerContext.getSampled(),
+            tracerContext.getSamplingDecision(),
             tracerContext.getStatus()));
     for (final Map.Entry<String, String> tag : tracerContext.getTags().entrySet()) {
       this.setTag(tag.getKey(), tag.getValue());
@@ -131,8 +132,21 @@ public final class SentryTransaction extends SentryBaseEvent
   }
 
   public boolean isSampled() {
+    final @Nullable TracesSamplingDecision samplingDecsion = getSamplingDecision();
+    if (samplingDecsion == null) {
+      return false;
+    }
+
+    return samplingDecsion.getSampled();
+  }
+
+  public @Nullable TracesSamplingDecision getSamplingDecision() {
     final SpanContext trace = this.getContexts().getTrace();
-    return trace != null && Boolean.TRUE.equals(trace.getSampled());
+    if (trace == null) {
+      return null;
+    }
+
+    return trace.getSamplingDecision();
   }
 
   public @NotNull Map<String, @NotNull MeasurementValue> getMeasurements() {
