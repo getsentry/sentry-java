@@ -61,10 +61,19 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
         new Dsn(sentryOptions.getDsn()).getPublicKey(),
         sentryOptions.getRelease(),
         sentryOptions.getEnvironment(),
-        user != null ? user.getId() : null,
+        getUserId(sentryOptions, user),
         user != null ? getSegment(user) : null,
         transaction.getName(),
         sampleRateToString(sampleRate(samplingDecision)));
+  }
+
+  private static @Nullable String getUserId(
+      final @NotNull SentryOptions options, final @Nullable User user) {
+    if (options.isSendDefaultPii() && user != null) {
+      return user.getId();
+    }
+
+    return null;
   }
 
   private static @Nullable String getSegment(final @NotNull User user) {

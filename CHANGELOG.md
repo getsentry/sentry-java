@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Only send userid in Dynamic Sampling Context if sendDefaultPii is true ([#2147](https://github.com/getsentry/sentry-java/pull/2147))
+
 ### Features
 
 - New package `sentry-android-navigation` for AndroidX Navigation support ([#2136](https://github.com/getsentry/sentry-java/pull/2136))

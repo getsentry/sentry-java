@@ -481,6 +481,7 @@ class SentryTracerTest {
     fun `returns trace state`() {
         val transaction = fixture.getSut({
             it.isTraceSampling = true
+            it.isSendDefaultPii = true
         })
         fixture.hub.setUser(
             User().apply {
@@ -496,6 +497,29 @@ class SentryTracerTest {
             assertEquals("release@3.0.0", it.release)
             assertEquals(transaction.name, it.transaction)
             assertEquals("user-id", it.userId)
+            assertEquals("pro", it.userSegment)
+        }
+    }
+
+    @Test
+    fun `returns trace state without userId if not send pii`() {
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+        })
+        fixture.hub.setUser(
+            User().apply {
+                id = "user-id"
+                others = mapOf("segment" to "pro")
+            }
+        )
+        val trace = transaction.traceContext()
+        assertNotNull(trace) {
+            assertEquals(transaction.spanContext.traceId, it.traceId)
+            assertEquals("key", it.publicKey)
+            assertEquals("environment", it.environment)
+            assertEquals("release@3.0.0", it.release)
+            assertEquals(transaction.name, it.transaction)
+            assertNull(it.userId)
             assertEquals("pro", it.userSegment)
         }
     }
@@ -525,6 +549,7 @@ class SentryTracerTest {
             it.isTraceSampling = true
             it.environment = "production"
             it.release = "1.0.99-rc.7"
+            it.isSendDefaultPii = true
         })
 
         fixture.hub.setUser(
@@ -546,6 +571,62 @@ class SentryTracerTest {
             assertTrue(it.value.contains("sentry-transaction=name,"))
             assertTrue(it.value.contains("sentry-user_id=userId12345,"))
             assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
+        }
+    }
+
+    @Test
+    fun `returns baggage header without userId if not send pii`() {
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+            it.environment = "production"
+            it.release = "1.0.99-rc.7"
+        })
+
+        fixture.hub.setUser(
+            User().apply {
+                id = "userId12345"
+                others = mapOf("segment" to "pro")
+            }
+        )
+
+        val header = transaction.toBaggageHeader()
+        assertNotNull(header) {
+            assertEquals("baggage", it.name)
+            assertNotNull(it.value)
+            println(it.value)
+            assertTrue(it.value.contains("sentry-trace_id=[^,]+".toRegex()))
+            assertTrue(it.value.contains("sentry-public_key=key,"))
+            assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
+            assertTrue(it.value.contains("sentry-environment=production,"))
+            assertTrue(it.value.contains("sentry-transaction=name,"))
+            assertFalse(it.value.contains("sentry-user_id"))
+            assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
+        }
+    }
+
+    @Test
+    fun `returns baggage header without userId if send pii and null user`() {
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+            it.environment = "production"
+            it.release = "1.0.99-rc.7"
+            it.isSendDefaultPii = true
+        })
+
+        fixture.hub.setUser(null)
+
+        val header = transaction.toBaggageHeader()
+        assertNotNull(header) {
+            assertEquals("baggage", it.name)
+            assertNotNull(it.value)
+            println(it.value)
+            assertTrue(it.value.contains("sentry-trace_id=[^,]+".toRegex()))
+            assertTrue(it.value.contains("sentry-public_key=key,"))
+            assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
+            assertTrue(it.value.contains("sentry-environment=production,"))
+            assertTrue(it.value.contains("sentry-transaction=name"))
+            assertFalse(it.value.contains("sentry-user_id"))
+            assertFalse(it.value.contains("sentry-user_segment"))
         }
     }
 
