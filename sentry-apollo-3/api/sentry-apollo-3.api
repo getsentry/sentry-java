@@ -1,3 +1,10 @@
+public final class io/sentry/apollo3/ApolloBuilderExtensionsKt {
+	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;)Lcom/apollographql/apollo3/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;)Lcom/apollographql/apollo3/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo3/ApolloClient$Builder;
+	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo3/ApolloClient$Builder;Lio/sentry/IHub;Lio/sentry/apollo3/SentryApollo3HttpInterceptor$BeforeSpanCallback;ILjava/lang/Object;)Lcom/apollographql/apollo3/ApolloClient$Builder;
+}
+
 public final class io/sentry/apollo3/SentryApollo3HttpInterceptor : com/apollographql/apollo3/network/http/HttpInterceptor {
 	public static final field Companion Lio/sentry/apollo3/SentryApollo3HttpInterceptor$Companion;
 	public static final field SENTRY_APOLLO_3_OPERATION_NAME Ljava/lang/String;
@@ -18,8 +25,8 @@ public abstract interface class io/sentry/apollo3/SentryApollo3HttpInterceptor$B
 public final class io/sentry/apollo3/SentryApollo3HttpInterceptor$Companion {
 }
 
-public final class io/sentry/apollo3/SentryApollo3RequestComposer : com/apollographql/apollo3/api/http/HttpRequestComposer {
-	public fun <init> (Ljava/lang/String;)V
-	public fun compose (Lcom/apollographql/apollo3/api/ApolloRequest;)Lcom/apollographql/apollo3/api/http/HttpRequest;
+public final class io/sentry/apollo3/SentryApollo3Interceptor : com/apollographql/apollo3/interceptor/ApolloInterceptor {
+	public fun <init> ()V
+	public fun intercept (Lcom/apollographql/apollo3/api/ApolloRequest;Lcom/apollographql/apollo3/interceptor/ApolloInterceptorChain;)Lkotlinx/coroutines/flow/Flow;
 }
 

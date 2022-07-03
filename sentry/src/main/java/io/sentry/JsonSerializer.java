@@ -106,25 +106,19 @@ public final class JsonSerializer implements ISerializer {
   // Deserialize
 
   @Override
-  public <T> @Nullable T deserialize(
-      @NotNull Reader reader, @NotNull Class<T> clazz, @NotNull JsonDeserializer<?> deserializer) {
+  public <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz) {
     try {
       JsonObjectReader jsonObjectReader = new JsonObjectReader(reader);
-      Object object = deserializer.deserialize(jsonObjectReader, options.getLogger());
-      return clazz.cast(object);
+      JsonDeserializer<?> deserializer = deserializersByClass.get(clazz);
+      if (deserializer != null) {
+        Object object = deserializer.deserialize(jsonObjectReader, options.getLogger());
+        return clazz.cast(object);
+      } else {
+        return null; // No way to deserialize objects we don't know about.
+      }
     } catch (Exception e) {
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
       return null;
-    }
-  }
-
-  @Override
-  public <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz) {
-    JsonDeserializer<?> deserializer = deserializersByClass.get(clazz);
-    if (deserializer != null) {
-      return deserialize(reader, clazz, deserializer);
-    } else {
-      return null; // No way to deserialize objects we don't know about.
     }
   }
 

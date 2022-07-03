@@ -12,9 +12,6 @@ import org.jetbrains.annotations.Nullable;
 public interface ISerializer {
   <T> @Nullable T deserialize(@NotNull Reader reader, @NotNull Class<T> clazz);
 
-  <T> @Nullable T deserialize(
-      @NotNull Reader reader, @NotNull Class<T> clazz, @NotNull JsonDeserializer<?> deserializer);
-
   @Nullable
   SentryEnvelope deserializeEnvelope(@NotNull InputStream inputStream);
 

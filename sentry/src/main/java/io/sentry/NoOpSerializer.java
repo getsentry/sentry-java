@@ -26,12 +26,6 @@ final class NoOpSerializer implements ISerializer {
   }
 
   @Override
-  public <T> @Nullable T deserialize(
-      @NotNull Reader reader, @NotNull Class<T> clazz, @NotNull JsonDeserializer<?> deserializer) {
-    return null;
-  }
-
-  @Override
   public @Nullable SentryEnvelope deserializeEnvelope(@NotNull InputStream inputStream) {
     return null;
   }

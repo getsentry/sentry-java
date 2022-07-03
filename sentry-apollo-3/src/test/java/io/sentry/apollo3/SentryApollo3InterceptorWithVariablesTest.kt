@@ -2,7 +2,6 @@ package io.sentry.apollo3
 
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
-import com.apollographql.apollo3.network.http.HttpNetworkTransport
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
@@ -28,12 +27,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class SentryApollo3InterceptorWithComposerTest {
+class SentryApollo3InterceptorWithVariablesTest {
 
     class Fixture {
         val server = MockWebServer()
         val hub = mock<IHub>()
-        private var httpInterceptor = SentryApollo3HttpInterceptor(hub)
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -64,19 +62,9 @@ class SentryApollo3InterceptorWithComposerTest {
                     .setResponseCode(httpStatusCode)
             )
 
-            if (beforeSpan != null) {
-                httpInterceptor = SentryApollo3HttpInterceptor(hub, beforeSpan)
-            }
-
-            val builder = ApolloClient.builder()
-                .networkTransport(
-                    HttpNetworkTransport.Builder()
-                        .httpRequestComposer(SentryApollo3RequestComposer(server.url("/").toString()))
-                        .addInterceptor(httpInterceptor)
-                        .build()
-                )
-
-            return builder.build()
+            return ApolloClient.Builder().serverUrl(server.url("/").toString())
+                .sentryTracing(hub, beforeSpan)
+                .build()
         }
     }
 
