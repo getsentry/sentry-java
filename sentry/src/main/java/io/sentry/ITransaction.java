@@ -35,6 +35,9 @@ public interface ITransaction extends ISpan {
   @Nullable
   Boolean isSampled();
 
+  @Nullable
+  TracesSamplingDecision getSamplingDecision();
+
   /**
    * Returns the latest span that is not finished.
    *

@@ -30,6 +30,7 @@ public final class io/sentry/Baggage {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setPublicKey (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
+	public fun setSampleRate (Ljava/lang/String;)V
 	public fun setTraceId (Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUserId (Ljava/lang/String;)V
@@ -473,6 +474,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLatestActiveSpan ()Lio/sentry/Span;
 	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public abstract fun getSpans ()Ljava/util/List;
 	public abstract fun isSampled ()Ljava/lang/Boolean;
 	public abstract fun scheduleFinish ()V
@@ -660,6 +662,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
+	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStatus ()Lio/sentry/SpanStatus;
@@ -1386,6 +1389,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
+	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStartTimestamp ()Ljava/util/Date;
@@ -1488,6 +1492,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getHighPrecisionTimestamp ()Ljava/lang/Double;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
+	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getStartTimestamp ()Ljava/util/Date;
@@ -1520,14 +1525,15 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	protected field status Lio/sentry/SpanStatus;
 	protected field tags Ljava/util/Map;
 	public fun <init> (Lio/sentry/SpanContext;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Lio/sentry/SpanStatus;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/String;Lio/sentry/SpanId;Ljava/lang/Boolean;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;Lio/sentry/SpanStatus;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;)V
 	public fun <init> (Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun <init> (Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSampled ()Ljava/lang/Boolean;
+	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTags ()Ljava/util/Map;
@@ -1537,6 +1543,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setSampled (Ljava/lang/Boolean;)V
+	public fun setSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -1619,10 +1626,12 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
+	public fun getSampleRate ()Ljava/lang/String;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getTransaction ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun getUser ()Lio/sentry/TraceContext$TraceContextUser;
+	public fun getUserId ()Ljava/lang/String;
+	public fun getUserSegment ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun toBaggage (Lio/sentry/ILogger;)Lio/sentry/Baggage;
@@ -1638,31 +1647,20 @@ public final class io/sentry/TraceContext$JsonKeys {
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field PUBLIC_KEY Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
+	public static final field SAMPLE_RATE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION Ljava/lang/String;
 	public static final field USER Ljava/lang/String;
+	public static final field USER_ID Ljava/lang/String;
+	public static final field USER_SEGMENT Ljava/lang/String;
 	public fun <init> ()V
 }
 
-public final class io/sentry/TraceContext$TraceContextUser : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/protocol/User;)V
-	public fun getId ()Ljava/lang/String;
-	public fun getSegment ()Ljava/lang/String;
-	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
-	public fun setUnknown (Ljava/util/Map;)V
-}
-
-public final class io/sentry/TraceContext$TraceContextUser$Deserializer : io/sentry/JsonDeserializer {
-	public fun <init> ()V
-	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/TraceContext$TraceContextUser;
-	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
-}
-
-public final class io/sentry/TraceContext$TraceContextUser$JsonKeys {
-	public static final field ID Ljava/lang/String;
-	public static final field SEGMENT Ljava/lang/String;
-	public fun <init> ()V
+public final class io/sentry/TracesSamplingDecision {
+	public fun <init> (Ljava/lang/Boolean;)V
+	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;)V
+	public fun getSampleRate ()Ljava/lang/Double;
+	public fun getSampled ()Ljava/lang/Boolean;
 }
 
 public final class io/sentry/TracingOrigins {
@@ -1673,10 +1671,11 @@ public final class io/sentry/TracingOrigins {
 
 public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public static fun fromSentryTrace (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
 	public fun getName ()Ljava/lang/String;
 	public fun getParentSampled ()Ljava/lang/Boolean;
+	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun setParentSampled (Ljava/lang/Boolean;)V
 }
 
@@ -2826,6 +2825,7 @@ public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEv
 	public fun <init> (Lio/sentry/SentryTracer;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;Ljava/util/List;Ljava/util/Map;)V
 	public fun getMeasurements ()Ljava/util/Map;
+	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStartTimestamp ()Ljava/lang/Double;
 	public fun getStatus ()Lio/sentry/SpanStatus;
@@ -3033,6 +3033,14 @@ public final class io/sentry/util/Platform {
 	public fun <init> ()V
 	public static fun isAndroid ()Z
 	public static fun isJvm ()Z
+}
+
+public final class io/sentry/util/SampleRateUtil {
+	public fun <init> ()V
+	public static fun isValidSampleRate (Ljava/lang/Double;)Z
+	public static fun isValidSampleRate (Ljava/lang/Double;Z)Z
+	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
+	public static fun isValidTracesSampleRate (Ljava/lang/Double;Z)Z
 }
 
 public final class io/sentry/util/StringUtils {

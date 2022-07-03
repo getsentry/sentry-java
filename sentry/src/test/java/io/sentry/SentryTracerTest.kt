@@ -40,10 +40,10 @@ class SentryTracerTest {
             idleTimeout: Long? = null,
             trimEnd: Boolean = false,
             transactionFinishedCallback: TransactionFinishedCallback? = null,
-            sampled: Boolean? = null
+            samplingDecision: TracesSamplingDecision? = null
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op", sampled), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback)
+            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback)
         }
     }
 
@@ -144,7 +144,7 @@ class SentryTracerTest {
         val tracer = fixture.getSut(optionsConfiguration = {
             it.isProfilingEnabled = true
             it.setTransactionProfiler(transactionProfiler)
-        }, sampled = true)
+        }, samplingDecision = TracesSamplingDecision(true))
         tracer.finish()
         verify(transactionProfiler).onTransactionFinish(any())
     }
@@ -188,7 +188,7 @@ class SentryTracerTest {
 
     @Test
     fun `not sampled spans are filtered out`() {
-        val tracer = fixture.getSut(sampled = true)
+        val tracer = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
         tracer.startChild("op1")
         val span = tracer.startChild("op2")
         span.spanContext.sampled = false
@@ -459,7 +459,7 @@ class SentryTracerTest {
 
     @Test
     fun `finishing unfinished spans with the transaction timestamp`() {
-        val transaction = fixture.getSut(sampled = true)
+        val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
         val span = transaction.startChild("op") as Span
         transaction.startChild("op2")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
@@ -481,6 +481,7 @@ class SentryTracerTest {
     fun `returns trace state`() {
         val transaction = fixture.getSut({
             it.isTraceSampling = true
+            it.isSendDefaultPii = true
         })
         fixture.hub.setUser(
             User().apply {
@@ -495,10 +496,31 @@ class SentryTracerTest {
             assertEquals("environment", it.environment)
             assertEquals("release@3.0.0", it.release)
             assertEquals(transaction.name, it.transaction)
-            assertNotNull(it.user) {
-                assertEquals("user-id", it.id)
-                assertEquals("pro", it.segment)
+            assertEquals("user-id", it.userId)
+            assertEquals("pro", it.userSegment)
+        }
+    }
+
+    @Test
+    fun `returns trace state without userId if not send pii`() {
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+        })
+        fixture.hub.setUser(
+            User().apply {
+                id = "user-id"
+                others = mapOf("segment" to "pro")
             }
+        )
+        val trace = transaction.traceContext()
+        assertNotNull(trace) {
+            assertEquals(transaction.spanContext.traceId, it.traceId)
+            assertEquals("key", it.publicKey)
+            assertEquals("environment", it.environment)
+            assertEquals("release@3.0.0", it.release)
+            assertEquals(transaction.name, it.transaction)
+            assertNull(it.userId)
+            assertEquals("pro", it.userSegment)
         }
     }
 
@@ -516,12 +538,44 @@ class SentryTracerTest {
         val traceAfterUserSet = transaction.traceContext()
         assertNotNull(traceAfterUserSet) {
             assertEquals(it, traceBeforeUserSet)
-            assertNull(it.user)
+            assertNull(it.userId)
+            assertNull(it.userSegment)
         }
     }
 
     @Test
     fun `returns baggage header`() {
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+            it.environment = "production"
+            it.release = "1.0.99-rc.7"
+            it.isSendDefaultPii = true
+        })
+
+        fixture.hub.setUser(
+            User().apply {
+                id = "userId12345"
+                others = mapOf("segment" to "pro")
+            }
+        )
+
+        val header = transaction.toBaggageHeader()
+        assertNotNull(header) {
+            assertEquals("baggage", it.name)
+            assertNotNull(it.value)
+            println(it.value)
+            assertTrue(it.value.contains("sentry-trace_id=[^,]+".toRegex()))
+            assertTrue(it.value.contains("sentry-public_key=key,"))
+            assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
+            assertTrue(it.value.contains("sentry-environment=production,"))
+            assertTrue(it.value.contains("sentry-transaction=name,"))
+            assertTrue(it.value.contains("sentry-user_id=userId12345,"))
+            assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
+        }
+    }
+
+    @Test
+    fun `returns baggage header without userId if not send pii`() {
         val transaction = fixture.getSut({
             it.isTraceSampling = true
             it.environment = "production"
@@ -540,19 +594,45 @@ class SentryTracerTest {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
             println(it.value)
-            assertTrue(it.value.contains("sentry-traceid=[^,]+".toRegex()))
-            assertTrue(it.value.contains("sentry-publickey=key,"))
+            assertTrue(it.value.contains("sentry-trace_id=[^,]+".toRegex()))
+            assertTrue(it.value.contains("sentry-public_key=key,"))
             assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
             assertTrue(it.value.contains("sentry-environment=production,"))
             assertTrue(it.value.contains("sentry-transaction=name,"))
-            assertTrue(it.value.contains("sentry-userid=userId12345,"))
-            assertTrue(it.value.contains("sentry-usersegment=pro$".toRegex()))
+            assertFalse(it.value.contains("sentry-user_id"))
+            assertTrue(it.value.contains("sentry-user_segment=pro$".toRegex()))
+        }
+    }
+
+    @Test
+    fun `returns baggage header without userId if send pii and null user`() {
+        val transaction = fixture.getSut({
+            it.isTraceSampling = true
+            it.environment = "production"
+            it.release = "1.0.99-rc.7"
+            it.isSendDefaultPii = true
+        })
+
+        fixture.hub.setUser(null)
+
+        val header = transaction.toBaggageHeader()
+        assertNotNull(header) {
+            assertEquals("baggage", it.name)
+            assertNotNull(it.value)
+            println(it.value)
+            assertTrue(it.value.contains("sentry-trace_id=[^,]+".toRegex()))
+            assertTrue(it.value.contains("sentry-public_key=key,"))
+            assertTrue(it.value.contains("sentry-release=1.0.99-rc.7,"))
+            assertTrue(it.value.contains("sentry-environment=production,"))
+            assertTrue(it.value.contains("sentry-transaction=name"))
+            assertFalse(it.value.contains("sentry-user_id"))
+            assertFalse(it.value.contains("sentry-user_segment"))
         }
     }
 
     @Test
     fun `sets ITransaction data as extra in SentryTransaction`() {
-        val transaction = fixture.getSut(sampled = true)
+        val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
         transaction.setData("key", "val")
         transaction.finish()
         verify(fixture.hub).captureTransaction(
@@ -567,7 +647,7 @@ class SentryTracerTest {
 
     @Test
     fun `sets Span data as data in SentrySpan`() {
-        val transaction = fixture.getSut(sampled = true)
+        val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
         val span = transaction.startChild("op")
         span.setData("key", "val")
         span.finish()
@@ -667,7 +747,7 @@ class SentryTracerTest {
 
     @Test
     fun `when trimEnd, trims idle transaction time to the latest child timestamp`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, sampled = true)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
 
         val span = transaction.startChild("op")
         span.finish()
@@ -693,19 +773,19 @@ class SentryTracerTest {
 
     @Test
     fun `timer is created if idle timeout is set`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, sampled = true)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
         assertNotNull(transaction.timer)
     }
 
     @Test
     fun `timer is not created if idle timeout is not set`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = null, trimEnd = true, sampled = true)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = null, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
         assertNull(transaction.timer)
     }
 
     @Test
     fun `timer is cancelled on finish`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, sampled = true)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
         assertNotNull(transaction.timer)
         transaction.finish(SpanStatus.OK)
         assertNull(transaction.timer)

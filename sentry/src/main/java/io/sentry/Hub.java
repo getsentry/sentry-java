@@ -730,8 +730,8 @@ public final class Hub implements IHub {
     } else {
       final SamplingContext samplingContext =
           new SamplingContext(transactionContext, customSamplingContext);
-      boolean samplingDecision = tracesSampler.sample(samplingContext);
-      transactionContext.setSampled(samplingDecision);
+      @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
+      transactionContext.setSamplingDecision(samplingDecision);
 
       transaction =
           new SentryTracer(
@@ -745,7 +745,7 @@ public final class Hub implements IHub {
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
-      if (samplingDecision && options.isProfilingEnabled()) {
+      if (samplingDecision.getSampled() && options.isProfilingEnabled()) {
         final ITransactionProfiler transactionProfiler = options.getTransactionProfiler();
         transactionProfiler.onTransactionStart(transaction);
       }

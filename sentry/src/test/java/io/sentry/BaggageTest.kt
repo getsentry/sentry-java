@@ -198,8 +198,9 @@ class BaggageTest {
         baggage.setTransaction("TX")
         baggage.setUserId(userId)
         baggage.setUserSegment("segmentA")
+        baggage.setSampleRate((1.0 / 3.0).toString())
 
-        assertEquals("sentry-environment=production,sentry-publickey=$publicKey,sentry-release=1.0-rc.1,sentry-traceid=$traceId,sentry-transaction=TX,sentry-userid=$userId,sentry-usersegment=segmentA", baggage.toHeaderString())
+        assertEquals("sentry-environment=production,sentry-public_key=$publicKey,sentry-release=1.0-rc.1,sentry-sample_rate=0.3333333333333333,sentry-trace_id=$traceId,sentry-transaction=TX,sentry-user_id=$userId,sentry-user_segment=segmentA", baggage.toHeaderString())
     }
 
     @Test
@@ -210,12 +211,12 @@ class BaggageTest {
 
     @Test
     fun `setting a value multiple times only keeps the last`() {
-        val baggage = Baggage.fromHeader("sentry-traceid=a", logger)
+        val baggage = Baggage.fromHeader("sentry-trace_id=a", logger)
 
         baggage.setTraceId("b")
         baggage.setTraceId("c")
 
-        assertEquals("sentry-traceid=c", baggage.toHeaderString())
+        assertEquals("sentry-trace_id=c", baggage.toHeaderString())
     }
 
     @Test

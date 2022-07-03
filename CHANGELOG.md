@@ -2,11 +2,16 @@
 
 ## Unreleased
 
+### Fixes
+
+- Only send userid in Dynamic Sampling Context if sendDefaultPii is true ([#2147](https://github.com/getsentry/sentry-java/pull/2147))
+
 ### Features
 
 - Add integration for Apollo-Kotlin 3 ([#2109](https://github.com/getsentry/sentry-java/pull/2109))
 - New package `sentry-android-navigation` for AndroidX Navigation support ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
 - New package `sentry-compose` for Jetpack Compose support (Navigation) ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
+- Add sample rate to baggage as well as trace in envelope header and flatten user ([#2135](https://github.com/getsentry/sentry-java/pull/2135))
 
 ## 6.1.4
 

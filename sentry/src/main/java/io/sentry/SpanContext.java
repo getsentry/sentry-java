@@ -26,8 +26,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   /** Id of a parent span. */
   private final @Nullable SpanId parentSpanId;
 
-  /** If trace is sampled. */
-  private transient @Nullable Boolean sampled;
+  private transient @Nullable TracesSamplingDecision samplingDecision;
 
   /** Short code identifying the type of operation the span is measuring. */
   protected @NotNull String op;
@@ -46,8 +45,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   private @Nullable Map<String, Object> unknown;
 
-  public SpanContext(final @NotNull String operation, final @Nullable Boolean sampled) {
-    this(new SentryId(), new SpanId(), operation, null, sampled);
+  public SpanContext(
+      final @NotNull String operation, final @Nullable TracesSamplingDecision samplingDecision) {
+    this(new SentryId(), new SpanId(), operation, null, samplingDecision);
   }
 
   /**
@@ -64,8 +64,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @NotNull SpanId spanId,
       final @NotNull String operation,
       final @Nullable SpanId parentSpanId,
-      final @Nullable Boolean sampled) {
-    this(traceId, spanId, parentSpanId, operation, null, sampled, null);
+      final @Nullable TracesSamplingDecision samplingDecision) {
+    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null);
   }
 
   @ApiStatus.Internal
@@ -75,13 +75,13 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @Nullable SpanId parentSpanId,
       final @NotNull String operation,
       final @Nullable String description,
-      final @Nullable Boolean sampled,
+      final @Nullable TracesSamplingDecision samplingDecision,
       final @Nullable SpanStatus status) {
     this.traceId = Objects.requireNonNull(traceId, "traceId is required");
     this.spanId = Objects.requireNonNull(spanId, "spanId is required");
     this.op = Objects.requireNonNull(operation, "operation is required");
     this.parentSpanId = parentSpanId;
-    this.sampled = sampled;
+    this.samplingDecision = samplingDecision;
     this.description = description;
     this.status = status;
   }
@@ -95,7 +95,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.traceId = spanContext.traceId;
     this.spanId = spanContext.spanId;
     this.parentSpanId = spanContext.parentSpanId;
-    this.sampled = spanContext.sampled;
+    this.samplingDecision = spanContext.samplingDecision;
     this.op = spanContext.op;
     this.description = spanContext.description;
     this.status = spanContext.status;
@@ -155,13 +155,30 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     return tags;
   }
 
+  public @Nullable TracesSamplingDecision getSamplingDecision() {
+    return samplingDecision;
+  }
+
   public @Nullable Boolean getSampled() {
-    return sampled;
+    if (samplingDecision == null) {
+      return null;
+    }
+
+    return samplingDecision.getSampled();
   }
 
   @ApiStatus.Internal
   public void setSampled(final @Nullable Boolean sampled) {
-    this.sampled = sampled;
+    if (sampled == null) {
+      setSamplingDecision(null);
+    } else {
+      setSamplingDecision(new TracesSamplingDecision(sampled));
+    }
+  }
+
+  @ApiStatus.Internal
+  public void setSamplingDecision(final @Nullable TracesSamplingDecision samplingDecision) {
+    this.samplingDecision = samplingDecision;
   }
 
   // region JsonSerializable
