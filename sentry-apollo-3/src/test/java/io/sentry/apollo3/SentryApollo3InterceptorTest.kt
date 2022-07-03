@@ -16,6 +16,7 @@ import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
+import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.BeforeSpanCallback
 import io.sentry.protocol.SentryTransaction
@@ -235,7 +236,7 @@ class SentryApollo3InterceptorTest {
     private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true) = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
-            tx = SentryTracer(TransactionContext("op", "desc", true), fixture.hub)
+            tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.hub)
             whenever(fixture.hub.span).thenReturn(tx)
         }
 
