@@ -26,6 +26,7 @@ android {
         // https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner#enable-gradle
         // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
         // Check the readme for more info.
+        // Test orchestrator was removed due to issues with SauceLabs
 //        testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
@@ -33,10 +34,6 @@ android {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
-    }
-
-    testOptions {
-        execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
 
     signingConfigs {

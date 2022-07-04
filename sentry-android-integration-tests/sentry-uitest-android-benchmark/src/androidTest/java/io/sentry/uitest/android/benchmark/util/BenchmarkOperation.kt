@@ -3,6 +3,7 @@ package io.sentry.uitest.android.benchmark.util
 import android.os.Process
 import android.os.SystemClock
 import android.view.Choreographer
+import java.util.LinkedList
 import java.util.concurrent.TimeUnit
 
 // 60 FPS is the recommended target: https://www.youtube.com/watch?v=CaMTIgxCSqU
@@ -11,7 +12,7 @@ private const val FRAME_DURATION_60FPS_NS: Double = 1_000_000_000 / 60.0
 /**
  * Class that allows to benchmark some operations.
  * Create two [BenchmarkOperation] objects and compare them using [BenchmarkOperation.compare] to get
- * a [BenchmarkResult] with relative or absolute measured overheads.
+ * a [BenchmarkComparisonResult] with relative or absolute measured overheads.
  */
 internal class BenchmarkOperation(
     private val choreographer: Choreographer,
@@ -35,9 +36,10 @@ internal class BenchmarkOperation(
             op1Name: String,
             op2: BenchmarkOperation,
             op2Name: String,
+            refreshRate: Float,
             warmupIterations: Int = 3,
-            measuredIterations: Int = 15
-        ): BenchmarkResult {
+            measuredIterations: Int = 20
+        ): BenchmarkComparisonResult {
             // Android pushes the "installed app" event to other apps and the system itself.
             // Let's give it time to do whatever it wants before starting measuring the operations.
             Thread.sleep(2000)
@@ -63,16 +65,15 @@ internal class BenchmarkOperation(
             println(op2Result)
             println("=====================================")
 
-            return op2Result.compare(op1Result)
+            return op2Result.compare(op1Result, measuredIterations, refreshRate)
         }
     }
 
-    private var iterations: Int = 0
-    private var durationNanos: Long = 0
-    private var cpuDurationMillis: Long = 0
-    private var frames: Int = 0
-    private var droppedFrames: Double = 0.0
     private var lastFrameTimeNanos: Long = 0
+    private val cpuDurationMillisList: MutableList<Long> = LinkedList()
+    private val droppedFramesList: MutableList<Double> = LinkedList()
+    private val durationNanosList: MutableList<Long> = LinkedList()
+    private val fpsList: MutableList<Int> = LinkedList()
 
     /** Run the operation without measuring it. */
     private fun warmup() {
@@ -86,45 +87,59 @@ internal class BenchmarkOperation(
     private fun iterate() {
         before?.invoke()
         Thread.sleep(200)
+        frameCallback.clear()
+
         val startRealtimeNs = SystemClock.elapsedRealtimeNanos()
         val startCpuTimeMs = Process.getElapsedCpuTime()
-
         lastFrameTimeNanos = startRealtimeNs
-        iterations++
+
         choreographer.postFrameCallback(frameCallback)
-
         op()
-
         choreographer.removeFrameCallback(frameCallback)
-        cpuDurationMillis += Process.getElapsedCpuTime() - startCpuTimeMs
-        durationNanos += SystemClock.elapsedRealtimeNanos() - startRealtimeNs
+
+        val durationNanos = SystemClock.elapsedRealtimeNanos() - startRealtimeNs
+        cpuDurationMillisList.add(Process.getElapsedCpuTime() - startCpuTimeMs)
+        durationNanosList.add(durationNanos)
+        droppedFramesList.add(frameCallback.droppedFrames)
+        // fps = counted frames per seconds converted into frames per nanoseconds, divided by duration in nanoseconds
+        // We don't convert the duration into seconds to avoid issues with rounding and possible division by 0
+        fpsList.add((frameCallback.frames * TimeUnit.SECONDS.toNanos(1) / durationNanos).toInt())
 
         after?.invoke()
         isolate()
     }
 
-    /** Return the [BenchmarkOperationResult] for the operation. */
-    private fun getResult(operationName: String): BenchmarkOperationResult = BenchmarkOperationResult(
-        cpuDurationMillis / iterations,
-        droppedFrames / iterations,
-        durationNanos / iterations,
-        // fps = counted frames per seconds converted into frames per nanoseconds, divided by duration in nanoseconds
-        // We don't convert the duration into seconds to avoid issues with rounding and possible division by 0
-        (frames * TimeUnit.SECONDS.toNanos(1) / durationNanos).toInt(),
-        operationName
-    )
+    /** Return the [BenchmarkOperationComparable] for the operation. */
+    private fun getResult(operationName: String): BenchmarkOperationComparable {
+        return BenchmarkOperationComparable(
+            cpuDurationMillisList,
+            droppedFramesList,
+            durationNanosList,
+            fpsList,
+            operationName
+        )
+    }
 
     /**
      * Helps ensure that operations don't impact one another.
      * Doesn't appear to currently have an impact on the benchmark.
      */
     private fun isolate() {
-        Thread.sleep(500)
+        Thread.sleep(200)
         Runtime.getRuntime().gc()
-        Thread.sleep(100)
+        Thread.sleep(200)
     }
 
     private val frameCallback = object : Choreographer.FrameCallback {
+
+        var frames = 0
+        var droppedFrames = 0.0
+
+        fun clear() {
+            frames = 0
+            droppedFrames = 0.0
+        }
+
         override fun doFrame(frameTimeNanos: Long) {
             frames++
             val timeSinceLastFrameNanos = frameTimeNanos - lastFrameTimeNanos

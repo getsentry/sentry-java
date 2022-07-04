@@ -40,7 +40,9 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         // should be very similar.
         val op1 = BenchmarkOperation(choreographer, op = getOperation(runner))
         val op2 = BenchmarkOperation(choreographer, op = getOperation(runner))
-        val comparisonResult = BenchmarkOperation.compare(op1, "Op1", op2, "Op2")
+        val comparisonResults = BenchmarkOperation.compare(op1, "Op1", op2, "Op2", refreshRate)
+        val comparisonResult = comparisonResults.getSummaryResult()
+        comparisonResult.printResults()
 
         assertTrue(comparisonResult.durationIncreasePercentage in -1F..1F)
         assertTrue(comparisonResult.cpuTimeIncreasePercentage in -1F..1F)
@@ -76,12 +78,16 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
                 }
             }
         )
-        val comparisonResult = BenchmarkOperation.compare(
+        val comparisonResults = BenchmarkOperation.compare(
             benchmarkOperationNoTransaction,
             "NoTransaction",
             benchmarkOperationProfiled,
-            "ProfiledTransaction"
+            "ProfiledTransaction",
+            refreshRate
         )
+        comparisonResults.printAllRuns("Profiling Benchmark")
+        val comparisonResult = comparisonResults.getSummaryResult()
+        comparisonResult.printResults()
 
         assertTrue(comparisonResult.durationIncreasePercentage in 0F..5F)
         assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5F)
