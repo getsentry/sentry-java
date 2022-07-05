@@ -24,6 +24,8 @@ public final class TypeCheckHint {
   public static final String ANDROID_VIEW = "android:view";
   /** Used for Fragment breadcrumbs. */
   public static final String ANDROID_FRAGMENT = "android:fragment";
+  /** Used for Navigation breadrcrumbs. */
+  public static final String ANDROID_NAV_DESTINATION = "android:navigationDestination";
 
   /** Used for OkHttp response breadcrumbs. */
   public static final String OKHTTP_RESPONSE = "okHttp:response";

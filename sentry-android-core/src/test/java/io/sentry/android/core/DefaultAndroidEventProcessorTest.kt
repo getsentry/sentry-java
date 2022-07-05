@@ -13,10 +13,8 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.DiagnosticLogger
 import io.sentry.Hint
-import io.sentry.ILogger
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
-import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.android.core.DefaultAndroidEventProcessor.EMULATOR
@@ -48,7 +46,7 @@ class DefaultAndroidEventProcessorTest {
 
     private val className = "io.sentry.android.core.DefaultAndroidEventProcessor"
     private val ctorTypes =
-        arrayOf(Context::class.java, ILogger::class.java, BuildInfoProvider::class.java)
+        arrayOf(Context::class.java, BuildInfoProvider::class.java, SentryAndroidOptions::class.java)
 
     init {
         Locale.setDefault(Locale.US)
@@ -56,7 +54,7 @@ class DefaultAndroidEventProcessorTest {
 
     private class Fixture {
         val buildInfo = mock<BuildInfoProvider>()
-        val options = SentryOptions().apply {
+        val options = SentryAndroidOptions().apply {
             setDebug(true)
             setLogger(mock())
             sdkVersion = SdkVersion("test", "1.2.3")
@@ -64,7 +62,7 @@ class DefaultAndroidEventProcessorTest {
         val sentryTracer = SentryTracer(TransactionContext("", ""), mock())
 
         fun getSut(context: Context): DefaultAndroidEventProcessor {
-            return DefaultAndroidEventProcessor(context, options.logger, buildInfo)
+            return DefaultAndroidEventProcessor(context, buildInfo, options)
         }
     }
 
@@ -86,7 +84,15 @@ class DefaultAndroidEventProcessorTest {
     fun `when null context is provided, invalid argument is thrown`() {
         val ctor = className.getCtor(ctorTypes)
 
-        val params = arrayOf(null, mock<SentryOptions>(), null)
+        val params = arrayOf(null, null, mock<SentryAndroidOptions>())
+        assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
+    }
+
+    @Test
+    fun `when null logger is provided, invalid argument is thrown`() {
+        val ctor = className.getCtor(ctorTypes)
+
+        val params = arrayOf(mock<Context>(), null, mock<SentryAndroidOptions>())
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
@@ -94,7 +100,7 @@ class DefaultAndroidEventProcessorTest {
     fun `when null options is provided, invalid argument is thrown`() {
         val ctor = className.getCtor(ctorTypes)
 
-        val params = arrayOf(mock<Context>(), null, null)
+        val params = arrayOf(mock<Context>(), mock<BuildInfoProvider>(), null)
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
@@ -102,7 +108,7 @@ class DefaultAndroidEventProcessorTest {
     fun `when null buildInfo is provided, invalid argument is thrown`() {
         val ctor = className.getCtor(ctorTypes)
 
-        val params = arrayOf(null, null, mock<BuildInfoProvider>())
+        val params = arrayOf(null, mock<BuildInfoProvider>(), mock<SentryAndroidOptions>())
         assertFailsWith<IllegalArgumentException> { ctor.newInstance(params) }
     }
 
@@ -306,7 +312,7 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `Processor won't throw exception when theres a hint`() {
         val processor =
-            DefaultAndroidEventProcessor(context, fixture.options.logger, fixture.buildInfo, mock())
+            DefaultAndroidEventProcessor(context, fixture.buildInfo, mock(), fixture.options)
 
         val hints = HintUtils.createWithTypeCheckHint(CachedEvent())
         processor.process(SentryEvent(), hints)
@@ -452,6 +458,25 @@ class DefaultAndroidEventProcessorTest {
 //            assertNotNull(device.isOnline)
 //            assertNotNull(device.externalFreeStorage)
 //            assertNotNull(device.externalStorageSize)
+//            assertNotNull(device.connectionType)
+        }
+    }
+
+    @Test
+    fun `Does not collect device info that requires IPC if disabled`() {
+        fixture.options.isCollectAdditionalContext = false
+        val sut = fixture.getSut(context)
+
+        assertNotNull(sut.process(SentryEvent(), Hint())) {
+            val device = it.contexts.device!!
+            assertNull(device.freeMemory)
+            assertNull(device.isLowMemory)
+
+// commented values are not mocked by robolectric
+//            assertNotNull(device.batteryLevel)
+//            assertNotNull(device.isCharging)
+//            assertNotNull(device.batteryTemperature)
+//            assertNotNull(device.isOnline)
 //            assertNotNull(device.connectionType)
         }
     }

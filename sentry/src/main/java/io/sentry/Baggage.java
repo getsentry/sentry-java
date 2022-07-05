@@ -3,7 +3,6 @@ package io.sentry;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Experimental
 public final class Baggage {
 
-  static final @NotNull String CHARSET = StandardCharsets.UTF_8.toString();
+  static final @NotNull String CHARSET = "UTF-8";
   static final @NotNull Integer MAX_BAGGAGE_STRING_LENGTH = 8192;
   static final @NotNull Integer MAX_BAGGAGE_LIST_MEMBER_COUNT = 64;
 
@@ -154,11 +153,11 @@ public final class Baggage {
   }
 
   public void setTraceId(final @Nullable String traceId) {
-    set("sentry-traceid", traceId);
+    set("sentry-trace_id", traceId);
   }
 
   public void setPublicKey(final @Nullable String publicKey) {
-    set("sentry-publickey", publicKey);
+    set("sentry-public_key", publicKey);
   }
 
   public void setEnvironment(final @Nullable String environment) {
@@ -170,15 +169,19 @@ public final class Baggage {
   }
 
   public void setUserId(final @Nullable String userId) {
-    set("sentry-userid", userId);
+    set("sentry-user_id", userId);
   }
 
   public void setUserSegment(final @Nullable String userSegment) {
-    set("sentry-usersegment", userSegment);
+    set("sentry-user_segment", userSegment);
   }
 
   public void setTransaction(final @Nullable String transaction) {
     set("sentry-transaction", transaction);
+  }
+
+  public void setSampleRate(final @Nullable String sampleRate) {
+    set("sentry-sample_rate", sampleRate);
   }
 
   public void set(final @NotNull String key, final @Nullable String value) {

@@ -10,6 +10,7 @@ import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
+import io.sentry.util.SampleRateUtil;
 import io.sentry.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
@@ -729,7 +730,7 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
+    if (!SampleRateUtil.isValidSampleRate(sampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + sampleRate
@@ -753,7 +754,7 @@ public class SentryOptions {
    * @param tracesSampleRate the sample rate
    */
   public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
-    if (tracesSampleRate != null && (tracesSampleRate > 1.0 || tracesSampleRate < 0.0)) {
+    if (!SampleRateUtil.isValidTracesSampleRate(tracesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + tracesSampleRate

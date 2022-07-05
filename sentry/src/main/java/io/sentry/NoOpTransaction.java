@@ -63,7 +63,7 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public void scheduleFinish(@NotNull Long idleTimeout) {}
+  public void scheduleFinish() {}
 
   @Override
   public boolean isFinished() {
@@ -133,6 +133,11 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @Nullable Boolean isSampled() {
+    return null;
+  }
+
+  @Override
+  public @Nullable TracesSamplingDecision getSamplingDecision() {
     return null;
   }
 

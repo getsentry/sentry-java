@@ -22,7 +22,8 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   private final long sessionIntervalMillis;
 
   private @Nullable TimerTask timerTask;
-  private final @NotNull Timer timer = new Timer(true);
+  private final @Nullable Timer timer;
+  private final @NotNull Object timerLock = new Object();
   private final @NotNull IHub hub;
   private final boolean enableSessionTracking;
   private final boolean enableAppLifecycleBreadcrumbs;
@@ -54,6 +55,11 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     this.enableAppLifecycleBreadcrumbs = enableAppLifecycleBreadcrumbs;
     this.hub = hub;
     this.currentDateProvider = currentDateProvider;
+    if (enableSessionTracking) {
+      timer = new Timer(true);
+    } else {
+      timer = null;
+    }
   }
 
   // App goes to foreground
@@ -95,24 +101,30 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   private void scheduleEndSession() {
-    cancelTask();
-    timerTask =
-        new TimerTask() {
-          @Override
-          public void run() {
-            addSessionBreadcrumb("end");
-            hub.endSession();
-            runningSession.set(false);
-          }
-        };
+    synchronized (timerLock) {
+      cancelTask();
+      if (timer != null) {
+        timerTask =
+            new TimerTask() {
+              @Override
+              public void run() {
+                addSessionBreadcrumb("end");
+                hub.endSession();
+                runningSession.set(false);
+              }
+            };
 
-    timer.schedule(timerTask, sessionIntervalMillis);
+        timer.schedule(timerTask, sessionIntervalMillis);
+      }
+    }
   }
 
   private void cancelTask() {
-    if (timerTask != null) {
-      timerTask.cancel();
-      timerTask = null;
+    synchronized (timerLock) {
+      if (timerTask != null) {
+        timerTask.cancel();
+        timerTask = null;
+      }
     }
   }
 
@@ -146,5 +158,11 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   @Nullable
   TimerTask getTimerTask() {
     return timerTask;
+  }
+
+  @TestOnly
+  @Nullable
+  Timer getTimer() {
+    return timer;
   }
 }
