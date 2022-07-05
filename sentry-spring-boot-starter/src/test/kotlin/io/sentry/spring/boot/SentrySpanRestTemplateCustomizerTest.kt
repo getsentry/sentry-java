@@ -11,6 +11,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
+import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -28,7 +29,7 @@ class SentrySpanRestTemplateCustomizerTest {
         val hub = mock<IHub>()
         val restTemplate = RestTemplateBuilder().build()
         var mockServer = MockWebServer()
-        val transaction = SentryTracer(TransactionContext("aTransaction", "op", true), hub)
+        val transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
         val url = mockServer.url("/test/123").toString()
 

@@ -137,6 +137,11 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
+  public @Nullable TracesSamplingDecision getSamplingDecision() {
+    return null;
+  }
+
+  @Override
   public void setData(@NotNull String key, @NotNull Object value) {}
 
   @Override
