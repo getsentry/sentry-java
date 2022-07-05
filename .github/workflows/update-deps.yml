@@ -17,5 +17,4 @@ jobs:
       name: Native SDK
     secrets:
       # If a custom token is used instead, a CI would be triggered on a created PR.
-      # api_token: ${{ secrets.CI_DEPLOY_KEY }}
-      api_token: ${{ github.token }}
+      api_token: ${{ secrets.CI_DEPLOY_KEY }}
