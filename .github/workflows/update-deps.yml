@@ -18,3 +18,13 @@ jobs:
     secrets:
       # If a custom token is used instead, a CI would be triggered on a created PR.
       api_token: ${{ secrets.CI_DEPLOY_KEY }}
+
+  gradle-wrapper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: gradle-update/update-gradle-wrapper-action@981c551b17dbcf1940b1b4435afdb79babb7c13a
+        with:
+          repo-token: ${{ secrets.CI_DEPLOY_KEY }}
+          labels: dependencies
