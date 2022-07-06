@@ -17,6 +17,5 @@ jobs:
 
       - uses: gradle-update/update-gradle-wrapper-action@981c551b17dbcf1940b1b4435afdb79babb7c13a
         with:
-          # TODO custom token can be used in order for CI to get triggered
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.CI_DEPLOY_KEY }}
           labels: dependencies
