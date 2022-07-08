@@ -37,21 +37,30 @@ internal class BenchmarkOperation(
             op2: BenchmarkOperation,
             op2Name: String,
             refreshRate: Float,
-            warmupIterations: Int = 3,
+            warmupIterations: Int = 2,
             measuredIterations: Int = 20
         ): BenchmarkComparisonResult {
             // Android pushes the "installed app" event to other apps and the system itself.
             // Let's give it time to do whatever it wants before starting measuring the operations.
-            Thread.sleep(2000)
+            Thread.sleep(3000)
             // The first operations are the slowest, as the device is still doing things like filling the cache.
             repeat(warmupIterations) {
                 op1.warmup()
                 op2.warmup()
             }
-            // Now we can measure the operations (in alternating sequence).
+
+            // Now we can measure the operations (in alternating sequence). We change the order of measurement to
+            // avoid issues with the first operation being slower than then last one.
+            var revertIteration = true
             repeat(measuredIterations) {
-                op1.iterate()
-                op2.iterate()
+                if (revertIteration) {
+                    op2.iterate(refreshRate)
+                    op1.iterate(refreshRate)
+                } else {
+                    op1.iterate(refreshRate)
+                    op2.iterate(refreshRate)
+                }
+                revertIteration = !revertIteration
             }
             val op1Result = op1.getResult(op1Name)
             val op2Result = op2.getResult(op2Name)
@@ -84,10 +93,10 @@ internal class BenchmarkOperation(
     }
 
     /** Run the operation and measure it, updating sentry-uitest-android-benchmark data. */
-    private fun iterate() {
+    private fun iterate(refreshRate: Float) {
         before?.invoke()
         Thread.sleep(200)
-        frameCallback.clear()
+        frameCallback.setup(refreshRate)
 
         val startRealtimeNs = SystemClock.elapsedRealtimeNanos()
         val startCpuTimeMs = Process.getElapsedCpuTime()
@@ -132,22 +141,24 @@ internal class BenchmarkOperation(
 
     private val frameCallback = object : Choreographer.FrameCallback {
 
+        private var expectedFrameDurationNanos: Float = TimeUnit.SECONDS.toNanos(1) / 60F
         var frames = 0
         var droppedFrames = 0.0
 
-        fun clear() {
+        fun setup(refreshRate: Float) {
             frames = 0
             droppedFrames = 0.0
+            expectedFrameDurationNanos = TimeUnit.SECONDS.toNanos(1) / refreshRate
         }
 
         override fun doFrame(frameTimeNanos: Long) {
             frames++
             val timeSinceLastFrameNanos = frameTimeNanos - lastFrameTimeNanos
-            if (timeSinceLastFrameNanos > FRAME_DURATION_60FPS_NS) {
+            if (timeSinceLastFrameNanos > expectedFrameDurationNanos) {
                 // Fractions of frames dropped are weighted to improve the accuracy of the results.
                 // For example, 31ms between frames is much worse than 17ms, even though both
                 // durations are within the "1 frame dropped" range.
-                droppedFrames += timeSinceLastFrameNanos / FRAME_DURATION_60FPS_NS - 1
+                droppedFrames += timeSinceLastFrameNanos / expectedFrameDurationNanos - 1
             }
             lastFrameTimeNanos = frameTimeNanos
             choreographer.postFrameCallback(this)

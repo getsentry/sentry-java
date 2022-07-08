@@ -33,9 +33,9 @@ suites:
   - name: "Android 10 (api 29)"
     devices:
       - id: Google_Pixel_4_XL_real_us1 # Google Pixel 4 XL - api 29 (10)
-      - id: Motorola_Moto_G_Power_real_us # Motorola Moto G Power (2021) - api 29 (10)
+      - id: Nokia_7_1_real_us # Nokia 7.1 - api 29 (10)
 
-# At the time of writing, the market share per android version is:
+# At the time of writing (July, 4, 2022), the market share per android version is:
 # 12.0 = 17.54%, 11.0 = 31.65%, 10.0 = 21.92%
 # Using these 3 versions we cover 71,11% of all devices out there. Currently, this is enough for benchmarking scope
 # Leaving these devices here in case we change mind on them

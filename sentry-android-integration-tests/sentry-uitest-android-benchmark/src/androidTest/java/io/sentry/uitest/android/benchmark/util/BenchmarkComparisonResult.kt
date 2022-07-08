@@ -97,24 +97,14 @@ internal data class BenchmarkComparisonResult(
         calculatePercentile(fpsDecreasePercentages, 90)
     )
 
+    /** Calculate the [percentile] of the [list]. [percentile] should be in the range 0, 100. */
     private fun <T : Number> calculatePercentile(list: List<T>, percentile: Int): T {
         if (list.isEmpty()) {
             return 0 as T
         }
         val sortedList = list.sortedBy { it.toDouble() }
-        val total = sortedList.sumOf { it.toDouble() }
-        val maxPercentileValue = total * percentile / 100
-        var sum = 0.0
-        var percentileValue = sortedList.first()
-        sortedList.forEach {
-            sum += it.toDouble()
-            if (sum <= maxPercentileValue) {
-                percentileValue = it
-            } else {
-                return percentileValue
-            }
-        }
-        return percentileValue
+        val percentileIndex = (list.size * percentile / 100 - 1).coerceIn(0, list.size)
+        return sortedList[percentileIndex]
     }
 }
 

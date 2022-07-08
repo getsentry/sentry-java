@@ -50,12 +50,12 @@ android {
         getByName("debug") {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug")
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
         }
     }
@@ -86,6 +86,8 @@ dependencies {
     implementation(projects.sentryAndroid)
     implementation(Config.Libs.appCompat)
     implementation(Config.Libs.androidxCore)
+    implementation(Config.Libs.androidxRecylerView)
+    implementation(Config.Libs.constraintLayout)
     implementation(Config.TestLibs.espressoIdlingResource)
 
     compileOnly(Config.CompileOnly.nopen)

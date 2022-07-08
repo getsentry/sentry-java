@@ -39,7 +39,7 @@ internal data class BenchmarkOperationComparable(
 
             // Measure average dropped frames
             droppedFramesIncrease.add(droppedFrames[index] - other.droppedFrames[index])
-            val totalExpectedFrames = TimeUnit.NANOSECONDS.toMillis(other.durationNanos[index]) * 60 / 1000
+            val totalExpectedFrames = TimeUnit.NANOSECONDS.toMillis(other.durationNanos[index]) * refreshRate / 1000
             droppedFramesIncreasePercentage.add(
                 droppedFramesIncrease[index] * 100 / (totalExpectedFrames - other.droppedFrames[index])
             )
