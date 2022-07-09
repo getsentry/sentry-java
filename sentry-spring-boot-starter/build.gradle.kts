@@ -42,6 +42,7 @@ dependencies {
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.springBootStarterAop)
     compileOnly(Config.Libs.springBootStarterSecurity)
+    compileOnly(Config.Libs.springBootStartOauth2ResourceServer)
     compileOnly(Config.Libs.reactorCore)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
@@ -66,6 +67,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
+    testImplementation(Config.Libs.springBootStartOauth2ResourceServer)
     testImplementation(Config.Libs.springBootStarterAop)
 }
 

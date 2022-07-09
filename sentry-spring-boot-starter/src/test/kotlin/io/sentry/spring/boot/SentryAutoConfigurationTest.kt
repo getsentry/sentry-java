@@ -49,6 +49,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.servlet.HandlerExceptionResolver
@@ -328,10 +329,11 @@ class SentryAutoConfigurationTest {
             .withConfiguration(UserConfigurations.of(SentryUserProviderConfiguration::class.java))
             .run {
                 val userProviders = it.getSentryUserProviders()
-                assertEquals(3, userProviders.size)
+                assertEquals(4, userProviders.size)
                 assertTrue(userProviders[0] is HttpServletRequestSentryUserProvider)
                 assertTrue(userProviders[1] is SpringSecuritySentryUserProvider)
-                assertTrue(userProviders[2] is CustomSentryUserProvider)
+                assertTrue(userProviders[2] is SentrySpringJwtUserProvider)
+                assertTrue(userProviders[3] is CustomSentryUserProvider)
             }
     }
 
@@ -341,10 +343,11 @@ class SentryAutoConfigurationTest {
             .withConfiguration(UserConfigurations.of(SentryHighestOrderUserProviderConfiguration::class.java))
             .run {
                 val userProviders = it.getSentryUserProviders()
-                assertEquals(3, userProviders.size)
+                assertEquals(4, userProviders.size)
                 assertTrue(userProviders[0] is CustomSentryUserProvider)
                 assertTrue(userProviders[1] is HttpServletRequestSentryUserProvider)
                 assertTrue(userProviders[2] is SpringSecuritySentryUserProvider)
+                assertTrue(userProviders[3] is SentrySpringJwtUserProvider)
             }
     }
 
@@ -357,6 +360,19 @@ class SentryAutoConfigurationTest {
                 assertTrue(userProviders.isNotEmpty())
                 userProviders.forEach {
                     assertFalse(it is SpringSecuritySentryUserProvider)
+                }
+            }
+    }
+
+    @Test
+    fun `when Jwt is not on the classpath, SentrySpringJwtUserProvider is not configured`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+            .withClassLoader(FilteredClassLoader(Jwt::class.java))
+            .run { ctx ->
+                val userProviders = ctx.getSentryUserProviders()
+                assertTrue(userProviders.isNotEmpty())
+                userProviders.forEach {
+                    assertFalse(it is SentrySpringJwtUserProvider)
                 }
             }
     }

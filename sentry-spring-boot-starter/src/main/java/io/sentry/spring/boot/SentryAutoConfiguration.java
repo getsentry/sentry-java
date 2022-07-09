@@ -51,6 +51,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -164,6 +165,27 @@ public class SentryAutoConfiguration {
             final @NotNull SentryOptions sentryOptions) {
           return new SpringSecuritySentryUserProvider(sentryOptions);
         }
+      }
+
+      @Configuration(proxyBeanMethods = false)
+      @ConditionalOnClass(Jwt.class)
+      @Open
+      static class SentryJwtConfiguration {
+
+        /**
+         * Configures {@link SentrySpringJwtUserProvider} only if Spring Jwt is on the
+         * classpath. Its order is set to be higher than {@link
+         * SentrySecurityConfiguration#springSecuritySentryUserProvider(SentryOptions)}
+         *
+         * @param sentryOptions the Sentry options
+         * @return {@link SentrySpringJwtUserProvider}
+         */
+        @Bean
+        @Order(2)
+          public @NotNull SentrySpringJwtUserProvider springJwtUserProvider(
+              final @NotNull SentryOptions sentryOptions) {
+            return new SentrySpringJwtUserProvider(sentryOptions);
+          }
       }
 
       /**
