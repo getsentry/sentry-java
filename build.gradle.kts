@@ -104,13 +104,17 @@ subprojects {
         val sep = File.separator
 
         configure<DistributionContainer> {
-            this.getByName("main").contents {
-                // non android modules
-                from("build${sep}libs")
-                from("build${sep}publications${sep}maven")
-                // android modules
-                from("build${sep}outputs${sep}aar")
-                from("build${sep}publications${sep}release")
+            if (this@subprojects.name.contains("-compose")) {
+                this.configureForMultiplatform(this@subprojects)
+            } else {
+                this.getByName("main").contents {
+                    // non android modules
+                    from("build${sep}libs")
+                    from("build${sep}publications${sep}maven")
+                    // android modules
+                    from("build${sep}outputs${sep}aar")
+                    from("build${sep}publications${sep}release")
+                }
             }
         }
 

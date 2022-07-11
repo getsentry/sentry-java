@@ -7,6 +7,7 @@ plugins {
     jacoco
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
+    id(Config.BuildPlugins.dokkaPluginAlias)
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 
