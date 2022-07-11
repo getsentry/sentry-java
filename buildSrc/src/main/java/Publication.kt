@@ -28,8 +28,10 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
         from("build${sep}kotlinToolingMetadata")
         from("build${sep}libs") {
             include("*compose-kotlin*")
+            include("*compose-metadata*")
             rename {
                 it.replace("-kotlin", "")
+                    .replace("-metadata", "")
             }
             withJavadoc()
         }
@@ -44,11 +46,10 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
     }
 
     // make other distZip tasks run together with the main distZip
-    project.tasks.getByName("distZip").dependsOn(
-        *project.tasks.filter { task ->
-            task.name.matches(Consts.taskRegex)
-        }.toTypedArray()
-    )
+    val platformDists = project.tasks.filter { task ->
+        task.name.matches(Consts.taskRegex)
+    }.toTypedArray()
+    project.tasks.getByName("distZip").finalizedBy(*platformDists)
 }
 
 private fun CopySpec.withJavadoc(renameTo: String = "compose") {
