@@ -10,3 +10,7 @@ fun ApolloClient.Builder.sentryTracing(hub: IHub = HubAdapter.getInstance(), bef
     addHttpInterceptor(SentryApollo3HttpInterceptor(hub, beforeSpan))
     return this
 }
+
+fun ApolloClient.Builder.sentryTracing(beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null): ApolloClient.Builder {
+    return sentryTracing(HubAdapter.getInstance(), beforeSpan)
+}
