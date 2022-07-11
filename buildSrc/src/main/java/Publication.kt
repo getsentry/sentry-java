@@ -3,6 +3,10 @@ import org.gradle.api.distribution.DistributionContainer
 import org.gradle.api.file.CopySpec
 import java.io.File
 
+private object Consts {
+    val taskRegex = Regex("(.*)DistZip")
+}
+
 // configure distZip tasks for multiplatform
 fun DistributionContainer.configureForMultiplatform(project: Project) {
     val sep = File.separator
@@ -40,14 +44,11 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
     }
 
     // make other distZip tasks run together with the main distZip
-    project.tasks.named("distZip").configure {
-        val taskRegex = Regex("(.*)DistZip")
-        dependsOn(
-            *project.tasks.filter { task ->
-                task.name.matches(taskRegex)
-            }.toTypedArray()
-        )
-    }
+    project.tasks.getByName("distZip").dependsOn(
+        *project.tasks.filter { task ->
+            task.name.matches(Consts.taskRegex)
+        }.toTypedArray()
+    )
 }
 
 private fun CopySpec.withJavadoc(renameTo: String = "compose") {
