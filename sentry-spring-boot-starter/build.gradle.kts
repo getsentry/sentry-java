@@ -67,7 +67,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWeb)
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
-    testImplementation(Config.Libs.springBootStartOauth2ResourceServer)
+    testImplementation(Config.Libs.springSecurityOauth2Jose)
     testImplementation(Config.Libs.springBootStarterAop)
 }
 
