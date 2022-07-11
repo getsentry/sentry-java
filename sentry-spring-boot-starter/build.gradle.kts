@@ -42,7 +42,7 @@ dependencies {
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.springBootStarterAop)
     compileOnly(Config.Libs.springBootStarterSecurity)
-    compileOnly(Config.Libs.springBootStartOauth2ResourceServer)
+    compileOnly(Config.Libs.springSecurityOauth2Jose)
     compileOnly(Config.Libs.reactorCore)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)

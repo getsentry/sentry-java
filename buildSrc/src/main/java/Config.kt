@@ -5,6 +5,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.6.8"
+    val springSecurityVersion = "5.6.5"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.1.1"
@@ -73,7 +74,7 @@ object Config {
         val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
         val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
-        val springBootStartOauth2ResourceServer = "org.springframework.boot:spring-boot-starter-oauth2-resource-server:$springBootVersion"
+        val springSecurityOauth2Jose = "org.springframework.security:spring-security-oauth2-jose:$springSecurityVersion"
 
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
