@@ -14,7 +14,7 @@ compile:
 	./gradlew build
 
 javadocs:
-  ./gradlew aggregateJavadocs
+	./gradlew aggregateJavadocs
 
 # do a dry release (like a local deploy)
 dryRelease:
