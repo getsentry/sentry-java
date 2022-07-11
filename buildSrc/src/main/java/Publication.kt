@@ -42,9 +42,11 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
     // make other distZip tasks run together with the main distZip
     project.tasks.named("distZip").configure {
         val taskRegex = Regex("(.*)DistZip")
-        dependsOn(*project.tasks.filter { task ->
-            task.name.matches(taskRegex)
-        }.toTypedArray())
+        dependsOn(
+            *project.tasks.filter { task ->
+                task.name.matches(taskRegex)
+            }.toTypedArray()
+        )
     }
 }
 
