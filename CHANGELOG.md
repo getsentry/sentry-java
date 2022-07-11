@@ -5,7 +5,7 @@
 ### Fixes
 
 - Only send userid in Dynamic Sampling Context if sendDefaultPii is true ([#2147](https://github.com/getsentry/sentry-java/pull/2147))
-- Remove userId and transaction from baggage due to PII ([#2157](https://github.com/getsentry/sentry-java/pull/2157))
+- Remove userId from baggage due to PII ([#2157](https://github.com/getsentry/sentry-java/pull/2157))
 
 ### Features
 
