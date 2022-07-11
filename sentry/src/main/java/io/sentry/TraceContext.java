@@ -56,17 +56,21 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       final @Nullable User user,
       final @NotNull SentryOptions sentryOptions,
       final @Nullable TracesSamplingDecision samplingDecision) {
+    // user_id isn't part of the dynamic sampling context right now because
+    // of PII concerns.
+    // https://develop.sentry.dev/sdk/performance/dynamic-sampling-context/#the-temporal-problem
     this(
         transaction.getSpanContext().getTraceId(),
         new Dsn(sentryOptions.getDsn()).getPublicKey(),
         sentryOptions.getRelease(),
         sentryOptions.getEnvironment(),
-        getUserId(sentryOptions, user),
+        null, // getUserId(sentryOptions, user),
         user != null ? getSegment(user) : null,
         transaction.getName(),
         sampleRateToString(sampleRate(samplingDecision)));
   }
 
+  @SuppressWarnings("UnusedMethod")
   private static @Nullable String getUserId(
       final @NotNull SentryOptions options, final @Nullable User user) {
     if (options.isSendDefaultPii() && user != null) {
