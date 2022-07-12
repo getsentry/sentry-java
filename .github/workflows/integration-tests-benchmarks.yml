@@ -27,7 +27,7 @@ jobs:
       - uses: vishnudxb/cancel-workflow@v1.2
         if: failure()
         with:
-          repo: octocat/hello-world
+          repo: getsentry/sentry-java
           workflow_id: ${{ github.run_id }}
           access_token: ${{ github.token }}
 
