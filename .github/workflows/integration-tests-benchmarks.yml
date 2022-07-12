@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Check pr keyword
-        uses: JJ/github-pr-contains-action@releases/v0
+        uses: JJ/github-pr-contains-action@releases/v4
         with:
           github-token: ${{github.token}}
           bodyDoesNotContain: "#skip-benchmarks"
