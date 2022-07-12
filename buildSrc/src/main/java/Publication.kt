@@ -15,7 +15,7 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
         from("build${sep}publications${sep}androidRelease")
         from("build${sep}outputs${sep}aar") {
             rename {
-                it.replace("-release", "-android-${project.version}")
+                it.replace("-release", "-android-release")
             }
         }
         from("build${sep}libs") {
