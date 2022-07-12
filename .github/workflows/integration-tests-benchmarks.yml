@@ -1,9 +1,16 @@
 name: "Integration Tests - Benchmarks"
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
   pull_request:
+    paths:
+      - '**/sentry/**'
+      - '**/sentry-android/**'
+      - '**/sentry-android-core/**'
+      - '**/sentry-android-ndk/**'
+      - '**/sentry-android-integration-tests/sentry-uitest-android-benchmark/**'
 
 jobs:
   test:
@@ -11,6 +18,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check pr keyword
+        uses: JJ/github-pr-contains-action@releases/v0
+        with:
+          github-token: ${{github.token}}
+          bodyDoesNotContain: "#skip-benchmarks"
+
       - name: Git checkout
         uses: actions/checkout@v2
 
