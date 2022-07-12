@@ -1,6 +1,5 @@
 name: "Integration Tests - Benchmarks"
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -11,6 +10,7 @@ on:
       - '**/sentry-android-core/**'
       - '**/sentry-android-ndk/**'
       - '**/sentry-android-integration-tests/sentry-uitest-android-benchmark/**'
+      - '**/.github/**'
 
 jobs:
   test:
