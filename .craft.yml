@@ -13,7 +13,7 @@ targets:
     mavenRepoId: ossrh
     mavenRepoUrl: https://oss.sonatype.org/service/local/staging/deploy/maven2/
     android:
-      distDirRegex: /^sentry-android-.*$/
+      distDirRegex: /^(sentry-android-|.*-android).*$/
       fileReplaceeRegex: /\d\.\d\.\d(-\w+(\.\d)?)?(-SNAPSHOT)?/
       fileReplacerStr: release.aar
   - name: github
