@@ -24,6 +24,13 @@ jobs:
           github-token: ${{github.token}}
           bodyDoesNotContain: "#skip-benchmarks"
 
+      - uses: vishnudxb/cancel-workflow@v1.2
+        if: failure()
+        with:
+          repo: octocat/hello-world
+          workflow_id: ${{ github.run_id }}
+          access_token: ${{ github.token }}
+
       - name: Git checkout
         uses: actions/checkout@v2
 
