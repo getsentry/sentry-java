@@ -1,5 +1,7 @@
 name: "Integration Tests - Benchmarks"
 on:
+  schedule:
+    - cron: '0 0 * * *' # every night at midnight UTC
   push:
     branches:
       - main
@@ -18,19 +20,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check pr keyword
-        uses: JJ/github-pr-contains-action@releases/v4
-        with:
-          github-token: ${{github.token}}
-          bodyDoesNotContain: "#skip-benchmarks"
-
-      - uses: vishnudxb/cancel-workflow@v1.2
-        if: failure()
-        with:
-          repo: getsentry/sentry-java
-          workflow_id: ${{ github.run_id }}
-          access_token: ${{ github.token }}
-
       - name: Git checkout
         uses: actions/checkout@v2
 
@@ -49,9 +38,18 @@ jobs:
       - name: Make stop
         run: make stop
 
-      - name: Run Tests in SauceLab
+      - name: Run All Tests in SauceLab
         uses: saucelabs/saucectl-run-action@v1
+        if: github.event_name != 'pull_request'
         with:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-benchmark.yml
+
+      - name: Run one test in SauceLab
+        uses: saucelabs/saucectl-run-action@v1
+        if: github.event_name == 'pull_request'
+        with:
+          sauce-username: ${{ secrets.SAUCE_USERNAME }}
+          sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
+          config-file: .sauce/sentry-uitest-android-benchmark-lite.yml
