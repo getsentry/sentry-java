@@ -1,9 +1,15 @@
 name: "Integration Tests - Benchmarks"
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: '0 0 * * *' # every night at midnight UTC
   pull_request:
+    paths:
+      - '**/sentry/**'
+      - '**/sentry-android/**'
+      - '**/sentry-android-core/**'
+      - '**/sentry-android-ndk/**'
+      - '**/sentry-android-integration-tests/sentry-uitest-android-benchmark/**'
+      - '**/.github/**'
 
 jobs:
   test:
@@ -29,9 +35,18 @@ jobs:
       - name: Make stop
         run: make stop
 
-      - name: Run Tests in SauceLab
+      - name: Run All Tests in SauceLab
         uses: saucelabs/saucectl-run-action@v1
+        if: github.event_name != 'pull_request'
         with:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-benchmark.yml
+
+      - name: Run one test in SauceLab
+        uses: saucelabs/saucectl-run-action@v1
+        if: github.event_name == 'pull_request'
+        with:
+          sauce-username: ${{ secrets.SAUCE_USERNAME }}
+          sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
+          config-file: .sauce/sentry-uitest-android-benchmark-lite.yml
