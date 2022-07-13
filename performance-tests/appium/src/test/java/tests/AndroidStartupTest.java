@@ -23,9 +23,9 @@ public class AndroidStartupTest {
     // TODO element lookup doesn't work yet
     // private By elementToWaitFor =
     // MobileBy.className("androidx.appcompat.widget.Toolbar");
-    private static final String APP_PKG = "io.sentry.samples.instrumentation";
-    private static final String APP_ACT = ".ui.MainActivity";
-    private static final String APP_WAIT = ".ui.MainActivity";
+    private static final String APP_PKG = "io.sentry.java.tests.perf.appsentry";
+    private static final String APP_ACT = ".MainActivity";
+    private static final String APP_WAIT = ".MainActivity";
 
     private AndroidDriver driver;
 
@@ -37,8 +37,8 @@ public class AndroidStartupTest {
         String sauceUrl = "@ondemand.us-west-1.saucelabs.com:443";
 
         String SAUCE_REMOTE_URL = "https://" + username + ":" + accesskey + sauceUrl + "/wd/hub";
-        String appName = "android-instrumentation-sample-release.apk";
-        // String appID = "9068cfba-d0cd-4027-99dc-ca70c5bf5278";
+        // String appName = "android-instrumentation-sample-release.apk";
+        String appID = "03d15b39-2912-4a78-9d66-5826877732d4";
         String methodName = method.getName();
         URL url = new URL(SAUCE_REMOTE_URL);
 
@@ -47,7 +47,7 @@ public class AndroidStartupTest {
         capabilities.setCapability("platformVersion", "11");
         capabilities.setCapability("platformName", "Android");
         // capabilities.setCapability("automationName", "XCuiTest");
-        capabilities.setCapability("app", "storage:filename=" + appName); // or "storage:"+appID
+        capabilities.setCapability("app", "storage:" + appID); // or "storage:filename=" + appName
         capabilities.setCapability("name", methodName);
         capabilities.setCapability("autoLaunch", false);
 
