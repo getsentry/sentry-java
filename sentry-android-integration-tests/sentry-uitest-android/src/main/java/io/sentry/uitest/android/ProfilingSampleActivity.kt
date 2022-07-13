@@ -65,10 +65,11 @@ class ProfilingSampleActivity : AppCompatActivity() {
     }
 
     private fun fibonacci(n: Int): Int {
-        if (n <= 1) {
-            return 1
+        return when {
+            !resumed -> n // If we destroy the activity we stop this function
+            n <= 1 -> 1
+            else -> fibonacci(n - 1) + fibonacci(n - 2)
         }
-        return fibonacci(n - 1) + fibonacci(n - 2)
     }
 
     override fun onPause() {

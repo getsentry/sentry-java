@@ -78,7 +78,6 @@ class EnvelopeTests : BaseUiTest() {
         swipeList(10)
         benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
         transaction.finish()
-        Thread.sleep(100)
         IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
     }
 
