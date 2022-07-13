@@ -6,16 +6,12 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import io.appium.java_client.MobileBy;
 import io.appium.java_client.android.Activity;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.serverevents.CommandEvent;
@@ -35,7 +31,6 @@ public class AndroidStartupTest {
 
     @BeforeMethod
     public void setup(Method method) throws MalformedURLException {
-
         System.out.println("Sauce - BeforeMethod hook");
         String username = System.getenv("SAUCE_USERNAME");
         String accesskey = System.getenv("SAUCE_ACCESS_KEY");
@@ -66,7 +61,7 @@ public class AndroidStartupTest {
         // capabilities.setCapability("tags", "sauceDemo1");
         // capabilities.setCapability("build", "myBuild1");
         try {
-            driver = new AndroidDriver<>(url, capabilities);
+            driver = new AndroidDriver(url, capabilities);
         } catch (Exception e) {
             System.out.println("*** Problem to create the driver " + e.getMessage());
             throw new RuntimeException(e);
