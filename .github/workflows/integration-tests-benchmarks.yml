@@ -2,9 +2,6 @@ name: "Integration Tests - Benchmarks"
 on:
   schedule:
     - cron: '0 0 * * *' # every night at midnight UTC
-  push:
-    branches:
-      - main
   pull_request:
     paths:
       - '**/sentry/**'
