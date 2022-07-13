@@ -1,5 +1,18 @@
 # Changelog
 
+## 6.2.1
+
+### Fixes
+
+- Only send userid in Dynamic Sampling Context if sendDefaultPii is true ([#2147](https://github.com/getsentry/sentry-java/pull/2147))
+- Remove userId from baggage due to PII ([#2157](https://github.com/getsentry/sentry-java/pull/2157))
+
+### Features
+
+- New package `sentry-android-navigation` for AndroidX Navigation support ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
+- New package `sentry-compose` for Jetpack Compose support (Navigation) ([#2136](https://github.com/getsentry/sentry-java/pull/2136))
+- Add sample rate to baggage as well as trace in envelope header and flatten user ([#2135](https://github.com/getsentry/sentry-java/pull/2135))
+
 ## 6.1.4
 
 ### Fixes
