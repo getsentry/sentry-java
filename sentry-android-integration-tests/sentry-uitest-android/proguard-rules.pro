@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+#Shrinking removes annotations and "unused classes" from test apk, so we don't shrink
+-dontshrink

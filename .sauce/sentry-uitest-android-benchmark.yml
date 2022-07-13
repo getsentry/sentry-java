@@ -21,27 +21,25 @@ suites:
   # Devices are chosen so that there is a high-end and a low-end device for each api level
   - name: "Android 12 (api 31)"
     devices:
-      - id: Google_Pixel_6_Pro_real_us # Google Pixel 6 Pro - api 31 (12)
-      - id: Google_Pixel_3_12_real_us # Google Pixel 3 - api 31 (12)
-    testOptions:
-      useTestOrchestrator: true
+      - id: Google_Pixel_6_Pro_real_us # Google Pixel 6 Pro - api 31 (12) - high end
+      - id: Google_Pixel_3_12_real_us # Google Pixel 3 - api 31 (12) - low end
 
   - name: "Android 11 (api 30)"
     devices:
-      - id: OnePlus_9_Pro_real_us # OnePlus 9 Pro - api 30 (11)
-      - id: Google_Pixel_2_real_us # Google Pixel 2 - api 30 (11)
-    testOptions:
-      useTestOrchestrator: true
+      - id: OnePlus_9_Pro_real_us # OnePlus 9 Pro - api 30 (11) - high end
+      - id: Google_Pixel_4_real_us # Google Pixel 4 - api 30 (11) - mid end
+      - id: Google_Pixel_2_real_us # Google Pixel 2 - api 30 (11) - low end
 
-# Commenting for the moment, due to the error "Cannot install test-services-1.4.1.apk on device" on low Android versions
-#  - name: "Android 5 (api 22)"
+  - name: "Android 10 (api 29)"
+    devices:
+      - id: Google_Pixel_4_XL_real_us1 # Google Pixel 4 XL - api 29 (10)
+      - id: Nokia_7_1_real_us # Nokia 7.1 - api 29 (10)
+
+# At the time of writing (July, 4, 2022), the market share per android version is:
+# 12.0 = 17.54%, 11.0 = 31.65%, 10.0 = 21.92%
+# Using these 3 versions we cover 71,11% of all devices out there. Currently, this is enough for benchmarking scope
+# Leaving these devices here in case we change mind on them
 #    devices:
-#      - id: Amazon_Kindle_Fire_HD_8_real_us # Amazon Kindle Fire HD 8 - api 22 (5.1.1)
-#    testOptions:
-#      useTestOrchestrator: true
-
-#      - id: Google_Pixel_4_XL_real_us1 # Google Pixel 4 XL - api 29 (10)
-#      - id: Motorola_Moto_G_Power_real_us # Motorola Moto G Power (2021) - api 29 (10)
 #      - id: Samsung_Galaxy_S8_plus_real_us # Samsung Galaxy S8+ - api 28 (9)
 #      - id: LG_G8_ThinQ_real_us # LG G8 ThinQ - api 28 (9)
 #      - id: OnePlus_5_real_us # OnePlus 5 - api 27 (8.1.0)
@@ -54,6 +52,7 @@ suites:
 #      - id: LG_K10_real # LG K10 - api 24 (7.0)
 #      - id: Samsung_Galaxy_S6_Edge_Plus_real # Samsung Galaxy S6 Edge+ - api 23 (6.0.1)
 #      - id: Samsung_Tab_E_real_us # Samsung Tab E - api 23 (6.0.1)
+#      - id: Amazon_Kindle_Fire_HD_8_real_us # Amazon Kindle Fire HD 8 - api 22 (5.1.1)
 
 artifacts:
   download:

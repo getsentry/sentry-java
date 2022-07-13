@@ -1,6 +1,6 @@
-.PHONY: all clean compile dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease
+.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease
 
-all: stop clean checkFormat compile dryRelease
+all: stop clean javadocs compile
 assembleBenchmarks: stop clean assembleBenchmarkTestRelease
 assembleUiTests: stop clean assembleUiTestRelease
 
@@ -12,6 +12,9 @@ clean:
 # build and run tests
 compile:
 	./gradlew build
+
+javadocs:
+	./gradlew aggregateJavadocs
 
 # do a dry release (like a local deploy)
 dryRelease:

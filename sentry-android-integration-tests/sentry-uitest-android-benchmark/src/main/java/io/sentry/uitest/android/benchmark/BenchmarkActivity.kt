@@ -1,5 +1,6 @@
 package io.sentry.uitest.android.benchmark
 
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,6 +17,9 @@ class BenchmarkActivity : AppCompatActivity() {
 
         /** The activity will set this when scrolling. */
         val scrollingIdlingResource = CountingIdlingResource("sentry-uitest-android-benchmark-activityScrolling")
+
+        /** The refresh rate of the device, set on activity create. */
+        var refreshRate: Float? = null
     }
 
     /**
@@ -31,6 +35,11 @@ class BenchmarkActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        refreshRate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display?.refreshRate
+        } else {
+            windowManager.defaultDisplay.refreshRate
+        }
         binding = ActivityBenchmarkBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

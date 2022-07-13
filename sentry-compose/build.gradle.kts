@@ -1,4 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
     kotlin("multiplatform")
@@ -7,6 +8,7 @@ plugins {
     jacoco
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
+    id(Config.BuildPlugins.dokkaPluginAlias)
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 
@@ -112,4 +114,16 @@ tasks.withType<Test> {
 tasks.withType<Detekt> {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
+
+tasks.withType<DokkaTask>().configureEach {
+    // suppress unattached source sets for docs
+    dokkaSourceSets {
+        matching {
+            it.name.contains("androidandroid", ignoreCase = true) ||
+                it.name.contains("testfixtures", ignoreCase = true)
+        }.configureEach {
+            suppress.set(true)
+        }
+    }
 }
