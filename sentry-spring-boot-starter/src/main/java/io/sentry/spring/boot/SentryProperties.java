@@ -7,6 +7,10 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.event.Level;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /** Configuration for Sentry integration. */
 @ConfigurationProperties("sentry")
 @Open
@@ -17,6 +21,9 @@ public class SentryProperties extends SentryOptions {
 
   /** Report all or only uncaught web exceptions. */
   private int exceptionResolverOrder = 1;
+
+  /** List of loggers, where the Sentry-Appender is registered */
+  private final List<String> loggers = Arrays.asList(org.slf4j.Logger.ROOT_LOGGER_NAME);
 
   /**
    * Defines the {@link io.sentry.spring.SentryUserFilter} order. The default value is {@link
@@ -72,6 +79,10 @@ public class SentryProperties extends SentryOptions {
     this.logging = logging;
   }
 
+  @NotNull
+  public List<String> getLoggers() {
+    return loggers;
+  }
   @Open
   public static class Logging {
     /** Enable/Disable logging auto-configuration. */
