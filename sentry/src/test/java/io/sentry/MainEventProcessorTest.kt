@@ -12,8 +12,10 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import org.awaitility.kotlin.await
+import org.mockito.Mockito
 import java.lang.RuntimeException
 import java.net.InetAddress
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -32,10 +34,12 @@ class MainEventProcessorTest {
         }
         val getLocalhost = mock<InetAddress>()
         val sentryTracer = SentryTracer(TransactionContext("", ""), mock())
+        private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
 
         fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap(), sendDefaultPii: Boolean? = null, serverName: String? = "server", host: String? = null, resolveHostDelay: Long? = null, hostnameCacheDuration: Long = 10, proguardUuid: String? = null): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
             sentryOptions.isAttachStacktrace = attachStackTrace
+            sentryOptions.isAttachServerName = true
             sentryOptions.environment = environment
             sentryOptions.serverName = serverName
             if (sendDefaultPii != null) {
@@ -52,8 +56,19 @@ class MainEventProcessorTest {
                 host
             }
             val hostnameCache = HostnameCache(hostnameCacheDuration) { getLocalhost }
-            return MainEventProcessor(sentryOptions, hostnameCache)
+            hostnameCacheMock.`when`<Any> { HostnameCache.getInstance() }.thenReturn(hostnameCache)
+
+            return MainEventProcessor(sentryOptions)
         }
+
+        fun teardown() {
+            hostnameCacheMock.close()
+        }
+    }
+
+    @AfterTest
+    fun teardown() {
+        fixture.teardown()
     }
 
     private val fixture = Fixture()
@@ -448,7 +463,10 @@ class MainEventProcessorTest {
 
     @Test
     fun `when processor is closed, closes hostname cache`() {
-        val sut = fixture.getSut()
+        val sut = fixture.getSut(serverName = null)
+
+        sut.process(SentryTransaction(fixture.sentryTracer), Hint())
+
         sut.close()
         assertNotNull(sut.hostnameCache) {
             assertTrue(it.isClosed())
