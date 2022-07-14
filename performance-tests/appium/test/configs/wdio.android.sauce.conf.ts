@@ -6,9 +6,6 @@ config.capabilities = [{
     'appium:platformVersion': '11',
     // 'appium:deviceName': 'Android GoogleAPI Emulator',
     'appium:automationName': 'UIAutomator2',
-    // The name of the App in the Sauce Labs storage, for more info see
-    // https://docs.saucelabs.com/mobile-apps/app-storage/
-    'appium:app': 'storage:filename=Android-MyDemoAppRN.apk',
     'appium:autoLaunch': false,
     'appium:newCommandTimeout': 240,
     'sauce:options': {
@@ -16,5 +13,9 @@ config.capabilities = [{
         // appiumVersion: '1.22.1',
     },
 }];
+
+config.customApps = [
+    new AppInfo('com.saucelabs.mydemoapp.rn', 'MainActivity', 'storage:filename=Android-MyDemoAppRN.apk')
+]
 
 exports.config = config;
