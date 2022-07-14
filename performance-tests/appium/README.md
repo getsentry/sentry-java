@@ -8,20 +8,28 @@ Originally based on [SauceLabs's demo scripts](https://github.com/saucelabs-trai
 npm install
 ```
 
+## Compile test apps
+
+```shell
+npm run build:apps
+```
+
+## Run tests
+
 You can run your tests on Sauce Labs:
 
 ```shell
-# Run Android Emulator Tests
-npm run saucelabs.android.emu
-# Run iOS Simulators Tests
-npm run saucelabs.ios.sim
+# Run Android Tests
+npm run saucelabs:android
+# Run iOS Tests
+npm run saucelabs:ios
 ```
 
 Or you can run the tests on your local Appium installation (head over to [appium.io](https://appium.io/) to get started):
 
 ```shell
-# Run Android Emulator Tests
-npm run local.android.emu
-# Run iOS Simulators Tests
-npm run local.ios.sim
+# Run Android Tests
+npm run local:android
+# Run iOS Tests
+npm run local:ios
 ```
