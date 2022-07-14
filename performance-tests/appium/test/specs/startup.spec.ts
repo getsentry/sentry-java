@@ -1,8 +1,11 @@
+import * as ss from 'simple-statistics'
+import * as assert from 'assert'
+
+
 const appName = 'com.saucelabs.mydemoapp.rn'
 const activityName = 'MainActivity'
 
 describe('App', () => {
-    // TODO check impact of 'appium:disableWindowAnimation' setting
     it('starts quickly', async () => {
         const runs = 10
         for (var i = 0; i < runs; i++) {
@@ -12,29 +15,18 @@ describe('App', () => {
                 await new Promise(resolve => setTimeout(resolve, 1000))
             }
 
-            // TODO check out .activateApp() - it should work on any OS.
+            // NOTE: there's also .activateApp() which should be OS independent, but doesn't seem to wait for the activity to start
             await driver.startActivity(appName, activityName)
         }
 
         const events = await driver.getEvents([])
-        const startupTimes = new Times(events.commands
+        const startupTimes = events.commands
             .filter((cmd: any) => cmd.cmd == 'startActivity')
-            .map((cmd: any) => cmd.endTime - cmd.startTime))
+            .map((cmd: any) => cmd.endTime - cmd.startTime)
 
-        console.log(`App launch times: [${startupTimes.items}]`)
-        console.log(`App launch mean: ${startupTimes.mean} ms | stddev: ${startupTimes.stddev}`)
+        assert.equal(startupTimes.length, runs)
+
+        console.log(`App launch times: [${startupTimes}]`)
+        console.log(`App launch mean: ${ss.mean(startupTimes)} ms | stddev: ${ss.standardDeviation(startupTimes).toFixed(2)}`)
     })
 })
-
-class Times {
-    items: number[]
-    mean: number
-    stddev: number
-
-    constructor(items: number[]) {
-        this.items = items
-        const sum = items.reduce((a, b) => a + b, 0)
-        this.mean = (sum / items.length) || 0
-        this.stddev = Math.sqrt(items.map(x => Math.pow(x - this.mean, 2)).reduce((a, b) => a + b) / items.length)
-    }
-}
