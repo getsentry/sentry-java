@@ -20,13 +20,3 @@ hs_err_pid*
 # files
 **/.DS_Store
 **/.idea
-
-# Extra folders
-.tmp/
-nightwatch/webdriver/examples/update-sauce/tests_output/
-**/apps/
-**/cypress/results/
-**/cypress/videos/
-*.xml
-v6/
-**/artifacts/

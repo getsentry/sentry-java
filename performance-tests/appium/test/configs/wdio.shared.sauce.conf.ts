@@ -1,4 +1,4 @@
-import {config} from './wdio.shared.conf';
+import { config } from './wdio.shared.conf';
 
 
 /**

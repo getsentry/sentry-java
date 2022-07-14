@@ -13,7 +13,7 @@ config.capabilities = [{
     'appium:newCommandTimeout': 240,
     'sauce:options': {
         build: buildName,
-        appiumVersion: '1.22.1',
+        // appiumVersion: '1.22.1',
     },
 }];
 
