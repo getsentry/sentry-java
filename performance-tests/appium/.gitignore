@@ -1,24 +1,32 @@
-target/
-.idea/
-*.setting
-*.DS_store
-*.classpath
-.settings/
-*.project
-*.png
-test-output/
-build/
-.DS_Store
-test-order-details/
-test-results/
-img/
-perfectoReports/
-.git/
+# Log files
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 *.log
-/logs/
-/dashboard/
-*.pdf
-/bin
-Drivers/
-target/surefire-reports/index.html
-*.iml
+
+# DS_Store
+*.DS_Store
+
+# virtual machine crash logs
+hs_err_pid*
+
+# node_modules
+**/node_modules
+
+# Optional npm cache directory
+**/.npm
+
+# files
+**/.DS_Store
+**/.idea
+
+# Extra folders
+.tmp/
+nightwatch/webdriver/examples/update-sauce/tests_output/
+**/apps/
+**/cypress/results/
+**/cypress/videos/
+*.xml
+v6/
+**/artifacts/

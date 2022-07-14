@@ -1,0 +1,27 @@
+{
+  "name": "webdriverio-simple-example",
+  "version": "1.0.0",
+  "description": "simple mobile example",
+  "main": "",
+  "scripts": {
+    "test.android.local.emu": "npx wdio test/configs/wdio.android.local.emu.conf.ts",
+    "test.sayucelabs.android.emu.eu": "REGION=eu npx wdio test/configs/wdio.android.sauce.emu.conf.ts",
+    "test.saucelabs.android.emu.us": "npx wdio test/configs/wdio.android.sauce.emu.conf.ts",
+    "test.ios.local.sim": "npx wdio test/configs/wdio.ios.local.sim.conf.ts",
+    "test.saucelabs.ios.sim.eu": "npx REGION=eu npx wdio test/configs/wdio.ios.sauce.sim.conf.ts",
+    "test.saucelabs.ios.sim.us": "npx wdio test/configs/wdio.ios.sauce.sim.conf.ts"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "devDependencies": {
+    "@wdio/cli": "^7.16.15",
+    "@wdio/local-runner": "^7.16.15",
+    "@wdio/mocha-framework": "^7.16.15",
+    "@wdio/sauce-service": "^7.16.15",
+    "@wdio/appium-service": "^7.19.1",
+    "@wdio/spec-reporter": "^7.16.14",
+    "@wdio/types": "^7.16.14",
+    "ts-node": "^10.5.0",
+    "typescript": "^4.5.5"
+  }
+}

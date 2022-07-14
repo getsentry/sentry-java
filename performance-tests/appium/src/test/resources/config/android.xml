@@ -1,8 +1,0 @@
-<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
-<suite name="Android Test Suite" parallel="methods" thread-count="100" verbose="0">
-	<test name="Startup test" enabled="true">
-		<classes>
-			<class name="tests.AndroidStartupTest"/>
-		</classes>
-	</test>
-</suite>
