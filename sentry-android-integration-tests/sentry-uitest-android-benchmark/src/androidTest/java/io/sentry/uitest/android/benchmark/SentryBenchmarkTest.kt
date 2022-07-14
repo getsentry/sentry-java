@@ -40,13 +40,15 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         // should be very similar.
         val op1 = BenchmarkOperation(choreographer, op = getOperation(runner))
         val op2 = BenchmarkOperation(choreographer, op = getOperation(runner))
-        val comparisonResult = BenchmarkOperation.compare(op1, "Op1", op2, "Op2")
+        val refreshRate = BenchmarkActivity.refreshRate ?: 60F
+        val comparisonResults = BenchmarkOperation.compare(op1, "Op1", op2, "Op2", refreshRate)
+        val comparisonResult = comparisonResults.getSummaryResult()
+        comparisonResult.printResults()
 
-        assertTrue(comparisonResult.durationIncreasePercentage in -1F..1F)
-        assertTrue(comparisonResult.cpuTimeIncreasePercentage in -1F..1F)
+        // Currently we just want to assert the cpu overhead
+        assertTrue(comparisonResult.cpuTimeIncreasePercentage in -2F..2F)
         // The fps decrease comparison is skipped, due to approximation: 59.51 and 59.49 fps are considered 60 and 59,
         // respectively. Also, if the average fps is 20 or 60, a difference of 1 fps becomes 5% or 1.66% respectively.
-        assertTrue(comparisonResult.droppedFramesIncreasePercentage in -1F..1F)
     }
 
     @Test
@@ -76,17 +78,20 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
                 }
             }
         )
-        val comparisonResult = BenchmarkOperation.compare(
+        val refreshRate = BenchmarkActivity.refreshRate ?: 60F
+        val comparisonResults = BenchmarkOperation.compare(
             benchmarkOperationNoTransaction,
             "NoTransaction",
             benchmarkOperationProfiled,
-            "ProfiledTransaction"
+            "ProfiledTransaction",
+            refreshRate
         )
+        comparisonResults.printAllRuns("Profiling Benchmark")
+        val comparisonResult = comparisonResults.getSummaryResult()
+        comparisonResult.printResults()
 
-        assertTrue(comparisonResult.durationIncreasePercentage in 0F..5F)
+        // Currently we just want to assert the cpu overhead
         assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5F)
-        assertTrue(comparisonResult.fpsDecreasePercentage in 0F..5F)
-        assertTrue(comparisonResult.droppedFramesIncreasePercentage in 0F..5F)
     }
 
     /**
@@ -103,12 +108,10 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         }
         // Just swipe the list some times: this is the benchmarked operation
         swipeList(2)
-        // We finish the transaction
+        // We finish the transaction. We do it on main thread, so there's no need to perform other operations after it
         runner.runOnMainSync {
             transaction?.finish()
         }
-        // We swipe a last time to measure how finishing the transaction may affect other operations
-        swipeList(1)
 
         benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
     }

@@ -24,6 +24,10 @@ Sentry SDK for Java and Android
 | sentry-android-okhttp | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-okhttp/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-okhttp) | 21 |
 | sentry-android-timber | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-timber/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-timber) | 14 |
 | sentry-android-fragment | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-fragment/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-fragment) | 14 |
+| sentry-android-navigation | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-navigation/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-navigation) | 14 |
+| sentry-compose-android | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose-android/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose-android) | 21 |
+| sentry-compose-desktop | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose-desktop/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose-desktop) | 
+| sentry-compose | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose) | 
 | sentry-apache-http-client-5 | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apache-http-client-5/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apache-http-client-5) |
 | sentry | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry) | 14 |
 | sentry-jul | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jul/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jul) |
@@ -93,7 +97,7 @@ Since version 3.0.0 of this SDK, Sentry version >= v20.6.0 is required. This onl
 
 * [![Java Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg?label=java%20docs)](https://docs.sentry.io/platforms/java/)
 * [![Android Documentation](https://img.shields.io/badge/documentation-sentry.io-green.svg?label=android%20docs)](https://docs.sentry.io/platforms/android/)
-* [![Forum](https://img.shields.io/badge/forum-sentry-green.svg)](https://forum.sentry.io/c/sdks)
+* [![Discussions](https://img.shields.io/github/discussions/getsentry/sentry-java.svg)](https://github.com/getsentry/sentry-java/discussions)
 * [![Discord Chat](https://img.shields.io/discord/621778831602221064?logo=discord&logoColor=ffffff&color=7389D8)](https://discord.gg/PXa5Apfe7K)
 * [![Stack Overflow](https://img.shields.io/badge/stack%20overflow-sentry-green.svg)](http://stackoverflow.com/questions/tagged/sentry)
 * [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-sentry-green.svg)](https://github.com/getsentry/.github/blob/master/CODE_OF_CONDUCT.md)

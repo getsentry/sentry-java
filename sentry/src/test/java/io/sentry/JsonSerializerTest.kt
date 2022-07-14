@@ -442,58 +442,49 @@ class JsonSerializerTest {
     }
 
     @Test
-    fun `serializes trace state`() {
-        val traceState = SentryEnvelopeHeader(null, null, TraceState(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", TraceState.TraceStateUser("userId", "segment"), "transaction"))
-        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user":{"id":"userId","segment":"segment"},"transaction":"transaction"}}"""
-        val json = serializeToString(traceState)
+    fun `serializes trace context`() {
+        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", "userId", "segment", "transaction", "0.5"))
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user_id":"userId","user_segment":"segment","transaction":"transaction","sample_rate":"0.5"}}"""
+        val json = serializeToString(traceContext)
         assertEquals(expected, json)
     }
 
     @Test
-    fun `serializes trace state with null user`() {
-        val traceState = SentryEnvelopeHeader(null, null, TraceState(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", null, "transaction"))
-        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction"}}"""
-        val json = serializeToString(traceState)
+    fun `serializes trace context with user having null id and segment`() {
+        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", null, null, "transaction", "0.6"))
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction","sample_rate":"0.6"}}"""
+        val json = serializeToString(traceContext)
         assertEquals(expected, json)
     }
 
     @Test
-    fun `serializes trace state with user having null id and segment`() {
-        val traceState = SentryEnvelopeHeader(null, null, TraceState(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", TraceState.TraceStateUser(null, null), "transaction"))
-        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction"}}"""
-        val json = serializeToString(traceState)
-        assertEquals(expected, json)
-    }
-
-    @Test
-    fun `deserializes trace state`() {
-        val json = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user":{"id":"userId","segment":"segment"},"transaction":"transaction"}}"""
+    fun `deserializes trace context`() {
+        val json = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user_id":"userId","user_segment":"segment","transaction":"transaction"}}"""
         val actual = fixture.serializer.deserialize(StringReader(json), SentryEnvelopeHeader::class.java)
         assertNotNull(actual) {
-            assertNotNull(it.trace) {
+            assertNotNull(it.traceContext) {
                 assertEquals(SentryId("3367f5196c494acaae85bbbd535379ac"), it.traceId)
                 assertEquals("key", it.publicKey)
                 assertEquals("release", it.release)
                 assertEquals("environment", it.environment)
-                assertNotNull(it.user) {
-                    assertEquals("userId", it.id)
-                    assertEquals("segment", it.segment)
-                }
+                assertEquals("userId", it.userId)
+                assertEquals("segment", it.userSegment)
             }
         }
     }
 
     @Test
-    fun `deserializes trace state without user`() {
+    fun `deserializes trace context without user`() {
         val json = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction"}}"""
         val actual = fixture.serializer.deserialize(StringReader(json), SentryEnvelopeHeader::class.java)
         assertNotNull(actual) {
-            assertNotNull(it.trace) {
+            assertNotNull(it.traceContext) {
                 assertEquals(SentryId("3367f5196c494acaae85bbbd535379ac"), it.traceId)
                 assertEquals("key", it.publicKey)
                 assertEquals("release", it.release)
                 assertEquals("environment", it.environment)
-                assertNull(it.user)
+                assertNull(it.userId)
+                assertNull(it.userSegment)
             }
         }
     }

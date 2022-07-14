@@ -1,5 +1,4 @@
 import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
@@ -25,6 +24,7 @@ android {
         // https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner#enable-gradle
         // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
         // Check the readme for more info.
+        // Test orchestrator was removed due to issues with SauceLabs
 //        testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
@@ -32,10 +32,6 @@ android {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
-    }
-
-    testOptions {
-        execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
 
     signingConfigs {
@@ -53,12 +49,12 @@ android {
         getByName("debug") {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug")
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
         }
     }
@@ -89,6 +85,8 @@ dependencies {
     implementation(projects.sentryAndroid)
     implementation(Config.Libs.appCompat)
     implementation(Config.Libs.androidxCore)
+    implementation(Config.Libs.androidxRecylerView)
+    implementation(Config.Libs.constraintLayout)
     implementation(Config.TestLibs.espressoIdlingResource)
 
     compileOnly(Config.CompileOnly.nopen)
@@ -118,11 +116,6 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.withType<Detekt> {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-configure<DetektExtension> {
-    buildUponDefaultConfig = true
-    allRules = true
 }
 
 kotlin {

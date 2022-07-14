@@ -40,7 +40,7 @@ class SentryOkHttpInterceptor(
                 span.toSentryTrace().let {
                     requestBuilder.addHeader(it.name, it.value)
                 }
-                span.toTraceStateHeader()?.let {
+                span.toBaggageHeader()?.let {
                     requestBuilder.addHeader(it.name, it.value)
                 }
             }

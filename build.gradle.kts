@@ -1,6 +1,7 @@
 import com.diffplug.spotless.LineEnding
 import com.vanniktech.maven.publish.MavenPublishPlugin
 import com.vanniktech.maven.publish.MavenPublishPluginExtension
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -34,6 +35,7 @@ buildscript {
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
         classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
+        classpath(Config.BuildPlugins.composeGradlePlugin)
     }
 }
 
@@ -88,19 +90,31 @@ allprojects {
 }
 
 subprojects {
+    plugins.withId(Config.QualityPlugins.detektPlugin) {
+        configure<DetektExtension> {
+            buildUponDefaultConfig = true
+            allRules = true
+            config.setFrom("${rootProject.rootDir}/detekt.yml")
+        }
+    }
+
     if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
 
         val sep = File.separator
 
         configure<DistributionContainer> {
-            this.getByName("main").contents {
-                // non android modules
-                from("build${sep}libs")
-                from("build${sep}publications${sep}maven")
-                // android modules
-                from("build${sep}outputs${sep}aar")
-                from("build${sep}publications${sep}release")
+            if (this@subprojects.name.contains("-compose")) {
+                this.configureForMultiplatform(this@subprojects)
+            } else {
+                this.getByName("main").contents {
+                    // non android modules
+                    from("build${sep}libs")
+                    from("build${sep}publications${sep}maven")
+                    // android modules
+                    from("build${sep}outputs${sep}aar")
+                    from("build${sep}publications${sep}release")
+                }
             }
         }
 

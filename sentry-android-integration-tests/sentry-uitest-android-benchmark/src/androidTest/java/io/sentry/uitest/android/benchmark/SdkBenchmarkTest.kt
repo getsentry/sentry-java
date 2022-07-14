@@ -32,14 +32,19 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
                 it.tracesSampleRate = 1.0
             }
         }
-        val simpleSdkResult = BenchmarkOperation.compare(opNoSdk, "No Sdk", opSimpleSdk, "Simple Sdk")
-        val perfProfilingSdkResult = BenchmarkOperation.compare(opNoSdk2, "No Sdk", opPerfProfilingSdk, "Sdk with perf and profiling")
+        val refreshRate = BenchmarkActivity.refreshRate ?: 60F
+        val simpleSdkResults = BenchmarkOperation.compare(opNoSdk, "No Sdk", opSimpleSdk, "Simple Sdk", refreshRate)
+        val simpleSdkResult = simpleSdkResults.getSummaryResult()
+        simpleSdkResult.printResults()
+        val perfProfilingSdkResults = BenchmarkOperation.compare(opNoSdk2, "No Sdk", opPerfProfilingSdk, "Sdk with perf and profiling", refreshRate)
+        val perfProfilingSdkResult = perfProfilingSdkResults.getSummaryResult()
+        perfProfilingSdkResult.printResults()
 
-        val maxDurationThreshold = TimeUnit.MILLISECONDS.toNanos(100)
+        val maxDurationThreshold = TimeUnit.MILLISECONDS.toNanos(250)
         assertTrue(simpleSdkResult.durationIncreaseNanos in 0..maxDurationThreshold)
         assertTrue(simpleSdkResult.cpuTimeIncreaseMillis in 0..100)
-        assertTrue(perfProfilingSdkResult.durationIncreaseNanos in simpleSdkResult.durationIncreaseNanos..maxDurationThreshold)
-        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseMillis in simpleSdkResult.cpuTimeIncreaseMillis..100)
+        assertTrue(perfProfilingSdkResult.durationIncreaseNanos in 0..maxDurationThreshold)
+        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseMillis in 0..100)
     }
 
     private fun getOperation(init: (() -> Unit)? = null) = BenchmarkOperation(

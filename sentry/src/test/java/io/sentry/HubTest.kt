@@ -1189,7 +1189,7 @@ class HubTest {
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op"), sut)
         sentryTracer.finish()
-        sut.captureTransaction(SentryTransaction(sentryTracer), null as TraceState?)
+        sut.captureTransaction(SentryTransaction(sentryTracer), null as TraceContext?)
         verify(mockClient, never()).captureTransaction(any(), any(), any())
         verify(mockClient, never()).captureTransaction(any(), any(), any(), anyOrNull(), anyOrNull())
     }
@@ -1204,10 +1204,10 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
         sentryTracer.finish()
-        val traceState = sentryTracer.traceState()
-        verify(mockClient).captureTransaction(any(), eq(traceState), any(), eq(null), anyOrNull())
+        val traceContext = sentryTracer.traceContext()
+        verify(mockClient).captureTransaction(any(), eq(traceContext), any(), eq(null), anyOrNull())
     }
 
     @Test
@@ -1218,14 +1218,14 @@ class HubTest {
             it.setTransactionProfiler(mockTransactionProfiler)
         }
         // Transaction is not sampled, so it should not be profiled
-        val contexts = TransactionContext("name", "op", false)
+        val contexts = TransactionContext("name", "op", TracesSamplingDecision(false))
         val transaction = hub.startTransaction(contexts)
         transaction.finish()
         verify(mockTransactionProfiler, never()).onTransactionStart(anyOrNull())
         verify(mockTransactionProfiler, never()).onTransactionFinish(anyOrNull())
 
         // Transaction is sampled, so it should be profiled
-        val sampledContexts = TransactionContext("name", "op", true)
+        val sampledContexts = TransactionContext("name", "op", TracesSamplingDecision(true))
         val sampledTransaction = hub.startTransaction(sampledContexts)
         sampledTransaction.finish()
         verify(mockTransactionProfiler).onTransactionStart(anyOrNull())
@@ -1239,7 +1239,7 @@ class HubTest {
             it.isProfilingEnabled = false
             it.setTransactionProfiler(mockTransactionProfiler)
         }
-        val contexts = TransactionContext("name", "op", true)
+        val contexts = TransactionContext("name", "op", TracesSamplingDecision(true))
         val transaction = hub.startTransaction(contexts)
         transaction.finish()
         verify(mockTransactionProfiler, never()).onTransactionStart(anyOrNull())
@@ -1257,7 +1257,7 @@ class HubTest {
         sut.bindClient(mockClient)
         whenever(mockClient.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(SentryId())
 
-        val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
         sentryTracer.finish()
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
     }
@@ -1272,8 +1272,8 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        val sentryTracer = SentryTracer(TransactionContext("name", "op", true), sut)
-        sut.captureTransaction(SentryTransaction(sentryTracer), null as TraceState?)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
+        sut.captureTransaction(SentryTransaction(sentryTracer), null as TraceContext?)
         verify(mockClient, never()).captureTransaction(any(), any(), any(), eq(null), anyOrNull())
     }
 
@@ -1287,10 +1287,10 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        val sentryTracer = SentryTracer(TransactionContext("name", "op", false), sut)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
         sentryTracer.finish()
-        val traceState = sentryTracer.traceState()
-        verify(mockClient, never()).captureTransaction(any(), eq(traceState), any(), eq(null), anyOrNull())
+        val traceContext = sentryTracer.traceContext()
+        verify(mockClient, never()).captureTransaction(any(), eq(traceContext), any(), eq(null), anyOrNull())
     }
 
     @Test
@@ -1303,7 +1303,7 @@ class HubTest {
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
 
-        val sentryTracer = SentryTracer(TransactionContext("name", "op", false), sut)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
         sentryTracer.finish()
 
         assertClientReport(
@@ -1397,7 +1397,7 @@ class HubTest {
             it.tracesSampleRate = null
             it.tracesSampler = null
         }
-        val transaction = hub.startTransaction(TransactionContext("name", "op", true))
+        val transaction = hub.startTransaction(TransactionContext("name", "op", TracesSamplingDecision(true)))
         assertTrue(transaction is NoOpTransaction)
     }
     //endregion

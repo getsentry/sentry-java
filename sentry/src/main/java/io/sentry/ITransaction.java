@@ -35,6 +35,9 @@ public interface ITransaction extends ISpan {
   @Nullable
   Boolean isSampled();
 
+  @Nullable
+  TracesSamplingDecision getSamplingDecision();
+
   /**
    * Returns the latest span that is not finished.
    *
@@ -51,10 +54,6 @@ public interface ITransaction extends ISpan {
   @NotNull
   SentryId getEventId();
 
-  /**
-   * Schedules when transaction should be automatically finished.
-   *
-   * @param idleTimeout - the time to wait before finishing the transaction
-   */
-  void scheduleFinish(final @NotNull Long idleTimeout);
+  /** Schedules when transaction should be automatically finished. */
+  void scheduleFinish();
 }

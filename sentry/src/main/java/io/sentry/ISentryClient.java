@@ -210,7 +210,7 @@ public interface ISentryClient {
    * Captures a transaction.
    *
    * @param transaction the {@link ITransaction} to send
-   * @param traceState the trace state
+   * @param traceContext the trace context
    * @param scope An optional scope to be applied to the event.
    * @param hint SDK specific but provides high level information about the origin of the event
    * @return The Id (SentryId object) of the event
@@ -219,17 +219,17 @@ public interface ISentryClient {
   @ApiStatus.Internal
   default SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      @Nullable TraceState traceState,
+      @Nullable TraceContext traceContext,
       @Nullable Scope scope,
       @Nullable Hint hint) {
-    return captureTransaction(transaction, traceState, scope, hint, null);
+    return captureTransaction(transaction, traceContext, scope, hint, null);
   }
 
   /**
    * Captures a transaction.
    *
    * @param transaction the {@link ITransaction} to send
-   * @param traceState the trace state
+   * @param traceContext the trace context
    * @param scope An optional scope to be applied to the event.
    * @param hint SDK specific but provides high level information about the origin of the event
    * @param profilingTraceData An optional profiling trace data captured during the transaction
@@ -239,7 +239,7 @@ public interface ISentryClient {
   @ApiStatus.Internal
   SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
-      @Nullable TraceState traceState,
+      @Nullable TraceContext traceContext,
       @Nullable Scope scope,
       @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData);
@@ -248,13 +248,13 @@ public interface ISentryClient {
    * Captures a transaction without scope nor hint.
    *
    * @param transaction the {@link ITransaction} to send
-   * @param traceState the trace state
+   * @param traceContext the trace context
    * @return The Id (SentryId object) of the event
    */
   @ApiStatus.Internal
   default @NotNull SentryId captureTransaction(
-      @NotNull SentryTransaction transaction, @Nullable TraceState traceState) {
-    return captureTransaction(transaction, traceState, null, null);
+      @NotNull SentryTransaction transaction, @Nullable TraceContext traceContext) {
+    return captureTransaction(transaction, traceContext, null, null);
   }
 
   /**

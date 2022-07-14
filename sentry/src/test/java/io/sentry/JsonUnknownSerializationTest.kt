@@ -78,8 +78,7 @@ class JsonUnknownSerializationTest(
             val session = givenJsonUnknown(SessionSerializationTest.Fixture().getSut())
             val skdVersion = givenJsonUnknown(SdkVersion("3e934135-3f2b-49bc-8756-9f025b55143e", "3e31738e-4106-42d0-8be2-4a3a1bc648d3"))
             val spanContext = givenJsonUnknown(SpanContext("c2fb8fee2e2b49758bcb67cda0f713c7"))
-            val traceState = givenJsonUnknown(TraceStateSerializationTest.Fixture().getSut())
-            val traceStateUser = givenJsonUnknown(TraceStateUserSerializationTest.Fixture().getSut())
+            val traceContext = givenJsonUnknown(TraceContextSerializationTest.Fixture().getSut())
             val user = givenJsonUnknown(User())
             val userFeedback = givenJsonUnknown(UserFeedback(SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")))
 
@@ -113,8 +112,7 @@ class JsonUnknownSerializationTest(
                 arrayOf(session, session, Session.Deserializer()::deserialize),
                 arrayOf(skdVersion, skdVersion, SdkVersion.Deserializer()::deserialize),
                 arrayOf(spanContext, spanContext, SpanContext.Deserializer()::deserialize),
-                arrayOf(traceState, traceState, TraceState.Deserializer()::deserialize),
-                arrayOf(traceStateUser, traceStateUser, TraceState.TraceStateUser.Deserializer()::deserialize),
+                arrayOf(traceContext, traceContext, TraceContext.Deserializer()::deserialize),
                 arrayOf(user, user, User.Deserializer()::deserialize),
                 arrayOf(userFeedback, userFeedback, UserFeedback.Deserializer()::deserialize)
             )

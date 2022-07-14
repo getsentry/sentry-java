@@ -181,4 +181,16 @@ class LifecycleWatcherTest {
         watcher.onStop(fixture.ownerMock)
         verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
     }
+
+    @Test
+    fun `timer is created if session tracking is enabled`() {
+        val watcher = fixture.getSUT(enableAutoSessionTracking = true, enableAppLifecycleBreadcrumbs = false)
+        assertNotNull(watcher.timer)
+    }
+
+    @Test
+    fun `timer is not created if session tracking is disabled`() {
+        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
+        assertNull(watcher.timer)
+    }
 }

@@ -6,12 +6,14 @@ import static io.sentry.TypeCheckHint.OPEN_FEIGN_RESPONSE;
 import feign.Client;
 import feign.Request;
 import feign.Response;
+import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
+import io.sentry.TracingOrigins;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.Collection;
@@ -47,11 +49,20 @@ public final class SentryFeignClient implements Client {
       }
 
       ISpan span = activeSpan.startChild("http.client");
-      span.setDescription(request.httpMethod().name() + " " + request.url());
+      String url = request.url();
+      span.setDescription(request.httpMethod().name() + " " + url);
 
-      final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
       final RequestWrapper requestWrapper = new RequestWrapper(request);
-      requestWrapper.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+
+      if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), url)) {
+        final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
+        final @Nullable BaggageHeader baggageHeader = span.toBaggageHeader();
+        requestWrapper.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+        if (baggageHeader != null) {
+          requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
+        }
+      }
+
       try {
         response = delegate.execute(requestWrapper.build(), options);
         // handles both success and error responses

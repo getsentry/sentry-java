@@ -66,7 +66,8 @@ public final class Span implements ISpan {
       final @Nullable Date startTimestamp,
       final @Nullable SpanFinishedCallback spanFinishedCallback) {
     this.context =
-        new SpanContext(traceId, new SpanId(), operation, parentSpanId, transaction.isSampled());
+        new SpanContext(
+            traceId, new SpanId(), operation, parentSpanId, transaction.getSamplingDecision());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.spanFinishedCallback = spanFinishedCallback;
@@ -139,13 +140,13 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public @Nullable TraceState traceState() {
-    return transaction.traceState();
+  public @Nullable TraceContext traceContext() {
+    return transaction.traceContext();
   }
 
   @Override
-  public @Nullable TraceStateHeader toTraceStateHeader() {
-    return transaction.toTraceStateHeader();
+  public @Nullable BaggageHeader toBaggageHeader() {
+    return transaction.toBaggageHeader();
   }
 
   @Override
@@ -256,6 +257,10 @@ public final class Span implements ISpan {
 
   public @Nullable Boolean isSampled() {
     return context.getSampled();
+  }
+
+  public @Nullable TracesSamplingDecision getSamplingDecision() {
+    return context.getSamplingDecision();
   }
 
   @Override

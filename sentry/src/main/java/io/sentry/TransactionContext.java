@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class TransactionContext extends SpanContext {
   private final @NotNull String name;
-  private @Nullable Boolean parentSampled;
+  private @Nullable TracesSamplingDecision parentSamplingDecision;
 
   /**
    * Creates {@link TransactionContext} from sentry-trace header.
@@ -21,19 +21,24 @@ public final class TransactionContext extends SpanContext {
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull SentryTraceHeader sentryTrace) {
+    @Nullable Boolean parentSampled = sentryTrace.isSampled();
     return new TransactionContext(
         name,
         operation,
         sentryTrace.getTraceId(),
         new SpanId(),
         sentryTrace.getSpanId(),
-        sentryTrace.isSampled());
+        parentSampled == null
+            ? null
+            : new TracesSamplingDecision(
+                parentSampled)); // TODO sampleRate should be retrieved from baggage and passed here
+    // in the future
   }
 
   public TransactionContext(final @NotNull String name, final @NotNull String operation) {
     super(operation);
     this.name = Objects.requireNonNull(name, "name is required");
-    this.parentSampled = null;
+    this.parentSamplingDecision = null;
   }
 
   /**
@@ -41,15 +46,15 @@ public final class TransactionContext extends SpanContext {
    *
    * @param name - transaction name
    * @param operation - operation
-   * @param sampled - sampling decision
+   * @param samplingDecision - sampling decision
    */
   public TransactionContext(
       final @NotNull String name,
       final @NotNull String operation,
-      final @Nullable Boolean sampled) {
+      final @Nullable TracesSamplingDecision samplingDecision) {
     super(operation);
     this.name = Objects.requireNonNull(name, "name is required");
-    this.setSampled(sampled);
+    this.setSamplingDecision(samplingDecision);
   }
 
   private TransactionContext(
@@ -58,10 +63,10 @@ public final class TransactionContext extends SpanContext {
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
       final @Nullable SpanId parentSpanId,
-      final @Nullable Boolean parentSampled) {
+      final @Nullable TracesSamplingDecision parentSamplingDecision) {
     super(traceId, spanId, operation, parentSpanId, null);
     this.name = Objects.requireNonNull(name, "name is required");
-    this.parentSampled = parentSampled;
+    this.parentSamplingDecision = parentSamplingDecision;
   }
 
   public @NotNull String getName() {
@@ -69,10 +74,22 @@ public final class TransactionContext extends SpanContext {
   }
 
   public @Nullable Boolean getParentSampled() {
-    return parentSampled;
+    if (parentSamplingDecision == null) {
+      return null;
+    }
+
+    return parentSamplingDecision.getSampled();
+  }
+
+  public @Nullable TracesSamplingDecision getParentSamplingDecision() {
+    return parentSamplingDecision;
   }
 
   public void setParentSampled(final @Nullable Boolean parentSampled) {
-    this.parentSampled = parentSampled;
+    if (parentSampled == null) {
+      this.parentSamplingDecision = null;
+    } else {
+      this.parentSamplingDecision = new TracesSamplingDecision(parentSampled);
+    }
   }
 }

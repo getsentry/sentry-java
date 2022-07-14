@@ -63,7 +63,7 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public void scheduleFinish(@NotNull Long idleTimeout) {}
+  public void scheduleFinish() {}
 
   @Override
   public boolean isFinished() {
@@ -76,13 +76,13 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @NotNull TraceState traceState() {
-    return new TraceState(SentryId.EMPTY_ID, "");
+  public @NotNull TraceContext traceContext() {
+    return new TraceContext(SentryId.EMPTY_ID, "");
   }
 
   @Override
-  public @NotNull TraceStateHeader toTraceStateHeader() {
-    return new TraceStateHeader("");
+  public @NotNull BaggageHeader toBaggageHeader() {
+    return new BaggageHeader("");
   }
 
   @Override
@@ -133,6 +133,11 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @Nullable Boolean isSampled() {
+    return null;
+  }
+
+  @Override
+  public @Nullable TracesSamplingDecision getSamplingDecision() {
     return null;
   }
 

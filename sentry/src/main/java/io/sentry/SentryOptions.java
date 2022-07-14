@@ -10,6 +10,7 @@ import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
+import io.sentry.util.SampleRateUtil;
 import io.sentry.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
@@ -293,8 +294,11 @@ public class SentryOptions {
    */
   private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
 
-  /** Controls if the `tracestate` header is attached to envelopes and HTTP client integrations. */
-  private boolean traceSampling;
+  /**
+   * Controls if the `baggage` header is attached to HTTP client integrations and if the `trace`
+   * header is attached to envelopes.
+   */
+  private boolean traceSampling = false;
 
   /** Control if profiling is enabled or not for transactions */
   private boolean profilingEnabled = false;
@@ -726,7 +730,7 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    if (sampleRate != null && (sampleRate > 1.0 || sampleRate <= 0.0)) {
+    if (!SampleRateUtil.isValidSampleRate(sampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + sampleRate
@@ -750,7 +754,7 @@ public class SentryOptions {
    * @param tracesSampleRate the sample rate
    */
   public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
-    if (tracesSampleRate != null && (tracesSampleRate > 1.0 || tracesSampleRate < 0.0)) {
+    if (!SampleRateUtil.isValidTracesSampleRate(tracesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + tracesSampleRate
@@ -1427,14 +1431,24 @@ public class SentryOptions {
     this.maxRequestBodySize = maxRequestBodySize;
   }
 
-  /** Note: this is an experimental API and will be removed without notice. */
+  /**
+   * Returns whether the `baggage` header is attached to HTTP client integrations and the `trace`
+   * header is attached to envelopes.
+   *
+   * <p>Note: this is an experimental API and will be removed without notice.
+   *
+   * @return true if enabled
+   */
   @ApiStatus.Experimental
   public boolean isTraceSampling() {
     return traceSampling;
   }
 
   /**
-   * Note: this is an experimental API and will be removed without notice.
+   * Controls if the `baggage` header is attached HTTP client integrations and if the `trace` header
+   * is attached to envelopes. Defaults to false.
+   *
+   * <p>Note: this is an experimental API and will be removed without notice.
    *
    * @param traceSampling - if trace sampling should be enabled
    */
@@ -1710,7 +1724,7 @@ public class SentryOptions {
    *
    * @param options options loaded from external locations
    */
-  void merge(final @NotNull ExternalOptions options) {
+  public void merge(final @NotNull ExternalOptions options) {
     if (options.getDsn() != null) {
       setDsn(options.getDsn());
     }

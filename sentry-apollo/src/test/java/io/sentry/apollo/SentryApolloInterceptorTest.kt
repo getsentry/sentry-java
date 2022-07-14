@@ -15,7 +15,8 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
-import io.sentry.TraceState
+import io.sentry.TraceContext
+import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryTransaction
 import kotlinx.coroutines.launch
@@ -85,7 +86,7 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -100,7 +101,7 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -115,7 +116,7 @@ class SentryApolloInterceptorTest {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -151,7 +152,7 @@ class SentryApolloInterceptorTest {
                 val httpClientSpan = it.spans.first()
                 assertEquals("overwritten description", httpClientSpan.description)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -167,7 +168,7 @@ class SentryApolloInterceptorTest {
             check {
                 assertEquals(1, it.spans.size)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -200,7 +201,7 @@ class SentryApolloInterceptorTest {
     private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true) = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
-            tx = SentryTracer(TransactionContext("op", "desc", true), fixture.hub)
+            tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.hub)
             whenever(fixture.hub.span).thenReturn(tx)
         }
 

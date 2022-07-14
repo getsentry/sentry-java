@@ -20,7 +20,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
-import io.sentry.TraceState
+import io.sentry.TraceContext
 import io.sentry.TransactionContext
 import io.sentry.TransactionFinishedCallback
 import java.util.Date
@@ -372,7 +372,7 @@ class ActivityLifecycleIntegrationTest {
             check {
                 assertEquals(SpanStatus.OK, it.status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -395,7 +395,7 @@ class ActivityLifecycleIntegrationTest {
             check {
                 assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
             },
-            anyOrNull<TraceState>(),
+            anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()
         )
@@ -412,7 +412,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceState>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -423,7 +423,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceState>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -436,7 +436,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceState>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -505,7 +505,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(mock(), mock())
 
         sut.onActivityCreated(mock(), fixture.bundle)
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceState>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -518,7 +518,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceState>(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
     }
 
     @Test
@@ -545,7 +545,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceState>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
