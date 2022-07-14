@@ -4,10 +4,10 @@
   "description": "",
   "main": "",
   "scripts": {
-    "local.android.emu": "npx wdio test/configs/wdio.android.local.conf.ts",
-    "saucelabs.android.emu": "npx wdio test/configs/wdio.android.sauce.conf.ts",
-    "local.ios.sim": "npx wdio test/configs/wdio.ios.local.conf.ts",
-    "saucelabs.ios.sim": "npx wdio test/configs/wdio.ios.sauce.conf.ts"
+    "local.android": "npx wdio test/configs/wdio.android.local.conf.ts",
+    "saucelabs.android": "npx wdio test/configs/wdio.android.sauce.conf.ts",
+    "local.ios": "npx wdio test/configs/wdio.ios.local.conf.ts",
+    "saucelabs.ios": "npx wdio test/configs/wdio.ios.sauce.conf.ts"
   },
   "keywords": [],
   "license": "MIT",

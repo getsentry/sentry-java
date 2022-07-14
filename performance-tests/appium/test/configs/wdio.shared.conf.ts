@@ -7,7 +7,7 @@ export const config: WebdriverIO.Config = {
     capabilities: [],
     maxInstances: 1,
     //Test Configuration
-    logLevel: 'debug',
+    logLevel: 'info',
     baseUrl: '',
     waitforTimeout: 30000,
     // A timeout of 5 min
