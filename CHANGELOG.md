@@ -6,7 +6,7 @@
 
 - Lazily retrieve HostnameCache in MainEventProcessor ([#2170](https://github.com/getsentry/sentry-java/pull/2170))
 - Switch upstream dependencies to `compileOnly` in integrations ([#2175](https://github.com/getsentry/sentry-java/pull/2175))
-g
+
 ## 6.2.1
 
 ### Fixes
