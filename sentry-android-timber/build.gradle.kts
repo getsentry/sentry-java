@@ -71,11 +71,12 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    api(Config.Libs.timber)
+    compileOnly(Config.Libs.timber)
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
+    testImplementation(Config.Libs.timber)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
