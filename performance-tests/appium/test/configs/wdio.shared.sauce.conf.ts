@@ -1,17 +1,27 @@
-import { SauceRegions } from '@wdio/types/build/Options';
-import { config } from './wdio.shared.conf';
+import { SauceLabsOptions } from 'saucelabs'
+import { AppInfo } from '../src/appinfo'
+import { config } from './wdio.shared.conf'
+import { uploadApp } from '../src/sauce-utils'
 
+const sauceOptions: SauceLabsOptions = {
+    user: process.env.SAUCE_USERNAME!,
+    key: process.env.SAUCE_ACCESS_KEY!,
+    region: process.env.SAUCE_REGION || 'us'
+}
+config.sauceOptions = sauceOptions
 
-/**
- * Sauce Service Providers
- */
-config.user = process.env.SAUCE_USERNAME;
-config.key = process.env.SAUCE_ACCESS_KEY;
-config.region = (process.env.SAUCE_REGION || 'us') as SauceRegions;
+config.user = sauceOptions.user
+config.key = sauceOptions.key
+config.region = sauceOptions.region
 
-/**
- * Services
- */
-config.services = config.services.concat([['sauce']]);
+config.services = config.services.concat([['sauce']])
 
-export default config;
+config.onPrepare = async (config, capabilities) => {
+    const appsUnderTest = config.customApps as AppInfo[]
+
+    for (const app of appsUnderTest) {
+        await uploadApp(sauceOptions, app)
+    }
+}
+
+export default config

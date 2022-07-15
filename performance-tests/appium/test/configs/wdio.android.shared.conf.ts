@@ -1,5 +1,5 @@
 import * as path from 'path'
-import { AppInfo } from './appinfo';
+import { AppInfo } from '../src/appinfo';
 
 export function updateConfig(config: WebdriverIO.Config) {
     config.customApps = [
