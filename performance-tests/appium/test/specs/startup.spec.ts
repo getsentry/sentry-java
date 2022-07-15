@@ -1,6 +1,8 @@
 import * as ss from 'simple-statistics'
 import * as assert from 'assert'
 import { AppInfo } from '../configs/appinfo'
+import SauceLabs from 'saucelabs'
+import * as fs from 'fs'
 
 const appsUnderTest = driver.config.customApps as AppInfo[]
 const runs = 10
@@ -8,8 +10,14 @@ const runs = 10
 describe('Apps', () => {
     // install apps and collect their startup times
     before(async () => {
+        const isSauceLabs = driver.config.services?.[0]?.[0] == 'sauce'
+
         for (var j = 0; j < appsUnderTest.length; j++) {
             const app = appsUnderTest[j]
+
+            if (isSauceLabs) {
+                await uploadToSauceLabs(app)
+            }
 
             console.log(`Installing app ${app.name} from ${app.path}`)
             await driver.installApp(app.path)
@@ -46,3 +54,22 @@ describe('Apps', () => {
         // TODO compare between the apps
     })
 })
+
+const uploadToSauceLabs = async (app: AppInfo) => {
+    console.log(`Uploading app ${app.name} to SauceLabs from ${app.path}`)
+
+    const sauceLabs = new SauceLabs({
+        user: driver.config.user!,
+        key: driver.config.key!,
+        region: driver.config.region!
+    })
+
+    const appType = ''
+    const appIdentifier = ''
+    const appDisplayName = ''
+    const appActive = false
+    const body = fs.createReadStream(app.path)
+    const response = await sauceLabs.uploadApp(appType, appIdentifier, appDisplayName, appActive, body)
+
+    console.log(response)
+}
