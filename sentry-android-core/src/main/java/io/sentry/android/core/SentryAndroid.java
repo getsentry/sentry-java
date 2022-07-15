@@ -33,7 +33,7 @@ public final class SentryAndroid {
 
   private static final String TIMBER_CLASS_NAME = "timber.log.Timber";
   private static final String FRAGMENT_CLASS_NAME =
-    "androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks";
+      "androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks";
 
   private SentryAndroid() {}
 
@@ -89,15 +89,16 @@ public final class SentryAndroid {
           options -> {
             final LoadClass classLoader = new LoadClass();
             final boolean isTimberUpstreamAvailable =
-              classLoader.isClassAvailable(TIMBER_CLASS_NAME, options);
+                classLoader.isClassAvailable(TIMBER_CLASS_NAME, options);
             final boolean isFragmentUpstreamAvailable =
-              classLoader.isClassAvailable(FRAGMENT_CLASS_NAME, options);
+                classLoader.isClassAvailable(FRAGMENT_CLASS_NAME, options);
             final boolean isFragmentAvailable =
-              (isFragmentUpstreamAvailable &&
-                classLoader.isClassAvailable(SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options));
+                (isFragmentUpstreamAvailable
+                    && classLoader.isClassAvailable(
+                        SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME, options));
             final boolean isTimberAvailable =
-              (isTimberUpstreamAvailable &&
-                classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
+                (isTimberUpstreamAvailable
+                    && classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
 
             AndroidOptionsInitializer.init(
                 options, context, logger, isFragmentAvailable, isTimberAvailable);
