@@ -17,6 +17,8 @@ config.services = config.services.concat([
     ]
 ]);
 
+config.startupRuns = 10
+
 config.onPrepare = async (config, capabilities) => {
     const appsUnderTest = config.customApps as AppInfo[]
 

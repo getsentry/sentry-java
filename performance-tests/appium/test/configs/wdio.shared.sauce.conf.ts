@@ -16,6 +16,8 @@ config.region = sauceOptions.region
 
 config.services = config.services.concat([['sauce']])
 
+config.startupRuns = 50
+
 config.onPrepare = async (config, capabilities) => {
     const appsUnderTest = config.customApps as AppInfo[]
 

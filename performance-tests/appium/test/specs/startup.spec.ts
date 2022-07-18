@@ -1,30 +1,29 @@
 import * as ss from 'simple-statistics'
 import * as assert from 'assert'
 import { AppInfo } from '../src/appinfo'
-import * as path from 'path'
-import { findAppOnServer } from '../src/sauce-utils'
 
 const appsUnderTest = driver.config.customApps as AppInfo[]
-const runs = 10
+const sleepTimeMs = 100
 
 describe('Apps', () => {
     // install apps and collect their startup times
     before(async () => {
-        const isSauceLabs = driver.config.services?.[0]?.[0] == 'sauce'
+        const runs = driver.config.startupRuns as number
 
         for (var j = 0; j < appsUnderTest.length; j++) {
             const app = appsUnderTest[j]
 
+            // sleep before the first test to improve the first run time
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
             console.log(`Collecting startup times for app ${app.name}`)
             for (var i = 0; i < runs; i++) {
-                // Note: sleeping before launching the app (instead of after), improves the speed of the first launch.
-                await new Promise(resolve => setTimeout(resolve, 1000))
-
                 // Note: there's also .activateApp() which should be OS independent, but doesn't seem to wait for the activity to start
                 await driver.startActivity(app.name, app.activity)
 
                 // kill the app and sleep before running the next iteration
                 await driver.terminateApp(app.name)
+                await new Promise(resolve => setTimeout(resolve, sleepTimeMs))
             }
 
             const events = await driver.getEvents([])
@@ -41,9 +40,26 @@ describe('Apps', () => {
     it('starts', async () => {
         for (const app of appsUnderTest) {
             console.log(`App ${app.name} launch times: [${app.startupTimes}]`)
-            console.log(`App ${app.name} launch mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)}`)
+            console.log(`App ${app.name} launch times mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)}`)
+            app.startupTimes = filterOutliers(app.startupTimes)
+            console.log(`App ${app.name} launch times (filtered): [${app.startupTimes}]`)
+            console.log(`App ${app.name} launch times (filtered) mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)}`)
         }
 
         // TODO compare between the apps
     })
 })
+
+// See https://en.wikipedia.org/wiki/Interquartile_range#Outliers for details
+function filterOutliers(list: number[]): number[] {
+    // sort array (as numbers)
+    list.sort((a, b) => a - b)
+
+    const Q1 = ss.quantileSorted(list, .25)
+    const Q3 = ss.quantileSorted(list, .75)
+    const IQR = Q3 - Q1;
+
+    const between = (num: number, a: number, b: number) => num >= a && num <= b
+
+    return list.filter(num => between(num, Q1 - 1.5 * IQR, Q3 + 1.5 * IQR))
+}
