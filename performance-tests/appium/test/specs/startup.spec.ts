@@ -15,13 +15,6 @@ describe('Apps', () => {
         for (var j = 0; j < appsUnderTest.length; j++) {
             const app = appsUnderTest[j]
 
-            if (isSauceLabs) {
-                app.path = 'storage:' + await findAppOnServer(driver.config.sauceOptions, app)
-            }
-
-            console.log(`Installing app ${app.name} from ${app.path}`)
-            await driver.installApp(app.path)
-
             console.log(`Collecting startup times for app ${app.name}`)
             for (var i = 0; i < runs; i++) {
                 // Note: sleeping before launching the app (instead of after), improves the speed of the first launch.

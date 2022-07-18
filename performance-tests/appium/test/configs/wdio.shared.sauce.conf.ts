@@ -19,8 +19,11 @@ config.services = config.services.concat([['sauce']])
 config.onPrepare = async (config, capabilities) => {
     const appsUnderTest = config.customApps as AppInfo[]
 
+    capabilities[0]['appium:otherApps'] = []
     for (const app of appsUnderTest) {
-        await uploadApp(sauceOptions, app)
+        const fileId = await uploadApp(sauceOptions, app)
+        console.log(`Adding app ${app.name} from ${app.path} to 'appium:otherApps' as 'storage:${fileId}'`)
+        capabilities[0]['appium:otherApps'].push(`storage:${fileId}`)
     }
 }
 
