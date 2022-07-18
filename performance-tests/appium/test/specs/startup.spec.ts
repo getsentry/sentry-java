@@ -50,7 +50,7 @@ describe('Apps', () => {
             const time0 = ss.mean(appsUnderTest[0].startupTimes)
             const time1 = ss.mean(appsUnderTest[1].startupTimes)
             const diff = time1 - time0
-            console.log(`App ${appsUnderTest[1].name} takes ${Math.abs(diff).toFixed(2)} ms ${diff >= 0 ? 'more' : 'less'} time to start than app ${appsUnderTest[0].name}`)
+            console.log(`App ${appsUnderTest[1].name} takes approximately ${Math.abs(diff).toFixed(2)} ms ${diff >= 0 ? 'more' : 'less'} time to start than app ${appsUnderTest[0].name}`)
         }
     })
 })
