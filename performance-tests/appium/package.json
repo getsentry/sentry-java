@@ -10,7 +10,7 @@
     "saucelabs:ios": "npx wdio test/configs/wdio.ios.sauce.conf.ts",
     "build:apps": "npm-run-all -s build:apps:plain build:apps:sentry",
     "build:apps:plain": "../test-app-plain/gradlew -p ../test-app-plain :app:assembleRelease",
-    "build:apps:sentry": "../test-app-sentry/gradlew -p ../test-app-sentry :app:assembleRelease"
+    "build:apps:sentry": "../../gradlew -p ../.. :performance-tests:test-app-sentry:assembleRelease"
   },
   "keywords": [],
   "license": "MIT",

@@ -6,6 +6,7 @@ updateConfig(config)
 config.capabilities = [{
     platformName: 'Android',
     'appium:automationName': 'UIAutomator2',
+    'appium:disableWindowAnimation': true,
     'appium:platformVersion': '11',
     // 'appium:deviceName': 'Android GoogleAPI Emulator',
     'appium:newCommandTimeout': 240,
