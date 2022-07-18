@@ -14,6 +14,7 @@ body:
         - sentry-android-timber
         - sentry-android-fragment
         - sentry-apollo
+        - sentry-compose
         - other
     validations:
       required: true
