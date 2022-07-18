@@ -9,7 +9,7 @@
     "local:ios": "npx wdio test/configs/wdio.ios.local.conf.ts",
     "saucelabs:ios": "npx wdio test/configs/wdio.ios.sauce.conf.ts",
     "build:apps": "npm-run-all -s build:apps:plain build:apps:sentry",
-    "build:apps:plain": "../test-app-plain/gradlew -p ../test-app-plain :app:assembleRelease",
+    "build:apps:plain": "../../gradlew -p ../.. :performance-tests:test-app-plain:assembleRelease",
     "build:apps:sentry": "../../gradlew -p ../.. :performance-tests:test-app-sentry:assembleRelease"
   },
   "keywords": [],

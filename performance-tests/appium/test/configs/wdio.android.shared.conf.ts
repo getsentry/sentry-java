@@ -6,7 +6,7 @@ export function updateConfig(config: WebdriverIO.Config) {
         new AppInfo(
             'io.sentry.java.tests.perf.appplain',
             'MainActivity',
-            path.join(process.cwd(), '../test-app-plain/app/build/outputs/apk/release/app-release.apk')
+            path.join(process.cwd(), '../test-app-plain/build/outputs/apk/release/test-app-plain-release.apk')
         ),
         new AppInfo(
             'io.sentry.java.tests.perf.appsentry',

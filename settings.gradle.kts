@@ -42,6 +42,7 @@ include(
     "sentry-samples:sentry-samples-netflix-dgs",
     "sentry-android-integration-tests:sentry-uitest-android-benchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
+    "performance-tests:test-app-plain",
     "performance-tests:test-app-sentry",
 )
 
