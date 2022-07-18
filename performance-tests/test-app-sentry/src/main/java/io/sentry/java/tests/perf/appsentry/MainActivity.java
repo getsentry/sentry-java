@@ -11,7 +11,6 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.snackbar.Snackbar;
 import io.sentry.java.tests.perf.appsentry.databinding.ActivityMainBinding;
-import io.sentry.Sentry;
 
 public class MainActivity extends AppCompatActivity {
 
