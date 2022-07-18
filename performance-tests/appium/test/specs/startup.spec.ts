@@ -46,7 +46,12 @@ describe('Apps', () => {
             console.log(`App ${app.name} launch times (filtered) mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)}`)
         }
 
-        // TODO compare between the apps
+        if (appsUnderTest.length == 2) {
+            const time0 = ss.mean(appsUnderTest[0].startupTimes)
+            const time1 = ss.mean(appsUnderTest[1].startupTimes)
+            const diff = time1 - time0
+            console.log(`App ${appsUnderTest[1].name} takes ${Math.abs(diff).toFixed(2)} ms ${diff >= 0 ? 'more' : 'less'} time to start than app ${appsUnderTest[0].name}`)
+        }
     })
 })
 
