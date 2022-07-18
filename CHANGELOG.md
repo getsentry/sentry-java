@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Switch upstream dependencies to `compileOnly` in integrations ([#2175](https://github.com/getsentry/sentry-java/pull/2175))
+
 ### Fixes
 
 - Lazily retrieve HostnameCache in MainEventProcessor ([#2170](https://github.com/getsentry/sentry-java/pull/2170))
