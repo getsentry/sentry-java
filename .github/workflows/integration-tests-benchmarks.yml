@@ -10,6 +10,7 @@ on:
       - '**/sentry-android-ndk/**'
       - '**/sentry-android-integration-tests/sentry-uitest-android-benchmark/**'
       - '**/.github/**'
+      - '**/performance-tests/**'
 
 jobs:
   test:
@@ -50,3 +51,28 @@ jobs:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-benchmark-lite.yml
+
+  startup-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: performance-tests/appium
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v2
+
+      - name: "Set up Java: 11"
+        uses: actions/setup-java@v2
+        with:
+          java-version: "11"
+          distribution: "adopt"
+
+      - run: npm install
+
+      - run: npm run build:apps
+
+      - run: npm run saucelabs:android
+        env:
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
