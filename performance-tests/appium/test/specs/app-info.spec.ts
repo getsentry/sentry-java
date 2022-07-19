@@ -1,11 +1,18 @@
 import * as ss from 'simple-statistics'
 import * as assert from 'assert'
 import { AppInfo } from '../src/appinfo'
+import * as fs from 'fs'
+import { sprintf } from 'sprintf-js';
+import * as bytes from 'bytes';
+
 
 const appsUnderTest = driver.config.customApps as AppInfo[]
 const sleepTimeMs = 300
+const MiB = 1024 * 1024
+const printf = (...args: any[]) => console.log(sprintf(...args))
+const logAppPrefix = `App %-${ss.max(appsUnderTest.map(a => a.name.length))}s`
 
-describe('App startup', () => {
+describe('App info', () => {
     // install apps and collect their startup times
     before(async () => {
         const runs = driver.config.startupRuns as number
@@ -16,7 +23,7 @@ describe('App startup', () => {
             // sleep before the first test to improve the first run time
             await new Promise(resolve => setTimeout(resolve, 1000))
 
-            console.log(`Collecting startup times for app ${app.name}`)
+            printf(`${logAppPrefix} collecting startup times`, app.name)
             for (var i = 0; i < runs; i++) {
                 // Note: there's also .activateApp() which should be OS independent, but doesn't seem to wait for the activity to start
                 await driver.startActivity(app.name, app.activity)
@@ -37,18 +44,44 @@ describe('App startup', () => {
         }
     })
 
-    it('print times', async () => {
+    it('startup times', async () => {
         for (const app of appsUnderTest) {
-            console.log(`App ${app.name} launch times (original) | mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)} | values: [${app.startupTimes}]`)
+            printf(`${logAppPrefix} launch times (original) | mean: %3.2f ms | stddev: %3.2f | values: [${app.startupTimes}]`,
+                app.name, ss.mean(app.startupTimes), ss.standardDeviation(app.startupTimes))
             app.startupTimes = filterOutliers(app.startupTimes)
-            console.log(`App ${app.name} launch times (filtered) | mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)} | values: [${app.startupTimes}]`)
+            printf(`${logAppPrefix} launch times (filtered) | mean: %3.2f ms | stddev: %3.2f | values: [${app.startupTimes}]`,
+                app.name, ss.mean(app.startupTimes), ss.standardDeviation(app.startupTimes))
+            expect(ss.standardDeviation(app.startupTimes)).toBeLessThan(50)
         }
 
         if (appsUnderTest.length == 2) {
             const time0 = ss.mean(appsUnderTest[0].startupTimes)
             const time1 = ss.mean(appsUnderTest[1].startupTimes)
             const diff = time1 - time0
-            console.log(`App ${appsUnderTest[1].name} takes approximately ${Math.abs(diff).toFixed(2)} ms ${diff >= 0 ? 'more' : 'less'} time to start than app ${appsUnderTest[0].name}`)
+            printf(`${logAppPrefix} takes approximately %3d ms %s time to start than app %s`,
+                appsUnderTest[1].name, Math.abs(diff), diff >= 0 ? 'more' : 'less', appsUnderTest[0].name)
+
+            // fail if the slowdown is not within the expected range
+            expect(diff).toBeGreaterThan(0)
+            expect(diff).toBeLessThan(150)
+        }
+    })
+
+    it('binary size', async () => {
+        for (const app of appsUnderTest) {
+            printf(`${logAppPrefix} size is %s`, app.name, bytes(fs.statSync(app.path).size))
+        }
+
+        if (appsUnderTest.length == 2) {
+            const value0 = fs.statSync(appsUnderTest[0].path).size
+            const value1 = fs.statSync(appsUnderTest[1].path).size
+            const diff = value1 - value0
+            printf(`${logAppPrefix} is %s %s than app %s`,
+                appsUnderTest[1].name, bytes(Math.abs(diff)), diff >= 0 ? 'larger' : 'smaller', appsUnderTest[0].name)
+
+            // fail if the added size is not within the expected range
+            expect(diff).toBeGreaterThan(1.8 * MiB)
+            expect(diff).toBeLessThan(2.1 * MiB)
         }
     })
 })
