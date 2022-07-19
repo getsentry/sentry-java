@@ -12,6 +12,7 @@ body:
         - sentry-jul
         - sentry-jdbc
         - sentry-apollo
+        - sentry-apollo-3
         - sentry-kotlin-extensions
         - sentry-servlet
         - sentry-servlet-jakarta

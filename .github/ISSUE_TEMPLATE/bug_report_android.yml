@@ -15,6 +15,7 @@ body:
         - sentry-android-fragment
         - sentry-apollo
         - sentry-compose
+        - sentry-apollo-3
         - other
     validations:
       required: true
