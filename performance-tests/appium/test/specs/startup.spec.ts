@@ -3,9 +3,9 @@ import * as assert from 'assert'
 import { AppInfo } from '../src/appinfo'
 
 const appsUnderTest = driver.config.customApps as AppInfo[]
-const sleepTimeMs = 100
+const sleepTimeMs = 300
 
-describe('Apps', () => {
+describe('App startup', () => {
     // install apps and collect their startup times
     before(async () => {
         const runs = driver.config.startupRuns as number
@@ -37,13 +37,11 @@ describe('Apps', () => {
         }
     })
 
-    it('starts', async () => {
+    it('print times', async () => {
         for (const app of appsUnderTest) {
-            console.log(`App ${app.name} launch times: [${app.startupTimes}]`)
-            console.log(`App ${app.name} launch times mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)}`)
+            console.log(`App ${app.name} launch times (original) | mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)} | values: [${app.startupTimes}]`)
             app.startupTimes = filterOutliers(app.startupTimes)
-            console.log(`App ${app.name} launch times (filtered): [${app.startupTimes}]`)
-            console.log(`App ${app.name} launch times (filtered) mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)}`)
+            console.log(`App ${app.name} launch times (filtered) | mean: ${ss.mean(app.startupTimes)} ms | stddev: ${ss.standardDeviation(app.startupTimes).toFixed(2)} | values: [${app.startupTimes}]`)
         }
 
         if (appsUnderTest.length == 2) {
