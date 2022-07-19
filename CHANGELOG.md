@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Switch upstream dependencies to `compileOnly` in integrations ([#2175](https://github.com/getsentry/sentry-java/pull/2175))
+
+### Fixes
+
+- Lazily retrieve HostnameCache in MainEventProcessor ([#2170](https://github.com/getsentry/sentry-java/pull/2170))
+
 ## 6.2.1
 
 ### Fixes
@@ -50,6 +60,7 @@
 ### Fixes
 
 - Fix proguard rules to work R8 [issue](https://issuetracker.google.com/issues/235733922) around on AGP 7.3.0-betaX and 7.4.0-alphaX ([#2094](https://github.com/getsentry/sentry-java/pull/2094))
+- Fix GraalVM Native Image compatibility ([#2172](https://github.com/getsentry/sentry-java/pull/2172))
 
 ## 6.0.0
 
