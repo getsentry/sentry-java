@@ -8,9 +8,8 @@ on:
       - '**/sentry-android/**'
       - '**/sentry-android-core/**'
       - '**/sentry-android-ndk/**'
-      - '**/sentry-android-integration-tests/sentry-uitest-android-benchmark/**'
+      - '**/sentry-android-integration-tests/**'
       - '**/.github/**'
-      - '**/performance-tests/**'
 
 jobs:
   test:
@@ -56,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: performance-tests/appium
+        working-directory: sentry-android-integration-tests/appium
 
     steps:
       - name: Git checkout
