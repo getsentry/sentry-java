@@ -185,6 +185,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
+	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getRelease ()Ljava/lang/String;
@@ -202,6 +203,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
+	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setRelease (Ljava/lang/String;)V
@@ -1230,6 +1232,8 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getOutboxPath ()Ljava/lang/String;
+	public fun getProfilesSampleRate ()Ljava/lang/Double;
+	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
@@ -1304,6 +1308,8 @@ public class io/sentry/SentryOptions {
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
 	public fun setPrintUncaughtStackTrace (Z)V
+	public fun setProfilesSampleRate (Ljava/lang/Double;)V
+	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingEnabled (Z)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
@@ -1335,6 +1341,10 @@ public abstract interface class io/sentry/SentryOptions$BeforeBreadcrumbCallback
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendCallback {
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
+public abstract interface class io/sentry/SentryOptions$ProfilesSamplerCallback {
+	public abstract fun sample (Lio/sentry/SamplingContext;)Ljava/lang/Double;
 }
 
 public final class io/sentry/SentryOptions$Proxy {
@@ -3037,6 +3047,8 @@ public final class io/sentry/util/Platform {
 
 public final class io/sentry/util/SampleRateUtil {
 	public fun <init> ()V
+	public static fun isValidProfilesSampleRate (Ljava/lang/Double;)Z
+	public static fun isValidProfilesSampleRate (Ljava/lang/Double;Z)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;Z)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z

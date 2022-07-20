@@ -100,4 +100,49 @@ class SampleRateUtilTest {
     fun `rejects null traces sample rate if told so`() {
         assertFalse(SampleRateUtil.isValidTracesSampleRate(null, false))
     }
+
+    @Test
+    fun `accepts 0 for profiles sample rate`() {
+        assertTrue(SampleRateUtil.isValidProfilesSampleRate(0.0))
+    }
+
+    @Test
+    fun `accepts 1 for profiles sample rate`() {
+        assertTrue(SampleRateUtil.isValidProfilesSampleRate(1.0))
+    }
+
+    @Test
+    fun `rejects negative profiles sample rate`() {
+        assertFalse(SampleRateUtil.isValidProfilesSampleRate(-0.5))
+    }
+
+    @Test
+    fun `rejects 1 dot 01 for profiles sample rate`() {
+        assertFalse(SampleRateUtil.isValidProfilesSampleRate(1.01))
+    }
+
+    @Test
+    fun `rejects NaN profiles sample rate`() {
+        assertFalse(SampleRateUtil.isValidProfilesSampleRate(Double.NaN))
+    }
+
+    @Test
+    fun `rejects positive infinite profiles sample rate`() {
+        assertFalse(SampleRateUtil.isValidProfilesSampleRate(Double.POSITIVE_INFINITY))
+    }
+
+    @Test
+    fun `rejects negative infinite profiles sample rate`() {
+        assertFalse(SampleRateUtil.isValidProfilesSampleRate(Double.NEGATIVE_INFINITY))
+    }
+
+    @Test
+    fun `accepts null profiles sample rate if told so`() {
+        assertTrue(SampleRateUtil.isValidProfilesSampleRate(null, true))
+    }
+
+    @Test
+    fun `rejects null profiles sample rate if told so`() {
+        assertFalse(SampleRateUtil.isValidProfilesSampleRate(null, false))
+    }
 }

@@ -114,6 +114,13 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with profilesSampleRate using external properties`() {
+        withPropertiesFile("profiles-sample-rate=0.2") {
+            assertEquals(0.2, it.profilesSampleRate)
+        }
+    }
+
+    @Test
     fun `creates options with enableDeduplication using external properties`() {
         withPropertiesFile("enable-deduplication=true") {
             assertNotNull(it.enableDeduplication) {

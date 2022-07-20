@@ -131,7 +131,7 @@ class SentryTracerTest {
     fun `when transaction is finished and profiling is disabled, transactionProfiler is not called`() {
         val transactionProfiler = mock<ITransactionProfiler>()
         val tracer = fixture.getSut(optionsConfiguration = {
-            it.isProfilingEnabled = false
+            it.profilesSampleRate = 0.0
             it.setTransactionProfiler(transactionProfiler)
         })
         tracer.finish()
@@ -142,7 +142,7 @@ class SentryTracerTest {
     fun `when transaction is finished and sampled and profiling is enabled, transactionProfiler is called`() {
         val transactionProfiler = mock<ITransactionProfiler>()
         val tracer = fixture.getSut(optionsConfiguration = {
-            it.isProfilingEnabled = true
+            it.profilesSampleRate = 1.0
             it.setTransactionProfiler(transactionProfiler)
         }, samplingDecision = TracesSamplingDecision(true))
         tracer.finish()
