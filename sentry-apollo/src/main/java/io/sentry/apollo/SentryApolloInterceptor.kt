@@ -31,7 +31,7 @@ class SentryApolloInterceptor(
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     init {
-      hub.options.sdkVersion?.addIntegration("Apollo2")
+        hub.options.sdkVersion?.addIntegration("Apollo2")
     }
 
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {

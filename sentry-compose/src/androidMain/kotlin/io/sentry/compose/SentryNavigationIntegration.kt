@@ -24,9 +24,9 @@ internal class SentryLifecycleObserver(
 ) : LifecycleEventObserver {
 
     init {
-      HubAdapter.getInstance().options
-          .sdkVersion
-          ?.addIntegration("ComposeNavigation")
+        HubAdapter.getInstance().options
+            .sdkVersion
+            ?.addIntegration("ComposeNavigation")
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
