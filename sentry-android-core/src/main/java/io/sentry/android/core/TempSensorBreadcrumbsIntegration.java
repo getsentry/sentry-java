@@ -14,6 +14,7 @@ import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -62,6 +63,10 @@ public final class TempSensorBreadcrumbsIntegration
             options
                 .getLogger()
                 .log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
+            final SdkVersion sdkVersion = this.options.getSdkVersion();
+            if (sdkVersion != null) {
+              sdkVersion.addIntegration("TempSensor");
+            }
           } else {
             this.options
                 .getLogger()

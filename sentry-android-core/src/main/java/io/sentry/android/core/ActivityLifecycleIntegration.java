@@ -20,6 +20,7 @@ import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -99,6 +100,10 @@ public final class ActivityLifecycleIntegration
     if (this.options.isEnableActivityLifecycleBreadcrumbs() || performanceEnabled) {
       application.registerActivityLifecycleCallbacks(this);
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
+      final SdkVersion sdkVersion = this.options.getSdkVersion();
+      if (sdkVersion != null) {
+        sdkVersion.addIntegration("Activity");
+      }
     }
   }
 

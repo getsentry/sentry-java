@@ -20,6 +20,10 @@ import io.sentry.TypeCheckHint
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
     HttpInterceptor {
 
+    init {
+        hub.options.sdkVersion?.addIntegration("Apollo3")
+    }
+
     override suspend fun intercept(
         request: HttpRequest,
         chain: HttpInterceptorChain

@@ -6,6 +6,7 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.MainThreadChecker;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -91,6 +92,10 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
             this.options.isEnableAppLifecycleBreadcrumbs());
     ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
     options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
+    final SdkVersion sdkVersion = this.options.getSdkVersion();
+    if (sdkVersion != null) {
+      sdkVersion.addIntegration("AppLifecycle");
+    }
   }
 
   private void removeObserver() {

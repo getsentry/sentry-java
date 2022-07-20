@@ -12,6 +12,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import io.sentry.Breadcrumb
+import io.sentry.HubAdapter
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
 import io.sentry.android.navigation.SentryNavigationListener
@@ -21,6 +22,12 @@ internal class SentryLifecycleObserver(
     private val navListener: NavController.OnDestinationChangedListener =
         SentryNavigationListener()
 ) : LifecycleEventObserver {
+
+    init {
+      HubAdapter.getInstance().options
+          .sdkVersion
+          ?.addIntegration("ComposeNavigation")
+    }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         if (event == Lifecycle.Event.ON_RESUME) {

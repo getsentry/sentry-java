@@ -10,6 +10,7 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.Permissions;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -53,6 +54,10 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
           telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
 
           options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
+          final SdkVersion sdkVersion = this.options.getSdkVersion();
+          if (sdkVersion != null) {
+            sdkVersion.addIntegration("PhoneState");
+          }
         } catch (Throwable e) {
           this.options
               .getLogger()

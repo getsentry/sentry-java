@@ -9,6 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -70,6 +71,10 @@ public final class AnrIntegration implements Integration, Closeable {
           anrWatchDog.start();
 
           options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
+          final SdkVersion sdkVersion = options.getSdkVersion();
+          if (sdkVersion != null) {
+            sdkVersion.addIntegration("Anr");
+          }
         }
       }
     }

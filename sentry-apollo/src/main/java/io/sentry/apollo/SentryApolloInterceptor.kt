@@ -30,6 +30,10 @@ class SentryApolloInterceptor(
     constructor(hub: IHub) : this(hub, null)
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
+    init {
+      hub.options.sdkVersion?.addIntegration("Apollo2")
+    }
+
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {
         val activeSpan = hub.span
         if (activeSpan == null) {

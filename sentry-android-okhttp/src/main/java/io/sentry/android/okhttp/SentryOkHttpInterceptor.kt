@@ -22,6 +22,10 @@ class SentryOkHttpInterceptor(
     constructor(hub: IHub) : this(hub, null)
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
+    init {
+        hub.options.sdkVersion?.addIntegration("OkHttp")
+    }
+
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()
 

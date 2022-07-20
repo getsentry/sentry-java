@@ -29,6 +29,7 @@ class SentryTimberIntegration(
         Timber.plant(tree)
 
         logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
+        options.sdkVersion?.addIntegration("Timber")
     }
 
     override fun close() {

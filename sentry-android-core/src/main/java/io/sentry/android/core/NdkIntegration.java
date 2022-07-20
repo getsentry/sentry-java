@@ -4,6 +4,7 @@ import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -53,6 +54,10 @@ public final class NdkIntegration implements Integration, Closeable {
         method.invoke(null, args);
 
         this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
+        final SdkVersion sdkVersion = this.options.getSdkVersion();
+        if (sdkVersion != null) {
+          sdkVersion.addIntegration("Ndk");
+        }
       } catch (NoSuchMethodException e) {
         disableNdkIntegration(this.options);
         this.options

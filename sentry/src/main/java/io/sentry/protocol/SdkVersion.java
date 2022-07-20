@@ -12,8 +12,11 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,7 +62,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
    * integrations are included because different SDK releases may contain different default
    * integrations.
    */
-  private @Nullable List<String> integrations;
+  private @Nullable Set<String> integrations;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -100,7 +103,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     Objects.requireNonNull(integration, "integration is required.");
 
     if (integrations == null) {
-      integrations = new ArrayList<>();
+      integrations = new CopyOnWriteArraySet<>();
     }
     integrations.add(integration);
   }
@@ -109,8 +112,8 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     return packages;
   }
 
-  public @Nullable List<String> getIntegrations() {
-    return integrations;
+  public @Nullable Set<String> getIntegrations() {
+    return integrations != null ? new CopyOnWriteArraySet<>(integrations) : null;
   }
 
   /**
@@ -241,7 +244,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
 
       SdkVersion sdkVersion = new SdkVersion(name, version);
       sdkVersion.packages = packages;
-      sdkVersion.integrations = integrations;
+      sdkVersion.integrations = new CopyOnWriteArraySet<>(integrations);
       sdkVersion.setUnknown(unknown);
       return sdkVersion;
     }

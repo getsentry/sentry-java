@@ -31,6 +31,7 @@ class FragmentLifecycleIntegration(
 
         application.registerActivityLifecycleCallbacks(this)
         options.logger.log(DEBUG, "FragmentLifecycleIntegration installed.")
+        options.sdkVersion?.addIntegration("Fragment")
     }
 
     override fun close() {

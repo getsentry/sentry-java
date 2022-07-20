@@ -38,6 +38,10 @@ class SentryNavigationListener @JvmOverloads constructor(
 
     private var activeTransaction: ITransaction? = null
 
+    init {
+        hub.options.sdkVersion?.addIntegration("Navigation")
+    }
+
     override fun onDestinationChanged(
         controller: NavController,
         destination: NavDestination,
