@@ -15,6 +15,7 @@ include(
     "sentry-android-navigation",
     "sentry-compose",
     "sentry-apollo",
+    "sentry-apollo-3",
     "sentry-test-support",
     "sentry-log4j2",
     "sentry-logback",
