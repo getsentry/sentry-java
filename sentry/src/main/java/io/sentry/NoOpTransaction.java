@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.TransactionNameSource;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -23,6 +24,11 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public @NotNull String getName() {
     return "";
+  }
+
+  @Override
+  public @NotNull TransactionNameSource getTransactionNameSource() {
+    return TransactionNameSource.CUSTOM;
   }
 
   @Override

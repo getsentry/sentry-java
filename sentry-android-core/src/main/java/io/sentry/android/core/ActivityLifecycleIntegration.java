@@ -20,6 +20,9 @@ import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.TransactionContext;
+import io.sentry.TransactionOptions;
+import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -160,26 +163,33 @@ public final class ActivityLifecycleIntegration
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (firstActivityCreated || appStartTime == null || coldStart == null) {
+        final TransactionOptions transactionOptions = new TransactionOptions();
+
+        transactionOptions.setWaitForChildren(true);
+        transactionOptions.setTransactionFinishedCallback(
+            (finishingTransaction) -> {
+              activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
+            });
+
         transaction =
             hub.startTransaction(
-                activityName,
-                UI_LOAD_OP,
-                (Date) null,
-                true,
-                (finishingTransaction) -> {
-                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
-                });
+                new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
+                transactionOptions);
       } else {
         // start transaction with app start timestamp
+        final TransactionOptions transactionOptions = new TransactionOptions();
+
+        transactionOptions.setStartTimestamp(appStartTime);
+        transactionOptions.setWaitForChildren(true);
+        transactionOptions.setTransactionFinishedCallback(
+            (finishingTransaction) -> {
+              activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
+            });
+
         transaction =
             hub.startTransaction(
-                activityName,
-                UI_LOAD_OP,
-                appStartTime,
-                true,
-                (finishingTransaction) -> {
-                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
-                });
+                new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
+                transactionOptions);
         // start specific span for app start
 
         appStartSpan =

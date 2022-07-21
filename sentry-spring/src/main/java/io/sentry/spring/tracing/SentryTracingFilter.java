@@ -9,7 +9,9 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
+import io.sentry.TransactionOptions;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
+import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import javax.servlet.FilterChain;
@@ -112,14 +114,28 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       try {
         final TransactionContext contexts =
             TransactionContext.fromSentryTrace(
-                name, "http.server", new SentryTraceHeader(sentryTraceHeader));
-        return hub.startTransaction(contexts, customSamplingContext, true);
+                name,
+                TransactionNameSource.URL,
+                "http.server",
+                new SentryTraceHeader(sentryTraceHeader));
+
+        final TransactionOptions transactionOptions = new TransactionOptions();
+        transactionOptions.setCustomSamplingContext(customSamplingContext);
+        transactionOptions.setBindToScope(true);
+
+        return hub.startTransaction(contexts, transactionOptions);
       } catch (InvalidSentryTraceHeaderException e) {
         hub.getOptions()
             .getLogger()
             .log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
       }
     }
-    return hub.startTransaction(name, "http.server", customSamplingContext, true);
+
+    final TransactionOptions transactionOptions = new TransactionOptions();
+    transactionOptions.setCustomSamplingContext(customSamplingContext);
+    transactionOptions.setBindToScope(true);
+
+    return hub.startTransaction(
+        new TransactionContext(name, TransactionNameSource.URL, "http.server"), transactionOptions);
   }
 }

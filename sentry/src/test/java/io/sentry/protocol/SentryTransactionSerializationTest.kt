@@ -26,7 +26,8 @@ class SentryTransactionSerializationTest {
             ),
             mapOf(
                 "386384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut()
-            )
+            ),
+            TransactionInfo(TransactionNameSource.CUSTOM)
         ).apply {
             SentryBaseEventSerializationTest.Fixture().update(this)
         }
@@ -49,7 +50,7 @@ class SentryTransactionSerializationTest {
     }
 
     @Test
-    fun `deserialize legacy date format`() {
+    fun `deserialize legacy date format and missing transaction name source`() {
         val expectedJson = sanitizedFile("json/sentry_transaction_legacy_date_format.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
