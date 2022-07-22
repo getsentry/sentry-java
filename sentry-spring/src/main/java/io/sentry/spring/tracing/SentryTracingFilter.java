@@ -87,7 +87,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         // if transaction name is not resolved, the request has not been processed by a controller
         // and we should not report it to Sentry
         if (transactionName != null) {
-          transaction.setName(transactionName);
+          transaction.setName(transactionName, TransactionNameSource.ROUTE);
           transaction.setOperation(TRANSACTION_OP);
           // if exception has been thrown, transaction status is already set to INTERNAL_ERROR, and
           // httpResponse.getStatus() returns 200.

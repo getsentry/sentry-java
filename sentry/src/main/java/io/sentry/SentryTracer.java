@@ -521,6 +521,13 @@ public final class SentryTracer implements ITransaction {
     this.name = name;
   }
 
+  @ApiStatus.Internal
+  @Override
+  public void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource) {
+    this.setName(name);
+    this.transactionNameSource = transactionNameSource;
+  }
+
   @Override
   public @NotNull String getName() {
     return this.name;
