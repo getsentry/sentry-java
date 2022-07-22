@@ -5,7 +5,6 @@ import io.sentry.protocol.TransactionNameSource;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
