@@ -24,6 +24,7 @@ include(
     "sentry-servlet-jakarta",
     "sentry-apache-http-client-5",
     "sentry-spring",
+    "sentry-spring-jakarta",
     "sentry-spring-boot-starter",
     "sentry-bom",
     "sentry-openfeign",
