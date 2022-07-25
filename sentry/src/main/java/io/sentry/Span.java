@@ -259,6 +259,10 @@ public final class Span implements ISpan {
     return context.getSampled();
   }
 
+  public @Nullable Boolean isProfileSampled() {
+    return context.getProfileSampled();
+  }
+
   public @Nullable TracesSamplingDecision getSamplingDecision() {
     return context.getSamplingDecision();
   }

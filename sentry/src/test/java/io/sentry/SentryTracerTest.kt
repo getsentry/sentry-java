@@ -99,6 +99,12 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when transaction is created, by default its profile is not sampled`() {
+        val tracer = fixture.getSut()
+        assertNull(tracer.isProfileSampled)
+    }
+
+    @Test
     fun `when transaction is finished, timestamp is set`() {
         val tracer = fixture.getSut()
         tracer.finish()
@@ -144,7 +150,7 @@ class SentryTracerTest {
         val tracer = fixture.getSut(optionsConfiguration = {
             it.profilesSampleRate = 1.0
             it.setTransactionProfiler(transactionProfiler)
-        }, samplingDecision = TracesSamplingDecision(true))
+        }, samplingDecision = TracesSamplingDecision(true, null, true, null))
         tracer.finish()
         verify(transactionProfiler).onTransactionFinish(any())
     }

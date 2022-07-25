@@ -295,7 +295,11 @@ public final class SentryTracer implements ITransaction {
       if (isSampled == null) {
         isSampled = false;
       }
-      if (hub.getOptions().isProfilingEnabled() && isSampled) {
+      Boolean isProfileSampled = isProfileSampled();
+      if (isProfileSampled == null) {
+        isProfileSampled = false;
+      }
+      if (isSampled && isProfileSampled) {
         profilingTraceData = hub.getOptions().getTransactionProfiler().onTransactionFinish(this);
       }
 
@@ -502,6 +506,11 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @Nullable Boolean isSampled() {
     return this.root.isSampled();
+  }
+
+  @Override
+  public @Nullable Boolean isProfileSampled() {
+    return this.root.isProfileSampled();
   }
 
   @Override

@@ -50,6 +50,7 @@ class SpanContextSerializationTest {
         val expectedJson = sanitizedFile("json/span_context.json")
         val actual = deserialize(expectedJson)
         assertNull(actual.sampled)
+        assertNull(actual.profileSampled)
         assertNotNull(actual.tags)
         val actualJson = serializeToString(actual)
         assertEquals(expectedJson, actualJson)

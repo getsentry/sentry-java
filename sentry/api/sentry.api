@@ -478,6 +478,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public abstract fun getSpans ()Ljava/util/List;
+	public abstract fun isProfileSampled ()Ljava/lang/Boolean;
 	public abstract fun isSampled ()Ljava/lang/Boolean;
 	public abstract fun scheduleFinish ()V
 	public abstract fun setName (Ljava/lang/String;)V
@@ -671,6 +672,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun isFinished ()Z
+	public fun isProfileSampled ()Ljava/lang/Boolean;
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun scheduleFinish ()V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
@@ -1408,6 +1410,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun isFinished ()Z
+	public fun isProfileSampled ()Ljava/lang/Boolean;
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun scheduleFinish ()V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
@@ -1513,6 +1516,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun isFinished ()Z
+	public fun isProfileSampled ()Ljava/lang/Boolean;
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
@@ -1542,6 +1546,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
+	public fun getProfileSampled ()Ljava/lang/Boolean;
 	public fun getSampled ()Ljava/lang/Boolean;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanId ()Lio/sentry/SpanId;
@@ -1553,6 +1558,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setSampled (Ljava/lang/Boolean;)V
+	public fun setSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V
 	public fun setSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -1669,6 +1675,9 @@ public final class io/sentry/TraceContext$JsonKeys {
 public final class io/sentry/TracesSamplingDecision {
 	public fun <init> (Ljava/lang/Boolean;)V
 	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;)V
+	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;Ljava/lang/Boolean;Ljava/lang/Double;)V
+	public fun getProfileSampleRate ()Ljava/lang/Double;
+	public fun getProfileSampled ()Ljava/lang/Boolean;
 	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getSampled ()Ljava/lang/Boolean;
 }
@@ -1687,6 +1696,7 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun getParentSampled ()Ljava/lang/Boolean;
 	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun setParentSampled (Ljava/lang/Boolean;)V
+	public fun setParentSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V
 }
 
 public abstract interface class io/sentry/TransactionFinishedCallback {

@@ -167,12 +167,31 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     return samplingDecision.getSampled();
   }
 
+  public @Nullable Boolean getProfileSampled() {
+    if (samplingDecision == null) {
+      return null;
+    }
+
+    return samplingDecision.getProfileSampled();
+  }
+
   @ApiStatus.Internal
   public void setSampled(final @Nullable Boolean sampled) {
     if (sampled == null) {
       setSamplingDecision(null);
     } else {
       setSamplingDecision(new TracesSamplingDecision(sampled));
+    }
+  }
+
+  @ApiStatus.Internal
+  public void setSampled(final @Nullable Boolean sampled, final @Nullable Boolean profileSampled) {
+    if (sampled == null) {
+      setSamplingDecision(null);
+    } else if (profileSampled == null) {
+      setSamplingDecision(new TracesSamplingDecision(sampled));
+    } else {
+      setSamplingDecision(new TracesSamplingDecision(sampled, null, profileSampled, null));
     }
   }
 
