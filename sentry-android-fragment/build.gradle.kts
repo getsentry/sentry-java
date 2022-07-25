@@ -66,9 +66,10 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    implementation(Config.Libs.fragment)
+    compileOnly(Config.Libs.fragment)
 
     // tests
+    testImplementation(Config.Libs.fragment)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)

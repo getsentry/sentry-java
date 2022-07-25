@@ -31,16 +31,10 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
-  private final @Nullable HostnameCache hostnameCache;
+  private volatile @Nullable HostnameCache hostnameCache = null;
 
   public MainEventProcessor(final @NotNull SentryOptions options) {
-    this(options, options.isAttachServerName() ? HostnameCache.getInstance() : null);
-  }
-
-  MainEventProcessor(
-      final @NotNull SentryOptions options, final @Nullable HostnameCache hostnameCache) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
-    this.hostnameCache = hostnameCache;
 
     final SentryStackTraceFactory sentryStackTraceFactory =
         new SentryStackTraceFactory(
@@ -53,14 +47,12 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   MainEventProcessor(
       final @NotNull SentryOptions options,
       final @NotNull SentryThreadFactory sentryThreadFactory,
-      final @NotNull SentryExceptionFactory sentryExceptionFactory,
-      final @NotNull HostnameCache hostnameCache) {
+      final @NotNull SentryExceptionFactory sentryExceptionFactory) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
     this.sentryThreadFactory =
         Objects.requireNonNull(sentryThreadFactory, "The SentryThreadFactory is required.");
     this.sentryExceptionFactory =
         Objects.requireNonNull(sentryExceptionFactory, "The SentryExceptionFactory is required.");
-    this.hostnameCache = Objects.requireNonNull(hostnameCache, "The HostnameCache is required");
   }
 
   @Override
@@ -164,8 +156,21 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
       event.setServerName(options.getServerName());
     }
 
-    if (options.isAttachServerName() && hostnameCache != null && event.getServerName() == null) {
-      event.setServerName(hostnameCache.getHostname());
+    if (options.isAttachServerName() && event.getServerName() == null) {
+      ensureHostnameCache();
+      if (hostnameCache != null) {
+        event.setServerName(hostnameCache.getHostname());
+      }
+    }
+  }
+
+  private void ensureHostnameCache() {
+    if (hostnameCache == null) {
+      synchronized (this) {
+        if (hostnameCache == null) {
+          hostnameCache = HostnameCache.getInstance();
+        }
+      }
     }
   }
 

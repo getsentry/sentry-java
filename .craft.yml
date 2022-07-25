@@ -45,3 +45,4 @@ targets:
       maven:io.sentry:sentry-compose:
       maven:io.sentry:sentry-compose-android:
       maven:io.sentry:sentry-compose-desktop:
+      maven:io.sentry:sentry-apollo-3:

@@ -119,6 +119,8 @@ object Config {
         val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
+
+        val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.3.0"
     }
 
     object AnnotationProcessors {
@@ -146,7 +148,7 @@ object Config {
         val mockitoInline = "org.mockito:mockito-inline:4.3.1"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
-        val mockWebserver3 = "com.squareup.okhttp3:mockwebserver:3.14.9"
+        val mockWebserver4 = "com.squareup.okhttp3:mockwebserver:4.9.3"
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"

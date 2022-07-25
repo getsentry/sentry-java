@@ -111,6 +111,7 @@ dependencies {
     implementation(projects.sentryAndroidTimber)
     implementation(projects.sentryCompose)
     implementation(Config.Libs.fragment)
+    implementation(Config.Libs.timber)
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(projects.sentryAndroid) {
