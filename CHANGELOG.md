@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add profilesSampleRate and profileSampler options for Android sdk ([#2184](https://github.com/getsentry/sentry-java/pull/2184))
+
 ## 6.2.1
 
 ### Fixes
