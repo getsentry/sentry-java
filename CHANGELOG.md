@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- `attach-screenshot` set on Manual init. didn't work ([#2175](https://github.com/getsentry/sentry-java/pull/2175))
+- `attach-screenshot` set on Manual init. didn't work ([#2186](https://github.com/getsentry/sentry-java/pull/2186))
 
 ## 6.3.0
 
