@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- `attach-screenshot` set on Manual init. didn't work ([#2175](https://github.com/getsentry/sentry-java/pull/2175))
+
 ## 6.3.0
 
 ### Features

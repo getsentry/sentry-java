@@ -61,17 +61,10 @@ class ScreenshotEventProcessorTest {
     }
 
     @Test
-    fun `when attach screenshot is enabled, registerActivityLifecycleCallbacks`() {
-        fixture.getSut(true)
+    fun `when add screenshot event processor, registerActivityLifecycleCallbacks`() {
+        fixture.getSut()
 
         verify(fixture.application).registerActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `when attach screenshot is disabled, does not registerActivityLifecycleCallbacks`() {
-        fixture.getSut(false)
-
-        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
     }
 
     @Test
@@ -85,7 +78,7 @@ class ScreenshotEventProcessorTest {
 
     @Test
     fun `when close is called and  attach screenshot is disabled, does not unregisterActivityLifecycleCallbacks`() {
-        val sut = fixture.getSut(false)
+        val sut = fixture.getSut()
 
         sut.close()
 
@@ -93,8 +86,19 @@ class ScreenshotEventProcessorTest {
     }
 
     @Test
+    fun `when process is called and attachScreenshot is disabled, unregisterActivityLifecycleCallbacks`() {
+        val sut = fixture.getSut()
+        val hint = Hint()
+
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
+
+        verify(fixture.application).registerActivityLifecycleCallbacks(any())
+    }
+
+    @Test
     fun `when process is called and attachScreenshot is disabled, does nothing`() {
-        val sut = fixture.getSut(false)
+        val sut = fixture.getSut()
         val hint = Hint()
 
         sut.onActivityCreated(fixture.activity, null)
