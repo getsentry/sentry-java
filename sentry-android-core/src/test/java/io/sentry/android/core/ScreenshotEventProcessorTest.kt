@@ -61,7 +61,7 @@ class ScreenshotEventProcessorTest {
     }
 
     @Test
-    fun `when add screenshot event processor, registerActivityLifecycleCallbacks`() {
+    fun `when adding screenshot event processor, registerActivityLifecycleCallbacks`() {
         fixture.getSut()
 
         verify(fixture.application).registerActivityLifecycleCallbacks(any())
