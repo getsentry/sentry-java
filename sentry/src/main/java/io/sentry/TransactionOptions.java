@@ -8,11 +8,11 @@ import org.jetbrains.annotations.Nullable;
 public final class TransactionOptions {
 
   private @Nullable CustomSamplingContext customSamplingContext = null;
-  private boolean isBindToScope = false;
+  private boolean bindToScope = false;
   private @Nullable Date startTimestamp = null;
-  private boolean isWaitForChildren = false;
+  private boolean waitForChildren = false;
   private @Nullable Long idleTimeout = null;
-  private boolean isTrimEnd = false;
+  private boolean trimEnd = false;
   private @Nullable TransactionFinishedCallback transactionFinishedCallback = null;
 
   public @Nullable CustomSamplingContext getCustomSamplingContext() {
@@ -24,11 +24,11 @@ public final class TransactionOptions {
   }
 
   public boolean isBindToScope() {
-    return isBindToScope;
+    return bindToScope;
   }
 
   public void setBindToScope(boolean bindToScope) {
-    isBindToScope = bindToScope;
+    this.bindToScope = bindToScope;
   }
 
   public @Nullable Date getStartTimestamp() {
@@ -40,11 +40,11 @@ public final class TransactionOptions {
   }
 
   public boolean isWaitForChildren() {
-    return isWaitForChildren;
+    return waitForChildren;
   }
 
   public void setWaitForChildren(boolean waitForChildren) {
-    isWaitForChildren = waitForChildren;
+    this.waitForChildren = waitForChildren;
   }
 
   public @Nullable Long getIdleTimeout() {
@@ -56,11 +56,11 @@ public final class TransactionOptions {
   }
 
   public boolean isTrimEnd() {
-    return isTrimEnd;
+    return trimEnd;
   }
 
   public void setTrimEnd(boolean trimEnd) {
-    isTrimEnd = trimEnd;
+    this.trimEnd = trimEnd;
   }
 
   public @Nullable TransactionFinishedCallback getTransactionFinishedCallback() {

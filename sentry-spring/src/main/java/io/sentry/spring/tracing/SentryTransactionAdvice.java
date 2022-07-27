@@ -105,7 +105,8 @@ public class SentryTransactionAdvice implements MethodInterceptor {
     private final @NotNull String name;
     private final @NotNull TransactionNameSource source;
 
-    public TransactionNameAndSource(@NotNull String name, @NotNull TransactionNameSource source) {
+    public TransactionNameAndSource(
+        final @NotNull String name, final @NotNull TransactionNameSource source) {
       this.name = name;
       this.source = source;
     }
