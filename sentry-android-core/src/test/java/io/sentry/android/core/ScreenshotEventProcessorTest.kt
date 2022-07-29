@@ -93,7 +93,7 @@ class ScreenshotEventProcessorTest {
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
 
-        verify(fixture.application).registerActivityLifecycleCallbacks(any())
+        verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
     }
 
     @Test
