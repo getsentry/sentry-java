@@ -64,7 +64,7 @@ class ProfilingActivity : AppCompatActivity() {
                 executors.submit { runMathOperations() }
             }
             executors.submit { swipeList() }
-            binding.profilingStart.postDelayed({ finishTransactionAndPrintResults(t) }, (seconds*1000).toLong())
+            binding.profilingStart.postDelayed({ finishTransactionAndPrintResults(t) }, (seconds * 1000).toLong())
         }
         setContentView(binding.root)
     }
@@ -114,8 +114,6 @@ class ProfilingActivity : AppCompatActivity() {
             fibonacci(25)
         }
     }
-
-
 
     private fun fibonacci(n: Int): Int {
         return when {
