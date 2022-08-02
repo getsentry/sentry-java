@@ -3,7 +3,7 @@ package io.sentry.spring.boot
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.SentryOptions
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
