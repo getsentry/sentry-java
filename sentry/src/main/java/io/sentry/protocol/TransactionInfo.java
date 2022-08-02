@@ -17,10 +17,10 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class TransactionInfo implements JsonSerializable, JsonUnknown {
 
-  private final @Nullable TransactionNameSource source;
+  private final @Nullable String source;
   private @Nullable Map<String, Object> unknown;
 
-  public TransactionInfo(final @Nullable TransactionNameSource source) {
+  public TransactionInfo(final @Nullable String source) {
     this.source = source;
   }
 
@@ -65,14 +65,14 @@ public final class TransactionInfo implements JsonSerializable, JsonUnknown {
         @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
 
-      TransactionNameSource source = null;
+      String source = null;
       Map<String, Object> unknown = null;
 
       while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.SOURCE:
-            source = reader.nextOrNull(logger, new TransactionNameSource.Deserializer());
+            source = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {
