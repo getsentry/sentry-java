@@ -69,7 +69,12 @@ class SentrySpringJwtUserProviderTest {
             assertEquals("info@sentry.io", it.username)
             assertEquals("info@sentry.io", it.email)
             assertEquals("subject", it.id)
-            assertEquals(jwt.claims, it.others)
+            assertEquals(mapOf(
+                "aud" to "[audience]",
+                "iss" to "issuer",
+                "exp" to Instant.MAX.toString(),
+                "iat" to Instant.MIN.toString()
+            ), it.others)
         }
     }
 
