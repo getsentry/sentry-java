@@ -7,8 +7,14 @@ case $1 in
 get-version)
     # `./gradlew` shows some info on the first run, breaking the parsing in the next step.
     # Therefore, we run it once without checking any output.
-    ./gradlew --version > /dev/null
+    ./gradlew --version >/dev/null
     version="$(./gradlew --version | sed -E -n 's/.*Gradle +([0-9.]+).*/\1/p')"
+
+    # Add trailing ".0" - gradlew outputs '7.1' instead of '7.1.0'
+    if [[ "$version" =~ ^[0-9]\.[0-9]$ ]]; then
+        version="$version.0"
+    fi
+
     echo "v$version"
     ;;
 get-repo)
