@@ -66,7 +66,7 @@ class SentrySpringJwtUserProviderTest {
         val provider = fixture.getSut(true, jwt)
         val user = provider.provideUser()
         assertNotNull(user) {
-            assertEquals("subject", it.username)
+            assertEquals("info@sentry.io", it.username)
             assertEquals("info@sentry.io", it.email)
             assertEquals("subject", it.id)
             assertEquals(jwt.claims, it.others)
