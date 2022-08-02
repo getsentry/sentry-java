@@ -67,7 +67,7 @@ class SentrySpringJwtUserProviderTest {
         val user = provider.provideUser()
         assertNotNull(user) {
             assertEquals("subject", it.username)
-            assertEquals("email", "info@sentry.io")
+            assertEquals("info@sentry.io", it.email)
             assertEquals("subject", it.id)
             assertEquals(jwt.claims, it.others)
         }
