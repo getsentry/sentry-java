@@ -1,14 +1,17 @@
 import com.google.common.hash.Hashing
 import com.jayway.jsonpath.JsonPath
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.asRequestBody
-import java.io.IOException
-import java.util.concurrent.TimeUnit
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import kotlinx.coroutines.runBlocking
 import java.util.logging.Logger
 import kotlin.io.path.name
 import kotlin.io.path.readBytes
-
 
 class SauceLabs {
     companion object {
@@ -24,21 +27,18 @@ class SauceLabs {
 class SauceLabsClient {
     companion object {
         private val logger: Logger = Logger.getLogger(SauceLabsClient::class.simpleName)
-        private val baseUrl = "https://api.${SauceLabs.region}.saucelabs.com"
-        private val client = OkHttpClient.Builder()
-            .writeTimeout(120, TimeUnit.SECONDS)
-            .readTimeout(120, TimeUnit.SECONDS)
-            .authenticator(object : Authenticator {
-                override fun authenticate(route: Route?, response: Response): Request? {
-                    if (response.request.header("Authorization") != null) {
-                        return null // Give up, we've already attempted to authenticate.
+        private const val baseUrl = "https://api.${SauceLabs.region}.saucelabs.com"
+        private val client = HttpClient(CIO) {
+            expectSuccess = true
+            install(Auth) {
+                basic {
+                    sendWithoutRequest { true }
+                    credentials {
+                        BasicAuthCredentials(username = SauceLabs.user, password = SauceLabs.key)
                     }
-                    return response.request.newBuilder()
-                        .header("Authorization", Credentials.basic(SauceLabs.user, SauceLabs.key))
-                        .build()
                 }
-            })
-            .build()
+            }
+        }
 
         // https://docs.saucelabs.com/dev/api/storage/#upload-file-to-app-storage
         fun uploadApp(app: AppInfo): String {
@@ -50,29 +50,22 @@ class SauceLabsClient {
 
             logger.info("Uploading app ${app.name} to SauceLabs from ${app.path}")
 
-            val requestBody = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("name", app.path.name)
-                .addFormDataPart(
-                    "payload", app.path.name,
-                    app.path.toFile().asRequestBody("application/octet-stream".toMediaType())
+            return runBlocking {
+                val response = client.submitFormWithBinaryData(
+                    url = "$baseUrl/v1/storage/upload",
+                    formData = formData {
+                        append("name", app.path.name)
+                        append("payload", app.path.readBytes(), Headers.build {
+                            append(HttpHeaders.ContentType, "application/octet-stream")
+                            append(HttpHeaders.ContentDisposition, "filename=\"${app.path.name}\"")
+                        })
+                    }
                 )
-                .build()
-
-            val request = Request.Builder()
-                .url("$baseUrl/v1/storage/upload")
-                .post(requestBody)
-                .build()
-
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw IOException("App upload to SauceLabs failed: $response\n${response.body?.string()}")
-                }
 
                 logger.info("App ${app.name} uploaded successfully")
-                val jsonString = response.body!!.string()
-                val json = JsonPath.parse(jsonString)
-                return json.read<String>("item.id")!!
+
+                val json = JsonPath.parse(response.bodyAsText())
+                json.read<String>("item.id")!!
             }
         }
 
@@ -80,23 +73,15 @@ class SauceLabsClient {
         private fun findAppOnServer(app: AppInfo): String? {
             val hash = Hashing.sha256().hashBytes(app.path.readBytes())
 
-            val request = Request.Builder()
-                .url("$baseUrl/v1/storage/files?sha256=${hash}")
-                .get()
-                .build()
-
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw IOException(
-                        "Looking for the app in SauceLabs failed: $response\n" +
-                            "${response.body?.string()}"
-                    )
+            return runBlocking {
+                val response = client.get("$baseUrl/v1/storage/files") {
+                    url {
+                        parameters.append("sha256", hash.toString())
+                    }
                 }
-
-                val jsonString = response.body!!.string()
-                val json = JsonPath.parse(jsonString)
+                val json = JsonPath.parse(response.bodyAsText())
                 val fileIds = json.read<List<String>>("items[*].id")
-                return fileIds.firstOrNull()
+                fileIds.firstOrNull()
             }
         }
     }
