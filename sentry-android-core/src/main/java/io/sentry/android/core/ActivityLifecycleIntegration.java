@@ -173,6 +173,15 @@ public final class ActivityLifecycleIntegration
                   if (unwrappedActivity != null) {
                     activityFramesTracker.setMetrics(
                         unwrappedActivity, finishingTransaction.getEventId());
+                  } else {
+                    if (options != null) {
+                      options
+                          .getLogger()
+                          .log(
+                              SentryLevel.WARNING,
+                              "Unable to track activity frames as the Activity %s has been destroyed.",
+                              activityName);
+                    }
                   }
                 });
       } else {
@@ -188,6 +197,15 @@ public final class ActivityLifecycleIntegration
                   if (unwrappedActivity != null) {
                     activityFramesTracker.setMetrics(
                         unwrappedActivity, finishingTransaction.getEventId());
+                  } else {
+                    if (options != null) {
+                      options
+                          .getLogger()
+                          .log(
+                              SentryLevel.WARNING,
+                              "Unable to track activity frames as the Activity %s has been destroyed.",
+                              activityName);
+                    }
                   }
                 });
         // start specific span for app start
