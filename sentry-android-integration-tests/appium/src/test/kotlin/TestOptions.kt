@@ -28,26 +28,30 @@ class TestOptions(
         val url = url()
 
         if (appsUnderTest != null) {
-            val otherAppsPaths = appsUnderTest.map {
-                when (server) {
-                    Server.LocalHost -> {
+            when (server) {
+                Server.LocalHost -> {
+                    val otherAppsPaths = appsUnderTest.map {
                         logger.info("Adding app ${it.name} from ${it.name} 'appium:otherApps'")
                         it.path.toString().replace('\\', '/')
                     }
 
-                    Server.SauceLabs -> {
+                    // Local Appium requires JSON array (i.e. a string) instead of a list.
+                    caps.setCapability("appium:otherApps", "[\"${otherAppsPaths.joinToString("\", \"")}\"]")
+                }
+
+                Server.SauceLabs -> {
+                    val otherAppsPaths = appsUnderTest.map {
                         val fileId = SauceLabsClient.uploadApp(it)
-                        logger.info("Adding app ${it.name} from ${it.name} 'appium:otherApps' as 'storage:$fileId'")
-                        "storage:$fileId"
+                        val result = "storage:$fileId"
+                        logger.info("Adding app ${it.name} from ${it.name} 'appium:otherApps' as '$result")
+                        result
                     }
+
+                    // SauceLabs requires this to be a list.
+                    caps.setCapability("appium:otherApps", otherAppsPaths)
                 }
             }
 
-            // Requires JSON array instead of a plain list.
-            caps.setCapability(
-                "appium:otherApps",
-                "[\"${otherAppsPaths.joinToString("\", \"")}\"]"
-            )
         }
 
         return when (platform) {
