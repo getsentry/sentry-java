@@ -12,19 +12,19 @@ public final class TracesSamplingDecision {
   private final @NotNull Boolean profileSampled;
   private final @Nullable Double profileSampleRate;
 
-  public TracesSamplingDecision(@NotNull Boolean sampled) {
+  public TracesSamplingDecision(final @NotNull Boolean sampled) {
     this(sampled, null);
   }
 
-  public TracesSamplingDecision(@NotNull Boolean sampled, @Nullable Double sampleRate) {
+  public TracesSamplingDecision(final @NotNull Boolean sampled, final @Nullable Double sampleRate) {
     this(sampled, sampleRate, false, null);
   }
 
   public TracesSamplingDecision(
-      @NotNull Boolean sampled,
-      @Nullable Double sampleRate,
-      @NotNull Boolean profileSampled,
-      @Nullable Double profileSampleRate) {
+      final @NotNull Boolean sampled,
+      final @Nullable Double sampleRate,
+      final @NotNull Boolean profileSampled,
+      final @Nullable Double profileSampleRate) {
     this.sampled = sampled;
     this.sampleRate = sampleRate;
     // A profile can be sampled only if the transaction is sampled

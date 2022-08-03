@@ -24,23 +24,17 @@ public final class SampleRateUtil {
 
   public static boolean isValidTracesSampleRate(
       @Nullable Double tracesSampleRate, boolean allowNull) {
-    if (tracesSampleRate == null) {
-      return allowNull;
-    }
-
-    return !(tracesSampleRate.isNaN() || tracesSampleRate > 1.0 || tracesSampleRate < 0.0);
+    return isValidRate(tracesSampleRate, allowNull);
   }
 
   public static boolean isValidProfilesSampleRate(@Nullable Double profilesSampleRate) {
-    return isValidProfilesSampleRate(profilesSampleRate, true);
+    return isValidRate(profilesSampleRate, true);
   }
 
-  public static boolean isValidProfilesSampleRate(
-      @Nullable Double profilesSampleRate, boolean allowNull) {
-    if (profilesSampleRate == null) {
+  private static boolean isValidRate(final @Nullable Double rate, final boolean allowNull) {
+    if (rate == null) {
       return allowNull;
     }
-
-    return !(profilesSampleRate.isNaN() || profilesSampleRate > 1.0 || profilesSampleRate < 0.0);
+    return !rate.isNaN() && rate >= 0.0 && rate <= 1.0;
   }
 }

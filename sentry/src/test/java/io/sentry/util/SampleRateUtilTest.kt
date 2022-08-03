@@ -137,12 +137,7 @@ class SampleRateUtilTest {
     }
 
     @Test
-    fun `accepts null profiles sample rate if told so`() {
-        assertTrue(SampleRateUtil.isValidProfilesSampleRate(null, true))
-    }
-
-    @Test
-    fun `rejects null profiles sample rate if told so`() {
-        assertFalse(SampleRateUtil.isValidProfilesSampleRate(null, false))
+    fun `accepts null profiles sample rate`() {
+        assertTrue(SampleRateUtil.isValidProfilesSampleRate(null))
     }
 }

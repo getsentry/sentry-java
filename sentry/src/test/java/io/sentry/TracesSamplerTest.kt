@@ -268,7 +268,7 @@ class TracesSamplerTest {
     fun `when tracing decision is set on SpanContext, sampler uses it as a sampling decision`() {
         val sampler = fixture.getSut()
         val transactionContextNotSampled = TransactionContext("name", "op")
-        transactionContextNotSampled.setSampled(false, false)
+        transactionContextNotSampled.sampled = false
         val samplingDecision =
             sampler.sample(SamplingContext(transactionContextNotSampled, CustomSamplingContext()))
         assertFalse(samplingDecision.sampled)

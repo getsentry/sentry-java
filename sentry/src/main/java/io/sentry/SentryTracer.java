@@ -291,15 +291,7 @@ public final class SentryTracer implements ITransaction {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
       ProfilingTraceData profilingTraceData = null;
-      Boolean isSampled = isSampled();
-      if (isSampled == null) {
-        isSampled = false;
-      }
-      Boolean isProfileSampled = isProfileSampled();
-      if (isProfileSampled == null) {
-        isProfileSampled = false;
-      }
-      if (isSampled && isProfileSampled) {
+      if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
         profilingTraceData = hub.getOptions().getTransactionProfiler().onTransactionFinish(this);
       }
 
