@@ -51,7 +51,6 @@ class TestOptions(
                     caps.setCapability("appium:otherApps", otherAppsPaths)
                 }
             }
-
         }
 
         return when (platform) {

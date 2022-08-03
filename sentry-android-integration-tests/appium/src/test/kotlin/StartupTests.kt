@@ -142,7 +142,8 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
 sealed class StartupTestsAndroid(server: TestOptions.Server) :
     StartupTests(
         TestOptions(
-            TestOptions.Platform.Android, server, listOf(
+            TestOptions.Platform.Android, server,
+            listOf(
                 AppInfo(
                     "io.sentry.java.tests.perf.appplain",
                     "MainActivity",
