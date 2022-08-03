@@ -18,6 +18,8 @@ dependencies {
     testImplementation("io.appium:java-client:8.1.1")
     testImplementation("io.kotest:kotest-assertions-core:5.4.1")
     testImplementation("com.google.guava:guava:31.1-jre")
+    testImplementation("com.squareup.okhttp3:okhttp:4.10.0")
+    testImplementation("com.jayway.jsonpath:json-path:2.7.0")
     testImplementation(Config.Libs.slf4jJdk14)
 }
 

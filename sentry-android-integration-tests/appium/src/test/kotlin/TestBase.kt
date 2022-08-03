@@ -16,7 +16,8 @@ abstract class TestBase(
 ) {
     protected lateinit var driver: AppiumDriver
 
-    protected fun printf(format: String, vararg args: Any?, logLevel: Level = Level.INFO) {
+    @Suppress("NOTHING_TO_INLINE") // Inline ensures the logger prints the actual caller.
+    protected inline fun printf(format: String, vararg args: Any?, logLevel: Level = Level.INFO) {
         options.logger.log(logLevel, String.format(format, *args))
     }
 

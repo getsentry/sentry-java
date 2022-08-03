@@ -29,10 +29,17 @@ class TestOptions(
 
         if (appsUnderTest != null) {
             val otherAppsPaths = appsUnderTest.map {
-                logger.info("Adding app ${it.name} from ${it.name} 'appium:otherApps'")
                 when (server) {
-                    Server.LocalHost -> it.path.toString().replace('\\', '/')
-                    Server.SauceLabs -> TODO()
+                    Server.LocalHost -> {
+                        logger.info("Adding app ${it.name} from ${it.name} 'appium:otherApps'")
+                        it.path.toString().replace('\\', '/')
+                    }
+
+                    Server.SauceLabs -> {
+                        val fileId = SauceLabsClient.uploadApp(it)
+                        logger.info("Adding app ${it.name} from ${it.name} 'appium:otherApps' as 'storage:$fileId'")
+                        "storage:$fileId"
+                    }
                 }
             }
 
@@ -51,7 +58,7 @@ class TestOptions(
 
     private fun url() = when (server) {
         Server.LocalHost -> URL("http://127.0.0.1:4723/wd/hub")
-        Server.SauceLabs -> URL("https://${System.getenv("SAUCE_USERNAME")}:${System.getenv("SAUCE_ACCESS_KEY")}@ondemand.us-west-1.saucelabs.com:443/wd/hub")
+        Server.SauceLabs -> URL("https://${SauceLabs.user}:${SauceLabs.key}@ondemand.${SauceLabs.region}.saucelabs.com:443/wd/hub")
     }
 
     private fun capabilities(): MutableCapabilities {
@@ -65,13 +72,13 @@ class TestOptions(
             Server.LocalHost -> {}
             Server.SauceLabs -> {
                 val sauceOptions = MutableCapabilities()
-                sauceOptions.setCapability("name", "Performance tests")
+                sauceOptions.setCapability("appium:name", "Performance tests")
                 sauceOptions.setCapability(
-                    "build",
+                    "appium:build",
                     if (isCI) "CI ${env["GITHUB_REPOSITORY"]} ${env["GITHUB_REF"]} ${env["GITHUB_RUN_ID"]}"
                     else "Local build ${LocalDateTime.now()}"
                 )
-                sauceOptions.setCapability("tags", listOf("android", if (isCI) "ci" else "local"))
+                sauceOptions.setCapability("appium:tags", listOf("android", if (isCI) "ci" else "local"))
                 caps.setCapability("sauce:options", sauceOptions)
             }
         }

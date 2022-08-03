@@ -22,7 +22,7 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
         const val sleepTimeMs: Long = 300
 
         // See https://en.wikipedia.org/wiki/Interquartile_range#Outliers for details
-        fun filterOutliers(list: List<Long>): List<Long> {
+        private fun filterOutliers(list: List<Long>): List<Long> {
             // sort array (as numbers)
             val sorted = list.sorted()
 
