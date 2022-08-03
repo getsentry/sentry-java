@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Weakly reference Activity for transaction finished callback ([]())
 - `attach-screenshot` set on Manual init. didn't work ([#2186](https://github.com/getsentry/sentry-java/pull/2186))
 - Remove extra space from `spring.factories` causing issues in old versions of Spring Boot ([#2181](https://github.com/getsentry/sentry-java/pull/2181))
 
