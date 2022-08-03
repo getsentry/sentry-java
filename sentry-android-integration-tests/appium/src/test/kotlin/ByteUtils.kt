@@ -23,8 +23,6 @@ class ByteUtils {
             return String.format("%.2f %ciB", value / 1024.0, SizeChars[c])
         }
 
-        fun fromMega(mb: Double): Long {
-            return (mb * MiB).toLong()
-        }
+        fun fromMega(mb: Double): Long = (mb * MiB).toLong()
     }
 }
