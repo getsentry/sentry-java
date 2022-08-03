@@ -6,8 +6,12 @@ import java.net.URL
 import java.time.LocalDateTime
 import java.util.logging.Logger
 
-class TestOptions(private val platform: Platform, private val server: Server, private val appsUnderTest: List<AppInfo>? = null) {
-    val logger = Logger.getLogger("jul.SentryHandlerTest")
+class TestOptions(
+    val platform: Platform,
+    private val server: Server,
+    val appsUnderTest: List<AppInfo>? = null
+) {
+    val logger: Logger = Logger.getLogger("jul.AppiumTest")
 
     enum class Platform {
         Android,
@@ -24,13 +28,19 @@ class TestOptions(private val platform: Platform, private val server: Server, pr
         val url = url()
 
         if (appsUnderTest != null) {
-            caps.setCapability("appium:otherApps", appsUnderTest.map {
+            val otherAppsPaths = appsUnderTest.map {
                 logger.info("Adding app ${it.name} from ${it.name} 'appium:otherApps'")
                 when (server) {
-                    Server.LocalHost -> it.path
+                    Server.LocalHost -> it.path.toString().replace('\\', '/')
                     Server.SauceLabs -> TODO()
                 }
-            }.toList())
+            }
+
+            // Requires JSON array instead of a plain list.
+            caps.setCapability(
+                "appium:otherApps",
+                "[\"${otherAppsPaths.joinToString("\", \"")}\"]"
+            )
         }
 
         return when (platform) {

@@ -3,7 +3,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
-import kotlin.annotation.Target
+import java.util.logging.Level
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
@@ -15,6 +15,10 @@ abstract class TestBase(
     protected val options: TestOptions
 ) {
     protected lateinit var driver: AppiumDriver
+
+    protected fun printf(format: String, vararg args: Any?, logLevel: Level = Level.INFO) {
+        options.logger.log(logLevel, String.format(format, *args))
+    }
 
     @BeforeAll
     fun setUp() {
