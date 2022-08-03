@@ -70,3 +70,6 @@ jobs:
 
       - name: Run perf test on SauceLabs
         run: ./gradlew :sentry-android-integration-tests:appium:test --tests StartupTestsAndroidSauce.*
+        env:
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
