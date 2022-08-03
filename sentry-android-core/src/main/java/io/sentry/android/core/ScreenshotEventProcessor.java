@@ -36,7 +36,8 @@ public final class ScreenshotEventProcessor
   private final @NotNull Application application;
   private final @NotNull SentryAndroidOptions options;
   private @Nullable WeakReference<Activity> currentActivity;
-  final @NotNull BuildInfoProvider buildInfoProvider;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
+  private boolean lifecycleCallbackInstalled = true;
 
   public ScreenshotEventProcessor(
       final @NotNull Application application,
@@ -47,27 +48,29 @@ public final class ScreenshotEventProcessor
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
 
-    if (this.options.isAttachScreenshot()) {
-      application.registerActivityLifecycleCallbacks(this);
-
-      this.options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "attachScreenshot is enabled, ScreenshotEventProcessor is installed.");
-    } else {
-      this.options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "attachScreenshot is disabled, ScreenshotEventProcessor isn't installed.");
-    }
+    application.registerActivityLifecycleCallbacks(this);
   }
 
   @SuppressWarnings("NullAway")
   @Override
   public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hint hint) {
-    if (options.isAttachScreenshot() && event.isErrored() && currentActivity != null) {
+    if (!lifecycleCallbackInstalled) {
+      return event;
+    }
+    if (!options.isAttachScreenshot()) {
+      application.unregisterActivityLifecycleCallbacks(this);
+      lifecycleCallbackInstalled = false;
+
+      this.options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "attachScreenshot is disabled, ScreenshotEventProcessor isn't installed.");
+
+      return event;
+    }
+
+    if (event.isErrored() && currentActivity != null) {
       final Activity activity = currentActivity.get();
       if (isActivityValid(activity)
           && activity.getWindow() != null
