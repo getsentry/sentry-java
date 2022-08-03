@@ -53,10 +53,6 @@ jobs:
 
   startup-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sentry-android-integration-tests/appium
-
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
@@ -67,11 +63,10 @@ jobs:
           java-version: "11"
           distribution: "adopt"
 
-      - run: npm install
+      - name: Build test apps
+        run: |
+          ./gradlew :sentry-android-integration-tests:test-app-plain:assembleRelease
+          ./gradlew :sentry-android-integration-tests:test-app-sentry:assembleRelease
 
-      - run: npm run build:apps
-
-      - run: npm run saucelabs:android
-        env:
-          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
-          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+      - name: Run perf test on SauceLabs
+        run: ./gradlew :sentry-android-integration-tests:appium:test --tests StartupTestsAndroidSauce.*
