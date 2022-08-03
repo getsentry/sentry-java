@@ -171,7 +171,8 @@ public final class ActivityLifecycleIntegration
                 (finishingTransaction) -> {
                   @Nullable Activity unwrappedActivity = weakActivity.get();
                   if (unwrappedActivity != null) {
-                    activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
+                    activityFramesTracker.setMetrics(
+                        unwrappedActivity, finishingTransaction.getEventId());
                   }
                 });
       } else {
@@ -185,7 +186,8 @@ public final class ActivityLifecycleIntegration
                 (finishingTransaction) -> {
                   @Nullable Activity unwrappedActivity = weakActivity.get();
                   if (unwrappedActivity != null) {
-                    activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
+                    activityFramesTracker.setMetrics(
+                        unwrappedActivity, finishingTransaction.getEventId());
                   }
                 });
         // start specific span for app start
