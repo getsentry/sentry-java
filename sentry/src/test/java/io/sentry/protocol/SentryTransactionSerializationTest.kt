@@ -27,7 +27,7 @@ class SentryTransactionSerializationTest {
             mapOf(
                 "386384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut()
             ),
-            TransactionInfo(TransactionNameSource.CUSTOM)
+            TransactionInfo(TransactionNameSource.CUSTOM.apiName())
         ).apply {
             SentryBaseEventSerializationTest.Fixture().update(this)
         }

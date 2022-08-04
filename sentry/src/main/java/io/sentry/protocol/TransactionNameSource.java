@@ -1,17 +1,10 @@
 package io.sentry.protocol;
 
-import io.sentry.ILogger;
-import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
-import io.sentry.JsonObjectWriter;
-import io.sentry.JsonSerializable;
-import java.io.IOException;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public enum TransactionNameSource implements JsonSerializable {
+public enum TransactionNameSource {
   /**
    * User-defined name
    *
@@ -87,18 +80,7 @@ public enum TransactionNameSource implements JsonSerializable {
 //  UNKNOWN
 ;
 
-  @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
-      throws IOException {
-    writer.value(name().toLowerCase(Locale.ROOT));
-  }
-
-  static final class Deserializer implements JsonDeserializer<TransactionNameSource> {
-
-    @Override
-    public @NotNull TransactionNameSource deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
-      return TransactionNameSource.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
-    }
+  public String apiName() {
+    return name().toLowerCase(Locale.ROOT);
   }
 }

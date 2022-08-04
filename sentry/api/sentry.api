@@ -2878,7 +2878,7 @@ public final class io/sentry/protocol/SentryTransaction$JsonKeys {
 }
 
 public final class io/sentry/protocol/TransactionInfo : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/protocol/TransactionNameSource;)V
+	public fun <init> (Ljava/lang/String;)V
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -2895,14 +2895,14 @@ public final class io/sentry/protocol/TransactionInfo$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/TransactionNameSource : java/lang/Enum, io/sentry/JsonSerializable {
+public final class io/sentry/protocol/TransactionNameSource : java/lang/Enum {
 	public static final field COMPONENT Lio/sentry/protocol/TransactionNameSource;
 	public static final field CUSTOM Lio/sentry/protocol/TransactionNameSource;
 	public static final field ROUTE Lio/sentry/protocol/TransactionNameSource;
 	public static final field TASK Lio/sentry/protocol/TransactionNameSource;
 	public static final field URL Lio/sentry/protocol/TransactionNameSource;
 	public static final field VIEW Lio/sentry/protocol/TransactionNameSource;
-	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun apiName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/protocol/TransactionNameSource;
 	public static fun values ()[Lio/sentry/protocol/TransactionNameSource;
 }
