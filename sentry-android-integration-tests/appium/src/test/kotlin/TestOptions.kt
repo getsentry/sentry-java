@@ -1,7 +1,7 @@
 import io.appium.java_client.AppiumDriver
 import io.appium.java_client.android.AndroidDriver
 import io.appium.java_client.ios.IOSDriver
-import io.ktor.util.*
+import io.ktor.util.toLowerCasePreservingASCIIRules
 import org.openqa.selenium.MutableCapabilities
 import java.net.URL
 import java.time.LocalDateTime
