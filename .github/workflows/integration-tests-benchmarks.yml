@@ -70,6 +70,28 @@ jobs:
 
       - name: Run perf test on SauceLabs
         run: ./gradlew :sentry-android-integration-tests:appium:test --tests StartupTestsAndroidSauce.*
+        id: tests
         env:
           SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
           SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@1769778a0c5bd330272d749d12c036d65e70d39d # v2.0.0
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '## Performance metrics'
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32 # v2.0.0
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## Performance metrics :rocket:
+            |                   |                                    Plain  |                              With Sentry  |                                        Diff  |
+            |-------------------|-----------------------------------------: |-----------------------------------------: |--------------------------------------------: |
+            | Startup time (ms) | ${{ steps.tests.outputs.StartTimeApp1 }}  | ${{ steps.tests.outputs.StartTimeApp2 }}  | **${{ steps.tests.outputs.StartTimeDiff }}** |
+            | Size (bytes)      | ${{ steps.tests.outputs.SizeApp1 }}       | ${{ steps.tests.outputs.SizeApp2 }}       | **${{ steps.tests.outputs.SizeDiff }}**      |
+          edit-mode: replace
