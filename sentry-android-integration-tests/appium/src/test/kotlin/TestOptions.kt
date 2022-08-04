@@ -1,3 +1,4 @@
+import com.google.common.collect.ImmutableMap
 import io.appium.java_client.AppiumDriver
 import io.appium.java_client.android.AndroidDriver
 import io.appium.java_client.ios.IOSDriver
@@ -77,6 +78,8 @@ class TestOptions(
             Server.SauceLabs -> {
                 val env = System.getenv()
                 val sauceOptions = MutableCapabilities()
+                // Appium v2 required for Android logcat access.
+                sauceOptions.setCapability("appiumVersion", "2.0.0")
                 sauceOptions.setCapability("name", "Performance tests")
                 sauceOptions.setCapability(
                     "build",
@@ -88,6 +91,11 @@ class TestOptions(
                     listOf(platform.toString().toLowerCasePreservingASCIIRules(), if (isCI) "ci" else "local")
                 )
                 caps.setCapability("sauce:options", sauceOptions)
+
+                // See https://github.com/appium/java-client/issues/1242#issuecomment-539075905
+                //   UnsupportedCommandException: unknown command: Cannot call non W3C standard command while in W3C mode
+                //   Command: [d3d1a56d-a224-4e05-b99e-a424bb77230d, getLog {type=logcat}]
+                caps.setCapability("appium:chromeOptions", ImmutableMap.of("w3c", false))
             }
         }
 

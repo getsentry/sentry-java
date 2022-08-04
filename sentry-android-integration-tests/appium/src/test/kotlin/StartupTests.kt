@@ -154,7 +154,7 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
                     //   val offset = j * runs
                     //   times.subList(offset, offset + runs)
                     val logEntries = driver.manage().logs().get("logcat")
-                    val regex = Regex("ActivityManager: Displayed ${app.name}/\\.${app.activity}: \\+([0-9]+)ms")
+                    val regex = Regex("Displayed ${app.name}/\\.${app.activity}: \\+([0-9]+)ms")
                     logEntries.mapNotNull { regex.find(it.message)?.groupValues?.get(1)?.toLong() }
                 }
 
