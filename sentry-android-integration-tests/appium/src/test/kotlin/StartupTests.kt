@@ -193,5 +193,5 @@ class StartupTestsAndroidLocal : StartupTestsAndroid(TestOptions.Server.LocalHos
 
 @SauceLabsOnly
 class StartupTestsAndroidSauce : StartupTestsAndroid(TestOptions.Server.SauceLabs) {
-    override val runs: Int = 2
+    override val runs: Int = 50
 }
