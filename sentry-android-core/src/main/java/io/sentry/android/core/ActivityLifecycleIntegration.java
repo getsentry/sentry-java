@@ -23,6 +23,7 @@ import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -146,6 +147,7 @@ public final class ActivityLifecycleIntegration
   }
 
   private void startTracing(final @NotNull Activity activity) {
+    WeakReference<Activity> weakActivity = new WeakReference<>(activity);
     if (performanceEnabled && !isRunningTransaction(activity) && hub != null) {
       // as we allow a single transaction running on the bound Scope, we finish the previous ones
       stopPreviousTransactions();
@@ -167,7 +169,20 @@ public final class ActivityLifecycleIntegration
                 (Date) null,
                 true,
                 (finishingTransaction) -> {
-                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
+                  @Nullable Activity unwrappedActivity = weakActivity.get();
+                  if (unwrappedActivity != null) {
+                    activityFramesTracker.setMetrics(
+                        unwrappedActivity, finishingTransaction.getEventId());
+                  } else {
+                    if (options != null) {
+                      options
+                          .getLogger()
+                          .log(
+                              SentryLevel.WARNING,
+                              "Unable to track activity frames as the Activity %s has been destroyed.",
+                              activityName);
+                    }
+                  }
                 });
       } else {
         // start transaction with app start timestamp
@@ -178,7 +193,20 @@ public final class ActivityLifecycleIntegration
                 appStartTime,
                 true,
                 (finishingTransaction) -> {
-                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
+                  @Nullable Activity unwrappedActivity = weakActivity.get();
+                  if (unwrappedActivity != null) {
+                    activityFramesTracker.setMetrics(
+                        unwrappedActivity, finishingTransaction.getEventId());
+                  } else {
+                    if (options != null) {
+                      options
+                          .getLogger()
+                          .log(
+                              SentryLevel.WARNING,
+                              "Unable to track activity frames as the Activity %s has been destroyed.",
+                              activityName);
+                    }
+                  }
                 });
         // start specific span for app start
 

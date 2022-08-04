@@ -1,10 +1,11 @@
 # Changelog
 
-## Unreleased
+## 6.3.1
 
 ### Fixes
 
 - Prevent NPE by checking SentryTracer.timer for null again inside synchronized ([#2200](https://github.com/getsentry/sentry-java/pull/2200))
+- Weakly reference Activity for transaction finished callback ([#2203](https://github.com/getsentry/sentry-java/pull/2203))
 - `attach-screenshot` set on Manual init. didn't work ([#2186](https://github.com/getsentry/sentry-java/pull/2186))
 - Remove extra space from `spring.factories` causing issues in old versions of Spring Boot ([#2181](https://github.com/getsentry/sentry-java/pull/2181))
 
