@@ -107,9 +107,8 @@ class TestOptions(
                 if (server == Server.SauceLabs) {
                     // Pixel 4 XL - ARM | octa core | 1785 MHz
                     caps.setCapability("appium:deviceName", "Google Pixel 4 XL")
-                    // Pixel 4 XL has three devices, one on each Android 10, 11, 12.
-                    // Currently, we allow tests to run on any of them.
-                    // caps.setCapability("appium:platformVersion", "11")
+                    // Pixel 4 XL has three devices, one for each Android 10, 11, 12.
+                    caps.setCapability("appium:platformVersion", "12")
                 }
             }
 
