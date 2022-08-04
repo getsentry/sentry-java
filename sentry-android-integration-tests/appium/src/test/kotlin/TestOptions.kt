@@ -1,6 +1,7 @@
 import io.appium.java_client.AppiumDriver
 import io.appium.java_client.android.AndroidDriver
 import io.appium.java_client.ios.IOSDriver
+import io.ktor.util.*
 import org.openqa.selenium.MutableCapabilities
 import java.net.URL
 import java.time.LocalDateTime
@@ -11,7 +12,7 @@ class TestOptions(
     private val server: Server,
     val appsUnderTest: List<AppInfo>? = null
 ) {
-    val logger: Logger = Logger.getLogger("jul.AppiumTest")
+    val logger: Logger = Logger.getLogger("AppiumTest")
 
     enum class Platform {
         Android,
@@ -41,7 +42,7 @@ class TestOptions(
 
                 Server.SauceLabs -> {
                     val otherAppsPaths = appsUnderTest.map {
-                        val fileId = SauceLabsClient.uploadApp(it)
+                        val fileId = SauceLabs.uploadApp(it)
                         val result = "storage:$fileId"
                         logger.info("Adding app ${it.name} from ${it.name} 'appium:otherApps' as '$result")
                         result
@@ -52,6 +53,8 @@ class TestOptions(
                 }
             }
         }
+
+        logger.info("Launching Appium $platform driver with the following options: ${caps.asMap()}")
 
         return when (platform) {
             Platform.Android -> AndroidDriver(url, caps)
@@ -75,13 +78,16 @@ class TestOptions(
             Server.LocalHost -> {}
             Server.SauceLabs -> {
                 val sauceOptions = MutableCapabilities()
-                sauceOptions.setCapability("appium:name", "Performance tests")
+                sauceOptions.setCapability("name", "Performance tests")
                 sauceOptions.setCapability(
-                    "appium:build",
+                    "build",
                     if (isCI) "CI ${env["GITHUB_REPOSITORY"]} ${env["GITHUB_REF"]} ${env["GITHUB_RUN_ID"]}"
                     else "Local build ${LocalDateTime.now()}"
                 )
-                sauceOptions.setCapability("appium:tags", listOf("android", if (isCI) "ci" else "local"))
+                sauceOptions.setCapability(
+                    "tags",
+                    listOf(platform.toString().toLowerCasePreservingASCIIRules(), if (isCI) "ci" else "local")
+                )
                 caps.setCapability("sauce:options", sauceOptions)
             }
         }

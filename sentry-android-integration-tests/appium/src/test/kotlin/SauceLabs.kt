@@ -21,23 +21,16 @@ class SauceLabs {
         val user: String = System.getenv("SAUCE_USERNAME")
         val key: String = System.getenv("SAUCE_ACCESS_KEY")
         const val region = "us-west-1"
-    }
-}
 
-/**
- * REST client for SauceLabs
- */
-class SauceLabsClient {
-    companion object {
-        private val logger: Logger = Logger.getLogger(SauceLabsClient::class.simpleName)
-        private const val baseUrl = "https://api.${SauceLabs.region}.saucelabs.com"
+        private val logger: Logger = Logger.getLogger(SauceLabs::class.simpleName)
+        private const val baseUrl = "https://api.$region.saucelabs.com"
         private val client = HttpClient(CIO) {
             expectSuccess = true
             install(Auth) {
                 basic {
                     sendWithoutRequest { true }
                     credentials {
-                        BasicAuthCredentials(username = SauceLabs.user, password = SauceLabs.key)
+                        BasicAuthCredentials(username = user, password = key)
                     }
                 }
             }
