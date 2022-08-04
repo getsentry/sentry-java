@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Missing unit fields for Android measurements ([#2200](https://github.com/getsentry/sentry-java/pull/2200))
+
 ## 6.3.1
 
 ### Fixes
