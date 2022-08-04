@@ -173,15 +173,15 @@ public final class ActivityLifecycleIntegration
               @Nullable Activity unwrappedActivity = weakActivity.get();
               if (unwrappedActivity != null) {
                 activityFramesTracker.setMetrics(
-                  unwrappedActivity, finishingTransaction.getEventId());
+                    unwrappedActivity, finishingTransaction.getEventId());
               } else {
                 if (options != null) {
                   options
-                    .getLogger()
-                    .log(
-                      SentryLevel.WARNING,
-                      "Unable to track activity frames as the Activity %s has been destroyed.",
-                      activityName);
+                      .getLogger()
+                      .log(
+                          SentryLevel.WARNING,
+                          "Unable to track activity frames as the Activity %s has been destroyed.",
+                          activityName);
                 }
               }
             });
@@ -201,15 +201,15 @@ public final class ActivityLifecycleIntegration
               @Nullable Activity unwrappedActivity = weakActivity.get();
               if (unwrappedActivity != null) {
                 activityFramesTracker.setMetrics(
-                  unwrappedActivity, finishingTransaction.getEventId());
+                    unwrappedActivity, finishingTransaction.getEventId());
               } else {
                 if (options != null) {
                   options
-                    .getLogger()
-                    .log(
-                      SentryLevel.WARNING,
-                      "Unable to track activity frames as the Activity %s has been destroyed.",
-                      activityName);
+                      .getLogger()
+                      .log(
+                          SentryLevel.WARNING,
+                          "Unable to track activity frames as the Activity %s has been destroyed.",
+                          activityName);
                 }
               }
             });
