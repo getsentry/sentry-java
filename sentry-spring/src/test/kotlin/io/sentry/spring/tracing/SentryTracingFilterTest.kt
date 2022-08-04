@@ -51,6 +51,7 @@ class SentryTracingFilterTest {
             request.method = "POST"
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             whenever(transactionNameProvider.provideTransactionName(request)).thenReturn("POST /product/{id}")
+            whenever(transactionNameProvider.provideTransactionSource()).thenReturn(TransactionNameSource.CUSTOM)
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
                 whenever(hub.startTransaction(any(), check<TransactionOptions> { it.isBindToScope })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }

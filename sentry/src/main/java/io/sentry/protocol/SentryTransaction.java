@@ -89,7 +89,7 @@ public final class SentryTransaction extends SentryBaseEvent
       }
     }
 
-    this.transactionInfo = new TransactionInfo(sentryTracer.getTransactionNameSource());
+    this.transactionInfo = new TransactionInfo(sentryTracer.getTransactionNameSource().apiName());
   }
 
   @ApiStatus.Internal
@@ -232,7 +232,7 @@ public final class SentryTransaction extends SentryBaseEvent
               null,
               new ArrayList<>(),
               new HashMap<>(),
-              new TransactionInfo(TransactionNameSource.CUSTOM));
+              new TransactionInfo(TransactionNameSource.CUSTOM.apiName()));
       Map<String, Object> unknown = null;
 
       SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();

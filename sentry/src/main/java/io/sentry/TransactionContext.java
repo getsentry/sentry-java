@@ -140,7 +140,7 @@ public final class TransactionContext extends SpanContext {
     }
   }
 
-  public TransactionNameSource getTransactionNameSource() {
+  public @NotNull TransactionNameSource getTransactionNameSource() {
     return transactionNameSource;
   }
 }
