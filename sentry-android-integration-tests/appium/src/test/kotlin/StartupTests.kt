@@ -104,9 +104,9 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
             diff.shouldBeLessThan(150.0)
 
             if (options.isCI) {
-                println("::set-output name=StartTimeApp1::${means[0]}")
-                println("::set-output name=StartTimeApp2::${means[1]}")
-                println("::set-output name=StartTimeDiff::$diff")
+                println(String.format("::set-output name=StartTimeApp1::%.2f", means[0]))
+                println(String.format("::set-output name=StartTimeApp2::%.2f", means[1]))
+                println(String.format("::set-output name=StartTimeDiff::%.2f", diff))
             }
         }
     }
@@ -193,5 +193,5 @@ class StartupTestsAndroidLocal : StartupTestsAndroid(TestOptions.Server.LocalHos
 
 @SauceLabsOnly
 class StartupTestsAndroidSauce : StartupTestsAndroid(TestOptions.Server.SauceLabs) {
-    override val runs: Int = 50
+    override val runs: Int = 2
 }
