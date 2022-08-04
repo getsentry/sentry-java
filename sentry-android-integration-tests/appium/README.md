@@ -15,7 +15,7 @@ You can run your tests on Sauce Labs:
 ./gradlew :sentry-android-integration-tests:appium:test --tests StartupTestsAndroidSauce.*
 ```
 
-Or you can run the tests on your local Appium installation (head over to [appium.io](https://appium.io/) to get started):
+Or you can run the tests on your local Appium 2 installation (head over to [appium.io](https://appium.io/) to get started):
 
 ```shell
 # run appium in another shell or detach

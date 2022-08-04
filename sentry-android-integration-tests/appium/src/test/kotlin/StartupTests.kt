@@ -70,15 +70,15 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
             val times1 = measuredTimes[j]
             val stats1 = Stats.of(times1)
             printf(
-                "$logAppPrefix launch times (original) | mean: %3.2f ms | stddev: %3.2f | values: $times1",
-                app.name, stats1.mean(), stats1.populationStandardDeviation()
+                "$logAppPrefix launch times (original) | mean: %3.2f ms | stddev: %3.2f | %d values: $times1",
+                app.name, stats1.mean(), stats1.populationStandardDeviation(), times1.size
             )
 
             val times2 = filterOutliers(measuredTimes[j])
             val stats2 = Stats.of(times2)
             printf(
-                "$logAppPrefix launch times (filtered) | mean: %3.2f ms | stddev: %3.2f | values: $times2",
-                app.name, stats2.mean(), stats2.populationStandardDeviation()
+                "$logAppPrefix launch times (filtered) | mean: %3.2f ms | stddev: %3.2f | %d values: $times2",
+                app.name, stats2.mean(), stats2.populationStandardDeviation(), times2.size
             )
 
             stats2.populationStandardDeviation().shouldBeLessThan(50.0)
@@ -108,7 +108,12 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
             // sleep before the first test to improve the first run time
             Thread.sleep(1_000)
 
-            for (i in 0..runs) {
+            // clear logcat before test runs
+            if (options.platform == TestOptions.Platform.Android) {
+                driver.manage().logs().get("logcat")
+            }
+
+            for (i in 1..runs) {
                 printf("$logAppPrefix collecting startup times: %d/%d", app.name, i, runs)
 
                 // kill the app and sleep before running the next iteration
@@ -127,13 +132,25 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
                 Thread.sleep(sleepTimeMs)
             }
 
-            val times =
-                driver.events.commands.filter { it.name == "startActivity" }.map { it.endTimestamp - it.startTimestamp }
-            val offset = j * runs
-            val appTimes = times.subList(offset, offset + runs)
-            measuredTimes.add(appTimes)
+            val appTimes = when (options.platform) {
+                TestOptions.Platform.Android -> {
+                    // Originally we used a code that loaded a list of executed Appium commands and used the time
+                    // that the 'startActivity' command took. It seems like this time includes some overhead of the
+                    // Appium controller because the times were about 900 ms, while the time reported in logcat
+                    // was `ActivityManager: Displayed io.sentry.java.tests.perf.appplain/.MainActivity: +276ms`
+                    //   val times = driver.events.commands.filter { it.name == "startActivity" } .map { it.endTimestamp - it.startTimestamp }
+                    //   val offset = j * runs
+                    //   times.subList(offset, offset + runs)
+                    val logEntries = driver.manage().logs().get("logcat")
+                    val regex = Regex("ActivityManager: Displayed ${app.name}/\\.${app.activity}: \\+([0-9]+)ms")
+                    logEntries.mapNotNull { regex.find(it.message)?.groupValues?.get(1)?.toLong() }
+                }
+
+                TestOptions.Platform.IOS -> TODO()
+            }
 
             appTimes.size.shouldBe(runs)
+            measuredTimes.add(appTimes)
         }
         return measuredTimes
     }
