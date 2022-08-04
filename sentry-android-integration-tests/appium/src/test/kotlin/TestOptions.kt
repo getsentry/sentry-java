@@ -13,6 +13,7 @@ class TestOptions(
     val appsUnderTest: List<AppInfo>? = null
 ) {
     val logger: Logger = Logger.getLogger("AppiumTest")
+    val isCI = System.getenv().containsKey("CI")
 
     enum class Platform {
         Android,
@@ -68,15 +69,13 @@ class TestOptions(
     }
 
     private fun capabilities(): MutableCapabilities {
-        val env = System.getenv()
-        val isCI = env.containsKey("CI")
-
         val caps = MutableCapabilities()
         caps.setCapability("appium:disableWindowAnimation", true)
 
         when (server) {
             Server.LocalHost -> {}
             Server.SauceLabs -> {
+                val env = System.getenv()
                 val sauceOptions = MutableCapabilities()
                 sauceOptions.setCapability("name", "Performance tests")
                 sauceOptions.setCapability(

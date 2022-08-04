@@ -56,6 +56,12 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
             // fail if the added size is not within the expected range
             diff.shouldBeGreaterThan(ByteUtils.fromMega(1.8))
             diff.shouldBeLessThan(ByteUtils.fromMega(2.0))
+
+            if (options.isCI) {
+                println("::set-output name=SizeApp1::${sizes[0]}")
+                println("::set-output name=SizeApp2::${sizes[1]}")
+                println("::set-output name=SizeDiff::$diff")
+            }
         }
     }
 
@@ -96,6 +102,12 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
             // fail if the slowdown is not within the expected range
             diff.shouldBeGreaterThan(0.0)
             diff.shouldBeLessThan(150.0)
+
+            if (options.isCI) {
+                println("::set-output name=StartTimeApp1::${means[0]}")
+                println("::set-output name=StartTimeApp2::${means[1]}")
+                println("::set-output name=StartTimeDiff::$diff")
+            }
         }
     }
 
