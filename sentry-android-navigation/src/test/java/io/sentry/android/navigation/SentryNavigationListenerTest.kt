@@ -7,7 +7,6 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
@@ -24,6 +23,8 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
+import io.sentry.TransactionOptions
+import io.sentry.protocol.TransactionNameSource
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import kotlin.test.Test
@@ -63,7 +64,7 @@ class SentryNavigationListenerTest {
         ): SentryNavigationListener {
             this.transaction = transaction
 
-            whenever(hub.startTransaction(any(), any(), any(), anyOrNull(), any<Boolean>()))
+            whenever(hub.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
                 .thenReturn(transaction)
             whenever(hub.options).thenReturn(
                 SentryOptions().apply {
@@ -193,11 +194,8 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         verify(fixture.hub, never()).startTransaction(
-            any(),
-            any(),
-            any(),
-            anyOrNull(),
-            any<Boolean>()
+            any<TransactionContext>(),
+            any<TransactionOptions>()
         )
     }
 
@@ -208,11 +206,8 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         verify(fixture.hub, never()).startTransaction(
-            any(),
-            any(),
-            any(),
-            anyOrNull(),
-            any<Boolean>()
+            any<TransactionContext>(),
+            any<TransactionOptions>()
         )
     }
 
@@ -224,11 +219,8 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         verify(fixture.hub, never()).startTransaction(
-            any(),
-            any(),
-            any(),
-            anyOrNull(),
-            any<Boolean>()
+            any<TransactionContext>(),
+            any<TransactionOptions>()
         )
     }
 
@@ -239,11 +231,8 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         verify(fixture.hub, never()).startTransaction(
-            any(),
-            any(),
-            any(),
-            anyOrNull(),
-            any<Boolean>()
+            any<TransactionContext>(),
+            any<TransactionOptions>()
         )
     }
 
@@ -254,9 +243,12 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         verify(fixture.hub).startTransaction(
-            check { assertEquals("/route", it) },
-            check { assertEquals(SentryNavigationListener.NAVIGATION_OP, it) },
-            any(), anyOrNull(), any<Boolean>()
+            check {
+                assertEquals("/route", it.name)
+                assertEquals(SentryNavigationListener.NAVIGATION_OP, it.operation)
+                assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
+            },
+            any<TransactionOptions>()
         )
     }
 
@@ -267,8 +259,11 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         verify(fixture.hub).startTransaction(
-            check { assertEquals("/github", it) },
-            any(), any(), anyOrNull(), any<Boolean>()
+            check {
+                assertEquals("/github", it.name)
+                assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
+            },
+            any<TransactionOptions>()
         )
     }
 
@@ -279,8 +274,11 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
         verify(fixture.hub).startTransaction(
-            check { assertEquals("/destination-id-1", it) },
-            any(), any(), anyOrNull(), any<Boolean>()
+            check {
+                assertEquals("/destination-id-1", it.name)
+                assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
+            },
+            any<TransactionOptions>()
         )
     }
 
@@ -295,8 +293,11 @@ class SentryNavigationListenerTest {
         )
 
         verify(fixture.hub).startTransaction(
-            check { assertEquals("/github", it) },
-            any(), any(), anyOrNull(), any<Boolean>()
+            check {
+                assertEquals("/github", it.name)
+                assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
+            },
+            any<TransactionOptions>()
         )
 
         val capturedArgs = fixture.transaction.data!!["arguments"]

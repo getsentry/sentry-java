@@ -50,6 +50,8 @@ public final class SentryTransaction extends SentryBaseEvent
 
   private @NotNull final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
 
+  private @NotNull TransactionInfo transactionInfo;
+
   private @Nullable Map<String, Object> unknown;
 
   @SuppressWarnings("deprecation")
@@ -86,6 +88,8 @@ public final class SentryTransaction extends SentryBaseEvent
         this.setExtra(tag.getKey(), tag.getValue());
       }
     }
+
+    this.transactionInfo = new TransactionInfo(sentryTracer.getTransactionNameSource().apiName());
   }
 
   @ApiStatus.Internal
@@ -94,12 +98,14 @@ public final class SentryTransaction extends SentryBaseEvent
       @NotNull Double startTimestamp,
       @Nullable Double timestamp,
       @NotNull List<SentrySpan> spans,
-      @NotNull final Map<String, @NotNull MeasurementValue> measurements) {
+      @NotNull final Map<String, @NotNull MeasurementValue> measurements,
+      @NotNull final TransactionInfo transactionInfo) {
     this.transaction = transaction;
     this.startTimestamp = startTimestamp;
     this.timestamp = timestamp;
     this.spans.addAll(spans);
     this.measurements.putAll(measurements);
+    this.transactionInfo = transactionInfo;
   }
 
   public @NotNull List<SentrySpan> getSpans() {
@@ -162,6 +168,7 @@ public final class SentryTransaction extends SentryBaseEvent
     public static final String SPANS = "spans";
     public static final String TYPE = "type";
     public static final String MEASUREMENTS = "measurements";
+    public static final String TRANSACTION_INFO = "transaction_info";
   }
 
   @Override
@@ -182,6 +189,7 @@ public final class SentryTransaction extends SentryBaseEvent
     if (!measurements.isEmpty()) {
       writer.name(JsonKeys.MEASUREMENTS).value(logger, measurements);
     }
+    writer.name(JsonKeys.TRANSACTION_INFO).value(logger, transactionInfo);
     new SentryBaseEvent.Serializer().serialize(this, writer, logger);
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -218,7 +226,13 @@ public final class SentryTransaction extends SentryBaseEvent
 
       // Init with placeholders.
       SentryTransaction transaction =
-          new SentryTransaction("", 0d, null, new ArrayList<>(), new HashMap<>());
+          new SentryTransaction(
+              "",
+              0d,
+              null,
+              new ArrayList<>(),
+              new HashMap<>(),
+              new TransactionInfo(TransactionNameSource.CUSTOM.apiName()));
       Map<String, Object> unknown = null;
 
       SentryBaseEvent.Deserializer baseEventDeserializer = new SentryBaseEvent.Deserializer();
@@ -271,6 +285,10 @@ public final class SentryTransaction extends SentryBaseEvent
             if (deserializedMeasurements != null) {
               transaction.measurements.putAll(deserializedMeasurements);
             }
+            break;
+          case JsonKeys.TRANSACTION_INFO:
+            transaction.transactionInfo =
+                new TransactionInfo.Deserializer().deserialize(reader, logger);
             break;
           default:
             if (!baseEventDeserializer.deserializeValue(transaction, nextName, reader, logger)) {

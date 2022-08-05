@@ -1,7 +1,9 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.TransactionNameSource;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -15,6 +17,9 @@ public interface ITransaction extends ISpan {
    */
   void setName(@NotNull String name);
 
+  @ApiStatus.Internal
+  void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource);
+
   /**
    * Returns transaction name.
    *
@@ -22,6 +27,14 @@ public interface ITransaction extends ISpan {
    */
   @NotNull
   String getName();
+
+  /**
+   * Returns the source of the transaction name.
+   *
+   * @return transaction name source
+   */
+  @NotNull
+  TransactionNameSource getTransactionNameSource();
 
   @NotNull
   @TestOnly
