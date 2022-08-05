@@ -39,7 +39,7 @@ class AndroidTransactionProfilerTest {
         val mockLogger = mock<ILogger>()
         val options = SentryAndroidOptions().apply {
             dsn = mockDsn
-            isProfilingEnabled = true
+            profilesSampleRate = 1.0
             isDebug = true
             setLogger(mockLogger)
         }
@@ -99,9 +99,9 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler on isProfilingEnabled false`() {
+    fun `profiler on profilesSampleRate=0 false`() {
         fixture.options.apply {
-            isProfilingEnabled = false
+            profilesSampleRate = 0.0
         }
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
@@ -110,9 +110,9 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler evaluates isProfiling options only on first transaction profiling`() {
+    fun `profiler evaluates if profiling is enabled in options only on first transaction profiling`() {
         fixture.options.apply {
-            isProfilingEnabled = false
+            profilesSampleRate = 0.0
         }
 
         // We create the profiler, and nothing goes wrong

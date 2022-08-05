@@ -60,6 +60,7 @@ final class ManifestMetadataReader {
   static final String TRACES_UI_ENABLE = "io.sentry.traces.user-interaction.enable";
 
   static final String TRACES_PROFILING_ENABLE = "io.sentry.traces.profiling.enable";
+  static final String PROFILES_SAMPLE_RATE = "io.sentry.traces.profiling.sample-rate";
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
 
@@ -82,6 +83,7 @@ final class ManifestMetadataReader {
    * @param context the application context
    * @param options the SentryAndroidOptions
    */
+  @SuppressWarnings("deprecation")
   static void applyMetadata(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     Objects.requireNonNull(context, "The application context is required.");
@@ -244,6 +246,13 @@ final class ManifestMetadataReader {
 
         options.setProfilingEnabled(
             readBool(metadata, logger, TRACES_PROFILING_ENABLE, options.isProfilingEnabled()));
+
+        if (options.getProfilesSampleRate() == null) {
+          final Double profilesSampleRate = readDouble(metadata, logger, PROFILES_SAMPLE_RATE);
+          if (profilesSampleRate != -1) {
+            options.setProfilesSampleRate(profilesSampleRate);
+          }
+        }
 
         options.setEnableUserInteractionTracing(
             readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));

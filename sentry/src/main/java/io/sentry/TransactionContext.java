@@ -92,4 +92,16 @@ public final class TransactionContext extends SpanContext {
       this.parentSamplingDecision = new TracesSamplingDecision(parentSampled);
     }
   }
+
+  public void setParentSampled(
+      final @Nullable Boolean parentSampled, final @Nullable Boolean parentProfileSampled) {
+    if (parentSampled == null) {
+      this.parentSamplingDecision = null;
+    } else if (parentProfileSampled == null) {
+      this.parentSamplingDecision = new TracesSamplingDecision(parentSampled);
+    } else {
+      this.parentSamplingDecision =
+          new TracesSamplingDecision(parentSampled, null, parentProfileSampled, null);
+    }
+  }
 }

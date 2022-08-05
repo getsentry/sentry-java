@@ -300,8 +300,19 @@ public class SentryOptions {
    */
   private boolean traceSampling = false;
 
-  /** Control if profiling is enabled or not for transactions */
-  private boolean profilingEnabled = false;
+  /**
+   * Configures the profiles sample rate as a percentage of sampled transactions to be sent in the
+   * range of 0.0 to 1.0. if 1.0 is set it means that 100% of sampled transactions will send a
+   * profile. If set to 0.1 only 10% of sampled transactions will send a profile. Profiles are
+   * picked randomly. Default is null (disabled)
+   */
+  private @Nullable Double profilesSampleRate;
+
+  /**
+   * This function is called by {@link TracesSampler} to determine if a profile is sampled - meant
+   * to be sent to Sentry.
+   */
+  private @Nullable ProfilesSamplerCallback profilesSampler;
 
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
@@ -1500,16 +1511,65 @@ public class SentryOptions {
    * @return if profiling is enabled for transactions.
    */
   public boolean isProfilingEnabled() {
-    return profilingEnabled;
+    return (getProfilesSampleRate() != null && getProfilesSampleRate() > 0)
+        || getProfilesSampler() != null;
   }
 
   /**
    * Sets whether profiling is enabled for transactions.
    *
+   * @deprecated use {{@link SentryOptions#setProfilesSampleRate(Double)} }
    * @param profilingEnabled - whether profiling is enabled for transactions
    */
+  @Deprecated
   public void setProfilingEnabled(boolean profilingEnabled) {
-    this.profilingEnabled = profilingEnabled;
+    if (getProfilesSampleRate() == null) {
+      setProfilesSampleRate(profilingEnabled ? 1.0 : null);
+    }
+  }
+
+  /**
+   * Returns the callback used to determine if a profile is sampled.
+   *
+   * @return the callback
+   */
+  public @Nullable ProfilesSamplerCallback getProfilesSampler() {
+    return profilesSampler;
+  }
+
+  /**
+   * Sets the callback used to determine if a profile is sampled.
+   *
+   * @param profilesSampler the callback
+   */
+  public void setProfilesSampler(final @Nullable ProfilesSamplerCallback profilesSampler) {
+    this.profilesSampler = profilesSampler;
+  }
+
+  /**
+   * Returns the profiles sample rate. Default is null (disabled).
+   *
+   * @return the sample rate
+   */
+  public @Nullable Double getProfilesSampleRate() {
+    return profilesSampleRate;
+  }
+
+  /**
+   * Sets the profilesSampleRate. Can be anything between 0.0 and 1.0 or null (default), to disable
+   * it. It’s dependent on the {{@link SentryOptions#setTracesSampleRate(Double)} } If a transaction
+   * is sampled, then a profile could be sampled with a probability given by profilesSampleRate.
+   *
+   * @param profilesSampleRate the sample rate
+   */
+  public void setProfilesSampleRate(final @Nullable Double profilesSampleRate) {
+    if (!SampleRateUtil.isValidProfilesSampleRate(profilesSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + profilesSampleRate
+              + " is not valid. Use null to disable or values between 0.0 and 1.0.");
+    }
+    this.profilesSampleRate = profilesSampleRate;
   }
 
   /**
@@ -1673,6 +1733,20 @@ public class SentryOptions {
     Double sample(@NotNull SamplingContext samplingContext);
   }
 
+  /** The profiles sampler callback. */
+  public interface ProfilesSamplerCallback {
+
+    /**
+     * Calculates the sampling value used to determine if a profile is going to be sent to Sentry
+     * backend.
+     *
+     * @param samplingContext the sampling context
+     * @return sampling value or {@code null} if decision has not been taken
+     */
+    @Nullable
+    Double sample(@NotNull SamplingContext samplingContext);
+  }
+
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
@@ -1751,6 +1825,9 @@ public class SentryOptions {
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
+    }
+    if (options.getProfilesSampleRate() != null) {
+      setProfilesSampleRate(options.getProfilesSampleRate());
     }
     if (options.getDebug() != null) {
       setDebug(options.getDebug());

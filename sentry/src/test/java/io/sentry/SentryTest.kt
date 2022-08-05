@@ -186,7 +186,7 @@ class SentryTest {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
-            it.isProfilingEnabled = true
+            it.profilesSampleRate = 1.0
             it.cacheDirPath = tempPath
             sentryOptions = it
         }
@@ -201,7 +201,7 @@ class SentryTest {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
-            it.isProfilingEnabled = false
+            it.profilesSampleRate = 0.0
             it.cacheDirPath = tempPath
             sentryOptions = it
         }

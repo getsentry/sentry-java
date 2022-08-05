@@ -35,6 +35,14 @@ public interface ITransaction extends ISpan {
   @Nullable
   Boolean isSampled();
 
+  /**
+   * Returns if the profile of a transaction is sampled.
+   *
+   * @return profile is sampled
+   */
+  @Nullable
+  Boolean isProfileSampled();
+
   @Nullable
   TracesSamplingDecision getSamplingDecision();
 

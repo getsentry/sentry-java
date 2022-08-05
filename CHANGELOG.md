@@ -13,6 +13,8 @@
 
 ### Features
 
+- Add profilesSampleRate and profileSampler options for Android sdk ([#2184](https://github.com/getsentry/sentry-java/pull/2184))
+- SentryOptions.setProfilingEnabled has been deprecated in favor of setProfilesSampleRate
 - Bump Native SDK to v0.4.18 ([#2154](https://github.com/getsentry/sentry-java/pull/2154))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0418)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.4.17...0.4.18)
