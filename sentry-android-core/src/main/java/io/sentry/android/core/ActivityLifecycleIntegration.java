@@ -182,6 +182,10 @@ public final class ActivityLifecycleIntegration
             }
           });
 
+      if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
+        transactionOptions.setStartTimestamp(appStartTime);
+      }
+
       // we can only bind to the scope if there's no running transaction
       ITransaction transaction =
           hub.startTransaction(
@@ -190,8 +194,6 @@ public final class ActivityLifecycleIntegration
 
       // in case appStartTime isn't available, we don't create a span for it.
       if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-        transactionOptions.setStartTimestamp(appStartTime);
-
         // start specific span for app start
         appStartSpan =
             transaction.startChild(
