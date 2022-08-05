@@ -64,8 +64,8 @@ public final class SentryTracer implements ITransaction {
    */
   private final @Nullable Long idleTimeout;
 
-  private @Nullable TimerTask timerTask;
-  private @Nullable Timer timer = null;
+  private volatile @Nullable TimerTask timerTask;
+  private volatile @Nullable Timer timer = null;
   private final @NotNull Object timerLock = new Object();
   private final @NotNull SpanByTimestampComparator spanByTimestampComparator =
       new SpanByTimestampComparator();
@@ -340,8 +340,10 @@ public final class SentryTracer implements ITransaction {
 
       if (timer != null) {
         synchronized (timerLock) {
-          timer.cancel();
-          timer = null;
+          if (timer != null) {
+            timer.cancel();
+            timer = null;
+          }
         }
       }
 
