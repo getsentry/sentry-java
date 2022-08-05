@@ -227,6 +227,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     if (memInfo != null) {
       totalMem = Long.toString(memInfo.totalMem);
     }
+    String[] abis = Build.SUPPORTED_ABIS;
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
     // done in the background when the trace file is read
@@ -235,6 +236,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         transaction,
         Long.toString(transactionDurationNanos),
         buildInfoProvider.getSdkInfoVersion(),
+        abis != null && abis.length > 0 ? abis[0] : "",
         () -> CpuInfoUtils.getInstance().readMaxFrequencies(),
         buildInfoProvider.getManufacturer(),
         buildInfoProvider.getModel(),

@@ -57,6 +57,8 @@ class EnvelopeTests : BaseUiTest() {
                 assertTrue(transactionItem.transaction == "e2etests")
                 assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
                 assertTrue(profilingTraceData.transactionName == "e2etests")
+                assertTrue(profilingTraceData.environment.isNotEmpty())
+                assertTrue(profilingTraceData.cpuArchitecture.isNotEmpty())
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
