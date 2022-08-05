@@ -155,71 +155,44 @@ public final class ActivityLifecycleIntegration
       // as we allow a single transaction running on the bound Scope, we finish the previous ones
       stopPreviousTransactions();
 
-      // we can only bind to the scope if there's no running transaction
-      ITransaction transaction;
       final String activityName = getActivityName(activity);
 
       final Date appStartTime =
           foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
       final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
+      final TransactionOptions transactionOptions = new TransactionOptions();
+
+      transactionOptions.setWaitForChildren(true);
+      transactionOptions.setTransactionFinishedCallback(
+          (finishingTransaction) -> {
+            @Nullable Activity unwrappedActivity = weakActivity.get();
+            if (unwrappedActivity != null) {
+              activityFramesTracker.setMetrics(
+                  unwrappedActivity, finishingTransaction.getEventId());
+            } else {
+              if (options != null) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.WARNING,
+                        "Unable to track activity frames as the Activity %s has been destroyed.",
+                        activityName);
+              }
+            }
+          });
+
+      // we can only bind to the scope if there's no running transaction
+      ITransaction transaction =
+          hub.startTransaction(
+              new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
+              transactionOptions);
+
       // in case appStartTime isn't available, we don't create a span for it.
-      if (firstActivityCreated || appStartTime == null || coldStart == null) {
-        final TransactionOptions transactionOptions = new TransactionOptions();
-
-        transactionOptions.setWaitForChildren(true);
-        transactionOptions.setTransactionFinishedCallback(
-            (finishingTransaction) -> {
-              @Nullable Activity unwrappedActivity = weakActivity.get();
-              if (unwrappedActivity != null) {
-                activityFramesTracker.setMetrics(
-                    unwrappedActivity, finishingTransaction.getEventId());
-              } else {
-                if (options != null) {
-                  options
-                      .getLogger()
-                      .log(
-                          SentryLevel.WARNING,
-                          "Unable to track activity frames as the Activity %s has been destroyed.",
-                          activityName);
-                }
-              }
-            });
-
-        transaction =
-            hub.startTransaction(
-                new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
-                transactionOptions);
-      } else {
-        // start transaction with app start timestamp
-        final TransactionOptions transactionOptions = new TransactionOptions();
-
+      if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
         transactionOptions.setStartTimestamp(appStartTime);
-        transactionOptions.setWaitForChildren(true);
-        transactionOptions.setTransactionFinishedCallback(
-            (finishingTransaction) -> {
-              @Nullable Activity unwrappedActivity = weakActivity.get();
-              if (unwrappedActivity != null) {
-                activityFramesTracker.setMetrics(
-                    unwrappedActivity, finishingTransaction.getEventId());
-              } else {
-                if (options != null) {
-                  options
-                      .getLogger()
-                      .log(
-                          SentryLevel.WARNING,
-                          "Unable to track activity frames as the Activity %s has been destroyed.",
-                          activityName);
-                }
-              }
-            });
 
-        transaction =
-            hub.startTransaction(
-                new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
-                transactionOptions);
         // start specific span for app start
-
         appStartSpan =
             transaction.startChild(
                 getAppStartOp(coldStart), getAppStartDesc(coldStart), appStartTime);
