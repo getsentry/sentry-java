@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- make profiling rate defaults to 101 hz ([#2211](https://github.com/getsentry/sentry-java/pull/2211))
+
 ### Features
 
 - Send source for transactions ([#2180](https://github.com/getsentry/sentry-java/pull/2180))
