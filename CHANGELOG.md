@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add baggage header to RestTemplate ([#2206](https://github.com/getsentry/sentry-java/pull/2206))
+
 ## 6.3.1
 
 ### Fixes
