@@ -653,6 +653,22 @@ public final class Hub implements IHub {
     return sentryId;
   }
 
+  @ApiStatus.Internal
+  @Override
+  public @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContext,
+      final @NotNull TransactionOptions transactionOptions) {
+    return createTransaction(
+        transactionContext,
+        transactionOptions.getCustomSamplingContext(),
+        transactionOptions.isBindToScope(),
+        transactionOptions.getStartTimestamp(),
+        transactionOptions.isWaitForChildren(),
+        transactionOptions.getIdleTimeout(),
+        transactionOptions.isTrimEnd(),
+        transactionOptions.getTransactionFinishedCallback());
+  }
+
   @Override
   public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
@@ -660,46 +676,6 @@ public final class Hub implements IHub {
       final boolean bindToScope) {
     return createTransaction(
         transactionContext, customSamplingContext, bindToScope, null, false, null, false, null);
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContext,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope,
-      @Nullable Date startTimestamp) {
-    return createTransaction(
-        transactionContext,
-        customSamplingContext,
-        bindToScope,
-        startTimestamp,
-        false,
-        null,
-        false,
-        null);
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope,
-      final @Nullable Date startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    return createTransaction(
-        transactionContexts,
-        customSamplingContext,
-        bindToScope,
-        startTimestamp,
-        waitForChildren,
-        idleTimeout,
-        trimEnd,
-        transactionFinishedCallback);
   }
 
   private @NotNull ITransaction createTransaction(

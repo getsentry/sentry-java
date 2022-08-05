@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.SampleRateUtil;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -66,7 +67,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
         sentryOptions.getEnvironment(),
         null, // getUserId(sentryOptions, user),
         user != null ? getSegment(user) : null,
-        transaction.getName(),
+        isHighQualityTransactionName(transaction.getTransactionNameSource())
+            ? transaction.getName()
+            : null,
         sampleRateToString(sampleRate(samplingDecision)));
   }
 
@@ -105,6 +108,12 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     DecimalFormat df =
         new DecimalFormat("#.################", DecimalFormatSymbols.getInstance(Locale.ROOT));
     return df.format(sampleRateAsDouble);
+  }
+
+  private static boolean isHighQualityTransactionName(
+      @Nullable TransactionNameSource transactionNameSource) {
+    return transactionNameSource != null
+        && !TransactionNameSource.URL.equals(transactionNameSource);
   }
 
   public @NotNull SentryId getTraceId() {

@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -72,6 +73,7 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull AtomicBoolean isFinishTimerRunning = new AtomicBoolean(false);
 
   private @Nullable TraceContext traceContext;
+  private @NotNull TransactionNameSource transactionNameSource;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -109,6 +111,7 @@ public final class SentryTracer implements ITransaction {
     this.idleTimeout = idleTimeout;
     this.trimEnd = trimEnd;
     this.transactionFinishedCallback = transactionFinishedCallback;
+    this.transactionNameSource = context.getTransactionNameSource();
 
     if (idleTimeout != null) {
       timer = new Timer(true);
@@ -521,9 +524,21 @@ public final class SentryTracer implements ITransaction {
     this.name = name;
   }
 
+  @ApiStatus.Internal
+  @Override
+  public void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource) {
+    this.setName(name);
+    this.transactionNameSource = transactionNameSource;
+  }
+
   @Override
   public @NotNull String getName() {
     return this.name;
+  }
+
+  @Override
+  public @NotNull TransactionNameSource getTransactionNameSource() {
+    return this.transactionNameSource;
   }
 
   @Override

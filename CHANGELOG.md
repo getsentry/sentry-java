@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Send source for transactions ([#2180](https://github.com/getsentry/sentry-java/pull/2180))
+
 ## 6.3.1
 
 ### Fixes

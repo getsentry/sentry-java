@@ -16,7 +16,10 @@ import io.sentry.ITransaction;
 import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
+import io.sentry.TransactionContext;
+import io.sentry.TransactionOptions;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.protocol.TransactionNameSource;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
@@ -249,8 +252,15 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     // we can only bind to the scope if there's no running transaction
     final String name = getActivityName(activity) + "." + viewId;
     final String op = UI_ACTION + "." + eventType;
+
+    final TransactionOptions transactionOptions = new TransactionOptions();
+    transactionOptions.setWaitForChildren(true);
+    transactionOptions.setIdleTimeout(options.getIdleTimeout());
+    transactionOptions.setTrimEnd(true);
+
     final ITransaction transaction =
-        hub.startTransaction(name, op, true, options.getIdleTimeout(), true);
+        hub.startTransaction(
+            new TransactionContext(name, TransactionNameSource.COMPONENT, op), transactionOptions);
 
     hub.configureScope(
         scope -> {
