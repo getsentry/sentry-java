@@ -8,6 +8,8 @@
 - Weakly reference Activity for transaction finished callback ([#2203](https://github.com/getsentry/sentry-java/pull/2203))
 - `attach-screenshot` set on Manual init. didn't work ([#2186](https://github.com/getsentry/sentry-java/pull/2186))
 - Remove extra space from `spring.factories` causing issues in old versions of Spring Boot ([#2181](https://github.com/getsentry/sentry-java/pull/2181))
+- Added cpu architecture and default environment in profiles envelope ([#2207](https://github.com/getsentry/sentry-java/pull/2207))
+
 
 ### Features
 
