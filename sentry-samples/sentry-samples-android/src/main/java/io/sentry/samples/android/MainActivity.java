@@ -189,6 +189,11 @@ public class MainActivity extends AppCompatActivity {
           startActivity(new Intent(this, ComposeActivity.class));
         });
 
+    binding.openProfilingActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, ProfilingActivity.class));
+        });
+
     setContentView(binding.getRoot());
   }
 

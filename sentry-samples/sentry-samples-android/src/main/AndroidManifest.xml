@@ -54,6 +54,10 @@
             android:exported="false" />
 
       <activity
+            android:name=".ProfilingActivity"
+            android:exported="false" />
+
+      <activity
             android:name=".compose.ComposeActivity"
             android:exported="false" />
 
@@ -100,7 +104,7 @@
         <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
 
         <!--    how to enable profiling when starting transactions -->
-        <!--    <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />-->
+        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />
 
         <!--    how to disable the Activity auto instrumentation for tracing-->
         <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->
