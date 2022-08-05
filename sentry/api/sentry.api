@@ -712,9 +712,10 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 
 public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;)V
-	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/lang/String;Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAndroidApiLevel ()I
 	public fun getBuildId ()Ljava/lang/String;
+	public fun getCpuArchitecture ()Ljava/lang/String;
 	public fun getDeviceCpuFrequencies ()Ljava/util/List;
 	public fun getDeviceLocale ()Ljava/lang/String;
 	public fun getDeviceManufacturer ()Ljava/lang/String;
@@ -740,6 +741,7 @@ public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAndroidApiLevel (I)V
 	public fun setBuildId (Ljava/lang/String;)V
+	public fun setCpuArchitecture (Ljava/lang/String;)V
 	public fun setDeviceCpuFrequencies (Ljava/util/List;)V
 	public fun setDeviceIsEmulator (Z)V
 	public fun setDeviceLocale (Ljava/lang/String;)V
@@ -768,6 +770,7 @@ public final class io/sentry/ProfilingTraceData$Deserializer : io/sentry/JsonDes
 
 public final class io/sentry/ProfilingTraceData$JsonKeys {
 	public static final field ANDROID_API_LEVEL Ljava/lang/String;
+	public static final field ARCHITECTURE Ljava/lang/String;
 	public static final field BUILD_ID Ljava/lang/String;
 	public static final field DEVICE_CPU_FREQUENCIES Ljava/lang/String;
 	public static final field DEVICE_IS_EMULATOR Ljava/lang/String;
