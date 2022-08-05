@@ -148,6 +148,11 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
+  public @Nullable Boolean isProfileSampled() {
+    return null;
+  }
+
+  @Override
   public @Nullable TracesSamplingDecision getSamplingDecision() {
     return null;
   }

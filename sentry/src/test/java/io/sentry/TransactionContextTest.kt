@@ -12,6 +12,7 @@ class TransactionContextTest {
     fun `when created using primary constructor, sampling decision and parent sampling are not set`() {
         val context = TransactionContext("name", "op")
         assertNull(context.sampled)
+        assertNull(context.profileSampled)
         assertNull(context.parentSampled)
         assertEquals("name", context.name)
         assertEquals("op", context.op)
@@ -22,6 +23,7 @@ class TransactionContextTest {
         val header = SentryTraceHeader(SentryId(), SpanId(), true)
         val context = TransactionContext.fromSentryTrace("name", "op", header)
         assertNull(context.sampled)
+        assertNull(context.profileSampled)
         assertTrue(context.parentSampled!!)
     }
 }
