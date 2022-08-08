@@ -5,6 +5,7 @@
 ### Fixes
 
 - make profiling rate defaults to 101 hz ([#2211](https://github.com/getsentry/sentry-java/pull/2211))
+- SentryOptions.setProfilingTracesIntervalMillis has been deprecated
 - Added cpu architecture and default environment in profiles envelope ([#2207](https://github.com/getsentry/sentry-java/pull/2207))
 - SentryOptions.setProfilingEnabled has been deprecated in favor of setProfilesSampleRate
 
