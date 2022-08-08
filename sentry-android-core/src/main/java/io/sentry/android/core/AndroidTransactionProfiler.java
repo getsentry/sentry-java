@@ -1,7 +1,7 @@
 package io.sentry.android.core;
 
 import static android.content.Context.ACTIVITY_SERVICE;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -81,17 +81,17 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
               "Disabling profiling because no profiling traces dir path is defined in options.");
       return;
     }
-    long intervalMillis = options.getProfilingTracesIntervalMillis();
-    if (intervalMillis <= 0) {
+    final int intervalHz = options.getProfilingTracesHz();
+    if (intervalHz <= 0) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Disabling profiling because trace interval is set to %d milliseconds",
-              intervalMillis);
+              "Disabling profiling because trace rate is set to %d",
+              intervalHz);
       return;
     }
-    intervalUs = (int) MILLISECONDS.toMicros(intervalMillis);
+    intervalUs = (int) SECONDS.toMicros(1) / intervalHz;
     traceFilesDir = new File(tracesFilesDirPath);
   }
 
