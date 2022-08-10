@@ -65,7 +65,7 @@ class TestOptions(
     }
 
     private fun url() = when (server) {
-        Server.LocalHost -> URL("http://127.0.0.1:4723/wd/hub")
+        Server.LocalHost -> URL("http://127.0.0.1:4723")
         Server.SauceLabs -> URL("https://${SauceLabs.user}:${SauceLabs.key}@ondemand.${SauceLabs.region}.saucelabs.com:443/wd/hub")
     }
 
@@ -112,7 +112,19 @@ class TestOptions(
                 }
             }
 
-            Platform.IOS -> TODO()
+            Platform.IOS -> {
+                caps.setCapability("platformName", "iOS")
+                caps.setCapability("appium:automationName", "XCUITest")
+
+                if (server == Server.SauceLabs) {
+                    // iPhone 12 Pro & iPhone 12 Pro Max | hexa core | 1900 MHz
+                    caps.setCapability("appium:deviceName", "iPhone 12 Pro.*")
+                    caps.setCapability("appium:platformVersion", "14.8")
+                } else {
+                    // Locally, we use any simulator, because real-device setup is a pain:
+                    // https://appium.io/docs/en/drivers/ios-xcuitest-real-devices/
+                }
+            }
         }
 
         return caps

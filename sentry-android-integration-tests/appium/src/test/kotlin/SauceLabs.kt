@@ -40,11 +40,11 @@ class SauceLabs {
         fun uploadApp(app: AppInfo): String {
             val fileId = findAppOnServer(app)
             if (fileId != null) {
-                logger.info("Skipping app ${app.name} upload - the same file already exists on the server as $fileId")
+                logger.info("App '${app.name}' - skipping upload - the same file already exists on the server as $fileId")
                 return fileId
             }
 
-            logger.info("Uploading app ${app.name} to SauceLabs from ${app.path}")
+            logger.info("App '${app.name}' - uploading to SauceLabs from ${app.path}")
 
             return runBlocking {
                 val response = client.submitFormWithBinaryData(
@@ -61,7 +61,7 @@ class SauceLabs {
                     }
                 )
 
-                logger.info("App ${app.name} uploaded successfully")
+                logger.info("App '${app.name}' - uploaded successfully")
 
                 val json = JsonPath.parse(response.bodyAsText())
                 json.read<String>("item.id")!!

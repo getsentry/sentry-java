@@ -2,6 +2,7 @@ import com.google.common.math.Quantiles
 import com.google.common.math.Stats
 import io.appium.java_client.android.Activity
 import io.appium.java_client.android.AndroidDriver
+import io.appium.java_client.ios.IOSDriver
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.doubles.shouldBeLessThan
 import io.kotest.matchers.longs.shouldBeGreaterThan
@@ -96,7 +97,10 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
             val diff = means[1] - means[0]
             printf(
                 "$logAppPrefix takes approximately %3f ms %s time to start than app %s",
-                appsUnderTest[1].name, abs(diff), if (diff >= 0) "more" else "less", appsUnderTest[0].name
+                appsUnderTest[1].name,
+                abs(diff),
+                if (diff >= 0) "more" else "less",
+                appsUnderTest[0].name
             )
 
             // fail if the slowdown is not within the expected range
@@ -137,7 +141,11 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
                         androidDriver.terminateApp(app.name)
                     }
 
-                    TestOptions.Platform.IOS -> TODO()
+                    TestOptions.Platform.IOS -> {
+                        val iosDriver = (driver as IOSDriver)
+                        iosDriver.activateApp(app.name)
+                        iosDriver.terminateApp(app.name)
+                    }
                 }
 
                 // sleep before the next test run
@@ -158,7 +166,12 @@ sealed class StartupTests(options: TestOptions) : TestBase(options) {
                     logEntries.mapNotNull { regex.find(it.message)?.groupValues?.get(1)?.toLong() }
                 }
 
-                TestOptions.Platform.IOS -> TODO()
+                TestOptions.Platform.IOS -> {
+                    val times = driver.events.commands.filter { it.name == "activateApp" }
+                        .map { it.endTimestamp - it.startTimestamp }
+                    val offset = j * runs
+                    times.subList(offset, offset + runs)
+                }
             }
 
             appTimes.size.shouldBe(runs)
@@ -174,14 +187,14 @@ sealed class StartupTestsAndroid(server: TestOptions.Server) :
             TestOptions.Platform.Android, server,
             listOf(
                 AppInfo(
-                    "io.sentry.java.tests.perf.appplain",
-                    "MainActivity",
-                    Path.of("../test-app-plain/build/outputs/apk/release/test-app-plain-release.apk")
+                    name = "io.sentry.java.tests.perf.appplain",
+                    activity = "MainActivity",
+                    path = Path.of("../test-app-plain/build/outputs/apk/release/test-app-plain-release.apk")
                 ),
                 AppInfo(
-                    "io.sentry.java.tests.perf.appsentry",
-                    "MainActivity",
-                    Path.of("../test-app-sentry/build/outputs/apk/release/test-app-sentry-release.apk")
+                    name = "io.sentry.java.tests.perf.appsentry",
+                    activity = "MainActivity",
+                    path = Path.of("../test-app-sentry/build/outputs/apk/release/test-app-sentry-release.apk")
                 )
             )
         )
@@ -193,5 +206,32 @@ class StartupTestsAndroidLocal : StartupTestsAndroid(TestOptions.Server.LocalHos
 
 @SauceLabsOnly
 class StartupTestsAndroidSauce : StartupTestsAndroid(TestOptions.Server.SauceLabs) {
+    override val runs: Int = 50
+}
+
+sealed class StartupTestsIOS(server: TestOptions.Server) :
+    StartupTests(
+        TestOptions(
+            TestOptions.Platform.IOS, server,
+            listOf(
+                AppInfo(
+                    name = "io.sentry.cocoa.test-app-plain",
+                    path = Path.of("../test-app-plain.ipa")
+                ),
+                AppInfo(
+                    name = "io.sentry.cocoa.test-app-sentry",
+                    path = Path.of("../test-app-sentry.ipa")
+                )
+            )
+        )
+    )
+
+// Running local
+class StartupTestsIOSLocal : StartupTestsIOS(TestOptions.Server.LocalHost) {
+    override val runs: Int = 5
+}
+
+@SauceLabsOnly
+class StartupTestsIOSSauce : StartupTestsIOS(TestOptions.Server.SauceLabs) {
     override val runs: Int = 50
 }
