@@ -42,6 +42,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String buildId;
 
   // Transaction info
+  private @NotNull List<ProfilingTransactionData> transactions;
   private @NotNull String transactionName;
   // duration_ns is a String to avoid issues with numbers and json
   private @NotNull String durationNs;
@@ -67,6 +68,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   public ProfilingTraceData(@NotNull File traceFile, @NotNull ITransaction transaction) {
     this(
         traceFile,
+        new ArrayList<>(),
         transaction,
         "0",
         0,
@@ -86,6 +88,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public ProfilingTraceData(
       @NotNull File traceFile,
+      @NotNull List<ProfilingTransactionData> transactions,
       @NotNull ITransaction transaction,
       @NotNull String durationNanos,
       int sdkInt,
@@ -119,6 +122,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.buildId = buildId != null ? buildId : "";
 
     // Transaction info
+    this.transactions = transactions;
     this.transactionName = transaction.getName();
     this.durationNs = durationNanos;
 
@@ -197,6 +201,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public @NotNull String getTransactionId() {
     return transactionId;
+  }
+
+  public @NotNull List<ProfilingTransactionData> getTransactions() {
+    return transactions;
   }
 
   public @NotNull String getTraceId() {
@@ -337,6 +345,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     public static final String DURATION_NS = "duration_ns";
     public static final String VERSION_NAME = "version_name";
     public static final String VERSION_CODE = "version_code";
+    public static final String TRANSACTION_LIST = "transactions";
     public static final String TRANSACTION_ID = "transaction_id";
     public static final String TRACE_ID = "trace_id";
     public static final String PROFILE_ID = "profile_id";
@@ -366,6 +375,9 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.DURATION_NS).value(durationNs);
     writer.name(JsonKeys.VERSION_NAME).value(versionName);
     writer.name(JsonKeys.VERSION_CODE).value(versionCode);
+    if (!transactions.isEmpty()) {
+      writer.name(JsonKeys.TRANSACTION_LIST).value(logger, transactions);
+    }
     writer.name(JsonKeys.TRANSACTION_ID).value(transactionId);
     writer.name(JsonKeys.TRACE_ID).value(traceId);
     writer.name(JsonKeys.PROFILE_ID).value(profileId);
@@ -507,6 +519,13 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
             String versionCode = reader.nextStringOrNull();
             if (versionCode != null) {
               data.versionCode = versionCode;
+            }
+            break;
+          case JsonKeys.TRANSACTION_LIST:
+            List<ProfilingTransactionData> transactions =
+                reader.nextList(logger, new ProfilingTransactionData.Deserializer());
+            if (transactions != null) {
+              data.transactions.addAll(transactions);
             }
             break;
           case JsonKeys.TRANSACTION_ID:

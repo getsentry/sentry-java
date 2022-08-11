@@ -13,12 +13,15 @@ import android.os.SystemClock;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionProfiler;
 import io.sentry.ProfilingTraceData;
+import io.sentry.ProfilingTransactionData;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +56,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private boolean isInitialized = false;
   private int transactionsCounter = 0;
   private final @NotNull Map<String, ITransaction> transactionMap = new HashMap<>();
+  private @Nullable ProfilingTransactionData transactionData;
 
   public AndroidTransactionProfiler(
       final @NotNull Context context,
@@ -136,6 +140,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                   () -> timedOutProfilingData = onTransactionFinish(transaction, true),
                   PROFILING_TIMEOUT_MILLIS);
 
+    transactionStartNanos = SystemClock.elapsedRealtimeNanos();
+    transactionData = new ProfilingTransactionData(transaction, transactionStartNanos);
+    Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
+  }
       transactionStartNanos = SystemClock.elapsedRealtimeNanos();
       Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
     }
@@ -221,7 +229,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
 
     Debug.stopMethodTracing();
-    long transactionDurationNanos = SystemClock.elapsedRealtimeNanos() - transactionStartNanos;
+    long transactionEndNanos = SystemClock.elapsedRealtimeNanos();
+    long transactionDurationNanos = transactionEndNanos - transactionStartNanos;
 
     // todo pass list to trace data - add tests
     transactionMap.clear();
@@ -251,10 +260,17 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
     String[] abis = Build.SUPPORTED_ABIS;
 
+    List<ProfilingTransactionData> transactionList = new ArrayList<>();
+    if (transactionData != null) {
+      transactionData.notifyFinish(transactionEndNanos, transactionStartNanos);
+      transactionList.add(transactionData);
+    }
+
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
     // done in the background when the trace file is read
     return new ProfilingTraceData(
         traceFile,
+        transactionList,
         transaction,
         Long.toString(transactionDurationNanos),
         buildInfoProvider.getSdkInfoVersion(),

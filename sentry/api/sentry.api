@@ -712,7 +712,7 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 
 public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;)V
-	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/lang/String;Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/io/File;Ljava/util/List;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/lang/String;Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAndroidApiLevel ()I
 	public fun getBuildId ()Ljava/lang/String;
 	public fun getCpuArchitecture ()Ljava/lang/String;
@@ -733,6 +733,7 @@ public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io
 	public fun getTraceId ()Ljava/lang/String;
 	public fun getTransactionId ()Ljava/lang/String;
 	public fun getTransactionName ()Ljava/lang/String;
+	public fun getTransactions ()Ljava/util/List;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersionCode ()Ljava/lang/String;
 	public fun getVersionName ()Ljava/lang/String;
@@ -788,9 +789,46 @@ public final class io/sentry/ProfilingTraceData$JsonKeys {
 	public static final field SAMPLED_PROFILE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION_ID Ljava/lang/String;
+	public static final field TRANSACTION_LIST Ljava/lang/String;
 	public static final field TRANSACTION_NAME Ljava/lang/String;
 	public static final field VERSION_CODE Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/ProfilingTransactionData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/ITransaction;Ljava/lang/Long;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public fun getRelativeEndNs ()Ljava/lang/Long;
+	public fun getRelativeStartNs ()Ljava/lang/Long;
+	public fun getTraceId ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun notifyFinish (Ljava/lang/Long;Ljava/lang/Long;)V
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setId (Ljava/lang/String;)V
+	public fun setName (Ljava/lang/String;)V
+	public fun setRelativeEndNs (Ljava/lang/Long;)V
+	public fun setRelativeStartNs (Ljava/lang/Long;)V
+	public fun setTraceId (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/ProfilingTransactionData$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/ProfilingTransactionData;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/ProfilingTransactionData$JsonKeys {
+	public static final field END_ND Ljava/lang/String;
+	public static final field ID Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field START_NS Ljava/lang/String;
+	public static final field TRACE_ID Ljava/lang/String;
 	public fun <init> ()V
 }
 
