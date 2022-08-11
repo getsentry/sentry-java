@@ -15,6 +15,7 @@ import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -59,6 +60,11 @@ class EnvelopeTests : BaseUiTest() {
                 assertTrue(profilingTraceData.transactionName == "e2etests")
                 assertTrue(profilingTraceData.environment.isNotEmpty())
                 assertTrue(profilingTraceData.cpuArchitecture.isNotEmpty())
+                assertTrue(profilingTraceData.transactions.isNotEmpty())
+                // We should find the transaction id that started the profiling in the list of transactions
+                val transactionData = profilingTraceData.transactions
+                    .firstOrNull { t -> t.id == transactionItem.eventId.toString() }
+                assertNotNull(transactionData)
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
