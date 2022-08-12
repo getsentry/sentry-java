@@ -69,7 +69,7 @@ jobs:
           ./gradlew :sentry-android-integration-tests:test-app-sentry:assembleRelease
 
       - name: Collect app metrics
-        uses: vaind/app-metrics-action@ecb56c86653ff05404a1eb84277ea6116e65e57f
+        uses: vaind/app-metrics-action@ef461e624e304576417e525797c38cad5ed0fc1c
         with:
           config: sentry-android-integration-tests/metrics-test.yml
           sauce-user: ${{ secrets.SAUCE_USERNAME }}
