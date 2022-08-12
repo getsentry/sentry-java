@@ -212,13 +212,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return null;
     }
 
-    // We notify the data referring to this transaction that it finished
-    ProfilingTransactionData transactionData =
-        transactionMap.get(transaction.getEventId().toString());
-    if (transactionData != null) {
-      transactionData.notifyFinish(SystemClock.elapsedRealtimeNanos(), transactionStartNanos);
-    }
-
     if (transactionsCounter > 0) {
       transactionsCounter--;
     }
@@ -233,6 +226,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
             transactionsCounter);
 
     if (transactionsCounter != 0 && !isTimeout) {
+      // We notify the data referring to this transaction that it finished
+      ProfilingTransactionData transactionData =
+          transactionMap.get(transaction.getEventId().toString());
+      if (transactionData != null) {
+        transactionData.notifyFinish(SystemClock.elapsedRealtimeNanos(), transactionStartNanos);
+      }
       return null;
     }
 

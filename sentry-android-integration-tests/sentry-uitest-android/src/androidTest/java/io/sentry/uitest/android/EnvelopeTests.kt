@@ -109,19 +109,21 @@ class EnvelopeTests : BaseUiTest() {
                 assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
                 assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
                 assertTrue(profilingTraceData.transactionName == "e2etests")
+
                 // Transaction timestamps should be all different from each other
                 val transactions = profilingTraceData.transactions
                 assertContains(transactions.map { t -> t.id }, transactionItem.eventId.toString())
                 val startTimes = transactions.map { t -> t.relativeStartNs }
-                val endTimes = transactions.map { t -> t.relativeEndNs }
-                assertEquals(0, startTimes[0])
+                val endTimes = transactions.mapNotNull { t -> t.relativeEndNs }
                 assertNotEquals(startTimes[0], startTimes[1])
                 assertNotEquals(startTimes[0], startTimes[2])
                 assertNotEquals(startTimes[1], startTimes[2])
-                assertNotEquals(0, endTimes[0])
                 assertNotEquals(endTimes[0], endTimes[1])
                 assertNotEquals(endTimes[0], endTimes[2])
                 assertNotEquals(endTimes[1], endTimes[2])
+
+                // The first and last transactions should be aligned to the start/stop of profile
+                assertEquals(endTimes.maxOrNull()!! - startTimes.minOrNull()!!, profilingTraceData.durationNs.toLong())
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
