@@ -51,7 +51,7 @@ jobs:
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-benchmark-lite.yml
 
-  startup-test:
+  app-metrics:
     runs-on: ubuntu-latest
     steps:
       - name: Git checkout

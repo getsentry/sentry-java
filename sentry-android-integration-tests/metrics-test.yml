@@ -7,7 +7,7 @@ apps:
     path: ./test-app-sentry/build/outputs/apk/release/test-app-sentry-release.apk
 
 startupTimeTest:
-  runs: 5
+  runs: 50
   diffMin: 0
   diffMax: 150
 
