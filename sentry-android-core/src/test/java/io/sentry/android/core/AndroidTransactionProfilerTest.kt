@@ -23,6 +23,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class AndroidTransactionProfilerTest {
@@ -46,6 +47,7 @@ class AndroidTransactionProfilerTest {
         }
         val transaction1 = SentryTracer(TransactionContext("", ""), mock())
         val transaction2 = SentryTracer(TransactionContext("", ""), mock())
+        val transaction3 = SentryTracer(TransactionContext("", ""), mock())
 
         fun getSut(context: Context, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidTransactionProfiler =
             AndroidTransactionProfiler(context, options, buildInfoProvider)
@@ -57,7 +59,7 @@ class AndroidTransactionProfilerTest {
         AndroidOptionsInitializer.init(fixture.options, context, fixture.mockLogger, false, false)
         // Profiler doesn't start if the folder doesn't exists.
         // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
-        File(fixture.options.profilingTracesDirPath).mkdirs()
+        File(fixture.options.profilingTracesDirPath!!).mkdirs()
     }
 
     @AfterTest
@@ -247,7 +249,7 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiling stops and returns data only when starting transaction finishes`() {
+    fun `profiling stops and returns data only when the last transaction finishes`() {
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
         profiler.onTransactionStart(fixture.transaction2)
@@ -257,5 +259,28 @@ class AndroidTransactionProfilerTest {
 
         traceData = profiler.onTransactionFinish(fixture.transaction1)
         assertEquals(fixture.transaction1.eventId.toString(), traceData!!.transactionId)
+    }
+
+    @Test
+    fun `profiling records multiple concurrent transactions`() {
+        val profiler = fixture.getSut(context)
+        profiler.onTransactionStart(fixture.transaction1)
+        profiler.onTransactionStart(fixture.transaction2)
+
+        var traceData = profiler.onTransactionFinish(fixture.transaction1)
+        assertNull(traceData)
+
+        profiler.onTransactionStart(fixture.transaction3)
+        traceData = profiler.onTransactionFinish(fixture.transaction3)
+        assertNull(traceData)
+        traceData = profiler.onTransactionFinish(fixture.transaction2)
+        assertEquals(fixture.transaction2.eventId.toString(), traceData!!.transactionId)
+        val expectedTransactions = listOf(
+            fixture.transaction1.eventId.toString(),
+            fixture.transaction3.eventId.toString(),
+            fixture.transaction2.eventId.toString()
+        )
+        assertTrue(traceData.transactions.map { it.id }.containsAll(expectedTransactions))
+        assertTrue(expectedTransactions.containsAll(traceData.transactions.map { it.id }))
     }
 }

@@ -16,12 +16,13 @@ import io.sentry.ProfilingTraceData;
 import io.sentry.ProfilingTransactionData;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
@@ -55,8 +56,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private long transactionStartNanos = 0;
   private boolean isInitialized = false;
   private int transactionsCounter = 0;
-  private final @NotNull Map<String, ITransaction> transactionMap = new HashMap<>();
-  private @Nullable ProfilingTransactionData transactionData;
+  private final @NotNull Map<String, ProfilingTransactionData> transactionMap = new HashMap<>();
 
   public AndroidTransactionProfiler(
       final @NotNull Context context,
@@ -140,15 +140,18 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                   () -> timedOutProfilingData = onTransactionFinish(transaction, true),
                   PROFILING_TIMEOUT_MILLIS);
 
-    transactionStartNanos = SystemClock.elapsedRealtimeNanos();
-    transactionData = new ProfilingTransactionData(transaction, transactionStartNanos);
-    Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
-  }
       transactionStartNanos = SystemClock.elapsedRealtimeNanos();
-      Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
-    }
 
-    transactionMap.put(transaction.getEventId().toString(), transaction);
+      ProfilingTransactionData transactionData =
+          new ProfilingTransactionData(transaction, transactionStartNanos);
+      transactionMap.put(transaction.getEventId().toString(), transactionData);
+
+      Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
+    } else {
+      ProfilingTransactionData transactionData =
+          new ProfilingTransactionData(transaction, SystemClock.elapsedRealtimeNanos());
+      transactionMap.put(transaction.getEventId().toString(), transactionData);
+    }
     options
         .getLogger()
         .log(
@@ -175,15 +178,15 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     final ProfilingTraceData profilingData = timedOutProfilingData;
 
-    // Tranasction finished, but it's not in the current profile,
-    // so we check if we cached a profiling data due to a timeout
+    // Transaction finished, but it's not in the current profile
     if (!transactionMap.containsKey(transaction.getEventId().toString())) {
-      // If the cached timed out profiling data contains the current transaction we return
-      // it back, otherwise we would simply lose it
+      // We check if we cached a profiling data due to a timeout with this profile in it
+      // If so, we return it back, otherwise we would simply lose it
       if (profilingData != null) {
-        // The timed out transaction is finishing
-        // todo check for id in list of transactions
-        if (profilingData.getTransactionId().equals(transaction.getEventId().toString())) {
+        // Don't use method reference. This can cause issues on Android
+        List<String> ids =
+            CollectionUtils.map(profilingData.getTransactions(), (data) -> data.getId());
+        if (ids.contains(transaction.getEventId().toString())) {
           timedOutProfilingData = null;
           return profilingData;
         } else {
@@ -192,12 +195,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
               .getLogger()
               .log(
                   SentryLevel.INFO,
-                  "A timed out profiling data exists, but the finishing transaction %s is not part of it",
-                  transaction.getName());
+                  "A timed out profiling data exists, but the finishing transaction %s (%s) is not part of it",
+                  transaction.getName(),
+                  transaction.getSpanContext().getTraceId().toString());
           return null;
         }
       }
-      // A transaction is finishing, but profiling didn't start. Maybe it was started by another one
+      // A transaction is finishing, but it's not profiled. We can skip it
       options
           .getLogger()
           .log(
@@ -208,8 +212,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return null;
     }
 
-    //todo
-//     transactionMap.get(transaction.getEventId().toString()).notifyFinish();
+    // We notify the data referring to this transaction that it finished
+    ProfilingTransactionData transactionData =
+        transactionMap.get(transaction.getEventId().toString());
+    if (transactionData != null) {
+      transactionData.notifyFinish(SystemClock.elapsedRealtimeNanos(), transactionStartNanos);
+    }
 
     if (transactionsCounter > 0) {
       transactionsCounter--;
@@ -232,7 +240,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     long transactionEndNanos = SystemClock.elapsedRealtimeNanos();
     long transactionDurationNanos = transactionEndNanos - transactionStartNanos;
 
-    // todo pass list to trace data - add tests
+    List<ProfilingTransactionData> transactionList = new ArrayList<>(transactionMap.values());
     transactionMap.clear();
     // We clear the counter in case of a timeout
     transactionsCounter = 0;
@@ -260,10 +268,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
     String[] abis = Build.SUPPORTED_ABIS;
 
-    List<ProfilingTransactionData> transactionList = new ArrayList<>();
-    if (transactionData != null) {
-      transactionData.notifyFinish(transactionEndNanos, transactionStartNanos);
-      transactionList.add(transactionData);
+    // We notify all transactions data that all transactions finished.
+    // Some may not have been really finished, in case of a timeout
+    for (ProfilingTransactionData t : transactionList) {
+      t.notifyFinish(transactionEndNanos, transactionStartNanos);
     }
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
