@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:orientation="vertical"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <TextView
+    android:id="@+id/profiling_duration_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:text="@string/profiling_duration" />
+
+  <SeekBar
+    android:id="@+id/profiling_duration_seekbar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:max="300" />
+
+  <TextView
+    android:id="@+id/profiling_threads_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:text="@string/profiling_threads" />
+
+  <SeekBar
+    android:id="@+id/profiling_threads_seekbar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:max="4" />
+
+  <TextView
+    android:id="@+id/profiling_result"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:text="@string/profiling_result" />
+
+  <Button
+    android:id="@+id/profiling_start"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/profiling_start" />
+
+  <ProgressBar
+    android:id="@+id/profiling_progress_bar"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:visibility="gone" />
+
+  <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/profiling_list"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:listitem="@layout/profiling_item_list" />
+
+</LinearLayout>

@@ -3,13 +3,11 @@ package io.sentry.spring.tracing
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.CustomSamplingContext
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -17,7 +15,9 @@ import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TransactionContext
+import io.sentry.TransactionOptions
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.TransactionNameSource
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
@@ -25,6 +25,7 @@ import org.springframework.web.servlet.HandlerMapping
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -50,12 +51,13 @@ class SentryTracingFilterTest {
             request.method = "POST"
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
             whenever(transactionNameProvider.provideTransactionName(request)).thenReturn("POST /product/{id}")
+            whenever(transactionNameProvider.provideTransactionSource()).thenReturn(TransactionNameSource.CUSTOM)
             if (sentryTraceHeader != null) {
                 request.addHeader("sentry-trace", sentryTraceHeader)
-                whenever(hub.startTransaction(any(), any<CustomSamplingContext>(), eq(true))).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
+                whenever(hub.startTransaction(any(), check<TransactionOptions> { it.isBindToScope })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             }
             response.status = status
-            whenever(hub.startTransaction(any(), any(), any<CustomSamplingContext>(), eq(true))).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
+            whenever(hub.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
             whenever(hub.isEnabled).thenReturn(isEnabled)
             return SentryTracingFilter(hub, transactionNameProvider)
         }
@@ -70,12 +72,16 @@ class SentryTracingFilterTest {
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
         verify(fixture.hub).startTransaction(
-            eq("POST /product/12"), eq("http.server"),
-            check<CustomSamplingContext>() {
-                assertNotNull(it["request"])
-                assertTrue(it["request"] is HttpServletRequest)
+            check<TransactionContext> {
+                assertEquals("POST /product/12", it.name)
+                assertEquals(TransactionNameSource.URL, it.transactionNameSource)
+                assertEquals("http.server", it.operation)
             },
-            eq(true)
+            check<TransactionOptions> {
+                assertNotNull(it.customSamplingContext?.get("request"))
+                assertTrue(it.customSamplingContext?.get("request") is HttpServletRequest)
+                assertTrue(it.isBindToScope)
+            }
         )
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
         verify(fixture.hub).captureTransaction(
