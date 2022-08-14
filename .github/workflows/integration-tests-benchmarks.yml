@@ -63,10 +63,18 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
 
-      - name: Build test apps
-        run: |
-          ./gradlew :sentry-android-integration-tests:test-app-plain:assembleRelease
-          ./gradlew :sentry-android-integration-tests:test-app-sentry:assembleRelease
+      - uses: actions/cache@v3
+        id: app-plain-cache
+        with:
+          path: sentry-android-integration-tests/test-app-plain/build/outputs/apk/release/test-app-plain-release.apk
+          key: ${{ github.workflow }}-${{ github.job }}-appplain-${{ hashFiles('sentry-android-integration-tests/test-app-plain/**') }}
+
+      - name: Build Android app plain
+        if: steps.app-plain-cache.outputs['cache-hit'] != 'true'
+        run: ./gradlew :sentry-android-integration-tests:test-app-plain:assembleRelease
+
+      - name: Build Android app with Sentry
+        run: ./gradlew :sentry-android-integration-tests:test-app-sentry:assembleRelease
 
       - name: Collect app metrics
         uses: vaind/app-metrics-action@7c4bb7c513304dc4cc2452d1deaf941b2fc03644
