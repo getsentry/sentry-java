@@ -8,6 +8,7 @@
 - SentryOptions.setProfilingTracesIntervalMillis has been deprecated
 - Added cpu architecture and default environment in profiles envelope ([#2207](https://github.com/getsentry/sentry-java/pull/2207))
 - SentryOptions.setProfilingEnabled has been deprecated in favor of setProfilesSampleRate
+- Use toString for enum serialization ([#2220](https://github.com/getsentry/sentry-java/pull/2220))
 
 ### Features
 
