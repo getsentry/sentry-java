@@ -21,6 +21,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
@@ -39,7 +40,7 @@ class AndroidTransactionProfilerTest {
         val mockLogger = mock<ILogger>()
         val options = SentryAndroidOptions().apply {
             dsn = mockDsn
-            isProfilingEnabled = true
+            profilesSampleRate = 1.0
             isDebug = true
             setLogger(mockLogger)
         }
@@ -99,9 +100,9 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler on isProfilingEnabled false`() {
+    fun `profiler on profilesSampleRate=0 false`() {
         fixture.options.apply {
-            isProfilingEnabled = false
+            profilesSampleRate = 0.0
         }
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
@@ -110,9 +111,9 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler evaluates isProfiling options only on first transaction profiling`() {
+    fun `profiler evaluates if profiling is enabled in options only on first transaction profiling`() {
         fixture.options.apply {
-            isProfilingEnabled = false
+            profilesSampleRate = 0.0
         }
 
         // We create the profiler, and nothing goes wrong
@@ -148,17 +149,17 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler evaluates profilingTracesIntervalMillis options only on first transaction profiling`() {
+    fun `profiler evaluates profilingTracesHz options only on first transaction profiling`() {
         fixture.options.apply {
-            profilingTracesIntervalMillis = 0
+            profilingTracesHz = 0
         }
 
         // We create the profiler, and nothing goes wrong
         val profiler = fixture.getSut(context)
         verify(fixture.mockLogger, never()).log(
             SentryLevel.WARNING,
-            "Disabling profiling because trace interval is set to %d milliseconds",
-            0L
+            "Disabling profiling because trace rate is set to %d",
+            0
         )
 
         // Regardless of how many times the profiler is started, the option is evaluated and logged only once
@@ -166,8 +167,8 @@ class AndroidTransactionProfilerTest {
         profiler.onTransactionStart(fixture.transaction1)
         verify(fixture.mockLogger, times(1)).log(
             SentryLevel.WARNING,
-            "Disabling profiling because trace interval is set to %d milliseconds",
-            0L
+            "Disabling profiling because trace rate is set to %d",
+            0
         )
     }
 
@@ -194,14 +195,25 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler on profilingTracesIntervalMillis 0`() {
+    fun `profiler on profilingTracesHz 0`() {
+        fixture.options.apply {
+            profilingTracesHz = 0
+        }
+        val profiler = fixture.getSut(context)
+        profiler.onTransactionStart(fixture.transaction1)
+        val traceData = profiler.onTransactionFinish(fixture.transaction1)
+        assertNull(traceData)
+    }
+
+    @Test
+    fun `profiler ignores profilingTracesIntervalMillis`() {
         fixture.options.apply {
             profilingTracesIntervalMillis = 0
         }
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
         val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertNull(traceData)
+        assertNotNull(traceData)
     }
 
     @Test
