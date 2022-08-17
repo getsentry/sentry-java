@@ -8,11 +8,13 @@
 - SentryOptions.setProfilingTracesIntervalMillis has been deprecated
 - Added cpu architecture and default environment in profiles envelope ([#2207](https://github.com/getsentry/sentry-java/pull/2207))
 - SentryOptions.setProfilingEnabled has been deprecated in favor of setProfilesSampleRate
+- Use toString for enum serialization ([#2220](https://github.com/getsentry/sentry-java/pull/2220))
 
 ### Features
 
 - Send source for transactions ([#2180](https://github.com/getsentry/sentry-java/pull/2180))
 - Add profilesSampleRate and profileSampler options for Android sdk ([#2184](https://github.com/getsentry/sentry-java/pull/2184))
+- Add baggage header to RestTemplate ([#2206](https://github.com/getsentry/sentry-java/pull/2206))
 
 ## 6.3.1
 
