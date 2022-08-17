@@ -15,6 +15,9 @@
 - Send source for transactions ([#2180](https://github.com/getsentry/sentry-java/pull/2180))
 - Add profilesSampleRate and profileSampler options for Android sdk ([#2184](https://github.com/getsentry/sentry-java/pull/2184))
 - Add baggage header to RestTemplate ([#2206](https://github.com/getsentry/sentry-java/pull/2206))
+- Bump Native SDK from v0.4.18 to v0.5.0 ([#2199](https://github.com/getsentry/sentry-java/pull/2199))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#050)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.4.18...0.5.0)
 
 ## 6.3.1
 
