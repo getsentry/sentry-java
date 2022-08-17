@@ -14,6 +14,7 @@
 
 - Send source for transactions ([#2180](https://github.com/getsentry/sentry-java/pull/2180))
 - Add profilesSampleRate and profileSampler options for Android sdk ([#2184](https://github.com/getsentry/sentry-java/pull/2184))
+- Add baggage header to RestTemplate ([#2206](https://github.com/getsentry/sentry-java/pull/2206))
 
 ## 6.3.1
 
