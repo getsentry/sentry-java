@@ -16,7 +16,7 @@ class MeasurementValueSerializationTest {
     class Fixture {
         val logger = mock<ILogger>()
         // float cannot represent 0.3 correctly https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
-        fun getSut() = MeasurementValue(0.30000001192092896f, "test", mapOf<String, Any>("new_type" to "newtype"))
+        fun getSut(value: Float = 0.30000001192092896f, unit: String = "test") = MeasurementValue(value, unit, mapOf<String, Any>("new_type" to "newtype"))
     }
     private val fixture = Fixture()
 
