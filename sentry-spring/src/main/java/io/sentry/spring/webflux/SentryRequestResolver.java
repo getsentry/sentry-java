@@ -1,9 +1,7 @@
 package io.sentry.spring.webflux;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
 import io.sentry.protocol.Request;
-import io.sentry.util.Objects;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -22,10 +20,10 @@ public class SentryRequestResolver {
       Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
   private final boolean isSendDefaultPii;
 
-//  private final @NotNull IHub hub;
+  //  private final @NotNull IHub hub;
 
   public SentryRequestResolver(final boolean isSendDefaultPii) {
-//    this.hub = Objects.requireNonNull(hub, "options is required");
+    //    this.hub = Objects.requireNonNull(hub, "options is required");
     this.isSendDefaultPii = isSendDefaultPii;
   }
 

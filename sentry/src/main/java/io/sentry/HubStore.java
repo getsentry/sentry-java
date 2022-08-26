@@ -1,29 +1,29 @@
 package io.sentry;
 
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class HubStore {
   private static class SingletonHolder {
 
     public static final HubStore instance = new HubStore();
-
   }
+
   public static HubStore getInstance() {
     return SingletonHolder.instance;
   }
 
   private static final @NotNull ThreadLocal<HubContainer> currentThreadHub = new ThreadLocal<>();
 
-  private final @NotNull ConcurrentHashMap<String, HubStorageEntry> hubs = new ConcurrentHashMap<>();
+  private final @NotNull ConcurrentHashMap<String, HubStorageEntry> hubs =
+      new ConcurrentHashMap<>();
   // this only serves to keep a strong ref on the IHub until it is removed explicitly
 
   public @Nullable IHub get() {
@@ -61,12 +61,14 @@ public final class HubStore {
 
   // TODO find places to call cleanup
   public void cleanup() {
-    @NotNull final Set<Map.Entry<String, HubStorageEntry>> entries = ((Map<String, HubStorageEntry>) hubs).entrySet();
+    @NotNull
+    final Set<Map.Entry<String, HubStorageEntry>> entries =
+        ((Map<String, HubStorageEntry>) hubs).entrySet();
     @NotNull final Set<String> toBeRemoved = new HashSet<>();
     @NotNull final Set<Thread> threads = Thread.getAllStackTraces().keySet();
     @NotNull final Set<String> threadIds = new HashSet<>();
 
-    for (final Thread t: threads) {
+    for (final Thread t : threads) {
       threadIds.add(String.valueOf(t.getId()));
     }
 
@@ -83,7 +85,7 @@ public final class HubStore {
       }
     }
 
-    for (String hubId: toBeRemoved) {
+    for (String hubId : toBeRemoved) {
       remove(hubId);
     }
   }
@@ -94,7 +96,8 @@ public final class HubStore {
     return String.valueOf(Thread.currentThread().getId());
   }
 
-  public void set(@NotNull final String hubId, @NotNull HubIdType hubIdType, @NotNull final IHub hub) {
+  public void set(
+      @NotNull final String hubId, @NotNull HubIdType hubIdType, @NotNull final IHub hub) {
     HubContainer hubContainer = new HubContainer(hub);
     if (HubIdType.THREAD_ID.equals(hubIdType)) {
       currentThreadHub.set(hubContainer);
@@ -113,7 +116,8 @@ public final class HubStore {
     private @NotNull final WeakReference<IHub> hub;
     private @NotNull final WeakReference<HubContainer> hubContainer;
 
-    private HubStorageEntry(@NotNull HubIdType hubIdType, @NotNull IHub hub, @NotNull HubContainer hubContainer) {
+    private HubStorageEntry(
+        @NotNull HubIdType hubIdType, @NotNull IHub hub, @NotNull HubContainer hubContainer) {
       this.hubIdType = hubIdType;
       this.hub = new WeakReference<>(hub);
       this.hubContainer = new WeakReference<>(hubContainer);

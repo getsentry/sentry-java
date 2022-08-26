@@ -1,26 +1,20 @@
 package io.sentry.spring.webflux;
 
-import io.sentry.Sentry;
 import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_REQUEST;
 import static io.sentry.TypeCheckHint.WEBFLUX_FILTER_RESPONSE;
 
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
-import io.sentry.util.Objects;
+import io.sentry.Sentry;
+import java.util.UUID;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-
-import java.util.UUID;
-
 import reactor.core.publisher.Mono;
 
 /** Manages {@link io.sentry.Scope} in Webflux request processing. */
@@ -44,9 +38,10 @@ public final class SentryWebFilter implements WebFilter {
 
     return webFilterChain
         .filter(serverWebExchange)
-      .contextWrite(ctx -> {
-        return ctx;
-      })
+        .contextWrite(
+            ctx -> {
+              return ctx;
+            })
         .doFinally(
             __ -> {
               hub.popScope();
@@ -67,6 +62,6 @@ public final class SentryWebFilter implements WebFilter {
               hub.configureScope(
                   scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
             })
-      .contextWrite(ctx -> ctx.put(SENTRY_HUB_KEY, hub));
+        .contextWrite(ctx -> ctx.put(SENTRY_HUB_KEY, hub));
   }
 }
