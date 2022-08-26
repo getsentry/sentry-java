@@ -12,6 +12,8 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
@@ -24,15 +26,17 @@ import reactor.core.publisher.Mono;
 // at -1
 @ApiStatus.Experimental
 public final class SentryWebExceptionHandler implements WebExceptionHandler {
-  private final @NotNull IHub hub;
+//  private final @NotNull IHub hub;
+//  private static final Logger log = LoggerFactory.getLogger("exceptionlogger");
 
   public SentryWebExceptionHandler(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+//    this.hub = Objects.requireNonNull(hub, "hub is required");
   }
 
   @Override
   public @NotNull Mono<Void> handle(
       final @NotNull ServerWebExchange serverWebExchange, final @NotNull Throwable ex) {
+//    log.debug("Exception handled on thread " + Thread.currentThread().getName());
     if (!(ex instanceof ResponseStatusException)) {
       final Mechanism mechanism = new Mechanism();
       mechanism.setType("SentryWebExceptionHandler");
@@ -47,7 +51,16 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
       hint.set(WEBFLUX_EXCEPTION_HANDLER_REQUEST, serverWebExchange.getRequest());
       hint.set(WEBFLUX_EXCEPTION_HANDLER_RESPONSE, serverWebExchange.getResponse());
 
-      hub.captureEvent(event, hint);
+      return SentryWebfluxHubHolder.getHub(serverWebExchange).flatMap(hub -> {
+//        log.warn("hub " + hub);
+        hub.captureEvent(event, hint);
+        return Mono.error(ex);
+      });
+//      return SentryWebfluxHubHolder.getHub(serverWebExchange).map(hub -> {
+//        log.warn("hub " + hub);
+//        hub.captureEvent(event, hint);
+//        return null;
+//      });
     }
     return Mono.error(ex);
   }

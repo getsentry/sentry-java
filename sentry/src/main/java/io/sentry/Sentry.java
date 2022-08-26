@@ -18,7 +18,9 @@ public final class Sentry {
   private Sentry() {}
 
   /** Holds Hubs per thread or only mainHub if globalHubMode is enabled. */
-  private static final @NotNull ThreadLocal<IHub> currentHub = new ThreadLocal<>();
+//  private static final @NotNull ThreadLocal<IHub> currentHub = new ThreadLocal<>();
+//  private static final @NotNull ThreadLocal<HubContainer> currentHub = new ThreadLocal<>();
+  private static final @NotNull HubStore hubStore = HubStore.getInstance();
 
   /** The Main Hub or NoOp if Sentry is disabled. */
   private static volatile @NotNull IHub mainHub = NoOpHub.getInstance();
@@ -39,17 +41,42 @@ public final class Sentry {
     if (globalHubMode) {
       return mainHub;
     }
-    IHub hub = currentHub.get();
+
+    IHub hub = hubStore.get();
+//    IHub hub = currentHub.get();
     if (hub == null || hub instanceof NoOpHub) {
       hub = mainHub.clone();
-      currentHub.set(hub);
+      hubStore.set(hub);
+//      currentHub.set(hub);
+    }
+    return hub;
+  }
+
+  @ApiStatus.Internal
+  public static @NotNull IHub getHub(@NotNull String hubId) {
+    if (globalHubMode) {
+      return mainHub;
+    }
+
+    IHub hub = hubStore.get(hubId);
+    if (hub == null || hub instanceof NoOpHub) {
+      hub = mainHub.clone();
+      hubStore.set(hubId, HubStore.HubIdType.WEBFLUX_CONTEXT_ID, hub);
+//      currentHub.set(hub);
     }
     return hub;
   }
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   public static void setCurrentHub(final @NotNull IHub hub) {
-    currentHub.set(hub);
+//    currentHub.set(hub);
+    hubStore.set(hub);
+  }
+
+  @ApiStatus.Internal
+  public static void clearHub(@NotNull String hubId) {
+    hubStore.remove(hubId);
+    hubStore.cleanup();
   }
 
   /**
@@ -176,7 +203,8 @@ public final class Sentry {
     final IHub hub = getCurrentHub();
     mainHub = new Hub(options);
 
-    currentHub.set(mainHub);
+//    currentHub.set(mainHub);
+    hubStore.set(mainHub);
 
     hub.close();
 
@@ -261,7 +289,8 @@ public final class Sentry {
     final IHub hub = getCurrentHub();
     mainHub = NoOpHub.getInstance();
     // remove thread local to avoid memory leak
-    currentHub.remove();
+//    currentHub.remove();
+    hubStore.remove();
     hub.close();
   }
 

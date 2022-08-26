@@ -20,11 +20,13 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 public class SentryRequestResolver {
   private static final List<String> SENSITIVE_HEADERS =
       Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
+  private final boolean isSendDefaultPii;
 
-  private final @NotNull IHub hub;
+//  private final @NotNull IHub hub;
 
-  public SentryRequestResolver(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "options is required");
+  public SentryRequestResolver(final boolean isSendDefaultPii) {
+//    this.hub = Objects.requireNonNull(hub, "options is required");
+    this.isSendDefaultPii = isSendDefaultPii;
   }
 
   public @NotNull Request resolveSentryRequest(final @NotNull ServerHttpRequest httpRequest) {
@@ -34,7 +36,7 @@ public class SentryRequestResolver {
     sentryRequest.setUrl(httpRequest.getURI().toString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
 
-    if (hub.getOptions().isSendDefaultPii()) {
+    if (isSendDefaultPii) {
       sentryRequest.setCookies(toString(httpRequest.getHeaders().get("Cookies")));
     }
     return sentryRequest;
@@ -45,7 +47,7 @@ public class SentryRequestResolver {
     final Map<String, String> headersMap = new HashMap<>();
     for (Map.Entry<String, List<String>> entry : request.entrySet()) {
       // do not copy personal information identifiable headers
-      if (hub.getOptions().isSendDefaultPii()
+      if (isSendDefaultPii
           || !SENSITIVE_HEADERS.contains(entry.getKey().toUpperCase(Locale.ROOT))) {
         headersMap.put(entry.getKey(), toString(entry.getValue()));
       }
