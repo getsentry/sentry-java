@@ -1,15 +1,12 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.SampleRateUtil;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -52,27 +49,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     this.sampleRate = sampleRate;
   }
 
-  TraceContext(
-      final @NotNull ITransaction transaction,
-      final @Nullable User user,
-      final @NotNull SentryOptions sentryOptions,
-      final @Nullable TracesSamplingDecision samplingDecision) {
-    // user_id isn't part of the dynamic sampling context right now because
-    // of PII concerns.
-    // https://develop.sentry.dev/sdk/performance/dynamic-sampling-context/#the-temporal-problem
-    this(
-        transaction.getSpanContext().getTraceId(),
-        new Dsn(sentryOptions.getDsn()).getPublicKey(),
-        sentryOptions.getRelease(),
-        sentryOptions.getEnvironment(),
-        null, // getUserId(sentryOptions, user),
-        user != null ? getSegment(user) : null,
-        isHighQualityTransactionName(transaction.getTransactionNameSource())
-            ? transaction.getName()
-            : null,
-        sampleRateToString(sampleRate(samplingDecision)));
-  }
-
   @SuppressWarnings("UnusedMethod")
   private static @Nullable String getUserId(
       final @NotNull SentryOptions options, final @Nullable User user) {
@@ -81,39 +57,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     }
 
     return null;
-  }
-
-  private static @Nullable String getSegment(final @NotNull User user) {
-    final Map<String, String> others = user.getOthers();
-    if (others != null) {
-      return others.get("segment");
-    } else {
-      return null;
-    }
-  }
-
-  private static @Nullable Double sampleRate(@Nullable TracesSamplingDecision samplingDecision) {
-    if (samplingDecision == null) {
-      return null;
-    }
-
-    return samplingDecision.getSampleRate();
-  }
-
-  private static @Nullable String sampleRateToString(@Nullable Double sampleRateAsDouble) {
-    if (!SampleRateUtil.isValidTracesSampleRate(sampleRateAsDouble, false)) {
-      return null;
-    }
-
-    DecimalFormat df =
-        new DecimalFormat("#.################", DecimalFormatSymbols.getInstance(Locale.ROOT));
-    return df.format(sampleRateAsDouble);
-  }
-
-  private static boolean isHighQualityTransactionName(
-      @Nullable TransactionNameSource transactionNameSource) {
-    return transactionNameSource != null
-        && !TransactionNameSource.URL.equals(transactionNameSource);
   }
 
   public @NotNull SentryId getTraceId() {
@@ -146,21 +89,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
 
   public @Nullable String getSampleRate() {
     return sampleRate;
-  }
-
-  public @NotNull Baggage toBaggage(@NotNull ILogger logger) {
-    Baggage baggage = new Baggage(logger);
-
-    baggage.setTraceId(traceId.toString());
-    baggage.setPublicKey(publicKey);
-    baggage.setSampleRate(sampleRate);
-    baggage.setRelease(release);
-    baggage.setEnvironment(environment);
-    baggage.setTransaction(transaction);
-    baggage.setUserId(userId);
-    baggage.setUserSegment(userSegment);
-
-    return baggage;
   }
 
   /** @deprecated only here to support parsing legacy JSON with non flattened user */
@@ -388,5 +316,18 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       logger.log(SentryLevel.ERROR, message, exception);
       return exception;
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    TraceContext that = (TraceContext) o;
+    return traceId.equals(that.traceId) && publicKey.equals(that.publicKey) && Objects.equals(release, that.release) && Objects.equals(environment, that.environment) && Objects.equals(userId, that.userId) && Objects.equals(userSegment, that.userSegment) && Objects.equals(transaction, that.transaction) && Objects.equals(sampleRate, that.sampleRate) && Objects.equals(unknown, that.unknown);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(traceId, publicKey, release, environment, userId, userSegment, transaction, sampleRate, unknown);
   }
 }

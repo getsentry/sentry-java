@@ -42,7 +42,8 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     span.setDescription(request.method().name() + " " + request.url());
 
     final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-    final @Nullable BaggageHeader baggageHeader = span.toBaggageHeader();
+    final @Nullable BaggageHeader baggageHeader =
+        span.toBaggageHeader(request.headers().get("baggage"));
 
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
 

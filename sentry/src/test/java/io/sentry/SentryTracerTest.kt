@@ -565,7 +565,7 @@ class SentryTracerTest {
             }
         )
 
-        val header = transaction.toBaggageHeader()
+        val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
@@ -595,7 +595,7 @@ class SentryTracerTest {
             }
         )
 
-        val header = transaction.toBaggageHeader()
+        val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
@@ -621,7 +621,7 @@ class SentryTracerTest {
 
         fixture.hub.setUser(null)
 
-        val header = transaction.toBaggageHeader()
+        val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)

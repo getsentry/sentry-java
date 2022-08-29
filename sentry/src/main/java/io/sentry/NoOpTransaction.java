@@ -92,7 +92,7 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @NotNull BaggageHeader toBaggageHeader() {
+  public @NotNull BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
     return new BaggageHeader("");
   }
 

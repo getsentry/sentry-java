@@ -51,7 +51,8 @@ class TraceContextSerializationTest {
     }
 
     private fun createTraceContext(sRate: Double): TraceContext {
-        return TraceContext(
+        val baggage = Baggage(fixture.logger)
+        baggage.setValuesFromTransaction(
             SentryTracer(TransactionContext("name", "op"), mock<IHub>()),
             User().apply {
                 id = "user-id"
@@ -65,6 +66,7 @@ class TraceContextSerializationTest {
             },
             TracesSamplingDecision(sRate > 0.5, sRate)
         )
+        return baggage.toTraceContext()!!
     }
 
     @Test

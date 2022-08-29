@@ -1,7 +1,6 @@
 package io.sentry
 
 import com.github.javafaker.Faker
-import io.sentry.Baggage.MAX_BAGGAGE_LIST_MEMBER_COUNT
 import io.sentry.Baggage.MAX_BAGGAGE_STRING_LENGTH
 import io.sentry.protocol.SentryId
 import java.util.UUID
@@ -21,167 +20,160 @@ class BaggageTest {
 
     @Test
     fun `can parse single baggage string with white spaces in it`() {
-        val baggage = Baggage.fromHeader("userId =  alice   ,  serverNode = DF%2028,isProduction=false", logger)
+        val baggage = Baggage.fromHeader("sentry-userId =  alice   ,  sentry-serverNode = DF%2028,sentry-isProduction=false", false, logger)
 
-        assertEquals("alice", baggage.get("userId"))
-        assertEquals("DF 28", baggage.get("serverNode"))
-        assertEquals("false", baggage.get("isProduction"))
+        assertEquals("alice", baggage.get("sentry-userId"))
+        assertEquals("DF 28", baggage.get("sentry-serverNode"))
+        assertEquals("false", baggage.get("sentry-isProduction"))
 
-        assertEquals("isProduction=false,serverNode=DF%2028,userId=alice", baggage.toHeaderString())
+        assertEquals("sentry-isProduction=false,sentry-serverNode=DF%2028,sentry-userId=alice", baggage.toHeaderString(null))
     }
 
     @Test
-    fun `can parse single baggage string`() {
-        val baggage = Baggage.fromHeader("userId=alice,serverNode=DF%2028,isProduction=false", logger)
+    fun `retain single third party baggage string`() {
+        val baggage = Baggage.fromHeader("userId=alice,serverNode=DF%2028,isProduction=false", true, logger)
 
-        assertEquals("alice", baggage.get("userId"))
-        assertEquals("DF 28", baggage.get("serverNode"))
-        assertEquals("false", baggage.get("isProduction"))
+        assertEquals("userId=alice,serverNode=DF%2028,isProduction=false", baggage.toHeaderString(baggage.getThirdPartyHeader()))
+    }
 
-        assertEquals("isProduction=false,serverNode=DF%2028,userId=alice", baggage.toHeaderString())
+    @Test
+    fun `sentry values in third party baggage string are removed`() {
+        val baggage = Baggage.fromHeader("userId=alice,sentry-thirdParty=thirdPartyValue,serverNode=DF%2028,isProduction=false", true, logger)
+
+        assertEquals("userId=alice,serverNode=DF%2028,isProduction=false", baggage.getThirdPartyHeader())
+    }
+
+    @Test
+    fun `third party headers are dropped if not specified to keep`() {
+        val baggage = Baggage.fromHeader("userId=alice,sentry-serverNode=DF%2028,isProduction=false", logger)
+
+        assertEquals("sentry-serverNode=DF%2028", baggage.toHeaderString(null))
     }
 
     @Test
     fun `keys are encoded and decoded as well`() {
-        val baggage = Baggage.fromHeader("user%2Bid=alice,server%2Bnode=DF%2028,is%2Bproduction=false", logger)
+        val baggage = Baggage.fromHeader("sentry-user%2Bid=alice,sentry-server%2Bnode=DF%2028,sentry-is%2Bproduction=false", logger)
 
-        assertEquals("alice", baggage.get("user+id"))
-        assertEquals("DF 28", baggage.get("server+node"))
-        assertEquals("false", baggage.get("is+production"))
+        assertEquals("alice", baggage.get("sentry-user+id"))
+        assertEquals("DF 28", baggage.get("sentry-server+node"))
+        assertEquals("false", baggage.get("sentry-is+production"))
 
-        assertEquals("is%2Bproduction=false,server%2Bnode=DF%2028,user%2Bid=alice", baggage.toHeaderString())
+        assertEquals("sentry-is%2Bproduction=false,sentry-server%2Bnode=DF%2028,sentry-user%2Bid=alice", baggage.toHeaderString(null))
     }
 
     @Test
     fun `can parse multiple baggage strings`() {
         val baggage = Baggage.fromHeader(
             listOf(
-                "userId=alice",
-                "serverNode=DF%2028,isProduction=false"
+                "sentry-userId=alice",
+                "sentry-serverNode=DF%2028,sentry-isProduction=false"
             ),
             logger
         )
 
-        assertEquals("alice", baggage.get("userId"))
-        assertEquals("DF 28", baggage.get("serverNode"))
-        assertEquals("false", baggage.get("isProduction"))
+        assertEquals("alice", baggage.get("sentry-userId"))
+        assertEquals("DF 28", baggage.get("sentry-serverNode"))
+        assertEquals("false", baggage.get("sentry-isProduction"))
 
-        assertEquals("isProduction=false,serverNode=DF%2028,userId=alice", baggage.toHeaderString())
+        assertEquals("sentry-isProduction=false,sentry-serverNode=DF%2028,sentry-userId=alice", baggage.toHeaderString(null))
     }
 
     @Test
     fun `can parse multiple baggage strings with white spaces`() {
         val baggage = Baggage.fromHeader(
             listOf(
-                "userId =   alice",
-                "serverNode = DF%2028, isProduction = false"
+                "sentry-userId =   alice",
+                "sentry-serverNode = DF%2028, sentry-isProduction = false"
             ),
             logger
         )
 
-        assertEquals("alice", baggage.get("userId"))
-        assertEquals("DF 28", baggage.get("serverNode"))
-        assertEquals("false", baggage.get("isProduction"))
+        assertEquals("alice", baggage.get("sentry-userId"))
+        assertEquals("DF 28", baggage.get("sentry-serverNode"))
+        assertEquals("false", baggage.get("sentry-isProduction"))
 
-        assertEquals("isProduction=false,serverNode=DF%2028,userId=alice", baggage.toHeaderString())
+        assertEquals("sentry-isProduction=false,sentry-serverNode=DF%2028,sentry-userId=alice", baggage.toHeaderString(null))
     }
 
     @Test
     fun `can parse null baggage string`() {
         val nothing: String? = null
         val baggage = Baggage.fromHeader(nothing, logger)
-        assertEquals("", baggage.toHeaderString())
+        assertEquals("", baggage.toHeaderString(null))
     }
 
     @Test
     fun `can parse blank baggage string`() {
         val baggage = Baggage.fromHeader("", logger)
-        assertEquals("", baggage.toHeaderString())
+        assertEquals("", baggage.toHeaderString(null))
     }
 
     @Test
     fun `can parse whitespace only baggage string`() {
         val baggage = Baggage.fromHeader("   ", logger)
-        assertEquals("", baggage.toHeaderString())
+        assertEquals("", baggage.toHeaderString(null))
     }
 
     @Test
     fun `can parse whitespace only baggage strings`() {
         val baggage = Baggage.fromHeader(listOf("   ", "   "), logger)
-        assertEquals("", baggage.toHeaderString())
+        assertEquals("", baggage.toHeaderString(null))
     }
 
     @Test
     fun `single large value is dropped and small values are kept`() {
         val largeValue = Faker.instance().random().hex(8193)
-        val baggage = Baggage.fromHeader("smallValue=remains,largeValue=$largeValue,otherValue=kept", logger)
+        val baggage = Baggage.fromHeader("sentry-smallValue=remains,sentry-largeValue=$largeValue,sentry-otherValue=kept", logger)
 
-        assertEquals("remains", baggage.get("smallValue"))
-        assertNotNull(baggage.get("largeValue"))
-        assertEquals("kept", baggage.get("otherValue"))
+        assertEquals("remains", baggage.get("sentry-smallValue"))
+        assertNotNull(baggage.get("sentry-largeValue"))
+        assertEquals("kept", baggage.get("sentry-otherValue"))
 
-        assertEquals("otherValue=kept,smallValue=remains", baggage.toHeaderString())
+        assertEquals("sentry-otherValue=kept,sentry-smallValue=remains", baggage.toHeaderString(null))
     }
 
     @Test
     fun `medium size value can cause small values to be dropped`() {
-        val mediumValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH - 12 - 15 - 1) // 8192 - "mediumValue=" - "otherValue=kept" - ","
-        val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=removed,otherValue=kept", logger)
+        val mediumValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH - 19 - 22 - 1) // 8192 - "sentry-mediumValue=" - "sentry-otherValue=kept" - ","
+        val baggage = Baggage.fromHeader("sentry-mediumValue=$mediumValue,sentry-smallValue=removed,sentry-otherValue=kept", logger)
 
-        assertEquals("removed", baggage.get("smallValue"))
-        assertEquals(mediumValue, baggage.get("mediumValue"))
-        assertEquals("kept", baggage.get("otherValue"))
+        assertEquals("removed", baggage.get("sentry-smallValue"))
+        assertEquals(mediumValue, baggage.get("sentry-mediumValue"))
+        assertEquals("kept", baggage.get("sentry-otherValue"))
 
-        val headerString = baggage.toHeaderString()
+        val headerString = baggage.toHeaderString(null)
         assertEquals(MAX_BAGGAGE_STRING_LENGTH, headerString.length)
-        assertEquals("mediumValue=$mediumValue,otherValue=kept", headerString)
+        assertEquals("sentry-mediumValue=$mediumValue,sentry-otherValue=kept", headerString)
     }
 
     @Test
     fun `medium size value can cause all values to be dropped`() {
         // nothing else will fit after mediumValue as the separator + any key/value would exceed the limit
-        val mediumValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH - 12 - 15) // 8192 - "mediumValue=" - "otherValue=lost"
-        val baggage = Baggage.fromHeader("mediumValue=$mediumValue,smallValue=stripped,otherValue=lost", logger)
+        val mediumValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH - 19 - 22) // 8192 - "sentry-mediumValue=" - "sentry-otherValue=lost"
+        val baggage = Baggage.fromHeader("sentry-mediumValue=$mediumValue,sentry-smallValue=stripped,sentry-otherValue=lost", logger)
 
-        assertEquals("stripped", baggage.get("smallValue"))
-        assertEquals(mediumValue, baggage.get("mediumValue"))
-        assertEquals("lost", baggage.get("otherValue"))
+        assertEquals("stripped", baggage.get("sentry-smallValue"))
+        assertEquals(mediumValue, baggage.get("sentry-mediumValue"))
+        assertEquals("lost", baggage.get("sentry-otherValue"))
 
-        val headerString = baggage.toHeaderString()
-        assertEquals(8177, headerString.length)
-        assertEquals("mediumValue=$mediumValue", headerString)
-    }
-
-    @Test
-    fun `exceeding entry limit causes values to be dropped`() {
-        val baggage = Baggage(logger)
-        val expectedItems = mutableListOf<String>()
-
-        for (i in 1..100) {
-            val key = 100 + i
-            baggage.set("a$key", "$i")
-            if (i <= MAX_BAGGAGE_LIST_MEMBER_COUNT) {
-                expectedItems.add("a$key=$i")
-            }
-        }
-
-        val expectedHeaderString = expectedItems.joinToString(",")
-        assertEquals(expectedHeaderString, baggage.toHeaderString())
+        val headerString = baggage.toHeaderString(null)
+        assertEquals(8170, headerString.length)
+        assertEquals("sentry-mediumValue=$mediumValue", headerString)
     }
 
     @Test
     fun `null value is omitted from header string`() {
         val baggage = Baggage(logger)
 
-        baggage.setTraceId(null)
-        baggage.setPublicKey(null)
-        baggage.setRelease(null)
-        baggage.setEnvironment(null)
-        baggage.setTransaction(null)
-        baggage.setUserId(null)
-        baggage.setUserSegment(null)
+        baggage.traceId = null
+        baggage.publicKey = null
+        baggage.release = null
+        baggage.environment = null
+        baggage.transaction = null
+        baggage.userId = null
+        baggage.userSegment = null
 
-        assertEquals("", baggage.toHeaderString())
+        assertEquals("", baggage.toHeaderString(null))
     }
 
     @Test
@@ -200,23 +192,37 @@ class BaggageTest {
         baggage.setUserSegment("segmentA")
         baggage.setSampleRate((1.0 / 3.0).toString())
 
-        assertEquals("sentry-environment=production,sentry-public_key=$publicKey,sentry-release=1.0-rc.1,sentry-sample_rate=0.3333333333333333,sentry-trace_id=$traceId,sentry-transaction=TX,sentry-user_id=$userId,sentry-user_segment=segmentA", baggage.toHeaderString())
+        assertEquals("sentry-environment=production,sentry-public_key=$publicKey,sentry-release=1.0-rc.1,sentry-sample_rate=0.3333333333333333,sentry-trace_id=$traceId,sentry-transaction=TX,sentry-user_id=$userId,sentry-user_segment=segmentA", baggage.toHeaderString(null))
     }
 
     @Test
     fun `duplicate entries are lost`() {
-        val baggage = Baggage.fromHeader("duplicate=a,duplicate=b", logger)
-        assertEquals("duplicate=b", baggage.toHeaderString())
+        val baggage = Baggage.fromHeader("sentry-duplicate=a,sentry-duplicate=b", logger)
+        assertEquals("sentry-duplicate=b", baggage.toHeaderString(null))
     }
 
     @Test
     fun `setting a value multiple times only keeps the last`() {
-        val baggage = Baggage.fromHeader("sentry-trace_id=a", logger)
+        val baggage = Baggage.fromHeader("", logger)
 
-        baggage.setTraceId("b")
-        baggage.setTraceId("c")
+        baggage.traceId = "a"
+        baggage.traceId = "b"
+        baggage.traceId = "c"
 
-        assertEquals("sentry-trace_id=c", baggage.toHeaderString())
+        assertEquals("sentry-trace_id=c", baggage.toHeaderString(null))
+    }
+
+    @Test
+    fun `setting values if header contains sentry values has no effect`() {
+        val baggage = Baggage.fromHeader("sentry-trace_id=a,sentry-transaction=sentryTransaction", logger)
+
+        baggage.traceId = "b"
+        baggage.traceId = "c"
+
+        baggage.transaction = "newTransaction"
+        baggage.environment = "production"
+
+        assertEquals("sentry-trace_id=a,sentry-transaction=sentryTransaction", baggage.toHeaderString(null))
     }
 
     @Test
@@ -225,25 +231,25 @@ class BaggageTest {
 
         baggage.setTransaction("a=b")
 
-        assertEquals("sentry-transaction=a%3Db", baggage.toHeaderString())
+        assertEquals("sentry-transaction=a%3Db", baggage.toHeaderString(null))
     }
 
     @Test
     fun `corrupted string does not throw out`() {
         val baggage = Baggage.fromHeader("a", logger)
-        assertEquals("", baggage.toHeaderString())
+        assertEquals("", baggage.toHeaderString(null))
     }
 
     @Test
     fun `corrupted string does not throw out 2`() {
         val baggage = Baggage.fromHeader("a=b=", logger)
-        assertEquals("", baggage.toHeaderString())
+        assertEquals("", baggage.toHeaderString(null))
     }
 
     @Test
     fun `corrupted string can be parsed partially`() {
-        val baggage = Baggage.fromHeader("a=value,b", logger)
-        assertEquals("a=value", baggage.toHeaderString())
+        val baggage = Baggage.fromHeader("sentry-a=value,sentry-b", logger)
+        assertEquals("sentry-a=value", baggage.toHeaderString(null))
     }
 
     @Test
@@ -348,7 +354,7 @@ class BaggageTest {
             val baggage = Baggage(logger)
             baggage.setTransaction(key)
 
-            val headerString = baggage.toHeaderString()
+            val headerString = baggage.toHeaderString(null)
             if ("sentry-transaction=$value" != headerString) {
                 failures.add("$key should be $value but was >$headerString<")
             }
@@ -363,10 +369,10 @@ class BaggageTest {
     @Test
     fun `all characters defined as valid for keys can be used`() {
         val baggage = Baggage(logger)
-        val key = validTokenCharacters().joinToString("")
+        val key = "sentry-" + validTokenCharacters().joinToString("")
         baggage.set(key, "value")
 
-        val reparsedBaggage = Baggage.fromHeader(baggage.toHeaderString(), logger)
+        val reparsedBaggage = Baggage.fromHeader(baggage.toHeaderString(null), logger)
         assertEquals("value", reparsedBaggage.get(key))
     }
 
@@ -375,7 +381,7 @@ class BaggageTest {
         val baggage = Baggage(logger)
         baggage.set(invalidTokenCharacters().joinToString(""), "value")
 
-        assertEquals("%22%28%29%2C%2F%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%7B%7D=value", baggage.toHeaderString())
+        assertEquals("%22%28%29%2C%2F%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%7B%7D=value", baggage.toHeaderString(null))
     }
 
     /**

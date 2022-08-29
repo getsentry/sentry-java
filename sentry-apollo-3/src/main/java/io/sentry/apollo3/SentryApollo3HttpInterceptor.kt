@@ -38,7 +38,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
 
             if (TracingOrigins.contain(hub.options.tracingOrigins, request.url)) {
                 val sentryTraceHeader = span.toSentryTrace()
-                val baggageHeader = span.toBaggageHeader()
+                val baggageHeader = span.toBaggageHeader(request.headers.filter { it.name == "baggage" }.map { it.value })
                 requestBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
 
                 baggageHeader?.let {

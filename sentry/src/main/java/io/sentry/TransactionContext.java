@@ -11,6 +11,7 @@ public final class TransactionContext extends SpanContext {
   private final @NotNull String name;
   private final @NotNull TransactionNameSource transactionNameSource;
   private @Nullable TracesSamplingDecision parentSamplingDecision;
+  private @Nullable Baggage baggage;
 
   /**
    * Creates {@link TransactionContext} from sentry-trace header.
@@ -24,7 +25,7 @@ public final class TransactionContext extends SpanContext {
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull SentryTraceHeader sentryTrace) {
-    return fromSentryTrace(name, TransactionNameSource.CUSTOM, operation, sentryTrace);
+    return fromSentryTrace(name, TransactionNameSource.CUSTOM, operation, sentryTrace, null);
   }
 
   /**
@@ -41,8 +42,23 @@ public final class TransactionContext extends SpanContext {
       final @NotNull String name,
       final @NotNull TransactionNameSource transactionNameSource,
       final @NotNull String operation,
-      final @NotNull SentryTraceHeader sentryTrace) {
+      final @NotNull SentryTraceHeader sentryTrace,
+      final @Nullable Baggage baggage) {
     @Nullable Boolean parentSampled = sentryTrace.isSampled();
+    TracesSamplingDecision samplingDecision =
+        parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
+
+    if (baggage != null) {
+      baggage.freeze();
+
+      Double sampleRate = baggage.getSampleRateDouble();
+      if (sampleRate != null) {
+        samplingDecision = new TracesSamplingDecision(true, sampleRate);
+      } else {
+        samplingDecision = new TracesSamplingDecision(true);
+      }
+    }
+
     return new TransactionContext(
         name,
         operation,
@@ -50,11 +66,8 @@ public final class TransactionContext extends SpanContext {
         new SpanId(),
         transactionNameSource,
         sentryTrace.getSpanId(),
-        parentSampled == null
-            ? null
-            : new TracesSamplingDecision(
-                parentSampled)); // TODO sampleRate should be retrieved from baggage and passed here
-    // in the future
+        samplingDecision,
+        baggage);
   }
 
   public TransactionContext(final @NotNull String name, final @NotNull String operation) {
@@ -109,11 +122,13 @@ public final class TransactionContext extends SpanContext {
       final @NotNull SpanId spanId,
       final @NotNull TransactionNameSource transactionNameSource,
       final @Nullable SpanId parentSpanId,
-      final @Nullable TracesSamplingDecision parentSamplingDecision) {
+      final @Nullable TracesSamplingDecision parentSamplingDecision,
+      final @Nullable Baggage baggage) {
     super(traceId, spanId, operation, parentSpanId, null);
     this.name = Objects.requireNonNull(name, "name is required");
     this.parentSamplingDecision = parentSamplingDecision;
     this.transactionNameSource = transactionNameSource;
+    this.baggage = baggage;
   }
 
   public @NotNull String getName() {
@@ -130,6 +145,10 @@ public final class TransactionContext extends SpanContext {
 
   public @Nullable TracesSamplingDecision getParentSamplingDecision() {
     return parentSamplingDecision;
+  }
+
+  public @Nullable Baggage getBaggage() {
+    return baggage;
   }
 
   public void setParentSampled(final @Nullable Boolean parentSampled) {

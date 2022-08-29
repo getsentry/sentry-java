@@ -16,6 +16,7 @@ import io.sentry.SpanStatus;
 import io.sentry.TracingOrigins;
 import io.sentry.util.Objects;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -56,7 +57,10 @@ public final class SentryFeignClient implements Client {
 
       if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), url)) {
         final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-        final @Nullable BaggageHeader baggageHeader = span.toBaggageHeader();
+        final @Nullable Collection<String> requestBaggageHeader = request.headers().get("baggage");
+        final @Nullable BaggageHeader baggageHeader =
+            span.toBaggageHeader(
+                requestBaggageHeader != null ? new ArrayList<>(requestBaggageHeader) : null);
         requestWrapper.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
         if (baggageHeader != null) {
           requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
