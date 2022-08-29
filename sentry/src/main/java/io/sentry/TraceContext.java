@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-import io.sentry.util.SampleRateUtil;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -323,11 +322,28 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     TraceContext that = (TraceContext) o;
-    return traceId.equals(that.traceId) && publicKey.equals(that.publicKey) && Objects.equals(release, that.release) && Objects.equals(environment, that.environment) && Objects.equals(userId, that.userId) && Objects.equals(userSegment, that.userSegment) && Objects.equals(transaction, that.transaction) && Objects.equals(sampleRate, that.sampleRate) && Objects.equals(unknown, that.unknown);
+    return traceId.equals(that.traceId)
+        && publicKey.equals(that.publicKey)
+        && Objects.equals(release, that.release)
+        && Objects.equals(environment, that.environment)
+        && Objects.equals(userId, that.userId)
+        && Objects.equals(userSegment, that.userSegment)
+        && Objects.equals(transaction, that.transaction)
+        && Objects.equals(sampleRate, that.sampleRate)
+        && Objects.equals(unknown, that.unknown);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(traceId, publicKey, release, environment, userId, userSegment, transaction, sampleRate, unknown);
+    return Objects.hash(
+        traceId,
+        publicKey,
+        release,
+        environment,
+        userId,
+        userSegment,
+        transaction,
+        sampleRate,
+        unknown);
   }
 }
