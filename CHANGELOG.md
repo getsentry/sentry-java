@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix memory leak caused by throwableToSpan ([#2227](https://github.com/getsentry/sentry-java/pull/2227))
+
 ## 6.4.0
 
 ### Fixes

@@ -12,6 +12,7 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.io.Closeable;
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -27,7 +28,7 @@ public final class Hub implements IHub {
   private volatile boolean isEnabled;
   private final @NotNull Stack stack;
   private final @NotNull TracesSampler tracesSampler;
-  private final @NotNull Map<Throwable, Pair<ISpan, String>> throwableToSpan =
+  private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
 
   public Hub(final @NotNull SentryOptions options) {
@@ -237,12 +238,15 @@ public final class Hub implements IHub {
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
     if (options.isTracingEnabled() && event.getThrowable() != null) {
-      final Pair<ISpan, String> pair =
+      final Pair<WeakReference<ISpan>, String> pair =
           throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
       if (pair != null) {
-        final ISpan span = pair.getFirst();
-        if (event.getContexts().getTrace() == null && span != null) {
-          event.getContexts().setTrace(span.getSpanContext());
+        final WeakReference<ISpan> spanWeakRef = pair.getFirst();
+        if (event.getContexts().getTrace() == null && spanWeakRef != null) {
+          final ISpan span = spanWeakRef.get();
+          if (span != null) {
+            event.getContexts().setTrace(span.getSpanContext());
+          }
         }
         final String transactionName = pair.getSecond();
         if (event.getTransaction() == null && transactionName != null) {
@@ -775,7 +779,7 @@ public final class Hub implements IHub {
     final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
     // the most inner span should be assigned to a throwable
     if (!throwableToSpan.containsKey(rootCause)) {
-      throwableToSpan.put(rootCause, new Pair<>(span, transactionName));
+      throwableToSpan.put(rootCause, new Pair<>(new WeakReference<>(span), transactionName));
     }
   }
 
@@ -783,11 +787,14 @@ public final class Hub implements IHub {
   SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
     final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
-    final Pair<ISpan, String> pair = this.throwableToSpan.get(rootCause);
+    final Pair<WeakReference<ISpan>, String> pair = this.throwableToSpan.get(rootCause);
     if (pair != null) {
-      final ISpan span = pair.getFirst();
-      if (span != null) {
-        return span.getSpanContext();
+      final WeakReference<ISpan> spanWeakRef = pair.getFirst();
+      if (spanWeakRef != null) {
+        final ISpan span = spanWeakRef.get();
+        if (span != null) {
+          return span.getSpanContext();
+        }
       }
     }
     return null;
