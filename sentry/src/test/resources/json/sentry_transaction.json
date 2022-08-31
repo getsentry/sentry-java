@@ -31,6 +31,9 @@
             "value": 0.30000001192092896
         }
     },
+    "transaction_info": {
+      "source": "custom"
+    },
     "event_id": "afcb46b1140ade5187c4bbb5daa804df",
     "contexts":
     {

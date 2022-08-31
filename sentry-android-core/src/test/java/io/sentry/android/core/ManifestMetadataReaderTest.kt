@@ -745,6 +745,47 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads profilesSampleRate from metadata`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        val bundle = bundleOf(ManifestMetadataReader.PROFILES_SAMPLE_RATE to expectedSampleRate)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profilesSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata does not override profilesSampleRate from options`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        fixture.options.profilesSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.PROFILES_SAMPLE_RATE to 0.1f)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profilesSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying profilesSampleRate, stays null`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertNull(fixture.options.profilesSampleRate)
+    }
+
+    @Test
     fun `applyMetadata reads tracingOrigins to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """localhost,^(http|https)://api\..*$""")

@@ -43,7 +43,7 @@ class EnvelopeTests : BaseUiTest() {
 
         initSentry(true) { options: SentryOptions ->
             options.tracesSampleRate = 1.0
-            options.isProfilingEnabled = true
+            options.profilesSampleRate = 1.0
         }
         relayIdlingResource.increment()
         val transaction = Sentry.startTransaction("e2etests", "test1")
@@ -57,6 +57,8 @@ class EnvelopeTests : BaseUiTest() {
                 assertTrue(transactionItem.transaction == "e2etests")
                 assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
                 assertTrue(profilingTraceData.transactionName == "e2etests")
+                assertTrue(profilingTraceData.environment.isNotEmpty())
+                assertTrue(profilingTraceData.cpuArchitecture.isNotEmpty())
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
@@ -70,7 +72,7 @@ class EnvelopeTests : BaseUiTest() {
         initSentry(false) { options: SentryOptions ->
             options.dsn = "https://640fae2f19ac4ba78ad740175f50195f@o1137848.ingest.sentry.io/6191083"
             options.tracesSampleRate = 1.0
-            options.isProfilingEnabled = true
+            options.profilesSampleRate = 1.0
         }
 
         val transaction = Sentry.startTransaction("e2etests", "testProfile")

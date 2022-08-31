@@ -5,6 +5,7 @@ import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_REQUEST_BODY;
 import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_RESPONSE;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
@@ -50,6 +51,10 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
 
       if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), request.getURI())) {
         request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+        @Nullable BaggageHeader baggage = span.toBaggageHeader();
+        if (baggage != null) {
+          request.getHeaders().add(baggage.getName(), baggage.getValue());
+        }
       }
 
       try {

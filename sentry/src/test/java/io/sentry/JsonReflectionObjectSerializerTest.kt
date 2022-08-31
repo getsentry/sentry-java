@@ -257,6 +257,12 @@ class JsonReflectionObjectSerializerTest {
         verify(fixture.logger).log(SentryLevel.INFO, "Max depth exceeded. Calling toString() on object.")
     }
 
+    @Test
+    fun `enum`() {
+        val actual = fixture.getSut().serialize(DataCategory.Error, fixture.logger)
+        assertEquals("Error", actual)
+    }
+
     // Helper
 
     class ClassWithPrimitiveFields(

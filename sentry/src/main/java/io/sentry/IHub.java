@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
-import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -481,26 +480,6 @@ public interface IHub {
       @Nullable CustomSamplingContext customSamplingContext,
       boolean bindToScope);
 
-  @ApiStatus.Internal
-  @NotNull
-  ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope,
-      @Nullable Date startTimestamp);
-
-  @ApiStatus.Internal
-  @NotNull
-  ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope,
-      @Nullable Date startTimestamp,
-      boolean waitForChildren,
-      @Nullable Long idleTimeout,
-      boolean trimEnd,
-      @Nullable TransactionFinishedCallback transactionFinishedCallback);
-
   /**
    * Creates a Transaction and returns the instance. Based on the {@link
    * SentryOptions#getTracesSampleRate()} the decision if transaction is sampled will be taken by
@@ -516,40 +495,10 @@ public interface IHub {
   }
 
   @ApiStatus.Internal
-  default @NotNull ITransaction startTransaction(
-      final @NotNull String name,
-      final @NotNull String operation,
-      @Nullable Date startTimestamp,
-      boolean waitForChildren,
-      @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    return startTransaction(
-        new TransactionContext(name, operation),
-        null,
-        false,
-        startTimestamp,
-        waitForChildren,
-        null,
-        false,
-        transactionFinishedCallback);
-  }
-
-  @ApiStatus.Internal
-  default @NotNull ITransaction startTransaction(
-      final @NotNull String name,
-      final @NotNull String operation,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd) {
-    return startTransaction(
-        new TransactionContext(name, operation),
-        null,
-        false,
-        null,
-        waitForChildren,
-        idleTimeout,
-        trimEnd,
-        null);
-  }
+  @NotNull
+  ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContext,
+      final @NotNull TransactionOptions transactionOptions);
 
   /**
    * Creates a Transaction and returns the instance. Based on the {@link

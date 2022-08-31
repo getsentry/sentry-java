@@ -17,6 +17,12 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
+  /**
+   * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
+   * SentryOptions} do not have the environment field set.
+   */
+  private static final String DEFAULT_ENVIRONMENT = "production";
+
   private @NotNull File traceFile;
   private @Nullable Callable<List<Integer>> deviceCpuFrequenciesReader;
 
@@ -29,6 +35,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String deviceOsName;
   private @NotNull String deviceOsVersion;
   private boolean deviceIsEmulator;
+  private @NotNull String cpuArchitecture;
   private @NotNull List<Integer> deviceCpuFrequencies = new ArrayList<>();
   private @NotNull String devicePhysicalMemoryBytes;
   private @NotNull String platform;
@@ -63,6 +70,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
         transaction,
         "0",
         0,
+        "",
         // Don't use method reference. This can cause issues on Android
         () -> new ArrayList<>(),
         null,
@@ -81,6 +89,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       @NotNull ITransaction transaction,
       @NotNull String durationNanos,
       int sdkInt,
+      @NotNull String cpuArchitecture,
       @NotNull Callable<List<Integer>> deviceCpuFrequenciesReader,
       @Nullable String deviceManufacturer,
       @Nullable String deviceModel,
@@ -92,6 +101,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       @Nullable String versionCode,
       @Nullable String environment) {
     this.traceFile = traceFile;
+    this.cpuArchitecture = cpuArchitecture;
     this.deviceCpuFrequenciesReader = deviceCpuFrequenciesReader;
 
     // Device metadata
@@ -120,7 +130,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.transactionId = transaction.getEventId().toString();
     this.traceId = transaction.getSpanContext().getTraceId().toString();
     this.profileId = UUID.randomUUID().toString();
-    this.environment = environment != null ? environment : "";
+    this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
   }
 
   private @Nullable Map<String, Object> unknown;
@@ -131,6 +141,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public int getAndroidApiLevel() {
     return androidApiLevel;
+  }
+
+  public @NotNull String getCpuArchitecture() {
+    return cpuArchitecture;
   }
 
   public @NotNull String getDeviceLocale() {
@@ -215,6 +229,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public void setAndroidApiLevel(int androidApiLevel) {
     this.androidApiLevel = androidApiLevel;
+  }
+
+  public void setCpuArchitecture(@NotNull String cpuArchitecture) {
+    this.cpuArchitecture = cpuArchitecture;
   }
 
   public void setDeviceLocale(@NotNull String deviceLocale) {
@@ -310,6 +328,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     public static final String DEVICE_OS_NAME = "device_os_name";
     public static final String DEVICE_OS_VERSION = "device_os_version";
     public static final String DEVICE_IS_EMULATOR = "device_is_emulator";
+    public static final String ARCHITECTURE = "architecture";
     public static final String DEVICE_CPU_FREQUENCIES = "device_cpu_frequencies";
     public static final String DEVICE_PHYSICAL_MEMORY_BYTES = "device_physical_memory_bytes";
     public static final String PLATFORM = "platform";
@@ -337,6 +356,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.DEVICE_OS_NAME).value(deviceOsName);
     writer.name(JsonKeys.DEVICE_OS_VERSION).value(deviceOsVersion);
     writer.name(JsonKeys.DEVICE_IS_EMULATOR).value(deviceIsEmulator);
+    writer.name(JsonKeys.ARCHITECTURE).value(logger, cpuArchitecture);
     // Backend expects the list of frequencies, even if empty
     writer.name(JsonKeys.DEVICE_CPU_FREQUENCIES).value(logger, deviceCpuFrequencies);
     writer.name(JsonKeys.DEVICE_PHYSICAL_MEMORY_BYTES).value(devicePhysicalMemoryBytes);
@@ -433,6 +453,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
             Boolean deviceIsEmulator = reader.nextBooleanOrNull();
             if (deviceIsEmulator != null) {
               data.deviceIsEmulator = deviceIsEmulator;
+            }
+            break;
+          case JsonKeys.ARCHITECTURE:
+            String cpuArchitecture = reader.nextStringOrNull();
+            if (cpuArchitecture != null) {
+              data.cpuArchitecture = cpuArchitecture;
             }
             break;
           case JsonKeys.DEVICE_CPU_FREQUENCIES:

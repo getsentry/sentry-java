@@ -1,7 +1,7 @@
 package io.sentry.android.core;
 
 import static android.content.Context.ACTIVITY_SERVICE;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -81,17 +81,17 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
               "Disabling profiling because no profiling traces dir path is defined in options.");
       return;
     }
-    long intervalMillis = options.getProfilingTracesIntervalMillis();
-    if (intervalMillis <= 0) {
+    final int intervalHz = options.getProfilingTracesHz();
+    if (intervalHz <= 0) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Disabling profiling because trace interval is set to %d milliseconds",
-              intervalMillis);
+              "Disabling profiling because trace rate is set to %d",
+              intervalHz);
       return;
     }
-    intervalUs = (int) MILLISECONDS.toMicros(intervalMillis);
+    intervalUs = (int) SECONDS.toMicros(1) / intervalHz;
     traceFilesDir = new File(tracesFilesDirPath);
   }
 
@@ -227,6 +227,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     if (memInfo != null) {
       totalMem = Long.toString(memInfo.totalMem);
     }
+    String[] abis = Build.SUPPORTED_ABIS;
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
     // done in the background when the trace file is read
@@ -235,6 +236,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         transaction,
         Long.toString(transactionDurationNanos),
         buildInfoProvider.getSdkInfoVersion(),
+        abis != null && abis.length > 0 ? abis[0] : "",
         () -> CpuInfoUtils.getInstance().readMaxFrequencies(),
         buildInfoProvider.getManufacturer(),
         buildInfoProvider.getModel(),
