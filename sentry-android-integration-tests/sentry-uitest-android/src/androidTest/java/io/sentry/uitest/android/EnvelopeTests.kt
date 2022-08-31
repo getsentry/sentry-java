@@ -14,7 +14,9 @@ import io.sentry.SentryOptions
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -65,6 +67,63 @@ class EnvelopeTests : BaseUiTest() {
                 val transactionData = profilingTraceData.transactions
                     .firstOrNull { t -> t.id == transactionItem.eventId.toString() }
                 assertNotNull(transactionData)
+            }
+            assertNoOtherEnvelopes()
+            assertNoOtherRequests()
+        }
+    }
+
+    @Test
+    fun checkEnvelopeConcurrentTransactions() {
+
+        initSentry(true) { options: SentryOptions ->
+            options.tracesSampleRate = 1.0
+            options.profilesSampleRate = 1.0
+        }
+        relayIdlingResource.increment()
+        relayIdlingResource.increment()
+        relayIdlingResource.increment()
+        val transaction = Sentry.startTransaction("e2etests", "test1")
+        val transaction2 = Sentry.startTransaction("e2etests", "test2")
+        val transaction3 = Sentry.startTransaction("e2etests", "test3")
+        transaction.finish()
+        transaction2.finish()
+        transaction3.finish()
+
+        relay.assert {
+            assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals(transaction.eventId.toString(), transactionItem.eventId.toString())
+            }
+            assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals(transaction2.eventId.toString(), transactionItem.eventId.toString())
+            }
+            // The profile is sent only in the last transaction envelope
+            assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                val profilingTraceData: ProfilingTraceData = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
+                assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
+                assertTrue(profilingTraceData.transactionName == "e2etests")
+
+                // Transaction timestamps should be all different from each other
+                val transactions = profilingTraceData.transactions
+                assertContains(transactions.map { t -> t.id }, transactionItem.eventId.toString())
+                val startTimes = transactions.map { t -> t.relativeStartNs }
+                val endTimes = transactions.mapNotNull { t -> t.relativeEndNs }
+                assertNotEquals(startTimes[0], startTimes[1])
+                assertNotEquals(startTimes[0], startTimes[2])
+                assertNotEquals(startTimes[1], startTimes[2])
+                assertNotEquals(endTimes[0], endTimes[1])
+                assertNotEquals(endTimes[0], endTimes[2])
+                assertNotEquals(endTimes[1], endTimes[2])
+
+                // The first and last transactions should be aligned to the start/stop of profile
+                assertEquals(endTimes.maxOrNull()!! - startTimes.minOrNull()!!, profilingTraceData.durationNs.toLong())
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()

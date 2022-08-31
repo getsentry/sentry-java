@@ -11,7 +11,8 @@
 
 ### Features
 
-- Added list of ProfilingTransactionData to the profiling envelope payload ([#2216](https://github.com/getsentry/sentry-java/pull/2216))
+- Concurrent profiling 2 - added list of transactions ([#2218](https://github.com/getsentry/sentry-java/pull/2218))
+- Concurrent profiling 1 - added envelope payload data format ([#2216](https://github.com/getsentry/sentry-java/pull/2216))
 - Send source for transactions ([#2180](https://github.com/getsentry/sentry-java/pull/2180))
 - Add profilesSampleRate and profileSampler options for Android sdk ([#2184](https://github.com/getsentry/sentry-java/pull/2184))
 
