@@ -87,22 +87,21 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
 
     Lifecycle lifeCycle;
 
-    try
-    {
+    try {
       lifeCycle = ProcessLifecycleOwner.get().getLifecycle();
     } catch (AbstractMethodError e) {
       options
-        .getLogger()
-        .log(SentryLevel.ERROR, "AppLifecycleIntegration failed to get Lifecycle.", e);
+          .getLogger()
+          .log(SentryLevel.ERROR, "AppLifecycleIntegration failed to get Lifecycle.", e);
       return;
     }
 
     watcher =
-      new LifecycleWatcher(
-        hub,
-        this.options.getSessionTrackingIntervalMillis(),
-        this.options.isEnableAutoSessionTracking(),
-        this.options.isEnableAppLifecycleBreadcrumbs());
+        new LifecycleWatcher(
+            hub,
+            this.options.getSessionTrackingIntervalMillis(),
+            this.options.isEnableAutoSessionTracking(),
+            this.options.isEnableAppLifecycleBreadcrumbs());
     lifeCycle.addObserver(watcher);
     options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
   }
