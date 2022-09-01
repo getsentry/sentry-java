@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import io.sentry.IHub;
 import io.sentry.Integration;
@@ -86,11 +85,11 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     }
 
     watcher =
-      new LifecycleWatcher(
-        hub,
-        this.options.getSessionTrackingIntervalMillis(),
-        this.options.isEnableAutoSessionTracking(),
-        this.options.isEnableAppLifecycleBreadcrumbs());
+        new LifecycleWatcher(
+            hub,
+            this.options.getSessionTrackingIntervalMillis(),
+            this.options.isEnableAutoSessionTracking(),
+            this.options.isEnableAppLifecycleBreadcrumbs());
 
     try {
       ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
@@ -103,9 +102,9 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       options
           .getLogger()
           .log(
-            SentryLevel.ERROR,
-            "AppLifecycleIntegration failed to get Lifecycle and could not be installed.",
-            e);
+              SentryLevel.ERROR,
+              "AppLifecycleIntegration failed to get Lifecycle and could not be installed.",
+              e);
     }
   }
 
