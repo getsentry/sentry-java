@@ -85,25 +85,28 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       return;
     }
 
-    Lifecycle lifeCycle;
+    watcher =
+      new LifecycleWatcher(
+        hub,
+        this.options.getSessionTrackingIntervalMillis(),
+        this.options.isEnableAutoSessionTracking(),
+        this.options.isEnableAppLifecycleBreadcrumbs());
 
     try {
-      lifeCycle = ProcessLifecycleOwner.get().getLifecycle();
-    } catch (AbstractMethodError e) {
+      ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
+      options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
+    } catch (Throwable e) {
+      // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
+      // connection with conflicting dependencies of the androidx.lifecycle.
+      // //See the issue here: https://github.com/getsentry/sentry-java/pull/2228
+      watcher = null;
       options
           .getLogger()
-          .log(SentryLevel.ERROR, "AppLifecycleIntegration failed to get Lifecycle.", e);
-      return;
+          .log(
+            SentryLevel.ERROR,
+            "AppLifecycleIntegration failed to get Lifecycle and could not be installed.",
+            e);
     }
-
-    watcher =
-        new LifecycleWatcher(
-            hub,
-            this.options.getSessionTrackingIntervalMillis(),
-            this.options.isEnableAutoSessionTracking(),
-            this.options.isEnableAppLifecycleBreadcrumbs());
-    lifeCycle.addObserver(watcher);
-    options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
   }
 
   private void removeObserver() {
