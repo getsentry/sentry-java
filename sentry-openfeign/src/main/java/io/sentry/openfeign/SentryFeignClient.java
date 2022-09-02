@@ -57,12 +57,14 @@ public final class SentryFeignClient implements Client {
 
       if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), url)) {
         final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-        final @Nullable Collection<String> requestBaggageHeader = request.headers().get("baggage");
+        final @Nullable Collection<String> requestBaggageHeader =
+            request.headers().get(BaggageHeader.BAGGAGE_HEADER);
         final @Nullable BaggageHeader baggageHeader =
             span.toBaggageHeader(
                 requestBaggageHeader != null ? new ArrayList<>(requestBaggageHeader) : null);
         requestWrapper.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
         if (baggageHeader != null) {
+          requestWrapper.removeHeader(BaggageHeader.BAGGAGE_HEADER);
           requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
         }
       }
@@ -130,6 +132,10 @@ public final class SentryFeignClient implements Client {
       if (!headers.containsKey(name)) {
         headers.put(name, Collections.singletonList(value));
       }
+    }
+
+    public void removeHeader(final @NotNull String name) {
+      headers.remove(name);
     }
 
     @NotNull

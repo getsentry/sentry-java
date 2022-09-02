@@ -68,8 +68,8 @@ public final class io/sentry/Baggage$DSCKeys {
 
 public final class io/sentry/BaggageHeader {
 	public static final field BAGGAGE_HEADER Ljava/lang/String;
-	public fun <init> (Lio/sentry/Baggage;Ljava/util/List;)V
 	public fun <init> (Ljava/lang/String;)V
+	public static fun fromBaggageAndOutgoingHeader (Lio/sentry/Baggage;Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun getName ()Ljava/lang/String;
 	public fun getValue ()Ljava/lang/String;
 }

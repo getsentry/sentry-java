@@ -38,7 +38,7 @@ class SentryOkHttpInterceptorTest {
         val hub = mock<IHub>()
         var interceptor = SentryOkHttpInterceptor(hub)
         val server = MockWebServer()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var sentryTracer: SentryTracer
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -60,6 +60,8 @@ class SentryOkHttpInterceptorTest {
                     }
                 }
             )
+
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)

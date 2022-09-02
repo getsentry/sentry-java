@@ -11,6 +11,7 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor.FetchSourceType
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HubAdapter
@@ -41,7 +42,7 @@ class SentryApolloInterceptor(
             // we have no access to URI, no way to verify tracing origins
             val requestHeaderBuilder = request.requestHeaders.toBuilder()
             requestHeaderBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
-            span.toBaggageHeader(listOf(request.requestHeaders.headerValue("baggage")))?.let {
+            span.toBaggageHeader(listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)))?.let {
                 requestHeaderBuilder.addHeader(it.name, it.value)
             }
             val headers = requestHeaderBuilder.build()

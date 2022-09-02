@@ -116,10 +116,7 @@ public final class SentryTracer implements ITransaction {
     if (context.getBaggage() != null) {
       this.baggage = context.getBaggage();
     } else {
-      // TODO find better way to support tests with mocked hub
-      this.baggage =
-          new Baggage(
-              hub.getOptions() != null ? hub.getOptions().getLogger() : NoOpLogger.getInstance());
+      this.baggage = new Baggage(hub.getOptions().getLogger());
     }
 
     if (idleTimeout != null) {
@@ -397,7 +394,7 @@ public final class SentryTracer implements ITransaction {
     if (hub.getOptions().isTraceSampling()) {
       updateBaggageValues();
 
-      return new BaggageHeader(baggage, thirdPartyBaggageHeaders);
+      return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
     } else {
       return null;
     }

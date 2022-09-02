@@ -34,11 +34,12 @@ class SentryFeignClientTest {
     class Fixture {
         val hub = mock<IHub>()
         val server = MockWebServer()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        val sentryTracer: SentryTracer
         val sentryOptions = SentryOptions()
 
         init {
             whenever(hub.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
         }
 
         fun getSut(

@@ -1,5 +1,6 @@
 package io.sentry.android.okhttp
 
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HubAdapter
@@ -41,7 +42,8 @@ class SentryOkHttpInterceptor(
                     requestBuilder.addHeader(it.name, it.value)
                 }
 
-                span.toBaggageHeader(request.headers("baggage"))?.let {
+                span.toBaggageHeader(request.headers(BaggageHeader.BAGGAGE_HEADER))?.let {
+                    requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
                     requestBuilder.addHeader(it.name, it.value)
                 }
             }

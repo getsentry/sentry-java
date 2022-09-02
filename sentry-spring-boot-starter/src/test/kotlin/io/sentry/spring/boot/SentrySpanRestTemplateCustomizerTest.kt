@@ -29,12 +29,13 @@ class SentrySpanRestTemplateCustomizerTest {
         val hub = mock<IHub>()
         val restTemplate = RestTemplateBuilder().build()
         var mockServer = MockWebServer()
-        val transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
+        val transaction: SentryTracer
         internal val customizer = SentrySpanRestTemplateCustomizer(hub)
         val url = mockServer.url("/test/123").toString()
 
         init {
             whenever(hub.options).thenReturn(sentryOptions)
+            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
         }
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN, includeMockServerInTracingOrigins: Boolean = true): RestTemplate {

@@ -32,12 +32,13 @@ public final class Baggage {
   private boolean mutable;
   final @NotNull ILogger logger;
 
+  @NotNull
   public static Baggage fromHeader(
       final @Nullable List<String> headerValues, final @NotNull ILogger logger) {
-
     return Baggage.fromHeader(headerValues, false, logger);
   }
 
+  @NotNull
   public static Baggage fromHeader(
       final @Nullable List<String> headerValues,
       final boolean includeThirdPartyValues,
@@ -50,10 +51,12 @@ public final class Baggage {
     }
   }
 
+  @NotNull
   public static Baggage fromHeader(final String headerValue, final @NotNull ILogger logger) {
     return Baggage.fromHeader(headerValue, false, logger);
   }
 
+  @NotNull
   public static Baggage fromHeader(
       final @Nullable String headerValue,
       final boolean includeThirdPartyValues,

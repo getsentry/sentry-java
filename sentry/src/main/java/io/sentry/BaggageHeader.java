@@ -11,15 +11,22 @@ public final class BaggageHeader {
 
   private final @NotNull String value;
 
-  public BaggageHeader(final @NotNull String value) {
-    this.value = value;
+  @Nullable
+  public static BaggageHeader fromBaggageAndOutgoingHeader(
+      final @NotNull Baggage baggage, final @Nullable List<String> outgoingBaggageHeaders) {
+    final Baggage thirdPartyBaggage =
+        Baggage.fromHeader(outgoingBaggageHeaders, true, baggage.logger);
+    String headerValue = baggage.toHeaderString(thirdPartyBaggage.getThirdPartyHeader());
+
+    if (headerValue.isEmpty()) {
+      return null;
+    } else {
+      return new BaggageHeader(headerValue);
+    }
   }
 
-  public BaggageHeader(
-      final @NotNull Baggage baggage, final @Nullable List<String> thirdPartyBaggageHeaders) {
-    final Baggage thirdPartyBaggage =
-        Baggage.fromHeader(thirdPartyBaggageHeaders, true, baggage.logger);
-    this.value = baggage.toHeaderString(thirdPartyBaggage.getThirdPartyHeader());
+  public BaggageHeader(final @NotNull String value) {
+    this.value = value;
   }
 
   public @NotNull String getName() {
