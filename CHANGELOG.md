@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Avoid sending empty profiles ([#2232](https://github.com/getsentry/sentry-java/pull/2232))
+
 ## 6.4.1
 
 ### Fixes
