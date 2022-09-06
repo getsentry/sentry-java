@@ -5,6 +5,7 @@
 ### Fixes
 
 - Fixed AbstractMethodError when getting Lifecycle ([#2228](https://github.com/getsentry/sentry-java/pull/2228))
+- Avoid sending empty profiles ([#2232](https://github.com/getsentry/sentry-java/pull/2232))
 
 ## 6.4.1
 
