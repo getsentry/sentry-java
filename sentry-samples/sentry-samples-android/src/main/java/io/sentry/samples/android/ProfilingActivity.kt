@@ -21,7 +21,7 @@ class ProfilingActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityProfilingBinding
     private val executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
-    private var profileFinished = false
+    private var profileFinished = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

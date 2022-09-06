@@ -5,6 +5,7 @@
 ### Fixes
 
 - Missing unit fields for Android measurements ([#2204](https://github.com/getsentry/sentry-java/pull/2204))
+- Avoid sending empty profiles ([#2232](https://github.com/getsentry/sentry-java/pull/2232))
 
 ## 6.4.1
 
