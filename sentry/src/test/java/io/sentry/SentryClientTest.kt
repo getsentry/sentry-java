@@ -91,6 +91,7 @@ class SentryClientTest {
 
         fun getSut(optionsCallback: ((SentryOptions) -> Unit)? = null): SentryClient {
             optionsCallback?.invoke(sentryOptions)
+            profilingTraceFile.writeText("sampledProfile")
             return SentryClient(sentryOptions)
         }
     }
@@ -1054,6 +1055,14 @@ class SentryClientTest {
         fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
         assertFails { verifyAttachmentsInEnvelope(transaction.eventId) }
         verifyProfilingTraceInEnvelope(transaction.eventId)
+    }
+
+    @Test
+    fun `when captureTransaction with empty trace file, profiling data is not sent`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+        fixture.profilingTraceFile.writeText("")
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
     }
 
     @Test

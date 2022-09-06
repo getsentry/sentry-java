@@ -2,9 +2,20 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fixed AbstractMethodError when getting Lifecycle ([#2228](https://github.com/getsentry/sentry-java/pull/2228))
+- Avoid sending empty profiles ([#2232](https://github.com/getsentry/sentry-java/pull/2232))
+
 ### Features
 
 - Server-Side Dynamic Sampling Context support  ([#2226](https://github.com/getsentry/sentry-java/pull/2226))
+
+## 6.4.1
+
+### Fixes
+
+- Fix memory leak caused by throwableToSpan ([#2227](https://github.com/getsentry/sentry-java/pull/2227))
 
 ## 6.4.0
 
