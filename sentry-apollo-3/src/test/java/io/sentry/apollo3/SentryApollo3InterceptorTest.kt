@@ -56,6 +56,7 @@ class SentryApollo3InterceptorTest {
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+            addThirdPartyBaggageHeader: Boolean = false,
             beforeSpan: BeforeSpanCallback? = null,
         ): ApolloClient {
             whenever(hub.options).thenReturn(
@@ -79,6 +80,11 @@ class SentryApollo3InterceptorTest {
             val builder = ApolloClient.Builder()
                 .serverUrl(server.url("/").toString())
                 .addHttpInterceptor(httpInterceptor)
+
+            if (addThirdPartyBaggageHeader) {
+                builder.addHttpHeader("baggage", "thirdPartyBaggage=someValue")
+                    .addHttpHeader("baggage", "secondThirdPartyBaggage=secondValue")
+            }
 
             return builder.build()
         }
@@ -146,6 +152,21 @@ class SentryApollo3InterceptorTest {
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
+        executeQuery(sut = fixture.getSut(addThirdPartyBaggageHeader = true))
+        val recorderRequest = fixture.server.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+
+        val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
+        assertEquals(baggageHeaderValues.size, 1)
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-transaction=op"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
     }
 
     @Test

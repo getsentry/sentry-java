@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import feign.Client
 import feign.Feign
 import feign.FeignException
+import feign.HeaderMap
 import feign.RequestLine
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
@@ -47,6 +48,7 @@ class SentryFeignClientTest {
             httpStatusCode: Int = 201,
             responseBody: String = "success",
             networkError: Boolean = false,
+            addThirdPartyBaggageHeader: Boolean = false,
             beforeSpan: SentryFeignClient.BeforeSpanCallback? = null
         ): MockApi {
             if (isSpanActive) {
@@ -87,6 +89,26 @@ class SentryFeignClientTest {
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
+        fixture.sentryOptions.isTraceSampling = true
+        fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
+        val sut = fixture.getSut()
+
+        sut.getOkWithBaggageHeader(mapOf("baggage" to listOf("thirdPartyBaggage=someValue", "secondThirdPartyBaggage=secondValue")))
+
+        val recorderRequest = fixture.server.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+
+        val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
+        assertEquals(baggageHeaderValues.size, 1)
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
     }
 
     @Test
@@ -253,6 +275,9 @@ class SentryFeignClientTest {
     interface MockApi {
         @RequestLine("GET /status/200")
         fun getOk(): String
+
+        @RequestLine("GET /status/200")
+        fun getOkWithBaggageHeader(@HeaderMap headers: Map<String, Any>): String
 
         @RequestLine("POST /post-with-body")
         fun postWithBody(body: String)

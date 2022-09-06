@@ -51,6 +51,83 @@ class BaggageTest {
     }
 
     @Test
+    fun `multiple baggage headers are merged into one, third party headers are dropped`() {
+        val headerValues = listOf(
+            "userId=alice,sentry-serverNode=DF%2028,isProduction=false",
+            "sentry-environment=production, os=android",
+            "trace=123456, isSampled=true"
+        )
+
+        val baggage = Baggage.fromHeader(headerValues, logger)
+
+        assertEquals("sentry-environment=production,sentry-serverNode=DF%2028", baggage.toHeaderString(null))
+    }
+
+    @Test
+    fun `sentry entries are stripped from third party headers and saved in original order`() {
+        val headerValues = listOf(
+            "userId=alice,sentry-serverNode=DF%2028,isProduction=false",
+            "sentry-environment=production, os=android",
+            "trace=123456, isSampled=true"
+        )
+
+        val baggage = Baggage.fromHeader(headerValues, true, logger)
+
+        assertEquals("userId=alice,isProduction=false,os=android,trace=123456,isSampled=true", baggage.thirdPartyHeader)
+    }
+
+    @Test
+    fun `when merging incoming and thirdparty baggages, sentry values are appended at the end`() {
+        val headerValues = listOf(
+            "userId=alice,sentry-serverNode=DF%2028,isProduction=false",
+            "sentry-environment=production, os=android",
+            "trace=123456, isSampled=true"
+        )
+
+        val baggage = Baggage.fromHeader(headerValues, false, logger)
+        val thirdPartyBaggage = Baggage.fromHeader(headerValues, true, logger)
+
+        assertEquals("userId=alice,isProduction=false,os=android,trace=123456,isSampled=true,sentry-environment=production,sentry-serverNode=DF%2028", baggage.toHeaderString(thirdPartyBaggage.thirdPartyHeader))
+    }
+
+    @Test
+    fun `when merging and thirdparty headers already use up the available space, sentry values are not added`() {
+        val largeThirdPartyHeaderValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH - 16 - 12 - 1) // 8192 - "large-value=" - "otherValue=value" - ","
+
+        val incomingHeaderValues = listOf(
+            "userId=alice,sentry-serverNode=DF%2028,isProduction=false",
+            "sentry-environment=production, os=android",
+            "trace=123456, isSampled=true"
+        )
+
+        val thirdPartyHeaderValues = "large-value=$largeThirdPartyHeaderValue, otherValue=value"
+
+        val baggage = Baggage.fromHeader(incomingHeaderValues, false, logger)
+        val thirdPartyBaggage = Baggage.fromHeader(thirdPartyHeaderValues, true, logger)
+
+        val headerString = baggage.toHeaderString(thirdPartyBaggage.thirdPartyHeader)
+        assertEquals(MAX_BAGGAGE_STRING_LENGTH, headerString.length)
+        assertEquals("large-value=$largeThirdPartyHeaderValue,otherValue=value", headerString)
+    }
+
+    @Test
+    fun `when merging third party baggage is kept even if it exceeds the allowed max length`() {
+        val largeThirdPartyHeaderValue = Faker.instance().random().hex(MAX_BAGGAGE_STRING_LENGTH)
+
+        val headerValues = listOf(
+            "userId=alice,sentry-serverNode=DF%2028,isProduction=false",
+            "sentry-environment=production, os=android",
+            "trace=123456, isSampled=true"
+        )
+
+        val baggage = Baggage.fromHeader(headerValues, false, logger)
+        val thirdPartyBaggage = Baggage.fromHeader("largeHeader=$largeThirdPartyHeaderValue", true, logger)
+        val headerString = baggage.toHeaderString(thirdPartyBaggage.thirdPartyHeader)
+        assertEquals(MAX_BAGGAGE_STRING_LENGTH + 12, headerString.length)
+        assertEquals("largeHeader=$largeThirdPartyHeaderValue", headerString)
+    }
+
+    @Test
     fun `keys are encoded and decoded as well`() {
         val baggage = Baggage.fromHeader("sentry-user%2Bid=alice,sentry-server%2Bnode=DF%2028,sentry-is%2Bproduction=false", logger)
 
