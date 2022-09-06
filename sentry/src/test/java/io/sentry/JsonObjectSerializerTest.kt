@@ -120,6 +120,38 @@ internal class JsonObjectSerializerTest {
     }
 
     @Test
+    fun `serialize enum`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, DataCategory.Session)
+        verify(fixture.writer).value("Session")
+    }
+
+    @Test
+    fun `serialize list of enum`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, listOf(DataCategory.Session))
+        verify(fixture.writer).beginArray()
+        verify(fixture.writer).value("Session")
+        verify(fixture.writer).endArray()
+    }
+
+    @Test
+    fun `serialize map of enum`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, mapOf("key" to DataCategory.Transaction))
+        verify(fixture.writer).beginObject()
+        verify(fixture.writer).name("key")
+        verify(fixture.writer).value("Transaction")
+        verify(fixture.writer).endObject()
+    }
+
+    @Test
+    fun `serialize object with enum property`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, ClassWithEnumProperty(DataCategory.Attachment))
+        verify(fixture.writer).beginObject()
+        verify(fixture.writer).name("enumProperty")
+        verify(fixture.writer).value("Attachment")
+        verify(fixture.writer).endObject()
+    }
+
+    @Test
     fun `serialize unknown object with data`() {
         val objectWithPrimitiveFields = UnknownClassWithData(
             17,
@@ -139,3 +171,5 @@ internal class JsonObjectSerializerTest {
         private val string: String
     )
 }
+
+data class ClassWithEnumProperty(val enumProperty: DataCategory)

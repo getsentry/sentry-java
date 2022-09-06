@@ -6,6 +6,34 @@
 
 - Missing unit fields for Android measurements ([#2204](https://github.com/getsentry/sentry-java/pull/2204))
 
+## 6.4.1
+
+### Fixes
+
+- Fix memory leak caused by throwableToSpan ([#2227](https://github.com/getsentry/sentry-java/pull/2227))
+
+## 6.4.0
+
+### Fixes
+
+- make profiling rate defaults to 101 hz ([#2211](https://github.com/getsentry/sentry-java/pull/2211))
+- SentryOptions.setProfilingTracesIntervalMillis has been deprecated
+- Added cpu architecture and default environment in profiles envelope ([#2207](https://github.com/getsentry/sentry-java/pull/2207))
+- SentryOptions.setProfilingEnabled has been deprecated in favor of setProfilesSampleRate
+- Use toString for enum serialization ([#2220](https://github.com/getsentry/sentry-java/pull/2220))
+
+### Features
+
+- Send source for transactions ([#2180](https://github.com/getsentry/sentry-java/pull/2180))
+- Add profilesSampleRate and profileSampler options for Android sdk ([#2184](https://github.com/getsentry/sentry-java/pull/2184))
+- Add baggage header to RestTemplate ([#2206](https://github.com/getsentry/sentry-java/pull/2206))
+- Bump Native SDK from v0.4.18 to v0.5.0 ([#2199](https://github.com/getsentry/sentry-java/pull/2199))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#050)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.4.18...0.5.0)
+- Bump Gradle from v7.5.0 to v7.5.1 ([#2212](https://github.com/getsentry/sentry-java/pull/2212))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v751)
+  - [diff](https://github.com/gradle/gradle/compare/v7.5.0...v7.5.1)
+
 ## 6.3.1
 
 ### Fixes
@@ -14,6 +42,7 @@
 - Weakly reference Activity for transaction finished callback ([#2203](https://github.com/getsentry/sentry-java/pull/2203))
 - `attach-screenshot` set on Manual init. didn't work ([#2186](https://github.com/getsentry/sentry-java/pull/2186))
 - Remove extra space from `spring.factories` causing issues in old versions of Spring Boot ([#2181](https://github.com/getsentry/sentry-java/pull/2181))
+
 
 ### Features
 

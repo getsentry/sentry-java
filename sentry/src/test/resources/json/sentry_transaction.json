@@ -39,6 +39,9 @@
             "new_type": "newtype"
         }
     },
+    "transaction_info": {
+      "source": "custom"
+    },
     "event_id": "afcb46b1140ade5187c4bbb5daa804df",
     "contexts":
     {

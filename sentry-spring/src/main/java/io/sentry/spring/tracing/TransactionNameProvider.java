@@ -1,6 +1,8 @@
 package io.sentry.spring.tracing;
 
+import io.sentry.protocol.TransactionNameSource;
 import javax.servlet.http.HttpServletRequest;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,4 +20,11 @@ public interface TransactionNameProvider {
    */
   @Nullable
   String provideTransactionName(@NotNull HttpServletRequest request);
+
+  /** Returns the source of the transaction name. Only to be used internally. */
+  @NotNull
+  @ApiStatus.Internal
+  default TransactionNameSource provideTransactionSource() {
+    return TransactionNameSource.CUSTOM;
+  }
 }

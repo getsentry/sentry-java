@@ -56,9 +56,9 @@ class SentryTransactionSerializationTest {
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
     }
-
+    
     @Test
-    fun `deserialize legacy date format`() {
+    fun `deserialize legacy date format and missing transaction name source`() {
         val expectedJson = sanitizedFile("json/sentry_transaction_legacy_date_format.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)

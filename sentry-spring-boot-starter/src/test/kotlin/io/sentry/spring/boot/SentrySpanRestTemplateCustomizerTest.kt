@@ -46,6 +46,9 @@ class SentrySpanRestTemplateCustomizerTest {
                 sentryOptions.tracingOrigins.add("other-api")
             }
 
+            sentryOptions.dsn = "https://key@sentry.io/proj"
+            sentryOptions.isTraceSampling = true
+
             mockServer.enqueue(
                 MockResponse()
                     .setBody("OK")
@@ -78,6 +81,7 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(recordedRequest.headers["sentry-trace"]!!).startsWith(fixture.transaction.spanContext.traceId.toString())
             .endsWith("-1")
             .doesNotContain(fixture.transaction.spanContext.spanId.toString())
+        assertThat(recordedRequest.headers["baggage"]!!).contains(fixture.transaction.spanContext.traceId.toString())
     }
 
     @Test

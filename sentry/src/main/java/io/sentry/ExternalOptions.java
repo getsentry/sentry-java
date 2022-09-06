@@ -26,6 +26,7 @@ public final class ExternalOptions {
   private @Nullable Boolean debug;
   private @Nullable Boolean enableDeduplication;
   private @Nullable Double tracesSampleRate;
+  private @Nullable Double profilesSampleRate;
   private @Nullable SentryOptions.RequestSize maxRequestBodySize;
   private final @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
   private @Nullable SentryOptions.Proxy proxy;
@@ -54,6 +55,7 @@ public final class ExternalOptions {
     options.setPrintUncaughtStackTrace(
         propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
+    options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
     options.setSendClientReports(propertiesProvider.getBooleanProperty("send-client-reports"));
@@ -190,6 +192,14 @@ public final class ExternalOptions {
 
   public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
     this.tracesSampleRate = tracesSampleRate;
+  }
+
+  public @Nullable Double getProfilesSampleRate() {
+    return profilesSampleRate;
+  }
+
+  public void setProfilesSampleRate(final @Nullable Double profilesSampleRate) {
+    this.profilesSampleRate = profilesSampleRate;
   }
 
   public @Nullable SentryOptions.RequestSize getMaxRequestBodySize() {
