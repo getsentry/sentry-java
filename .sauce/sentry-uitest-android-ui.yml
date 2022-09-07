@@ -14,9 +14,21 @@ espresso:
   testApp: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
 suites:
 
-  - name: "Android 12 (api 31)"
+  - name: "Android 13 Ui test (api 33)"
+    devices:
+      - id: Google_Pixel_5_13_real_us # Google Pixel 5 - api 33 (13)
+
+  - name: "Android 12 Ui test (api 31)"
     devices:
       - id: Samsung_Galaxy_S22_Ultra_5G_real_us # Samsung Galaxy S22 Ultra 5G - api 31 (12)
+
+  - name: "Android 11 Ui test (api 30)"
+    devices:
+      - id: OnePlus_9_Pro_real_us # OnePlus 9 Pro - api 30 (11)
+
+  - name: "Android 10 Ui test (api 29)"
+    devices:
+      - id: Google_Pixel_4_XL_real_us1 # Google Pixel 4 XL - api 29 (10)
 
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
 artifacts:
