@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.os.Debug;
+import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionProfiler;
@@ -54,6 +55,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @Nullable PackageInfo packageInfo;
   private long transactionStartNanos = 0;
+  private long profileStartCpuMillis = 0;
   private boolean isInitialized = false;
   private int transactionsCounter = 0;
   private final @NotNull Map<String, ProfilingTransactionData> transactionMap = new HashMap<>();
@@ -141,15 +143,17 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                   PROFILING_TIMEOUT_MILLIS);
 
       transactionStartNanos = SystemClock.elapsedRealtimeNanos();
+      profileStartCpuMillis = Process.getElapsedCpuTime();
 
       ProfilingTransactionData transactionData =
-          new ProfilingTransactionData(transaction, transactionStartNanos);
+          new ProfilingTransactionData(transaction, transactionStartNanos, profileStartCpuMillis);
       transactionMap.put(transaction.getEventId().toString(), transactionData);
 
       Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
     } else {
       ProfilingTransactionData transactionData =
-          new ProfilingTransactionData(transaction, SystemClock.elapsedRealtimeNanos());
+          new ProfilingTransactionData(
+              transaction, SystemClock.elapsedRealtimeNanos(), Process.getElapsedCpuTime());
       transactionMap.put(transaction.getEventId().toString(), transactionData);
     }
     options
@@ -230,13 +234,18 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       ProfilingTransactionData transactionData =
           transactionMap.get(transaction.getEventId().toString());
       if (transactionData != null) {
-        transactionData.notifyFinish(SystemClock.elapsedRealtimeNanos(), transactionStartNanos);
+        transactionData.notifyFinish(
+            SystemClock.elapsedRealtimeNanos(),
+            transactionStartNanos,
+            Process.getElapsedCpuTime(),
+            profileStartCpuMillis);
       }
       return null;
     }
 
     Debug.stopMethodTracing();
     long transactionEndNanos = SystemClock.elapsedRealtimeNanos();
+    long transactionEndCpuMillis = Process.getElapsedCpuTime();
     long transactionDurationNanos = transactionEndNanos - transactionStartNanos;
 
     List<ProfilingTransactionData> transactionList = new ArrayList<>(transactionMap.values());
@@ -270,7 +279,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     // We notify all transactions data that all transactions finished.
     // Some may not have been really finished, in case of a timeout
     for (ProfilingTransactionData t : transactionList) {
-      t.notifyFinish(transactionEndNanos, transactionStartNanos);
+      t.notifyFinish(
+          transactionEndNanos,
+          transactionStartNanos,
+          transactionEndCpuMillis,
+          profileStartCpuMillis);
     }
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be

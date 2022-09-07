@@ -84,10 +84,14 @@ class EnvelopeTests : BaseUiTest() {
         relayIdlingResource.increment()
         relayIdlingResource.increment()
         val transaction = Sentry.startTransaction("e2etests", "test1")
+        Thread.sleep(5)
         val transaction2 = Sentry.startTransaction("e2etests", "test2")
+        Thread.sleep(5)
         val transaction3 = Sentry.startTransaction("e2etests", "test3")
         transaction.finish()
+        Thread.sleep(5)
         transaction2.finish()
+        Thread.sleep(5)
         transaction3.finish()
 
         relay.assert {
@@ -115,12 +119,20 @@ class EnvelopeTests : BaseUiTest() {
                 assertContains(transactions.map { t -> t.id }, transactionItem.eventId.toString())
                 val startTimes = transactions.map { t -> t.relativeStartNs }
                 val endTimes = transactions.mapNotNull { t -> t.relativeEndNs }
+                val startCpuTimes = transactions.map { t -> t.relativeStartCpuMs }
+                val endCpuTimes = transactions.mapNotNull { t -> t.relativeEndCpuMs }
                 assertNotEquals(startTimes[0], startTimes[1])
                 assertNotEquals(startTimes[0], startTimes[2])
                 assertNotEquals(startTimes[1], startTimes[2])
                 assertNotEquals(endTimes[0], endTimes[1])
                 assertNotEquals(endTimes[0], endTimes[2])
                 assertNotEquals(endTimes[1], endTimes[2])
+                assertNotEquals(startCpuTimes[0], startCpuTimes[1])
+                assertNotEquals(startCpuTimes[0], startCpuTimes[2])
+                assertNotEquals(startCpuTimes[1], startCpuTimes[2])
+                assertNotEquals(endCpuTimes[0], endCpuTimes[1])
+                assertNotEquals(endCpuTimes[0], endCpuTimes[2])
+                assertNotEquals(endCpuTimes[1], endCpuTimes[2])
 
                 // The first and last transactions should be aligned to the start/stop of profile
                 assertEquals(endTimes.maxOrNull()!! - startTimes.minOrNull()!!, profilingTraceData.durationNs.toLong())
