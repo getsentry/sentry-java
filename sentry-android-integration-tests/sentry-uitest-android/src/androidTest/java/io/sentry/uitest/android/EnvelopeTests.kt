@@ -16,6 +16,7 @@ import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -83,15 +84,12 @@ class EnvelopeTests : BaseUiTest() {
         relayIdlingResource.increment()
         relayIdlingResource.increment()
         relayIdlingResource.increment()
+
         val transaction = Sentry.startTransaction("e2etests", "test1")
-        Thread.sleep(5)
         val transaction2 = Sentry.startTransaction("e2etests", "test2")
-        Thread.sleep(5)
         val transaction3 = Sentry.startTransaction("e2etests", "test3")
         transaction.finish()
-        Thread.sleep(5)
         transaction2.finish()
-        Thread.sleep(5)
         transaction3.finish()
 
         relay.assert {
@@ -127,12 +125,10 @@ class EnvelopeTests : BaseUiTest() {
                 assertNotEquals(endTimes[0], endTimes[1])
                 assertNotEquals(endTimes[0], endTimes[2])
                 assertNotEquals(endTimes[1], endTimes[2])
-                assertNotEquals(startCpuTimes[0], startCpuTimes[1])
-                assertNotEquals(startCpuTimes[0], startCpuTimes[2])
-                assertNotEquals(startCpuTimes[1], startCpuTimes[2])
-                assertNotEquals(endCpuTimes[0], endCpuTimes[1])
-                assertNotEquals(endCpuTimes[0], endCpuTimes[2])
-                assertNotEquals(endCpuTimes[1], endCpuTimes[2])
+
+                // The cpu timestamps shouldn't be all the same
+                assertFalse(startCpuTimes[0] == startCpuTimes[1] && startCpuTimes[1] == startCpuTimes[2])
+                assertFalse(endCpuTimes[0] == endCpuTimes[1] && endCpuTimes[1] == endCpuTimes[2])
 
                 // The first and last transactions should be aligned to the start/stop of profile
                 assertEquals(endTimes.maxOrNull()!! - startTimes.minOrNull()!!, profilingTraceData.durationNs.toLong())
