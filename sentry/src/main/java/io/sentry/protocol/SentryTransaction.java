@@ -280,8 +280,8 @@ public final class SentryTransaction extends SentryBaseEvent
             reader.nextString(); // No need to assign, as it is final.
             break;
           case JsonKeys.MEASUREMENTS:
-            Map<String, @NotNull MeasurementValue> deserializedMeasurements =
-                (Map<String, @NotNull MeasurementValue>) reader.nextObjectOrNull();
+            Map<String, MeasurementValue> deserializedMeasurements =
+                reader.nextMapOrNull(logger, new MeasurementValue.Deserializer());
             if (deserializedMeasurements != null) {
               transaction.measurements.putAll(deserializedMeasurements);
             }
