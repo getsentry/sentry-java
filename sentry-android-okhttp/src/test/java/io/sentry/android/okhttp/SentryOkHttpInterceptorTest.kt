@@ -83,7 +83,7 @@ class SentryOkHttpInterceptorTest {
     private val fixture = Fixture()
 
     private val getRequest = { Request.Builder().get().url(fixture.server.url("/hello")).build() }
-    private val getRequestWithBaggagHeader = { Request.Builder().addHeader("baggage", "thirdPartyBaggage=someValue").addHeader("baggage", "secondThirdPartyBaggage=secondValue").get().url(fixture.server.url("/hello")).build() }
+    private val getRequestWithBaggagHeader = { Request.Builder().addHeader("baggage", "thirdPartyBaggage=someValue").addHeader("baggage", "secondThirdPartyBaggage=secondValue,anotherThirdPartyBaggage=anotherValue").get().url(fixture.server.url("/hello")).build() }
     private val postRequest = {
         Request.Builder().post(
             "request-body"
