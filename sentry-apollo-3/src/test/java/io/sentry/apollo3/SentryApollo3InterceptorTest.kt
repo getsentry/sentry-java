@@ -83,7 +83,7 @@ class SentryApollo3InterceptorTest {
 
             if (addThirdPartyBaggageHeader) {
                 builder.addHttpHeader("baggage", "thirdPartyBaggage=someValue")
-                    .addHttpHeader("baggage", "secondThirdPartyBaggage=secondValue")
+                    .addHttpHeader("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
             }
 
             return builder.build()
@@ -163,7 +163,7 @@ class SentryApollo3InterceptorTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue"))
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=op"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))

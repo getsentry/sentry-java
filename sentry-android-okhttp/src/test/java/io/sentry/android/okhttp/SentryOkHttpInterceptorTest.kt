@@ -83,7 +83,7 @@ class SentryOkHttpInterceptorTest {
     private val fixture = Fixture()
 
     private val getRequest = { Request.Builder().get().url(fixture.server.url("/hello")).build() }
-    private val getRequestWithBaggagHeader = { Request.Builder().addHeader("baggage", "thirdPartyBaggage=someValue").addHeader("baggage", "secondThirdPartyBaggage=secondValue,anotherThirdPartyBaggage=anotherValue").get().url(fixture.server.url("/hello")).build() }
+    private val getRequestWithBaggagHeader = { Request.Builder().addHeader("baggage", "thirdPartyBaggage=someValue").addHeader("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue").get().url(fixture.server.url("/hello")).build() }
     private val postRequest = {
         Request.Builder().post(
             "request-body"
@@ -131,7 +131,7 @@ class SentryOkHttpInterceptorTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue"))
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))

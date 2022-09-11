@@ -42,6 +42,34 @@ public final class TransactionContext extends SpanContext {
       final @NotNull String name,
       final @NotNull TransactionNameSource transactionNameSource,
       final @NotNull String operation,
+      final @NotNull SentryTraceHeader sentryTrace) {
+    @Nullable Boolean parentSampled = sentryTrace.isSampled();
+    return new TransactionContext(
+        name,
+        operation,
+        sentryTrace.getTraceId(),
+        new SpanId(),
+        transactionNameSource,
+        sentryTrace.getSpanId(),
+        parentSampled == null ? null : new TracesSamplingDecision(parentSampled),
+        null);
+  }
+
+  /**
+   * Creates {@link TransactionContext} from sentry-trace header.
+   *
+   * @param name - the transaction name
+   * @param transactionNameSource - source of the transaction name
+   * @param operation - the operation
+   * @param sentryTrace - the sentry-trace header
+   * @param baggage - the baggage header
+   * @return the transaction contexts
+   */
+  @ApiStatus.Internal
+  public static @NotNull TransactionContext fromSentryTrace(
+      final @NotNull String name,
+      final @NotNull TransactionNameSource transactionNameSource,
+      final @NotNull String operation,
       final @NotNull SentryTraceHeader sentryTrace,
       final @Nullable Baggage baggage) {
     @Nullable Boolean parentSampled = sentryTrace.isSampled();

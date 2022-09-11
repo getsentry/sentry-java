@@ -38,9 +38,9 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
                 val baggageHeader = span.toBaggageHeader(request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value })
                 cleanedHeaders.add(HttpHeader(sentryTraceHeader.name, sentryTraceHeader.value))
 
-                baggageHeader?.let {
+                baggageHeader?.let { newHeader ->
                     cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
-                        add(HttpHeader(it.name, it.value))
+                        add(HttpHeader(newHeader.name, newHeader.value))
                     }
                 }
             }

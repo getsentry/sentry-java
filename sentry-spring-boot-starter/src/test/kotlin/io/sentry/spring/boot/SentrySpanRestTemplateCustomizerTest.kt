@@ -96,7 +96,7 @@ class SentrySpanRestTemplateCustomizerTest {
         val sut = fixture.getSut(isTransactionActive = true)
         val headers = HttpHeaders()
         headers.add("baggage", "thirdPartyBaggage=someValue")
-        headers.add("baggage", "secondThirdPartyBaggage=secondValue")
+        headers.add("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
 
         val requestEntity = HttpEntity<Unit>(headers)
 
@@ -108,7 +108,7 @@ class SentrySpanRestTemplateCustomizerTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue"))
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=aTransaction"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))

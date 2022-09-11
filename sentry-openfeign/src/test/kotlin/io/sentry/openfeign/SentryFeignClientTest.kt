@@ -48,7 +48,6 @@ class SentryFeignClientTest {
             httpStatusCode: Int = 201,
             responseBody: String = "success",
             networkError: Boolean = false,
-            addThirdPartyBaggageHeader: Boolean = false,
             beforeSpan: SentryFeignClient.BeforeSpanCallback? = null
         ): MockApi {
             if (isSpanActive) {
@@ -97,7 +96,7 @@ class SentryFeignClientTest {
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut()
 
-        sut.getOkWithBaggageHeader(mapOf("baggage" to listOf("thirdPartyBaggage=someValue", "secondThirdPartyBaggage=secondValue")))
+        sut.getOkWithBaggageHeader(mapOf("baggage" to listOf("thirdPartyBaggage=someValue", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")))
 
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
@@ -105,7 +104,7 @@ class SentryFeignClientTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue"))
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
