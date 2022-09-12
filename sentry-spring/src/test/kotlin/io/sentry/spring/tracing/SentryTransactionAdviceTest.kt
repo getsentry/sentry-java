@@ -100,7 +100,7 @@ class SentryTransactionAdviceTest {
 
     @Test
     fun `when transaction is already active, does not start new transaction`() {
-        whenever(hub.span).thenReturn(SentryTracer(TransactionContext("aTransaction", "op"), hub))
+        whenever(hub.span).then { SentryTracer(TransactionContext("aTransaction", "op"), hub) }
 
         sampleService.methodWithTransactionNameSet()
 

@@ -33,7 +33,8 @@ class MainEventProcessorTest {
             sdkVersion = SdkVersion("test", "1.2.3")
         }
         val getLocalhost = mock<InetAddress>()
-        val sentryTracer = SentryTracer(TransactionContext("", ""), mock())
+        val hub = mock<IHub>()
+        lateinit var sentryTracer: SentryTracer
         private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
 
         fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap(), sendDefaultPii: Boolean? = null, serverName: String? = "server", host: String? = null, resolveHostDelay: Long? = null, hostnameCacheDuration: Long = 10, proguardUuid: String? = null): MainEventProcessor {
@@ -57,6 +58,9 @@ class MainEventProcessorTest {
             }
             val hostnameCache = HostnameCache(hostnameCacheDuration) { getLocalhost }
             hostnameCacheMock.`when`<Any> { HostnameCache.getInstance() }.thenReturn(hostnameCache)
+
+            whenever(hub.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("", ""), hub)
 
             return MainEventProcessor(sentryOptions)
         }

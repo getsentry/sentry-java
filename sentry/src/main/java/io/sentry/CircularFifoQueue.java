@@ -30,7 +30,8 @@ import org.jetbrains.annotations.Nullable;
  * @since 4.0
  * @version $Id$
  */
-final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<E>, Serializable {
+public final class CircularFifoQueue<E> extends AbstractCollection<E>
+    implements Queue<E>, Serializable {
 
   /** Serialization version. */
   private static final long serialVersionUID = -8423413834657610406L;
@@ -67,7 +68,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    * @throws IllegalArgumentException if the size is &lt; 1
    */
   @SuppressWarnings("unchecked")
-  CircularFifoQueue(final int size) {
+  public CircularFifoQueue(final int size) {
     if (size <= 0) {
       throw new IllegalArgumentException("The size must be greater than 0");
     }
@@ -284,6 +285,13 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
       return null;
     }
     return elements[start];
+  }
+
+  public @Nullable E peekEnd() {
+    if (isEmpty()) {
+      return null;
+    }
+    return elements[end];
   }
 
   @Override

@@ -48,12 +48,13 @@ class SentryGestureListenerTracingTest {
             hasViewIdInRes: Boolean = true,
             tracesSampleRate: Double? = 1.0,
             isEnableUserInteractionTracing: Boolean = true,
-            transaction: SentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+            transaction: SentryTracer? = null
         ): SentryGestureListener {
             options.tracesSampleRate = tracesSampleRate
             options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
+            whenever(hub.options).thenReturn(options)
 
-            this.transaction = transaction
+            this.transaction = transaction ?: SentryTracer(TransactionContext("name", "op"), hub)
 
             target = mockView<T>(event = event, clickable = true)
             window.mockDecorView<ViewGroup>(event = event) {
@@ -74,8 +75,7 @@ class SentryGestureListenerTracingTest {
             whenever(activity.window).thenReturn(window)
 
             whenever(hub.startTransaction(any(), any<TransactionOptions>()))
-                .thenReturn(transaction)
-            whenever(hub.options).thenReturn(options)
+                .thenReturn(this.transaction)
             return SentryGestureListener(
                 activity,
                 hub,

@@ -253,6 +253,10 @@ public final class Sentry {
               });
     }
 
+    if (options.isTracingEnabled()) {
+      //      options.getMeasurementBackgroundService().start();
+    }
+
     return true;
   }
 

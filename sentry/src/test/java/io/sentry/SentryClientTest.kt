@@ -61,7 +61,7 @@ class SentryClientTest {
         var factory = mock<ITransportFactory>()
         val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
         val hub = mock<IHub>()
-        val sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), hub)
+        val sentryTracer: SentryTracer
 
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
@@ -79,6 +79,7 @@ class SentryClientTest {
         init {
             whenever(factory.create(any(), any())).thenReturn(transport)
             whenever(hub.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), hub)
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
@@ -1117,10 +1118,10 @@ class SentryClientTest {
 
     @Test
     fun `when captureTransaction with scope, transaction should use user data`() {
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), mock()))
         val scope = createScope()
 
         val sut = fixture.getSut()
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), fixture.hub))
 
         sut.captureTransaction(transaction, scope, null)
         assertNotNull(transaction.user) {

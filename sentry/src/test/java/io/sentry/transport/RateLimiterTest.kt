@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Attachment
 import io.sentry.Hint
+import io.sentry.IHub
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.SentryEnvelope
@@ -38,9 +39,10 @@ class RateLimiterTest {
         val currentDateProvider = mock<ICurrentDateProvider>()
         val clientReportRecorder = mock<IClientReportRecorder>()
         val serializer = mock<ISerializer>()
+        lateinit var options: SentryOptions
 
         fun getSUT(): RateLimiter {
-            val options = SentryOptions().apply {
+            options = SentryOptions().apply {
                 setLogger(NoOpLogger.getInstance())
             }
 
@@ -74,7 +76,9 @@ class RateLimiterTest {
         val rateLimiter = fixture.getSUT()
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        val hub = mock<IHub>()
+        whenever(hub.options).thenReturn(fixture.options)
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), hub))
         val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, transaction)
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem))
 
@@ -89,7 +93,9 @@ class RateLimiterTest {
         val rateLimiter = fixture.getSUT()
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        val hub = mock<IHub>()
+        whenever(hub.options).thenReturn(fixture.options)
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), hub))
         val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, transaction)
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem))
 

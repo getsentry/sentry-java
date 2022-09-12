@@ -5,6 +5,8 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.measurement.MeasurementBackgroundService;
+import io.sentry.measurement.MeasurementCollectorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -40,6 +42,9 @@ public class SentryOptions {
    * means just adding data OR return null in case the event will be dropped and not sent.
    */
   private final @NotNull List<EventProcessor> eventProcessors = new CopyOnWriteArrayList<>();
+
+  private final @NotNull List<MeasurementCollectorFactory> measurementCollectorFactories =
+      new CopyOnWriteArrayList<>();
 
   /** Exceptions that once captured will not be sent to Sentry as {@link SentryEvent}. */
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
@@ -350,6 +355,10 @@ public class SentryOptions {
   /** ClientReportRecorder to track count of lost events / transactions / ... * */
   @NotNull IClientReportRecorder clientReportRecorder = new ClientReportRecorder(this);
 
+  @NotNull
+  MeasurementBackgroundService measurementBackgroundService =
+      new MeasurementBackgroundService(this);
+
   /**
    * Adds an event processor
    *
@@ -366,6 +375,17 @@ public class SentryOptions {
    */
   public @NotNull List<EventProcessor> getEventProcessors() {
     return eventProcessors;
+  }
+
+  @ApiStatus.Internal
+  public void addMetricsCollectorFactory(
+      @NotNull MeasurementCollectorFactory measurementCollectorFactory) {
+    measurementCollectorFactories.add(measurementCollectorFactory);
+  }
+
+  @ApiStatus.Internal
+  public @NotNull List<MeasurementCollectorFactory> getMeasurementCollectorFactories() {
+    return measurementCollectorFactories;
   }
 
   /**
@@ -1689,6 +1709,10 @@ public class SentryOptions {
   @ApiStatus.Internal
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
+  }
+
+  public MeasurementBackgroundService getMeasurementBackgroundService() {
+    return measurementBackgroundService;
   }
 
   /** The BeforeSend callback */

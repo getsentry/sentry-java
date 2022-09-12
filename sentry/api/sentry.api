@@ -101,6 +101,27 @@ public final class io/sentry/BuildConfig {
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
+public final class io/sentry/CircularFifoQueue : java/util/AbstractCollection, java/io/Serializable, java/util/Queue {
+	public fun <init> ()V
+	public fun <init> (I)V
+	public fun <init> (Ljava/util/Collection;)V
+	public fun add (Ljava/lang/Object;)Z
+	public fun clear ()V
+	public fun element ()Ljava/lang/Object;
+	public fun get (I)Ljava/lang/Object;
+	public fun isAtFullCapacity ()Z
+	public fun isEmpty ()Z
+	public fun isFull ()Z
+	public fun iterator ()Ljava/util/Iterator;
+	public fun maxSize ()I
+	public fun offer (Ljava/lang/Object;)Z
+	public fun peek ()Ljava/lang/Object;
+	public fun peekEnd ()Ljava/lang/Object;
+	public fun poll ()Ljava/lang/Object;
+	public fun remove ()Ljava/lang/Object;
+	public fun size ()I
+}
+
 public final class io/sentry/CustomSamplingContext {
 	public fun <init> ()V
 	public fun get (Ljava/lang/String;)Ljava/lang/Object;
@@ -1200,6 +1221,7 @@ public class io/sentry/SentryOptions {
 	public fun addInAppExclude (Ljava/lang/String;)V
 	public fun addInAppInclude (Ljava/lang/String;)V
 	public fun addIntegration (Lio/sentry/Integration;)V
+	public fun addMetricsCollectorFactory (Lio/sentry/measurement/MeasurementCollectorFactory;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
 	public fun addTracingOrigin (Ljava/lang/String;)V
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
@@ -1233,6 +1255,8 @@ public class io/sentry/SentryOptions {
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
+	public fun getMeasurementBackgroundService ()Lio/sentry/measurement/MeasurementBackgroundService;
+	public fun getMeasurementCollectorFactories ()Ljava/util/List;
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
@@ -2033,6 +2057,83 @@ public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/Out
 	public fun <init> (Ljava/io/FileDescriptor;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Z)V
+}
+
+public abstract class io/sentry/measurement/BackgroundAwareMeasurementCollector : io/sentry/measurement/MeasurementCollector {
+	protected final field backgroundService Lio/sentry/measurement/MeasurementBackgroundService;
+	protected field startDate Ljava/util/Date;
+	public fun <init> (Lio/sentry/measurement/MeasurementBackgroundService;)V
+	protected abstract fun listenToTypes ()Ljava/util/List;
+	public fun onTransactionFinished (Lio/sentry/ITransaction;Lio/sentry/measurement/MeasurementContext;)Ljava/util/Map;
+	protected abstract fun onTransactionFinishedInternal (Lio/sentry/ITransaction;Lio/sentry/measurement/MeasurementContext;)Ljava/util/Map;
+	public fun onTransactionStarted (Lio/sentry/ITransaction;)V
+	protected abstract fun onTransactionStartedInternal (Lio/sentry/ITransaction;)V
+}
+
+public abstract interface class io/sentry/measurement/MeasurementBackgroundCollector {
+	public abstract fun collect ()Ljava/lang/Object;
+	public abstract fun getMeasurementType ()Lio/sentry/measurement/MeasurementBackgroundServiceType;
+}
+
+public final class io/sentry/measurement/MeasurementBackgroundService {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun getFrom (Lio/sentry/measurement/MeasurementBackgroundServiceType;Ljava/util/Date;Ljava/lang/Integer;)Ljava/util/List;
+	public fun getLatest (Lio/sentry/measurement/MeasurementBackgroundServiceType;)Ljava/lang/Object;
+	public fun getPollingInterval ()I
+	public fun registerBackgroundCollectors (Ljava/util/List;)V
+	public fun start ()V
+	public fun startPolling (Lio/sentry/measurement/MeasurementBackgroundServiceType;)V
+	public fun stop ()V
+	public fun stopPolling (Lio/sentry/measurement/MeasurementBackgroundServiceType;)V
+}
+
+public final class io/sentry/measurement/MeasurementBackgroundServiceType : java/lang/Enum {
+	public static final field BATTERY Lio/sentry/measurement/MeasurementBackgroundServiceType;
+	public static final field CPU Lio/sentry/measurement/MeasurementBackgroundServiceType;
+	public static final field FPS Lio/sentry/measurement/MeasurementBackgroundServiceType;
+	public static final field MEMORY Lio/sentry/measurement/MeasurementBackgroundServiceType;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/measurement/MeasurementBackgroundServiceType;
+	public static fun values ()[Lio/sentry/measurement/MeasurementBackgroundServiceType;
+}
+
+public final class io/sentry/measurement/MeasurementBackgroundWorker : java/lang/Runnable {
+	public fun <init> (Lio/sentry/SentryOptions;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;I)V
+	public fun run ()V
+}
+
+public abstract interface class io/sentry/measurement/MeasurementCollector {
+	public abstract fun onTransactionFinished (Lio/sentry/ITransaction;Lio/sentry/measurement/MeasurementContext;)Ljava/util/Map;
+	public abstract fun onTransactionStarted (Lio/sentry/ITransaction;)V
+}
+
+public abstract interface class io/sentry/measurement/MeasurementCollectorFactory {
+	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/measurement/MeasurementBackgroundService;)Lio/sentry/measurement/MeasurementCollector;
+	public fun createBackgroundCollector (Lio/sentry/SentryOptions;)Lio/sentry/measurement/MeasurementBackgroundCollector;
+}
+
+public final class io/sentry/measurement/MeasurementContext {
+	public fun <init> (Lio/sentry/SentryTracer;)V
+	public fun getDuration ()Ljava/lang/Double;
+}
+
+public final class io/sentry/measurement/SentryMeasurements {
+	public fun <init> ()V
+	public fun get (Ljava/lang/String;)Ljava/lang/Double;
+	public fun set (Ljava/lang/String;Ljava/lang/Double;)V
+}
+
+public final class io/sentry/measurement/TimeSeriesStorage {
+	public fun <init> (I)V
+	public fun add (Ljava/lang/Object;)V
+	public fun getFrom (Ljava/util/Date;I)Ljava/util/List;
+	public fun getLatest (J)Ljava/lang/Object;
+	public fun size ()I
+}
+
+public final class io/sentry/measurement/TimeSeriesStorage$TimeSeriesEntry {
+	public fun <init> (Ljava/util/Date;Ljava/lang/Object;)V
+	public fun getDate ()Ljava/util/Date;
+	public fun getValue ()Ljava/lang/Object;
 }
 
 public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -3092,6 +3193,15 @@ public abstract interface class io/sentry/util/HintUtils$SentryNullableConsumer 
 public final class io/sentry/util/LogUtils {
 	public fun <init> ()V
 	public static fun logNotInstanceOf (Ljava/lang/Class;Ljava/lang/Object;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/util/MeasurementUtils {
+	public static final field MEASUREMENTS_DATA_KEY Ljava/lang/String;
+	public fun <init> ()V
+	public static fun clearMeasurements (Lio/sentry/ISpan;)V
+	public static fun finishMeasurements (Lio/sentry/ISpan;)Lio/sentry/measurement/SentryMeasurements;
+	public static fun initMeasurements (Lio/sentry/ISpan;)V
+	public static fun modifyMeasurements (Lio/sentry/ISpan;Lio/sentry/util/HintUtils$SentryConsumer;)V
 }
 
 public final class io/sentry/util/Objects {

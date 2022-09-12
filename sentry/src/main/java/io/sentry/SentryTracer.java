@@ -1,5 +1,9 @@
 package io.sentry;
 
+import io.sentry.measurement.MeasurementCollector;
+import io.sentry.measurement.MeasurementCollectorFactory;
+import io.sentry.measurement.MeasurementContext;
+import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
@@ -74,6 +78,7 @@ public final class SentryTracer implements ITransaction {
 
   private @Nullable TraceContext traceContext;
   private @NotNull TransactionNameSource transactionNameSource;
+  private @NotNull List<MeasurementCollector> measurementCollectors;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -112,6 +117,22 @@ public final class SentryTracer implements ITransaction {
     this.trimEnd = trimEnd;
     this.transactionFinishedCallback = transactionFinishedCallback;
     this.transactionNameSource = context.getTransactionNameSource();
+
+    // TODO extract this code to another class
+    final List<MeasurementCollector> measurementCollectors = new ArrayList<>();
+    SentryOptions options = hub.getOptions();
+    for (MeasurementCollectorFactory factory : options.getMeasurementCollectorFactories()) {
+      MeasurementCollector measurementCollector =
+          factory.create(options, options.getMeasurementBackgroundService());
+      // TODO move out of ctor
+      long start = System.currentTimeMillis();
+      measurementCollector.onTransactionStarted(this);
+      measurementCollectors.add(measurementCollector);
+      long delta = System.currentTimeMillis() - start;
+      options.getLogger().log(SentryLevel.INFO, "Took %s ms to collect measurement", delta);
+    }
+
+    this.measurementCollectors = measurementCollectors;
 
     if (idleTimeout != null) {
       timer = new Timer(true);
@@ -336,7 +357,10 @@ public final class SentryTracer implements ITransaction {
                   }
                 });
           });
+
       SentryTransaction transaction = new SentryTransaction(this);
+      addMeasurementsToTransaction(transaction);
+
       if (transactionFinishedCallback != null) {
         transactionFinishedCallback.execute(this);
       }
@@ -355,6 +379,25 @@ public final class SentryTracer implements ITransaction {
         return;
       }
       hub.captureTransaction(transaction, this.traceContext, null, profilingTraceData);
+    }
+  }
+
+  private void addMeasurementsToTransaction(@NotNull SentryTransaction transaction) {
+    MeasurementContext measurementContext = new MeasurementContext(this);
+
+    for (MeasurementCollector collector : measurementCollectors) {
+      @Nullable
+      Map<String, MeasurementValue> measurement =
+          collector.onTransactionFinished(this, measurementContext);
+      if (measurement != null) {
+        for (Map.Entry<String, MeasurementValue> entry : measurement.entrySet()) {
+          String name = entry.getKey();
+          MeasurementValue value = entry.getValue();
+          if (name != null && value != null) {
+            transaction.getMeasurements().put(name, value);
+          }
+        }
+      }
     }
   }
 

@@ -12,6 +12,9 @@ import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.internal.measurement.battery.BatteryLevelMeasurementCollectorFactory;
+import io.sentry.android.core.internal.measurement.cpu.CpuMeasurementCollectorFactory;
+import io.sentry.android.core.internal.measurement.memory.MemoryMeasurementCollectorFactory;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.util.Objects;
@@ -153,6 +156,15 @@ final class AndroidOptionsInitializer {
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     options.setTransactionProfiler(
         new AndroidTransactionProfiler(context, options, buildInfoProvider));
+
+    options.addMetricsCollectorFactory(new CpuMeasurementCollectorFactory());
+    options.addMetricsCollectorFactory(new MemoryMeasurementCollectorFactory(context));
+    options.addMetricsCollectorFactory(new BatteryLevelMeasurementCollectorFactory(context));
+    //    options.addMetricsCollectorFactory(new FpsMeasurementCollectorFactory(context));
+
+    options
+        .getMeasurementBackgroundService()
+        .registerBackgroundCollectors(options.getMeasurementCollectorFactories());
   }
 
   private static void installDefaultIntegrations(
