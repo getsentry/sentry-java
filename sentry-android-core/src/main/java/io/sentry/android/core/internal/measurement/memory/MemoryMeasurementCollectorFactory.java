@@ -28,6 +28,6 @@ public final class MemoryMeasurementCollectorFactory implements MeasurementColle
   @Override
   public @Nullable MeasurementBackgroundCollector createBackgroundCollector(
       @NotNull SentryOptions options) {
-    return new MemoryBackgroundMeasurementCollector(applicationContext);
+    return new MemoryBackgroundMeasurementCollector(applicationContext, options);
   }
 }

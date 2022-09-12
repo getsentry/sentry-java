@@ -1,9 +1,10 @@
 package io.sentry.android.core.internal.measurement.memory;
 
-import android.app.ActivityManager;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.os.Debug;
+import android.os.SystemClock;
 import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -25,8 +26,6 @@ public final class MemoryMeasurementCollector extends BackgroundAwareMeasurement
   //  private final @NotNull Context applicationContext;
   private @NotNull final SentryOptions options;
   private @NotNull List<MeasurementBackgroundServiceType> listenToTypes;
-  private @Nullable ActivityManager.MemoryInfo memoryAtStart;
-  private long availMem;
 
   public MemoryMeasurementCollector(
       @NotNull SentryOptions options,
@@ -43,27 +42,11 @@ public final class MemoryMeasurementCollector extends BackgroundAwareMeasurement
     return listenToTypes;
   }
 
+  @SuppressLint("NewApi")
   @Override
   protected void onTransactionStartedInternal(@NotNull ITransaction transaction) {
-    long start = System.currentTimeMillis();
-    //    @Nullable ActivityManager am = (ActivityManager)
-    // applicationContext.getSystemService(ACTIVITY_SERVICE);
-    //    if (am != null) {
-    //      ActivityManager.MemoryInfo memType = new ActivityManager.MemoryInfo();
-    //      am.getMemoryInfo(memType);
-    //      availMem = memType.availMem;
-    //    }
-    Runtime runtime = Runtime.getRuntime();
-    availMem = runtime.totalMemory() - runtime.freeMemory();
-    long delta = System.currentTimeMillis() - start;
-    options.getLogger().log(SentryLevel.INFO, "mem took %d ms and had result %d", delta, availMem);
-
-    memoryAtStart =
-        (ActivityManager.MemoryInfo)
-            backgroundService.getLatest(MeasurementBackgroundServiceType.MEMORY);
-    if (memoryAtStart != null) {
-      options.getLogger().log(SentryLevel.INFO, "from background %s", memoryAtStart.availMem);
-    }
+    // TODO 1 - 5 μs
+    //    Runtime runtime = Runtime.getRuntime();
   }
 
   @Override
@@ -72,13 +55,14 @@ public final class MemoryMeasurementCollector extends BackgroundAwareMeasurement
     Map<String, MeasurementValue> results = new HashMap<>();
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      long start = System.currentTimeMillis();
+      long start = SystemClock.elapsedRealtimeNanos();
+      // TODO 7 - 18 μs
       String bytesAllocatedString = Debug.getRuntimeStat("art.gc.bytes-allocated");
-      long delta = System.currentTimeMillis() - start;
+      long delta = SystemClock.elapsedRealtimeNanos() - start;
       Long value = Long.valueOf(bytesAllocatedString);
       options
           .getLogger()
-          .log(SentryLevel.INFO, "mem from debug took %d ms and had result %d", delta, value);
+          .log(SentryLevel.INFO, "mem from debug took %d ns and had result %d", delta, value);
       results.put("mem_bytes_allocated", new MeasurementValue(value));
 
       Double transactionDuration = context.getDuration();
@@ -86,7 +70,7 @@ public final class MemoryMeasurementCollector extends BackgroundAwareMeasurement
         Double bytesAllocatedPerSecond = value.doubleValue() / transactionDuration;
         results.put(
             "mem_bytes_allocated_per_second",
-            new MeasurementValue(bytesAllocatedPerSecond.longValue()));
+            new MeasurementValue(bytesAllocatedPerSecond.floatValue()));
       }
     }
 
@@ -97,8 +81,18 @@ public final class MemoryMeasurementCollector extends BackgroundAwareMeasurement
             backgroundService.getPollingInterval());
     options.getLogger().log(SentryLevel.INFO, "from background at end count %d", from.size());
     for (Object o : from) {
-      ActivityManager.MemoryInfo mem = (ActivityManager.MemoryInfo) o;
-      options.getLogger().log(SentryLevel.INFO, "from background at end %s", mem.availMem);
+      MemoryBackgroundMeasurementCollector.MemoryReading mem =
+          (MemoryBackgroundMeasurementCollector.MemoryReading) o;
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "from background at end %,d/%,d | %,d/%,d|%,d",
+              mem.getAm(),
+              mem.getAmTotal(),
+              mem.getRuntime(),
+              mem.getRuntimeTotal(),
+              mem.getRuntimeMax());
     }
 
     return results;

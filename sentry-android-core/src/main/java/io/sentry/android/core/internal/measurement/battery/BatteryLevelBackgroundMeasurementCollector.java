@@ -30,6 +30,7 @@ public final class BatteryLevelBackgroundMeasurementCollector
 
   @Override
   public @Nullable Object collect() {
+    // TODO 0.4 - 20 ms
     return getBatteryLevel();
   }
 

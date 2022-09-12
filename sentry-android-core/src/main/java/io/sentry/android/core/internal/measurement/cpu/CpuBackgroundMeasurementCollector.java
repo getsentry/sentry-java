@@ -25,6 +25,7 @@ public final class CpuBackgroundMeasurementCollector implements MeasurementBackg
   @Override
   public @Nullable Object collect() {
     try {
+      // TODO 1-5 ms
       String stat = readProcSelfStat();
       return parseClockTicks(stat);
     } catch (IOException e) {
