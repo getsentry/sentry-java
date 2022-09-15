@@ -1,11 +1,14 @@
 package io.sentry.android.core.internal.measurement.cpu;
 
+import android.annotation.SuppressLint;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.measurement.MeasurementBackgroundCollector;
 import io.sentry.measurement.MeasurementBackgroundServiceType;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,11 +26,18 @@ public final class CpuBackgroundMeasurementCollector implements MeasurementBackg
   }
 
   @Override
+  @SuppressLint("NewApi")
   public @Nullable Object collect() {
     try {
       // TODO 1-5 ms
       String stat = readProcSelfStat();
-      return parseClockTicks(stat);
+      Long clockTicks = parseClockTicks(stat);
+
+      // TODO 2-4 ms on first read, then cached 4 - 20 μs
+      List<Integer> maxFrequencies = CpuInfoUtils.getInstance().readMaxFrequencies();
+      // TODO 0.5 - 6ms
+      List<Integer> currentFrequencies = CpuInfoUtils.getInstance().readCurrentFrequencies();
+      return new CpuReading(clockTicks, maxFrequencies, currentFrequencies);
     } catch (IOException e) {
       options
           .getLogger()
@@ -69,5 +79,32 @@ public final class CpuBackgroundMeasurementCollector implements MeasurementBackg
             + clockTicksUserModeChildren
             + clockTicksKernelModeChildren;
     return clockTicks;
+  }
+
+  public static final class CpuReading {
+    private final @Nullable Long ticks;
+    private final @NotNull List<Integer> maxFrequencies;
+    private final @NotNull List<Integer> currentFrequencies;
+
+    public CpuReading(
+        @Nullable Long ticks,
+        @NotNull List<Integer> maxFrequencies,
+        @NotNull List<Integer> currentFrequencies) {
+      this.ticks = ticks;
+      this.maxFrequencies = maxFrequencies;
+      this.currentFrequencies = currentFrequencies;
+    }
+
+    public @NotNull List<Integer> getMaxFrequencies() {
+      return maxFrequencies;
+    }
+
+    public @NotNull List<Integer> getCurrentFrequencies() {
+      return currentFrequencies;
+    }
+
+    public @Nullable Long getTicks() {
+      return ticks;
+    }
   }
 }

@@ -26,6 +26,8 @@ public final class CpuInfoUtils {
   @VisibleForTesting
   static final @NotNull String CPUINFO_MAX_FREQ_PATH = "cpufreq/cpuinfo_max_freq";
 
+  static final @NotNull String CPU_SCALING_FREQ_PATH = "cpufreq/scaling_cur_freq";
+
   /** Cached max frequencies to avoid reading files multiple times */
   private final @NotNull List<Integer> cpuMaxFrequenciesMhz = new ArrayList<>();
 
@@ -62,6 +64,35 @@ public final class CpuInfoUtils {
       cpuMaxFrequenciesMhz.add((int) (khz / 1000));
     }
     return cpuMaxFrequenciesMhz;
+  }
+
+  public @NotNull List<Integer> readCurrentFrequencies() {
+    File[] cpuDirs = new File(getSystemCpuPath()).listFiles();
+    if (cpuDirs == null) {
+      return new ArrayList<>();
+    }
+
+    final @NotNull List<Integer> cpuCurrentFrequenciesMhz = new ArrayList<>();
+
+    for (File cpuDir : cpuDirs) {
+      if (!cpuDir.getName().matches("cpu[0-9]+")) continue;
+      File cpuMaxFreqFile = new File(cpuDir, CPU_SCALING_FREQ_PATH);
+
+      if (!cpuMaxFreqFile.exists() || !cpuMaxFreqFile.canRead()) continue;
+
+      long khz;
+      try {
+        String content = FileUtils.readText(cpuMaxFreqFile);
+        if (content == null) continue;
+        khz = Long.parseLong(content.trim());
+      } catch (NumberFormatException e) {
+        continue;
+      } catch (IOException e) {
+        continue;
+      }
+      cpuCurrentFrequenciesMhz.add((int) (khz / 1000));
+    }
+    return cpuCurrentFrequenciesMhz;
   }
 
   @VisibleForTesting

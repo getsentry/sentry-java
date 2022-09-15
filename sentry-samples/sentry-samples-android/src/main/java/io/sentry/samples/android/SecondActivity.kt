@@ -10,6 +10,12 @@ import io.sentry.samples.android.databinding.ActivitySecondBinding
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.UUID
+import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class SecondActivity : AppCompatActivity() {
 
@@ -68,6 +74,32 @@ class SecondActivity : AppCompatActivity() {
         val currentSpan = Sentry.getSpan()
         val span = currentSpan?.startChild("updateRepos", javaClass.simpleName)
             ?: Sentry.startTransaction("updateRepos", "task")
+
+        val threadCount = 4
+        val numOfStrings = 100 * 1000
+        val numOfSorts = 1 * 1000
+        val executorService: ExecutorService = Executors.newFixedThreadPool(threadCount)
+        val countDownLatch = CountDownLatch(threadCount)
+
+        Sentry.addBreadcrumb("load sim: $threadCount: $numOfSorts|$numOfSorts")
+
+        executorService.invokeAll(
+            (1..threadCount).map {
+                Callable {
+                    var someStrings = mutableListOf<String>()
+                    (1..numOfStrings).forEach { someStrings.add(UUID.randomUUID().toString()) }
+
+                    (1..numOfSorts).forEach {
+                        someStrings.shuffle()
+                        someStrings.sort()
+                    }
+                    Sentry.addBreadcrumb("${UUID.randomUUID()} collection length: ${someStrings.size}")
+                    countDownLatch.countDown()
+                }
+            }
+        )
+
+        countDownLatch.await(100, TimeUnit.SECONDS)
 
         GithubAPI.service.listRepos(binding.editRepo.text.toString()).enqueue(object : Callback<List<Repo>> {
             override fun onFailure(call: Call<List<Repo>>, t: Throwable) {

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.os.Debug;
-import android.os.SystemClock;
 import io.sentry.ITransaction;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -55,14 +54,9 @@ public final class MemoryMeasurementCollector extends BackgroundAwareMeasurement
     Map<String, MeasurementValue> results = new HashMap<>();
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      long start = SystemClock.elapsedRealtimeNanos();
       // TODO 7 - 18 μs
       String bytesAllocatedString = Debug.getRuntimeStat("art.gc.bytes-allocated");
-      long delta = SystemClock.elapsedRealtimeNanos() - start;
       Long value = Long.valueOf(bytesAllocatedString);
-      options
-          .getLogger()
-          .log(SentryLevel.INFO, "mem from debug took %d ns and had result %d", delta, value);
       results.put("mem_bytes_allocated", new MeasurementValue(value));
 
       Double transactionDuration = context.getDuration();
@@ -87,12 +81,14 @@ public final class MemoryMeasurementCollector extends BackgroundAwareMeasurement
           .getLogger()
           .log(
               SentryLevel.INFO,
-              "from background at end %,d/%,d | %,d/%,d|%,d",
+              "from background at end am: %,d/%,d | runtime: %,d/%,d|%,d | pss: %,d | procstat: %,d",
               mem.getAm(),
               mem.getAmTotal(),
               mem.getRuntime(),
               mem.getRuntimeTotal(),
-              mem.getRuntimeMax());
+              mem.getRuntimeMax(),
+              mem.getPss(),
+              mem.getProcStatusMemory());
     }
 
     return results;

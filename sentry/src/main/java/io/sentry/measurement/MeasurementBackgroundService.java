@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
@@ -28,6 +29,7 @@ public final class MeasurementBackgroundService {
   private final @NotNull Map<MeasurementBackgroundServiceType, TimeSeriesStorage<Object>> storage =
       new HashMap<>();
   private final int pollingInterval;
+  private @Nullable ScheduledFuture<?> scheduledFuture;
 
   public MeasurementBackgroundService(@NotNull SentryOptions options) {
     this.options = options;
@@ -46,12 +48,17 @@ public final class MeasurementBackgroundService {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start() {
-    executorService.scheduleAtFixedRate(
-        new MeasurementBackgroundWorker(
-            options, listenCounts, backgroundCollectors, storage, pollingInterval),
-        0,
-        pollingInterval,
-        TimeUnit.MILLISECONDS);
+    try {
+      scheduledFuture =
+          executorService.scheduleAtFixedRate(
+              new MeasurementBackgroundWorker(
+                  options, listenCounts, backgroundCollectors, storage, pollingInterval),
+              0,
+              pollingInterval,
+              TimeUnit.MILLISECONDS);
+    } catch (Exception e) {
+      options.getLogger().log(SentryLevel.ERROR, "Unable to start MeasurementBackgroundWorker.", e);
+    }
   }
 
   // TODO call
@@ -86,6 +93,17 @@ public final class MeasurementBackgroundService {
       @NotNull MeasurementBackgroundServiceType measurementType,
       @Nullable Date minDate,
       @Nullable Integer allowedTimeBeforeMin) {
+    if (scheduledFuture != null) {
+      if (scheduledFuture.isDone() || scheduledFuture.isCancelled()) {
+        try {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Future no longer works %s", scheduledFuture.get());
+        } catch (Exception e) {
+          options.getLogger().log(SentryLevel.ERROR, "Future problem", e);
+        }
+      }
+    }
     final @Nullable TimeSeriesStorage<Object> timieSeriesStorage = storage.get(measurementType);
     final int allowedTimeBeforeOrZero = allowedTimeBeforeMin != null ? allowedTimeBeforeMin : 0;
     if (minDate != null && timieSeriesStorage != null) {

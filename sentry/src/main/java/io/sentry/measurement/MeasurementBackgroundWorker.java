@@ -47,6 +47,7 @@ public final class MeasurementBackgroundWorker implements Runnable {
               "Not running MeasurementBackgroundWorker as the previous run has not finished yet.");
       return;
     }
+    options.getLogger().log(SentryLevel.DEBUG, "Running MeasurementBackgroundWorker.");
 
     isRunning.set(true);
 
@@ -72,18 +73,25 @@ public final class MeasurementBackgroundWorker implements Runnable {
         // %s took %d ms", measurementType, deltaSingle);
         //        }
       }
+    } catch (Exception e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "MeasurementBackgroundWorker Error while doing background work for measurements.",
+              e);
     } finally {
       isRunning.set(false);
       long timeDelta = System.currentTimeMillis() - startTime;
       double warningThreshold = pollingInterval * 0.9;
-      //      options.getLogger().log(SentryLevel.DEBUG, "Background measurement collectioin for all
-      // took %d ms", timeDelta);
+      //      options.getLogger().log(SentryLevel.DEBUG, "MeasurementBackgroundWorker collection for
+      // all took %d ms", timeDelta);
       if (timeDelta > warningThreshold) {
         options
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Measurement collection in background is taking > 90% of %d",
+                "Measurement collection in background is taking > 90 %% of %d",
                 pollingInterval);
       }
     }
@@ -97,10 +105,11 @@ public final class MeasurementBackgroundWorker implements Runnable {
         // TODO maybe cleanup old entries (time wise) so the queue doesn't stay full all the time
         @Nullable TimeSeriesStorage<Object> storageQueue = storage.get(measurementType);
         if (storageQueue != null) {
-          //          options
-          //            .getLogger()
-          //            .log(SentryLevel.INFO, "storage for %s has size %d", measurementType,
-          // storageQueue.size());
+          //                    options
+          //                      .getLogger()
+          //                      .log(SentryLevel.INFO, "MeasurementBackgroundWorker storage for %s
+          // has size %d", measurementType,
+          //           storageQueue.size());
           storageQueue.add(result);
         }
       }
