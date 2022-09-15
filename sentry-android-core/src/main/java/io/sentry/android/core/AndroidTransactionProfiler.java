@@ -291,7 +291,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         options.getProguardUuid(),
         versionName,
         versionCode,
-        options.getEnvironment());
+        options.getEnvironment(),
+        );
   }
 
   /**

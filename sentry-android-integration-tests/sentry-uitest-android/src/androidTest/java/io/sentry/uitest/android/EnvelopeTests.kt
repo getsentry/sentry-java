@@ -109,6 +109,7 @@ class EnvelopeTests : BaseUiTest() {
                 assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
                 assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
                 assertTrue(profilingTraceData.transactionName == "e2etests")
+                assertTrue(profilingTraceData.truncationReason == "normal")
 
                 // Transaction timestamps should be all different from each other
                 val transactions = profilingTraceData.transactions

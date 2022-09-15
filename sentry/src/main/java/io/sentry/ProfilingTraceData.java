@@ -22,6 +22,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
    * SentryOptions} do not have the environment field set.
    */
   private static final String DEFAULT_ENVIRONMENT = "production";
+  @ApiStatus.Internal
+  public static final String TRUNCATION_REASON_NORMAL = "normal";
+  @ApiStatus.Internal
+  public static final String TRUNCATION_REASON_TIMEOUT = "timeout";
+  @ApiStatus.Internal
+  public static final String TRUNCATION_REASON_BACKGROUNDED = "backgrounded";
 
   private @NotNull File traceFile;
   private @Nullable Callable<List<Integer>> deviceCpuFrequenciesReader;
@@ -56,6 +62,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String traceId;
   private @NotNull String profileId;
   private @NotNull String environment;
+  private @NotNull String truncationReason;
 
   // Stacktrace (file)
   /** Profile trace encoded with Base64 */
@@ -83,7 +90,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
         null,
         null,
         null,
-        null);
+        null,
+      TRUNCATION_REASON_NORMAL);
   }
 
   public ProfilingTraceData(
@@ -102,7 +110,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       @Nullable String buildId,
       @Nullable String versionName,
       @Nullable String versionCode,
-      @Nullable String environment) {
+      @Nullable String environment,
+      @NotNull String truncationReason) {
     this.traceFile = traceFile;
     this.cpuArchitecture = cpuArchitecture;
     this.deviceCpuFrequenciesReader = deviceCpuFrequenciesReader;
@@ -135,6 +144,16 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.traceId = transaction.getSpanContext().getTraceId().toString();
     this.profileId = UUID.randomUUID().toString();
     this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
+    this.truncationReason = truncationReason;
+    if (!isTruncationReasonValid()) {
+      this.truncationReason = TRUNCATION_REASON_NORMAL;
+    }
+  }
+
+  private boolean isTruncationReasonValid() {
+    return truncationReason.equals(TRUNCATION_REASON_NORMAL) ||
+      truncationReason.equals(TRUNCATION_REASON_TIMEOUT) ||
+      truncationReason.equals(TRUNCATION_REASON_BACKGROUNDED);
   }
 
   private @Nullable Map<String, Object> unknown;
@@ -233,6 +252,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public @NotNull String getDevicePhysicalMemoryBytes() {
     return devicePhysicalMemoryBytes;
+  }
+
+  public @NotNull String getTruncationReason() {
+    return truncationReason;
   }
 
   public void setAndroidApiLevel(int androidApiLevel) {
@@ -351,6 +374,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     public static final String PROFILE_ID = "profile_id";
     public static final String ENVIRONMENT = "environment";
     public static final String SAMPLED_PROFILE = "sampled_profile";
+    public static final String TRUNCATION_REASON = "truncation_reason";
   }
 
   @Override
@@ -382,6 +406,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.TRACE_ID).value(traceId);
     writer.name(JsonKeys.PROFILE_ID).value(profileId);
     writer.name(JsonKeys.ENVIRONMENT).value(environment);
+    writer.name(JsonKeys.TRUNCATION_REASON).value(truncationReason);
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(sampledProfile);
     }
@@ -550,6 +575,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
             String environment = reader.nextStringOrNull();
             if (environment != null) {
               data.environment = environment;
+            }
+            break;
+          case JsonKeys.TRUNCATION_REASON:
+            String truncationReason = reader.nextStringOrNull();
+            if (truncationReason != null) {
+              data.truncationReason = truncationReason;
             }
             break;
           case JsonKeys.SAMPLED_PROFILE:
