@@ -146,6 +146,35 @@ class JsonObjectReaderTest {
         assertEquals(expected, actual)
     }
 
+    // nextMap
+
+    @Test
+    fun `returns null for null map`() {
+        val jsonString = "{\"key\": null}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        assertNull(reader.nextMapOrNull(fixture.logger, Deserializable.Deserializer()))
+    }
+
+    @Test
+    fun `returns map of deserializables`() {
+        val deserializableA = "{\"foo\": \"foo\", \"bar\": \"bar\"}"
+        val deserializableB = "{\"foo\": \"fooo\", \"bar\": \"baar\"}"
+        val jsonString = "{\"deserializable\": { \"a\":$deserializableA,\"b\":$deserializableB}}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        val expected = mapOf(
+            "a" to Deserializable("foo", "bar"),
+            "b" to Deserializable("fooo", "baar")
+        )
+        val actual = reader.nextMapOrNull(fixture.logger, Deserializable.Deserializer())
+        assertEquals(expected, actual)
+    }
+
     // nextDateOrNull
 
     @Test

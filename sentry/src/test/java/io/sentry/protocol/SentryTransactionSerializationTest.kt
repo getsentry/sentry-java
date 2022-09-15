@@ -25,7 +25,8 @@ class SentryTransactionSerializationTest {
                 SentrySpanSerializationTest.Fixture().getSut()
             ),
             mapOf(
-                "386384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut()
+                "386384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut(),
+                "186384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut(0.4000000059604645f, "test2")
             ),
             TransactionInfo(TransactionNameSource.CUSTOM.apiName())
         ).apply {
@@ -44,6 +45,14 @@ class SentryTransactionSerializationTest {
     @Test
     fun deserialize() {
         val expectedJson = sanitizedFile("json/sentry_transaction.json")
+        val actual = deserialize(expectedJson)
+        val actualJson = serialize(actual)
+        assertEquals(expectedJson, actualJson)
+    }
+
+    @Test
+    fun `deserialize without measurement unit`() {
+        val expectedJson = sanitizedFile("json/sentry_transaction_no_measurement_unit.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
