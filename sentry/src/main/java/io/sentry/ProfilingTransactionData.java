@@ -120,7 +120,16 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, traceId, name, relativeStartNs, relativeEndNs, unknown);
+    return Objects.hash(
+      id,
+      traceId,
+      name,
+      relativeStartNs,
+      relativeEndNs,
+      relativeStartCpuMs,
+      relativeEndCpuMs,
+      unknown
+    );
   }
 
   // JsonSerializable
