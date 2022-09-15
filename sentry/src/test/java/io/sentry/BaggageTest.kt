@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.github.javafaker.Faker
+import io.sentry.Baggage.MAX_BAGGAGE_LIST_MEMBER_COUNT
 import io.sentry.Baggage.MAX_BAGGAGE_STRING_LENGTH
 import io.sentry.protocol.SentryId
 import java.util.UUID
@@ -125,6 +126,56 @@ class BaggageTest {
         val headerString = baggage.toHeaderString(thirdPartyBaggage.thirdPartyHeader)
         assertEquals(MAX_BAGGAGE_STRING_LENGTH + 12, headerString.length)
         assertEquals("largeHeader=$largeThirdPartyHeaderValue", headerString)
+    }
+
+    @Test
+    fun `exceeding entry limit causes values to be dropped`() {
+        val baggage = Baggage(logger)
+        val expectedItems = mutableListOf<String>()
+
+        for (i in 1..100) {
+            val key = 100 + i
+            baggage.set("a$key", "$i")
+            if (i <= MAX_BAGGAGE_LIST_MEMBER_COUNT) {
+                expectedItems.add("a$key=$i")
+            }
+        }
+
+        val expectedHeaderString = expectedItems.joinToString(",")
+        assertEquals(expectedHeaderString, baggage.toHeaderString(null))
+    }
+
+    @Test
+    fun `if third party header exceeds entry limit, sentry headers are not added`() {
+        val baggage = Baggage(logger)
+        baggage.set("sentry-one", "value1")
+        baggage.set("sentry-two", "value2")
+        val thirdPartyItems = mutableListOf<String>()
+
+        for (i in 1..70) {
+            val key = 70 + i
+            thirdPartyItems.add("a$key=$i")
+        }
+
+        val thirdPartyHeaderString = thirdPartyItems.joinToString(",")
+        assertEquals(thirdPartyHeaderString, baggage.toHeaderString(thirdPartyHeaderString))
+    }
+
+    @Test
+    fun `if third party header is close to entry limit only some sentry headers are added`() {
+        val baggage = Baggage(logger)
+        baggage.set("sentry-one", "value1")
+        baggage.set("sentry-two", "value2")
+        val thirdPartyItems = mutableListOf<String>()
+
+        for (i in 1..63) {
+            val key = 63 + i
+            thirdPartyItems.add("a$key=$i")
+        }
+
+        val thirdPartyHeaderString = thirdPartyItems.joinToString(",")
+        val expectedHeaderString = "$thirdPartyHeaderString,sentry-one=value1"
+        assertEquals(expectedHeaderString, baggage.toHeaderString(thirdPartyHeaderString))
     }
 
     @Test

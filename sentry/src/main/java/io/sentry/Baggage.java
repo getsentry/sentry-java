@@ -4,6 +4,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.SampleRateUtil;
+import io.sentry.util.StringUtils;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -25,6 +26,7 @@ public final class Baggage {
 
   static final @NotNull String CHARSET = "UTF-8";
   static final @NotNull Integer MAX_BAGGAGE_STRING_LENGTH = 8192;
+  static final @NotNull Integer MAX_BAGGAGE_LIST_MEMBER_COUNT = 64;
   static final @NotNull String SENTRY_BAGGAGE_PREFIX = "sentry-";
 
   final @NotNull Map<String, String> keyValues;
@@ -133,9 +135,11 @@ public final class Baggage {
   public @NotNull String toHeaderString(@Nullable String thirdPartyBaggageHeaderString) {
     final StringBuilder sb = new StringBuilder();
     String separator = "";
+    int listMemberCount = 0;
 
     if (thirdPartyBaggageHeaderString != null && !thirdPartyBaggageHeaderString.isEmpty()) {
       sb.append(thirdPartyBaggageHeaderString);
+      listMemberCount = StringUtils.countOf(thirdPartyBaggageHeaderString, ',') + 1;
       separator = ",";
     }
 
@@ -144,30 +148,39 @@ public final class Baggage {
       final @Nullable String value = keyValues.get(key);
 
       if (value != null) {
-        try {
-          final String encodedKey = encode(key);
-          final String encodedValue = encode(value);
-          final String encodedKeyValue = separator + encodedKey + "=" + encodedValue;
-
-          final int valueLength = encodedKeyValue.length();
-          final int totalLengthIfValueAdded = sb.length() + valueLength;
-          if (totalLengthIfValueAdded > MAX_BAGGAGE_STRING_LENGTH) {
-            logger.log(
-                SentryLevel.ERROR,
-                "Not adding baggage value %s as the total header value length would exceed the maximum of %s.",
-                key,
-                MAX_BAGGAGE_STRING_LENGTH);
-          } else {
-            sb.append(encodedKeyValue);
-            separator = ",";
-          }
-        } catch (Throwable e) {
+        if (listMemberCount >= MAX_BAGGAGE_LIST_MEMBER_COUNT) {
           logger.log(
               SentryLevel.ERROR,
-              e,
-              "Unable to encode baggage key value pair (key=%s,value=%s).",
+              "Not adding baggage value %s as the total number of list members would exceed the maximum of %s.",
               key,
-              value);
+              MAX_BAGGAGE_LIST_MEMBER_COUNT);
+        } else {
+          try {
+            final String encodedKey = encode(key);
+            final String encodedValue = encode(value);
+            final String encodedKeyValue = separator + encodedKey + "=" + encodedValue;
+
+            final int valueLength = encodedKeyValue.length();
+            final int totalLengthIfValueAdded = sb.length() + valueLength;
+            if (totalLengthIfValueAdded > MAX_BAGGAGE_STRING_LENGTH) {
+              logger.log(
+                  SentryLevel.ERROR,
+                  "Not adding baggage value %s as the total header value length would exceed the maximum of %s.",
+                  key,
+                  MAX_BAGGAGE_STRING_LENGTH);
+            } else {
+              listMemberCount++;
+              sb.append(encodedKeyValue);
+              separator = ",";
+            }
+          } catch (Throwable e) {
+            logger.log(
+                SentryLevel.ERROR,
+                e,
+                "Unable to encode baggage key value pair (key=%s,value=%s).",
+                key,
+                value);
+          }
         }
       }
     }
