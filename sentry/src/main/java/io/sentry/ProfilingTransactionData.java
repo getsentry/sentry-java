@@ -16,18 +16,22 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
   private @NotNull String name; // transaction name
   private @NotNull Long relativeStartNs; // timestamp in nanoseconds this transaction started
   private @Nullable Long relativeEndNs; // timestamp in nanoseconds this transaction ended
+  private @NotNull Long relativeStartCpuMs; // cpu time in milliseconds this transaction started
+  private @Nullable Long relativeEndCpuMs; // cpu time in milliseconds this transaction ended
 
   private @Nullable Map<String, Object> unknown;
 
   public ProfilingTransactionData() {
-    this(NoOpTransaction.getInstance(), 0L);
+    this(NoOpTransaction.getInstance(), 0L, 0L);
   }
 
-  public ProfilingTransactionData(@NotNull ITransaction transaction, @NotNull Long startNs) {
+  public ProfilingTransactionData(
+      @NotNull ITransaction transaction, @NotNull Long startNs, @NotNull Long startCpuMs) {
     this.id = transaction.getEventId().toString();
     this.traceId = transaction.getSpanContext().getTraceId().toString();
     this.name = transaction.getName();
     this.relativeStartNs = startNs;
+    this.relativeStartCpuMs = startCpuMs;
   }
 
   /**
@@ -38,10 +42,16 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
    * @param profileStartNs The timestamp the profile started, so that timestamps can be converted in
    *     times relative to the profile start timestamp.
    */
-  public void notifyFinish(@NotNull Long endNs, @NotNull Long profileStartNs) {
+  public void notifyFinish(
+      @NotNull Long endNs,
+      @NotNull Long profileStartNs,
+      @NotNull Long endCpuMs,
+      @NotNull Long profileStartCpuMs) {
     if (this.relativeEndNs == null) {
       this.relativeEndNs = endNs - profileStartNs;
       this.relativeStartNs = relativeStartNs - profileStartNs;
+      this.relativeEndCpuMs = endCpuMs - profileStartCpuMs;
+      this.relativeStartCpuMs = relativeStartCpuMs - profileStartCpuMs;
     }
   }
 
@@ -63,6 +73,14 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
 
   public @Nullable Long getRelativeEndNs() {
     return relativeEndNs;
+  }
+
+  public @Nullable Long getRelativeEndCpuMs() {
+    return relativeEndCpuMs;
+  }
+
+  public @NotNull Long getRelativeStartCpuMs() {
+    return relativeStartCpuMs;
   }
 
   public void setId(@NotNull String id) {
@@ -94,13 +112,23 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
         && traceId.equals(that.traceId)
         && name.equals(that.name)
         && relativeStartNs.equals(that.relativeStartNs)
+        && relativeStartCpuMs.equals(that.relativeStartCpuMs)
+        && Objects.equals(relativeEndCpuMs, that.relativeEndCpuMs)
         && Objects.equals(relativeEndNs, that.relativeEndNs)
         && Objects.equals(unknown, that.unknown);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, traceId, name, relativeStartNs, relativeEndNs, unknown);
+    return Objects.hash(
+        id,
+        traceId,
+        name,
+        relativeStartNs,
+        relativeEndNs,
+        relativeStartCpuMs,
+        relativeEndCpuMs,
+        unknown);
   }
 
   // JsonSerializable
@@ -110,7 +138,9 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
     public static final String TRACE_ID = "trace_id";
     public static final String NAME = "name";
     public static final String START_NS = "relative_start_ns";
-    public static final String END_ND = "relative_end_ns";
+    public static final String END_NS = "relative_end_ns";
+    public static final String START_CPU_MS = "relative_cpu_start_ms";
+    public static final String END_CPU_MS = "relative_cpu_end_ms";
   }
 
   @Override
@@ -121,7 +151,9 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
     writer.name(JsonKeys.TRACE_ID).value(logger, traceId);
     writer.name(JsonKeys.NAME).value(logger, name);
     writer.name(JsonKeys.START_NS).value(logger, relativeStartNs);
-    writer.name(JsonKeys.END_ND).value(logger, relativeEndNs);
+    writer.name(JsonKeys.END_NS).value(logger, relativeEndNs);
+    writer.name(JsonKeys.START_CPU_MS).value(logger, relativeStartCpuMs);
+    writer.name(JsonKeys.END_CPU_MS).value(logger, relativeEndCpuMs);
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -179,10 +211,22 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
               data.relativeStartNs = startNs;
             }
             break;
-          case JsonKeys.END_ND:
+          case JsonKeys.END_NS:
             Long endNs = reader.nextLongOrNull();
             if (endNs != null) {
               data.relativeEndNs = endNs;
+            }
+            break;
+          case JsonKeys.START_CPU_MS:
+            Long startCpuMs = reader.nextLongOrNull();
+            if (startCpuMs != null) {
+              data.relativeStartCpuMs = startCpuMs;
+            }
+            break;
+          case JsonKeys.END_CPU_MS:
+            Long endCpuMs = reader.nextLongOrNull();
+            if (endCpuMs != null) {
+              data.relativeEndCpuMs = endCpuMs;
             }
             break;
           default:
