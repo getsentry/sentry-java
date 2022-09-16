@@ -27,7 +27,6 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 final class AndroidTransactionProfiler implements ITransactionProfiler {
 
@@ -292,7 +291,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         versionName,
         versionCode,
         options.getEnvironment(),
-        );
+        isTimeout
+            ? ProfilingTraceData.TRUNCATION_REASON_TIMEOUT
+            : ProfilingTraceData.TRUNCATION_REASON_NORMAL);
   }
 
   /**
@@ -314,10 +315,5 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       options.getLogger().log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
       return null;
     }
-  }
-
-  @TestOnly
-  void setTimedOutProfilingData(@Nullable ProfilingTraceData data) {
-    this.timedOutProfilingData = data;
   }
 }

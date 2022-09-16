@@ -22,12 +22,11 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
    * SentryOptions} do not have the environment field set.
    */
   private static final String DEFAULT_ENVIRONMENT = "production";
-  @ApiStatus.Internal
-  public static final String TRUNCATION_REASON_NORMAL = "normal";
-  @ApiStatus.Internal
-  public static final String TRUNCATION_REASON_TIMEOUT = "timeout";
-  @ApiStatus.Internal
-  public static final String TRUNCATION_REASON_BACKGROUNDED = "backgrounded";
+
+  @ApiStatus.Internal public static final String TRUNCATION_REASON_NORMAL = "normal";
+  @ApiStatus.Internal public static final String TRUNCATION_REASON_TIMEOUT = "timeout";
+  // Backgrounded reason is not used, yet, but it's one of the possible values
+  @ApiStatus.Internal public static final String TRUNCATION_REASON_BACKGROUNDED = "backgrounded";
 
   private @NotNull File traceFile;
   private @Nullable Callable<List<Integer>> deviceCpuFrequenciesReader;
@@ -91,7 +90,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
         null,
         null,
         null,
-      TRUNCATION_REASON_NORMAL);
+        TRUNCATION_REASON_NORMAL);
   }
 
   public ProfilingTraceData(
@@ -151,9 +150,9 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   }
 
   private boolean isTruncationReasonValid() {
-    return truncationReason.equals(TRUNCATION_REASON_NORMAL) ||
-      truncationReason.equals(TRUNCATION_REASON_TIMEOUT) ||
-      truncationReason.equals(TRUNCATION_REASON_BACKGROUNDED);
+    return truncationReason.equals(TRUNCATION_REASON_NORMAL)
+        || truncationReason.equals(TRUNCATION_REASON_TIMEOUT)
+        || truncationReason.equals(TRUNCATION_REASON_BACKGROUNDED);
   }
 
   private @Nullable Map<String, Object> unknown;
