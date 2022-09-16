@@ -85,8 +85,8 @@ class EnvelopeTests : BaseUiTest() {
         relayIdlingResource.increment()
 
         val transaction = Sentry.startTransaction("e2etests", "test1")
-        val transaction2 = Sentry.startTransaction("e2etests", "test2")
-        val transaction3 = Sentry.startTransaction("e2etests", "test3")
+        val transaction2 = Sentry.startTransaction("e2etests1", "test2")
+        val transaction3 = Sentry.startTransaction("e2etests2", "test3")
         transaction.finish()
         transaction2.finish()
         transaction3.finish()
@@ -109,7 +109,7 @@ class EnvelopeTests : BaseUiTest() {
                 it.assertNoOtherItems()
                 assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
                 assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
-                assertTrue(profilingTraceData.transactionName == "e2etests")
+                assertTrue(profilingTraceData.transactionName == "e2etests2")
                 assertTrue(profilingTraceData.truncationReason == "normal")
 
                 // The transaction list is not ordered, since it's stored using a map to be able to quickly check the
