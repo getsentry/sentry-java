@@ -298,7 +298,7 @@ public class SentryOptions {
    * Controls if the `baggage` header is attached to HTTP client integrations and if the `trace`
    * header is attached to envelopes.
    */
-  private boolean traceSampling = false;
+  private boolean traceSampling = true;
 
   /**
    * Configures the profiles sample rate as a percentage of sampled transactions to be sent in the
@@ -323,7 +323,7 @@ public class SentryOptions {
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
-  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+  private final @NotNull List<String> tracePropagationTargets = new CopyOnWriteArrayList<>();
 
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
@@ -1461,9 +1461,11 @@ public class SentryOptions {
    *
    * <p>Note: this is an experimental API and will be removed without notice.
    *
+   * @deprecated please use {{@link SentryOptions#addTracePropagationTarget(String)}} instead
    * @param traceSampling - if trace sampling should be enabled
    */
   @ApiStatus.Experimental
+  @Deprecated
   public void setTraceSampling(boolean traceSampling) {
     this.traceSampling = traceSampling;
   }
@@ -1588,19 +1590,41 @@ public class SentryOptions {
   /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
+   * @deprecated use {{@link SentryOptions#getTracePropagationTargets()} }
    * @return the list of origins
    */
+  @Deprecated
   public @NotNull List<String> getTracingOrigins() {
-    return tracingOrigins;
+    return tracePropagationTargets;
   }
 
   /**
    * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
    *
+   * @deprecated use {{@link SentryOptions#addTracePropagationTarget(String)} }
    * @param tracingOrigin - the tracing origin
    */
+  @Deprecated
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.tracingOrigins.add(tracingOrigin);
+    this.tracePropagationTargets.add(tracingOrigin);
+  }
+
+  /**
+   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @return the list of targets
+   */
+  public @NotNull List<String> getTracePropagationTargets() {
+    return tracePropagationTargets;
+  }
+
+  /**
+   * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @param tracePropagationTarget - the tracing target
+   */
+  public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {
+    this.tracePropagationTargets.add(tracePropagationTarget);
   }
 
   /**
@@ -1854,9 +1878,10 @@ public class SentryOptions {
         new HashSet<>(options.getIgnoredExceptionsForType())) {
       addIgnoredExceptionForType(exceptionType);
     }
-    final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
-    for (final String tracingOrigin : tracingOrigins) {
-      addTracingOrigin(tracingOrigin);
+    final List<String> tracePropagationTargets =
+        new ArrayList<>(options.getTracePropagationTargets());
+    for (final String tracePropagationTarget : tracePropagationTargets) {
+      addTracePropagationTarget(tracePropagationTarget);
     }
     final List<String> contextTags = new ArrayList<>(options.getContextTags());
     for (final String contextTag : contextTags) {

@@ -716,7 +716,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertFalse(fixture.options.isTraceSampling)
+        assertTrue(fixture.options.isTraceSampling)
     }
 
     @Test
@@ -786,20 +786,20 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads tracingOrigins to options`() {
+    fun `applyMetadata reads tracePropagationTargets to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """localhost,^(http|https)://api\..*$""")
+        val bundle = bundleOf(ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to """localhost,^(http|https)://api\..*$""")
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracingOrigins)
+        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracePropagationTargets)
     }
 
     @Test
-    fun `applyMetadata reads tracingOrigins to options and keeps default`() {
+    fun `applyMetadata reads tracePropagationTargets to options and keeps default`() {
         // Arrange
         val context = fixture.getContext()
 
@@ -807,7 +807,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(fixture.options.tracingOrigins.isEmpty())
+        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
     }
 
     @Test

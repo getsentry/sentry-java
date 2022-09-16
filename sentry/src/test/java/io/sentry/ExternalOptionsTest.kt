@@ -147,8 +147,8 @@ class ExternalOptionsTest {
 
     @Test
     fun `creates options with tracing origins using external properties`() {
-        withPropertiesFile("""tracing-origins=localhost,^(http|https)://api\\..*$""") {
-            assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracingOrigins)
+        withPropertiesFile("""trace-propagation-targets=localhost,^(http|https)://api\\..*$""") {
+            assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracePropagationTargets)
         }
     }
 

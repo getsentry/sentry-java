@@ -49,6 +49,9 @@ final class Dsn {
 
   Dsn(@Nullable String dsn) throws IllegalArgumentException {
     try {
+      if (dsn == null) {
+        throw new IllegalArgumentException("Invalid DSN: Cannot be null.");
+      }
       URI uri = new URI(dsn).normalize();
       String userInfo = uri.getUserInfo();
       if (userInfo == null || userInfo.isEmpty()) {

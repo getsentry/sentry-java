@@ -32,7 +32,7 @@ public final class ExternalOptions {
   private @Nullable SentryOptions.Proxy proxy;
   private final @NotNull List<String> inAppExcludes = new CopyOnWriteArrayList<>();
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
-  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+  private final @NotNull List<String> tracePropagationTargets = new CopyOnWriteArrayList<>();
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
   private @Nullable Long idleTimeout;
@@ -84,8 +84,16 @@ public final class ExternalOptions {
     for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
       options.addInAppExclude(inAppExclude);
     }
-    for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
-      options.addTracingOrigin(tracingOrigin);
+
+    List<String> tracePropagationTargets = propertiesProvider.getList("trace-propagation-targets");
+
+    // TODO: Remove once tracing-origins has been removed
+    if (tracePropagationTargets.isEmpty()) {
+      tracePropagationTargets = propertiesProvider.getList("tracing-origins");
+    }
+
+    for (final String tracePropagationTarget : tracePropagationTargets) {
+      options.addTracePropagationTarget(tracePropagationTarget);
     }
     for (final String contextTag : propertiesProvider.getList("context-tags")) {
       options.addContextTag(contextTag);
@@ -166,8 +174,13 @@ public final class ExternalOptions {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
+  @Deprecated
   public @NotNull List<String> getTracingOrigins() {
-    return tracingOrigins;
+    return tracePropagationTargets;
+  }
+
+  public @NotNull List<String> getTracePropagationTargets() {
+    return tracePropagationTargets;
   }
 
   public @Nullable Boolean getDebug() {
@@ -254,8 +267,13 @@ public final class ExternalOptions {
     inAppExcludes.add(exclude);
   }
 
+  @Deprecated
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.tracingOrigins.add(tracingOrigin);
+    this.tracePropagationTargets.add(tracingOrigin);
+  }
+
+  public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {
+    this.tracePropagationTargets.add(tracePropagationTarget);
   }
 
   public void addContextTag(final @NotNull String contextTag) {

@@ -55,7 +55,7 @@ public final class SentryFeignClient implements Client {
 
       final RequestWrapper requestWrapper = new RequestWrapper(request);
 
-      if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), url)) {
+      if (TracingOrigins.contain(hub.getOptions().getTracePropagationTargets(), url)) {
         final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
         final @Nullable Collection<String> requestBaggageHeader =
             request.headers().get(BaggageHeader.BAGGAGE_HEADER);
