@@ -3,12 +3,12 @@ plugins {
 }
 
 android {
-    compileSdk = 32
+    compileSdk = Config.Android.compileSdkVersion
 
     defaultConfig {
         applicationId = "io.sentry.java.tests.perf.appplain"
-        minSdk = 21
-        targetSdk = 32
+        minSdk = Config.Android.minSdkVersionNdk
+        targetSdk = Config.Android.targetSdkVersion
         versionCode = 1
         versionName = "1.0"
     }
