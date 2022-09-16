@@ -44,14 +44,12 @@ class AndroidTransactionProfilerTest {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
         val mockLogger = mock<ILogger>()
-        val options = spy(
-            SentryAndroidOptions().apply {
-                dsn = mockDsn
-                profilesSampleRate = 1.0
-                isDebug = true
-                setLogger(mockLogger)
-            }
-        )
+        val options = spy(SentryAndroidOptions()).apply {
+            dsn = mockDsn
+            profilesSampleRate = 1.0
+            isDebug = true
+            setLogger(mockLogger)
+        }
         val transaction1 = SentryTracer(TransactionContext("", ""), mock())
         val transaction2 = SentryTracer(TransactionContext("", ""), mock())
         val transaction3 = SentryTracer(TransactionContext("", ""), mock())
