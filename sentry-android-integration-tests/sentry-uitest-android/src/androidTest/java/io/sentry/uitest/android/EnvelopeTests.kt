@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -83,6 +83,7 @@ class EnvelopeTests : BaseUiTest() {
         relayIdlingResource.increment()
         relayIdlingResource.increment()
         relayIdlingResource.increment()
+
         val transaction = Sentry.startTransaction("e2etests", "test1")
         val transaction2 = Sentry.startTransaction("e2etests", "test2")
         val transaction3 = Sentry.startTransaction("e2etests", "test3")
@@ -111,20 +112,33 @@ class EnvelopeTests : BaseUiTest() {
                 assertTrue(profilingTraceData.transactionName == "e2etests")
                 assertTrue(profilingTraceData.truncationReason == "normal")
 
-                // Transaction timestamps should be all different from each other
-                val transactions = profilingTraceData.transactions
+                // The transaction list is not ordered, since it's stored using a map to be able to quickly check the
+                // existence of a certain id. So we order the list to make more meaningful checks on timestamps.
+                val transactions = profilingTraceData.transactions.sortedBy { it.relativeStartNs }
                 assertContains(transactions.map { t -> t.id }, transactionItem.eventId.toString())
+                assertEquals(transactions.last().id, transactionItem.eventId.toString())
                 val startTimes = transactions.map { t -> t.relativeStartNs }
                 val endTimes = transactions.mapNotNull { t -> t.relativeEndNs }
-                assertNotEquals(startTimes[0], startTimes[1])
-                assertNotEquals(startTimes[0], startTimes[2])
-                assertNotEquals(startTimes[1], startTimes[2])
-                assertNotEquals(endTimes[0], endTimes[1])
-                assertNotEquals(endTimes[0], endTimes[2])
-                assertNotEquals(endTimes[1], endTimes[2])
+                val startCpuTimes = transactions.map { t -> t.relativeStartCpuMs }
+                val endCpuTimes = transactions.mapNotNull { t -> t.relativeEndCpuMs }
+
+                // Transaction timestamps should be all different from each other
+                assertTrue(startTimes[0] < startTimes[1])
+                assertTrue(startTimes[1] < startTimes[2])
+                assertTrue(endTimes[0] < endTimes[1])
+                assertTrue(endTimes[1] < endTimes[2])
+
+                // The cpu timestamps use milliseconds precision, so few of them could have the same timestamps
+                // However, it's basically impossible that all of them have the same timestamps
+                assertFalse(startCpuTimes[0] == startCpuTimes[1] && startCpuTimes[1] == startCpuTimes[2])
+                assertTrue(startCpuTimes[0] <= startCpuTimes[1])
+                assertTrue(startCpuTimes[1] <= startCpuTimes[2])
+                assertFalse(endCpuTimes[0] == endCpuTimes[1] && endCpuTimes[1] == endCpuTimes[2])
+                assertTrue(endCpuTimes[0] <= endCpuTimes[1])
+                assertTrue(endCpuTimes[1] <= endCpuTimes[2])
 
                 // The first and last transactions should be aligned to the start/stop of profile
-                assertEquals(endTimes.maxOrNull()!! - startTimes.minOrNull()!!, profilingTraceData.durationNs.toLong())
+                assertEquals(endTimes.last() - startTimes.first(), profilingTraceData.durationNs.toLong())
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
