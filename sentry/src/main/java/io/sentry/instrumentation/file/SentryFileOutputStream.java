@@ -5,6 +5,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -59,7 +60,7 @@ public final class SentryFileOutputStream extends FileOutputStream {
 
   private SentryFileOutputStream(final @NotNull FileOutputStreamInitData data)
       throws FileNotFoundException {
-    super(data.file, data.append);
+    super(getFileDescriptor(data.delegate));
     spanManager = new FileIOSpanManager(data.span, data.file, data.isSendDefaultPii);
     delegate = data.delegate;
   }
@@ -118,6 +119,14 @@ public final class SentryFileOutputStream extends FileOutputStream {
   @Override
   public void close() throws IOException {
     spanManager.finish(delegate);
+  }
+
+  private static FileDescriptor getFileDescriptor(FileOutputStream stream) throws FileNotFoundException {
+    try {
+      return stream.getFD();
+    } catch (IOException error) {
+      throw new FileNotFoundException("No file descriptor");
+    }
   }
 
   public static final class Factory {
