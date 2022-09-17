@@ -1,4 +1,4 @@
-name: "Integration Tests - Benchmarks"
+name: 'Integration Tests - Benchmarks'
 on:
   schedule:
     - cron: '0 0 * * *' # every night at midnight UTC
@@ -8,7 +8,7 @@ on:
       - '**/sentry-android/**'
       - '**/sentry-android-core/**'
       - '**/sentry-android-ndk/**'
-      - '**/sentry-android-integration-tests/sentry-uitest-android-benchmark/**'
+      - '**/sentry-android-integration-tests/**'
       - '**/.github/**'
 
 jobs:
@@ -20,11 +20,11 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      - name: "Set up Java: 11"
+      - name: 'Set up Java: 11'
         uses: actions/setup-java@v2
         with:
-          java-version: "11"
-          distribution: "adopt"
+          java-version: '11'
+          distribution: 'adopt'
 
       # Clean, build and release a test apk
       - name: Make assembleBenchmarks
@@ -50,3 +50,35 @@ jobs:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-benchmark-lite.yml
+
+  app-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v2
+
+      - name: 'Set up Java: 11'
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      - uses: actions/cache@v3
+        id: app-plain-cache
+        with:
+          path: sentry-android-integration-tests/test-app-plain/build/outputs/apk/release/test-app-plain-release.apk
+          key: ${{ github.workflow }}-${{ github.job }}-appplain-${{ hashFiles('sentry-android-integration-tests/test-app-plain/**') }}
+
+      - name: Build Android app plain
+        if: steps.app-plain-cache.outputs['cache-hit'] != 'true'
+        run: ./gradlew :sentry-android-integration-tests:test-app-plain:assembleRelease
+
+      - name: Build Android app with Sentry
+        run: ./gradlew :sentry-android-integration-tests:test-app-sentry:assembleRelease
+
+      - name: Collect app metrics
+        uses: getsentry/action-app-sdk-overhead-metrics@v1
+        with:
+          config: sentry-android-integration-tests/metrics-test.yml
+          sauce-user: ${{ secrets.SAUCE_USERNAME }}
+          sauce-key: ${{ secrets.SAUCE_ACCESS_KEY }}
