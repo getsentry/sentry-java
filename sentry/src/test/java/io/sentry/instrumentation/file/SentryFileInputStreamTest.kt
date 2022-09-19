@@ -16,6 +16,7 @@ import java.io.FileInputStream
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class SentryFileInputStreamTest {
 
@@ -96,6 +97,13 @@ class SentryFileInputStreamTest {
         assertEquals(fileIOSpan.throwable, null)
         assertEquals(fileIOSpan.isFinished, true)
         assertEquals(fileIOSpan.status, SpanStatus.OK)
+    }
+
+    @Test
+    fun `when stream is closed, releases file descriptor`() {
+        val fis = fixture.getSut(tmpFile)
+        fis.use { it.readAllBytes() }
+        assertFalse(fis.fd.valid())
     }
 
     @Test
