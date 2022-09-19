@@ -28,7 +28,15 @@
     {
         "386384cb-1162-49e7-aea1-db913d4fca63":
         {
-            "value": 0.30000001192092896
+            "value": 0.30000001192092896,
+            "unit": "test",
+            "new_type": "newtype"
+        },
+        "186384cb-1162-49e7-aea1-db913d4fca63":
+        {
+            "value": 0.4000000059604645,
+            "unit": "test2",
+            "new_type": "newtype"
         }
     },
     "transaction_info": {
