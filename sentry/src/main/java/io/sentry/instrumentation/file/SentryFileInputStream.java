@@ -114,7 +114,7 @@ public final class SentryFileInputStream extends FileInputStream {
     spanManager.finish(delegate);
   }
 
-  private static FileDescriptor getFileDescriptor(FileInputStream stream)
+  private static FileDescriptor getFileDescriptor(final @NotNull FileInputStream stream)
       throws FileNotFoundException {
     try {
       return stream.getFD();
