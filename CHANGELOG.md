@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.4.2
 
 ### Fixes
 
