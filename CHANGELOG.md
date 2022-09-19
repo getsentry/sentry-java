@@ -11,6 +11,7 @@
 
 ### Features
 
+- Concurrent profiling 3 - added truncation reason ([#2247](https://github.com/getsentry/sentry-java/pull/2247))
 - Concurrent profiling 2 - added list of transactions ([#2218](https://github.com/getsentry/sentry-java/pull/2218))
 - Concurrent profiling 1 - added envelope payload data format ([#2216](https://github.com/getsentry/sentry-java/pull/2216))
 - Send source for transactions ([#2180](https://github.com/getsentry/sentry-java/pull/2180))

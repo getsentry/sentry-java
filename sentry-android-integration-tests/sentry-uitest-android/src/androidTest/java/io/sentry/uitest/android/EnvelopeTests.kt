@@ -110,6 +110,7 @@ class EnvelopeTests : BaseUiTest() {
                 assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
                 assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
                 assertTrue(profilingTraceData.transactionName == "e2etests2")
+                assertTrue(profilingTraceData.truncationReason == "normal")
 
                 // The transaction list is not ordered, since it's stored using a map to be able to quickly check the
                 // existence of a certain id. So we order the list to make more meaningful checks on timestamps.
