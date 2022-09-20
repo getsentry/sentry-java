@@ -14,6 +14,10 @@ espresso:
   testApp: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
 suites:
 
+  - name: "Android 13 Ui test (api 33)"
+    devices:
+      - id: Google_Pixel_5_13_real_us # Google Pixel 5 - api 33 (13)
+
   - name: "Android 12 Ui test (api 31)"
     devices:
       - id: Samsung_Galaxy_S22_Ultra_5G_real_us # Samsung Galaxy S22 Ultra 5G - api 31 (12)
