@@ -47,7 +47,7 @@ public final class MeasurementBackgroundWorker implements Runnable {
               "Not running MeasurementBackgroundWorker as the previous run has not finished yet.");
       return;
     }
-    options.getLogger().log(SentryLevel.DEBUG, "Running MeasurementBackgroundWorker.");
+    //    options.getLogger().log(SentryLevel.DEBUG, "Running MeasurementBackgroundWorker.");
 
     isRunning.set(true);
 

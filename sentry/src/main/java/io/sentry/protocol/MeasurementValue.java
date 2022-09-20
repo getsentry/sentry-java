@@ -20,6 +20,10 @@ public final class MeasurementValue implements JsonUnknown, JsonSerializable {
 
   public static final @NotNull String NONE_UNIT = "none";
   public static final @NotNull String MILLISECOND_UNIT = "millisecond";
+  public static final @NotNull String NANOSECOND_UNIT = "nanosecond";
+  public static final @NotNull String BYTE_UNIT = "byte";
+  public static final @NotNull String RATIO_UNIT = "ratio";
+  public static final @NotNull String PERCENT_UNIT = "percent";
 
   @SuppressWarnings("UnusedVariable")
   private final float value;

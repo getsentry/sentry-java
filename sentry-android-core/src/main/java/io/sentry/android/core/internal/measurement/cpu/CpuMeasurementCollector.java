@@ -62,13 +62,18 @@ public final class CpuMeasurementCollector extends BackgroundAwareMeasurementCol
       // TODO SystemClock.elapsedRealtimeNanos() + Process.getElapsedCpuTime() take 9 - 15 μs
       Long diffRealtimeNanos = SystemClock.elapsedRealtimeNanos() - startRealtimeNanos;
       Long diffElapsedTimeMs = Process.getElapsedCpuTime() - startElapsedTimeMs;
-      results.put("cpu_realtime_diff_ns", new MeasurementValue(diffRealtimeNanos));
-      results.put("cpu_elapsed_time_diff_ms", new MeasurementValue(diffElapsedTimeMs));
+      results.put(
+          "cpu_realtime_diff_ns",
+          new MeasurementValue(diffRealtimeNanos, MeasurementValue.NANOSECOND_UNIT));
+      results.put(
+          "cpu_elapsed_time_diff_ms",
+          new MeasurementValue(diffElapsedTimeMs, MeasurementValue.MILLISECOND_UNIT));
       Double ratio =
           diffElapsedTimeMs.doubleValue()
               * TimeUnit.MILLISECONDS.toNanos(1)
               / diffRealtimeNanos.doubleValue();
-      results.put("cpu_time_ratio", new MeasurementValue(ratio.floatValue()));
+      results.put(
+          "cpu_time_ratio", new MeasurementValue(ratio.floatValue(), MeasurementValue.RATIO_UNIT));
     }
 
     List<Object> values =
@@ -85,31 +90,44 @@ public final class CpuMeasurementCollector extends BackgroundAwareMeasurementCol
       CpuBackgroundMeasurementCollector.CpuReading cpuReadingAtEnd =
           (CpuBackgroundMeasurementCollector.CpuReading) values.get(values.size() - 1);
       long ticksDelta = cpuReadingAtEnd.getTicks() - cpuReadingAtStart.getTicks();
+      // TODO 0.1 - 5ms
+      Integer cpuCores = cpuReadingAtStart.getCpuCores();
+      if (cpuCores != null) {
+        results.put(
+            "cpu_cores_file_system", new MeasurementValue(cpuCores, MeasurementValue.NONE_UNIT));
+      }
 
-      results.put("cpu_ticks", new MeasurementValue(ticksDelta));
+      results.put("cpu_ticks", new MeasurementValue(ticksDelta, MeasurementValue.NONE_UNIT));
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         long numberOfCores = Os.sysconf(OsConstants._SC_NPROCESSORS_CONF);
-        results.put("cpu_cores", new MeasurementValue(numberOfCores));
+        results.put("cpu_cores", new MeasurementValue(numberOfCores, MeasurementValue.NONE_UNIT));
 
         // TODO 6 - 9 μs
         long clockTickHz = Os.sysconf(OsConstants._SC_CLK_TCK);
         options.getLogger().log(SentryLevel.WARNING, "hz = %d", clockTickHz);
         Double cpuTimeSeconds = Double.valueOf(ticksDelta) / Double.valueOf(clockTickHz);
         float cpuTimeMs = Double.valueOf(cpuTimeSeconds * 1000.0).floatValue();
-        results.put("cpu_time_ms", new MeasurementValue(cpuTimeMs));
+        results.put(
+            "cpu_time_ms", new MeasurementValue(cpuTimeMs, MeasurementValue.MILLISECOND_UNIT));
 
         @Nullable Double transactionDuration = context.getDuration();
         if (transactionDuration != null) {
           results.put(
               "transaction_duration_ms",
-              new MeasurementValue(Double.valueOf(transactionDuration * 1000.0).floatValue()));
+              new MeasurementValue(
+                  Double.valueOf(transactionDuration * 1000.0).floatValue(),
+                  MeasurementValue.MILLISECOND_UNIT));
           Double factor = cpuTimeSeconds / transactionDuration;
           // TODO name
-          results.put("cpu_busy_factor", new MeasurementValue(factor.floatValue()));
+          results.put(
+              "cpu_busy_factor",
+              new MeasurementValue(factor.floatValue(), MeasurementValue.RATIO_UNIT));
 
           Double altFactor = Double.valueOf(ticksDelta) / transactionDuration;
-          results.put("cpu_busy_factor_alt", new MeasurementValue(altFactor.floatValue()));
+          results.put(
+              "cpu_busy_factor_alt",
+              new MeasurementValue(altFactor.floatValue(), MeasurementValue.RATIO_UNIT));
         }
       }
     } else {

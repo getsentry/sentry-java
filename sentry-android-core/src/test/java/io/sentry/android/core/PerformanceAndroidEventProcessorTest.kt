@@ -10,12 +10,10 @@ import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.protocol.MeasurementValue
-import io.sentry.protocol.MeasurementValue.MILLISECOND_UNIT
 import io.sentry.protocol.SentryTransaction
 import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PerformanceAndroidEventProcessorTest {

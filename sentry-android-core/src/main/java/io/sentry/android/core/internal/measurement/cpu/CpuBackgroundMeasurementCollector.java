@@ -1,6 +1,9 @@
 package io.sentry.android.core.internal.measurement.cpu;
 
 import android.annotation.SuppressLint;
+import android.os.SystemClock;
+import android.system.Os;
+import android.system.OsConstants;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
@@ -32,12 +35,30 @@ public final class CpuBackgroundMeasurementCollector implements MeasurementBackg
       // TODO 1-5 ms
       String stat = readProcSelfStat();
       Long clockTicks = parseClockTicks(stat);
-
+      // TODO pull out to cache or even easier re-use?
+      //      @Nullable Boolean isEmulator = new
+      // BuildInfoProvider(options.getLogger()).isEmulator();
+      //      if (isEmulator != null && isEmulator == true) {
+      //        options.getLogger().log(SentryLevel.DEBUG, "Not collecting CPU frequencies as
+      // thisi devicie seems to be a simulator.");
+      //        return new CpuReading(clockTicks, new ArrayList<>(), new ArrayList<>(), -1);
+      //      } else {
       // TODO 2-4 ms on first read, then cached 4 - 20 μs
       List<Integer> maxFrequencies = CpuInfoUtils.getInstance().readMaxFrequencies();
       // TODO 0.5 - 6ms
       List<Integer> currentFrequencies = CpuInfoUtils.getInstance().readCurrentFrequencies();
-      return new CpuReading(clockTicks, maxFrequencies, currentFrequencies);
+      Long start = SystemClock.elapsedRealtimeNanos();
+      Integer numberOfCores = CpuInfoUtils.getInstance().readNumberOfCores();
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Readig number of cores took %,d ns and returned %d vs %d",
+              SystemClock.elapsedRealtimeNanos() - start,
+              numberOfCores,
+              Os.sysconf(OsConstants._SC_NPROCESSORS_CONF));
+      return new CpuReading(clockTicks, maxFrequencies, currentFrequencies, numberOfCores);
+      //      }
     } catch (IOException e) {
       options
           .getLogger()
@@ -85,14 +106,17 @@ public final class CpuBackgroundMeasurementCollector implements MeasurementBackg
     private final @Nullable Long ticks;
     private final @NotNull List<Integer> maxFrequencies;
     private final @NotNull List<Integer> currentFrequencies;
+    private final @Nullable Integer cpuCores;
 
     public CpuReading(
         @Nullable Long ticks,
         @NotNull List<Integer> maxFrequencies,
-        @NotNull List<Integer> currentFrequencies) {
+        @NotNull List<Integer> currentFrequencies,
+        @Nullable Integer cpuCores) {
       this.ticks = ticks;
       this.maxFrequencies = maxFrequencies;
       this.currentFrequencies = currentFrequencies;
+      this.cpuCores = cpuCores;
     }
 
     public @NotNull List<Integer> getMaxFrequencies() {
@@ -105,6 +129,10 @@ public final class CpuBackgroundMeasurementCollector implements MeasurementBackg
 
     public @Nullable Long getTicks() {
       return ticks;
+    }
+
+    public @Nullable Integer getCpuCores() {
+      return cpuCores;
     }
   }
 }

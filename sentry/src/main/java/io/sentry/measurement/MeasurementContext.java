@@ -10,8 +10,8 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class MeasurementContext {
 
-  final @NotNull Date startTimestamp;
-  final @Nullable Double endTimestamp;
+  private final @NotNull Date startTimestamp;
+  private final @Nullable Double endTimestamp;
 
   public MeasurementContext(@NotNull SentryTracer tracer) {
     startTimestamp = tracer.getStartTimestamp();

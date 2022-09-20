@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -93,6 +94,21 @@ public final class CpuInfoUtils {
       cpuCurrentFrequenciesMhz.add((int) (khz / 1000));
     }
     return cpuCurrentFrequenciesMhz;
+  }
+
+  public @Nullable Integer readNumberOfCores() {
+    File[] cpuDirs = new File(getSystemCpuPath()).listFiles();
+    if (cpuDirs == null) {
+      return null;
+    }
+
+    @NotNull Integer numberOfCores = 0;
+
+    for (File cpuDir : cpuDirs) {
+      if (!cpuDir.getName().matches("cpu[0-9]+")) continue;
+      numberOfCores += 1;
+    }
+    return numberOfCores;
   }
 
   @VisibleForTesting

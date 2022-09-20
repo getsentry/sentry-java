@@ -53,12 +53,14 @@ public final class BatteryLevelMeasurementCollector extends BackgroundAwareMeasu
       float batteryLevelAtStart = (float) batteryLevels.get(0);
       float batteryLevelAtEnd = (float) batteryLevels.get(batteryLevels.size() - 1);
       float batteryLevelDelta = batteryLevelAtEnd - batteryLevelAtStart;
-      results.put("battery_drain", new MeasurementValue(batteryLevelDelta));
+      results.put(
+          "battery_drain", new MeasurementValue(batteryLevelDelta, MeasurementValue.NONE_UNIT));
       @Nullable Double transactionDuration = context.getDuration();
       if (transactionDuration != null) {
         @NotNull Double batteryDrainPerSecond = batteryLevelDelta / transactionDuration;
         results.put(
-            "battery_drain_per_second", new MeasurementValue(batteryDrainPerSecond.floatValue()));
+            "battery_drain_per_second",
+            new MeasurementValue(batteryDrainPerSecond.floatValue(), MeasurementValue.NONE_UNIT));
       }
     } else {
       options

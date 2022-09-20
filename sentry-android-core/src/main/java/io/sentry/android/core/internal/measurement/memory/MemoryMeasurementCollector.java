@@ -57,14 +57,14 @@ public final class MemoryMeasurementCollector extends BackgroundAwareMeasurement
       // TODO 7 - 18 μs
       String bytesAllocatedString = Debug.getRuntimeStat("art.gc.bytes-allocated");
       Long value = Long.valueOf(bytesAllocatedString);
-      results.put("mem_bytes_allocated", new MeasurementValue(value));
+      results.put("mem_bytes_allocated", new MeasurementValue(value, MeasurementValue.BYTE_UNIT));
 
       Double transactionDuration = context.getDuration();
       if (transactionDuration != null) {
         Double bytesAllocatedPerSecond = value.doubleValue() / transactionDuration;
         results.put(
             "mem_bytes_allocated_per_second",
-            new MeasurementValue(bytesAllocatedPerSecond.floatValue()));
+            new MeasurementValue(bytesAllocatedPerSecond.floatValue(), MeasurementValue.BYTE_UNIT));
       }
     }
 
