@@ -77,7 +77,7 @@ jobs:
         run: ./gradlew :sentry-android-integration-tests:test-app-sentry:assembleRelease
 
       - name: Collect app metrics
-        uses: getsentry/action-app-sdk-overhead-metrics@v1
+        uses: getsentry/action-app-sdk-overhead-metrics@a99530cc923ebfc82ee701f0d3d0d74a6bd08096
         with:
           config: sentry-android-integration-tests/metrics-test.yml
           sauce-user: ${{ secrets.SAUCE_USERNAME }}
