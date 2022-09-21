@@ -53,10 +53,11 @@ public final class CpuBackgroundMeasurementCollector implements MeasurementBackg
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Readig number of cores took %,d ns and returned %d vs %d",
+              "Readig number of cores took %,d ns and returned %d vs %d vs %d",
               SystemClock.elapsedRealtimeNanos() - start,
               numberOfCores,
-              Os.sysconf(OsConstants._SC_NPROCESSORS_CONF));
+              Os.sysconf(OsConstants._SC_NPROCESSORS_CONF),
+              Runtime.getRuntime().availableProcessors());
       return new CpuReading(clockTicks, maxFrequencies, currentFrequencies, numberOfCores);
       //      }
     } catch (IOException e) {
