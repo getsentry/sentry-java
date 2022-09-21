@@ -386,9 +386,7 @@ final class ManifestMetadataReader {
   private static @Nullable Bundle getMetadata(final @NotNull Context context)
       throws PackageManager.NameNotFoundException {
     final ApplicationInfo app =
-        context
-            .getPackageManager()
-            .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+        ContextUtils.getApplicationInfo(context, PackageManager.GET_META_DATA);
     return app.metaData;
   }
 }

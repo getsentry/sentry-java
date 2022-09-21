@@ -1,7 +1,9 @@
 package io.sentry.android.core;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -28,13 +30,43 @@ final class ContextUtils {
    * @return the Application's PackageInfo if possible, or null
    */
   @Nullable
+  @SuppressWarnings("deprecation")
   static PackageInfo getPackageInfo(
       final @NotNull Context context, final int flags, final @NotNull ILogger logger) {
     try {
-      return context.getPackageManager().getPackageInfo(context.getPackageName(), flags);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        return context
+            .getPackageManager()
+            .getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(flags));
+      } else {
+        return context.getPackageManager().getPackageInfo(context.getPackageName(), flags);
+      }
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error getting package info.", e);
       return null;
+    }
+  }
+
+  /**
+   * Return the Application's ApplicationInfo if possible. Throws @{@link
+   * android.content.pm.PackageManager.NameNotFoundException} if the package is not found.
+   *
+   * @return the Application's ApplicationInfo if possible, or throws
+   */
+  @NotNull
+  @SuppressWarnings("deprecation")
+  static ApplicationInfo getApplicationInfo(final @NotNull Context context, final long flag)
+      throws PackageManager.NameNotFoundException {
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      return context
+          .getPackageManager()
+          .getApplicationInfo(
+              context.getPackageName(), PackageManager.ApplicationInfoFlags.of(flag));
+    } else {
+      return context
+          .getPackageManager()
+          .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
     }
   }
 

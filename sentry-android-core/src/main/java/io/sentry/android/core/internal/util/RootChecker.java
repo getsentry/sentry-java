@@ -2,6 +2,7 @@ package io.sentry.android.core.internal.util;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
@@ -155,12 +156,17 @@ public final class RootChecker {
    *
    * @return whether the root packages exist or not
    */
+  @SuppressWarnings("deprecation")
   private boolean checkRootPackages() {
     final PackageManager pm = context.getPackageManager();
     if (pm != null) {
       for (final String pkg : rootPackages) {
         try {
-          pm.getPackageInfo(pkg, 0);
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.getPackageInfo(pkg, PackageManager.PackageInfoFlags.of(0));
+          } else {
+            pm.getPackageInfo(pkg, 0);
+          }
           return true;
         } catch (PackageManager.NameNotFoundException ignored) {
           // fine, package doesn't exist.
