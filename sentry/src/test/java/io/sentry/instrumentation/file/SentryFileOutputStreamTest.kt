@@ -12,6 +12,7 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class SentryFileOutputStreamTest {
     class Fixture {
@@ -67,6 +68,13 @@ class SentryFileOutputStreamTest {
         assertEquals(fileIOSpan.throwable, null)
         assertEquals(fileIOSpan.isFinished, true)
         assertEquals(fileIOSpan.status, SpanStatus.OK)
+    }
+
+    @Test
+    fun `when stream is closed file descriptor is also closed`() {
+        val fos = fixture.getSut(tmpFile)
+        fos.use { it.write("hello".toByteArray()) }
+        assertFalse(fos.fd.valid())
     }
 
     @Test

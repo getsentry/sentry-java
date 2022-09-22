@@ -1,12 +1,13 @@
 # Changelog
 
-## Unreleased
+## 6.4.2
 
 ### Fixes
 
 - Fixed AbstractMethodError when getting Lifecycle ([#2228](https://github.com/getsentry/sentry-java/pull/2228))
 - Missing unit fields for Android measurements ([#2204](https://github.com/getsentry/sentry-java/pull/2204))
 - Avoid sending empty profiles ([#2232](https://github.com/getsentry/sentry-java/pull/2232))
+- Fix file descriptor leak in FileIO instrumentation ([#2248](https://github.com/getsentry/sentry-java/pull/2248))
 
 ### Features
 
