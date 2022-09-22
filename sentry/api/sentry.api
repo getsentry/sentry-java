@@ -1674,7 +1674,6 @@ public final class io/sentry/SystemOutLogger : io/sentry/ILogger {
 }
 
 public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun equals (Ljava/lang/Object;)Z
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
@@ -1684,7 +1683,6 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserId ()Ljava/lang/String;
 	public fun getUserSegment ()Ljava/lang/String;
-	public fun hashCode ()I
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
