@@ -5,7 +5,6 @@ import io.sentry.protocol.User;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -13,14 +12,14 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Experimental
 public final class TraceContext implements JsonUnknown, JsonSerializable {
-  private @NotNull SentryId traceId;
-  private @NotNull String publicKey;
-  private @Nullable String release;
-  private @Nullable String environment;
-  private @Nullable String userId;
-  private @Nullable String userSegment;
-  private @Nullable String transaction;
-  private @Nullable String sampleRate;
+  private final @NotNull SentryId traceId;
+  private final @NotNull String publicKey;
+  private final @Nullable String release;
+  private final @Nullable String environment;
+  private final @Nullable String userId;
+  private final @Nullable String userSegment;
+  private final @Nullable String transaction;
+  private final @Nullable String sampleRate;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
@@ -315,35 +314,5 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       logger.log(SentryLevel.ERROR, message, exception);
       return exception;
     }
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    TraceContext that = (TraceContext) o;
-    return traceId.equals(that.traceId)
-        && publicKey.equals(that.publicKey)
-        && Objects.equals(release, that.release)
-        && Objects.equals(environment, that.environment)
-        && Objects.equals(userId, that.userId)
-        && Objects.equals(userSegment, that.userSegment)
-        && Objects.equals(transaction, that.transaction)
-        && Objects.equals(sampleRate, that.sampleRate)
-        && Objects.equals(unknown, that.unknown);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        traceId,
-        publicKey,
-        release,
-        environment,
-        userId,
-        userSegment,
-        transaction,
-        sampleRate,
-        unknown);
   }
 }
