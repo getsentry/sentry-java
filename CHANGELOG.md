@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.5.0-beta.1
 
 ### Features
 
