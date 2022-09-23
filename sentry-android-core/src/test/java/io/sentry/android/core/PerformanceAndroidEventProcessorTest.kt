@@ -25,12 +25,13 @@ class PerformanceAndroidEventProcessorTest {
 
         val hub = mock<IHub>()
         val context = TransactionContext("name", "op", TracesSamplingDecision(true))
-        val tracer = SentryTracer(context, hub)
+        lateinit var tracer: SentryTracer
         val activityFramesTracker = mock<ActivityFramesTracker>()
 
         fun getSut(tracesSampleRate: Double? = 1.0): PerformanceAndroidEventProcessor {
             options.tracesSampleRate = tracesSampleRate
             whenever(hub.options).thenReturn(options)
+            tracer = SentryTracer(context, hub)
             return PerformanceAndroidEventProcessor(options, activityFramesTracker)
         }
     }

@@ -42,14 +42,21 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     span.setDescription(request.method().name() + " " + request.url());
 
     final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-    final @Nullable BaggageHeader baggageHeader = span.toBaggageHeader();
 
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
 
     if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), request.url())) {
       requestBuilder.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+
+      final @Nullable BaggageHeader baggageHeader =
+          span.toBaggageHeader(request.headers().get(BaggageHeader.BAGGAGE_HEADER));
+
       if (baggageHeader != null) {
-        requestBuilder.header(baggageHeader.getName(), baggageHeader.getValue());
+        requestBuilder.headers(
+            httpHeaders -> {
+              httpHeaders.remove(BaggageHeader.BAGGAGE_HEADER);
+              httpHeaders.add(baggageHeader.getName(), baggageHeader.getValue());
+            });
       }
     }
 

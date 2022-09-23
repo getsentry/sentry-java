@@ -51,9 +51,11 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
 
       if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), request.getURI())) {
         request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-        @Nullable BaggageHeader baggage = span.toBaggageHeader();
+        @Nullable
+        BaggageHeader baggage =
+            span.toBaggageHeader(request.getHeaders().get(BaggageHeader.BAGGAGE_HEADER));
         if (baggage != null) {
-          request.getHeaders().add(baggage.getName(), baggage.getValue());
+          request.getHeaders().set(baggage.getName(), baggage.getValue());
         }
       }
 
