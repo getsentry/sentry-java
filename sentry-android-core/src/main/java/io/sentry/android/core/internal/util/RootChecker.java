@@ -1,5 +1,6 @@
 package io.sentry.android.core.internal.util;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -88,7 +89,7 @@ public final class RootChecker {
    * @return whether the device is rooted or not
    */
   public boolean isDeviceRooted() {
-    return checkTestKeys() || checkRootFiles() || checkSUExist() || checkRootPackages();
+    return checkTestKeys() || checkRootFiles() || checkSUExist() || checkRootPackages(logger);
   }
 
   /**
@@ -156,13 +157,15 @@ public final class RootChecker {
    *
    * @return whether the root packages exist or not
    */
+  @SuppressLint("NewApi")
   @SuppressWarnings("deprecation")
-  private boolean checkRootPackages() {
+  private boolean checkRootPackages(final @NotNull ILogger logger) {
+    BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
     final PackageManager pm = context.getPackageManager();
     if (pm != null) {
       for (final String pkg : rootPackages) {
         try {
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+          if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
             pm.getPackageInfo(pkg, PackageManager.PackageInfoFlags.of(0));
           } else {
             pm.getPackageInfo(pkg, 0);

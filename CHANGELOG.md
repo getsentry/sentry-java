@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Fixes
-
-- Upgrade to Android 13 sdk ([#2251](https://github.com/getsentry/sentry-java/pull/2251))
-
 ## 6.4.2
 
 ### Fixes

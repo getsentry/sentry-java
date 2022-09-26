@@ -226,7 +226,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     final PackageInfo packageInfo =
         ContextUtils.getPackageInfo(context, PackageManager.GET_PERMISSIONS, options.getLogger());
     if (packageInfo != null) {
-      String versionCode = ContextUtils.getVersionCode(packageInfo);
+      String versionCode = ContextUtils.getVersionCode(packageInfo, options.getLogger());
 
       setDist(event, versionCode);
       setAppPackageInfo(app, packageInfo);
@@ -749,7 +749,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setAppPackageInfo(final @NotNull App app, final @NotNull PackageInfo packageInfo) {
     app.setAppIdentifier(packageInfo.packageName);
     app.setAppVersion(packageInfo.versionName);
-    app.setAppBuild(ContextUtils.getVersionCode(packageInfo));
+    app.setAppBuild(ContextUtils.getVersionCode(packageInfo, options.getLogger()));
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
       final Map<String, String> permissions = new HashMap<>();

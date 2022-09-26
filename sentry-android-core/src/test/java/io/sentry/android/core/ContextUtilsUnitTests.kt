@@ -5,6 +5,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.spy
+import io.sentry.ILogger
+import io.sentry.NoOpLogger
 import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -15,10 +17,12 @@ import kotlin.test.assertNull
 class ContextUtilsUnitTests {
 
     private lateinit var context: Context
+    private lateinit var logger: ILogger
 
     @BeforeTest
     fun `set up`() {
         context = ApplicationProvider.getApplicationContext()
+        logger = NoOpLogger.getInstance()
     }
 
     @Test
@@ -37,7 +41,7 @@ class ContextUtilsUnitTests {
     @Test
     fun `Given a valid PackageInfo, returns a valid versionCode`() {
         val packageInfo = ContextUtils.getPackageInfo(context, mock())
-        val versionCode = ContextUtils.getVersionCode(packageInfo!!)
+        val versionCode = ContextUtils.getVersionCode(packageInfo!!, logger)
 
         assertNotNull(versionCode)
     }

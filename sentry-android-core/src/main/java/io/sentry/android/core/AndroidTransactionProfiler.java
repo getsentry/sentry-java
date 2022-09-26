@@ -222,7 +222,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     ActivityManager.MemoryInfo memInfo = getMemInfo();
     if (packageInfo != null) {
       versionName = ContextUtils.getVersionName(packageInfo);
-      versionCode = ContextUtils.getVersionCode(packageInfo);
+      versionCode = ContextUtils.getVersionCode(packageInfo, options.getLogger());
     }
     if (memInfo != null) {
       totalMem = Long.toString(memInfo.totalMem);

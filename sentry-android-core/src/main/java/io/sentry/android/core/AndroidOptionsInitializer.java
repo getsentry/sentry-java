@@ -230,7 +230,8 @@ final class AndroidOptionsInitializer {
       // Sets App's release if not set by Manifest
       if (options.getRelease() == null) {
         options.setRelease(
-            getSentryReleaseVersion(packageInfo, ContextUtils.getVersionCode(packageInfo)));
+            getSentryReleaseVersion(
+                packageInfo, ContextUtils.getVersionCode(packageInfo, options.getLogger())));
       }
 
       // Sets the App's package name as InApp
