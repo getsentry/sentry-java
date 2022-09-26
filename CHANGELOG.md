@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Make user segment a top level property ([#2257](https://github.com/getsentry/sentry-java/pull/2257))
+
 ## 6.5.0-beta.1
 
 ### Features
