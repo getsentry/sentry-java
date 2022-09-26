@@ -2974,6 +2974,7 @@ public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sent
 	public fun getId ()Ljava/lang/String;
 	public fun getIpAddress ()Ljava/lang/String;
 	public fun getOthers ()Ljava/util/Map;
+	public fun getSegment ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUsername ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
@@ -2981,6 +2982,7 @@ public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sent
 	public fun setId (Ljava/lang/String;)V
 	public fun setIpAddress (Ljava/lang/String;)V
 	public fun setOthers (Ljava/util/Map;)V
+	public fun setSegment (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUsername (Ljava/lang/String;)V
 }
@@ -2996,6 +2998,7 @@ public final class io/sentry/protocol/User$JsonKeys {
 	public static final field ID Ljava/lang/String;
 	public static final field IP_ADDRESS Ljava/lang/String;
 	public static final field OTHER Ljava/lang/String;
+	public static final field SEGMENT Ljava/lang/String;
 	public static final field USERNAME Ljava/lang/String;
 	public fun <init> ()V
 }

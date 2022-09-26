@@ -31,6 +31,8 @@ public final class User implements JsonUnknown, JsonSerializable {
   /** Username of the user. */
   private @Nullable String username;
 
+  private @Nullable String segment;
+
   /** Remote IP address of the user. */
   private @Nullable String ipAddress;
 
@@ -50,6 +52,7 @@ public final class User implements JsonUnknown, JsonSerializable {
     this.username = user.username;
     this.id = user.id;
     this.ipAddress = user.ipAddress;
+    this.segment = user.segment;
     this.other = CollectionUtils.newConcurrentHashMap(user.other);
     this.unknown = CollectionUtils.newConcurrentHashMap(user.unknown);
   }
@@ -109,6 +112,24 @@ public final class User implements JsonUnknown, JsonSerializable {
   }
 
   /**
+   * Gets the segment of the user.
+   *
+   * @return the user segment.
+   */
+  public @Nullable String getSegment() {
+    return segment;
+  }
+
+  /**
+   * Sets the segment of the user.
+   *
+   * @param segment the segment.
+   */
+  public void setSegment(final @Nullable String segment) {
+    this.segment = segment;
+  }
+
+  /**
    * Gets the IP address of the user.
    *
    * @return the IP address of the user.
@@ -161,6 +182,7 @@ public final class User implements JsonUnknown, JsonSerializable {
     public static final String EMAIL = "email";
     public static final String ID = "id";
     public static final String USERNAME = "username";
+    public static final String SEGMENT = "segment";
     public static final String IP_ADDRESS = "ip_address";
     public static final String OTHER = "other";
   }
@@ -177,6 +199,9 @@ public final class User implements JsonUnknown, JsonSerializable {
     }
     if (username != null) {
       writer.name(JsonKeys.USERNAME).value(username);
+    }
+    if (segment != null) {
+      writer.name(JsonKeys.SEGMENT).value(segment);
     }
     if (ipAddress != null) {
       writer.name(JsonKeys.IP_ADDRESS).value(ipAddress);
@@ -213,6 +238,9 @@ public final class User implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.USERNAME:
             user.username = reader.nextStringOrNull();
+            break;
+          case JsonKeys.SEGMENT:
+            user.segment = reader.nextStringOrNull();
             break;
           case JsonKeys.IP_ADDRESS:
             user.ipAddress = reader.nextStringOrNull();

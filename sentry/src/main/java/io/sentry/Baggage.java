@@ -292,6 +292,10 @@ public final class Baggage {
   }
 
   private static @Nullable String getSegment(final @NotNull User user) {
+    if (user.getSegment() != null) {
+      return user.getSegment();
+    }
+
     final Map<String, String> others = user.getOthers();
     if (others != null) {
       return others.get("segment");
