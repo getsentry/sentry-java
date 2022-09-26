@@ -296,9 +296,9 @@ public final class Baggage {
       return user.getSegment();
     }
 
-    final Map<String, String> others = user.getOthers();
-    if (others != null) {
-      return others.get("segment");
+    final Map<String, String> userData = user.getData();
+    if (userData != null) {
+      return userData.get("segment");
     } else {
       return null;
     }
