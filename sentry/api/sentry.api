@@ -483,6 +483,8 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun isFinished ()Z
 	public abstract fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public abstract fun setDescription (Ljava/lang/String;)V
+	public abstract fun setMeasurement (Ljava/lang/String;F)V
+	public abstract fun setMeasurement (Ljava/lang/String;FLio/sentry/SentryMeasurementUnit;)V
 	public abstract fun setOperation (Ljava/lang/String;)V
 	public abstract fun setStatus (Lio/sentry/SpanStatus;)V
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -668,6 +670,8 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun isFinished ()Z
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
+	public fun setMeasurement (Ljava/lang/String;F)V
+	public fun setMeasurement (Ljava/lang/String;FLio/sentry/SentryMeasurementUnit;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -703,6 +707,8 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun scheduleFinish ()V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
+	public fun setMeasurement (Ljava/lang/String;F)V
+	public fun setMeasurement (Ljava/lang/String;FLio/sentry/SentryMeasurementUnit;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun setOperation (Ljava/lang/String;)V
@@ -1268,6 +1274,21 @@ public final class io/sentry/SentryLevel : java/lang/Enum, io/sentry/JsonSeriali
 	public static fun values ()[Lio/sentry/SentryLevel;
 }
 
+public final class io/sentry/SentryMeasurementUnit : java/lang/Enum {
+	public static final field DAY Lio/sentry/SentryMeasurementUnit;
+	public static final field HOUR Lio/sentry/SentryMeasurementUnit;
+	public static final field MICROSECOND Lio/sentry/SentryMeasurementUnit;
+	public static final field MILLISECOND Lio/sentry/SentryMeasurementUnit;
+	public static final field MINUTE Lio/sentry/SentryMeasurementUnit;
+	public static final field NANOSECOND Lio/sentry/SentryMeasurementUnit;
+	public static final field NONE Lio/sentry/SentryMeasurementUnit;
+	public static final field SECOND Lio/sentry/SentryMeasurementUnit;
+	public static final field WEEK Lio/sentry/SentryMeasurementUnit;
+	public fun apiName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryMeasurementUnit;
+	public static fun values ()[Lio/sentry/SentryMeasurementUnit;
+}
+
 public class io/sentry/SentryOptions {
 	public fun <init> ()V
 	public fun addContextTag (Ljava/lang/String;)V
@@ -1492,6 +1513,8 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun scheduleFinish ()V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
+	public fun setMeasurement (Ljava/lang/String;F)V
+	public fun setMeasurement (Ljava/lang/String;FLio/sentry/SentryMeasurementUnit;)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun setOperation (Ljava/lang/String;)V
@@ -1598,6 +1621,8 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
+	public fun setMeasurement (Ljava/lang/String;F)V
+	public fun setMeasurement (Ljava/lang/String;FLio/sentry/SentryMeasurementUnit;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -2444,8 +2469,6 @@ public final class io/sentry/protocol/Gpu$JsonKeys {
 }
 
 public final class io/sentry/protocol/MeasurementValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public static final field MILLISECOND_UNIT Ljava/lang/String;
-	public static final field NONE_UNIT Ljava/lang/String;
 	public fun <init> (FLjava/lang/String;)V
 	public fun <init> (FLjava/lang/String;Ljava/util/Map;)V
 	public fun getUnit ()Ljava/lang/String;

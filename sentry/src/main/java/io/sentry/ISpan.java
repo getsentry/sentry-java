@@ -169,4 +169,27 @@ public interface ISpan {
    */
   @Nullable
   Object getData(@NotNull String key);
+
+  /**
+   * Set a measurement with NONE unit.
+   *
+   * <p>NOTE: Setting a measurement with the same name on the same transaction multiple times only
+   * keeps the last value.
+   *
+   * @param name the name of the measurement
+   * @param value the value of the measurement
+   */
+  void setMeasurement(@NotNull String name, float value);
+
+  /**
+   * Set a measurement with specific unit.
+   *
+   * <p>NOTE: Setting a measurement with the same name on the same transaction multiple times only
+   * keeps the last value.
+   *
+   * @param name the name of the measurement
+   * @param value the value of the measurement
+   * @param unit the unit the value is measured in
+   */
+  void setMeasurement(@NotNull String name, float value, @NotNull SentryMeasurementUnit unit);
 }

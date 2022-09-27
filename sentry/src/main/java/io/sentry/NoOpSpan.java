@@ -111,4 +111,11 @@ public final class NoOpSpan implements ISpan {
   public @Nullable Object getData(@NotNull String key) {
     return null;
   }
+
+  @Override
+  public void setMeasurement(@NotNull String name, float value) {}
+
+  @Override
+  public void setMeasurement(
+      @NotNull String name, float value, @NotNull SentryMeasurementUnit unit) {}
 }

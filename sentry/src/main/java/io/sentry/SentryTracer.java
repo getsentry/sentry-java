@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -74,6 +76,7 @@ public final class SentryTracer implements ITransaction {
 
   private final @NotNull Baggage baggage;
   private @NotNull TransactionNameSource transactionNameSource;
+  private final @NotNull Map<String, MeasurementValue> measurements;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -104,6 +107,7 @@ public final class SentryTracer implements ITransaction {
       final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
+    this.measurements = new ConcurrentHashMap<>();
     this.root = new Span(context, this, hub, startTimestamp);
     this.name = context.getName();
     this.hub = hub;
@@ -360,6 +364,9 @@ public final class SentryTracer implements ITransaction {
         // if it's an idle transaction which has no children, we drop it to save user's quota
         return;
       }
+
+      transaction.getMeasurements().putAll(measurements);
+
       hub.captureTransaction(transaction, traceContext(), null, profilingTraceData);
     }
   }
@@ -504,6 +511,17 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @Nullable Object getData(@NotNull String key) {
     return this.root.getData(key);
+  }
+
+  @Override
+  public void setMeasurement(@NotNull String name, float value) {
+    this.measurements.put(name, new MeasurementValue(value, SentryMeasurementUnit.NONE.apiName()));
+  }
+
+  @Override
+  public void setMeasurement(
+      @NotNull String name, float value, @NotNull SentryMeasurementUnit unit) {
+    this.measurements.put(name, new MeasurementValue(value, unit.apiName()));
   }
 
   public @Nullable Map<String, Object> getData() {

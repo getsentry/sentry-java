@@ -18,9 +18,6 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class MeasurementValue implements JsonUnknown, JsonSerializable {
 
-  public static final @NotNull String NONE_UNIT = "none";
-  public static final @NotNull String MILLISECOND_UNIT = "millisecond";
-
   @SuppressWarnings("UnusedVariable")
   private final float value;
 
