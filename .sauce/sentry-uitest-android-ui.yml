@@ -9,6 +9,10 @@ sauce:
     tags:
       - e2e
       - android
+
+defaults:
+  timeout: 30m
+
 espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
   testApp: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
