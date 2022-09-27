@@ -87,12 +87,13 @@ public final class ExternalOptions {
 
     List<String> tracePropagationTargets = null;
 
-    if(propertiesProvider.getProperty("trace-propagation-targets") != null) {
+    if (propertiesProvider.getProperty("trace-propagation-targets") != null) {
       tracePropagationTargets = propertiesProvider.getList("trace-propagation-targets");
     }
 
     // TODO: Remove once tracing-origins has been removed
-    if (tracePropagationTargets == null && propertiesProvider.getProperty("tracing-origins") != null) {
+    if (tracePropagationTargets == null
+        && propertiesProvider.getProperty("tracing-origins") != null) {
       tracePropagationTargets = propertiesProvider.getList("tracing-origins");
     }
 
@@ -281,7 +282,7 @@ public final class ExternalOptions {
   }
 
   public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {
-    if(tracePropagationTargets == null) {
+    if (tracePropagationTargets == null) {
       tracePropagationTargets = new CopyOnWriteArrayList<>();
     }
     this.tracePropagationTargets.add(tracePropagationTarget);

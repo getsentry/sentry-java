@@ -270,17 +270,20 @@ final class ManifestMetadataReader {
             readList(metadata, logger, TRACE_PROPAGATION_TARGETS);
 
         // TODO remove once TRACING_ORIGINS have been removed
-        if (!metadata.containsKey(TRACE_PROPAGATION_TARGETS) && (tracePropagationTargets == null || tracePropagationTargets.isEmpty())) {
+        if (!metadata.containsKey(TRACE_PROPAGATION_TARGETS)
+            && (tracePropagationTargets == null || tracePropagationTargets.isEmpty())) {
           tracePropagationTargets = readList(metadata, logger, TRACING_ORIGINS);
         }
 
-        if ((metadata.containsKey(TRACE_PROPAGATION_TARGETS) || metadata.containsKey(TRACING_ORIGINS)) && tracePropagationTargets == null) {
+        if ((metadata.containsKey(TRACE_PROPAGATION_TARGETS)
+                || metadata.containsKey(TRACING_ORIGINS))
+            && tracePropagationTargets == null) {
           options.setTracePropagationTargets(Collections.emptyList());
         } else if (tracePropagationTargets != null) {
           for (final String tracePropagationTarget : tracePropagationTargets) {
             options.addTracePropagationTarget(tracePropagationTarget);
           }
-      }
+        }
 
         options.setProguardUuid(
             readString(metadata, logger, PROGUARD_UUID, options.getProguardUuid()));
