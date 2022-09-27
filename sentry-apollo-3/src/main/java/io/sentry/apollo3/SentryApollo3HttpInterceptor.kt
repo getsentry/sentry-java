@@ -7,6 +7,7 @@ import com.apollographql.apollo3.exception.ApolloHttpException
 import com.apollographql.apollo3.exception.ApolloNetworkException
 import com.apollographql.apollo3.network.http.HttpInterceptor
 import com.apollographql.apollo3.network.http.HttpInterceptorChain
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HubAdapter
@@ -30,20 +31,22 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         } else {
             val span = startChild(request, activeSpan)
 
-            val cleanedHeaders = removeSentryInternalHeaders(request.headers)
-
-            val requestBuilder = request.newBuilder().apply {
-                headers(cleanedHeaders)
-            }
+            var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
 
             if (TracingOrigins.contain(hub.options.tracingOrigins, request.url)) {
                 val sentryTraceHeader = span.toSentryTrace()
-                val baggageHeader = span.toBaggageHeader()
-                requestBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
+                val baggageHeader = span.toBaggageHeader(request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value })
+                cleanedHeaders.add(HttpHeader(sentryTraceHeader.name, sentryTraceHeader.value))
 
-                baggageHeader?.let {
-                    requestBuilder.addHeader(it.name, it.value)
+                baggageHeader?.let { newHeader ->
+                    cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
+                        add(HttpHeader(newHeader.name, newHeader.value))
+                    }
                 }
+            }
+
+            val requestBuilder = request.newBuilder().apply {
+                headers(cleanedHeaders)
             }
 
             val modifiedRequest = requestBuilder.build()

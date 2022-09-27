@@ -38,7 +38,7 @@ class SentryOkHttpInterceptorTest {
         val hub = mock<IHub>()
         var interceptor = SentryOkHttpInterceptor(hub)
         val server = MockWebServer()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var sentryTracer: SentryTracer
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -61,6 +61,8 @@ class SentryOkHttpInterceptorTest {
                 }
             )
 
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
@@ -81,6 +83,7 @@ class SentryOkHttpInterceptorTest {
     private val fixture = Fixture()
 
     private val getRequest = { Request.Builder().get().url(fixture.server.url("/hello")).build() }
+    private val getRequestWithBaggagHeader = { Request.Builder().addHeader("baggage", "thirdPartyBaggage=someValue").addHeader("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue").get().url(fixture.server.url("/hello")).build() }
     private val postRequest = {
         Request.Builder().post(
             "request-body"
@@ -116,6 +119,22 @@ class SentryOkHttpInterceptorTest {
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
+        val sut = fixture.getSut()
+        sut.newCall(getRequestWithBaggagHeader()).execute()
+        val recorderRequest = fixture.server.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+
+        val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
+        assertEquals(baggageHeaderValues.size, 1)
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
     }
 
     @Test

@@ -1,6 +1,7 @@
 package io.sentry;
 
 import java.util.Date;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,7 +56,7 @@ public interface ISpan {
    */
   @Nullable
   @ApiStatus.Experimental
-  BaggageHeader toBaggageHeader();
+  BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders);
 
   /** Sets span timestamp marking this span as finished. */
   void finish();
