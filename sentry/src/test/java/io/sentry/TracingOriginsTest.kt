@@ -23,7 +23,7 @@ class TracingOriginsTest {
     }
 
     @Test
-    fun `when no origins are defined, returns true for every url`() {
+    fun `when no origins are defined, returns false for every url`() {
         assertTrue(TracingOrigins.contain(emptyList(), "http://some.api.com/"))
     }
 }

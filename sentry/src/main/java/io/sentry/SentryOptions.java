@@ -14,6 +14,7 @@ import io.sentry.util.SampleRateUtil;
 import io.sentry.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -323,7 +324,9 @@ public class SentryOptions {
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
-  private final @NotNull List<String> tracePropagationTargets = new CopyOnWriteArrayList<>();
+  private @Nullable List<String> tracePropagationTargets = null;
+
+  private final @NotNull List<String> defaultTracePropagationTargets = Collections.singletonList(".*"); //new CopyOnWriteArrayList<>(Collections.singletonList(".*"));
 
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
@@ -1594,8 +1597,9 @@ public class SentryOptions {
    * @return the list of origins
    */
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public @NotNull List<String> getTracingOrigins() {
-    return tracePropagationTargets;
+    return getTracePropagationTargets();
   }
 
   /**
@@ -1605,8 +1609,9 @@ public class SentryOptions {
    * @param tracingOrigin - the tracing origin
    */
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.tracePropagationTargets.add(tracingOrigin);
+    addTracePropagationTarget(tracingOrigin);
   }
 
   /**
@@ -1615,7 +1620,15 @@ public class SentryOptions {
    * @return the list of targets
    */
   public @NotNull List<String> getTracePropagationTargets() {
-    return tracePropagationTargets;
+    if (tracePropagationTargets == null) {
+      return defaultTracePropagationTargets;
+    }
+    return Collections.unmodifiableList(tracePropagationTargets);
+  }
+
+  @ApiStatus.Internal
+  public void setTracePropagationTargets(List<String> tracePropagationTargets) {
+    this.tracePropagationTargets = tracePropagationTargets;
   }
 
   /**
@@ -1624,7 +1637,10 @@ public class SentryOptions {
    * @param tracePropagationTarget - the tracing target
    */
   public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {
-    this.tracePropagationTargets.add(tracePropagationTarget);
+    if (tracePropagationTargets == null) {
+      tracePropagationTargets = new CopyOnWriteArrayList<>();
+    }
+    tracePropagationTargets.add(tracePropagationTarget);
   }
 
   /**
@@ -1878,10 +1894,12 @@ public class SentryOptions {
         new HashSet<>(options.getIgnoredExceptionsForType())) {
       addIgnoredExceptionForType(exceptionType);
     }
-    final List<String> tracePropagationTargets =
+    if(options.getTracePropagationTargets() != null) {
+      final List<String> tracePropagationTargets =
         new ArrayList<>(options.getTracePropagationTargets());
-    for (final String tracePropagationTarget : tracePropagationTargets) {
-      addTracePropagationTarget(tracePropagationTarget);
+      for (final String tracePropagationTarget : tracePropagationTargets) {
+        addTracePropagationTarget(tracePropagationTarget);
+      }
     }
     final List<String> contextTags = new ArrayList<>(options.getContextTags());
     for (final String contextTag : contextTags) {

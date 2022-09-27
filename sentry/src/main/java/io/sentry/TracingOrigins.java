@@ -12,7 +12,7 @@ public final class TracingOrigins {
 
   public static boolean contain(final @NotNull List<String> origins, final @NotNull String url) {
     if (origins.isEmpty()) {
-      return true;
+      return false;
     }
     for (final String origin : origins) {
       if (url.contains(origin) || url.matches(origin)) {

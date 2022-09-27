@@ -32,7 +32,7 @@ public final class ExternalOptions {
   private @Nullable SentryOptions.Proxy proxy;
   private final @NotNull List<String> inAppExcludes = new CopyOnWriteArrayList<>();
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
-  private final @NotNull List<String> tracePropagationTargets = new CopyOnWriteArrayList<>();
+  private @Nullable List<String> tracePropagationTargets = null;
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
   private @Nullable Long idleTimeout;
@@ -85,16 +85,23 @@ public final class ExternalOptions {
       options.addInAppExclude(inAppExclude);
     }
 
-    List<String> tracePropagationTargets = propertiesProvider.getList("trace-propagation-targets");
+    List<String> tracePropagationTargets = null;
+
+    if(propertiesProvider.getProperty("trace-propagation-targets") != null) {
+      tracePropagationTargets = propertiesProvider.getList("trace-propagation-targets");
+    }
 
     // TODO: Remove once tracing-origins has been removed
-    if (tracePropagationTargets.isEmpty()) {
+    if (tracePropagationTargets == null && propertiesProvider.getProperty("tracing-origins") != null) {
       tracePropagationTargets = propertiesProvider.getList("tracing-origins");
     }
 
-    for (final String tracePropagationTarget : tracePropagationTargets) {
-      options.addTracePropagationTarget(tracePropagationTarget);
+    if (tracePropagationTargets != null) {
+      for (final String tracePropagationTarget : tracePropagationTargets) {
+        options.addTracePropagationTarget(tracePropagationTarget);
+      }
     }
+
     for (final String contextTag : propertiesProvider.getList("context-tags")) {
       options.addContextTag(contextTag);
     }
@@ -175,11 +182,11 @@ public final class ExternalOptions {
   }
 
   @Deprecated
-  public @NotNull List<String> getTracingOrigins() {
+  public @Nullable List<String> getTracingOrigins() {
     return tracePropagationTargets;
   }
 
-  public @NotNull List<String> getTracePropagationTargets() {
+  public @Nullable List<String> getTracePropagationTargets() {
     return tracePropagationTargets;
   }
 
@@ -268,11 +275,15 @@ public final class ExternalOptions {
   }
 
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.tracePropagationTargets.add(tracingOrigin);
+    this.addTracePropagationTarget(tracingOrigin);
   }
 
   public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {
+    if(tracePropagationTargets == null) {
+      tracePropagationTargets = new CopyOnWriteArrayList<>();
+    }
     this.tracePropagationTargets.add(tracePropagationTarget);
   }
 

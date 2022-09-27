@@ -54,9 +54,9 @@ class SentryOkHttpInterceptorTest {
                     dsn = "https://key@sentry.io/proj"
                     isTraceSampling = true
                     if (includeMockServerInTracingOrigins) {
-                        tracePropagationTargets.add(server.hostName)
+                        addTracePropagationTarget(server.hostName)
                     } else {
-                        tracePropagationTargets.add("other-api")
+                        addTracePropagationTarget("other-api")
                     }
                 }
             )

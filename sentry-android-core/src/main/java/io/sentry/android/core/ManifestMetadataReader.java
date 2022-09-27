@@ -9,6 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
@@ -269,15 +270,17 @@ final class ManifestMetadataReader {
             readList(metadata, logger, TRACE_PROPAGATION_TARGETS);
 
         // TODO remove once TRACING_ORIGINS have been removed
-        if (tracePropagationTargets == null || tracePropagationTargets.isEmpty()) {
+        if (!metadata.containsKey(TRACE_PROPAGATION_TARGETS) && (tracePropagationTargets == null || tracePropagationTargets.isEmpty())) {
           tracePropagationTargets = readList(metadata, logger, TRACING_ORIGINS);
         }
 
-        if (tracePropagationTargets != null) {
+        if ((metadata.containsKey(TRACE_PROPAGATION_TARGETS) || metadata.containsKey(TRACING_ORIGINS)) && tracePropagationTargets == null) {
+          options.setTracePropagationTargets(Collections.emptyList());
+        } else if (tracePropagationTargets != null) {
           for (final String tracePropagationTarget : tracePropagationTargets) {
             options.addTracePropagationTarget(tracePropagationTarget);
           }
-        }
+      }
 
         options.setProguardUuid(
             readString(metadata, logger, PROGUARD_UUID, options.getProguardUuid()));

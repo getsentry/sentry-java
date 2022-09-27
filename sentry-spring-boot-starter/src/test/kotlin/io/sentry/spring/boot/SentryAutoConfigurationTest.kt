@@ -184,6 +184,27 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
+    fun `when tracePropagationTargets are not set, default is returned`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.tracePropagationTargets).isNotNull().containsOnly(".*")
+        }
+    }
+
+    @Test
+    fun `when tracePropagationTargets property is set to empty list, empty list is returned`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+            "sentry.trace-propagation-targets="
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.tracePropagationTargets).isNotNull().isEmpty()
+        }
+    }
+
+    @Test
     fun `when traces sample rate is set to null and tracing is enabled, traces sample rate should be set to 0`() {
         contextRunner.withPropertyValues(
             "sentry.dsn=http://key@localhost/proj"

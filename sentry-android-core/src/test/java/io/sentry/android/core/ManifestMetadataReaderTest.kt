@@ -799,6 +799,19 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads null tracePropagationTargets and sets empty list`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to null)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
+    }
+
+    @Test
     fun `applyMetadata reads tracePropagationTargets to options and keeps default`() {
         // Arrange
         val context = fixture.getContext()
@@ -807,7 +820,8 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
+        assertTrue(fixture.options.tracePropagationTargets.size == 1)
+        assertTrue(fixture.options.tracePropagationTargets.first() == ".*")
     }
 
     @Test
