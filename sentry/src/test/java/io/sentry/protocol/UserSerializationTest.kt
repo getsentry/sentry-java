@@ -44,7 +44,7 @@ class UserSerializationTest {
     }
 
     @Test
-    fun deserializeLegacy() {
+    fun `deserialize legacy`() {
         val inputJson = sanitizedFile("json/user_legacy.json")
         val expectedJson = sanitizedFile("json/user.json")
         val actual = deserialize(inputJson)

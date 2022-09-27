@@ -150,7 +150,7 @@ public final class User implements JsonUnknown, JsonSerializable {
   /**
    * Gets other user related data.
    *
-   * @deprecated use getData instead
+   * @deprecated use {{@link User#getData()}} instead
    * @return the other user data.
    */
   @Deprecated
@@ -162,7 +162,7 @@ public final class User implements JsonUnknown, JsonSerializable {
   /**
    * Sets other user related data.
    *
-   * @deprecated use setData instead
+   * @deprecated use {{@link User#setData(Map)}} instead
    * @param other the other user related data..
    */
   @Deprecated
@@ -276,6 +276,7 @@ public final class User implements JsonUnknown, JsonSerializable {
                     (Map<String, String>) reader.nextObjectOrNull());
             break;
           case JsonKeys.OTHER:
+            // restore `other` from legacy JSON
             if (user.data == null || user.data.isEmpty()) {
               user.data =
                   CollectionUtils.newConcurrentHashMap(
