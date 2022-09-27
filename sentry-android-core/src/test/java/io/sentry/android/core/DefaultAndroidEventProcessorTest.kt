@@ -13,6 +13,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.DiagnosticLogger
 import io.sentry.Hint
+import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
@@ -59,9 +60,14 @@ class DefaultAndroidEventProcessorTest {
             setLogger(mock())
             sdkVersion = SdkVersion("test", "1.2.3")
         }
-        val sentryTracer = SentryTracer(TransactionContext("", ""), mock())
+
+        val hub: IHub = mock<IHub>()
+
+        lateinit var sentryTracer: SentryTracer
 
         fun getSut(context: Context): DefaultAndroidEventProcessor {
+            whenever(hub.options).thenReturn(options)
+            sentryTracer = SentryTracer(TransactionContext("", ""), hub)
             return DefaultAndroidEventProcessor(context, buildInfo, options)
         }
     }

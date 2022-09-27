@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
@@ -44,11 +45,18 @@ class AndroidTransactionProfilerTest {
             isDebug = true
             setLogger(mockLogger)
         }
-        val transaction1 = SentryTracer(TransactionContext("", ""), mock())
-        val transaction2 = SentryTracer(TransactionContext("", ""), mock())
 
-        fun getSut(context: Context, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidTransactionProfiler =
-            AndroidTransactionProfiler(context, options, buildInfoProvider)
+        val hub: IHub = mock()
+
+        lateinit var transaction1: SentryTracer
+        lateinit var transaction2: SentryTracer
+
+        fun getSut(context: Context, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidTransactionProfiler {
+            whenever(hub.options).thenReturn(options)
+            transaction1 = SentryTracer(TransactionContext("", ""), hub)
+            transaction2 = SentryTracer(TransactionContext("", ""), hub)
+            return AndroidTransactionProfiler(context, options, buildInfoProvider)
+        }
     }
 
     @BeforeTest

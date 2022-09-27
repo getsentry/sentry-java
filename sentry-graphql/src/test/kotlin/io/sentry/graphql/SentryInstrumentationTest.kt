@@ -23,10 +23,11 @@ class SentryInstrumentationTest {
 
     class Fixture {
         val hub = mock<IHub>()
-        val activeSpan = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var activeSpan: SentryTracer
 
         fun getSut(isTransactionActive: Boolean = true, dataFetcherThrows: Boolean = false, beforeSpan: SentryInstrumentation.BeforeSpanCallback? = null): GraphQL {
             whenever(hub.options).thenReturn(SentryOptions())
+            activeSpan = SentryTracer(TransactionContext("name", "op"), hub)
             val schema = """
             type Query {
                 shows: [Show]
