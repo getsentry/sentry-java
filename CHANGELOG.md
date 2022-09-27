@@ -5,7 +5,7 @@
 ### Features
 
 - Make user segment a top level property ([#2257](https://github.com/getsentry/sentry-java/pull/2257))
-- Make user segment a top level property ([#2258](https://github.com/getsentry/sentry-java/pull/2258))
+- Replace user `other` with `data` ([#2258](https://github.com/getsentry/sentry-java/pull/2258))
 
 ## 6.5.0-beta.1
 
