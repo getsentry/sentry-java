@@ -266,6 +266,7 @@ final class ManifestMetadataReader {
           options.setIdleTimeout(idleTimeout);
         }
 
+        @Nullable
         List<String> tracePropagationTargets =
             readList(metadata, logger, TRACE_PROPAGATION_TARGETS);
 
@@ -280,9 +281,7 @@ final class ManifestMetadataReader {
             && tracePropagationTargets == null) {
           options.setTracePropagationTargets(Collections.emptyList());
         } else if (tracePropagationTargets != null) {
-          for (final String tracePropagationTarget : tracePropagationTargets) {
-            options.addTracePropagationTarget(tracePropagationTarget);
-          }
+          options.setTracePropagationTargets(tracePropagationTargets);
         }
 
         options.setProguardUuid(

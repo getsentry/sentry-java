@@ -7,7 +7,7 @@ import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SpanStatus
-import io.sentry.TracingOrigins
+import io.sentry.TracePropagationTargets
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import okhttp3.Interceptor
@@ -37,7 +37,9 @@ class SentryOkHttpInterceptor(
         var code: Int? = null
         try {
             val requestBuilder = request.newBuilder()
-            if (span != null && TracingOrigins.contain(hub.options.tracePropagationTargets, request.url.toString())) {
+            if (span != null &&
+                TracePropagationTargets.contain(hub.options.tracePropagationTargets, request.url.toString())
+            ) {
                 span.toSentryTrace().let {
                     requestBuilder.addHeader(it.name, it.value)
                 }

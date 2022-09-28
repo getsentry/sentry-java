@@ -125,7 +125,7 @@ class SentryFeignClientTest {
 
     @Test
     fun `when request url not in tracing origins, does not add sentry trace header to the request`() {
-        fixture.sentryOptions.addTracePropagationTarget("http://some-other-url.sentry.io")
+        fixture.sentryOptions.setTracePropagationTargets(listOf("http://some-other-url.sentry.io"))
         fixture.sentryOptions.isTraceSampling = true
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut()

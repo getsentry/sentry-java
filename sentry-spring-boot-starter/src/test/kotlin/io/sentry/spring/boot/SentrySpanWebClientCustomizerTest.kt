@@ -41,9 +41,9 @@ class SentrySpanWebClientCustomizerTest {
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false, includeMockServerInTracingOrigins: Boolean = true): WebClient {
             sentryOptions = SentryOptions().apply {
                 if (includeMockServerInTracingOrigins) {
-                    addTracePropagationTarget(mockServer.hostName)
+                    setTracePropagationTargets(listOf(mockServer.hostName))
                 } else {
-                    addTracePropagationTarget("other-api")
+                    setTracePropagationTargets(listOf("other-api"))
                 }
                 dsn = "http://key@localhost/proj"
             }

@@ -1468,7 +1468,6 @@ public class SentryOptions {
    * @deprecated please use {{@link SentryOptions#addTracePropagationTarget(String)}} instead
    * @param traceSampling - if trace sampling should be enabled
    */
-  @ApiStatus.Experimental
   @Deprecated
   public void setTraceSampling(boolean traceSampling) {
     this.traceSampling = traceSampling;
@@ -1612,13 +1611,18 @@ public class SentryOptions {
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    addTracePropagationTarget(tracingOrigin);
+    if (tracePropagationTargets == null) {
+      tracePropagationTargets = new CopyOnWriteArrayList<>();
+    }
+    if (!tracingOrigin.isEmpty()) {
+      tracePropagationTargets.add(tracingOrigin);
+    }
   }
 
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   @ApiStatus.Internal
-  public void setTracingOrigins(List<String> tracingOrigins) {
+  public void setTracingOrigins(@Nullable List<String> tracingOrigins) {
     setTracePropagationTargets(tracingOrigins);
   }
 
@@ -1631,25 +1635,22 @@ public class SentryOptions {
     if (tracePropagationTargets == null) {
       return defaultTracePropagationTargets;
     }
-    return Collections.unmodifiableList(tracePropagationTargets);
+    return tracePropagationTargets;
   }
 
   @ApiStatus.Internal
-  public void setTracePropagationTargets(List<String> tracePropagationTargets) {
-    this.tracePropagationTargets = tracePropagationTargets;
-  }
-
-  /**
-   * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
-   *
-   * @param tracePropagationTarget - the tracing target
-   */
-  public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {
+  public void setTracePropagationTargets(final @Nullable List<String> tracePropagationTargets) {
     if (tracePropagationTargets == null) {
-      tracePropagationTargets = new CopyOnWriteArrayList<>();
-    }
-    if (!tracePropagationTarget.isEmpty()) {
-      tracePropagationTargets.add(tracePropagationTarget);
+      this.tracePropagationTargets = tracePropagationTargets;
+    } else {
+      @NotNull final List<String> filteredTracePropagationTargets = new ArrayList<>();
+      for (String target : tracePropagationTargets) {
+        if (!target.isEmpty()) {
+          filteredTracePropagationTargets.add(target);
+        }
+      }
+
+      this.tracePropagationTargets = filteredTracePropagationTargets;
     }
   }
 
@@ -1907,12 +1908,7 @@ public class SentryOptions {
     if (options.getTracePropagationTargets() != null) {
       final List<String> tracePropagationTargets =
           new ArrayList<>(options.getTracePropagationTargets());
-      if (tracePropagationTargets.isEmpty()) {
-        setTracePropagationTargets(Collections.emptyList());
-      }
-      for (final String tracePropagationTarget : tracePropagationTargets) {
-        addTracePropagationTarget(tracePropagationTarget);
-      }
+      setTracePropagationTargets(tracePropagationTargets);
     }
     final List<String> contextTags = new ArrayList<>(options.getContextTags());
     for (final String contextTag : contextTags) {

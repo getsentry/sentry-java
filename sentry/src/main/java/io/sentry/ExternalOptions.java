@@ -85,7 +85,7 @@ public final class ExternalOptions {
       options.addInAppExclude(inAppExclude);
     }
 
-    List<String> tracePropagationTargets = null;
+    @Nullable List<String> tracePropagationTargets = null;
 
     if (propertiesProvider.getProperty("trace-propagation-targets") != null) {
       tracePropagationTargets = propertiesProvider.getList("trace-propagation-targets");
