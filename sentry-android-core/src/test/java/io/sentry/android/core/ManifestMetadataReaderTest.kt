@@ -697,14 +697,14 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads traceSampling to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to true)
+        val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options)
 
         // Assert
-        assertTrue(fixture.options.isTraceSampling)
+        assertFalse(fixture.options.isTraceSampling)
     }
 
     @Test

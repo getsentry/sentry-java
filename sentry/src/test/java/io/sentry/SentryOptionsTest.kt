@@ -338,6 +338,23 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `merging options when tracePropagationTargets is not set preserves the default value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.merge(externalOptions)
+        assertEquals(listOf(".*"), options.tracePropagationTargets)
+    }
+
+    @Test
+    fun `merging options when tracePropagationTargets is empty`() {
+        val externalOptions = ExternalOptions()
+        externalOptions.addTracePropagationTarget("")
+        val options = SentryOptions()
+        options.merge(externalOptions)
+        assertEquals(listOf(), options.tracePropagationTargets)
+    }
+
+    @Test
     fun `when options is initialized, Json Serializer is set by default`() {
         assertTrue(SentryOptions().serializer is JsonSerializer)
     }

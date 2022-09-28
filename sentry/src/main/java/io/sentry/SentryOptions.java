@@ -327,8 +327,7 @@ public class SentryOptions {
   private @Nullable List<String> tracePropagationTargets = null;
 
   private final @NotNull List<String> defaultTracePropagationTargets =
-      Collections.singletonList(
-          ".*"); // new CopyOnWriteArrayList<>(Collections.singletonList(".*"));
+      Collections.singletonList(".*");
 
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
@@ -1899,6 +1898,9 @@ public class SentryOptions {
     if (options.getTracePropagationTargets() != null) {
       final List<String> tracePropagationTargets =
           new ArrayList<>(options.getTracePropagationTargets());
+      if (tracePropagationTargets.isEmpty()) {
+        setTracePropagationTargets(Collections.emptyList());
+      }
       for (final String tracePropagationTarget : tracePropagationTargets) {
         addTracePropagationTarget(tracePropagationTarget);
       }

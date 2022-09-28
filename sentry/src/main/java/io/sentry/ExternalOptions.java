@@ -285,7 +285,9 @@ public final class ExternalOptions {
     if (tracePropagationTargets == null) {
       tracePropagationTargets = new CopyOnWriteArrayList<>();
     }
-    this.tracePropagationTargets.add(tracePropagationTarget);
+    if (!tracePropagationTarget.isEmpty()) {
+      this.tracePropagationTargets.add(tracePropagationTarget);
+    }
   }
 
   public void addContextTag(final @NotNull String contextTag) {

@@ -1362,6 +1362,7 @@ public class io/sentry/SentryOptions {
 	public fun setShutdownTimeoutMillis (J)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTracePropagationTargets (Ljava/util/List;)V
 	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
