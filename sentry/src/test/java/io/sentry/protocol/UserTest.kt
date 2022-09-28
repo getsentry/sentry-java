@@ -17,7 +17,7 @@ class UserTest {
         assertNotNull(clone)
         assertNotSame(user, clone)
 
-        assertNotSame(user.others, clone.others)
+        assertNotSame(user.data, clone.data)
 
         assertNotSame(user.unknown, clone.unknown)
     }
@@ -31,7 +31,8 @@ class UserTest {
         assertEquals("123", clone.id)
         assertEquals("123.x", clone.ipAddress)
         assertEquals("userName", clone.username)
-        assertEquals("others", clone.others!!["others"])
+        assertEquals("userSegment", clone.segment)
+        assertEquals("data", clone.data!!["data"])
         assertEquals("unknown", clone.unknown!!["unknown"])
     }
 
@@ -44,8 +45,9 @@ class UserTest {
         user.id = "456"
         user.ipAddress = "456.x"
         user.username = "newUserName"
-        user.others!!["others"] = "newOthers"
-        user.others!!["anotherOne"] = "anotherOne"
+        user.segment = "newUserSegment"
+        user.data!!["data"] = "newOthers"
+        user.data!!["anotherOne"] = "anotherOne"
         val newUnknown = mapOf(Pair("unknown", "newUnknown"), Pair("otherUnknown", "otherUnknown"))
         user.setUnknown(newUnknown)
 
@@ -53,27 +55,28 @@ class UserTest {
         assertEquals("123", clone.id)
         assertEquals("123.x", clone.ipAddress)
         assertEquals("userName", clone.username)
-        assertEquals("others", clone.others!!["others"])
-        assertEquals(1, clone.others!!.size)
+        assertEquals("userSegment", clone.segment)
+        assertEquals("data", clone.data!!["data"])
+        assertEquals(1, clone.data!!.size)
         assertEquals("unknown", clone.unknown!!["unknown"])
         assertEquals(1, clone.unknown!!.size)
     }
 
     @Test
-    fun `setting null others do not crash`() {
+    fun `setting null data do not crash`() {
         val user = createUser()
-        user.others = null
+        user.data = null
 
-        assertNull(user.others)
+        assertNull(user.data)
     }
 
     @Test
-    fun `when setOther receives immutable map as an argument, its still possible to add more others to the user`() {
+    fun `when setOther receives immutable map as an argument, its still possible to add more data to the user`() {
         val user = User().apply {
-            others = Collections.unmodifiableMap(mapOf("key1" to "value1"))
-            others!!["key2"] = "value2"
+            data = Collections.unmodifiableMap(mapOf("key1" to "value1"))
+            data!!["key2"] = "value2"
         }
-        assertNotNull(user.others) {
+        assertNotNull(user.data) {
             assertEquals(mapOf("key1" to "value1", "key2" to "value2"), it)
         }
     }
@@ -84,8 +87,9 @@ class UserTest {
             id = "123"
             ipAddress = "123.x"
             username = "userName"
-            val others = mutableMapOf(Pair("others", "others"))
-            setOthers(others)
+            segment = "userSegment"
+            val data = mutableMapOf(Pair("data", "data"))
+            setData(data)
             val unknown = mapOf(Pair("unknown", "unknown"))
             setUnknown(unknown)
         }
