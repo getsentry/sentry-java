@@ -8,6 +8,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.SentryMeasurementUnit.DAY
 import io.sentry.protocol.User
 import org.awaitility.kotlin.await
 import java.util.Date
@@ -367,6 +368,7 @@ class SentryTracerTest {
         transaction.description = "desc"
         transaction.setTag("myTag", "myValue")
         transaction.setData("myData", "myValue")
+        transaction.setMeasurement("myMetric", 1.0f)
         val ex = RuntimeException()
         transaction.throwable = ex
 
@@ -382,13 +384,14 @@ class SentryTracerTest {
         transaction.setTag("myTag", "myNewValue")
         transaction.throwable = RuntimeException()
         transaction.setData("myData", "myNewValue")
-        transaction.name = "newName"
+        transaction.setMeasurement("myMetric", 2.0f)
 
         assertEquals(SpanStatus.OK, transaction.status)
         assertEquals("op", transaction.operation)
         assertEquals("desc", transaction.description)
         assertEquals("myValue", transaction.getTag("myTag"))
         assertEquals("myValue", transaction.getData("myData"))
+        assertEquals(1.0f, transaction.measurements["myMetric"]!!.value)
         assertEquals("name", transaction.name)
         assertEquals(ex, transaction.throwable)
     }
@@ -708,7 +711,7 @@ class SentryTracerTest {
 
     @Test
     fun `when idle transaction with children, finishes the transaction after the idle timeout`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 10)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 1000)
 
         val span = transaction.startChild("op")
         span.finish()
@@ -803,5 +806,25 @@ class SentryTracerTest {
         assertNotNull(transaction.timer)
         transaction.finish(SpanStatus.OK)
         assertNull(transaction.timer)
+    }
+
+    @Test
+    fun `when tracer is finished, puts custom measurements into underlying transaction`() {
+        val transaction = fixture.getSut()
+        transaction.setMeasurement("metric1", 1.0f)
+        transaction.setMeasurement("days", 2f, DAY)
+        transaction.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(1.0f, it.measurements["metric1"]!!.value)
+
+                assertEquals(2f, it.measurements["days"]!!.value)
+                assertEquals("day", it.measurements["days"]!!.unit)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
     }
 }

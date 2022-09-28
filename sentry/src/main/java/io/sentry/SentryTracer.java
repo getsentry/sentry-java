@@ -515,12 +515,20 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setMeasurement(@NotNull String name, float value) {
+    if (root.isFinished()) {
+      return;
+    }
+
     this.measurements.put(name, new MeasurementValue(value, SentryMeasurementUnit.NONE.apiName()));
   }
 
   @Override
   public void setMeasurement(
       @NotNull String name, float value, @NotNull SentryMeasurementUnit unit) {
+    if (root.isFinished()) {
+      return;
+    }
+
     this.measurements.put(name, new MeasurementValue(value, unit.apiName()));
   }
 
@@ -617,6 +625,12 @@ public final class SentryTracer implements ITransaction {
   @NotNull
   AtomicBoolean isFinishTimerRunning() {
     return isFinishTimerRunning;
+  }
+
+  @TestOnly
+  @NotNull
+  Map<String, MeasurementValue> getMeasurements() {
+    return measurements;
   }
 
   private static final class FinishStatus {
