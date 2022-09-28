@@ -6,6 +6,7 @@
 
 - Make user segment a top level property ([#2257](https://github.com/getsentry/sentry-java/pull/2257))
 - Replace user `other` with `data` ([#2258](https://github.com/getsentry/sentry-java/pull/2258))
+- Provide API for attaching custom measurements to transactions ([#2260](https://github.com/getsentry/sentry-java/pull/2260))
 
 ## 6.5.0-beta.1
 
