@@ -126,7 +126,7 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `when there is an active span and server tracing origins is empty, does not add sentry trace headers to the request`() {
         val sut = fixture.getSut()
-        fixture.options.tracePropagationTargets = emptyList()
+        fixture.options.setTracePropagationTargets(emptyList())
         sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])

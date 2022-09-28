@@ -1615,6 +1615,13 @@ public class SentryOptions {
     addTracePropagationTarget(tracingOrigin);
   }
 
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  @ApiStatus.Internal
+  public void setTracingOrigins(List<String> tracingOrigins) {
+    setTracePropagationTargets(tracingOrigins);
+  }
+
   /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
@@ -1641,7 +1648,9 @@ public class SentryOptions {
     if (tracePropagationTargets == null) {
       tracePropagationTargets = new CopyOnWriteArrayList<>();
     }
-    tracePropagationTargets.add(tracePropagationTarget);
+    if (!tracePropagationTarget.isEmpty()) {
+      tracePropagationTargets.add(tracePropagationTarget);
+    }
   }
 
   /**

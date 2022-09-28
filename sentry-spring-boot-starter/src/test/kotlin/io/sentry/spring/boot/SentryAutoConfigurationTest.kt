@@ -205,6 +205,17 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
+    fun `when setting tracingOrigins it still works`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+            "sentry.tracing-origins=somehost,otherhost"
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.tracePropagationTargets).isNotNull().isEqualTo(listOf("somehost", "otherhost"))
+        }
+    }
+
+    @Test
     fun `when traces sample rate is set to null and tracing is enabled, traces sample rate should be set to 0`() {
         contextRunner.withPropertyValues(
             "sentry.dsn=http://key@localhost/proj"

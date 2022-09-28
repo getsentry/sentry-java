@@ -799,6 +799,67 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present`() {
+        // Arrange
+        val bundle = bundleOf(
+            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to """localhost,^(http|https)://api\..*$""",
+            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracePropagationTargets)
+    }
+
+    @Test
+    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present even if null`() {
+        // Arrange
+        val bundle = bundleOf(
+            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to null,
+            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
+    }
+
+    @Test
+    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present even if empty string`() {
+        // Arrange
+        val bundle = bundleOf(
+            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to "",
+            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
+    }
+
+    @Test
+    fun `applyMetadata uses tracingOrigins if tracePropagationTargets is not present`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """otherhost""")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options)
+
+        // Assert
+        assertEquals(listOf("otherhost"), fixture.options.tracePropagationTargets)
+    }
+
+    @Test
     fun `applyMetadata reads null tracePropagationTargets and sets empty list`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to null)
