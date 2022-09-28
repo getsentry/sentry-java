@@ -384,6 +384,7 @@ class SentryTracerTest {
         transaction.setTag("myTag", "myNewValue")
         transaction.throwable = RuntimeException()
         transaction.setData("myData", "myNewValue")
+        transaction.name = "newName"
         transaction.setMeasurement("myMetric", 2.0f)
 
         assertEquals(SpanStatus.OK, transaction.status)
