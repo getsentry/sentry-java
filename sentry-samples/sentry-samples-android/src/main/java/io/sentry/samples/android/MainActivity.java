@@ -27,6 +27,7 @@ import timber.log.Timber;
 public class MainActivity extends AppCompatActivity {
 
   private int crashCount = 0;
+  private int screenLoadCount = 0;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -200,8 +201,10 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onResume() {
     super.onResume();
+    screenLoadCount++;
     final ISpan span = Sentry.getSpan();
     if (span != null) {
+      span.setMeasurement("screen_load_count", screenLoadCount);
       span.finish(SpanStatus.OK);
     }
   }
