@@ -21,8 +21,11 @@ final class ContextUtils {
    * @return the Application's PackageInfo if possible, or null
    */
   @Nullable
-  static PackageInfo getPackageInfo(final @NotNull Context context, final @NotNull ILogger logger) {
-    return getPackageInfo(context, 0, logger);
+  static PackageInfo getPackageInfo(
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    return getPackageInfo(context, 0, logger, buildInfoProvider);
   }
 
   /**
@@ -34,9 +37,11 @@ final class ContextUtils {
   @Nullable
   @SuppressWarnings("deprecation")
   static PackageInfo getPackageInfo(
-      final @NotNull Context context, final int flags, final @NotNull ILogger logger) {
+      final @NotNull Context context,
+      final int flags,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     try {
-      BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
       if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
         return context
             .getPackageManager()
@@ -60,10 +65,10 @@ final class ContextUtils {
   @NotNull
   @SuppressWarnings("deprecation")
   static ApplicationInfo getApplicationInfo(
-      final @NotNull Context context, final long flag, final @NotNull ILogger logger)
+      final @NotNull Context context,
+      final long flag,
+      final @NotNull BuildInfoProvider buildInfoProvider)
       throws PackageManager.NameNotFoundException {
-
-    BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
       return context
           .getPackageManager()
@@ -85,8 +90,7 @@ final class ContextUtils {
   @SuppressLint("NewApi")
   @NotNull
   static String getVersionCode(
-      final @NotNull PackageInfo packageInfo, final @NotNull ILogger logger) {
-    BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
+      final @NotNull PackageInfo packageInfo, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.P) {
       return Long.toString(packageInfo.getLongVersionCode());
     }
