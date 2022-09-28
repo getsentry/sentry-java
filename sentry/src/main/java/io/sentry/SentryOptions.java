@@ -1622,7 +1622,7 @@ public class SentryOptions {
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   @ApiStatus.Internal
-  public void setTracingOrigins(@Nullable List<String> tracingOrigins) {
+  public void setTracingOrigins(final @Nullable List<String> tracingOrigins) {
     setTracePropagationTargets(tracingOrigins);
   }
 
