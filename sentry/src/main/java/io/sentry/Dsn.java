@@ -49,7 +49,7 @@ final class Dsn {
 
   Dsn(@Nullable String dsn) throws IllegalArgumentException {
     try {
-    Objects.requireNonNull(dsn, "The DSN is required.");
+      Objects.requireNonNull(dsn, "The DSN is required.");
       URI uri = new URI(dsn).normalize();
       String userInfo = uri.getUserInfo();
       if (userInfo == null || userInfo.isEmpty()) {
