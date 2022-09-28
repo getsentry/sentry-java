@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.Objects;
 import java.net.URI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
