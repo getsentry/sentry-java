@@ -13,6 +13,7 @@ val sentryAndroidSdkName: String by project
 
 android {
     compileSdk = Config.Android.compileSdkVersion
+    namespace = "io.sentry.android.ndk"
 
     sentryNativeSrc = if (File("${project.projectDir}/sentry-native-local").exists()) {
         "sentry-native-local"
