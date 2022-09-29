@@ -217,7 +217,18 @@ class SpanTest {
         val transaction = getTransaction()
         val span = transaction.startChild("operation", "description")
 
-        assertEquals(transaction.traceContext(), span.traceContext())
+        val transactionTraceContext = transaction.traceContext()
+        val spanTraceContext = span.traceContext()
+        assertNotNull(transactionTraceContext)
+        assertNotNull(spanTraceContext)
+        assertEquals(transactionTraceContext.traceId, spanTraceContext.traceId)
+        assertEquals(transactionTraceContext.transaction, spanTraceContext.transaction)
+        assertEquals(transactionTraceContext.environment, spanTraceContext.environment)
+        assertEquals(transactionTraceContext.release, spanTraceContext.release)
+        assertEquals(transactionTraceContext.publicKey, spanTraceContext.publicKey)
+        assertEquals(transactionTraceContext.sampleRate, spanTraceContext.sampleRate)
+        assertEquals(transactionTraceContext.userId, spanTraceContext.userId)
+        assertEquals(transactionTraceContext.userSegment, spanTraceContext.userSegment)
     }
 
     @Test
@@ -225,8 +236,8 @@ class SpanTest {
         val transaction = getTransaction()
         val span = transaction.startChild("operation", "description")
 
-        assertNotNull(transaction.toBaggageHeader()) {
-            assertEquals(it.value, span.toBaggageHeader()!!.value)
+        assertNotNull(transaction.toBaggageHeader(null)) {
+            assertEquals(it.value, span.toBaggageHeader(null)!!.value)
         }
     }
 

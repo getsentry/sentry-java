@@ -22,10 +22,24 @@ public final class io/sentry/Attachment {
 
 public final class io/sentry/Baggage {
 	public fun <init> (Lio/sentry/ILogger;)V
-	public fun <init> (Ljava/util/Map;Lio/sentry/ILogger;)V
+	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZLio/sentry/ILogger;)V
+	public fun freeze ()V
 	public static fun fromHeader (Ljava/lang/String;Lio/sentry/ILogger;)Lio/sentry/Baggage;
+	public static fun fromHeader (Ljava/lang/String;ZLio/sentry/ILogger;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/util/List;Lio/sentry/ILogger;)Lio/sentry/Baggage;
+	public static fun fromHeader (Ljava/util/List;ZLio/sentry/ILogger;)Lio/sentry/Baggage;
 	public fun get (Ljava/lang/String;)Ljava/lang/String;
+	public fun getEnvironment ()Ljava/lang/String;
+	public fun getPublicKey ()Ljava/lang/String;
+	public fun getRelease ()Ljava/lang/String;
+	public fun getSampleRate ()Ljava/lang/String;
+	public fun getSampleRateDouble ()Ljava/lang/Double;
+	public fun getThirdPartyHeader ()Ljava/lang/String;
+	public fun getTraceId ()Ljava/lang/String;
+	public fun getTransaction ()Ljava/lang/String;
+	public fun getUserId ()Ljava/lang/String;
+	public fun getUserSegment ()Ljava/lang/String;
+	public fun isMutable ()Z
 	public fun set (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setPublicKey (Ljava/lang/String;)V
@@ -35,13 +49,27 @@ public final class io/sentry/Baggage {
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUserId (Ljava/lang/String;)V
 	public fun setUserSegment (Ljava/lang/String;)V
-	public fun toHeaderString ()Ljava/lang/String;
+	public fun setValuesFromTransaction (Lio/sentry/ITransaction;Lio/sentry/protocol/User;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;)V
+	public fun toHeaderString (Ljava/lang/String;)Ljava/lang/String;
+	public fun toTraceContext ()Lio/sentry/TraceContext;
+}
+
+public final class io/sentry/Baggage$DSCKeys {
+	public static final field ENVIRONMENT Ljava/lang/String;
+	public static final field PUBLIC_KEY Ljava/lang/String;
+	public static final field RELEASE Ljava/lang/String;
+	public static final field SAMPLE_RATE Ljava/lang/String;
+	public static final field TRACE_ID Ljava/lang/String;
+	public static final field TRANSACTION Ljava/lang/String;
+	public static final field USER_ID Ljava/lang/String;
+	public static final field USER_SEGMENT Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/BaggageHeader {
 	public static final field BAGGAGE_HEADER Ljava/lang/String;
-	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Ljava/lang/String;)V
+	public static fun fromBaggageAndOutgoingHeader (Lio/sentry/Baggage;Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun getName ()Ljava/lang/String;
 	public fun getValue ()Ljava/lang/String;
 }
@@ -462,7 +490,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public abstract fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public abstract fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public abstract fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -647,7 +675,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -684,7 +712,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -712,8 +740,11 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 }
 
 public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field TRUNCATION_REASON_BACKGROUNDED Ljava/lang/String;
+	public static final field TRUNCATION_REASON_NORMAL Ljava/lang/String;
+	public static final field TRUNCATION_REASON_TIMEOUT Ljava/lang/String;
 	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;)V
-	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/lang/String;Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/io/File;Ljava/util/List;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/lang/String;Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAndroidApiLevel ()I
 	public fun getBuildId ()Ljava/lang/String;
 	public fun getCpuArchitecture ()Ljava/lang/String;
@@ -734,6 +765,8 @@ public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io
 	public fun getTraceId ()Ljava/lang/String;
 	public fun getTransactionId ()Ljava/lang/String;
 	public fun getTransactionName ()Ljava/lang/String;
+	public fun getTransactions ()Ljava/util/List;
+	public fun getTruncationReason ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersionCode ()Ljava/lang/String;
 	public fun getVersionName ()Ljava/lang/String;
@@ -789,9 +822,51 @@ public final class io/sentry/ProfilingTraceData$JsonKeys {
 	public static final field SAMPLED_PROFILE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION_ID Ljava/lang/String;
+	public static final field TRANSACTION_LIST Ljava/lang/String;
 	public static final field TRANSACTION_NAME Ljava/lang/String;
+	public static final field TRUNCATION_REASON Ljava/lang/String;
 	public static final field VERSION_CODE Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/ProfilingTransactionData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/ITransaction;Ljava/lang/Long;Ljava/lang/Long;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public fun getRelativeEndCpuMs ()Ljava/lang/Long;
+	public fun getRelativeEndNs ()Ljava/lang/Long;
+	public fun getRelativeStartCpuMs ()Ljava/lang/Long;
+	public fun getRelativeStartNs ()Ljava/lang/Long;
+	public fun getTraceId ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun notifyFinish (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;)V
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setId (Ljava/lang/String;)V
+	public fun setName (Ljava/lang/String;)V
+	public fun setRelativeEndNs (Ljava/lang/Long;)V
+	public fun setRelativeStartNs (Ljava/lang/Long;)V
+	public fun setTraceId (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/ProfilingTransactionData$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/ProfilingTransactionData;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/ProfilingTransactionData$JsonKeys {
+	public static final field END_CPU_MS Ljava/lang/String;
+	public static final field END_NS Ljava/lang/String;
+	public static final field ID Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field START_CPU_MS Ljava/lang/String;
+	public static final field START_NS Ljava/lang/String;
+	public static final field TRACE_ID Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -1426,7 +1501,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -1530,7 +1605,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -1653,7 +1728,6 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getUserSegment ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
-	public fun toBaggage (Lio/sentry/ILogger;)Lio/sentry/Baggage;
 }
 
 public final class io/sentry/TraceContext$Deserializer : io/sentry/JsonDeserializer {
@@ -1697,7 +1771,9 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public static fun fromSentryTrace (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
+	public static fun fromSentryTrace (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;)Lio/sentry/TransactionContext;
 	public static fun fromSentryTrace (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
+	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getName ()Ljava/lang/String;
 	public fun getParentSampled ()Ljava/lang/Boolean;
 	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;
@@ -2941,17 +3017,21 @@ public final class io/sentry/protocol/TransactionNameSource : java/lang/Enum {
 public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/User;)V
+	public fun getData ()Ljava/util/Map;
 	public fun getEmail ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/String;
 	public fun getIpAddress ()Ljava/lang/String;
 	public fun getOthers ()Ljava/util/Map;
+	public fun getSegment ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUsername ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setData (Ljava/util/Map;)V
 	public fun setEmail (Ljava/lang/String;)V
 	public fun setId (Ljava/lang/String;)V
 	public fun setIpAddress (Ljava/lang/String;)V
 	public fun setOthers (Ljava/util/Map;)V
+	public fun setSegment (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUsername (Ljava/lang/String;)V
 }
@@ -2963,10 +3043,12 @@ public final class io/sentry/protocol/User$Deserializer : io/sentry/JsonDeserial
 }
 
 public final class io/sentry/protocol/User$JsonKeys {
+	public static final field DATA Ljava/lang/String;
 	public static final field EMAIL Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
 	public static final field IP_ADDRESS Ljava/lang/String;
 	public static final field OTHER Ljava/lang/String;
+	public static final field SEGMENT Ljava/lang/String;
 	public static final field USERNAME Ljava/lang/String;
 	public fun <init> ()V
 }
@@ -3052,10 +3134,15 @@ public abstract class io/sentry/transport/TransportResult {
 
 public final class io/sentry/util/CollectionUtils {
 	public static fun filterMapEntries (Ljava/util/Map;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/Map;
+	public static fun map (Ljava/util/List;Lio/sentry/util/CollectionUtils$Mapper;)Ljava/util/List;
 	public static fun newArrayList (Ljava/util/List;)Ljava/util/List;
 	public static fun newConcurrentHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun newHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun size (Ljava/lang/Iterable;)I
+}
+
+public abstract interface class io/sentry/util/CollectionUtils$Mapper {
+	public abstract fun map (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface class io/sentry/util/CollectionUtils$Predicate {
@@ -3131,6 +3218,7 @@ public final class io/sentry/util/StringUtils {
 	public static fun byteCountToString (J)Ljava/lang/String;
 	public static fun calculateStringHash (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/String;
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
+	public static fun countOf (Ljava/lang/String;C)I
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 }

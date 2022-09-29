@@ -17,13 +17,14 @@ import kotlin.test.assertFalse
 class SentryFileOutputStreamTest {
     class Fixture {
         val hub = mock<IHub>()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var sentryTracer: SentryTracer
 
         internal fun getSut(
             tmpFile: File? = null,
             activeTransaction: Boolean = true,
         ): SentryFileOutputStream {
             whenever(hub.options).thenReturn(SentryOptions())
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }

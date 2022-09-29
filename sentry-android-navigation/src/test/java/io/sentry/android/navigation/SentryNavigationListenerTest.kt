@@ -54,18 +54,8 @@ class SentryNavigationListenerTest {
             enableTracing: Boolean = true,
             tracesSampleRate: Double? = 1.0,
             hasViewIdInRes: Boolean = true,
-            transaction: SentryTracer = SentryTracer(
-                TransactionContext(
-                    "/$toRoute",
-                    SentryNavigationListener.NAVIGATION_OP
-                ),
-                hub
-            )
+            transaction: SentryTracer? = null
         ): SentryNavigationListener {
-            this.transaction = transaction
-
-            whenever(hub.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
-                .thenReturn(transaction)
             whenever(hub.options).thenReturn(
                 SentryOptions().apply {
                     setTracesSampleRate(
@@ -73,6 +63,18 @@ class SentryNavigationListenerTest {
                     )
                 }
             )
+
+            this.transaction = transaction ?: SentryTracer(
+                TransactionContext(
+                    "/$toRoute",
+                    SentryNavigationListener.NAVIGATION_OP
+                ),
+                hub
+            )
+
+            whenever(hub.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
+                .thenReturn(this.transaction)
+
             whenever(hub.configureScope(any())).thenAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }
