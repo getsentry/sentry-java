@@ -809,7 +809,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracePropagationTargets)
@@ -825,7 +825,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.tracePropagationTargets.isEmpty())
@@ -841,7 +841,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.tracePropagationTargets.isEmpty())
@@ -854,7 +854,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(listOf("otherhost"), fixture.options.tracePropagationTargets)
@@ -867,7 +867,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.tracePropagationTargets.isEmpty())
