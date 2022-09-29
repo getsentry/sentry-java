@@ -152,7 +152,7 @@ class SentryAutoConfigurationTest {
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
             "sentry.ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,io.sentry.Sentry",
-            "sentry.tracing-origins=localhost,^(http|https)://api\\..*\$"
+            "sentry.trace-propagation-targets=localhost,^(http|https)://api\\..*\$"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -179,7 +179,39 @@ class SentryAutoConfigurationTest {
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
-            assertThat(options.tracingOrigins).containsOnly("localhost", "^(http|https)://api\\..*\$")
+            assertThat(options.tracePropagationTargets).containsOnly("localhost", "^(http|https)://api\\..*\$")
+        }
+    }
+
+    @Test
+    fun `when tracePropagationTargets are not set, default is returned`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.tracePropagationTargets).isNotNull().containsOnly(".*")
+        }
+    }
+
+    @Test
+    fun `when tracePropagationTargets property is set to empty list, empty list is returned`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+            "sentry.trace-propagation-targets="
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.tracePropagationTargets).isNotNull().isEmpty()
+        }
+    }
+
+    @Test
+    fun `when setting tracingOrigins it still works`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+            "sentry.tracing-origins=somehost,otherhost"
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.tracePropagationTargets).isNotNull().isEqualTo(listOf("somehost", "otherhost"))
         }
     }
 

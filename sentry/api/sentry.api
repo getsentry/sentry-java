@@ -198,6 +198,7 @@ public final class io/sentry/ExternalOptions {
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addInAppExclude (Ljava/lang/String;)V
 	public fun addInAppInclude (Ljava/lang/String;)V
+	public fun addTracePropagationTarget (Ljava/lang/String;)V
 	public fun addTracingOrigin (Ljava/lang/String;)V
 	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/ExternalOptions;
 	public fun getContextTags ()Ljava/util/List;
@@ -220,6 +221,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getSendClientReports ()Ljava/lang/Boolean;
 	public fun getServerName ()Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
+	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracingOrigins ()Ljava/util/List;
 	public fun setDebug (Ljava/lang/Boolean;)V
@@ -1327,6 +1329,7 @@ public class io/sentry/SentryOptions {
 	public fun getShutdownTimeoutMillis ()J
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
+	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
 	public fun getTracingOrigins ()Ljava/util/List;
@@ -1405,9 +1408,11 @@ public class io/sentry/SentryOptions {
 	public fun setShutdownTimeoutMillis (J)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTracePropagationTargets (Ljava/util/List;)V
 	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
+	public fun setTracingOrigins (Ljava/util/List;)V
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
@@ -1749,6 +1754,12 @@ public final class io/sentry/TraceContext$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/TracePropagationTargets {
+	public fun <init> ()V
+	public static fun contain (Ljava/util/List;Ljava/lang/String;)Z
+	public static fun contain (Ljava/util/List;Ljava/net/URI;)Z
+}
+
 public final class io/sentry/TracesSamplingDecision {
 	public fun <init> (Ljava/lang/Boolean;)V
 	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;)V
@@ -1757,12 +1768,6 @@ public final class io/sentry/TracesSamplingDecision {
 	public fun getProfileSampled ()Ljava/lang/Boolean;
 	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getSampled ()Ljava/lang/Boolean;
-}
-
-public final class io/sentry/TracingOrigins {
-	public fun <init> ()V
-	public static fun contain (Ljava/util/List;Ljava/lang/String;)Z
-	public static fun contain (Ljava/util/List;Ljava/net/URI;)Z
 }
 
 public final class io/sentry/TransactionContext : io/sentry/SpanContext {

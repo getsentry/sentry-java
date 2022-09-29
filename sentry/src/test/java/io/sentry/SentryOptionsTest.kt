@@ -285,8 +285,8 @@ class SentryOptionsTest {
         externalOptions.profilesSampleRate = 0.5
         externalOptions.addInAppInclude("com.app")
         externalOptions.addInAppExclude("io.off")
-        externalOptions.addTracingOrigin("localhost")
-        externalOptions.addTracingOrigin("api.foo.com")
+        externalOptions.addTracePropagationTarget("localhost")
+        externalOptions.addTracePropagationTarget("api.foo.com")
         externalOptions.addContextTag("userId")
         externalOptions.addContextTag("requestId")
         externalOptions.proguardUuid = "1234"
@@ -309,7 +309,7 @@ class SentryOptionsTest {
         assertEquals(0.5, options.profilesSampleRate)
         assertEquals(listOf("com.app"), options.inAppIncludes)
         assertEquals(listOf("io.off"), options.inAppExcludes)
-        assertEquals(listOf("localhost", "api.foo.com"), options.tracingOrigins)
+        assertEquals(listOf("localhost", "api.foo.com"), options.tracePropagationTargets)
         assertEquals(listOf("userId", "requestId"), options.contextTags)
         assertEquals("1234", options.proguardUuid)
         assertEquals(1500L, options.idleTimeout)
@@ -335,6 +335,23 @@ class SentryOptionsTest {
         options.merge(externalOptions)
 
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2", "tag3" to "value3"), options.tags)
+    }
+
+    @Test
+    fun `merging options when tracePropagationTargets is not set preserves the default value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.merge(externalOptions)
+        assertEquals(listOf(".*"), options.tracePropagationTargets)
+    }
+
+    @Test
+    fun `merging options when tracePropagationTargets is empty`() {
+        val externalOptions = ExternalOptions()
+        externalOptions.addTracePropagationTarget("")
+        val options = SentryOptions()
+        options.merge(externalOptions)
+        assertEquals(listOf(), options.tracePropagationTargets)
     }
 
     @Test

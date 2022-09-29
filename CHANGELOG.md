@@ -6,6 +6,7 @@
 
 - Make user segment a top level property ([#2257](https://github.com/getsentry/sentry-java/pull/2257))
 - Replace user `other` with `data` ([#2258](https://github.com/getsentry/sentry-java/pull/2258))
+- `isTraceSampling` is now on by default. `tracingOrigins` has been replaced by `tracePropagationTargets` ([#2255](https://github.com/getsentry/sentry-java/pull/2255))
 
 ## 6.5.0-beta.1
 
