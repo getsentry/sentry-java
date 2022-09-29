@@ -85,12 +85,14 @@ final class ManifestMetadataReader {
    */
   @SuppressWarnings("deprecation")
   static void applyMetadata(
-      final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
+      final @NotNull Context context,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The application context is required.");
     Objects.requireNonNull(options, "The options object is required.");
 
     try {
-      final Bundle metadata = getMetadata(context);
+      final Bundle metadata = getMetadata(context, options.getLogger(), buildInfoProvider);
       final ILogger logger = options.getLogger();
 
       if (metadata != null) {
@@ -365,7 +367,7 @@ final class ManifestMetadataReader {
 
     boolean autoInit = true;
     try {
-      final Bundle metadata = getMetadata(context);
+      final Bundle metadata = getMetadata(context, logger, null);
       if (metadata != null) {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
@@ -383,12 +385,16 @@ final class ManifestMetadataReader {
    * @return the Bundle attached to the PackageManager
    * @throws PackageManager.NameNotFoundException if the package name is non-existent
    */
-  private static @Nullable Bundle getMetadata(final @NotNull Context context)
+  private static @Nullable Bundle getMetadata(
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @Nullable BuildInfoProvider buildInfoProvider)
       throws PackageManager.NameNotFoundException {
     final ApplicationInfo app =
-        context
-            .getPackageManager()
-            .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+        ContextUtils.getApplicationInfo(
+            context,
+            PackageManager.GET_META_DATA,
+            buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
     return app.metaData;
   }
 }

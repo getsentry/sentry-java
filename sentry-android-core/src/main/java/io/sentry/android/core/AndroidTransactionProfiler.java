@@ -67,7 +67,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
-    this.packageInfo = ContextUtils.getPackageInfo(context, options.getLogger());
+    this.packageInfo = ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
   }
 
   private void init() {
@@ -268,7 +268,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     ActivityManager.MemoryInfo memInfo = getMemInfo();
     if (packageInfo != null) {
       versionName = ContextUtils.getVersionName(packageInfo);
-      versionCode = ContextUtils.getVersionCode(packageInfo);
+      versionCode = ContextUtils.getVersionCode(packageInfo, buildInfoProvider);
     }
     if (memInfo != null) {
       totalMem = Long.toString(memInfo.totalMem);
