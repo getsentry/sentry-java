@@ -1465,7 +1465,7 @@ public class SentryOptions {
    *
    * <p>Note: this is an experimental API and will be removed without notice.
    *
-   * @deprecated please use {{@link SentryOptions#addTracePropagationTarget(String)}} instead
+   * @deprecated please use {{@link SentryOptions#setTracePropagationTargets(List)}} instead
    * @param traceSampling - if trace sampling should be enabled
    */
   @Deprecated
@@ -1605,7 +1605,7 @@ public class SentryOptions {
   /**
    * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
    *
-   * @deprecated use {{@link SentryOptions#addTracePropagationTarget(String)} }
+   * @deprecated use {{@link SentryOptions#setTracePropagationTargets(List)}}
    * @param tracingOrigin - the tracing origin
    */
   @Deprecated
