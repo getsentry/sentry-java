@@ -3,6 +3,9 @@ package io.sentry;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * <a href="https://getsentry.github.io/relay/relay_metrics/enum.DurationUnit.html">Develop Docs</a>
+ */
 public enum SentryMeasurementUnit {
   /** Nanosecond (`"nanosecond"`), 10^-9 seconds. */
   NANOSECOND,

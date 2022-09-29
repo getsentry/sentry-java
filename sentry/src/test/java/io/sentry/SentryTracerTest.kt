@@ -819,6 +819,7 @@ class SentryTracerTest {
         verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(1.0f, it.measurements["metric1"]!!.value)
+                assertEquals(null, it.measurements["metric1"]!!.unit)
 
                 assertEquals(2f, it.measurements["days"]!!.value)
                 assertEquals("day", it.measurements["days"]!!.unit)

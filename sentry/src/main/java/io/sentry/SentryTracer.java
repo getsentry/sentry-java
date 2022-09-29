@@ -519,7 +519,7 @@ public final class SentryTracer implements ITransaction {
       return;
     }
 
-    this.measurements.put(name, new MeasurementValue(value, SentryMeasurementUnit.NONE.apiName()));
+    this.measurements.put(name, new MeasurementValue(value, null));
   }
 
   @Override

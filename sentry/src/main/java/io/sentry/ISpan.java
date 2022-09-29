@@ -171,7 +171,7 @@ public interface ISpan {
   Object getData(@NotNull String key);
 
   /**
-   * Set a measurement with NONE unit.
+   * Set a measurement without unit.
    *
    * <p>NOTE: Setting a measurement with the same name on the same transaction multiple times only
    * keeps the last value.
