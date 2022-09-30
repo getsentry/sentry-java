@@ -205,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
     screenLoadCount++;
     final ISpan span = Sentry.getSpan();
     if (span != null) {
-      span.setMeasurement("screen_load_count", screenLoadCount, SentryMeasurementUnit.DAY);
+      span.setMeasurement("screen_load_count", screenLoadCount, new SentryMeasurementUnit.Custom("test"));
       span.finish(SpanStatus.OK);
     }
   }

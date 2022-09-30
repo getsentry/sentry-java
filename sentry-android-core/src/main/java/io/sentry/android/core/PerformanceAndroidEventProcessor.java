@@ -68,7 +68,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       if (appStartUpInterval != null) {
         final MeasurementValue value =
             new MeasurementValue(
-                (float) appStartUpInterval, SentryMeasurementUnit.MILLISECOND.apiName());
+                (float) appStartUpInterval, SentryMeasurementUnit.Duration.MILLISECOND.apiName());
 
         final String appStartKey =
             AppStartState.getInstance().isColdStart() ? "app_start_cold" : "app_start_warm";

@@ -104,11 +104,11 @@ public final class ActivityFramesTracker {
     }
 
     final MeasurementValue tfValues =
-        new MeasurementValue(totalFrames, SentryMeasurementUnit.NONE.apiName());
+        new MeasurementValue(totalFrames, SentryMeasurementUnit.Duration.NONE.apiName());
     final MeasurementValue sfValues =
-        new MeasurementValue(slowFrames, SentryMeasurementUnit.NONE.apiName());
+        new MeasurementValue(slowFrames, SentryMeasurementUnit.Duration.NONE.apiName());
     final MeasurementValue ffValues =
-        new MeasurementValue(frozenFrames, SentryMeasurementUnit.NONE.apiName());
+        new MeasurementValue(frozenFrames, SentryMeasurementUnit.Duration.NONE.apiName());
     final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
     measurements.put("frames_total", tfValues);
     measurements.put("frames_slow", sfValues);
