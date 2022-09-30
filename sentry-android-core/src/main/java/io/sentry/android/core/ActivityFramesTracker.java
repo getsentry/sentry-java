@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.ILogger;
-import io.sentry.SentryMeasurementUnit;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
@@ -103,12 +102,9 @@ public final class ActivityFramesTracker {
       return;
     }
 
-    final MeasurementValue tfValues =
-        new MeasurementValue(totalFrames, SentryMeasurementUnit.Duration.NONE.apiName());
-    final MeasurementValue sfValues =
-        new MeasurementValue(slowFrames, SentryMeasurementUnit.Duration.NONE.apiName());
-    final MeasurementValue ffValues =
-        new MeasurementValue(frozenFrames, SentryMeasurementUnit.Duration.NONE.apiName());
+    final MeasurementValue tfValues = new MeasurementValue(totalFrames, null);
+    final MeasurementValue sfValues = new MeasurementValue(slowFrames, null);
+    final MeasurementValue ffValues = new MeasurementValue(frozenFrames, null);
     final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
     measurements.put("frames_total", tfValues);
     measurements.put("frames_slow", sfValues);

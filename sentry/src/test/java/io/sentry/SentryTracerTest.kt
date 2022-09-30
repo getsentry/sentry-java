@@ -8,7 +8,6 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
-import io.sentry.SentryMeasurementUnit.DAY
 import io.sentry.protocol.User
 import org.awaitility.kotlin.await
 import java.util.Date
@@ -813,7 +812,7 @@ class SentryTracerTest {
     fun `when tracer is finished, puts custom measurements into underlying transaction`() {
         val transaction = fixture.getSut()
         transaction.setMeasurement("metric1", 1.0f)
-        transaction.setMeasurement("days", 2f, DAY)
+        transaction.setMeasurement("days", 2f, SentryMeasurementUnit.Duration.DAY)
         transaction.finish()
 
         verify(fixture.hub).captureTransaction(
