@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Fixes
-
-- Reset frames tracker on activity started ([#2269](https://github.com/getsentry/sentry-java/pull/2269))([#2270](https://github.com/getsentry/sentry-java/pull/2270))
-
 ## 6.4.2
 
 ### Fixes
