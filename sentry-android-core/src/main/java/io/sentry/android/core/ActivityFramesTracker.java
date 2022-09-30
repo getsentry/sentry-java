@@ -54,6 +54,7 @@ public final class ActivityFramesTracker {
     if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
+    frameMetricsAggregator.reset();
     frameMetricsAggregator.add(activity);
   }
 
