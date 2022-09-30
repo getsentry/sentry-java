@@ -95,12 +95,14 @@ public interface SentryMeasurementUnit {
       this.name = name;
     }
 
-    @Override public @NotNull String name() {
+    @Override
+    public @NotNull String name() {
       return name;
     }
   }
 
-  @NotNull String name();
+  @NotNull
+  String name();
 
   @ApiStatus.Internal
   default @NotNull String apiName() {

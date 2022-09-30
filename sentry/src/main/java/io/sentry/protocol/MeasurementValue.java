@@ -34,7 +34,9 @@ public final class MeasurementValue implements JsonUnknown, JsonSerializable {
 
   @TestOnly
   public MeasurementValue(
-      final @NotNull Number value, final @Nullable String unit, final @Nullable Map<String, Object> unknown) {
+      final @NotNull Number value,
+      final @Nullable String unit,
+      final @Nullable Map<String, Object> unknown) {
     this.value = value;
     this.unit = unit;
     this.unknown = unknown;
