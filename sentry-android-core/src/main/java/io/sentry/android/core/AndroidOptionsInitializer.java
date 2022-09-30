@@ -130,7 +130,7 @@ final class AndroidOptionsInitializer {
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
 
-    ManifestMetadataReader.applyMetadata(context, options);
+    ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
 
     final ActivityFramesTracker activityFramesTracker =
@@ -144,7 +144,7 @@ final class AndroidOptionsInitializer {
         isFragmentAvailable,
         isTimberAvailable);
 
-    readDefaultOptionValues(options, context);
+    readDefaultOptionValues(options, context, buildInfoProvider);
 
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
@@ -224,13 +224,17 @@ final class AndroidOptionsInitializer {
    * @param context the Android context methods
    */
   private static void readDefaultOptionValues(
-      final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
-    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, options.getLogger());
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    final PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
     if (packageInfo != null) {
       // Sets App's release if not set by Manifest
       if (options.getRelease() == null) {
         options.setRelease(
-            getSentryReleaseVersion(packageInfo, ContextUtils.getVersionCode(packageInfo)));
+            getSentryReleaseVersion(
+                packageInfo, ContextUtils.getVersionCode(packageInfo, buildInfoProvider)));
       }
 
       // Sets the App's package name as InApp

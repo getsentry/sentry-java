@@ -4,6 +4,7 @@ plugins {
 
 android {
     compileSdk = Config.Android.compileSdkVersion
+    namespace = "io.sentry.java.tests.perf.appsentry"
 
     defaultConfig {
         applicationId = "io.sentry.java.tests.perf.appsentry"

@@ -4,9 +4,15 @@
 
 ### Features
 
+- Provide API for attaching custom measurements to transactions ([#2260](https://github.com/getsentry/sentry-java/pull/2260))
+
+## 6.5.0-beta.2
+
+### Features
+
 - Make user segment a top level property ([#2257](https://github.com/getsentry/sentry-java/pull/2257))
 - Replace user `other` with `data` ([#2258](https://github.com/getsentry/sentry-java/pull/2258))
-- Provide API for attaching custom measurements to transactions ([#2260](https://github.com/getsentry/sentry-java/pull/2260))
+- `isTraceSampling` is now on by default. `tracingOrigins` has been replaced by `tracePropagationTargets` ([#2255](https://github.com/getsentry/sentry-java/pull/2255))
 
 ## 6.5.0-beta.1
 

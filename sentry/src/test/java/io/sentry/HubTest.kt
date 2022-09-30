@@ -1207,7 +1207,7 @@ class HubTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
         sentryTracer.finish()
         val traceContext = sentryTracer.traceContext()
-        verify(mockClient).captureTransaction(any(), eq(traceContext), any(), eq(null), anyOrNull())
+        verify(mockClient).captureTransaction(any(), equalTraceContext(traceContext), any(), eq(null), anyOrNull())
     }
 
     @Test
@@ -1289,7 +1289,7 @@ class HubTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
         sentryTracer.finish()
         val traceContext = sentryTracer.traceContext()
-        verify(mockClient, never()).captureTransaction(any(), eq(traceContext), any(), eq(null), anyOrNull())
+        verify(mockClient, never()).captureTransaction(any(), equalTraceContext(traceContext), any(), eq(null), anyOrNull())
     }
 
     @Test
@@ -1545,5 +1545,20 @@ class HubTest {
         val hash = StringUtils.calculateStringHash(dsnTest, mock())
         val fileHashFolder = File(file.absolutePath, hash!!)
         return fileHashFolder.absolutePath
+    }
+
+    private fun equalTraceContext(expectedContext: TraceContext?): TraceContext? {
+        expectedContext ?: return eq<TraceContext?>(null)
+
+        return argWhere { actual ->
+            expectedContext.traceId == actual.traceId &&
+                expectedContext.transaction == actual.transaction &&
+                expectedContext.environment == actual.environment &&
+                expectedContext.release == actual.release &&
+                expectedContext.publicKey == actual.publicKey &&
+                expectedContext.sampleRate == actual.sampleRate &&
+                expectedContext.userId == actual.userId &&
+                expectedContext.userSegment == actual.userSegment
+        }
     }
 }

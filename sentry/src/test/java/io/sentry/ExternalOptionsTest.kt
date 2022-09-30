@@ -146,9 +146,30 @@ class ExternalOptionsTest {
     }
 
     @Test
-    fun `creates options with tracing origins using external properties`() {
+    fun `creates options with trace propagation targets using external properties`() {
+        withPropertiesFile("""trace-propagation-targets=localhost,^(http|https)://api\\..*$""") {
+            assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracePropagationTargets)
+        }
+    }
+
+    @Test
+    fun `creates options without trace propagation targets results in default tracePropagationTargets being null`() {
+        withPropertiesFile("""""") {
+            assertEquals(null, it.tracePropagationTargets)
+        }
+    }
+
+    @Test
+    fun `creates options with empty trace propagation targets, results in empty list`() {
+        withPropertiesFile("""trace-propagation-targets=""") {
+            assertTrue(it.tracePropagationTargets?.isEmpty() == true)
+        }
+    }
+
+    @Test
+    fun `creates options with tracingOrigins using external properties`() {
         withPropertiesFile("""tracing-origins=localhost,^(http|https)://api\\..*$""") {
-            assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracingOrigins)
+            assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracePropagationTargets)
         }
     }
 

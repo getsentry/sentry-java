@@ -36,7 +36,9 @@ class SentryFeignClientTest {
         val hub = mock<IHub>()
         val server = MockWebServer()
         val sentryTracer: SentryTracer
-        val sentryOptions = SentryOptions()
+        val sentryOptions = SentryOptions().apply {
+            dsn = "http://key@localhost/proj"
+        }
 
         init {
             whenever(hub.options).thenReturn(sentryOptions)
@@ -123,7 +125,7 @@ class SentryFeignClientTest {
 
     @Test
     fun `when request url not in tracing origins, does not add sentry trace header to the request`() {
-        fixture.sentryOptions.addTracingOrigin("http://some-other-url.sentry.io")
+        fixture.sentryOptions.setTracePropagationTargets(listOf("http://some-other-url.sentry.io"))
         fixture.sentryOptions.isTraceSampling = true
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut()
