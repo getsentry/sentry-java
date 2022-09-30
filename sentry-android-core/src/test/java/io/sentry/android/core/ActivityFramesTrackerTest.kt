@@ -6,6 +6,8 @@ import androidx.core.app.FrameMetricsAggregator
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.protocol.SentryId
@@ -124,6 +126,15 @@ class ActivityFramesTrackerTest {
         val sut = ActivityFramesTracker(fixture.loadClass)
 
         sut.addActivity(fixture.activity)
+    }
+
+    @Test
+    fun `addActivity resets aggregator`() {
+        val sut = fixture.getSut()
+
+        sut.addActivity(fixture.activity)
+
+        verify(fixture.aggregator, times(1)).reset()
     }
 
     @Test
