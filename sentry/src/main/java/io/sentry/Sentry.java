@@ -7,7 +7,6 @@ import io.sentry.protocol.User;
 import io.sentry.util.FileUtils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -760,36 +759,18 @@ public final class Sentry {
         .startTransaction(transactionContexts, customSamplingContext, bindToScope);
   }
 
+  /**
+   * Creates a Transaction and returns the instance.
+   *
+   * @param transactionContext the transaction context
+   * @param transactionOptions options for the transaction
+   * @return created transaction.
+   */
   @ApiStatus.Internal
   public static @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope,
-      final @Nullable Date startTimestamp) {
-    return getCurrentHub()
-        .startTransaction(transactionContexts, customSamplingContext, bindToScope, startTimestamp);
-  }
-
-  @ApiStatus.Internal
-  public static @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope,
-      final @Nullable Date startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    return getCurrentHub()
-        .startTransaction(
-            transactionContexts,
-            customSamplingContext,
-            bindToScope,
-            startTimestamp,
-            waitForChildren,
-            idleTimeout,
-            trimEnd,
-            transactionFinishedCallback);
+      final @NotNull TransactionContext transactionContext,
+      final @NotNull TransactionOptions transactionOptions) {
+    return getCurrentHub().startTransaction(transactionContext, transactionOptions);
   }
 
   /**

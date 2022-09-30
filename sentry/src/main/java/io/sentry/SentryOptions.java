@@ -14,6 +14,7 @@ import io.sentry.util.SampleRateUtil;
 import io.sentry.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -298,10 +299,21 @@ public class SentryOptions {
    * Controls if the `baggage` header is attached to HTTP client integrations and if the `trace`
    * header is attached to envelopes.
    */
-  private boolean traceSampling = false;
+  private boolean traceSampling = true;
 
-  /** Control if profiling is enabled or not for transactions */
-  private boolean profilingEnabled = false;
+  /**
+   * Configures the profiles sample rate as a percentage of sampled transactions to be sent in the
+   * range of 0.0 to 1.0. if 1.0 is set it means that 100% of sampled transactions will send a
+   * profile. If set to 0.1 only 10% of sampled transactions will send a profile. Profiles are
+   * picked randomly. Default is null (disabled)
+   */
+  private @Nullable Double profilesSampleRate;
+
+  /**
+   * This function is called by {@link TracesSampler} to determine if a profile is sampled - meant
+   * to be sent to Sentry.
+   */
+  private @Nullable ProfilesSamplerCallback profilesSampler;
 
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
@@ -312,7 +324,10 @@ public class SentryOptions {
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
-  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+  private @Nullable List<String> tracePropagationTargets = null;
+
+  private final @NotNull List<String> defaultTracePropagationTargets =
+      Collections.singletonList(".*");
 
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
@@ -1450,9 +1465,10 @@ public class SentryOptions {
    *
    * <p>Note: this is an experimental API and will be removed without notice.
    *
+   * @deprecated please use {{@link SentryOptions#setTracePropagationTargets(List)}} instead
    * @param traceSampling - if trace sampling should be enabled
    */
-  @ApiStatus.Experimental
+  @Deprecated
   public void setTraceSampling(boolean traceSampling) {
     this.traceSampling = traceSampling;
   }
@@ -1500,16 +1516,65 @@ public class SentryOptions {
    * @return if profiling is enabled for transactions.
    */
   public boolean isProfilingEnabled() {
-    return profilingEnabled;
+    return (getProfilesSampleRate() != null && getProfilesSampleRate() > 0)
+        || getProfilesSampler() != null;
   }
 
   /**
    * Sets whether profiling is enabled for transactions.
    *
+   * @deprecated use {{@link SentryOptions#setProfilesSampleRate(Double)} }
    * @param profilingEnabled - whether profiling is enabled for transactions
    */
+  @Deprecated
   public void setProfilingEnabled(boolean profilingEnabled) {
-    this.profilingEnabled = profilingEnabled;
+    if (getProfilesSampleRate() == null) {
+      setProfilesSampleRate(profilingEnabled ? 1.0 : null);
+    }
+  }
+
+  /**
+   * Returns the callback used to determine if a profile is sampled.
+   *
+   * @return the callback
+   */
+  public @Nullable ProfilesSamplerCallback getProfilesSampler() {
+    return profilesSampler;
+  }
+
+  /**
+   * Sets the callback used to determine if a profile is sampled.
+   *
+   * @param profilesSampler the callback
+   */
+  public void setProfilesSampler(final @Nullable ProfilesSamplerCallback profilesSampler) {
+    this.profilesSampler = profilesSampler;
+  }
+
+  /**
+   * Returns the profiles sample rate. Default is null (disabled).
+   *
+   * @return the sample rate
+   */
+  public @Nullable Double getProfilesSampleRate() {
+    return profilesSampleRate;
+  }
+
+  /**
+   * Sets the profilesSampleRate. Can be anything between 0.0 and 1.0 or null (default), to disable
+   * it. It’s dependent on the {{@link SentryOptions#setTracesSampleRate(Double)} } If a transaction
+   * is sampled, then a profile could be sampled with a probability given by profilesSampleRate.
+   *
+   * @param profilesSampleRate the sample rate
+   */
+  public void setProfilesSampleRate(final @Nullable Double profilesSampleRate) {
+    if (!SampleRateUtil.isValidProfilesSampleRate(profilesSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + profilesSampleRate
+              + " is not valid. Use null to disable or values between 0.0 and 1.0.");
+    }
+    this.profilesSampleRate = profilesSampleRate;
   }
 
   /**
@@ -1528,19 +1593,65 @@ public class SentryOptions {
   /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
+   * @deprecated use {{@link SentryOptions#getTracePropagationTargets()} }
    * @return the list of origins
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public @NotNull List<String> getTracingOrigins() {
-    return tracingOrigins;
+    return getTracePropagationTargets();
   }
 
   /**
    * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
    *
+   * @deprecated use {{@link SentryOptions#setTracePropagationTargets(List)}}
    * @param tracingOrigin - the tracing origin
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.tracingOrigins.add(tracingOrigin);
+    if (tracePropagationTargets == null) {
+      tracePropagationTargets = new CopyOnWriteArrayList<>();
+    }
+    if (!tracingOrigin.isEmpty()) {
+      tracePropagationTargets.add(tracingOrigin);
+    }
+  }
+
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  @ApiStatus.Internal
+  public void setTracingOrigins(final @Nullable List<String> tracingOrigins) {
+    setTracePropagationTargets(tracingOrigins);
+  }
+
+  /**
+   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @return the list of targets
+   */
+  public @NotNull List<String> getTracePropagationTargets() {
+    if (tracePropagationTargets == null) {
+      return defaultTracePropagationTargets;
+    }
+    return tracePropagationTargets;
+  }
+
+  @ApiStatus.Internal
+  public void setTracePropagationTargets(final @Nullable List<String> tracePropagationTargets) {
+    if (tracePropagationTargets == null) {
+      this.tracePropagationTargets = tracePropagationTargets;
+    } else {
+      @NotNull final List<String> filteredTracePropagationTargets = new ArrayList<>();
+      for (String target : tracePropagationTargets) {
+        if (!target.isEmpty()) {
+          filteredTracePropagationTargets.add(target);
+        }
+      }
+
+      this.tracePropagationTargets = filteredTracePropagationTargets;
+    }
   }
 
   /**
@@ -1673,6 +1784,20 @@ public class SentryOptions {
     Double sample(@NotNull SamplingContext samplingContext);
   }
 
+  /** The profiles sampler callback. */
+  public interface ProfilesSamplerCallback {
+
+    /**
+     * Calculates the sampling value used to determine if a profile is going to be sent to Sentry
+     * backend.
+     *
+     * @param samplingContext the sampling context
+     * @return sampling value or {@code null} if decision has not been taken
+     */
+    @Nullable
+    Double sample(@NotNull SamplingContext samplingContext);
+  }
+
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
@@ -1752,6 +1877,9 @@ public class SentryOptions {
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
     }
+    if (options.getProfilesSampleRate() != null) {
+      setProfilesSampleRate(options.getProfilesSampleRate());
+    }
     if (options.getDebug() != null) {
       setDebug(options.getDebug());
     }
@@ -1777,9 +1905,10 @@ public class SentryOptions {
         new HashSet<>(options.getIgnoredExceptionsForType())) {
       addIgnoredExceptionForType(exceptionType);
     }
-    final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
-    for (final String tracingOrigin : tracingOrigins) {
-      addTracingOrigin(tracingOrigin);
+    if (options.getTracePropagationTargets() != null) {
+      final List<String> tracePropagationTargets =
+          new ArrayList<>(options.getTracePropagationTargets());
+      setTracePropagationTargets(tracePropagationTargets);
     }
     final List<String> contextTags = new ArrayList<>(options.getContextTags());
     for (final String contextTag : contextTags) {

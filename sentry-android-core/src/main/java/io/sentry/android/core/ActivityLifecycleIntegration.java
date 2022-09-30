@@ -20,9 +20,13 @@ import io.sentry.Scope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.TransactionContext;
+import io.sentry.TransactionOptions;
+import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -146,42 +150,51 @@ public final class ActivityLifecycleIntegration
   }
 
   private void startTracing(final @NotNull Activity activity) {
+    WeakReference<Activity> weakActivity = new WeakReference<>(activity);
     if (performanceEnabled && !isRunningTransaction(activity) && hub != null) {
       // as we allow a single transaction running on the bound Scope, we finish the previous ones
       stopPreviousTransactions();
 
-      // we can only bind to the scope if there's no running transaction
-      ITransaction transaction;
       final String activityName = getActivityName(activity);
 
       final Date appStartTime =
           foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
       final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
-      // in case appStartTime isn't available, we don't create a span for it.
-      if (firstActivityCreated || appStartTime == null || coldStart == null) {
-        transaction =
-            hub.startTransaction(
-                activityName,
-                UI_LOAD_OP,
-                (Date) null,
-                true,
-                (finishingTransaction) -> {
-                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
-                });
-      } else {
-        // start transaction with app start timestamp
-        transaction =
-            hub.startTransaction(
-                activityName,
-                UI_LOAD_OP,
-                appStartTime,
-                true,
-                (finishingTransaction) -> {
-                  activityFramesTracker.setMetrics(activity, finishingTransaction.getEventId());
-                });
-        // start specific span for app start
+      final TransactionOptions transactionOptions = new TransactionOptions();
 
+      transactionOptions.setWaitForChildren(true);
+      transactionOptions.setTransactionFinishedCallback(
+          (finishingTransaction) -> {
+            @Nullable Activity unwrappedActivity = weakActivity.get();
+            if (unwrappedActivity != null) {
+              activityFramesTracker.setMetrics(
+                  unwrappedActivity, finishingTransaction.getEventId());
+            } else {
+              if (options != null) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.WARNING,
+                        "Unable to track activity frames as the Activity %s has been destroyed.",
+                        activityName);
+              }
+            }
+          });
+
+      if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
+        transactionOptions.setStartTimestamp(appStartTime);
+      }
+
+      // we can only bind to the scope if there's no running transaction
+      ITransaction transaction =
+          hub.startTransaction(
+              new TransactionContext(activityName, TransactionNameSource.COMPONENT, UI_LOAD_OP),
+              transactionOptions);
+
+      // in case appStartTime isn't available, we don't create a span for it.
+      if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
+        // start specific span for app start
         appStartSpan =
             transaction.startChild(
                 getAppStartOp(coldStart), getAppStartDesc(coldStart), appStartTime);

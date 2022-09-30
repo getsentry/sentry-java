@@ -553,10 +553,27 @@ class JsonSerializerTest {
                             "device_os_name":"android",
                             "device_os_version":"11",
                             "device_is_emulator":true,
+                            "architecture":"arm64-v8a",
                             "device_cpu_frequencies":[1, 2, 3, 4],
                             "device_physical_memory_bytes":"2000000",
                             "platform":"android",
                             "build_id":"buildId",
+                            "transactions":[
+                                {
+                                    "id":"id",
+                                    "trace_id":"traceId",
+                                    "name":"name",
+                                    "relative_start_ns":0,
+                                    "relative_end_ns":10
+                                },
+                                {
+                                    "id":"id2",
+                                    "trace_id":"traceId2",
+                                    "name":"name 2",
+                                    "relative_start_ns":4,
+                                    "relative_end_ns":21
+                                }
+                            ],
                             "transaction_name":"transactionName",
                             "duration_ns":"100",
                             "version_name":"versionName",
@@ -577,10 +594,28 @@ class JsonSerializerTest {
         assertEquals("android", profilingTraceData.deviceOsName)
         assertEquals("11", profilingTraceData.deviceOsVersion)
         assertEquals(true, profilingTraceData.isDeviceIsEmulator)
+        assertEquals("arm64-v8a", profilingTraceData.cpuArchitecture)
         assertEquals(listOf(1, 2, 3, 4), profilingTraceData.deviceCpuFrequencies)
         assertEquals("2000000", profilingTraceData.devicePhysicalMemoryBytes)
         assertEquals("android", profilingTraceData.platform)
         assertEquals("buildId", profilingTraceData.buildId)
+        val expectedTransactions = listOf(
+            ProfilingTransactionData().apply {
+                id = "id"
+                traceId = "traceId"
+                name = "name"
+                relativeStartNs = 0
+                relativeEndNs = 10
+            },
+            ProfilingTransactionData().apply {
+                id = "id2"
+                traceId = "traceId2"
+                name = "name 2"
+                relativeStartNs = 4
+                relativeEndNs = 21
+            }
+        )
+        assertEquals(expectedTransactions, profilingTraceData.transactions)
         assertEquals("transactionName", profilingTraceData.transactionName)
         assertEquals("100", profilingTraceData.durationNs)
         assertEquals("versionName", profilingTraceData.versionName)

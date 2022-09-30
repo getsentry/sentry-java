@@ -12,17 +12,19 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class SentryFileOutputStreamTest {
     class Fixture {
         val hub = mock<IHub>()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var sentryTracer: SentryTracer
 
         internal fun getSut(
             tmpFile: File? = null,
             activeTransaction: Boolean = true,
         ): SentryFileOutputStream {
             whenever(hub.options).thenReturn(SentryOptions())
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
@@ -66,6 +68,13 @@ class SentryFileOutputStreamTest {
         assertEquals(fileIOSpan.throwable, null)
         assertEquals(fileIOSpan.isFinished, true)
         assertEquals(fileIOSpan.status, SpanStatus.OK)
+    }
+
+    @Test
+    fun `when stream is closed file descriptor is also closed`() {
+        val fos = fixture.getSut(tmpFile)
+        fos.use { it.write("hello".toByteArray()) }
+        assertFalse(fos.fd.valid())
     }
 
     @Test

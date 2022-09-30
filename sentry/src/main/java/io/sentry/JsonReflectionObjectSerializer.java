@@ -39,6 +39,8 @@ public final class JsonReflectionObjectSerializer {
       return object;
     } else if (object instanceof String) {
       return object;
+    } else if (object.getClass().isEnum()) {
+      return object.toString();
     } else {
       if (visiting.contains(object)) {
         logger.log(SentryLevel.INFO, "Cyclic reference detected. Calling toString() on object.");

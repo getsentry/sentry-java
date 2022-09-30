@@ -46,6 +46,8 @@ public final class JsonObjectSerializer {
       serializeCollection(writer, logger, Arrays.asList((Object[]) object));
     } else if (object instanceof Map) {
       serializeMap(writer, logger, (Map<?, ?>) object);
+    } else if (object.getClass().isEnum()) {
+      writer.value(object.toString());
     } else {
       try {
         Object serializableObject = jsonReflectionObjectSerializer.serialize(object, logger);

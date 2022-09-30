@@ -43,6 +43,15 @@ class UserSerializationTest {
         assertEquals(expectedJson, actualJson)
     }
 
+    @Test
+    fun `deserialize legacy`() {
+        val inputJson = sanitizedFile("json/user_legacy.json")
+        val expectedJson = sanitizedFile("json/user.json")
+        val actual = deserialize(inputJson)
+        val actualJson = serialize(actual)
+        assertEquals(expectedJson, actualJson)
+    }
+
     // Helper
 
     private fun sanitizedFile(path: String): String {

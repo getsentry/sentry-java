@@ -10,7 +10,6 @@ import android.view.Window
 import android.widget.AbsListView
 import android.widget.ListAdapter
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.clearInvocations
 import com.nhaarman.mockitokotlin2.mock
@@ -22,7 +21,9 @@ import io.sentry.Scope
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.TransactionOptions
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.protocol.TransactionNameSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -47,12 +48,13 @@ class SentryGestureListenerTracingTest {
             hasViewIdInRes: Boolean = true,
             tracesSampleRate: Double? = 1.0,
             isEnableUserInteractionTracing: Boolean = true,
-            transaction: SentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+            transaction: SentryTracer? = null
         ): SentryGestureListener {
             options.tracesSampleRate = tracesSampleRate
             options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
+            whenever(hub.options).thenReturn(options)
 
-            this.transaction = transaction
+            this.transaction = transaction ?: SentryTracer(TransactionContext("name", "op"), hub)
 
             target = mockView<T>(event = event, clickable = true)
             window.mockDecorView<ViewGroup>(event = event) {
@@ -72,9 +74,9 @@ class SentryGestureListenerTracingTest {
 
             whenever(activity.window).thenReturn(window)
 
-            whenever(hub.startTransaction(any(), any(), any(), anyOrNull(), any<Boolean>()))
-                .thenReturn(transaction)
-            whenever(hub.options).thenReturn(options)
+            whenever(hub.startTransaction(any(), any<TransactionOptions>()))
+                .thenReturn(this.transaction)
+
             return SentryGestureListener(
                 activity,
                 hub,
@@ -93,7 +95,7 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), anyOrNull(), any(), anyOrNull(), any<Boolean>()
+            any(), any<TransactionOptions>()
         )
     }
 
@@ -104,7 +106,7 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), anyOrNull(), any(), anyOrNull(), any<Boolean>()
+            any(), any<TransactionOptions>()
         )
     }
 
@@ -115,7 +117,7 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), anyOrNull(), any(), anyOrNull(), any<Boolean>()
+            any(), any<TransactionOptions>()
         )
     }
 
@@ -184,9 +186,10 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.hub).startTransaction(
             check {
-                assertEquals("Activity.test_button", it)
+                assertEquals("Activity.test_button", it.name)
+                assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            anyOrNull(), any(), anyOrNull(), any<Boolean>()
+            any<TransactionOptions>()
         )
     }
 
@@ -197,8 +200,11 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub).startTransaction(
-            any(), check { assertEquals("ui.action.click", it) }, any(),
-            anyOrNull(), any<Boolean>()
+            check {
+                assertEquals("ui.action.click", it.operation)
+                assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
+            },
+            any<TransactionOptions>()
         )
     }
 
@@ -211,9 +217,10 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.hub).startTransaction(
             check {
-                assertEquals("Activity.test_button", it)
+                assertEquals("Activity.test_button", it.name)
+                assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any(), any(), anyOrNull(), any<Boolean>()
+            any<TransactionOptions>()
         )
 
         clearInvocations(fixture.hub)
@@ -229,7 +236,7 @@ class SentryGestureListenerTracingTest {
             whenever(it.getChildAt(0)).thenReturn(newTarget)
         }
 
-        whenever(fixture.hub.startTransaction(any(), any(), any(), anyOrNull(), any<Boolean>()))
+        whenever(fixture.hub.startTransaction(any(), any<TransactionOptions>()))
             .thenAnswer {
                 // verify that the active transaction gets finished when a new one appears
                 assertEquals(true, fixture.transaction.isFinished)
@@ -240,9 +247,10 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.hub).startTransaction(
             check {
-                assertEquals("Activity.test_checkbox", it)
+                assertEquals("Activity.test_checkbox", it.name)
+                assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any(), any(), anyOrNull(), any<Boolean>()
+            any<TransactionOptions>()
         )
     }
 
@@ -254,18 +262,17 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.hub).startTransaction(
             check {
-                assertEquals("Activity.test_scroll_view", it)
+                assertEquals("Activity.test_scroll_view", it.name)
+                assertEquals("ui.action.click", it.operation)
+                assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            check {
-                assertEquals("ui.action.click", it)
-            },
-            any(), anyOrNull(), any<Boolean>()
+            any<TransactionOptions>()
         )
 
         clearInvocations(fixture.hub)
 
         // second view interaction with a different interaction type (scroll)
-        whenever(fixture.hub.startTransaction(any(), any(), any(), anyOrNull(), any<Boolean>()))
+        whenever(fixture.hub.startTransaction(any(), any<TransactionOptions>()))
             .thenAnswer {
                 // verify that the active transaction gets finished when a new one appears
                 assertEquals(true, fixture.transaction.isFinished)
@@ -277,12 +284,11 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.hub).startTransaction(
             check {
-                assertEquals("Activity.test_scroll_view", it)
+                assertEquals("Activity.test_scroll_view", it.name)
+                assertEquals("ui.action.scroll", it.operation)
+                assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            check {
-                assertEquals("ui.action.scroll", it)
-            },
-            any(), anyOrNull(), any<Boolean>()
+            any<TransactionOptions>()
         )
     }
 
@@ -296,9 +302,10 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.hub).startTransaction(
             check {
-                assertEquals("Activity.test_button", it)
+                assertEquals("Activity.test_button", it.name)
+                assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any(), any(), anyOrNull(), any<Boolean>()
+            any<TransactionOptions>()
         )
 
         // second view interaction

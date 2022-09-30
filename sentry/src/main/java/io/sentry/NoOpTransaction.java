@@ -1,9 +1,11 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.TransactionNameSource;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,9 +22,18 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public void setName(@NotNull String name) {}
 
+  @ApiStatus.Internal
+  @Override
+  public void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource) {}
+
   @Override
   public @NotNull String getName() {
     return "";
+  }
+
+  @Override
+  public @NotNull TransactionNameSource getTransactionNameSource() {
+    return TransactionNameSource.CUSTOM;
   }
 
   @Override
@@ -81,7 +92,7 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @NotNull BaggageHeader toBaggageHeader() {
+  public @NotNull BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
     return new BaggageHeader("");
   }
 
@@ -133,6 +144,11 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @Nullable Boolean isSampled() {
+    return null;
+  }
+
+  @Override
+  public @Nullable Boolean isProfileSampled() {
     return null;
   }
 

@@ -61,7 +61,7 @@ class SentryClientTest {
         var factory = mock<ITransportFactory>()
         val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
         val hub = mock<IHub>()
-        val sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), hub)
+        val sentryTracer: SentryTracer
 
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
@@ -79,6 +79,7 @@ class SentryClientTest {
         init {
             whenever(factory.create(any(), any())).thenReturn(transport)
             whenever(hub.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("a-transaction", "op"), hub)
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
@@ -90,6 +91,7 @@ class SentryClientTest {
 
         fun getSut(optionsCallback: ((SentryOptions) -> Unit)? = null): SentryClient {
             optionsCallback?.invoke(sentryOptions)
+            profilingTraceFile.writeText("sampledProfile")
             return SentryClient(sentryOptions)
         }
     }
@@ -1056,6 +1058,14 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when captureTransaction with empty trace file, profiling data is not sent`() {
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+        fixture.profilingTraceFile.writeText("")
+        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+    }
+
+    @Test
     fun `when captureTransaction with non existing profiling trace file, profiling trace data is not sent`() {
         val transaction = SentryTransaction(fixture.sentryTracer)
         fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingNonExistingTraceData)
@@ -1108,7 +1118,9 @@ class SentryClientTest {
 
     @Test
     fun `when captureTransaction with scope, transaction should use user data`() {
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), mock()))
+        val hub: IHub = mock()
+        whenever(hub.options).thenReturn(SentryOptions())
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), hub))
         val scope = createScope()
 
         val sut = fixture.getSut()

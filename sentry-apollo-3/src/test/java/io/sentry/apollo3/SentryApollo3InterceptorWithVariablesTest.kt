@@ -54,7 +54,11 @@ class SentryApollo3InterceptorWithVariablesTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: BeforeSpanCallback? = null,
         ): ApolloClient {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    dsn = "http://key@localhost/proj"
+                }
+            )
 
             server.enqueue(
                 MockResponse()

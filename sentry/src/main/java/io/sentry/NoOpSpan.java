@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import java.util.Date;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,7 +44,7 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public @NotNull BaggageHeader toBaggageHeader() {
+  public @NotNull BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
     return new BaggageHeader("");
   }
 

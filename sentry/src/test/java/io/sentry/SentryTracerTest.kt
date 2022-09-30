@@ -99,6 +99,12 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when transaction is created, by default its profile is not sampled`() {
+        val tracer = fixture.getSut()
+        assertNull(tracer.isProfileSampled)
+    }
+
+    @Test
     fun `when transaction is finished, timestamp is set`() {
         val tracer = fixture.getSut()
         tracer.finish()
@@ -131,7 +137,7 @@ class SentryTracerTest {
     fun `when transaction is finished and profiling is disabled, transactionProfiler is not called`() {
         val transactionProfiler = mock<ITransactionProfiler>()
         val tracer = fixture.getSut(optionsConfiguration = {
-            it.isProfilingEnabled = false
+            it.profilesSampleRate = 0.0
             it.setTransactionProfiler(transactionProfiler)
         })
         tracer.finish()
@@ -142,9 +148,9 @@ class SentryTracerTest {
     fun `when transaction is finished and sampled and profiling is enabled, transactionProfiler is called`() {
         val transactionProfiler = mock<ITransactionProfiler>()
         val tracer = fixture.getSut(optionsConfiguration = {
-            it.isProfilingEnabled = true
+            it.profilesSampleRate = 1.0
             it.setTransactionProfiler(transactionProfiler)
-        }, samplingDecision = TracesSamplingDecision(true))
+        }, samplingDecision = TracesSamplingDecision(true, null, true, null))
         tracer.finish()
         verify(transactionProfiler).onTransactionFinish(any())
     }
@@ -537,7 +543,15 @@ class SentryTracerTest {
         )
         val traceAfterUserSet = transaction.traceContext()
         assertNotNull(traceAfterUserSet) {
-            assertEquals(it, traceBeforeUserSet)
+            assertEquals(it.traceId, traceBeforeUserSet?.traceId)
+            assertEquals(it.transaction, traceBeforeUserSet?.transaction)
+            assertEquals(it.environment, traceBeforeUserSet?.environment)
+            assertEquals(it.release, traceBeforeUserSet?.release)
+            assertEquals(it.publicKey, traceBeforeUserSet?.publicKey)
+            assertEquals(it.sampleRate, traceBeforeUserSet?.sampleRate)
+            assertEquals(it.userId, traceBeforeUserSet?.userId)
+            assertEquals(it.userSegment, traceBeforeUserSet?.userSegment)
+
             assertNull(it.userId)
             assertNull(it.userSegment)
         }
@@ -559,7 +573,7 @@ class SentryTracerTest {
             }
         )
 
-        val header = transaction.toBaggageHeader()
+        val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
@@ -589,7 +603,7 @@ class SentryTracerTest {
             }
         )
 
-        val header = transaction.toBaggageHeader()
+        val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
@@ -615,7 +629,7 @@ class SentryTracerTest {
 
         fixture.hub.setUser(null)
 
-        val header = transaction.toBaggageHeader()
+        val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
