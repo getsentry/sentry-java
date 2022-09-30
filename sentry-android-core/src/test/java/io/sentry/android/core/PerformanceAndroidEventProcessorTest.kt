@@ -156,7 +156,7 @@ class PerformanceAndroidEventProcessorTest {
         val tracer = SentryTracer(context, fixture.hub)
         var tr = SentryTransaction(tracer)
 
-        val metrics = mapOf("frames_total" to MeasurementValue(1f, SentryMeasurementUnit.MILLISECOND.apiName()))
+        val metrics = mapOf("frames_total" to MeasurementValue(1f, SentryMeasurementUnit.Duration.MILLISECOND.apiName()))
         whenever(fixture.activityFramesTracker.takeMetrics(any())).thenReturn(metrics)
 
         tr = sut.process(tr, Hint())

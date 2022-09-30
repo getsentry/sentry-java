@@ -314,13 +314,13 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public void setMeasurement(@NotNull String name, float value) {
+  public void setMeasurement(@NotNull String name, @NotNull Number value) {
     this.transaction.setMeasurement(name, value);
   }
 
   @Override
   public void setMeasurement(
-      @NotNull String name, float value, @NotNull SentryMeasurementUnit unit) {
+      @NotNull String name, @NotNull Number value, @NotNull SentryMeasurementUnit unit) {
     this.transaction.setMeasurement(name, value, unit);
   }
 

@@ -514,7 +514,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public void setMeasurement(final @NotNull String name, final float value) {
+  public void setMeasurement(final @NotNull String name, final @NotNull Number value) {
     if (root.isFinished()) {
       return;
     }
@@ -524,7 +524,7 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void setMeasurement(
-      final @NotNull String name, final float value, final @NotNull SentryMeasurementUnit unit) {
+      final @NotNull String name, final @NotNull Number value, final @NotNull SentryMeasurementUnit unit) {
     if (root.isFinished()) {
       return;
     }

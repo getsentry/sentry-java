@@ -113,9 +113,9 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public void setMeasurement(@NotNull String name, float value) {}
+  public void setMeasurement(@NotNull String name, @NotNull Number value) {}
 
   @Override
   public void setMeasurement(
-      @NotNull String name, float value, @NotNull SentryMeasurementUnit unit) {}
+      @NotNull String name, @NotNull Number value, @NotNull SentryMeasurementUnit unit) {}
 }

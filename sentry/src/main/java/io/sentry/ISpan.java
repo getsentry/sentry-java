@@ -179,7 +179,7 @@ public interface ISpan {
    * @param name the name of the measurement
    * @param value the value of the measurement
    */
-  void setMeasurement(@NotNull String name, float value);
+  void setMeasurement(@NotNull String name, @NotNull Number value);
 
   /**
    * Set a measurement with specific unit.
@@ -191,5 +191,5 @@ public interface ISpan {
    * @param value the value of the measurement
    * @param unit the unit the value is measured in
    */
-  void setMeasurement(@NotNull String name, float value, @NotNull SentryMeasurementUnit unit);
+  void setMeasurement(@NotNull String name, @NotNull Number value, @NotNull SentryMeasurementUnit unit);
 }

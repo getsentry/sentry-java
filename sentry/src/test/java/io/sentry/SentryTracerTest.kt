@@ -812,7 +812,7 @@ class SentryTracerTest {
     fun `when tracer is finished, puts custom measurements into underlying transaction`() {
         val transaction = fixture.getSut()
         transaction.setMeasurement("metric1", 1.0f)
-        transaction.setMeasurement("days", 2f, SentryMeasurementUnit.Duration.DAY)
+        transaction.setMeasurement("days", 2, SentryMeasurementUnit.Duration.DAY)
         transaction.finish()
 
         verify(fixture.hub).captureTransaction(
@@ -820,7 +820,7 @@ class SentryTracerTest {
                 assertEquals(1.0f, it.measurements["metric1"]!!.value)
                 assertEquals(null, it.measurements["metric1"]!!.unit)
 
-                assertEquals(2f, it.measurements["days"]!!.value)
+                assertEquals(2, it.measurements["days"]!!.value)
                 assertEquals("day", it.measurements["days"]!!.unit)
             },
             anyOrNull(),

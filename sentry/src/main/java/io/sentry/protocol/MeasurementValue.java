@@ -6,6 +6,7 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.SentryLevel;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -19,28 +20,28 @@ import org.jetbrains.annotations.TestOnly;
 public final class MeasurementValue implements JsonUnknown, JsonSerializable {
 
   @SuppressWarnings("UnusedVariable")
-  private final float value;
+  private final @NotNull Number value;
 
   private final @Nullable String unit;
 
   /** the unknown fields of breadcrumbs, internal usage only */
   private @Nullable Map<String, Object> unknown;
 
-  public MeasurementValue(final float value, final @Nullable String unit) {
+  public MeasurementValue(final @NotNull Number value, final @Nullable String unit) {
     this.value = value;
     this.unit = unit;
   }
 
   @TestOnly
   public MeasurementValue(
-      final float value, final @Nullable String unit, final @Nullable Map<String, Object> unknown) {
+      final @NotNull Number value, final @Nullable String unit, final @Nullable Map<String, Object> unknown) {
     this.value = value;
     this.unit = unit;
     this.unknown = unknown;
   }
 
   @TestOnly
-  public float getValue() {
+  public @NotNull Number getValue() {
     return value;
   }
 
@@ -94,14 +95,14 @@ public final class MeasurementValue implements JsonUnknown, JsonSerializable {
       reader.beginObject();
 
       String unit = null;
-      float value = 0;
+      Number value = null;
       Map<String, Object> unknown = null;
 
       while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.VALUE:
-            value = reader.nextFloat();
+            value = (Number) reader.nextObjectOrNull();
             break;
           case JsonKeys.UNIT:
             unit = reader.nextStringOrNull();
@@ -116,6 +117,14 @@ public final class MeasurementValue implements JsonUnknown, JsonSerializable {
       }
 
       reader.endObject();
+
+      if (value == null) {
+        final String message = "Missing required field \"value\"";
+        final Exception ex = new IllegalStateException(message);
+        logger.log(SentryLevel.ERROR, message, ex);
+        throw ex;
+      }
+
       final MeasurementValue measurement = new MeasurementValue(value, unit);
       measurement.setUnknown(unknown);
 
