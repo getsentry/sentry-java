@@ -171,7 +171,9 @@ public interface ISpan {
   Object getData(@NotNull String key);
 
   /**
-   * Set a measurement without unit.
+   * Set a measurement without unit. When setting the measurement without the unit, no formatting
+   * will be applied to the measurement value in the Sentry product, and the value will be shown
+   * as is.
    *
    * <p>NOTE: Setting a measurement with the same name on the same transaction multiple times only
    * keeps the last value.

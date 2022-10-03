@@ -5,10 +5,22 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * <a href="https://getsentry.github.io/relay/relay_metrics/enum.MetricUnit.html#">Develop Docs</a>
+ * The unit of measurement of a metric value.
+ *
+ * Units augment metric values by giving them a magnitude and semantics. There are certain types of
+ * units that are subdivided in their precision, such as the {@link MeasurementUnit.Duration} for
+ * time measurements.
+ *
+ * When using the units to custom measurements, Sentry will apply formatting to display measurement
+ * values in the UI.
+ *
+ * @see <a href="https://getsentry.github.io/relay/relay_metrics/enum.MetricUnit.html#">Develop Docs</a>
  */
 public interface MeasurementUnit {
 
+  /**
+   * A time duration.
+   */
   enum Duration implements MeasurementUnit {
     /** Nanosecond (`"nanosecond"`), 10^-9 seconds. */
     NANOSECOND,
@@ -35,6 +47,9 @@ public interface MeasurementUnit {
     WEEK;
   }
 
+  /**
+   * Size of information derived from bytes.
+   */
   enum Information implements MeasurementUnit {
     /** Bit (`"bit"`), corresponding to 1/8 of a byte. */
     BIT,
@@ -79,6 +94,9 @@ public interface MeasurementUnit {
     EXBIBYTE;
   }
 
+  /**
+   * Fractions such as percentages.
+   */
   enum Fraction implements MeasurementUnit {
     /** Floating point fraction of `1`. */
     RATIO,
@@ -87,6 +105,10 @@ public interface MeasurementUnit {
     PERCENT;
   }
 
+  /**
+   * Custom units without builtin conversion. No formatting will be applied to the measurement value
+   * in the Sentry product, and the value with the unit will be shown as is.
+   */
   final class Custom implements MeasurementUnit {
 
     private final @NotNull String name;
@@ -104,6 +126,9 @@ public interface MeasurementUnit {
   @NotNull
   String name();
 
+  /**
+   * Unit adhering to the API spec.
+   */
   @ApiStatus.Internal
   default @NotNull String apiName() {
     return name().toLowerCase(Locale.ROOT);
