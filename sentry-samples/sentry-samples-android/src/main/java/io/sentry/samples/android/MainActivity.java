@@ -5,8 +5,8 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.ISpan;
-import io.sentry.Sentry;
 import io.sentry.MeasurementUnit;
+import io.sentry.Sentry;
 import io.sentry.SpanStatus;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
@@ -205,8 +205,7 @@ public class MainActivity extends AppCompatActivity {
     screenLoadCount++;
     final ISpan span = Sentry.getSpan();
     if (span != null) {
-      span.setMeasurement(
-          "screen_load_count", screenLoadCount, new MeasurementUnit.Custom("test"));
+      span.setMeasurement("screen_load_count", screenLoadCount, new MeasurementUnit.Custom("test"));
       span.finish(SpanStatus.OK);
     }
   }
