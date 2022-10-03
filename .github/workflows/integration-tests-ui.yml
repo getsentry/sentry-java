@@ -1,4 +1,4 @@
-name: "Integration Tests - Ui tests"
+name: 'Integration Tests - Ui tests'
 on:
   push:
     branches:
@@ -15,11 +15,11 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      - name: "Set up Java: 11"
+      - name: 'Set up Java: 11'
         uses: actions/setup-java@v2
         with:
-          java-version: "11"
-          distribution: "adopt"
+          java-version: '11'
+          distribution: 'adopt'
 
       # Clean, build and release a test apk
       - name: Make assembleUiTests
@@ -31,7 +31,7 @@ jobs:
         run: make stop
 
       - name: Run Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@v1
+        uses: saucelabs/saucectl-run-action@9f8b2c03deea98eb6db7b75bffb1595f2da535db # pin@v1
         with:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
