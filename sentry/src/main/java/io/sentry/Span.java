@@ -320,7 +320,7 @@ public final class Span implements ISpan {
 
   @Override
   public void setMeasurement(
-      @NotNull String name, @NotNull Number value, @NotNull SentryMeasurementUnit unit) {
+      @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {
     this.transaction.setMeasurement(name, value, unit);
   }
 

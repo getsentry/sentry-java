@@ -526,7 +526,7 @@ public final class SentryTracer implements ITransaction {
   public void setMeasurement(
       final @NotNull String name,
       final @NotNull Number value,
-      final @NotNull SentryMeasurementUnit unit) {
+      final @NotNull MeasurementUnit unit) {
     if (root.isFinished()) {
       return;
     }

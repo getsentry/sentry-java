@@ -812,7 +812,7 @@ class SentryTracerTest {
     fun `when tracer is finished, puts custom measurements into underlying transaction`() {
         val transaction = fixture.getSut()
         transaction.setMeasurement("metric1", 1.0f)
-        transaction.setMeasurement("days", 2, SentryMeasurementUnit.Duration.DAY)
+        transaction.setMeasurement("days", 2, MeasurementUnit.Duration.DAY)
         transaction.finish()
 
         verify(fixture.hub).captureTransaction(

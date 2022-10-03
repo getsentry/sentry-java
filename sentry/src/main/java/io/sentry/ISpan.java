@@ -192,5 +192,5 @@ public interface ISpan {
    * @param unit the unit the value is measured in
    */
   void setMeasurement(
-      @NotNull String name, @NotNull Number value, @NotNull SentryMeasurementUnit unit);
+      @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit);
 }

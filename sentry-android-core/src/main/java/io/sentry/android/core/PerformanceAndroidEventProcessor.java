@@ -7,7 +7,7 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
-import io.sentry.SentryMeasurementUnit;
+import io.sentry.MeasurementUnit;
 import io.sentry.SpanContext;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
@@ -68,7 +68,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       if (appStartUpInterval != null) {
         final MeasurementValue value =
             new MeasurementValue(
-                (float) appStartUpInterval, SentryMeasurementUnit.Duration.MILLISECOND.apiName());
+                (float) appStartUpInterval, MeasurementUnit.Duration.MILLISECOND.apiName());
 
         final String appStartKey =
             AppStartState.getInstance().isColdStart() ? "app_start_cold" : "app_start_warm";

@@ -7,9 +7,9 @@ import org.jetbrains.annotations.NotNull;
 /**
  * <a href="https://getsentry.github.io/relay/relay_metrics/enum.MetricUnit.html#">Develop Docs</a>
  */
-public interface SentryMeasurementUnit {
+public interface MeasurementUnit {
 
-  enum Duration implements SentryMeasurementUnit {
+  enum Duration implements MeasurementUnit {
     /** Nanosecond (`"nanosecond"`), 10^-9 seconds. */
     NANOSECOND,
 
@@ -35,7 +35,7 @@ public interface SentryMeasurementUnit {
     WEEK;
   }
 
-  enum Information implements SentryMeasurementUnit {
+  enum Information implements MeasurementUnit {
     /** Bit (`"bit"`), corresponding to 1/8 of a byte. */
     BIT,
 
@@ -79,7 +79,7 @@ public interface SentryMeasurementUnit {
     EXBIBYTE;
   }
 
-  enum Fraction implements SentryMeasurementUnit {
+  enum Fraction implements MeasurementUnit {
     /** Floating point fraction of `1`. */
     RATIO,
 
@@ -87,7 +87,7 @@ public interface SentryMeasurementUnit {
     PERCENT;
   }
 
-  final class Custom implements SentryMeasurementUnit {
+  final class Custom implements MeasurementUnit {
 
     private final @NotNull String name;
 
