@@ -19,6 +19,11 @@ import org.jetbrains.annotations.NotNull;
 public interface MeasurementUnit {
 
   /**
+   * Untyped value.
+   */
+  String NONE = "none";
+
+  /**
    * A time duration.
    */
   enum Duration implements MeasurementUnit {
