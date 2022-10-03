@@ -128,7 +128,7 @@ public final class ActivityFramesTracker {
     private final int slowFrames;
     private final int frozenFrames;
 
-    private FrameCounts(int totalFrames, int slowFrames, int frozenFrames) {
+    private FrameCounts(final int totalFrames, final int slowFrames, final int frozenFrames) {
       this.totalFrames = totalFrames;
       this.slowFrames = slowFrames;
       this.frozenFrames = frozenFrames;
