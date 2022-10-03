@@ -828,4 +828,22 @@ class SentryTracerTest {
             anyOrNull(),
         )
     }
+
+    @Test
+    fun `setting the same measurement multiple times only keeps latest value`() {
+        val transaction = fixture.getSut()
+        transaction.setMeasurement("metric1", 1.0f)
+        transaction.setMeasurement("metric1", 2, MeasurementUnit.Duration.DAY)
+        transaction.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(2, it.measurements["metric1"]!!.value)
+                assertEquals("day", it.measurements["metric1"]!!.unit)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
+    }
 }
