@@ -6,6 +6,8 @@ import androidx.core.app.FrameMetricsAggregator
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.protocol.SentryId
@@ -34,8 +36,9 @@ class ActivityFramesTrackerTest {
         val sut = fixture.getSut()
         val array = getArray()
 
-        whenever(fixture.aggregator.remove(any())).thenReturn(array)
+        whenever(fixture.aggregator.metrics).thenReturn(emptyArray(), array)
 
+        sut.addActivity(fixture.activity)
         sut.setMetrics(fixture.activity, fixture.sentryId)
 
         val metrics = sut.takeMetrics(fixture.sentryId)
@@ -48,10 +51,12 @@ class ActivityFramesTrackerTest {
     @Test
     fun `sets frozen frames`() {
         val sut = fixture.getSut()
-        val array = getArray(frameTime = 705, numFrames = 5)
+        val arrayAtStart = getArray(frameTime = 705, numFrames = 5)
+        val arrayAtEnd = getArray(frameTime = 705, numFrames = 10)
 
-        whenever(fixture.aggregator.remove(any())).thenReturn(array)
+        whenever(fixture.aggregator.metrics).thenReturn(arrayAtStart, arrayAtEnd)
 
+        sut.addActivity(fixture.activity)
         sut.setMetrics(fixture.activity, fixture.sentryId)
 
         val metrics = sut.takeMetrics(fixture.sentryId)
@@ -64,10 +69,12 @@ class ActivityFramesTrackerTest {
     @Test
     fun `sets slow frames`() {
         val sut = fixture.getSut()
-        val array = getArray(frameTime = 20, numFrames = 5)
+        val arrayAtStart = getArray(frameTime = 20, numFrames = 5)
+        val arrayAtEnd = getArray(frameTime = 20, numFrames = 10)
 
-        whenever(fixture.aggregator.remove(any())).thenReturn(array)
+        whenever(fixture.aggregator.metrics).thenReturn(arrayAtStart, arrayAtEnd)
 
+        sut.addActivity(fixture.activity)
         sut.setMetrics(fixture.activity, fixture.sentryId)
 
         val metrics = sut.takeMetrics(fixture.sentryId)
@@ -86,8 +93,35 @@ class ActivityFramesTrackerTest {
         arrayAll.put(705, 6)
         val array = arrayOf(arrayAll)
 
-        whenever(fixture.aggregator.remove(any())).thenReturn(array)
+        whenever(fixture.aggregator.metrics).thenReturn(emptyArray(), array)
 
+        sut.addActivity(fixture.activity)
+        sut.setMetrics(fixture.activity, fixture.sentryId)
+
+        val metrics = sut.takeMetrics(fixture.sentryId)
+
+        val totalFrames = metrics!!["frames_total"]
+        assertEquals(totalFrames!!.value, 111f)
+
+        val frozenFrames = metrics["frames_frozen"]
+        assertEquals(frozenFrames!!.value, 6f)
+
+        val slowFrames = metrics["frames_slow"]
+        assertEquals(slowFrames!!.value, 5f)
+    }
+
+    @Test
+    fun `sets slow and frozen frames even if start was null`() {
+        val sut = fixture.getSut()
+        val arrayAll = SparseIntArray()
+        arrayAll.put(1, 100)
+        arrayAll.put(20, 5)
+        arrayAll.put(705, 6)
+        val array = arrayOf(arrayAll)
+
+        whenever(fixture.aggregator.metrics).thenReturn(null, array)
+
+        sut.addActivity(fixture.activity)
         sut.setMetrics(fixture.activity, fixture.sentryId)
 
         val metrics = sut.takeMetrics(fixture.sentryId)
@@ -109,8 +143,23 @@ class ActivityFramesTrackerTest {
         arrayAll.put(0, 0)
         val array = arrayOf(arrayAll)
 
-        whenever(fixture.aggregator.remove(any())).thenReturn(array)
+        whenever(fixture.aggregator.metrics).thenReturn(array)
 
+        sut.addActivity(fixture.activity)
+        sut.setMetrics(fixture.activity, fixture.sentryId)
+
+        val metrics = sut.takeMetrics(fixture.sentryId)
+
+        assertNull(metrics)
+    }
+
+    @Test
+    fun `do not set metrics if values are null`() {
+        val sut = fixture.getSut()
+
+        whenever(fixture.aggregator.metrics).thenReturn(null)
+
+        sut.addActivity(fixture.activity)
         sut.setMetrics(fixture.activity, fixture.sentryId)
 
         val metrics = sut.takeMetrics(fixture.sentryId)
@@ -135,8 +184,17 @@ class ActivityFramesTrackerTest {
     }
 
     @Test
+    fun `addActivity and setMetrics combined do not throw if no AndroidX`() {
+        whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
+        val sut = ActivityFramesTracker(fixture.loadClass)
+
+        sut.addActivity(fixture.activity)
+        sut.setMetrics(fixture.activity, fixture.sentryId)
+    }
+
+    @Test
     fun `setMetrics does not throw if Activity is not added`() {
-        whenever(fixture.aggregator.remove(any())).thenThrow(IllegalArgumentException())
+        whenever(fixture.aggregator.metrics).thenThrow(IllegalArgumentException())
         val sut = ActivityFramesTracker(fixture.loadClass)
 
         sut.setMetrics(fixture.activity, fixture.sentryId)
@@ -148,6 +206,15 @@ class ActivityFramesTrackerTest {
         val sut = ActivityFramesTracker(fixture.loadClass)
 
         sut.stop()
+    }
+
+    @Test
+    fun `stop resets frameMetricsAggregator`() {
+        val sut = fixture.getSut()
+
+        sut.stop()
+
+        verify(fixture.aggregator, times(1)).reset()
     }
 
     @Test
