@@ -41,7 +41,7 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
         val totalFrames = metrics!!["frames_total"]
 
-        assertEquals(totalFrames!!.value, 1f)
+        assertEquals(totalFrames!!.value, 1)
         assertEquals(totalFrames.unit, "none")
     }
 
@@ -57,7 +57,7 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
         val frozenFrames = metrics!!["frames_frozen"]
 
-        assertEquals(frozenFrames!!.value, 5f)
+        assertEquals(frozenFrames!!.value, 5)
         assertEquals(frozenFrames.unit, "none")
     }
 
@@ -73,7 +73,7 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
         val slowFrames = metrics!!["frames_slow"]
 
-        assertEquals(slowFrames!!.value, 5f)
+        assertEquals(slowFrames!!.value, 5)
         assertEquals(slowFrames.unit, "none")
     }
 
@@ -93,13 +93,13 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
 
         val totalFrames = metrics!!["frames_total"]
-        assertEquals(totalFrames!!.value, 111f)
+        assertEquals(totalFrames!!.value, 111)
 
         val frozenFrames = metrics["frames_frozen"]
-        assertEquals(frozenFrames!!.value, 6f)
+        assertEquals(frozenFrames!!.value, 6)
 
         val slowFrames = metrics["frames_slow"]
-        assertEquals(slowFrames!!.value, 5f)
+        assertEquals(slowFrames!!.value, 5)
     }
 
     @Test

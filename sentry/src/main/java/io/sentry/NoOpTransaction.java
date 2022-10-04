@@ -164,4 +164,11 @@ public final class NoOpTransaction implements ITransaction {
   public @Nullable Object getData(@NotNull String key) {
     return null;
   }
+
+  @Override
+  public void setMeasurement(@NotNull String name, @NotNull Number value) {}
+
+  @Override
+  public void setMeasurement(
+      @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {}
 }
