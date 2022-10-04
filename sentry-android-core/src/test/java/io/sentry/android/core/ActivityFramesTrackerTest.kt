@@ -51,8 +51,8 @@ class ActivityFramesTrackerTest {
     @Test
     fun `sets frozen frames`() {
         val sut = fixture.getSut()
-        val arrayAtStart = getArray(frameTime = 705, numFrames = 5)
-        val arrayAtEnd = getArray(frameTime = 705, numFrames = 10)
+        val arrayAtStart = getArray(frameTime = 701, numFrames = 5)
+        val arrayAtEnd = getArray(frameTime = 701, numFrames = 10)
 
         whenever(fixture.aggregator.metrics).thenReturn(arrayAtStart, arrayAtEnd)
 
@@ -87,11 +87,11 @@ class ActivityFramesTrackerTest {
     @Test
     fun `sets slow and frozen frames`() {
         val sut = fixture.getSut()
-        val arrayAll = SparseIntArray()
-        arrayAll.put(1, 100)
-        arrayAll.put(20, 5)
-        arrayAll.put(705, 6)
-        val array = arrayOf(arrayAll)
+        val array = SparseIntArray().also {
+            it.put(16, 100)
+            it.put(20, 5)
+            it.put(701, 6)
+        }.let { arrayOf(it) }
 
         whenever(fixture.aggregator.metrics).thenReturn(emptyArray(), array)
 
@@ -113,11 +113,11 @@ class ActivityFramesTrackerTest {
     @Test
     fun `sets slow and frozen frames even if start was null`() {
         val sut = fixture.getSut()
-        val arrayAll = SparseIntArray()
-        arrayAll.put(1, 100)
-        arrayAll.put(20, 5)
-        arrayAll.put(705, 6)
-        val array = arrayOf(arrayAll)
+        val array = SparseIntArray().also {
+            it.put(16, 100)
+            it.put(20, 5)
+            it.put(701, 6)
+        }.let { arrayOf(it) }
 
         whenever(fixture.aggregator.metrics).thenReturn(null, array)
 
@@ -139,85 +139,91 @@ class ActivityFramesTrackerTest {
     @Test
     fun `different activities have separate counts - even when called out of order`() {
         val sut = fixture.getSut()
-        val array0 = SparseIntArray().also {
-            it.put(1, 100)
-            it.put(20, 5)
-            it.put(705, 6)
+        val activityAStartFrameCounts = SparseIntArray().also {
+            it.put(16, 100)
+            it.put(17, 3)
+            it.put(700, 2)
+            it.put(701, 6)
         }.let { arrayOf(it) }
-        val array1 = SparseIntArray().also {
-            it.put(1, 110)
-            it.put(20, 6)
-            it.put(705, 7)
+        val activityBStartFrameCounts = SparseIntArray().also {
+            it.put(16, 110)
+            it.put(17, 3)
+            it.put(700, 3)
+            it.put(701, 7)
         }.let { arrayOf(it) }
-        val array2 = SparseIntArray().also {
-            it.put(1, 115)
-            it.put(20, 8)
-            it.put(705, 9)
+        val activityAEndFrameCounts = SparseIntArray().also {
+            it.put(16, 115)
+            it.put(17, 3)
+            it.put(700, 5)
+            it.put(701, 9)
         }.let { arrayOf(it) }
-        val array3 = SparseIntArray().also {
-            it.put(1, 135)
-            it.put(20, 11)
-            it.put(705, 12)
+        val activityBEndFrameCounts = SparseIntArray().also {
+            it.put(16, 135)
+            it.put(17, 3)
+            it.put(700, 8)
+            it.put(701, 12)
         }.let { arrayOf(it) }
 
-        val otherActivity = mock<Activity>()
-        val otherSentryId = SentryId()
+        val activityA = fixture.activity
+        val activityB = mock<Activity>()
+        val sentryIdA = fixture.sentryId
+        val sentryIdB = SentryId()
 
-        whenever(fixture.aggregator.metrics).thenReturn(array0, array1, array2, array3)
+        whenever(fixture.aggregator.metrics).thenReturn(activityAStartFrameCounts, activityBStartFrameCounts, activityAEndFrameCounts, activityBEndFrameCounts)
 
-        sut.addActivity(fixture.activity)
-        sut.addActivity(otherActivity)
-        sut.setMetrics(fixture.activity, fixture.sentryId)
-        sut.setMetrics(otherActivity, otherSentryId)
+        sut.addActivity(activityA)
+        sut.addActivity(activityB)
+        sut.setMetrics(activityA, sentryIdA)
+        sut.setMetrics(activityB, sentryIdB)
 
-        val metrics = sut.takeMetrics(fixture.sentryId)!!
-        val otherMetrics = sut.takeMetrics(otherSentryId)!!
+        val metricsA = sut.takeMetrics(sentryIdA)!!
+        val metricsB = sut.takeMetrics(sentryIdB)!!
 
-        val totalFrames = metrics!!["frames_total"]
-        assertEquals(totalFrames!!.value, 21f) // 15 + 3 + 3
+        val totalFramesA = metricsA!!["frames_total"]
+        assertEquals(totalFramesA!!.value, 21f) // 15 + 3 + 3 (diff counts for activityA)
 
-        val frozenFrames = metrics["frames_frozen"]
-        assertEquals(frozenFrames!!.value, 3f)
+        val frozenFramesA = metricsA["frames_frozen"]
+        assertEquals(frozenFramesA!!.value, 3f)
 
-        val slowFrames = metrics["frames_slow"]
-        assertEquals(slowFrames!!.value, 3f)
+        val slowFramesA = metricsA["frames_slow"]
+        assertEquals(slowFramesA!!.value, 3f)
 
-        val totalFramesOther = otherMetrics!!["frames_total"]
-        assertEquals(totalFramesOther!!.value, 35f) // 25 + 5 + 5
+        val totalFramesB = metricsB!!["frames_total"]
+        assertEquals(totalFramesB!!.value, 35f) // 25 + 5 + 5 (diff counts for activityB)
 
-        val frozenFramesOther = otherMetrics["frames_frozen"]
-        assertEquals(frozenFramesOther!!.value, 5f)
+        val frozenFramesB = metricsB["frames_frozen"]
+        assertEquals(frozenFramesB!!.value, 5f)
 
-        val slowFramesOther = otherMetrics["frames_slow"]
-        assertEquals(slowFramesOther!!.value, 5f)
+        val slowFramesB = metricsB["frames_slow"]
+        assertEquals(slowFramesB!!.value, 5f)
     }
 
     @Test
     fun `same activity can be used again later on`() {
         val sut = fixture.getSut()
-        val array0 = SparseIntArray().also {
-            it.put(1, 100)
+        val firstLaunchStartFrameCounts = SparseIntArray().also {
+            it.put(16, 100)
             it.put(20, 5)
-            it.put(705, 6)
+            it.put(701, 6)
         }.let { arrayOf(it) }
-        val array1 = SparseIntArray().also {
-            it.put(1, 110)
+        val firstLaunchEndFrameCounts = SparseIntArray().also {
+            it.put(16, 110)
             it.put(20, 6)
-            it.put(705, 7)
+            it.put(701, 7)
         }.let { arrayOf(it) }
-        val array2 = SparseIntArray().also {
-            it.put(1, 115)
+        val secondLaunchStartFrameCounts = SparseIntArray().also {
+            it.put(16, 115)
             it.put(20, 8)
-            it.put(705, 9)
+            it.put(701, 9)
         }.let { arrayOf(it) }
-        val array3 = SparseIntArray().also {
-            it.put(1, 135)
+        val secondLaunchEndFrameCounts = SparseIntArray().also {
+            it.put(16, 135)
             it.put(20, 11)
-            it.put(705, 12)
+            it.put(701, 12)
         }.let { arrayOf(it) }
         val secondSentryId = SentryId()
 
-        whenever(fixture.aggregator.metrics).thenReturn(array0, array1, array2, array3)
+        whenever(fixture.aggregator.metrics).thenReturn(firstLaunchStartFrameCounts, firstLaunchEndFrameCounts, secondLaunchStartFrameCounts, secondLaunchEndFrameCounts)
 
         sut.addActivity(fixture.activity)
         sut.setMetrics(fixture.activity, fixture.sentryId)
@@ -228,7 +234,7 @@ class ActivityFramesTrackerTest {
         val secondMetrics = sut.takeMetrics(secondSentryId)
 
         val totalFrames = metrics!!["frames_total"]
-        assertEquals(totalFrames!!.value, 12f) // 10 + 1 + 1
+        assertEquals(totalFrames!!.value, 12f) // 10 + 1 + 1 (diff counts for first invocation)
 
         val frozenFrames = metrics["frames_frozen"]
         assertEquals(frozenFrames!!.value, 1f)
@@ -237,7 +243,7 @@ class ActivityFramesTrackerTest {
         assertEquals(slowFrames!!.value, 1f)
 
         val totalFramesSecond = secondMetrics!!["frames_total"]
-        assertEquals(totalFramesSecond!!.value, 26f) // 20 + 3 + 3
+        assertEquals(totalFramesSecond!!.value, 26f) // 20 + 3 + 3 (diff counts for second invocation)
 
         val frozenFramesSecond = secondMetrics["frames_frozen"]
         assertEquals(frozenFramesSecond!!.value, 3f)

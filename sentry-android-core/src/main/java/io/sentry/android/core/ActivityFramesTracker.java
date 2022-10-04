@@ -68,25 +68,6 @@ public final class ActivityFramesTracker {
     }
   }
 
-  private @Nullable FrameCounts diffFrameCountsAtEnd(final @NotNull Activity activity) {
-    @Nullable
-    final FrameCounts frameCountsAtStartFromMap = frameCountAtStartSnapshots.remove(activity);
-    @NotNull
-    final FrameCounts frameCountsAtStart =
-        frameCountsAtStartFromMap == null ? new FrameCounts(0, 0, 0) : frameCountsAtStartFromMap;
-
-    @Nullable final FrameCounts frameCountsAtEnd = calculateCurrentFrameCounts();
-    if (frameCountsAtEnd == null) {
-      return null;
-    }
-
-    final int diffTotalFrames = frameCountsAtEnd.totalFrames - frameCountsAtStart.totalFrames;
-    final int diffSlowFrames = frameCountsAtEnd.slowFrames - frameCountsAtStart.slowFrames;
-    final int diffFrozenFrames = frameCountsAtEnd.frozenFrames - frameCountsAtStart.frozenFrames;
-
-    return new FrameCounts(diffTotalFrames, diffSlowFrames, diffFrozenFrames);
-  }
-
   private @Nullable FrameCounts calculateCurrentFrameCounts() {
     if (!isFrameMetricsAggregatorAvailable()) {
       return null;
@@ -121,18 +102,6 @@ public final class ActivityFramesTracker {
     }
 
     return new FrameCounts(totalFrames, slowFrames, frozenFrames);
-  }
-
-  private static final class FrameCounts {
-    private final int totalFrames;
-    private final int slowFrames;
-    private final int frozenFrames;
-
-    private FrameCounts(final int totalFrames, final int slowFrames, final int frozenFrames) {
-      this.totalFrames = totalFrames;
-      this.slowFrames = slowFrames;
-      this.frozenFrames = frozenFrames;
-    }
   }
 
   @SuppressWarnings("NullAway")
@@ -172,19 +141,37 @@ public final class ActivityFramesTracker {
     measurements.put("frames_slow", sfValues);
     measurements.put("frames_frozen", ffValues);
 
-    activityMeasurements.put(sentryId, measurements);
+    activityMeasurements.put(transactionId, measurements);
+  }
+
+  private @Nullable FrameCounts diffFrameCountsAtEnd(final @NotNull Activity activity) {
+    @Nullable final FrameCounts frameCountsAtStart = frameCountAtStartSnapshots.remove(activity);
+    if (frameCountsAtStart == null) {
+      return null;
+    }
+
+    @Nullable final FrameCounts frameCountsAtEnd = calculateCurrentFrameCounts();
+    if (frameCountsAtEnd == null) {
+      return null;
+    }
+
+    final int diffTotalFrames = frameCountsAtEnd.totalFrames - frameCountsAtStart.totalFrames;
+    final int diffSlowFrames = frameCountsAtEnd.slowFrames - frameCountsAtStart.slowFrames;
+    final int diffFrozenFrames = frameCountsAtEnd.frozenFrames - frameCountsAtStart.frozenFrames;
+
+    return new FrameCounts(diffTotalFrames, diffSlowFrames, diffFrozenFrames);
   }
 
   @Nullable
   public synchronized Map<String, @NotNull MeasurementValue> takeMetrics(
-      final @NotNull SentryId sentryId) {
+      final @NotNull SentryId transactionId) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return null;
     }
 
     final Map<String, @NotNull MeasurementValue> stringMeasurementValueMap =
-        activityMeasurements.get(sentryId);
-    activityMeasurements.remove(sentryId);
+        activityMeasurements.get(transactionId);
+    activityMeasurements.remove(transactionId);
     return stringMeasurementValueMap;
   }
 
@@ -195,5 +182,17 @@ public final class ActivityFramesTracker {
       frameMetricsAggregator.reset();
     }
     activityMeasurements.clear();
+  }
+
+  private static final class FrameCounts {
+    private final int totalFrames;
+    private final int slowFrames;
+    private final int frozenFrames;
+
+    private FrameCounts(final int totalFrames, final int slowFrames, final int frozenFrames) {
+      this.totalFrames = totalFrames;
+      this.slowFrames = slowFrames;
+      this.frozenFrames = frozenFrames;
+    }
   }
 }
