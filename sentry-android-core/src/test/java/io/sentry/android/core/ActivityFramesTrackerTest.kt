@@ -324,7 +324,7 @@ class ActivityFramesTrackerTest {
 
         sut.stop()
 
-        verify(fixture.aggregator, times(1)).reset()
+        verify(fixture.aggregator).reset()
     }
 
     @Test
