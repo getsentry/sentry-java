@@ -170,8 +170,8 @@ class ActivityFramesTrackerTest {
         sut.setMetrics(fixture.activity, fixture.sentryId)
         sut.setMetrics(otherActivity, otherSentryId)
 
-        val metrics = sut.takeMetrics(fixture.sentryId)
-        val otherMetrics = sut.takeMetrics(otherSentryId)
+        val metrics = sut.takeMetrics(fixture.sentryId)!!
+        val otherMetrics = sut.takeMetrics(otherSentryId)!!
 
         val totalFrames = metrics!!["frames_total"]
         assertEquals(totalFrames!!.value, 21f) // 15 + 3 + 3
