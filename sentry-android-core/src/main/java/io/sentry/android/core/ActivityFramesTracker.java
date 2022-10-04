@@ -137,7 +137,7 @@ public final class ActivityFramesTracker {
 
   @SuppressWarnings("NullAway")
   public synchronized void setMetrics(
-      final @NotNull Activity activity, final @NotNull SentryId sentryId) {
+      final @NotNull Activity activity, final @NotNull SentryId transactionId) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
