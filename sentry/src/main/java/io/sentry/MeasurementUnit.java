@@ -20,8 +20,7 @@ import org.jetbrains.annotations.NotNull;
 public interface MeasurementUnit {
 
   /** Untyped value. */
-  @ApiStatus.Internal
-  String NONE = "none";
+  @ApiStatus.Internal String NONE = "none";
 
   /** A time duration. */
   enum Duration implements MeasurementUnit {
