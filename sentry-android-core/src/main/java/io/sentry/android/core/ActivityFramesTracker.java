@@ -8,6 +8,7 @@ import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.ILogger;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -30,6 +31,8 @@ public final class ActivityFramesTracker {
       activityMeasurements = new ConcurrentHashMap<>();
   private final @NotNull Map<Activity, FrameCounts> frameCountAtStartSnapshots =
       new WeakHashMap<>();
+  private final @NotNull Map<Activity, FrameCounts> frameDiffsAtEnd = new WeakHashMap<>();
+  private @Nullable WeakReference<Activity> lastKnownActivity;
 
   public ActivityFramesTracker(final @NotNull LoadClass loadClass, final @Nullable ILogger logger) {
     androidXAvailable =
@@ -57,12 +60,27 @@ public final class ActivityFramesTracker {
     if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
+    snapshotFrameCountsAtStartAndEndPreviousTracking(activity);
     frameMetricsAggregator.add(activity);
-    snapshotFrameCountsAtStart(activity);
+    lastKnownActivity = new WeakReference<>(activity);
   }
 
-  private void snapshotFrameCountsAtStart(final @NotNull Activity activity) {
+  private void snapshotFrameCountsAtStartAndEndPreviousTracking(final @NotNull Activity activity) {
     FrameCounts frameCounts = calculateCurrentFrameCounts();
+    if (lastKnownActivity != null) {
+      @Nullable Activity lastKnownActivityUnwrapped = lastKnownActivity.get();
+      if (lastKnownActivityUnwrapped != null) {
+        @Nullable
+        FrameCounts frameCountDiffOfLastKnownActivity =
+            diffFrameCountsAtEnd(lastKnownActivityUnwrapped, frameCounts);
+        if (frameCountDiffOfLastKnownActivity == null) {
+          frameDiffsAtEnd.put(lastKnownActivityUnwrapped, new FrameCounts(0, 0, 0));
+        } else {
+          frameDiffsAtEnd.put(lastKnownActivityUnwrapped, frameCountDiffOfLastKnownActivity);
+        }
+        removeActivityFromFrameMetricsAggregator(lastKnownActivityUnwrapped);
+      }
+    }
     if (frameCounts != null) {
       frameCountAtStartSnapshots.put(activity, frameCounts);
     }
@@ -111,20 +129,10 @@ public final class ActivityFramesTracker {
       return;
     }
 
-    try {
-      // NOTE: removing an activity does not reset the frame counts, only reset() does
-      frameMetricsAggregator.remove(activity);
-    } catch (Throwable ignored) {
-      // throws IllegalArgumentException when attempting to remove OnFrameMetricsAvailableListener
-      // that was never added.
-      // there's no contains method.
-      // throws NullPointerException when attempting to remove OnFrameMetricsAvailableListener and
-      // there was no
-      // Observers, See
-      // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
-    }
+    removeActivityFromFrameMetricsAggregator(activity);
+    lastKnownActivity = null;
 
-    final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
+    final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity, null);
 
     if (frameCounts == null
         || (frameCounts.totalFrames == 0
@@ -144,13 +152,40 @@ public final class ActivityFramesTracker {
     activityMeasurements.put(transactionId, measurements);
   }
 
-  private @Nullable FrameCounts diffFrameCountsAtEnd(final @NotNull Activity activity) {
+  private void removeActivityFromFrameMetricsAggregator(@NotNull Activity activity) {
+    if (frameMetricsAggregator == null) {
+      return;
+    }
+
+    try {
+      // NOTE: removing an activity does not reset the frame counts, only reset() does
+      frameMetricsAggregator.remove(activity);
+    } catch (Throwable ignored) {
+      // throws IllegalArgumentException when attempting to remove OnFrameMetricsAvailableListener
+      // that was never added.
+      // there's no contains method.
+      // throws NullPointerException when attempting to remove OnFrameMetricsAvailableListener and
+      // there was no
+      // Observers, See
+      // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
+    }
+  }
+
+  private @Nullable FrameCounts diffFrameCountsAtEnd(
+      final @NotNull Activity activity, final @Nullable FrameCounts frameCountsAtEndOverride) {
+    @Nullable final FrameCounts frameCountDiff = frameDiffsAtEnd.remove(activity);
+    if (frameCountDiff != null) {
+      return frameCountDiff;
+    }
+
     @Nullable final FrameCounts frameCountsAtStart = frameCountAtStartSnapshots.remove(activity);
     if (frameCountsAtStart == null) {
       return null;
     }
 
-    @Nullable final FrameCounts frameCountsAtEnd = calculateCurrentFrameCounts();
+    @Nullable
+    final FrameCounts frameCountsAtEnd =
+        frameCountsAtEndOverride != null ? frameCountsAtEndOverride : calculateCurrentFrameCounts();
     if (frameCountsAtEnd == null) {
       return null;
     }
