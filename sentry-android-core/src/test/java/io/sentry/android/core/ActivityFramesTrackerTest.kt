@@ -42,7 +42,7 @@ class ActivityFramesTrackerTest {
         val totalFrames = metrics!!["frames_total"]
 
         assertEquals(totalFrames!!.value, 1)
-        assertEquals(totalFrames.unit, null)
+        assertEquals(totalFrames.unit, "none")
     }
 
     @Test
@@ -58,7 +58,7 @@ class ActivityFramesTrackerTest {
         val frozenFrames = metrics!!["frames_frozen"]
 
         assertEquals(frozenFrames!!.value, 5)
-        assertEquals(frozenFrames.unit, null)
+        assertEquals(frozenFrames.unit, "none")
     }
 
     @Test
@@ -74,7 +74,7 @@ class ActivityFramesTrackerTest {
         val slowFrames = metrics!!["frames_slow"]
 
         assertEquals(slowFrames!!.value, 5)
-        assertEquals(slowFrames.unit, null)
+        assertEquals(slowFrames.unit, "none")
     }
 
     @Test
