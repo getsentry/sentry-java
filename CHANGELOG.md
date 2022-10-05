@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix slow and frozen frames tracking ([#2271](https://github.com/getsentry/sentry-java/pull/2271))
+
 ## 6.4.2
 
 ### Fixes
