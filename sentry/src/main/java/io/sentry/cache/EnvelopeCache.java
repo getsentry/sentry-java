@@ -58,6 +58,8 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
   public static final String CRASH_MARKER_FILE = "last_crash";
   public static final String NATIVE_CRASH_MARKER_FILE = ".sentry-native/" + CRASH_MARKER_FILE;
 
+  public static final String STARTUP_CRASH_MARKER_FILE = "startup_crash";
+
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
@@ -202,7 +204,42 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
     // write file to the disk when its about to crash so crashedLastRun can be marked on restart
     if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
       writeCrashMarkerFile();
+
+      long timeSinceSdkInit = System.currentTimeMillis() - options.getSdkInitTime();
+      if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
+        options
+          .getLogger()
+          .log(DEBUG,
+            "Startup Crash detected %d milliseconds after SDK init. Writing a startup crash marker file to disk.",
+            timeSinceSdkInit);
+        writeStartupCrashMarkerFile();
+      }
     }
+  }
+
+  private void writeStartupCrashMarkerFile() {
+    final File crashMarkerFile = new File(options.getCacheDirPath(), STARTUP_CRASH_MARKER_FILE);
+    try {
+      crashMarkerFile.createNewFile();
+    } catch (Throwable e) {
+      options.getLogger().log(ERROR, "Error writing the startup crash marker file to the disk", e);
+    }
+  }
+
+  public static boolean hasStartupCrashMarker(final @NotNull String dirPath, final @NotNull SentryOptions options) {
+    final File crashMarkerFile = new File(dirPath, STARTUP_CRASH_MARKER_FILE);
+    final boolean exists = crashMarkerFile.exists();
+    if (exists) {
+      if (!crashMarkerFile.delete()) {
+        options
+          .getLogger()
+          .log(
+            ERROR,
+            "Failed to delete the startup crash marker file. %s.",
+            crashMarkerFile.getAbsolutePath());
+      }
+    }
+    return exists;
   }
 
   private void writeCrashMarkerFile() {

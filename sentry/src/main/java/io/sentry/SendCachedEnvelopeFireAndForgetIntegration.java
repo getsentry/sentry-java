@@ -1,7 +1,11 @@
 package io.sentry;
 
+import io.sentry.cache.EnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.File;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,6 +26,9 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
   public interface SendFireAndForgetFactory {
     @Nullable
     SendFireAndForget create(@NotNull IHub hub, @NotNull SentryOptions options);
+
+    @Nullable
+    String getDirPath();
 
     default boolean hasValidPath(final @Nullable String dirPath, final @NotNull ILogger logger) {
       if (dirPath == null) {
@@ -71,7 +78,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
     }
 
     try {
-      options
+      Future<?> future = options
           .getExecutorService()
           .submit(
               () -> {
@@ -83,6 +90,25 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
                       .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
                 }
               });
+
+      final String dirPath = factory.getDirPath();
+      if (dirPath != null && EnvelopeCache.hasStartupCrashMarker(dirPath, options)) {
+        options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Startup Crash marker exists, blocking flush.");
+        try {
+          future.get(options.getStartupCrashFlushTimeoutMillis(), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+          // TODO: handle more exceptions
+          options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Synchronous send timed out, continuing in the background.");
+        }
+      } else {
+        options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "No Startup Crash marker exists, flushing asynchronously.");
+      }
 
       options
           .getLogger()
