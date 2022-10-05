@@ -17,7 +17,7 @@ jobs:
       name: Native SDK
     secrets:
       # If a custom token is used instead, a CI would be triggered on a created PR.
-      api_token: ${{ secrets.CI_DEPLOY_KEY }}
+      api-token: ${{ secrets.CI_DEPLOY_KEY }}
 
   gradle-wrapper:
     uses: getsentry/github-workflows/.github/workflows/updater.yml@v2
@@ -26,4 +26,4 @@ jobs:
       name: Gradle
       pattern: '^v[0-9.]+$' # only match non-preview versions
     secrets:
-      api_token: ${{ secrets.CI_DEPLOY_KEY }}
+      api-token: ${{ secrets.CI_DEPLOY_KEY }}
