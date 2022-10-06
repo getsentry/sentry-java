@@ -9,6 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
@@ -64,7 +65,10 @@ final class ManifestMetadataReader {
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
 
-  static final String TRACING_ORIGINS = "io.sentry.traces.tracing-origins";
+  // TODO: remove in favor of TRACE_PROPAGATION_TARGETS
+  @Deprecated static final String TRACING_ORIGINS = "io.sentry.traces.tracing-origins";
+
+  static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
   static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
@@ -85,12 +89,14 @@ final class ManifestMetadataReader {
    */
   @SuppressWarnings("deprecation")
   static void applyMetadata(
-      final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
+      final @NotNull Context context,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The application context is required.");
     Objects.requireNonNull(options, "The options object is required.");
 
     try {
-      final Bundle metadata = getMetadata(context);
+      final Bundle metadata = getMetadata(context, options.getLogger(), buildInfoProvider);
       final ILogger logger = options.getLogger();
 
       if (metadata != null) {
@@ -262,11 +268,22 @@ final class ManifestMetadataReader {
           options.setIdleTimeout(idleTimeout);
         }
 
-        final List<String> tracingOrigins = readList(metadata, logger, TRACING_ORIGINS);
-        if (tracingOrigins != null) {
-          for (final String tracingOrigin : tracingOrigins) {
-            options.addTracingOrigin(tracingOrigin);
-          }
+        @Nullable
+        List<String> tracePropagationTargets =
+            readList(metadata, logger, TRACE_PROPAGATION_TARGETS);
+
+        // TODO remove once TRACING_ORIGINS have been removed
+        if (!metadata.containsKey(TRACE_PROPAGATION_TARGETS)
+            && (tracePropagationTargets == null || tracePropagationTargets.isEmpty())) {
+          tracePropagationTargets = readList(metadata, logger, TRACING_ORIGINS);
+        }
+
+        if ((metadata.containsKey(TRACE_PROPAGATION_TARGETS)
+                || metadata.containsKey(TRACING_ORIGINS))
+            && tracePropagationTargets == null) {
+          options.setTracePropagationTargets(Collections.emptyList());
+        } else if (tracePropagationTargets != null) {
+          options.setTracePropagationTargets(tracePropagationTargets);
         }
 
         options.setProguardUuid(
@@ -365,7 +382,7 @@ final class ManifestMetadataReader {
 
     boolean autoInit = true;
     try {
-      final Bundle metadata = getMetadata(context);
+      final Bundle metadata = getMetadata(context, logger, null);
       if (metadata != null) {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
@@ -383,12 +400,16 @@ final class ManifestMetadataReader {
    * @return the Bundle attached to the PackageManager
    * @throws PackageManager.NameNotFoundException if the package name is non-existent
    */
-  private static @Nullable Bundle getMetadata(final @NotNull Context context)
+  private static @Nullable Bundle getMetadata(
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @Nullable BuildInfoProvider buildInfoProvider)
       throws PackageManager.NameNotFoundException {
     final ApplicationInfo app =
-        context
-            .getPackageManager()
-            .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+        ContextUtils.getApplicationInfo(
+            context,
+            PackageManager.GET_META_DATA,
+            buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
     return app.metaData;
   }
 }

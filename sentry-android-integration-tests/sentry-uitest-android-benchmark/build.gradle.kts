@@ -11,6 +11,7 @@ plugins {
 
 android {
     compileSdk = Config.Android.compileSdkVersion
+    namespace = "io.sentry.uitest.android.benchmark"
 
     defaultConfig {
         applicationId = "io.sentry.uitest.android.benchmark"

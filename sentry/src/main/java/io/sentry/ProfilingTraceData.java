@@ -23,6 +23,11 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
    */
   private static final String DEFAULT_ENVIRONMENT = "production";
 
+  @ApiStatus.Internal public static final String TRUNCATION_REASON_NORMAL = "normal";
+  @ApiStatus.Internal public static final String TRUNCATION_REASON_TIMEOUT = "timeout";
+  // Backgrounded reason is not used, yet, but it's one of the possible values
+  @ApiStatus.Internal public static final String TRUNCATION_REASON_BACKGROUNDED = "backgrounded";
+
   private @NotNull File traceFile;
   private @Nullable Callable<List<Integer>> deviceCpuFrequenciesReader;
 
@@ -42,6 +47,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String buildId;
 
   // Transaction info
+  private @NotNull List<ProfilingTransactionData> transactions;
   private @NotNull String transactionName;
   // duration_ns is a String to avoid issues with numbers and json
   private @NotNull String durationNs;
@@ -55,6 +61,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String traceId;
   private @NotNull String profileId;
   private @NotNull String environment;
+  private @NotNull String truncationReason;
 
   // Stacktrace (file)
   /** Profile trace encoded with Base64 */
@@ -67,6 +74,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   public ProfilingTraceData(@NotNull File traceFile, @NotNull ITransaction transaction) {
     this(
         traceFile,
+        new ArrayList<>(),
         transaction,
         "0",
         0,
@@ -81,11 +89,13 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
         null,
         null,
         null,
-        null);
+        null,
+        TRUNCATION_REASON_NORMAL);
   }
 
   public ProfilingTraceData(
       @NotNull File traceFile,
+      @NotNull List<ProfilingTransactionData> transactions,
       @NotNull ITransaction transaction,
       @NotNull String durationNanos,
       int sdkInt,
@@ -99,7 +109,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       @Nullable String buildId,
       @Nullable String versionName,
       @Nullable String versionCode,
-      @Nullable String environment) {
+      @Nullable String environment,
+      @NotNull String truncationReason) {
     this.traceFile = traceFile;
     this.cpuArchitecture = cpuArchitecture;
     this.deviceCpuFrequenciesReader = deviceCpuFrequenciesReader;
@@ -119,6 +130,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.buildId = buildId != null ? buildId : "";
 
     // Transaction info
+    this.transactions = transactions;
     this.transactionName = transaction.getName();
     this.durationNs = durationNanos;
 
@@ -131,6 +143,16 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.traceId = transaction.getSpanContext().getTraceId().toString();
     this.profileId = UUID.randomUUID().toString();
     this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
+    this.truncationReason = truncationReason;
+    if (!isTruncationReasonValid()) {
+      this.truncationReason = TRUNCATION_REASON_NORMAL;
+    }
+  }
+
+  private boolean isTruncationReasonValid() {
+    return truncationReason.equals(TRUNCATION_REASON_NORMAL)
+        || truncationReason.equals(TRUNCATION_REASON_TIMEOUT)
+        || truncationReason.equals(TRUNCATION_REASON_BACKGROUNDED);
   }
 
   private @Nullable Map<String, Object> unknown;
@@ -199,6 +221,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     return transactionId;
   }
 
+  public @NotNull List<ProfilingTransactionData> getTransactions() {
+    return transactions;
+  }
+
   public @NotNull String getTraceId() {
     return traceId;
   }
@@ -225,6 +251,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public @NotNull String getDevicePhysicalMemoryBytes() {
     return devicePhysicalMemoryBytes;
+  }
+
+  public @NotNull String getTruncationReason() {
+    return truncationReason;
   }
 
   public void setAndroidApiLevel(int androidApiLevel) {
@@ -337,11 +367,13 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     public static final String DURATION_NS = "duration_ns";
     public static final String VERSION_NAME = "version_name";
     public static final String VERSION_CODE = "version_code";
+    public static final String TRANSACTION_LIST = "transactions";
     public static final String TRANSACTION_ID = "transaction_id";
     public static final String TRACE_ID = "trace_id";
     public static final String PROFILE_ID = "profile_id";
     public static final String ENVIRONMENT = "environment";
     public static final String SAMPLED_PROFILE = "sampled_profile";
+    public static final String TRUNCATION_REASON = "truncation_reason";
   }
 
   @Override
@@ -366,10 +398,14 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.DURATION_NS).value(durationNs);
     writer.name(JsonKeys.VERSION_NAME).value(versionName);
     writer.name(JsonKeys.VERSION_CODE).value(versionCode);
+    if (!transactions.isEmpty()) {
+      writer.name(JsonKeys.TRANSACTION_LIST).value(logger, transactions);
+    }
     writer.name(JsonKeys.TRANSACTION_ID).value(transactionId);
     writer.name(JsonKeys.TRACE_ID).value(traceId);
     writer.name(JsonKeys.PROFILE_ID).value(profileId);
     writer.name(JsonKeys.ENVIRONMENT).value(environment);
+    writer.name(JsonKeys.TRUNCATION_REASON).value(truncationReason);
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(sampledProfile);
     }
@@ -509,6 +545,13 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
               data.versionCode = versionCode;
             }
             break;
+          case JsonKeys.TRANSACTION_LIST:
+            List<ProfilingTransactionData> transactions =
+                reader.nextList(logger, new ProfilingTransactionData.Deserializer());
+            if (transactions != null) {
+              data.transactions.addAll(transactions);
+            }
+            break;
           case JsonKeys.TRANSACTION_ID:
             String transactionId = reader.nextStringOrNull();
             if (transactionId != null) {
@@ -531,6 +574,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
             String environment = reader.nextStringOrNull();
             if (environment != null) {
               data.environment = environment;
+            }
+            break;
+          case JsonKeys.TRUNCATION_REASON:
+            String truncationReason = reader.nextStringOrNull();
+            if (truncationReason != null) {
+              data.truncationReason = truncationReason;
             }
             break;
           case JsonKeys.SAMPLED_PROFILE:

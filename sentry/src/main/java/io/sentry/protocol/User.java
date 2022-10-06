@@ -31,6 +31,8 @@ public final class User implements JsonUnknown, JsonSerializable {
   /** Username of the user. */
   private @Nullable String username;
 
+  private @Nullable String segment;
+
   /** Remote IP address of the user. */
   private @Nullable String ipAddress;
 
@@ -38,7 +40,7 @@ public final class User implements JsonUnknown, JsonSerializable {
    * Additional arbitrary fields, as stored in the database (and sometimes as sent by clients). All
    * data from `self.other` should end up here after store normalization.
    */
-  private @Nullable Map<String, @NotNull String> other;
+  private @Nullable Map<String, @NotNull String> data;
 
   /** unknown fields, only internal usage. */
   private @Nullable Map<String, @NotNull Object> unknown;
@@ -50,7 +52,8 @@ public final class User implements JsonUnknown, JsonSerializable {
     this.username = user.username;
     this.id = user.id;
     this.ipAddress = user.ipAddress;
-    this.other = CollectionUtils.newConcurrentHashMap(user.other);
+    this.segment = user.segment;
+    this.data = CollectionUtils.newConcurrentHashMap(user.data);
     this.unknown = CollectionUtils.newConcurrentHashMap(user.unknown);
   }
 
@@ -109,6 +112,24 @@ public final class User implements JsonUnknown, JsonSerializable {
   }
 
   /**
+   * Gets the segment of the user.
+   *
+   * @return the user segment.
+   */
+  public @Nullable String getSegment() {
+    return segment;
+  }
+
+  /**
+   * Sets the segment of the user.
+   *
+   * @param segment the segment.
+   */
+  public void setSegment(final @Nullable String segment) {
+    this.segment = segment;
+  }
+
+  /**
    * Gets the IP address of the user.
    *
    * @return the IP address of the user.
@@ -129,19 +150,43 @@ public final class User implements JsonUnknown, JsonSerializable {
   /**
    * Gets other user related data.
    *
+   * @deprecated use {{@link User#getData()}} instead
    * @return the other user data.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public @Nullable Map<String, @NotNull String> getOthers() {
-    return other;
+    return getData();
   }
 
   /**
    * Sets other user related data.
    *
+   * @deprecated use {{@link User#setData(Map)}} instead
    * @param other the other user related data..
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public void setOthers(final @Nullable Map<String, @NotNull String> other) {
-    this.other = CollectionUtils.newConcurrentHashMap(other);
+    this.setData(other);
+  }
+
+  /**
+   * Gets additional arbitrary fields of the user.
+   *
+   * @return the other user data.
+   */
+  public @Nullable Map<String, @NotNull String> getData() {
+    return data;
+  }
+
+  /**
+   * Sets additional arbitrary fields of the user.
+   *
+   * @param data the other user related data..
+   */
+  public void setData(final @Nullable Map<String, @NotNull String> data) {
+    this.data = CollectionUtils.newConcurrentHashMap(data);
   }
 
   // region json
@@ -161,8 +206,10 @@ public final class User implements JsonUnknown, JsonSerializable {
     public static final String EMAIL = "email";
     public static final String ID = "id";
     public static final String USERNAME = "username";
+    public static final String SEGMENT = "segment";
     public static final String IP_ADDRESS = "ip_address";
     public static final String OTHER = "other";
+    public static final String DATA = "data";
   }
 
   @Override
@@ -178,11 +225,14 @@ public final class User implements JsonUnknown, JsonSerializable {
     if (username != null) {
       writer.name(JsonKeys.USERNAME).value(username);
     }
+    if (segment != null) {
+      writer.name(JsonKeys.SEGMENT).value(segment);
+    }
     if (ipAddress != null) {
       writer.name(JsonKeys.IP_ADDRESS).value(ipAddress);
     }
-    if (other != null) {
-      writer.name(JsonKeys.OTHER).value(logger, other);
+    if (data != null) {
+      writer.name(JsonKeys.DATA).value(logger, data);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -214,13 +264,24 @@ public final class User implements JsonUnknown, JsonSerializable {
           case JsonKeys.USERNAME:
             user.username = reader.nextStringOrNull();
             break;
+          case JsonKeys.SEGMENT:
+            user.segment = reader.nextStringOrNull();
+            break;
           case JsonKeys.IP_ADDRESS:
             user.ipAddress = reader.nextStringOrNull();
             break;
-          case JsonKeys.OTHER:
-            user.other =
+          case JsonKeys.DATA:
+            user.data =
                 CollectionUtils.newConcurrentHashMap(
                     (Map<String, String>) reader.nextObjectOrNull());
+            break;
+          case JsonKeys.OTHER:
+            // restore `other` from legacy JSON
+            if (user.data == null || user.data.isEmpty()) {
+              user.data =
+                  CollectionUtils.newConcurrentHashMap(
+                      (Map<String, String>) reader.nextObjectOrNull());
+            }
             break;
           default:
             if (unknown == null) {
