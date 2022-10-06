@@ -12,7 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
 @Configuration
-@SuppressWarnings("deprecation")
+@SuppressWarnings("deprecation") // WebSecurityConfigurerAdapter has been deprecated
 public class SecurityConfiguration
     extends org.springframework.security.config.annotation.web.configuration
         .WebSecurityConfigurerAdapter {
