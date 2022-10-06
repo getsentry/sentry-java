@@ -132,9 +132,12 @@ public final class ActivityFramesTracker {
       return;
     }
 
-    final MeasurementValue tfValues = new MeasurementValue(frameCounts.totalFrames, MeasurementUnit.NONE);
-    final MeasurementValue sfValues = new MeasurementValue(frameCounts.slowFrames, MeasurementUnit.NONE);
-    final MeasurementValue ffValues = new MeasurementValue(frameCounts.frozenFrames, MeasurementUnit.NONE);
+    final MeasurementValue tfValues =
+        new MeasurementValue(frameCounts.totalFrames, MeasurementUnit.NONE);
+    final MeasurementValue sfValues =
+        new MeasurementValue(frameCounts.slowFrames, MeasurementUnit.NONE);
+    final MeasurementValue ffValues =
+        new MeasurementValue(frameCounts.frozenFrames, MeasurementUnit.NONE);
     final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
     measurements.put("frames_total", tfValues);
     measurements.put("frames_slow", sfValues);
