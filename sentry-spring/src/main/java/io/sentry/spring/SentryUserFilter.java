@@ -62,15 +62,15 @@ public class SentryUserFilter extends OncePerRequestFilter {
       Optional.ofNullable(userFromProvider.getId()).ifPresent(existingUser::setId);
       Optional.ofNullable(userFromProvider.getIpAddress()).ifPresent(existingUser::setIpAddress);
       Optional.ofNullable(userFromProvider.getUsername()).ifPresent(existingUser::setUsername);
-      if (userFromProvider.getOthers() != null && !userFromProvider.getOthers().isEmpty()) {
-        Map<String, String> existingUserOthers = existingUser.getOthers();
-        if (existingUserOthers == null) {
-          existingUserOthers = new ConcurrentHashMap<>();
+      if (userFromProvider.getData() != null && !userFromProvider.getData().isEmpty()) {
+        Map<String, String> existingUserData = existingUser.getData();
+        if (existingUserData == null) {
+          existingUserData = new ConcurrentHashMap<>();
         }
-        for (final Map.Entry<String, String> entry : userFromProvider.getOthers().entrySet()) {
-          existingUserOthers.put(entry.getKey(), entry.getValue());
+        for (final Map.Entry<String, String> entry : userFromProvider.getData().entrySet()) {
+          existingUserData.put(entry.getKey(), entry.getValue());
         }
-        existingUser.setOthers(existingUserOthers);
+        existingUser.setData(existingUserData);
       }
     }
   }

@@ -38,7 +38,8 @@ class SentryOkHttpInterceptorTest {
         val hub = mock<IHub>()
         var interceptor = SentryOkHttpInterceptor(hub)
         val server = MockWebServer()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var sentryTracer: SentryTracer
+        lateinit var options: SentryOptions
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -47,19 +48,21 @@ class SentryOkHttpInterceptorTest {
             responseBody: String = "success",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null,
-            includeMockServerInTracingOrigins: Boolean = true
+            includeMockServerInTracePropagationTargets: Boolean = true,
+            keepDefaultTracePropagationTargets: Boolean = false,
         ): OkHttpClient {
-            whenever(hub.options).thenReturn(
-                SentryOptions().apply {
-                    dsn = "https://key@sentry.io/proj"
-                    isTraceSampling = true
-                    if (includeMockServerInTracingOrigins) {
-                        tracingOrigins.add(server.hostName)
-                    } else {
-                        tracingOrigins.add("other-api")
-                    }
+            options = SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+                isTraceSampling = true
+                if (includeMockServerInTracePropagationTargets) {
+                    setTracePropagationTargets(listOf(server.hostName))
+                } else if (!keepDefaultTracePropagationTargets) {
+                    setTracePropagationTargets(listOf("other-api"))
                 }
-            )
+            }
+            whenever(hub.options).thenReturn(options)
+
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
 
             if (isSpanActive) {
                 whenever(hub.span).thenReturn(sentryTracer)
@@ -81,6 +84,7 @@ class SentryOkHttpInterceptorTest {
     private val fixture = Fixture()
 
     private val getRequest = { Request.Builder().get().url(fixture.server.url("/hello")).build() }
+    private val getRequestWithBaggagHeader = { Request.Builder().addHeader("baggage", "thirdPartyBaggage=someValue").addHeader("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue").get().url(fixture.server.url("/hello")).build() }
     private val postRequest = {
         Request.Builder().post(
             "request-body"
@@ -101,8 +105,28 @@ class SentryOkHttpInterceptorTest {
     }
 
     @Test
+    fun `when there is an active span and tracing origins contains default regex, adds sentry trace headers to the request`() {
+        val sut = fixture.getSut(keepDefaultTracePropagationTargets = true)
+
+        sut.newCall(getRequest()).execute()
+        val recorderRequest = fixture.server.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
     fun `when there is an active span and server is not listed in tracing origins, does not add sentry trace headers to the request`() {
-        val sut = fixture.getSut(includeMockServerInTracingOrigins = false)
+        val sut = fixture.getSut(includeMockServerInTracePropagationTargets = false)
+        sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
+        val recorderRequest = fixture.server.takeRequest()
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when there is an active span and server tracing origins is empty, does not add sentry trace headers to the request`() {
+        val sut = fixture.getSut()
+        fixture.options.setTracePropagationTargets(emptyList())
         sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
@@ -116,6 +140,22 @@ class SentryOkHttpInterceptorTest {
         val recorderRequest = fixture.server.takeRequest()
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
+        val sut = fixture.getSut()
+        sut.newCall(getRequestWithBaggagHeader()).execute()
+        val recorderRequest = fixture.server.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+
+        val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
+        assertEquals(baggageHeaderValues.size, 1)
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
     }
 
     @Test

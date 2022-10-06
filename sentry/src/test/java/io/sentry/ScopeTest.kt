@@ -30,8 +30,8 @@ class ScopeTest {
         user.id = "123"
         user.ipAddress = "123.x"
         user.username = "userName"
-        val others = mutableMapOf(Pair("others", "others"))
-        user.others = others
+        val data = mutableMapOf(Pair("data", "data"))
+        user.data = data
 
         scope.user = user
 

@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
 class SentryFileReaderTest {
     class Fixture {
         val hub = mock<IHub>()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var sentryTracer: SentryTracer
 
         internal fun getSut(
             tmpFile: File,
@@ -24,6 +24,7 @@ class SentryFileReaderTest {
         ): SentryFileReader {
             tmpFile.writeText("TEXT")
             whenever(hub.options).thenReturn(SentryOptions())
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }

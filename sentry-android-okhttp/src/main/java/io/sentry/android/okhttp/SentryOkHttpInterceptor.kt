@@ -1,12 +1,13 @@
 package io.sentry.android.okhttp
 
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SpanStatus
-import io.sentry.TracingOrigins
+import io.sentry.TracePropagationTargets
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import okhttp3.Interceptor
@@ -36,11 +37,15 @@ class SentryOkHttpInterceptor(
         var code: Int? = null
         try {
             val requestBuilder = request.newBuilder()
-            if (span != null && TracingOrigins.contain(hub.options.tracingOrigins, request.url.toString())) {
+            if (span != null &&
+                TracePropagationTargets.contain(hub.options.tracePropagationTargets, request.url.toString())
+            ) {
                 span.toSentryTrace().let {
                     requestBuilder.addHeader(it.name, it.value)
                 }
-                span.toBaggageHeader()?.let {
+
+                span.toBaggageHeader(request.headers(BaggageHeader.BAGGAGE_HEADER))?.let {
+                    requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
                     requestBuilder.addHeader(it.name, it.value)
                 }
             }

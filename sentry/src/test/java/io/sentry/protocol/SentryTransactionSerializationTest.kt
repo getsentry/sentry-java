@@ -26,7 +26,7 @@ class SentryTransactionSerializationTest {
             ),
             mapOf(
                 "386384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut(),
-                "186384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut(0.4000000059604645f, "test2")
+                "186384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut(0.4000000059604645, "test2")
             ),
             TransactionInfo(TransactionNameSource.CUSTOM.apiName())
         ).apply {
