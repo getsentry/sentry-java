@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- ConcurrentModificationException due to FrameMetricsAggregator ([#2281](https://github.com/getsentry/sentry-java/pull/2281))
+
 ## 6.5.0-beta.3
 
 ### Features
