@@ -58,6 +58,7 @@ class SentryNavigationListenerTest {
         ): SentryNavigationListener {
             whenever(hub.options).thenReturn(
                 SentryOptions().apply {
+                    dsn = "http://key@localhost/proj"
                     setTracesSampleRate(
                         tracesSampleRate
                     )

@@ -13,7 +13,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
-import io.sentry.TracingOrigins;
+import io.sentry.TracePropagationTargets;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ public final class SentryFeignClient implements Client {
 
       final RequestWrapper requestWrapper = new RequestWrapper(request);
 
-      if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), url)) {
+      if (TracePropagationTargets.contain(hub.getOptions().getTracePropagationTargets(), url)) {
         final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
         final @Nullable Collection<String> requestBaggageHeader =
             request.headers().get(BaggageHeader.BAGGAGE_HEADER);

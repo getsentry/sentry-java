@@ -48,9 +48,9 @@ class SentrySpanRestTemplateCustomizerTest {
             customizer.customize(restTemplate)
 
             if (includeMockServerInTracingOrigins) {
-                sentryOptions.tracingOrigins.add(mockServer.hostName)
+                sentryOptions.setTracePropagationTargets(listOf(mockServer.hostName))
             } else {
-                sentryOptions.tracingOrigins.add("other-api")
+                sentryOptions.setTracePropagationTargets(listOf("other-api"))
             }
 
             sentryOptions.dsn = "https://key@sentry.io/proj"

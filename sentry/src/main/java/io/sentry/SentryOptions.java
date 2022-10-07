@@ -14,6 +14,7 @@ import io.sentry.util.SampleRateUtil;
 import io.sentry.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -298,7 +299,7 @@ public class SentryOptions {
    * Controls if the `baggage` header is attached to HTTP client integrations and if the `trace`
    * header is attached to envelopes.
    */
-  private boolean traceSampling = false;
+  private boolean traceSampling = true;
 
   /**
    * Configures the profiles sample rate as a percentage of sampled transactions to be sent in the
@@ -323,7 +324,10 @@ public class SentryOptions {
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
-  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+  private @Nullable List<String> tracePropagationTargets = null;
+
+  private final @NotNull List<String> defaultTracePropagationTargets =
+      Collections.singletonList(".*");
 
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
@@ -1461,9 +1465,10 @@ public class SentryOptions {
    *
    * <p>Note: this is an experimental API and will be removed without notice.
    *
+   * @deprecated please use {{@link SentryOptions#setTracePropagationTargets(List)}} instead
    * @param traceSampling - if trace sampling should be enabled
    */
-  @ApiStatus.Experimental
+  @Deprecated
   public void setTraceSampling(boolean traceSampling) {
     this.traceSampling = traceSampling;
   }
@@ -1588,19 +1593,65 @@ public class SentryOptions {
   /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
+   * @deprecated use {{@link SentryOptions#getTracePropagationTargets()} }
    * @return the list of origins
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public @NotNull List<String> getTracingOrigins() {
-    return tracingOrigins;
+    return getTracePropagationTargets();
   }
 
   /**
    * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
    *
+   * @deprecated use {{@link SentryOptions#setTracePropagationTargets(List)}}
    * @param tracingOrigin - the tracing origin
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.tracingOrigins.add(tracingOrigin);
+    if (tracePropagationTargets == null) {
+      tracePropagationTargets = new CopyOnWriteArrayList<>();
+    }
+    if (!tracingOrigin.isEmpty()) {
+      tracePropagationTargets.add(tracingOrigin);
+    }
+  }
+
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  @ApiStatus.Internal
+  public void setTracingOrigins(final @Nullable List<String> tracingOrigins) {
+    setTracePropagationTargets(tracingOrigins);
+  }
+
+  /**
+   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @return the list of targets
+   */
+  public @NotNull List<String> getTracePropagationTargets() {
+    if (tracePropagationTargets == null) {
+      return defaultTracePropagationTargets;
+    }
+    return tracePropagationTargets;
+  }
+
+  @ApiStatus.Internal
+  public void setTracePropagationTargets(final @Nullable List<String> tracePropagationTargets) {
+    if (tracePropagationTargets == null) {
+      this.tracePropagationTargets = tracePropagationTargets;
+    } else {
+      @NotNull final List<String> filteredTracePropagationTargets = new ArrayList<>();
+      for (String target : tracePropagationTargets) {
+        if (!target.isEmpty()) {
+          filteredTracePropagationTargets.add(target);
+        }
+      }
+
+      this.tracePropagationTargets = filteredTracePropagationTargets;
+    }
   }
 
   /**
@@ -1854,9 +1905,10 @@ public class SentryOptions {
         new HashSet<>(options.getIgnoredExceptionsForType())) {
       addIgnoredExceptionForType(exceptionType);
     }
-    final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
-    for (final String tracingOrigin : tracingOrigins) {
-      addTracingOrigin(tracingOrigin);
+    if (options.getTracePropagationTargets() != null) {
+      final List<String> tracePropagationTargets =
+          new ArrayList<>(options.getTracePropagationTargets());
+      setTracePropagationTargets(tracePropagationTargets);
     }
     final List<String> contextTags = new ArrayList<>(options.getContextTags());
     for (final String contextTag : contextTags) {
