@@ -5,6 +5,7 @@
 ### Features
 
 - Provide API for attaching custom measurements to transactions ([#2260](https://github.com/getsentry/sentry-java/pull/2260))
+- Bump spring to 2.7.4 ([#2279](https://github.com/getsentry/sentry-java/pull/2279))
 
 ## 6.5.0-beta.2
 
