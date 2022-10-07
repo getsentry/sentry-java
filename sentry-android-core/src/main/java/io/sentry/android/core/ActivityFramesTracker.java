@@ -112,7 +112,7 @@ public final class ActivityFramesTracker {
 
     try {
       // NOTE: removing an activity does not reset the frame counts, only reset() does
-      frameMetricsAggregator.remove(activity);
+      activity.runOnUiThread(() -> frameMetricsAggregator.remove(activity));
     } catch (Throwable ignored) {
       // throws IllegalArgumentException when attempting to remove OnFrameMetricsAvailableListener
       // that was never added.
