@@ -1,15 +1,15 @@
 package io.sentry.android.core;
 
-import static io.sentry.protocol.MeasurementValue.NONE_UNIT;
-
 import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.ILogger;
+import io.sentry.MeasurementUnit;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +27,8 @@ public final class ActivityFramesTracker {
 
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
       activityMeasurements = new ConcurrentHashMap<>();
+  private final @NotNull Map<Activity, FrameCounts> frameCountAtStartSnapshots =
+      new WeakHashMap<>();
 
   public ActivityFramesTracker(final @NotNull LoadClass loadClass, final @Nullable ILogger logger) {
     androidXAvailable =
@@ -55,33 +57,31 @@ public final class ActivityFramesTracker {
       return;
     }
     frameMetricsAggregator.add(activity);
+    snapshotFrameCountsAtStart(activity);
   }
 
-  @SuppressWarnings("NullAway")
-  public synchronized void setMetrics(
-      final @NotNull Activity activity, final @NotNull SentryId sentryId) {
-    if (!isFrameMetricsAggregatorAvailable()) {
-      return;
+  private void snapshotFrameCountsAtStart(final @NotNull Activity activity) {
+    FrameCounts frameCounts = calculateCurrentFrameCounts();
+    if (frameCounts != null) {
+      frameCountAtStartSnapshots.put(activity, frameCounts);
     }
+  }
+
+  private @Nullable FrameCounts calculateCurrentFrameCounts() {
+    if (!isFrameMetricsAggregatorAvailable()) {
+      return null;
+    }
+
+    if (frameMetricsAggregator == null) {
+      return null;
+    }
+    final @Nullable SparseIntArray[] framesRates = frameMetricsAggregator.getMetrics();
 
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
 
-    SparseIntArray[] framesRates = null;
-    try {
-      framesRates = frameMetricsAggregator.remove(activity);
-    } catch (Throwable ignored) {
-      // throws IllegalArgumentException when attempting to remove OnFrameMetricsAvailableListener
-      // that was never added.
-      // there's no contains method.
-      // throws NullPointerException when attempting to remove OnFrameMetricsAvailableListener and
-      // there was no
-      // Observers, See
-      // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
-    }
-
-    if (framesRates != null) {
+    if (framesRates != null && framesRates.length > 0) {
       final SparseIntArray totalIndexArray = framesRates[FrameMetricsAggregator.TOTAL_INDEX];
       if (totalIndexArray != null) {
         for (int i = 0; i < totalIndexArray.size(); i++) {
@@ -100,31 +100,80 @@ public final class ActivityFramesTracker {
       }
     }
 
-    if (totalFrames == 0 && slowFrames == 0 && frozenFrames == 0) {
+    return new FrameCounts(totalFrames, slowFrames, frozenFrames);
+  }
+
+  @SuppressWarnings("NullAway")
+  public synchronized void setMetrics(
+      final @NotNull Activity activity, final @NotNull SentryId transactionId) {
+    if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
 
-    final MeasurementValue tfValues = new MeasurementValue(totalFrames, NONE_UNIT);
-    final MeasurementValue sfValues = new MeasurementValue(slowFrames, NONE_UNIT);
-    final MeasurementValue ffValues = new MeasurementValue(frozenFrames, NONE_UNIT);
+    try {
+      // NOTE: removing an activity does not reset the frame counts, only reset() does
+      frameMetricsAggregator.remove(activity);
+    } catch (Throwable ignored) {
+      // throws IllegalArgumentException when attempting to remove OnFrameMetricsAvailableListener
+      // that was never added.
+      // there's no contains method.
+      // throws NullPointerException when attempting to remove OnFrameMetricsAvailableListener and
+      // there was no
+      // Observers, See
+      // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
+    }
+
+    final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
+
+    if (frameCounts == null
+        || (frameCounts.totalFrames == 0
+            && frameCounts.slowFrames == 0
+            && frameCounts.frozenFrames == 0)) {
+      return;
+    }
+
+    final MeasurementValue tfValues =
+        new MeasurementValue(frameCounts.totalFrames, MeasurementUnit.NONE);
+    final MeasurementValue sfValues =
+        new MeasurementValue(frameCounts.slowFrames, MeasurementUnit.NONE);
+    final MeasurementValue ffValues =
+        new MeasurementValue(frameCounts.frozenFrames, MeasurementUnit.NONE);
     final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
     measurements.put("frames_total", tfValues);
     measurements.put("frames_slow", sfValues);
     measurements.put("frames_frozen", ffValues);
 
-    activityMeasurements.put(sentryId, measurements);
+    activityMeasurements.put(transactionId, measurements);
+  }
+
+  private @Nullable FrameCounts diffFrameCountsAtEnd(final @NotNull Activity activity) {
+    @Nullable final FrameCounts frameCountsAtStart = frameCountAtStartSnapshots.remove(activity);
+    if (frameCountsAtStart == null) {
+      return null;
+    }
+
+    @Nullable final FrameCounts frameCountsAtEnd = calculateCurrentFrameCounts();
+    if (frameCountsAtEnd == null) {
+      return null;
+    }
+
+    final int diffTotalFrames = frameCountsAtEnd.totalFrames - frameCountsAtStart.totalFrames;
+    final int diffSlowFrames = frameCountsAtEnd.slowFrames - frameCountsAtStart.slowFrames;
+    final int diffFrozenFrames = frameCountsAtEnd.frozenFrames - frameCountsAtStart.frozenFrames;
+
+    return new FrameCounts(diffTotalFrames, diffSlowFrames, diffFrozenFrames);
   }
 
   @Nullable
   public synchronized Map<String, @NotNull MeasurementValue> takeMetrics(
-      final @NotNull SentryId sentryId) {
+      final @NotNull SentryId transactionId) {
     if (!isFrameMetricsAggregatorAvailable()) {
       return null;
     }
 
     final Map<String, @NotNull MeasurementValue> stringMeasurementValueMap =
-        activityMeasurements.get(sentryId);
-    activityMeasurements.remove(sentryId);
+        activityMeasurements.get(transactionId);
+    activityMeasurements.remove(transactionId);
     return stringMeasurementValueMap;
   }
 
@@ -132,7 +181,20 @@ public final class ActivityFramesTracker {
   public synchronized void stop() {
     if (isFrameMetricsAggregatorAvailable()) {
       frameMetricsAggregator.stop();
+      frameMetricsAggregator.reset();
     }
     activityMeasurements.clear();
+  }
+
+  private static final class FrameCounts {
+    private final int totalFrames;
+    private final int slowFrames;
+    private final int frozenFrames;
+
+    private FrameCounts(final int totalFrames, final int slowFrames, final int frozenFrames) {
+      this.totalFrames = totalFrames;
+      this.slowFrames = slowFrames;
+      this.frozenFrames = frozenFrames;
+    }
   }
 }
