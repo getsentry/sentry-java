@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-### Features
+### Fixes
 
 - Improve public facing API for creating Baggage from header ([#2284](https://github.com/getsentry/sentry-java/pull/2284))
 
