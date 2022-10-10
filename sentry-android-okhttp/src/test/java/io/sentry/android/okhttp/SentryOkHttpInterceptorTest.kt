@@ -36,7 +36,7 @@ class SentryOkHttpInterceptorTest {
 
     class Fixture {
         val hub = mock<IHub>()
-        var interceptor = SentryOkHttpInterceptor(hub)
+        var interceptor = SentryOkHttpInterceptor_old(hub)
         val server = MockWebServer()
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions
@@ -47,7 +47,7 @@ class SentryOkHttpInterceptorTest {
             httpStatusCode: Int = 201,
             responseBody: String = "success",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null,
+            beforeSpan: SentryOkHttpInterceptor_old.BeforeSpanCallback? = null,
             includeMockServerInTracePropagationTargets: Boolean = true,
             keepDefaultTracePropagationTargets: Boolean = false,
         ): OkHttpClient {
@@ -75,7 +75,7 @@ class SentryOkHttpInterceptorTest {
             )
 
             if (beforeSpan != null) {
-                interceptor = SentryOkHttpInterceptor(hub, beforeSpan)
+                interceptor = SentryOkHttpInterceptor_old(hub, beforeSpan)
             }
             return OkHttpClient.Builder().addInterceptor(interceptor).build()
         }

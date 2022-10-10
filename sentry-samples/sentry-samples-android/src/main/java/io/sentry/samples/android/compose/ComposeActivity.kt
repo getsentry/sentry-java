@@ -90,7 +90,11 @@ fun Github(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(perPage) {
-        result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+        try {
+            result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+        } catch (e: Throwable) {
+            Sentry.captureException(e)
+        }
     }
 
     Column(
@@ -108,7 +112,12 @@ fun Github(
         Button(
             onClick = {
                 scope.launch {
-                    result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+                    try {
+                        result =
+                            GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+                    } catch (e: Throwable) {
+                        Sentry.captureException(e)
+                    }
                 }
             },
             modifier = Modifier.padding(top = 32.dp)

@@ -8,9 +8,14 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object GithubAPI {
 
-    private val client = OkHttpClient.Builder().addInterceptor(SentryOkHttpInterceptor(captureFailedRequests = true, failedRequestStatusCodes = listOf(
-        StatusCodeRange(200, 599)
-    ))).build()
+    private val client = OkHttpClient.Builder().addInterceptor(
+        SentryOkHttpInterceptor(
+            captureFailedRequests = true,
+            failedRequestStatusCode = listOf(
+                StatusCodeRange(200, 599)
+            )
+        )
+    ).build()
 
     private val retrofit = Retrofit.Builder()
         .baseUrl("https://api.github.com/")

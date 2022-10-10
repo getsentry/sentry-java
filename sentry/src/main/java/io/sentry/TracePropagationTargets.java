@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
+// TODO: rename class to something more generic
+
 /**
  * Checks if an URL matches the list of origins to which `sentry-trace` header should be sent in
  * HTTP integrations.

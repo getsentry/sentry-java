@@ -10,7 +10,9 @@ interface GitHubService {
     @GET("users/{user}/repos")
     fun listRepos(@Path("user") user: String): Call<List<Repo>>
 
-    @GET("users/{user}/repos")
+    // TODO: @GET("users/{user}/repos/#test") throws 404
+//    @GET("users/{user}/repos/")
+    @GET("users/{user}/repos/#test")
     suspend fun listReposAsync(@Path("user") user: String, @Query("per_page") perPage: Int): List<Repo>
 }
 

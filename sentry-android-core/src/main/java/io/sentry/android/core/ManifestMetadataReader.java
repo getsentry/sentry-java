@@ -300,7 +300,8 @@ final class ManifestMetadataReader {
         sdkInfo.setVersion(readStringNotNull(metadata, logger, SDK_VERSION, sdkInfo.getVersion()));
         options.setSdkVersion(sdkInfo);
 
-        options.setSendDefaultPii(readBool(metadata, logger, SEND_DEFAULT_PII, options.isSendDefaultPii()));
+        options.setSendDefaultPii(
+            readBool(metadata, logger, SEND_DEFAULT_PII, options.isSendDefaultPii()));
       }
 
       options

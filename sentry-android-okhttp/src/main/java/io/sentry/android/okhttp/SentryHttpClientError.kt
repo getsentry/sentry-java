@@ -1,5 +1,4 @@
 package io.sentry.android.okhttp
 
-class SentryHttpClientError(override val message: String) : RuntimeException(message) {
-
-}
+// @ApiStatus.Internal
+class SentryHttpClientError(override val message: String) : RuntimeException(message)
