@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix ConcurrentModificationException due to FrameMetricsAggregator manipulation ([#2282](https://github.com/getsentry/sentry-java/pull/2282))
+
 ## 6.4.3
 
 - Fix slow and frozen frames tracking ([#2271](https://github.com/getsentry/sentry-java/pull/2271))
