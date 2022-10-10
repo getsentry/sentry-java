@@ -76,28 +76,7 @@ public final class ActivityFramesTracker {
       return;
     }
 
-    try {
-      if (MainThreadChecker.isMainThread()) {
-        frameMetricsAggregator.add(activity);
-      } else {
-        handler.post(
-            () -> {
-              try {
-                frameMetricsAggregator.add(activity);
-              } catch (Throwable t) {
-                if (logger != null) {
-                  logger.log(
-                      SentryLevel.ERROR, "Failed to add Activity to FrameMetricsAggregator", t);
-                }
-              }
-            });
-      }
-    } catch (Throwable t) {
-      if (logger != null) {
-        logger.log(SentryLevel.ERROR, "Failed to add Activity to FrameMetricsAggregator", t);
-      }
-    }
-
+    runSafelyOnUiThread(() -> frameMetricsAggregator.add(activity), "FrameMetricsAggregator.add");
     snapshotFrameCountsAtStart(activity);
   }
 
@@ -117,7 +96,7 @@ public final class ActivityFramesTracker {
       return null;
     }
 
-    @Nullable final SparseIntArray[] framesRates = frameMetricsAggregator.getMetrics();
+    final @Nullable SparseIntArray[] framesRates = frameMetricsAggregator.getMetrics();
 
     int totalFrames = 0;
     int slowFrames = 0;
@@ -152,39 +131,18 @@ public final class ActivityFramesTracker {
       return;
     }
 
-    try {
-      if (MainThreadChecker.isMainThread()) {
-        frameMetricsAggregator.remove(activity);
-      } else {
-        handler.post(
-            () -> {
-              try {
-                // NOTE: removing an activity does not reset the frame counts, only reset() does
-                frameMetricsAggregator.remove(activity);
-              } catch (Throwable t) {
-                // throws IllegalArgumentException when attempting to remove
-                // OnFrameMetricsAvailableListener
-                // that was never added.
-                // there's no contains method.
-                // throws NullPointerException when attempting to remove
-                // OnFrameMetricsAvailableListener and
-                // there was no
-                // Observers, See
-                // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
-                if (logger != null) {
-                  logger.log(
-                      SentryLevel.ERROR,
-                      "Failed to remove Activity from FrameMetricsAggregator",
-                      t);
-                }
-              }
-            });
-      }
-    } catch (Throwable t) {
-      if (logger != null) {
-        logger.log(SentryLevel.ERROR, "Failed to remove Activity from FrameMetricsAggregator", t);
-      }
-    }
+    // NOTE: removing an activity does not reset the frame counts, only reset() does
+    // throws IllegalArgumentException when attempting to remove
+    // OnFrameMetricsAvailableListener
+    // that was never added.
+    // there's no contains method.
+    // throws NullPointerException when attempting to remove
+    // OnFrameMetricsAvailableListener and
+    // there was no
+    // Observers, See
+    // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
+    runSafelyOnUiThread(
+        () -> frameMetricsAggregator.remove(activity), "FrameMetricsAggregator.remove");
 
     final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
 
@@ -240,30 +198,33 @@ public final class ActivityFramesTracker {
   @SuppressWarnings("NullAway")
   public synchronized void stop() {
     if (isFrameMetricsAggregatorAvailable()) {
-      try {
-        if (MainThreadChecker.isMainThread()) {
-          frameMetricsAggregator.stop();
-        } else {
-          handler.post(
-              () -> {
-                try {
-                  frameMetricsAggregator.stop();
-                } catch (Throwable t) {
-                  if (logger != null) {
-                    logger.log(SentryLevel.ERROR, "Failed to stop FrameMetricsAggregator", t);
-                  }
-                }
-              });
-        }
-      } catch (Throwable t) {
-        if (logger != null) {
-          logger.log(SentryLevel.ERROR, "Failed to stop FrameMetricsAggregator", t);
-        }
-      }
-
+      runSafelyOnUiThread(() -> frameMetricsAggregator.stop(), "FrameMetricsAggregator.stop");
       frameMetricsAggregator.reset();
     }
     activityMeasurements.clear();
+  }
+
+  private void runSafelyOnUiThread(final Runnable runnable, final String tag) {
+    try {
+      if (MainThreadChecker.isMainThread()) {
+        runnable.run();
+      } else {
+        handler.post(
+            () -> {
+              try {
+                runnable.run();
+              } catch (Throwable t) {
+                if (logger != null) {
+                  logger.log(SentryLevel.ERROR, "Failed to execute " + tag, t);
+                }
+              }
+            });
+      }
+    } catch (Throwable t) {
+      if (logger != null) {
+        logger.log(SentryLevel.ERROR, "Failed to execute " + tag, t);
+      }
+    }
   }
 
   private static final class FrameCounts {
