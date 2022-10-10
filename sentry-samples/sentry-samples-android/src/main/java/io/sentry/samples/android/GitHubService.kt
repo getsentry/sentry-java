@@ -11,8 +11,7 @@ interface GitHubService {
     fun listRepos(@Path("user") user: String): Call<List<Repo>>
 
     // TODO: @GET("users/{user}/repos/#test") throws 404
-//    @GET("users/{user}/repos/")
-    @GET("users/{user}/repos/#test")
+    @GET("users/{user}/repos/")
     suspend fun listReposAsync(@Path("user") user: String, @Query("per_page") perPage: Int): List<Repo>
 }
 

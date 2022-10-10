@@ -93,6 +93,7 @@ fun Github(
         try {
             result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
         } catch (e: Throwable) {
+            // TODO: event processor that converts retrofit HttpException to a proper sentry event
             Sentry.captureException(e)
         }
     }

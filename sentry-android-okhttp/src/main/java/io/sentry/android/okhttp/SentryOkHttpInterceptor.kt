@@ -203,8 +203,6 @@ class SentryOkHttpInterceptor(
         event.message = sentryMessage
 
         hub.captureEvent(event, hint)
-
-        // TODO: event processor that converts retrofit HttpException to a proper sentry event
     }
 
     private fun containsStatusCode(statusCode: Int): Boolean {
