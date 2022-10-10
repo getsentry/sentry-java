@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.ILogger;
+import io.sentry.android.core.internal.util.MainThreadChecker;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
@@ -30,6 +31,8 @@ public final class ActivityFramesTracker {
       activityMeasurements = new ConcurrentHashMap<>();
   private final @NotNull Map<Activity, FrameCounts> frameCountAtStartSnapshots =
       new WeakHashMap<>();
+
+  private final @NotNull MainLooperHandler handler = new MainLooperHandler();
 
   public ActivityFramesTracker(final @NotNull LoadClass loadClass, final @Nullable ILogger logger) {
     androidXAvailable =
@@ -57,7 +60,24 @@ public final class ActivityFramesTracker {
     if (!isFrameMetricsAggregatorAvailable()) {
       return;
     }
-    frameMetricsAggregator.add(activity);
+
+    try {
+      if (MainThreadChecker.isMainThread()) {
+        frameMetricsAggregator.add(activity);
+      } else {
+        handler.post(
+            () -> {
+              try {
+                frameMetricsAggregator.add(activity);
+              } catch (Throwable ignored) {
+                // no-op
+              }
+            });
+      }
+    } catch (Throwable ignored) {
+      // no-op
+    }
+
     snapshotFrameCountsAtStart(activity);
   }
 
@@ -112,16 +132,29 @@ public final class ActivityFramesTracker {
     }
 
     try {
-      // NOTE: removing an activity does not reset the frame counts, only reset() does
-      frameMetricsAggregator.remove(activity);
+      if (MainThreadChecker.isMainThread()) {
+        frameMetricsAggregator.remove(activity);
+      } else {
+        handler.post(
+            () -> {
+              try {
+                // NOTE: removing an activity does not reset the frame counts, only reset() does
+                frameMetricsAggregator.remove(activity);
+              } catch (Throwable ignored) {
+                // throws IllegalArgumentException when attempting to remove
+                // OnFrameMetricsAvailableListener
+                // that was never added.
+                // there's no contains method.
+                // throws NullPointerException when attempting to remove
+                // OnFrameMetricsAvailableListener and
+                // there was no
+                // Observers, See
+                // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
+              }
+            });
+      }
     } catch (Throwable ignored) {
-      // throws IllegalArgumentException when attempting to remove OnFrameMetricsAvailableListener
-      // that was never added.
-      // there's no contains method.
-      // throws NullPointerException when attempting to remove OnFrameMetricsAvailableListener and
-      // there was no
-      // Observers, See
-      // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
+      // no-op
     }
 
     final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
@@ -178,8 +211,24 @@ public final class ActivityFramesTracker {
   @SuppressWarnings("NullAway")
   public synchronized void stop() {
     if (isFrameMetricsAggregatorAvailable()) {
-      frameMetricsAggregator.stop();
-      frameMetricsAggregator.reset();
+      try {
+        if (MainThreadChecker.isMainThread()) {
+          frameMetricsAggregator.stop();
+          frameMetricsAggregator.reset();
+        } else {
+          handler.post(
+              () -> {
+                try {
+                  frameMetricsAggregator.stop();
+                  frameMetricsAggregator.reset();
+                } catch (Throwable t) {
+                  // no-op
+                }
+              });
+        }
+      } catch (Throwable ignored) {
+        // no-op
+      }
     }
     activityMeasurements.clear();
   }
