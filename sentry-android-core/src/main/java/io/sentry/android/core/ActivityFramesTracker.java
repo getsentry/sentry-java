@@ -96,7 +96,13 @@ public final class ActivityFramesTracker {
     if (frameMetricsAggregator == null) {
       return null;
     }
-    final @Nullable SparseIntArray[] framesRates = frameMetricsAggregator.getMetrics();
+
+    @Nullable SparseIntArray[] framesRates = null;
+    try {
+      framesRates = frameMetricsAggregator.getMetrics();
+    } catch (Throwable t) {
+      // no-op
+    }
 
     int totalFrames = 0;
     int slowFrames = 0;
