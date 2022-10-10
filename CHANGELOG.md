@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+### Fixes
+
 - Fix ConcurrentModificationException due to FrameMetricsAggregator manipulation ([#2282](https://github.com/getsentry/sentry-java/pull/2282))
 
 ## 6.4.3
