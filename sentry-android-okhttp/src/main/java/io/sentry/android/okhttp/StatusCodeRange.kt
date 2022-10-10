@@ -1,8 +1,8 @@
 package io.sentry.android.okhttp
 
-//import org.jetbrains.annotations.ApiStatus
+// import org.jetbrains.annotations.ApiStatus
 
-//@ApiStatus.Internal
+// @ApiStatus.Internal
 class StatusCodeRange(private val min: Int, private val max: Int) {
     constructor(statusCode: Int) : this(statusCode, statusCode)
 

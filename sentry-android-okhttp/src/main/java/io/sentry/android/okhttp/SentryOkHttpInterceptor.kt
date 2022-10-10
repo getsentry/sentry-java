@@ -6,9 +6,9 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
+import io.sentry.SentryEvent
 import io.sentry.SpanStatus
 import io.sentry.TracePropagationTargets
-import io.sentry.SentryEvent
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.exception.ExceptionMechanismException
@@ -208,7 +208,7 @@ class SentryOkHttpInterceptor(
     }
 
     private fun containsStatusCode(statusCode: Int): Boolean {
-        for(item in failedRequestStatusCode) {
+        for (item in failedRequestStatusCode) {
             if (item.isInRange(statusCode)) {
                 return true
             }

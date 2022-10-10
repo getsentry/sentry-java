@@ -102,9 +102,7 @@ public final class Request implements JsonUnknown, JsonSerializable {
 
   private @Nullable Map<String, String> other;
 
-  /**
-   * The fragment (anchor) of the request URL.
-   */
+  /** The fragment (anchor) of the request URL. */
   private @Nullable String fragment;
 
   @SuppressWarnings("unused")

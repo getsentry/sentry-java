@@ -140,8 +140,8 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
   public static final class Deserializer implements JsonDeserializer<Contexts> {
 
     @Override
-    public @NotNull Contexts deserialize(final @NotNull JsonObjectReader reader, final @NotNull ILogger logger)
-        throws Exception {
+    public @NotNull Contexts deserialize(
+        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
       final Contexts contexts = new Contexts();
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {
