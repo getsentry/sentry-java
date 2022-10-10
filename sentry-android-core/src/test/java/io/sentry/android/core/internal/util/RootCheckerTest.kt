@@ -86,7 +86,8 @@ class RootCheckerTest {
         val rootPackages = arrayOf("com.devadvance.rootcloak")
         val packageInfo = mock<PackageInfo>()
 
-        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any())).thenReturn(packageInfo)
+        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any<Int>())).thenReturn(packageInfo)
+        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any<PackageManager.PackageInfoFlags>())).thenReturn(packageInfo)
 
         assertTrue(fixture.getSut(rootPackages = rootPackages).isDeviceRooted)
     }
@@ -95,7 +96,8 @@ class RootCheckerTest {
     fun `When root packages do not exist, device is not rooted`() {
         val rootPackages = arrayOf("com.devadvance.rootcloak")
 
-        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any())).thenThrow(PackageManager.NameNotFoundException())
+        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any<Int>())).thenThrow(PackageManager.NameNotFoundException())
+        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any<PackageManager.PackageInfoFlags>())).thenThrow(PackageManager.NameNotFoundException())
 
         assertFalse(fixture.getSut(rootPackages = rootPackages).isDeviceRooted)
     }

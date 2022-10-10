@@ -35,18 +35,20 @@ class SentrySpanWebClientCustomizerTest {
         lateinit var sentryOptions: SentryOptions
         val hub = mock<IHub>()
         var mockServer = MockWebServer()
-        val transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
+        lateinit var transaction: SentryTracer
         private val customizer = SentrySpanWebClientCustomizer(hub)
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false, includeMockServerInTracingOrigins: Boolean = true): WebClient {
             sentryOptions = SentryOptions().apply {
                 if (includeMockServerInTracingOrigins) {
-                    tracingOrigins.add(mockServer.hostName)
+                    setTracePropagationTargets(listOf(mockServer.hostName))
                 } else {
-                    tracingOrigins.add("other-api")
+                    setTracePropagationTargets(listOf("other-api"))
                 }
+                dsn = "http://key@localhost/proj"
             }
             whenever(hub.options).thenReturn(sentryOptions)
+            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
             val webClientBuilder = WebClient.builder()
             customizer.customize(webClientBuilder)
             val webClient = webClientBuilder.build()

@@ -11,6 +11,7 @@ plugins {
 
 android {
     compileSdk = Config.Android.compileSdkVersion
+    namespace = "io.sentry.android.core"
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion

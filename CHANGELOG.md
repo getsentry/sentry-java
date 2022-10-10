@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Improve public facing API for creating Baggage from header ([#2284](https://github.com/getsentry/sentry-java/pull/2284))
+
+## 6.5.0-beta.3
+
+### Features
+
+- Provide API for attaching custom measurements to transactions ([#2260](https://github.com/getsentry/sentry-java/pull/2260))
+- Bump spring to 2.7.4 ([#2279](https://github.com/getsentry/sentry-java/pull/2279))
+
+## 6.5.0-beta.2
+
+### Features
+
+- Make user segment a top level property ([#2257](https://github.com/getsentry/sentry-java/pull/2257))
+- Replace user `other` with `data` ([#2258](https://github.com/getsentry/sentry-java/pull/2258))
+- `isTraceSampling` is now on by default. `tracingOrigins` has been replaced by `tracePropagationTargets` ([#2255](https://github.com/getsentry/sentry-java/pull/2255))
+
+## 6.5.0-beta.1
+
+### Features
+
+- Server-Side Dynamic Sampling Context support  ([#2226](https://github.com/getsentry/sentry-java/pull/2226))
+
 ## 6.4.4
 
 ### Fixes
@@ -37,6 +64,9 @@
 
 ### Features
 
+- Concurrent profiling 3 - added truncation reason ([#2247](https://github.com/getsentry/sentry-java/pull/2247))
+- Concurrent profiling 2 - added list of transactions ([#2218](https://github.com/getsentry/sentry-java/pull/2218))
+- Concurrent profiling 1 - added envelope payload data format ([#2216](https://github.com/getsentry/sentry-java/pull/2216))
 - Send source for transactions ([#2180](https://github.com/getsentry/sentry-java/pull/2180))
 - Add profilesSampleRate and profileSampler options for Android sdk ([#2184](https://github.com/getsentry/sentry-java/pull/2184))
 - Add baggage header to RestTemplate ([#2206](https://github.com/getsentry/sentry-java/pull/2206))

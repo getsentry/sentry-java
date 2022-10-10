@@ -13,9 +13,10 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
-import io.sentry.TracingOrigins;
+import io.sentry.TracePropagationTargets;
 import io.sentry.util.Objects;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -54,11 +55,16 @@ public final class SentryFeignClient implements Client {
 
       final RequestWrapper requestWrapper = new RequestWrapper(request);
 
-      if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), url)) {
+      if (TracePropagationTargets.contain(hub.getOptions().getTracePropagationTargets(), url)) {
         final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-        final @Nullable BaggageHeader baggageHeader = span.toBaggageHeader();
+        final @Nullable Collection<String> requestBaggageHeader =
+            request.headers().get(BaggageHeader.BAGGAGE_HEADER);
+        final @Nullable BaggageHeader baggageHeader =
+            span.toBaggageHeader(
+                requestBaggageHeader != null ? new ArrayList<>(requestBaggageHeader) : null);
         requestWrapper.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
         if (baggageHeader != null) {
+          requestWrapper.removeHeader(BaggageHeader.BAGGAGE_HEADER);
           requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
         }
       }
@@ -126,6 +132,10 @@ public final class SentryFeignClient implements Client {
       if (!headers.containsKey(name)) {
         headers.put(name, Collections.singletonList(value));
       }
+    }
+
+    public void removeHeader(final @NotNull String name) {
+      headers.remove(name);
     }
 
     @NotNull

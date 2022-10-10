@@ -1,6 +1,8 @@
 package io.sentry.spring.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.Baggage;
+import io.sentry.BaggageHeader;
 import io.sentry.CustomSamplingContext;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
@@ -14,6 +16,8 @@ import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -72,9 +76,12 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
     if (hub.isEnabled()) {
       final String sentryTraceHeader = httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
+      final List<String> baggageHeader =
+          Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
 
       // at this stage we are not able to get real transaction name
-      final ITransaction transaction = startTransaction(httpRequest, sentryTraceHeader);
+      final ITransaction transaction =
+          startTransaction(httpRequest, sentryTraceHeader, baggageHeader);
       try {
         filterChain.doFilter(httpRequest, httpResponse);
       } catch (Throwable e) {
@@ -105,12 +112,16 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   }
 
   private ITransaction startTransaction(
-      final @NotNull HttpServletRequest request, final @Nullable String sentryTraceHeader) {
+      final @NotNull HttpServletRequest request,
+      final @Nullable String sentryTraceHeader,
+      final @Nullable List<String> baggageHeader) {
 
     final String name = request.getMethod() + " " + request.getRequestURI();
 
     final CustomSamplingContext customSamplingContext = new CustomSamplingContext();
     customSamplingContext.set("request", request);
+
+    final Baggage baggage = Baggage.fromHeader(baggageHeader, hub.getOptions().getLogger());
 
     if (sentryTraceHeader != null) {
       try {
@@ -119,7 +130,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
                 name,
                 TransactionNameSource.URL,
                 "http.server",
-                new SentryTraceHeader(sentryTraceHeader));
+                new SentryTraceHeader(sentryTraceHeader),
+                baggage);
 
         final TransactionOptions transactionOptions = new TransactionOptions();
         transactionOptions.setCustomSamplingContext(customSamplingContext);

@@ -12,7 +12,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
-import io.sentry.TracingOrigins;
+import io.sentry.TracePropagationTargets;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
@@ -49,11 +49,14 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
 
       final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
 
-      if (TracingOrigins.contain(hub.getOptions().getTracingOrigins(), request.getURI())) {
+      if (TracePropagationTargets.contain(
+          hub.getOptions().getTracePropagationTargets(), request.getURI())) {
         request.getHeaders().add(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-        @Nullable BaggageHeader baggage = span.toBaggageHeader();
+        @Nullable
+        BaggageHeader baggage =
+            span.toBaggageHeader(request.getHeaders().get(BaggageHeader.BAGGAGE_HEADER));
         if (baggage != null) {
-          request.getHeaders().add(baggage.getName(), baggage.getValue());
+          request.getHeaders().set(baggage.getName(), baggage.getValue());
         }
       }
 

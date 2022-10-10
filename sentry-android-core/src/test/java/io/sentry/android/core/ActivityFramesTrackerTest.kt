@@ -45,7 +45,7 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
         val totalFrames = metrics!!["frames_total"]
 
-        assertEquals(totalFrames!!.value, 1f)
+        assertEquals(totalFrames!!.value, 1)
         assertEquals(totalFrames.unit, "none")
     }
 
@@ -63,7 +63,7 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
         val frozenFrames = metrics!!["frames_frozen"]
 
-        assertEquals(frozenFrames!!.value, 5f)
+        assertEquals(frozenFrames!!.value, 5)
         assertEquals(frozenFrames.unit, "none")
     }
 
@@ -81,7 +81,7 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
         val slowFrames = metrics!!["frames_slow"]
 
-        assertEquals(slowFrames!!.value, 5f)
+        assertEquals(slowFrames!!.value, 5)
         assertEquals(slowFrames.unit, "none")
     }
 
@@ -102,13 +102,13 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
 
         val totalFrames = metrics!!["frames_total"]
-        assertEquals(totalFrames!!.value, 111f)
+        assertEquals(totalFrames!!.value, 111)
 
         val frozenFrames = metrics["frames_frozen"]
-        assertEquals(frozenFrames!!.value, 6f)
+        assertEquals(frozenFrames!!.value, 6)
 
         val slowFrames = metrics["frames_slow"]
-        assertEquals(slowFrames!!.value, 5f)
+        assertEquals(slowFrames!!.value, 5)
     }
 
     @Test
@@ -128,13 +128,13 @@ class ActivityFramesTrackerTest {
         val metrics = sut.takeMetrics(fixture.sentryId)
 
         val totalFrames = metrics!!["frames_total"]
-        assertEquals(totalFrames!!.value, 111f)
+        assertEquals(totalFrames!!.value, 111)
 
         val frozenFrames = metrics["frames_frozen"]
-        assertEquals(frozenFrames!!.value, 6f)
+        assertEquals(frozenFrames!!.value, 6)
 
         val slowFrames = metrics["frames_slow"]
-        assertEquals(slowFrames!!.value, 5f)
+        assertEquals(slowFrames!!.value, 5)
     }
 
     @Test
@@ -181,22 +181,22 @@ class ActivityFramesTrackerTest {
         val metricsB = sut.takeMetrics(sentryIdB)!!
 
         val totalFramesA = metricsA!!["frames_total"]
-        assertEquals(totalFramesA!!.value, 21f) // 15 + 3 + 3 (diff counts for activityA)
+        assertEquals(totalFramesA!!.value, 21) // 15 + 3 + 3 (diff counts for activityA)
 
         val frozenFramesA = metricsA["frames_frozen"]
-        assertEquals(frozenFramesA!!.value, 3f)
+        assertEquals(frozenFramesA!!.value, 3)
 
         val slowFramesA = metricsA["frames_slow"]
-        assertEquals(slowFramesA!!.value, 3f)
+        assertEquals(slowFramesA!!.value, 3)
 
         val totalFramesB = metricsB!!["frames_total"]
-        assertEquals(totalFramesB!!.value, 35f) // 25 + 5 + 5 (diff counts for activityB)
+        assertEquals(totalFramesB!!.value, 35) // 25 + 5 + 5 (diff counts for activityB)
 
         val frozenFramesB = metricsB["frames_frozen"]
-        assertEquals(frozenFramesB!!.value, 5f)
+        assertEquals(frozenFramesB!!.value, 5)
 
         val slowFramesB = metricsB["frames_slow"]
-        assertEquals(slowFramesB!!.value, 5f)
+        assertEquals(slowFramesB!!.value, 5)
     }
 
     @Test
@@ -235,22 +235,22 @@ class ActivityFramesTrackerTest {
         val secondMetrics = sut.takeMetrics(secondSentryId)
 
         val totalFrames = metrics!!["frames_total"]
-        assertEquals(totalFrames!!.value, 12f) // 10 + 1 + 1 (diff counts for first invocation)
+        assertEquals(totalFrames!!.value, 12) // 10 + 1 + 1 (diff counts for first invocation)
 
         val frozenFrames = metrics["frames_frozen"]
-        assertEquals(frozenFrames!!.value, 1f)
+        assertEquals(frozenFrames!!.value, 1)
 
         val slowFrames = metrics["frames_slow"]
-        assertEquals(slowFrames!!.value, 1f)
+        assertEquals(slowFrames!!.value, 1)
 
         val totalFramesSecond = secondMetrics!!["frames_total"]
-        assertEquals(totalFramesSecond!!.value, 26f) // 20 + 3 + 3 (diff counts for second invocation)
+        assertEquals(totalFramesSecond!!.value, 26) // 20 + 3 + 3 (diff counts for second invocation)
 
         val frozenFramesSecond = secondMetrics["frames_frozen"]
-        assertEquals(frozenFramesSecond!!.value, 3f)
+        assertEquals(frozenFramesSecond!!.value, 3)
 
         val slowFramesSecond = secondMetrics["frames_slow"]
-        assertEquals(slowFramesSecond!!.value, 3f)
+        assertEquals(slowFramesSecond!!.value, 3)
     }
 
     @Test
