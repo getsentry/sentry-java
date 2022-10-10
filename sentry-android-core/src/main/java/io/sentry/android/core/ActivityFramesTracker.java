@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.ILogger;
+import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.MainThreadChecker;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
@@ -32,14 +33,24 @@ public final class ActivityFramesTracker {
   private final @NotNull Map<Activity, FrameCounts> frameCountAtStartSnapshots =
       new WeakHashMap<>();
 
-  private final @NotNull MainLooperHandler handler = new MainLooperHandler();
+  private final @Nullable ILogger logger;
+  private final @NotNull MainLooperHandler handler;
 
-  public ActivityFramesTracker(final @NotNull LoadClass loadClass, final @Nullable ILogger logger) {
+  public ActivityFramesTracker(
+      final @NotNull LoadClass loadClass,
+      final @Nullable ILogger logger,
+      final @NotNull MainLooperHandler handler) {
     androidXAvailable =
         loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", logger);
     if (androidXAvailable) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
+    this.logger = logger;
+    this.handler = handler;
+  }
+
+  public ActivityFramesTracker(final @NotNull LoadClass loadClass, final @Nullable ILogger logger) {
+    this(loadClass, logger, new MainLooperHandler());
   }
 
   public ActivityFramesTracker(final @NotNull LoadClass loadClass) {
@@ -47,8 +58,12 @@ public final class ActivityFramesTracker {
   }
 
   @TestOnly
-  ActivityFramesTracker(final @Nullable FrameMetricsAggregator frameMetricsAggregator) {
+  ActivityFramesTracker(
+      final @Nullable FrameMetricsAggregator frameMetricsAggregator,
+      final @NotNull MainLooperHandler handler) {
     this.frameMetricsAggregator = frameMetricsAggregator;
+    this.logger = null;
+    this.handler = handler;
   }
 
   private boolean isFrameMetricsAggregatorAvailable() {
@@ -69,13 +84,18 @@ public final class ActivityFramesTracker {
             () -> {
               try {
                 frameMetricsAggregator.add(activity);
-              } catch (Throwable ignored) {
-                // no-op
+              } catch (Throwable t) {
+                if (logger != null) {
+                  logger.log(
+                      SentryLevel.ERROR, "Failed to add Activity to FrameMetricsAggregator", t);
+                }
               }
             });
       }
-    } catch (Throwable ignored) {
-      // no-op
+    } catch (Throwable t) {
+      if (logger != null) {
+        logger.log(SentryLevel.ERROR, "Failed to add Activity to FrameMetricsAggregator", t);
+      }
     }
 
     snapshotFrameCountsAtStart(activity);
@@ -97,12 +117,7 @@ public final class ActivityFramesTracker {
       return null;
     }
 
-    @Nullable SparseIntArray[] framesRates = null;
-    try {
-      framesRates = frameMetricsAggregator.getMetrics();
-    } catch (Throwable t) {
-      // no-op
-    }
+    @Nullable final SparseIntArray[] framesRates = frameMetricsAggregator.getMetrics();
 
     int totalFrames = 0;
     int slowFrames = 0;
@@ -146,7 +161,7 @@ public final class ActivityFramesTracker {
               try {
                 // NOTE: removing an activity does not reset the frame counts, only reset() does
                 frameMetricsAggregator.remove(activity);
-              } catch (Throwable ignored) {
+              } catch (Throwable t) {
                 // throws IllegalArgumentException when attempting to remove
                 // OnFrameMetricsAvailableListener
                 // that was never added.
@@ -156,11 +171,19 @@ public final class ActivityFramesTracker {
                 // there was no
                 // Observers, See
                 // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
+                if (logger != null) {
+                  logger.log(
+                      SentryLevel.ERROR,
+                      "Failed to remove Activity from FrameMetricsAggregator",
+                      t);
+                }
               }
             });
       }
-    } catch (Throwable ignored) {
-      // no-op
+    } catch (Throwable t) {
+      if (logger != null) {
+        logger.log(SentryLevel.ERROR, "Failed to remove Activity from FrameMetricsAggregator", t);
+      }
     }
 
     final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
@@ -220,21 +243,25 @@ public final class ActivityFramesTracker {
       try {
         if (MainThreadChecker.isMainThread()) {
           frameMetricsAggregator.stop();
-          frameMetricsAggregator.reset();
         } else {
           handler.post(
               () -> {
                 try {
                   frameMetricsAggregator.stop();
-                  frameMetricsAggregator.reset();
                 } catch (Throwable t) {
-                  // no-op
+                  if (logger != null) {
+                    logger.log(SentryLevel.ERROR, "Failed to stop FrameMetricsAggregator", t);
+                  }
                 }
               });
         }
-      } catch (Throwable ignored) {
-        // no-op
+      } catch (Throwable t) {
+        if (logger != null) {
+          logger.log(SentryLevel.ERROR, "Failed to stop FrameMetricsAggregator", t);
+        }
       }
+
+      frameMetricsAggregator.reset();
     }
     activityMeasurements.clear();
   }

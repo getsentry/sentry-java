@@ -24,9 +24,10 @@ class ActivityFramesTrackerTest {
         val activity = mock<Activity>()
         val sentryId = SentryId()
         val loadClass = mock<LoadClass>()
+        val handler = mock<MainLooperHandler>()
 
         fun getSut(): ActivityFramesTracker {
-            return ActivityFramesTracker(aggregator)
+            return ActivityFramesTracker(aggregator, handler)
         }
     }
     private val fixture = Fixture()
@@ -339,6 +340,35 @@ class ActivityFramesTrackerTest {
         val sut = ActivityFramesTracker(fixture.loadClass)
 
         assertNull(sut.takeMetrics(fixture.sentryId))
+    }
+
+    @Test
+    fun `start, setMetrics and stop call to FrameMetricsTracker is done on the main thread, even when being called from a background thread`() {
+        val sut = fixture.getSut()
+
+        // .addActivity
+        val callAddThread = Thread {
+            sut.addActivity(fixture.activity)
+        }
+        callAddThread.start()
+        callAddThread.join(500)
+        verify(fixture.handler, times(1)).post(any())
+
+        // .setMetrics
+        val setMetricsThread = Thread {
+            sut.setMetrics(fixture.activity, fixture.sentryId)
+        }
+        setMetricsThread.start()
+        setMetricsThread.join(500)
+        verify(fixture.handler, times(2)).post(any())
+
+        // .stop
+        val callStopThread = Thread {
+            sut.stop()
+        }
+        callStopThread.start()
+        callStopThread.join(500)
+        verify(fixture.handler, times(3)).post(any())
     }
 
     private fun getArray(frameTime: Int = 1, numFrames: Int = 1): Array<SparseIntArray?> {
