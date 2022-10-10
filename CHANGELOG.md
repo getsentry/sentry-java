@@ -27,6 +27,11 @@
 
 - Server-Side Dynamic Sampling Context support  ([#2226](https://github.com/getsentry/sentry-java/pull/2226))
 
+## 6.4.4
+
+### Fixes
+
+- Fix ConcurrentModificationException due to FrameMetricsAggregator manipulation ([#2282](https://github.com/getsentry/sentry-java/pull/2282))
 
 ## 6.4.3
 
