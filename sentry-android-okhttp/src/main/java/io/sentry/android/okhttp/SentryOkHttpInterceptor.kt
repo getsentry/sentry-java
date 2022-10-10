@@ -23,6 +23,7 @@ import java.io.IOException
 class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
+    // TODO: should this be under the options or here? also define the names
     private val captureFailedRequests: Boolean = false,
     private val failedRequestStatusCode: List<StatusCodeRange> = listOf(StatusCodeRange(500, 599)),
     private val failedRequestsTargets: List<String> = listOf(".*")
@@ -62,6 +63,7 @@ class SentryOkHttpInterceptor(
             code = response.code
             span?.status = SpanStatus.fromHttpStatusCode(code)
 
+            // OkHttp errors (4xx, 5xx) don't throw, so it's safe to call within this block.
             captureEvent(request, response)
 
             return response
