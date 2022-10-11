@@ -1,11 +1,9 @@
-package spring.web;
-
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.Map;
+package io.sentry.samples.spring.web;
 
 import io.sentry.spring.tracing.SentrySpan;
+import java.util.Map;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class PersonService {

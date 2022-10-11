@@ -55,6 +55,7 @@ apiValidation {
             "sentry-samples-openfeign",
             "sentry-samples-servlet",
             "sentry-samples-spring",
+            "sentry-samples-spring-jakarta",
             "sentry-spring-jakarta",
             "sentry-samples-spring-boot",
             "sentry-samples-spring-boot-webflux",

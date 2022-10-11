@@ -1,16 +1,14 @@
-package spring;
+package io.sentry.samples.spring;
 
+import io.sentry.IHub;
+import io.sentry.spring.tracing.SentrySpanClientHttpRequestInterceptor;
+import java.util.Collections;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-
-import java.util.Collections;
-
-import io.sentry.IHub;
-import io.sentry.spring.tracing.SentrySpanClientHttpRequestInterceptor;
 
 @Configuration
 @EnableAspectJAutoProxy(proxyTargetClass = true)

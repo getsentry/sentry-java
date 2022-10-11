@@ -1,12 +1,10 @@
-package spring;
+package io.sentry.samples.spring;
 
+import io.sentry.spring.tracing.SentryTracingFilter;
+import jakarta.servlet.Filter;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.filter.RequestContextFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
-
-import javax.servlet.Filter;
-
-import io.sentry.spring.tracing.SentryTracingFilter;
 
 public class AppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 

@@ -1,14 +1,12 @@
-package spring;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-
-import javax.servlet.http.HttpServletRequest;
+package io.sentry.samples.spring;
 
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.TracesSamplerCallback;
 import io.sentry.spring.EnableSentry;
 import io.sentry.spring.tracing.SentryTracingConfiguration;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 
 // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry
 // project/dashboard

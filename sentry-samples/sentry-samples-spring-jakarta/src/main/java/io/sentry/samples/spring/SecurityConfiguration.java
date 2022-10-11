@@ -1,4 +1,4 @@
-package spring;
+package io.sentry.samples.spring;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +13,7 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
-@Configuration
+@SuppressWarnings( "deprecation" )@Configuration
 @EnableWebSecurity
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 

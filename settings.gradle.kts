@@ -1,5 +1,13 @@
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
+pluginManagement {
+    repositories {
+        mavenLocal()
+        maven { url = uri("https://repo.spring.io/milestone") }
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = "sentry-root"
 rootProject.buildFileName = "build.gradle.kts"
 
@@ -38,6 +46,7 @@ include(
     "sentry-samples:sentry-samples-openfeign",
     "sentry-samples:sentry-samples-servlet",
     "sentry-samples:sentry-samples-spring",
+    "sentry-samples:sentry-samples-spring-jakarta",
     "sentry-samples:sentry-samples-spring-boot",
     "sentry-samples:sentry-samples-spring-boot-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
