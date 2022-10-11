@@ -24,8 +24,7 @@ import org.springframework.core.ResolvableType;
 class SentryLogbackInitializer implements GenericApplicationListener {
   private final @NotNull SentryProperties sentryProperties;
   private final @NotNull List<String> loggers;
-  @Nullable
-  private SentryAppender sentryAppender;
+  @Nullable private SentryAppender sentryAppender;
 
   public SentryLogbackInitializer(final @NotNull SentryProperties sentryProperties) {
     this.sentryProperties = Objects.requireNonNull(sentryProperties, "properties are required");
@@ -40,27 +39,28 @@ class SentryLogbackInitializer implements GenericApplicationListener {
 
   @Override
   public void onApplicationEvent(final @NotNull ApplicationEvent event) {
-    this.loggers.forEach(loggerName ->{
-      final Logger logger = (Logger) LoggerFactory.getLogger(loggerName);
-      if (!isSentryAppenderRegistered(logger)) {
-        final SentryAppender sentryAppender = getSentryAppender();
+    this.loggers.forEach(
+        loggerName -> {
+          final Logger logger = (Logger) LoggerFactory.getLogger(loggerName);
+          if (!isSentryAppenderRegistered(logger)) {
+            final SentryAppender sentryAppender = getSentryAppender();
 
-        Optional.ofNullable(sentryProperties.getLogging().getMinimumBreadcrumbLevel())
-          .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
-          .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);
-        Optional.ofNullable(sentryProperties.getLogging().getMinimumEventLevel())
-          .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
-          .ifPresent(sentryAppender::setMinimumEventLevel);
+            Optional.ofNullable(sentryProperties.getLogging().getMinimumBreadcrumbLevel())
+                .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
+                .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);
+            Optional.ofNullable(sentryProperties.getLogging().getMinimumEventLevel())
+                .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
+                .ifPresent(sentryAppender::setMinimumEventLevel);
 
-        sentryAppender.start();
-        logger.addAppender(sentryAppender);
-      }
-    });
+            sentryAppender.start();
+            logger.addAppender(sentryAppender);
+          }
+        });
   }
 
   @NotNull
   private SentryAppender getSentryAppender() {
-    if(sentryAppender == null) {
+    if (sentryAppender == null) {
       sentryAppender = new SentryAppender();
       sentryAppender.setName("SENTRY_APPENDER");
       sentryAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());

@@ -2,14 +2,12 @@ package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.SentryOptions;
+import java.util.Arrays;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.event.Level;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /** Configuration for Sentry integration. */
 @ConfigurationProperties("sentry")
@@ -23,7 +21,7 @@ public class SentryProperties extends SentryOptions {
   private int exceptionResolverOrder = 1;
 
   /** List of loggers, where the Sentry-Appender is registered */
-  private final List<String> loggers = Arrays.asList(org.slf4j.Logger.ROOT_LOGGER_NAME);
+  private @NotNull List<String> loggers = Arrays.asList(org.slf4j.Logger.ROOT_LOGGER_NAME);
 
   /**
    * Defines the {@link io.sentry.spring.SentryUserFilter} order. The default value is {@link
@@ -83,6 +81,11 @@ public class SentryProperties extends SentryOptions {
   public List<String> getLoggers() {
     return loggers;
   }
+
+  public void setLoggers(final @NotNull List<String> loggers) {
+    this.loggers = loggers;
+  }
+
   @Open
   public static class Logging {
     /** Enable/Disable logging auto-configuration. */
