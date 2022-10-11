@@ -366,7 +366,7 @@ public final class SentryTracer implements ITransaction {
       }
 
       transaction.getMeasurements().putAll(measurements);
-      
+
       if (profilingTraceData != null) {
         hub.captureProfile(profilingTraceData);
       }
