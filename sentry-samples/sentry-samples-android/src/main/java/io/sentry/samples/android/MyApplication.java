@@ -24,7 +24,7 @@ public class MyApplication extends Application {
     //      });
     //       */
     //    });
-    //throw new RuntimeException("Startup Crash!");
+    // throw new RuntimeException("Startup Crash!");
   }
 
   private void strictMode() {

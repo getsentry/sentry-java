@@ -113,9 +113,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Startup Crashes, it blocks the execution of the {@link Sentry#init()} function for the amount
    * of startupCrashFlushTimeoutMillis to make sure the events make it to Sentry.
    *
-   * When the timeout is reached, the execution will continue on background.
+   * <p>When the timeout is reached, the execution will continue on background.
    *
-   * Default is 5000 = 5s.
+   * <p>Default is 5000 = 5s.
    */
   private long startupCrashFlushTimeoutMillis = 5000; // 5s
 
@@ -123,10 +123,10 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Controls the threshold after the application startup time, within which a crash should happen
    * to be considered a Startup Crash.
    *
-   * Startup Crashes are sent on @{@link Sentry#init()} in a blocking way, controlled by
-   * {@link SentryAndroidOptions#startupCrashFlushTimeoutMillis}.
+   * <p>Startup Crashes are sent on @{@link Sentry#init()} in a blocking way, controlled by {@link
+   * SentryAndroidOptions#startupCrashFlushTimeoutMillis}.
    *
-   * Default is 2000 = 2s.
+   * <p>Default is 2000 = 2s.
    */
   private long startupCrashDurationThresholdMillis = 2000; // 2s
 

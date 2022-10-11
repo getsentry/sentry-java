@@ -38,7 +38,8 @@ public final class SendFireAndForgetEnvelopeSender
     return processDir(envelopeSender, dirPath, options.getLogger());
   }
 
-  @Override public @Nullable String getDirPath() {
+  @Override
+  public @Nullable String getDirPath() {
     return sendFireAndForgetDirPath.getDirPath();
   }
 }

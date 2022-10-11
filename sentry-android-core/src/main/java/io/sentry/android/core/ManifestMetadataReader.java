@@ -80,7 +80,8 @@ final class ManifestMetadataReader {
 
   static final String STARTUP_CRASH_FLUSH_TIMEOUT = "io.sentry.startup-crash.flush-timeout";
 
-  static final String STARTUP_CRASH_DURATION_THRESHOLD = "io.sentry.startup-crash.duration-threshold";
+  static final String STARTUP_CRASH_DURATION_THRESHOLD =
+      "io.sentry.startup-crash.duration-threshold";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -231,18 +232,18 @@ final class ManifestMetadataReader {
                 options.isCollectAdditionalContext()));
 
         options.setStartupCrashDurationThresholdMillis(
-          readLong(
-            metadata,
-            logger,
-            STARTUP_CRASH_DURATION_THRESHOLD,
-            options.getStartupCrashDurationThresholdMillis()));
+            readLong(
+                metadata,
+                logger,
+                STARTUP_CRASH_DURATION_THRESHOLD,
+                options.getStartupCrashDurationThresholdMillis()));
 
         options.setStartupCrashFlushTimeoutMillis(
-          readLong(
-            metadata,
-            logger,
-            STARTUP_CRASH_FLUSH_TIMEOUT,
-            options.getStartupCrashFlushTimeoutMillis()));
+            readLong(
+                metadata,
+                logger,
+                STARTUP_CRASH_FLUSH_TIMEOUT,
+                options.getStartupCrashFlushTimeoutMillis()));
 
         if (options.getTracesSampleRate() == null) {
           final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);

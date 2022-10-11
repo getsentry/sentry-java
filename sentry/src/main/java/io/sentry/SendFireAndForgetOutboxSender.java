@@ -42,7 +42,8 @@ public final class SendFireAndForgetOutboxSender
     return processDir(outboxSender, dirPath, options.getLogger());
   }
 
-  @Override public @Nullable String getDirPath() {
+  @Override
+  public @Nullable String getDirPath() {
     return sendFireAndForgetDirPath.getDirPath();
   }
 }

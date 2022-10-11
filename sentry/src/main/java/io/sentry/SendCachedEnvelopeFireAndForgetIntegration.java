@@ -1,11 +1,7 @@
 package io.sentry;
 
-import io.sentry.cache.EnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.File;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
