@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
+
 ## 6.5.0
 
 ### Fixes
