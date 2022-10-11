@@ -1,5 +1,18 @@
 # Changelog
 
+## 6.5.0
+
+### Fixes
+
+- Improve public facing API for creating Baggage from header ([#2284](https://github.com/getsentry/sentry-java/pull/2284))
+
+## 6.5.0-beta.3
+
+### Features
+
+- Provide API for attaching custom measurements to transactions ([#2260](https://github.com/getsentry/sentry-java/pull/2260))
+- Bump spring to 2.7.4 ([#2279](https://github.com/getsentry/sentry-java/pull/2279))
+
 ## 6.5.0-beta.2
 
 ### Features
@@ -13,6 +26,16 @@
 ### Features
 
 - Server-Side Dynamic Sampling Context support  ([#2226](https://github.com/getsentry/sentry-java/pull/2226))
+
+## 6.4.4
+
+### Fixes
+
+- Fix ConcurrentModificationException due to FrameMetricsAggregator manipulation ([#2282](https://github.com/getsentry/sentry-java/pull/2282))
+
+## 6.4.3
+
+- Fix slow and frozen frames tracking ([#2271](https://github.com/getsentry/sentry-java/pull/2271))
 
 ## 6.4.2
 
