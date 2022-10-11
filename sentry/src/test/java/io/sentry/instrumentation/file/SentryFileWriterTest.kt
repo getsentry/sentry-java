@@ -20,7 +20,7 @@ class SentryFileWriterTest {
 
         internal fun getSut(
             tmpFile: File,
-            activeTransaction: Boolean = true,
+            activeTransaction: Boolean = true
         ): SentryFileWriter {
             whenever(hub.options).thenReturn(SentryOptions())
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)

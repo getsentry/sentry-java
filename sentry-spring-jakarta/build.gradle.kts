@@ -19,7 +19,6 @@ repositories {
     maven { url = uri("https://repo.spring.io/milestone") }
 }
 
-
 the<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension>().apply {
     imports {
         mavenBom("org.springframework.boot:spring-boot-dependencies:${Config.springBoot3Version}")
@@ -115,7 +114,7 @@ tasks.withType<JavaCompile> {
 
 task("jakartaTransformation", JavaExec::class) {
     main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") //sourceSets["main"].compileClasspath
+    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
     args = listOf("../sentry-spring/src", "src", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
 

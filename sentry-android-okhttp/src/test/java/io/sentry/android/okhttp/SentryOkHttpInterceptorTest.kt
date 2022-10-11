@@ -1,4 +1,5 @@
 @file:Suppress("MaxLineLength")
+
 package io.sentry.android.okhttp
 
 import com.nhaarman.mockitokotlin2.any
@@ -49,7 +50,7 @@ class SentryOkHttpInterceptorTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null,
             includeMockServerInTracePropagationTargets: Boolean = true,
-            keepDefaultTracePropagationTargets: Boolean = false,
+            keepDefaultTracePropagationTargets: Boolean = false
         ): OkHttpClient {
             options = SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"

@@ -25,9 +25,9 @@ import io.sentry.spring.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
-import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
@@ -304,7 +304,7 @@ public class SentryAutoConfiguration {
       final String version = BuildConfig.VERSION_NAME;
       sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-      sdkVersion.addPackage("maven:io.sentry:sentry-spring-boot-starter", version);
+      sdkVersion.addPackage("maven:io.sentry:sentry-spring-boot-starter-jakarta", version);
 
       return sdkVersion;
     }

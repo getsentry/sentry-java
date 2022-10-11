@@ -57,7 +57,7 @@ class SentryApollo3InterceptorTest {
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             addThirdPartyBaggageHeader: Boolean = false,
-            beforeSpan: BeforeSpanCallback? = null,
+            beforeSpan: BeforeSpanCallback? = null
         ): ApolloClient {
             whenever(hub.options).thenReturn(
                 SentryOptions().apply {

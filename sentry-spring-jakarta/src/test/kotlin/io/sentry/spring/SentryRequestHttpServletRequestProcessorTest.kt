@@ -7,11 +7,11 @@ import io.sentry.IHub
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.spring.tracing.SpringMvcTransactionNameProvider
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.web.servlet.HandlerMapping
 import java.net.URI
-import jakarta.servlet.http.HttpServletRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

@@ -35,7 +35,6 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
 
     @Test
     fun benchmarkSameOperation() {
-
         // We compare two operation that are the same. We expect the increases to be negligible, as the results
         // should be very similar.
         val op1 = BenchmarkOperation(choreographer, op = getOperation(runner))
@@ -53,7 +52,6 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
 
     @Test
     fun benchmarkProfiledTransaction() {
-
         // We compare the same operation with and without profiled transaction.
         // We expect the profiled transaction operation to be slower, but not slower than 5%.
         val benchmarkOperationNoTransaction = BenchmarkOperation(choreographer, op = getOperation(runner))

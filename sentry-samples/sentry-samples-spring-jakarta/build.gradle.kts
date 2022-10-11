@@ -1,6 +1,6 @@
+
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
@@ -67,6 +67,6 @@ tasks.withType<KotlinCompile> {
 
 task("jakartaTransformation", JavaExec::class) {
     main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") //sourceSets["main"].compileClasspath
+    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
     args = listOf("../sentry-samples-spring/src", "src", "-o")
 }

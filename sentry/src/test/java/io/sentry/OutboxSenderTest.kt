@@ -123,7 +123,8 @@ class OutboxSenderTest {
                 assertEquals(expected, it)
                 assertTrue(it.isSampled)
             },
-            any(), any()
+            any(),
+            any()
         )
         assertFalse(File(path).exists())
 

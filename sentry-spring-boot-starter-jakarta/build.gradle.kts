@@ -44,7 +44,6 @@ dependencies {
     jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.cli:0.5.0")
     jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.jakarta:0.5.0")
 
-
     api(projects.sentry)
     api(projects.sentrySpringJakarta)
     compileOnly(projects.sentryLogback)
@@ -113,7 +112,7 @@ tasks {
 
 task("jakartaTransformation", JavaExec::class) {
     main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
-    classpath = configurations.getByName("jakartaTransform") //sourceSets["main"].compileClasspath
+    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
     args = listOf("../sentry-spring-boot-starter/src", "src", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
 

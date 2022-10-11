@@ -122,6 +122,7 @@ object Config {
 
         private val navigationVersion = "2.4.2"
         val navigationRuntime = "androidx.navigation:navigation-runtime:$navigationVersion"
+
         // compose deps
         val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
         val composeActivity = "androidx.activity:activity-compose:1.4.0"
@@ -169,9 +170,9 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "6.2.1"
+        val spotlessVersion = "6.11.0"
         val errorProne = "net.ltgt.errorprone"
-        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:2.0.1"
+        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:3.0.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"

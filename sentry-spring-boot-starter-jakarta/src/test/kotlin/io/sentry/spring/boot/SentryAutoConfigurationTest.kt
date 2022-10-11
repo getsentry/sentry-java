@@ -31,6 +31,7 @@ import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
+import jakarta.servlet.Filter
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
 import org.slf4j.MDC
@@ -53,7 +54,6 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.servlet.HandlerExceptionResolver
 import java.lang.RuntimeException
-import jakarta.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -186,7 +186,7 @@ class SentryAutoConfigurationTest {
     @Test
     fun `when tracePropagationTargets are not set, default is returned`() {
         contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
+            "sentry.dsn=http://key@localhost/proj"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.tracePropagationTargets).isNotNull().containsOnly(".*")
@@ -258,7 +258,7 @@ class SentryAutoConfigurationTest {
                         assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
                         assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
                         assertThat(sdk.packages).anyMatch { pkg ->
-                            pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
+                            pkg.name == "maven:io.sentry:sentry-spring-boot-starter-jakarta" && pkg.version == BuildConfig.VERSION_NAME
                         }
                     },
                     anyOrNull()

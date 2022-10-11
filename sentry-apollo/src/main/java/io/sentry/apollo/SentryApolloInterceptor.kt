@@ -51,7 +51,8 @@ class SentryApolloInterceptor(
             span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
 
             chain.proceedAsync(
-                requestWithHeader, dispatcher,
+                requestWithHeader,
+                dispatcher,
                 object : CallBack {
                     override fun onResponse(response: InterceptorResponse) {
                         // onResponse is called only for statuses 2xx

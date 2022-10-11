@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.protocol.Request;
 import io.sentry.util.Objects;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -11,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

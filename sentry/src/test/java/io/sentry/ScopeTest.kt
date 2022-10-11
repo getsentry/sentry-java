@@ -767,7 +767,8 @@ class ScopeTest {
         scope.addAttachment(Attachment(""))
 
         assertNotSame(
-            scope.attachments, scope.attachments,
+            scope.attachments,
+            scope.attachments,
             "Scope.attachments must return a new instance on each call."
         )
     }

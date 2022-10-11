@@ -7,9 +7,9 @@ import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.protocol.User
+import jakarta.servlet.FilterChain
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
-import jakarta.servlet.FilterChain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

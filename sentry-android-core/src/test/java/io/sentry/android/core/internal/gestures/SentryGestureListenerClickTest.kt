@@ -47,7 +47,7 @@ class SentryGestureListenerClickTest {
             invalidTarget = mockView(
                 event = event,
                 visible = isInvalidTargetVisible,
-                clickable = isInvalidTargetClickable,
+                clickable = isInvalidTargetClickable
             )
 
             if (targetOverride == null) {
@@ -61,7 +61,7 @@ class SentryGestureListenerClickTest {
 
             if (attachViewsToRoot) {
                 window.mockDecorView<ViewGroup>(
-                    event = event,
+                    event = event
                 ) {
                     whenever(it.childCount).thenReturn(2)
                     whenever(it.getChildAt(0)).thenReturn(invalidTarget)

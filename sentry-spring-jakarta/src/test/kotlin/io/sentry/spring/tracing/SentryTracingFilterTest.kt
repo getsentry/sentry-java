@@ -18,12 +18,12 @@ import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.web.servlet.HandlerMapping
-import jakarta.servlet.FilterChain
-import jakarta.servlet.http.HttpServletRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

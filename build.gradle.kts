@@ -65,7 +65,7 @@ apiValidation {
             "sentry-uitest-android",
             "sentry-uitest-android-benchmark",
             "test-app-plain",
-            "test-app-sentry",
+            "test-app-sentry"
         )
     )
 }
@@ -164,11 +164,11 @@ spotless {
 
     kotlin {
         target("**/*.kt")
-        ktlint()
+        ktlint("0.47.1")
     }
     kotlinGradle {
         target("**/*.kts")
-        ktlint()
+        ktlint("0.47.1")
     }
 }
 

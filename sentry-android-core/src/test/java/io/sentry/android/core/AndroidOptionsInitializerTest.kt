@@ -53,7 +53,8 @@ class AndroidOptionsInitializerTest {
             mockContext.configureContext()
             sentryOptions.configureOptions()
             AndroidOptionsInitializer.init(
-                sentryOptions, if (useRealContext) context else mockContext
+                sentryOptions,
+                if (useRealContext) context else mockContext
             )
         }
 
@@ -71,8 +72,13 @@ class AndroidOptionsInitializerTest {
             )
             sentryOptions.setDebug(true)
             AndroidOptionsInitializer.init(
-                sentryOptions, mockContext, logger, createBuildInfo(minApi),
-                createClassMock(classToLoad), isFragmentAvailable, isTimberAvailable
+                sentryOptions,
+                mockContext,
+                logger,
+                createBuildInfo(minApi),
+                createClassMock(classToLoad),
+                isFragmentAvailable,
+                isTimberAvailable
             )
         }
 

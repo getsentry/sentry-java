@@ -52,7 +52,7 @@ class SentryApollo3InterceptorWithVariablesTest {
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            beforeSpan: BeforeSpanCallback? = null,
+            beforeSpan: BeforeSpanCallback? = null
         ): ApolloClient {
             whenever(hub.options).thenReturn(
                 SentryOptions().apply {

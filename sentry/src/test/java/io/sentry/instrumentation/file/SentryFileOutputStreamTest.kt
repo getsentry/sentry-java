@@ -21,7 +21,7 @@ class SentryFileOutputStreamTest {
 
         internal fun getSut(
             tmpFile: File? = null,
-            activeTransaction: Boolean = true,
+            activeTransaction: Boolean = true
         ): SentryFileOutputStream {
             whenever(hub.options).thenReturn(SentryOptions())
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)

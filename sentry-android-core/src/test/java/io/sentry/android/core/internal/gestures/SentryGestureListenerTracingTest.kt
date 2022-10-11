@@ -95,7 +95,8 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), any<TransactionOptions>()
+            any(),
+            any<TransactionOptions>()
         )
     }
 
@@ -106,7 +107,8 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), any<TransactionOptions>()
+            any(),
+            any<TransactionOptions>()
         )
     }
 
@@ -117,7 +119,8 @@ class SentryGestureListenerTracingTest {
         sut.onSingleTapUp(fixture.event)
 
         verify(fixture.hub, never()).startTransaction(
-            any(), any<TransactionOptions>()
+            any(),
+            any<TransactionOptions>()
         )
     }
 

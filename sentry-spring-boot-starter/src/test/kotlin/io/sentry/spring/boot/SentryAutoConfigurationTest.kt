@@ -186,7 +186,7 @@ class SentryAutoConfigurationTest {
     @Test
     fun `when tracePropagationTargets are not set, default is returned`() {
         contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
+            "sentry.dsn=http://key@localhost/proj"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.tracePropagationTargets).isNotNull().containsOnly(".*")

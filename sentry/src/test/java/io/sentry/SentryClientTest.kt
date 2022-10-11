@@ -521,8 +521,10 @@ class SentryClientTest {
 
         verify(logger)
             .log(
-                SentryLevel.WARNING, exception,
-                "Capturing user feedback %s failed.", userFeedback.eventId
+                SentryLevel.WARNING,
+                exception,
+                "Capturing user feedback %s failed.",
+                userFeedback.eventId
             )
     }
 
@@ -805,7 +807,8 @@ class SentryClientTest {
             val event = SentryEvent()
             fixture.getSut().updateSessionData(
                 event,
-                Hint(), scope
+                Hint(),
+                scope
             )
             assertEquals(level, session.status)
         }
@@ -849,7 +852,8 @@ class SentryClientTest {
             val event = SentryEvent()
             fixture.getSut().updateSessionData(
                 event,
-                Hint(), scope
+                Hint(),
+                scope
             )
             assertEquals(errorCount, session.errorCount())
         }
@@ -867,7 +871,8 @@ class SentryClientTest {
             }
             fixture.getSut().updateSessionData(
                 event,
-                Hint(), scope
+                Hint(),
+                scope
             )
             scope.withSession {
                 assertEquals("jamesBond", it!!.userAgent)
@@ -889,7 +894,8 @@ class SentryClientTest {
             }
             fixture.getSut().updateSessionData(
                 event,
-                Hint(), scope
+                Hint(),
+                scope
             )
             assertEquals(userAgent, session.userAgent)
         }

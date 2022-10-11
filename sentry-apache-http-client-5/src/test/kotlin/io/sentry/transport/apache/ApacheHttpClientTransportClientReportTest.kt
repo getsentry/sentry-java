@@ -62,7 +62,6 @@ class ApacheHttpClientTransportClientReportTest {
         }
 
         fun getSut(response: SimpleHttpResponse? = null, queueFull: Boolean = false): ApacheHttpClientTransport {
-
             val transport = ApacheHttpClientTransport(options, requestDetails, client, rateLimiter, currentlyRunning)
 
             if (response != null) {

@@ -702,7 +702,7 @@ class SentryTracerTest {
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 
@@ -719,7 +719,7 @@ class SentryTracerTest {
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 

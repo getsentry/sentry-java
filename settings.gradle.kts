@@ -54,7 +54,7 @@ include(
     "sentry-android-integration-tests:sentry-uitest-android-benchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
     "sentry-android-integration-tests:test-app-plain",
-    "sentry-android-integration-tests:test-app-sentry",
+    "sentry-android-integration-tests:test-app-sentry"
 )
 
 gradle.beforeProject {

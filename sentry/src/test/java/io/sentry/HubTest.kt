@@ -498,7 +498,7 @@ class HubTest {
         verify(mockClient, times(2)).captureMessage(
             any(),
             any(),
-            argumentCaptor.capture(),
+            argumentCaptor.capture()
         )
 
         assertEquals("testValue", argumentCaptor.allValues[0].tags["test"])
@@ -559,7 +559,8 @@ class HubTest {
                 assertEquals(span.spanContext, it.contexts.trace)
                 assertEquals("tx-name", it.transaction)
             },
-            any(), anyOrNull()
+            any(),
+            anyOrNull()
         )
     }
 
@@ -575,7 +576,8 @@ class HubTest {
             check {
                 assertNull(it.contexts.trace)
             },
-            any(), anyOrNull()
+            any(),
+            anyOrNull()
         )
     }
 
@@ -644,6 +646,7 @@ class HubTest {
         sut.captureUserFeedback(userFeedback)
         verify(mockClient, never()).captureUserFeedback(any())
     }
+
     @Test
     fun `when captureUserFeedback is called and client throws, don't crash`() {
         val (sut, mockClient) = getEnabledHub()
@@ -1481,7 +1484,8 @@ class HubTest {
             check {
                 assertEquals(span.spanContext, it.contexts.trace)
             },
-            anyOrNull(), anyOrNull()
+            anyOrNull(),
+            anyOrNull()
         )
     }
 

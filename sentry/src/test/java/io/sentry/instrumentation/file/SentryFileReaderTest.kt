@@ -20,7 +20,7 @@ class SentryFileReaderTest {
 
         internal fun getSut(
             tmpFile: File,
-            activeTransaction: Boolean = true,
+            activeTransaction: Boolean = true
         ): SentryFileReader {
             tmpFile.writeText("TEXT")
             whenever(hub.options).thenReturn(SentryOptions())
