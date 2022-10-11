@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -172,7 +173,7 @@ public final class Scope {
     if (transaction != null) {
       final ITransaction tx = this.transaction;
       if (tx != null) {
-        tx.setName(transaction);
+        tx.setName(transaction, TransactionNameSource.CUSTOM);
       }
       this.transactionName = transaction;
     } else {

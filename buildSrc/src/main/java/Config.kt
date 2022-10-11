@@ -4,13 +4,13 @@ object Config {
     val kotlinVersion = "1.6.10"
     val kotlinStdLib = "stdlib-jdk8"
 
-    val springBootVersion = "2.6.8"
+    val springBootVersion = "2.7.4"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.1.1"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.2.0"
+        val androidGradle = "com.android.tools.build:gradle:7.3.0"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -26,7 +26,7 @@ object Config {
     }
 
     object Android {
-        private val sdkVersion = 32
+        private val sdkVersion = 33
 
         val minSdkVersion = 14
         val minSdkVersionOkHttp = 21

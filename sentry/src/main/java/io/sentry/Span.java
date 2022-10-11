@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -145,8 +146,8 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public @Nullable BaggageHeader toBaggageHeader() {
-    return transaction.toBaggageHeader();
+  public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
+    return transaction.toBaggageHeader(thirdPartyBaggageHeaders);
   }
 
   @Override
@@ -259,6 +260,10 @@ public final class Span implements ISpan {
     return context.getSampled();
   }
 
+  public @Nullable Boolean isProfileSampled() {
+    return context.getProfileSampled();
+  }
+
   public @Nullable TracesSamplingDecision getSamplingDecision() {
     return context.getSamplingDecision();
   }
@@ -306,6 +311,17 @@ public final class Span implements ISpan {
   @Override
   public @Nullable Object getData(@NotNull String key) {
     return data.get(key);
+  }
+
+  @Override
+  public void setMeasurement(@NotNull String name, @NotNull Number value) {
+    this.transaction.setMeasurement(name, value);
+  }
+
+  @Override
+  public void setMeasurement(
+      @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {
+    this.transaction.setMeasurement(name, value, unit);
   }
 
   @Nullable

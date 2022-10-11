@@ -28,7 +28,7 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
         val opPerfProfilingSdk = getOperation {
             SentryAndroid.init(context) {
                 it.dsn = "https://key@host/proj"
-                it.isProfilingEnabled = true
+                it.profilesSampleRate = 1.0
                 it.tracesSampleRate = 1.0
             }
         }

@@ -4,6 +4,9 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.SpanStatus;
+import io.sentry.TransactionContext;
+import io.sentry.TransactionOptions;
+import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -43,7 +46,8 @@ public class SentryTransactionAdvice implements MethodInterceptor {
               mostSpecificMethod.getDeclaringClass(), SentryTransaction.class);
     }
 
-    final String name = resolveTransactionName(invocation, sentryTransaction);
+    final TransactionNameAndSource nameAndSource =
+        resolveTransactionName(invocation, sentryTransaction);
 
     final boolean isTransactionActive = isTransactionActive();
 
@@ -58,7 +62,12 @@ public class SentryTransactionAdvice implements MethodInterceptor {
         operation = "bean";
       }
       hub.pushScope();
-      final ITransaction transaction = hub.startTransaction(name, operation, true);
+      final TransactionOptions transactionOptions = new TransactionOptions();
+      transactionOptions.setBindToScope(true);
+      final ITransaction transaction =
+          hub.startTransaction(
+              new TransactionContext(nameAndSource.name, nameAndSource.source, operation),
+              transactionOptions);
       try {
         final Object result = invocation.proceed();
         transaction.setStatus(SpanStatus.OK);
@@ -75,16 +84,31 @@ public class SentryTransactionAdvice implements MethodInterceptor {
   }
 
   @SuppressWarnings("deprecation")
-  private @NotNull String resolveTransactionName(
+  private @NotNull TransactionNameAndSource resolveTransactionName(
       MethodInvocation invocation, @Nullable SentryTransaction sentryTransaction) {
-    return sentryTransaction == null || StringUtils.isEmpty(sentryTransaction.value())
-        ? invocation.getMethod().getDeclaringClass().getSimpleName()
-            + "."
-            + invocation.getMethod().getName()
-        : sentryTransaction.value();
+    if (sentryTransaction == null || StringUtils.isEmpty(sentryTransaction.value())) {
+      final String name =
+          invocation.getMethod().getDeclaringClass().getSimpleName()
+              + "."
+              + invocation.getMethod().getName();
+      return new TransactionNameAndSource(name, TransactionNameSource.COMPONENT);
+    } else {
+      return new TransactionNameAndSource(sentryTransaction.value(), TransactionNameSource.CUSTOM);
+    }
   }
 
   private boolean isTransactionActive() {
     return hub.getSpan() != null;
+  }
+
+  private static class TransactionNameAndSource {
+    private final @NotNull String name;
+    private final @NotNull TransactionNameSource source;
+
+    public TransactionNameAndSource(
+        final @NotNull String name, final @NotNull TransactionNameSource source) {
+      this.name = name;
+      this.source = source;
+    }
   }
 }

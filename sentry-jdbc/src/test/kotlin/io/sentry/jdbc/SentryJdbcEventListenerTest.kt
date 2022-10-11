@@ -19,11 +19,12 @@ class SentryJdbcEventListenerTest {
 
     class Fixture {
         private val hub = mock<IHub>()
-        val tx = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var tx: SentryTracer
         val actualDataSource = JDBCDataSource()
 
         fun getSut(withRunningTransaction: Boolean = true, existingRow: Int? = null): DataSource {
             whenever(hub.options).thenReturn(SentryOptions())
+            tx = SentryTracer(TransactionContext("name", "op"), hub)
             if (withRunningTransaction) {
                 whenever(hub.span).thenReturn(tx)
             }

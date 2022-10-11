@@ -6,6 +6,7 @@ import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Sentry SDK options for Android */
@@ -84,8 +85,12 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableActivityLifecycleTracingAutoFinish = true;
 
-  /** Interval for profiling traces in milliseconds. Defaults to 100 times per second */
-  private int profilingTracesIntervalMillis = 1_000 / 100;
+  /**
+   * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
+   * lockstep sampling. More on
+   * https://stackoverflow.com/questions/45470758/what-is-lockstep-sampling
+   */
+  private int profilingTracesHz = 101;
 
   /** Enables the Auto instrumentation for user interaction tracing. */
   private boolean enableUserInteractionTracing = false;
@@ -235,18 +240,37 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Returns the interval for profiling traces in milliseconds.
    *
    * @return the interval for profiling traces in milliseconds.
+   * @deprecated has no effect and will be removed in future versions. It now just returns 0.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public int getProfilingTracesIntervalMillis() {
-    return profilingTracesIntervalMillis;
+    return 0;
   }
 
   /**
    * Sets the interval for profiling traces in milliseconds.
    *
    * @param profilingTracesIntervalMillis - the interval for profiling traces in milliseconds.
+   * @deprecated has no effect and will be removed in future versions.
    */
-  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {
-    this.profilingTracesIntervalMillis = profilingTracesIntervalMillis;
+  @Deprecated
+  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {}
+
+  /**
+   * Returns the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second.
+   *
+   * @return Rate the profiler will sample rates at.
+   */
+  @ApiStatus.Internal
+  public int getProfilingTracesHz() {
+    return profilingTracesHz;
+  }
+
+  /** Sets the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second. */
+  @ApiStatus.Internal
+  public void setProfilingTracesHz(final int profilingTracesHz) {
+    this.profilingTracesHz = profilingTracesHz;
   }
 
   /**

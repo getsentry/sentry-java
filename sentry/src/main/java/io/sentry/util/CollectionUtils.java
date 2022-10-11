@@ -102,11 +102,40 @@ public final class CollectionUtils {
   }
 
   /**
+   * Returns a new list with the results of the function applied to all elements of the original
+   * list.
+   *
+   * @param list - the list to apply the function to
+   * @param f - the function
+   * @param <T> - original list element type
+   * @param <R> - returned list element type
+   * @return a new list
+   */
+  public static @NotNull <T, R> List<R> map(
+      final @NotNull List<T> list, final @NotNull Mapper<T, R> f) {
+    List<R> mappedList = new ArrayList<>();
+    for (T t : list) {
+      mappedList.add(f.map(t));
+    }
+    return mappedList;
+  }
+
+  /**
    * A simplified copy of Java 8 Predicate.
    *
    * @param <T> the type
    */
   public interface Predicate<T> {
     boolean test(T t);
+  }
+
+  /**
+   * A simple function to map an object into another.
+   *
+   * @param <T> the original type
+   * @param <R> the returned type
+   */
+  public interface Mapper<T, R> {
+    R map(T t);
   }
 }

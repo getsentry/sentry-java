@@ -99,6 +99,12 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when transaction is created, by default its profile is not sampled`() {
+        val tracer = fixture.getSut()
+        assertNull(tracer.isProfileSampled)
+    }
+
+    @Test
     fun `when transaction is finished, timestamp is set`() {
         val tracer = fixture.getSut()
         tracer.finish()
@@ -131,7 +137,7 @@ class SentryTracerTest {
     fun `when transaction is finished and profiling is disabled, transactionProfiler is not called`() {
         val transactionProfiler = mock<ITransactionProfiler>()
         val tracer = fixture.getSut(optionsConfiguration = {
-            it.isProfilingEnabled = false
+            it.profilesSampleRate = 0.0
             it.setTransactionProfiler(transactionProfiler)
         })
         tracer.finish()
@@ -142,9 +148,9 @@ class SentryTracerTest {
     fun `when transaction is finished and sampled and profiling is enabled, transactionProfiler is called`() {
         val transactionProfiler = mock<ITransactionProfiler>()
         val tracer = fixture.getSut(optionsConfiguration = {
-            it.isProfilingEnabled = true
+            it.profilesSampleRate = 1.0
             it.setTransactionProfiler(transactionProfiler)
-        }, samplingDecision = TracesSamplingDecision(true))
+        }, samplingDecision = TracesSamplingDecision(true, null, true, null))
         tracer.finish()
         verify(transactionProfiler).onTransactionFinish(any())
     }
@@ -361,6 +367,7 @@ class SentryTracerTest {
         transaction.description = "desc"
         transaction.setTag("myTag", "myValue")
         transaction.setData("myData", "myValue")
+        transaction.setMeasurement("myMetric", 1.0f)
         val ex = RuntimeException()
         transaction.throwable = ex
 
@@ -377,12 +384,14 @@ class SentryTracerTest {
         transaction.throwable = RuntimeException()
         transaction.setData("myData", "myNewValue")
         transaction.name = "newName"
+        transaction.setMeasurement("myMetric", 2.0f)
 
         assertEquals(SpanStatus.OK, transaction.status)
         assertEquals("op", transaction.operation)
         assertEquals("desc", transaction.description)
         assertEquals("myValue", transaction.getTag("myTag"))
         assertEquals("myValue", transaction.getData("myData"))
+        assertEquals(1.0f, transaction.measurements["myMetric"]!!.value)
         assertEquals("name", transaction.name)
         assertEquals(ex, transaction.throwable)
     }
@@ -537,7 +546,15 @@ class SentryTracerTest {
         )
         val traceAfterUserSet = transaction.traceContext()
         assertNotNull(traceAfterUserSet) {
-            assertEquals(it, traceBeforeUserSet)
+            assertEquals(it.traceId, traceBeforeUserSet?.traceId)
+            assertEquals(it.transaction, traceBeforeUserSet?.transaction)
+            assertEquals(it.environment, traceBeforeUserSet?.environment)
+            assertEquals(it.release, traceBeforeUserSet?.release)
+            assertEquals(it.publicKey, traceBeforeUserSet?.publicKey)
+            assertEquals(it.sampleRate, traceBeforeUserSet?.sampleRate)
+            assertEquals(it.userId, traceBeforeUserSet?.userId)
+            assertEquals(it.userSegment, traceBeforeUserSet?.userSegment)
+
             assertNull(it.userId)
             assertNull(it.userSegment)
         }
@@ -559,7 +576,7 @@ class SentryTracerTest {
             }
         )
 
-        val header = transaction.toBaggageHeader()
+        val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
@@ -589,7 +606,7 @@ class SentryTracerTest {
             }
         )
 
-        val header = transaction.toBaggageHeader()
+        val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
@@ -615,7 +632,7 @@ class SentryTracerTest {
 
         fixture.hub.setUser(null)
 
-        val header = transaction.toBaggageHeader()
+        val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
             assertEquals("baggage", it.name)
             assertNotNull(it.value)
@@ -694,7 +711,7 @@ class SentryTracerTest {
 
     @Test
     fun `when idle transaction with children, finishes the transaction after the idle timeout`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 10)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 1000)
 
         val span = transaction.startChild("op")
         span.finish()
@@ -789,5 +806,44 @@ class SentryTracerTest {
         assertNotNull(transaction.timer)
         transaction.finish(SpanStatus.OK)
         assertNull(transaction.timer)
+    }
+
+    @Test
+    fun `when tracer is finished, puts custom measurements into underlying transaction`() {
+        val transaction = fixture.getSut()
+        transaction.setMeasurement("metric1", 1.0f)
+        transaction.setMeasurement("days", 2, MeasurementUnit.Duration.DAY)
+        transaction.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(1.0f, it.measurements["metric1"]!!.value)
+                assertEquals(null, it.measurements["metric1"]!!.unit)
+
+                assertEquals(2, it.measurements["days"]!!.value)
+                assertEquals("day", it.measurements["days"]!!.unit)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
+    }
+
+    @Test
+    fun `setting the same measurement multiple times only keeps latest value`() {
+        val transaction = fixture.getSut()
+        transaction.setMeasurement("metric1", 1.0f)
+        transaction.setMeasurement("metric1", 2, MeasurementUnit.Duration.DAY)
+        transaction.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(2, it.measurements["metric1"]!!.value)
+                assertEquals("day", it.measurements["metric1"]!!.unit)
+            },
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
     }
 }

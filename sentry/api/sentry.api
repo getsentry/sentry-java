@@ -22,10 +22,26 @@ public final class io/sentry/Attachment {
 
 public final class io/sentry/Baggage {
 	public fun <init> (Lio/sentry/ILogger;)V
-	public fun <init> (Ljava/util/Map;Lio/sentry/ILogger;)V
+	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZLio/sentry/ILogger;)V
+	public fun freeze ()V
+	public static fun fromHeader (Ljava/lang/String;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/lang/String;Lio/sentry/ILogger;)Lio/sentry/Baggage;
+	public static fun fromHeader (Ljava/lang/String;ZLio/sentry/ILogger;)Lio/sentry/Baggage;
+	public static fun fromHeader (Ljava/util/List;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/util/List;Lio/sentry/ILogger;)Lio/sentry/Baggage;
+	public static fun fromHeader (Ljava/util/List;ZLio/sentry/ILogger;)Lio/sentry/Baggage;
 	public fun get (Ljava/lang/String;)Ljava/lang/String;
+	public fun getEnvironment ()Ljava/lang/String;
+	public fun getPublicKey ()Ljava/lang/String;
+	public fun getRelease ()Ljava/lang/String;
+	public fun getSampleRate ()Ljava/lang/String;
+	public fun getSampleRateDouble ()Ljava/lang/Double;
+	public fun getThirdPartyHeader ()Ljava/lang/String;
+	public fun getTraceId ()Ljava/lang/String;
+	public fun getTransaction ()Ljava/lang/String;
+	public fun getUserId ()Ljava/lang/String;
+	public fun getUserSegment ()Ljava/lang/String;
+	public fun isMutable ()Z
 	public fun set (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setPublicKey (Ljava/lang/String;)V
@@ -35,13 +51,27 @@ public final class io/sentry/Baggage {
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUserId (Ljava/lang/String;)V
 	public fun setUserSegment (Ljava/lang/String;)V
-	public fun toHeaderString ()Ljava/lang/String;
+	public fun setValuesFromTransaction (Lio/sentry/ITransaction;Lio/sentry/protocol/User;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;)V
+	public fun toHeaderString (Ljava/lang/String;)Ljava/lang/String;
+	public fun toTraceContext ()Lio/sentry/TraceContext;
+}
+
+public final class io/sentry/Baggage$DSCKeys {
+	public static final field ENVIRONMENT Ljava/lang/String;
+	public static final field PUBLIC_KEY Ljava/lang/String;
+	public static final field RELEASE Ljava/lang/String;
+	public static final field SAMPLE_RATE Ljava/lang/String;
+	public static final field TRACE_ID Ljava/lang/String;
+	public static final field TRANSACTION Ljava/lang/String;
+	public static final field USER_ID Ljava/lang/String;
+	public static final field USER_SEGMENT Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/BaggageHeader {
 	public static final field BAGGAGE_HEADER Ljava/lang/String;
-	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Ljava/lang/String;)V
+	public static fun fromBaggageAndOutgoingHeader (Lio/sentry/Baggage;Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun getName ()Ljava/lang/String;
 	public fun getValue ()Ljava/lang/String;
 }
@@ -170,6 +200,7 @@ public final class io/sentry/ExternalOptions {
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addInAppExclude (Ljava/lang/String;)V
 	public fun addInAppInclude (Ljava/lang/String;)V
+	public fun addTracePropagationTarget (Ljava/lang/String;)V
 	public fun addTracingOrigin (Ljava/lang/String;)V
 	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/ExternalOptions;
 	public fun getContextTags ()Ljava/util/List;
@@ -185,12 +216,14 @@ public final class io/sentry/ExternalOptions {
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
+	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSendClientReports ()Ljava/lang/Boolean;
 	public fun getServerName ()Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
+	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracingOrigins ()Ljava/util/List;
 	public fun setDebug (Ljava/lang/Boolean;)V
@@ -202,6 +235,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
+	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setRelease (Ljava/lang/String;)V
@@ -266,8 +300,7 @@ public final class io/sentry/Hub : io/sentry/IHub {
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -311,8 +344,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -376,15 +408,12 @@ public abstract interface class io/sentry/IHub {
 	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
 	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
-	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Z)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
-	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Z)Lio/sentry/ITransaction;
-	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Long;Z)Lio/sentry/ITransaction;
 	public abstract fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public abstract fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -458,6 +487,8 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun isFinished ()Z
 	public abstract fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public abstract fun setDescription (Ljava/lang/String;)V
+	public abstract fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
+	public abstract fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
 	public abstract fun setOperation (Ljava/lang/String;)V
 	public abstract fun setStatus (Lio/sentry/SpanStatus;)V
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -465,7 +496,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public abstract fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public abstract fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public abstract fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -476,9 +507,12 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public abstract fun getSpans ()Ljava/util/List;
+	public abstract fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
+	public abstract fun isProfileSampled ()Ljava/lang/Boolean;
 	public abstract fun isSampled ()Ljava/lang/Boolean;
 	public abstract fun scheduleFinish ()V
 	public abstract fun setName (Ljava/lang/String;)V
+	public abstract fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 }
 
 public abstract interface class io/sentry/ITransactionProfiler {
@@ -517,6 +551,7 @@ public final class io/sentry/JsonObjectReader : io/sentry/vendor/gson/stream/Jso
 	public fun nextIntegerOrNull ()Ljava/lang/Integer;
 	public fun nextList (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/List;
 	public fun nextLongOrNull ()Ljava/lang/Long;
+	public fun nextMapOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/util/Map;
 	public fun nextObjectOrNull ()Ljava/lang/Object;
 	public fun nextOrNull (Lio/sentry/ILogger;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
 	public fun nextStringOrNull ()Ljava/lang/String;
@@ -568,6 +603,56 @@ public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
+public abstract interface class io/sentry/MeasurementUnit {
+	public static final field NONE Ljava/lang/String;
+	public fun apiName ()Ljava/lang/String;
+	public abstract fun name ()Ljava/lang/String;
+}
+
+public final class io/sentry/MeasurementUnit$Custom : io/sentry/MeasurementUnit {
+	public fun <init> (Ljava/lang/String;)V
+	public fun name ()Ljava/lang/String;
+}
+
+public final class io/sentry/MeasurementUnit$Duration : java/lang/Enum, io/sentry/MeasurementUnit {
+	public static final field DAY Lio/sentry/MeasurementUnit$Duration;
+	public static final field HOUR Lio/sentry/MeasurementUnit$Duration;
+	public static final field MICROSECOND Lio/sentry/MeasurementUnit$Duration;
+	public static final field MILLISECOND Lio/sentry/MeasurementUnit$Duration;
+	public static final field MINUTE Lio/sentry/MeasurementUnit$Duration;
+	public static final field NANOSECOND Lio/sentry/MeasurementUnit$Duration;
+	public static final field SECOND Lio/sentry/MeasurementUnit$Duration;
+	public static final field WEEK Lio/sentry/MeasurementUnit$Duration;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MeasurementUnit$Duration;
+	public static fun values ()[Lio/sentry/MeasurementUnit$Duration;
+}
+
+public final class io/sentry/MeasurementUnit$Fraction : java/lang/Enum, io/sentry/MeasurementUnit {
+	public static final field PERCENT Lio/sentry/MeasurementUnit$Fraction;
+	public static final field RATIO Lio/sentry/MeasurementUnit$Fraction;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MeasurementUnit$Fraction;
+	public static fun values ()[Lio/sentry/MeasurementUnit$Fraction;
+}
+
+public final class io/sentry/MeasurementUnit$Information : java/lang/Enum, io/sentry/MeasurementUnit {
+	public static final field BIT Lio/sentry/MeasurementUnit$Information;
+	public static final field BYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field EXABYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field EXBIBYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field GIBIBYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field GIGABYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field KIBIBYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field KILOBYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field MEBIBYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field MEGABYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field PEBIBYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field PETABYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field TEBIBYTE Lio/sentry/MeasurementUnit$Information;
+	public static final field TERABYTE Lio/sentry/MeasurementUnit$Information;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MeasurementUnit$Information;
+	public static fun values ()[Lio/sentry/MeasurementUnit$Information;
+}
+
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
 	public static fun getInstance ()Lio/sentry/NoOpEnvelopeReader;
 	public fun read (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
@@ -612,8 +697,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -640,6 +724,8 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun isFinished ()Z
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -647,7 +733,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -668,12 +754,17 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun isFinished ()Z
+	public fun isProfileSampled ()Ljava/lang/Boolean;
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun scheduleFinish ()V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
 	public fun setName (Ljava/lang/String;)V
+	public fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -681,7 +772,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -709,10 +800,14 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 }
 
 public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field TRUNCATION_REASON_BACKGROUNDED Ljava/lang/String;
+	public static final field TRUNCATION_REASON_NORMAL Ljava/lang/String;
+	public static final field TRUNCATION_REASON_TIMEOUT Ljava/lang/String;
 	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;)V
-	public fun <init> (Ljava/io/File;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/io/File;Ljava/util/List;Lio/sentry/ITransaction;Ljava/lang/String;ILjava/lang/String;Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAndroidApiLevel ()I
 	public fun getBuildId ()Ljava/lang/String;
+	public fun getCpuArchitecture ()Ljava/lang/String;
 	public fun getDeviceCpuFrequencies ()Ljava/util/List;
 	public fun getDeviceLocale ()Ljava/lang/String;
 	public fun getDeviceManufacturer ()Ljava/lang/String;
@@ -730,6 +825,8 @@ public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io
 	public fun getTraceId ()Ljava/lang/String;
 	public fun getTransactionId ()Ljava/lang/String;
 	public fun getTransactionName ()Ljava/lang/String;
+	public fun getTransactions ()Ljava/util/List;
+	public fun getTruncationReason ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersionCode ()Ljava/lang/String;
 	public fun getVersionName ()Ljava/lang/String;
@@ -738,6 +835,7 @@ public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAndroidApiLevel (I)V
 	public fun setBuildId (Ljava/lang/String;)V
+	public fun setCpuArchitecture (Ljava/lang/String;)V
 	public fun setDeviceCpuFrequencies (Ljava/util/List;)V
 	public fun setDeviceIsEmulator (Z)V
 	public fun setDeviceLocale (Ljava/lang/String;)V
@@ -766,6 +864,7 @@ public final class io/sentry/ProfilingTraceData$Deserializer : io/sentry/JsonDes
 
 public final class io/sentry/ProfilingTraceData$JsonKeys {
 	public static final field ANDROID_API_LEVEL Ljava/lang/String;
+	public static final field ARCHITECTURE Ljava/lang/String;
 	public static final field BUILD_ID Ljava/lang/String;
 	public static final field DEVICE_CPU_FREQUENCIES Ljava/lang/String;
 	public static final field DEVICE_IS_EMULATOR Ljava/lang/String;
@@ -783,9 +882,51 @@ public final class io/sentry/ProfilingTraceData$JsonKeys {
 	public static final field SAMPLED_PROFILE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION_ID Ljava/lang/String;
+	public static final field TRANSACTION_LIST Ljava/lang/String;
 	public static final field TRANSACTION_NAME Ljava/lang/String;
+	public static final field TRUNCATION_REASON Ljava/lang/String;
 	public static final field VERSION_CODE Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/ProfilingTransactionData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/ITransaction;Ljava/lang/Long;Ljava/lang/Long;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public fun getRelativeEndCpuMs ()Ljava/lang/Long;
+	public fun getRelativeEndNs ()Ljava/lang/Long;
+	public fun getRelativeStartCpuMs ()Ljava/lang/Long;
+	public fun getRelativeStartNs ()Ljava/lang/Long;
+	public fun getTraceId ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun notifyFinish (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;)V
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setId (Ljava/lang/String;)V
+	public fun setName (Ljava/lang/String;)V
+	public fun setRelativeEndNs (Ljava/lang/Long;)V
+	public fun setRelativeStartNs (Ljava/lang/Long;)V
+	public fun setTraceId (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/ProfilingTransactionData$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/ProfilingTransactionData;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/ProfilingTransactionData$JsonKeys {
+	public static final field END_CPU_MS Ljava/lang/String;
+	public static final field END_NS Ljava/lang/String;
+	public static final field ID Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field START_CPU_MS Ljava/lang/String;
+	public static final field START_NS Ljava/lang/String;
+	public static final field TRACE_ID Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -928,8 +1069,7 @@ public final class io/sentry/Sentry {
 	public static fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Z)Lio/sentry/ITransaction;
-	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;)Lio/sentry/ITransaction;
-	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;ZLjava/util/Date;ZLjava/lang/Long;ZLio/sentry/TransactionFinishedCallback;)Lio/sentry/ITransaction;
+	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Z)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/CustomSamplingContext;)Lio/sentry/ITransaction;
@@ -1230,6 +1370,8 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getOutboxPath ()Ljava/lang/String;
+	public fun getProfilesSampleRate ()Ljava/lang/Double;
+	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
@@ -1245,6 +1387,7 @@ public class io/sentry/SentryOptions {
 	public fun getShutdownTimeoutMillis ()J
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
+	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
 	public fun getTracingOrigins ()Ljava/util/List;
@@ -1304,6 +1447,8 @@ public class io/sentry/SentryOptions {
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
 	public fun setPrintUncaughtStackTrace (Z)V
+	public fun setProfilesSampleRate (Ljava/lang/Double;)V
+	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingEnabled (Z)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
@@ -1321,9 +1466,11 @@ public class io/sentry/SentryOptions {
 	public fun setShutdownTimeoutMillis (J)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTracePropagationTargets (Ljava/util/List;)V
 	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
+	public fun setTracingOrigins (Ljava/util/List;)V
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
@@ -1335,6 +1482,10 @@ public abstract interface class io/sentry/SentryOptions$BeforeBreadcrumbCallback
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendCallback {
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
+public abstract interface class io/sentry/SentryOptions$ProfilesSamplerCallback {
+	public abstract fun sample (Lio/sentry/SamplingContext;)Ljava/lang/Double;
 }
 
 public final class io/sentry/SentryOptions$Proxy {
@@ -1397,12 +1548,17 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
 	public fun getTimestamp ()Ljava/lang/Double;
+	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun isFinished ()Z
+	public fun isProfileSampled ()Ljava/lang/Boolean;
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun scheduleFinish ()V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
 	public fun setName (Ljava/lang/String;)V
+	public fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -1410,7 +1566,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -1503,9 +1659,12 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun isFinished ()Z
+	public fun isProfileSampled ()Ljava/lang/Boolean;
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -1513,7 +1672,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
-	public fun toBaggageHeader ()Lio/sentry/BaggageHeader;
+	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
@@ -1532,6 +1691,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun getDescription ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
+	public fun getProfileSampled ()Ljava/lang/Boolean;
 	public fun getSampled ()Ljava/lang/Boolean;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanId ()Lio/sentry/SpanId;
@@ -1543,6 +1703,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setSampled (Ljava/lang/Boolean;)V
+	public fun setSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V
 	public fun setSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
@@ -1634,7 +1795,6 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getUserSegment ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
-	public fun toBaggage (Lio/sentry/ILogger;)Lio/sentry/Baggage;
 }
 
 public final class io/sentry/TraceContext$Deserializer : io/sentry/JsonDeserializer {
@@ -1656,31 +1816,59 @@ public final class io/sentry/TraceContext$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/TracesSamplingDecision {
-	public fun <init> (Ljava/lang/Boolean;)V
-	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;)V
-	public fun getSampleRate ()Ljava/lang/Double;
-	public fun getSampled ()Ljava/lang/Boolean;
-}
-
-public final class io/sentry/TracingOrigins {
+public final class io/sentry/TracePropagationTargets {
 	public fun <init> ()V
 	public static fun contain (Ljava/util/List;Ljava/lang/String;)Z
 	public static fun contain (Ljava/util/List;Ljava/net/URI;)Z
 }
 
+public final class io/sentry/TracesSamplingDecision {
+	public fun <init> (Ljava/lang/Boolean;)V
+	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;)V
+	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;Ljava/lang/Boolean;Ljava/lang/Double;)V
+	public fun getProfileSampleRate ()Ljava/lang/Double;
+	public fun getProfileSampled ()Ljava/lang/Boolean;
+	public fun getSampleRate ()Ljava/lang/Double;
+	public fun getSampled ()Ljava/lang/Boolean;
+}
+
 public final class io/sentry/TransactionContext : io/sentry/SpanContext {
+	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
+	public static fun fromSentryTrace (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
+	public static fun fromSentryTrace (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;)Lio/sentry/TransactionContext;
 	public static fun fromSentryTrace (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
+	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getName ()Ljava/lang/String;
 	public fun getParentSampled ()Ljava/lang/Boolean;
 	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;
+	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun setParentSampled (Ljava/lang/Boolean;)V
+	public fun setParentSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V
 }
 
 public abstract interface class io/sentry/TransactionFinishedCallback {
 	public abstract fun execute (Lio/sentry/ITransaction;)V
+}
+
+public final class io/sentry/TransactionOptions {
+	public fun <init> ()V
+	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
+	public fun getIdleTimeout ()Ljava/lang/Long;
+	public fun getStartTimestamp ()Ljava/util/Date;
+	public fun getTransactionFinishedCallback ()Lio/sentry/TransactionFinishedCallback;
+	public fun isBindToScope ()Z
+	public fun isTrimEnd ()Z
+	public fun isWaitForChildren ()Z
+	public fun setBindToScope (Z)V
+	public fun setCustomSamplingContext (Lio/sentry/CustomSamplingContext;)V
+	public fun setIdleTimeout (Ljava/lang/Long;)V
+	public fun setStartTimestamp (Ljava/util/Date;)V
+	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V
+	public fun setTrimEnd (Z)V
+	public fun setWaitForChildren (Z)V
 }
 
 public final class io/sentry/TypeCheckHint {
@@ -2322,10 +2510,14 @@ public final class io/sentry/protocol/Gpu$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/MeasurementValue : io/sentry/JsonSerializable {
-	public fun <init> (F)V
-	public fun getValue ()F
+public final class io/sentry/protocol/MeasurementValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Ljava/lang/Number;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/Number;Ljava/lang/String;Ljava/util/Map;)V
+	public fun getUnit ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun getValue ()Ljava/lang/Number;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
 }
 
 public final class io/sentry/protocol/MeasurementValue$Deserializer : io/sentry/JsonDeserializer {
@@ -2335,6 +2527,7 @@ public final class io/sentry/protocol/MeasurementValue$Deserializer : io/sentry/
 }
 
 public final class io/sentry/protocol/MeasurementValue$JsonKeys {
+	public static final field UNIT Ljava/lang/String;
 	public static final field VALUE Ljava/lang/String;
 	public fun <init> ()V
 }
@@ -2823,7 +3016,7 @@ public final class io/sentry/protocol/SentryThread$JsonKeys {
 
 public final class io/sentry/protocol/SentryTransaction : io/sentry/SentryBaseEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/SentryTracer;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;Ljava/util/List;Ljava/util/Map;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;Ljava/util/List;Ljava/util/Map;Lio/sentry/protocol/TransactionInfo;)V
 	public fun getMeasurements ()Ljava/util/Map;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpans ()Ljava/util/List;
@@ -2851,24 +3044,59 @@ public final class io/sentry/protocol/SentryTransaction$JsonKeys {
 	public static final field START_TIMESTAMP Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TRANSACTION Ljava/lang/String;
+	public static final field TRANSACTION_INFO Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/TransactionInfo : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/TransactionInfo$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/TransactionInfo;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/TransactionInfo$JsonKeys {
+	public static final field SOURCE Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/TransactionNameSource : java/lang/Enum {
+	public static final field COMPONENT Lio/sentry/protocol/TransactionNameSource;
+	public static final field CUSTOM Lio/sentry/protocol/TransactionNameSource;
+	public static final field ROUTE Lio/sentry/protocol/TransactionNameSource;
+	public static final field TASK Lio/sentry/protocol/TransactionNameSource;
+	public static final field URL Lio/sentry/protocol/TransactionNameSource;
+	public static final field VIEW Lio/sentry/protocol/TransactionNameSource;
+	public fun apiName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/protocol/TransactionNameSource;
+	public static fun values ()[Lio/sentry/protocol/TransactionNameSource;
 }
 
 public final class io/sentry/protocol/User : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/User;)V
+	public fun getData ()Ljava/util/Map;
 	public fun getEmail ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/String;
 	public fun getIpAddress ()Ljava/lang/String;
 	public fun getOthers ()Ljava/util/Map;
+	public fun getSegment ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUsername ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setData (Ljava/util/Map;)V
 	public fun setEmail (Ljava/lang/String;)V
 	public fun setId (Ljava/lang/String;)V
 	public fun setIpAddress (Ljava/lang/String;)V
 	public fun setOthers (Ljava/util/Map;)V
+	public fun setSegment (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUsername (Ljava/lang/String;)V
 }
@@ -2880,10 +3108,12 @@ public final class io/sentry/protocol/User$Deserializer : io/sentry/JsonDeserial
 }
 
 public final class io/sentry/protocol/User$JsonKeys {
+	public static final field DATA Ljava/lang/String;
 	public static final field EMAIL Ljava/lang/String;
 	public static final field ID Ljava/lang/String;
 	public static final field IP_ADDRESS Ljava/lang/String;
 	public static final field OTHER Ljava/lang/String;
+	public static final field SEGMENT Ljava/lang/String;
 	public static final field USERNAME Ljava/lang/String;
 	public fun <init> ()V
 }
@@ -2969,10 +3199,15 @@ public abstract class io/sentry/transport/TransportResult {
 
 public final class io/sentry/util/CollectionUtils {
 	public static fun filterMapEntries (Ljava/util/Map;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/Map;
+	public static fun map (Ljava/util/List;Lio/sentry/util/CollectionUtils$Mapper;)Ljava/util/List;
 	public static fun newArrayList (Ljava/util/List;)Ljava/util/List;
 	public static fun newConcurrentHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun newHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun size (Ljava/lang/Iterable;)I
+}
+
+public abstract interface class io/sentry/util/CollectionUtils$Mapper {
+	public abstract fun map (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface class io/sentry/util/CollectionUtils$Predicate {
@@ -3037,6 +3272,7 @@ public final class io/sentry/util/Platform {
 
 public final class io/sentry/util/SampleRateUtil {
 	public fun <init> ()V
+	public static fun isValidProfilesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;Z)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
@@ -3047,6 +3283,7 @@ public final class io/sentry/util/StringUtils {
 	public static fun byteCountToString (J)Ljava/lang/String;
 	public static fun calculateStringHash (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/String;
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
+	public static fun countOf (Ljava/lang/String;C)I
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 }

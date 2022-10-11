@@ -62,6 +62,7 @@ kotlin {
 
 android {
     compileSdk = Config.Android.compileSdkVersion
+    namespace = "io.sentry.compose"
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion

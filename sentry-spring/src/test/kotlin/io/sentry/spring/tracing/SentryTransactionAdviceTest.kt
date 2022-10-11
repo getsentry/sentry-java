@@ -3,7 +3,6 @@ package io.sentry.spring.tracing
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.times
@@ -15,6 +14,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TransactionContext
+import io.sentry.TransactionOptions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
@@ -27,6 +27,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 @RunWith(SpringRunner::class)
 @SpringJUnitConfig(SentryTransactionAdviceTest.Config::class)
@@ -47,7 +48,7 @@ class SentryTransactionAdviceTest {
     @BeforeTest
     fun setup() {
         reset(hub)
-        whenever(hub.startTransaction(any<String>(), any(), eq(true))).thenAnswer { SentryTracer(TransactionContext(it.arguments[0] as String, it.arguments[1] as String), hub) }
+        whenever(hub.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, hub) }
         whenever(hub.options).thenReturn(
             SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
@@ -99,7 +100,8 @@ class SentryTransactionAdviceTest {
 
     @Test
     fun `when transaction is already active, does not start new transaction`() {
-        whenever(hub.span).thenReturn(SentryTracer(TransactionContext("aTransaction", "op"), hub))
+        whenever(hub.options).thenReturn(SentryOptions())
+        whenever(hub.span).then { SentryTracer(TransactionContext("aTransaction", "op"), hub) }
 
         sampleService.methodWithTransactionNameSet()
 

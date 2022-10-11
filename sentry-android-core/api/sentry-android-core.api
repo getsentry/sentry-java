@@ -1,6 +1,7 @@
 public final class io/sentry/android/core/ActivityFramesTracker {
 	public fun <init> (Lio/sentry/android/core/LoadClass;)V
 	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/ILogger;)V
+	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/ILogger;Lio/sentry/android/core/MainLooperHandler;)V
 	public fun addActivity (Landroid/app/Activity;)V
 	public fun setMetrics (Landroid/app/Activity;Lio/sentry/protocol/SentryId;)V
 	public fun stop ()V
@@ -125,6 +126,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun enableAllAutoBreadcrumbs (Z)V
 	public fun getAnrTimeoutIntervalMillis ()J
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
+	public fun getProfilingTracesHz ()I
 	public fun getProfilingTracesIntervalMillis ()I
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
@@ -152,6 +154,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableUserInteractionBreadcrumbs (Z)V
 	public fun setEnableUserInteractionTracing (Z)V
+	public fun setProfilingTracesHz (I)V
 	public fun setProfilingTracesIntervalMillis (I)V
 }
 

@@ -121,4 +121,21 @@ public final class StringUtils {
     }
     return null;
   }
+
+  /**
+   * Counts the occurrences of a character in a String
+   *
+   * @param str the String
+   * @param character the character to count
+   * @return The number of occurrences of the character in the String
+   */
+  public static int countOf(@NotNull String str, char character) {
+    int count = 0;
+    for (int i = 0; i < str.length(); i++) {
+      if (str.charAt(i) == character) {
+        count++;
+      }
+    }
+    return count;
+  }
 }
