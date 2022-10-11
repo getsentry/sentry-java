@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Ignore broken regex for tracePropagationTarget ([#2288](https://github.com/getsentry/sentry-java/pull/2288))
+
 ## 6.5.0
 
 ### Fixes
