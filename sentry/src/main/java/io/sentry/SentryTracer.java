@@ -360,7 +360,10 @@ public final class SentryTracer implements ITransaction {
         // if it's an idle transaction which has no children, we drop it to save user's quota
         return;
       }
-      hub.captureTransaction(transaction, traceContext(), null, profilingTraceData);
+      if (profilingTraceData != null) {
+        hub.captureProfile(profilingTraceData);
+      }
+      hub.captureTransaction(transaction, traceContext(), null);
     }
   }
 

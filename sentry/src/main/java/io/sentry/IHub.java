@@ -342,21 +342,14 @@ public interface IHub {
   IHub clone();
 
   /**
-   * Captures the transaction and enqueues it for sending to Sentry server.
+   * Captures a profile and enqueues it for sending to Sentry server.
    *
-   * @param transaction the transaction
-   * @param traceContext the trace context
-   * @param hint the hints
    * @param profilingTraceData the profiling trace data
-   * @return transaction's id
+   * @return profile's id
    */
   @ApiStatus.Internal
   @NotNull
-  SentryId captureTransaction(
-      @NotNull SentryTransaction transaction,
-      @Nullable TraceContext traceContext,
-      @Nullable Hint hint,
-      final @Nullable ProfilingTraceData profilingTraceData);
+  SentryId captureProfile(final @NotNull ProfilingTraceData profilingTraceData);
 
   /**
    * Captures the transaction and enqueues it for sending to Sentry server.
@@ -368,12 +361,10 @@ public interface IHub {
    */
   @ApiStatus.Internal
   @NotNull
-  default SentryId captureTransaction(
+  SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
-      @Nullable Hint hint) {
-    return captureTransaction(transaction, traceContext, hint, null);
-  }
+      @Nullable Hint hint);
 
   @ApiStatus.Internal
   @NotNull
