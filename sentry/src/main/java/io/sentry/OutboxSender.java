@@ -97,8 +97,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   @Override
   protected boolean isRelevantFileName(final @Nullable String fileName) {
     // ignore current.envelope
-    return fileName != null && !fileName.startsWith(PREFIX_CURRENT_SESSION_FILE) && !fileName.startsWith(
-      EnvelopeCache.STARTUP_CRASH_MARKER_FILE);
+    return fileName != null
+        && !fileName.startsWith(PREFIX_CURRENT_SESSION_FILE)
+        && !fileName.startsWith(EnvelopeCache.STARTUP_CRASH_MARKER_FILE);
     // TODO: Use an extension to filter out relevant files
   }
 

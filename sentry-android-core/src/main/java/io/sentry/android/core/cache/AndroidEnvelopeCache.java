@@ -53,7 +53,9 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     // decide to write it, which will trigger the blocking init
     final String outboxPath = options.getOutboxPath();
     if (outboxPath == null) {
-      options.getLogger().log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
+      options
+          .getLogger()
+          .log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
       return;
     }
     final File crashMarkerFile = new File(options.getOutboxPath(), STARTUP_CRASH_MARKER_FILE);
@@ -64,10 +66,12 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     }
   }
 
-  public static boolean hasStartupCrashMarker(
-      final @NotNull SentryOptions options) { final String outboxPath = options.getOutboxPath();
+  public static boolean hasStartupCrashMarker(final @NotNull SentryOptions options) {
+    final String outboxPath = options.getOutboxPath();
     if (outboxPath == null) {
-      options.getLogger().log(DEBUG, "Outbox path is null, the startup crash marker file does not exist");
+      options
+          .getLogger()
+          .log(DEBUG, "Outbox path is null, the startup crash marker file does not exist");
       return false;
     }
 

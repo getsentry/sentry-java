@@ -171,7 +171,8 @@ final class AndroidOptionsInitializer {
 
     options.addIntegration(
         new SendCachedEnvelopeIntegration(
-            new SendFireAndForgetEnvelopeSender(() -> options.getCacheDirPath()), hasStartupCrashMarker));
+            new SendFireAndForgetEnvelopeSender(() -> options.getCacheDirPath()),
+            hasStartupCrashMarker));
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
@@ -190,7 +191,8 @@ final class AndroidOptionsInitializer {
     // and we'd like to send them right away
     options.addIntegration(
         new SendCachedEnvelopeIntegration(
-            new SendFireAndForgetOutboxSender(() -> options.getOutboxPath()), hasStartupCrashMarker));
+            new SendFireAndForgetOutboxSender(() -> options.getOutboxPath()),
+            hasStartupCrashMarker));
 
     options.addIntegration(new AnrIntegration(context));
     options.addIntegration(new AppLifecycleIntegration());

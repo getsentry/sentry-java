@@ -19,7 +19,7 @@ final class SendCachedEnvelopeIntegration implements Integration {
 
   public SendCachedEnvelopeIntegration(
       final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory factory,
-    final boolean hasStartupCrashMarker) {
+      final boolean hasStartupCrashMarker) {
     this.factory = Objects.requireNonNull(factory, "SendFireAndForgetFactory is required");
     this.hasStartupCrashMarker = hasStartupCrashMarker;
   }
@@ -78,9 +78,7 @@ final class SendCachedEnvelopeIntegration implements Integration {
             .log(SentryLevel.DEBUG, "No Startup Crash marker exists, flushing asynchronously.");
       }
 
-      androidOptions
-          .getLogger()
-          .log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");
+      androidOptions.getLogger().log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");
     } catch (Throwable e) {
       androidOptions
           .getLogger()
