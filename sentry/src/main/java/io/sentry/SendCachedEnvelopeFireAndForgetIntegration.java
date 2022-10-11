@@ -64,7 +64,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
     Objects.requireNonNull(hub, "Hub is required");
     Objects.requireNonNull(options, "SentryOptions is required");
 
-    final String cachedDir = options.getCacheDirPath();
+    final String cachedDir = factory.getDirPath();
     if (!factory.hasValidPath(cachedDir, options.getLogger())) {
       options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
       return;
@@ -78,7 +78,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
     }
 
     try {
-      Future<?> future = options
+      options
           .getExecutorService()
           .submit(
               () -> {
@@ -90,26 +90,6 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
                       .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
                 }
               });
-
-      final String dirPath = factory.getDirPath();
-      if (dirPath != null && EnvelopeCache.hasStartupCrashMarker(dirPath, options)) {
-        options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Startup Crash marker exists, blocking flush.");
-        try {
-          future.get(options.getStartupCrashFlushTimeoutMillis(), TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-          // TODO: handle more exceptions
-          options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Synchronous send timed out, continuing in the background.");
-        }
-      } else {
-        options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "No Startup Crash marker exists, flushing asynchronously.");
-      }
-
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");

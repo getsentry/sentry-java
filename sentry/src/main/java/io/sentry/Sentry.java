@@ -1,9 +1,11 @@
 package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
+import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.FileUtils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -230,7 +232,13 @@ public final class Sentry {
     if (cacheDirPath != null) {
       final File cacheDir = new File(cacheDirPath);
       cacheDir.mkdirs();
-      options.setEnvelopeDiskCache(EnvelopeCache.create(options));
+      final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
+      // only overwrite the cache impl if it's not set by Android
+      if (envelopeCache instanceof NoOpEnvelopeCache) {
+        options.setEnvelopeDiskCache(EnvelopeCache.create(options));
+      }
+    } else {
+      options.setEnvelopeDiskCache(NoOpEnvelopeCache.getInstance());
     }
 
     final String profilingTracesDirPath = options.getProfilingTracesDirPath();

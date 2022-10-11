@@ -48,7 +48,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
+public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   /** File suffix added to all serialized envelopes files. */
   public static final String SUFFIX_ENVELOPE_FILE = ".envelope";
@@ -57,23 +57,20 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
   static final String SUFFIX_CURRENT_SESSION_FILE = ".json";
   public static final String CRASH_MARKER_FILE = "last_crash";
   public static final String NATIVE_CRASH_MARKER_FILE = ".sentry-native/" + CRASH_MARKER_FILE;
-
-  public static final String STARTUP_CRASH_MARKER_FILE = "startup_crash";
-
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
     final int maxCacheItems = options.getMaxCacheItems();
     if (cacheDirPath == null) {
-      options.getLogger().log(WARNING, "maxCacheItems is null, returning NoOpEnvelopeCache");
+      options.getLogger().log(WARNING, "cacheDirPath is null, returning NoOpEnvelopeCache");
       return NoOpEnvelopeCache.getInstance();
     } else {
       return new EnvelopeCache(options, cacheDirPath, maxCacheItems);
     }
   }
 
-  private EnvelopeCache(
+  public EnvelopeCache(
       final @NotNull SentryOptions options,
       final @NotNull String cacheDirPath,
       final int maxCacheItems) {
@@ -204,42 +201,7 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
     // write file to the disk when its about to crash so crashedLastRun can be marked on restart
     if (HintUtils.hasType(hint, DiskFlushNotification.class)) {
       writeCrashMarkerFile();
-
-      long timeSinceSdkInit = System.currentTimeMillis() - options.getSdkInitTime();
-      if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
-        options
-          .getLogger()
-          .log(DEBUG,
-            "Startup Crash detected %d milliseconds after SDK init. Writing a startup crash marker file to disk.",
-            timeSinceSdkInit);
-        writeStartupCrashMarkerFile();
-      }
     }
-  }
-
-  private void writeStartupCrashMarkerFile() {
-    final File crashMarkerFile = new File(options.getCacheDirPath(), STARTUP_CRASH_MARKER_FILE);
-    try {
-      crashMarkerFile.createNewFile();
-    } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Error writing the startup crash marker file to the disk", e);
-    }
-  }
-
-  public static boolean hasStartupCrashMarker(final @NotNull String dirPath, final @NotNull SentryOptions options) {
-    final File crashMarkerFile = new File(dirPath, STARTUP_CRASH_MARKER_FILE);
-    final boolean exists = crashMarkerFile.exists();
-    if (exists) {
-      if (!crashMarkerFile.delete()) {
-        options
-          .getLogger()
-          .log(
-            ERROR,
-            "Failed to delete the startup crash marker file. %s.",
-            crashMarkerFile.getAbsolutePath());
-      }
-    }
-    return exists;
   }
 
   private void writeCrashMarkerFile() {

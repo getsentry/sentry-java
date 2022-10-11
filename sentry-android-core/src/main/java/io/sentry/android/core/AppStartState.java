@@ -84,6 +84,11 @@ public final class AppStartState {
     return appStartTime;
   }
 
+  @Nullable
+  public Long getAppStartMillis() {
+    return appStartMillis;
+  }
+
   synchronized void setAppStartTime(final long appStartMillis, final @NotNull Date appStartTime) {
     // method is synchronized because the SDK may by init. on a background thread.
     if (this.appStartTime != null && this.appStartMillis != null) {
