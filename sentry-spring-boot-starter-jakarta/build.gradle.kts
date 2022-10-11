@@ -122,7 +122,7 @@ tasks.named("build").dependsOn("jakartaTransformation")
 buildConfig {
     useJavaOutput()
     packageName("io.sentry.spring.boot")
-    buildConfigField("String", "SENTRY_SPRING_BOOT_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_BOOT_SDK_NAME}\"")
+    buildConfigField("String", "SENTRY_SPRING_BOOT_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
