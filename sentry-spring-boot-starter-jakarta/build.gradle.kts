@@ -1,7 +1,8 @@
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     `java-library`
@@ -19,10 +20,10 @@ repositories {
     maven { url = uri("https://repo.spring.io/milestone") }
 }
 
-
-the<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension>().apply {
+the<DependencyManagementExtension>().apply {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:${Config.springBoot3Version}")
+        mavenBom(SpringBootPlugin.BOM_COORDINATES)
+        mavenBom(Config.Libs.okhttpBom)
     }
 }
 
@@ -39,20 +40,25 @@ tasks.withType<KotlinCompile>().configureEach {
 val jakartaTransform by configurations.creating
 
 dependencies {
-
     jakartaTransform("org.eclipse.transformer:org.eclipse.transformer:0.5.0")
     jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.cli:0.5.0")
     jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.jakarta:0.5.0")
 
-    api(projects.sentry)
-    compileOnly(Config.Libs.springWeb)
-    compileOnly(Config.Libs.springAop)
-    compileOnly(Config.Libs.springSecurityWeb)
-    compileOnly(Config.Libs.aspectj)
-    compileOnly(Config.Libs.servletApiJakarta)
-    compileOnly(Config.Libs.slf4jApi)
 
+    api(projects.sentry)
+    api(projects.sentrySpringJakarta)
+    compileOnly(projects.sentryLogback)
+    compileOnly(projects.sentryApacheHttpClient5)
+    implementation(Config.Libs.springBoot3Starter)
+    compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
+    compileOnly(Config.Libs.servletApiJakarta)
+    compileOnly(Config.Libs.springBoot3StarterAop)
+    compileOnly(Config.Libs.springBoot3StarterSecurity)
+    compileOnly(Config.Libs.reactorCore)
+
+    annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
+    annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -61,23 +67,19 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
+    testImplementation(projects.sentryLogback)
+    testImplementation(projects.sentryApacheHttpClient5)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBoot3StarterTest)
     testImplementation(Config.Libs.springBoot3StarterWeb)
     testImplementation(Config.Libs.springBoot3StarterWebflux)
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
-    testImplementation(Config.TestLibs.awaitility)
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
 }
 
 configure<SourceSetContainer> {
@@ -109,22 +111,18 @@ tasks {
     }
 }
 
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-Xlint:-deprecation")
-}
-
 task("jakartaTransformation", JavaExec::class) {
     main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
     classpath = configurations.getByName("jakartaTransform") //sourceSets["main"].compileClasspath
-    args = listOf("../sentry-spring/src", "src", "-o", "-tf", "sentry-jakarta-text-master.properties")
+    args = listOf("../sentry-spring-boot-starter/src", "src", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
 
 tasks.named("build").dependsOn("jakartaTransformation")
 
 buildConfig {
     useJavaOutput()
-    packageName("io.sentry.spring")
-    buildConfigField("String", "SENTRY_SPRING_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_SDK_NAME}\"")
+    packageName("io.sentry.spring.boot")
+    buildConfigField("String", "SENTRY_SPRING_BOOT_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_BOOT_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 

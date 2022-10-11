@@ -2,7 +2,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
     repositories {
-        mavenLocal()
         maven { url = uri("https://repo.spring.io/milestone") }
         gradlePluginPortal()
     }
@@ -34,6 +33,7 @@ include(
     "sentry-spring",
     "sentry-spring-jakarta",
     "sentry-spring-boot-starter",
+    "sentry-spring-boot-starter-jakarta",
     "sentry-bom",
     "sentry-openfeign",
     "sentry-graphql",

@@ -57,6 +57,7 @@ apiValidation {
             "sentry-samples-spring",
             "sentry-samples-spring-jakarta",
             "sentry-spring-jakarta",
+            "sentry-spring-boot-starter-jakarta",
             "sentry-samples-spring-boot",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-netflix-dgs",
