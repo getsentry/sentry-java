@@ -23,9 +23,6 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
     @Nullable
     SendFireAndForget create(@NotNull IHub hub, @NotNull SentryOptions options);
 
-    @Nullable
-    String getDirPath();
-
     default boolean hasValidPath(final @Nullable String dirPath, final @NotNull ILogger logger) {
       if (dirPath == null) {
         logger.log(SentryLevel.INFO, "No cached dir path is defined in options.");
@@ -60,7 +57,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
     Objects.requireNonNull(hub, "Hub is required");
     Objects.requireNonNull(options, "SentryOptions is required");
 
-    final String cachedDir = factory.getDirPath();
+    final String cachedDir = options.getCacheDirPath();
     if (!factory.hasValidPath(cachedDir, options.getLogger())) {
       options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
       return;

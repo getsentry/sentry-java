@@ -5,7 +5,6 @@ import io.sentry.Integration;
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.util.Objects;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -16,10 +15,13 @@ final class SendCachedEnvelopeIntegration implements Integration {
 
   private final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
       factory;
+  private final boolean hasStartupCrashMarker;
 
   public SendCachedEnvelopeIntegration(
-      final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory factory) {
+      final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory factory,
+    final boolean hasStartupCrashMarker) {
     this.factory = Objects.requireNonNull(factory, "SendFireAndForgetFactory is required");
+    this.hasStartupCrashMarker = hasStartupCrashMarker;
   }
 
   @Override
@@ -29,6 +31,12 @@ final class SendCachedEnvelopeIntegration implements Integration {
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
+
+    final String cachedDir = options.getCacheDirPath();
+    if (!factory.hasValidPath(cachedDir, options.getLogger())) {
+      options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
+      return;
+    }
 
     final SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender =
         factory.create(hub, androidOptions);
@@ -53,8 +61,7 @@ final class SendCachedEnvelopeIntegration implements Integration {
                     }
                   });
 
-      final String dirPath = factory.getDirPath();
-      if (dirPath != null && AndroidEnvelopeCache.hasStartupCrashMarker(dirPath, androidOptions)) {
+      if (hasStartupCrashMarker) {
         androidOptions
             .getLogger()
             .log(SentryLevel.DEBUG, "Startup Crash marker exists, blocking flush.");
@@ -73,7 +80,7 @@ final class SendCachedEnvelopeIntegration implements Integration {
 
       androidOptions
           .getLogger()
-          .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
+          .log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");
     } catch (Throwable e) {
       androidOptions
           .getLogger()

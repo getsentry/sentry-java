@@ -6,6 +6,7 @@ import static io.sentry.SentryLevel.INFO;
 import static io.sentry.SentryLevel.WARNING;
 import static java.lang.String.format;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.SentryCrashLastRunState;
@@ -47,6 +48,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Open
 @ApiStatus.Internal
 public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
@@ -57,6 +59,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   static final String SUFFIX_CURRENT_SESSION_FILE = ".json";
   public static final String CRASH_MARKER_FILE = "last_crash";
   public static final String NATIVE_CRASH_MARKER_FILE = ".sentry-native/" + CRASH_MARKER_FILE;
+
+  public static final String STARTUP_CRASH_MARKER_FILE = "startup_crash";
+
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {

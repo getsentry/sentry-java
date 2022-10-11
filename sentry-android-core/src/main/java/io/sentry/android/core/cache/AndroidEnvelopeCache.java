@@ -3,6 +3,7 @@ package io.sentry.android.core.cache;
 import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
 
+import android.os.SystemClock;
 import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryOptions;
@@ -19,25 +20,22 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class AndroidEnvelopeCache extends EnvelopeCache {
 
-  public static final String STARTUP_CRASH_MARKER_FILE = "startup_crash";
-
-  private final @NotNull SentryAndroidOptions options;
-
   public AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options) {
     super(
         options,
         Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null"),
         options.getMaxCacheItems());
-    this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required.");
   }
 
   @Override
   public void store(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
     super.store(envelope, hint);
 
+    final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
+
     final Long appStartTime = AppStartState.getInstance().getAppStartMillis();
     if (HintUtils.hasType(hint, DiskFlushNotification.class) && appStartTime != null) {
-      long timeSinceSdkInit = System.currentTimeMillis() - appStartTime;
+      long timeSinceSdkInit = SystemClock.uptimeMillis() - appStartTime;
       if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
         options
             .getLogger()
@@ -51,7 +49,14 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   }
 
   private void writeStartupCrashMarkerFile() {
-    final File crashMarkerFile = new File(options.getCacheDirPath(), STARTUP_CRASH_MARKER_FILE);
+    // we use outbox path always, as it's the one that will also contain markers if hybrid sdks
+    // decide to write it, which will trigger the blocking init
+    final String outboxPath = options.getOutboxPath();
+    if (outboxPath == null) {
+      options.getLogger().log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
+      return;
+    }
+    final File crashMarkerFile = new File(options.getOutboxPath(), STARTUP_CRASH_MARKER_FILE);
     try {
       crashMarkerFile.createNewFile();
     } catch (Throwable e) {
@@ -60,8 +65,13 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   }
 
   public static boolean hasStartupCrashMarker(
-      final @NotNull String dirPath, final @NotNull SentryOptions options) {
-    final File crashMarkerFile = new File(dirPath, STARTUP_CRASH_MARKER_FILE);
+      final @NotNull SentryOptions options) { final String outboxPath = options.getOutboxPath();
+    if (outboxPath == null) {
+      options.getLogger().log(DEBUG, "Outbox path is null, the startup crash marker file does not exist");
+      return false;
+    }
+
+    final File crashMarkerFile = new File(options.getOutboxPath(), STARTUP_CRASH_MARKER_FILE);
     try {
       final boolean exists = crashMarkerFile.exists();
       if (exists) {
