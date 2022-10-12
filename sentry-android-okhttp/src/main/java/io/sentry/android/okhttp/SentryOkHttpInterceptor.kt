@@ -28,7 +28,8 @@ class SentryOkHttpInterceptor(
     // should this be under the options or here? also define the names
     private val captureFailedRequests: Boolean = false,
     private val failedRequestStatusCode: List<HttpStatusCodeRange> = listOf(
-        HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)),
+        HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
+    ),
     private val failedRequestsTargets: List<String> = listOf(".*")
 ) : Interceptor {
 
@@ -144,7 +145,8 @@ class SentryOkHttpInterceptor(
 
         if (!captureFailedRequests ||
             !PropagationTargetsUtils.contain(failedRequestsTargets, requestUrl) ||
-            !containsStatusCode(response.code)) {
+            !containsStatusCode(response.code)
+        ) {
             return
         }
 
@@ -152,7 +154,8 @@ class SentryOkHttpInterceptor(
             type = "SentryOkHttpInterceptor"
         }
         val exception = SentryHttpClientException(
-            "Event was captured because the request status code was ${response.code}")
+            "Event was captured because the request status code was ${response.code}"
+        )
         val mechanismException = ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
         val event = SentryEvent(mechanismException)
 
