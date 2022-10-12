@@ -1,16 +1,16 @@
-package io.sentry;
+package io.sentry.util;
 
 import java.net.URI;
 import java.util.List;
+
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-// TODO: rename class to something more generic
-
 /**
- * Checks if an URL matches the list of origins to which `sentry-trace` header should be sent in
- * HTTP integrations.
+ * Checks if an URL matches the list of origins.
  */
-public final class TracePropagationTargets {
+@ApiStatus.Internal
+public final class PropagationTargetsUtils {
 
   public static boolean contain(final @NotNull List<String> origins, final @NotNull String url) {
     if (origins.isEmpty()) {

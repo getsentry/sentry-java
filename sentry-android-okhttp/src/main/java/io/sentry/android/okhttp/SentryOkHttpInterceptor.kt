@@ -8,12 +8,11 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryEvent
 import io.sentry.SpanStatus
-import io.sentry.TracePropagationTargets
+import io.sentry.util.PropagationTargetsUtils
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
-import io.sentry.protocol.Message
 import io.sentry.util.HttpHeadersUtils
 import okhttp3.Headers
 import okhttp3.Interceptor
@@ -48,7 +47,7 @@ class SentryOkHttpInterceptor(
         try {
             val requestBuilder = request.newBuilder()
             if (span != null &&
-                TracePropagationTargets.contain(hub.options.tracePropagationTargets, request.url.toString())
+                PropagationTargetsUtils.contain(hub.options.tracePropagationTargets, request.url.toString())
             ) {
                 span.toSentryTrace().let {
                     requestBuilder.addHeader(it.name, it.value)
@@ -139,7 +138,7 @@ class SentryOkHttpInterceptor(
             requestUrl = requestUrl.replace("#$urlFragment", "")
         }
 
-        if (!captureFailedRequests || !TracePropagationTargets.contain(failedRequestsTargets, requestUrl) || !containsStatusCode(response.code)) {
+        if (!captureFailedRequests || !PropagationTargetsUtils.contain(failedRequestsTargets, requestUrl) || !containsStatusCode(response.code)) {
             return
         }
 
