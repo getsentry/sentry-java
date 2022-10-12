@@ -115,14 +115,20 @@ tasks.withType<JavaCompile> {
 task("jakartaTransformation", JavaExec::class) {
     main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
-    args = listOf("../sentry-spring/src", "src", "-o", "-tf", "sentry-jakarta-text-master.properties")
+    args = listOf("../sentry-spring/src/main/java/io/sentry/spring", "src/main/java/io/sentry/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
+}.dependsOn("jakartaTestTransformation")
+
+task("jakartaTestTransformation", JavaExec::class) {
+    main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
+    classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
+    args = listOf("../sentry-spring/src/test/kotlin/io/sentry/spring", "src/test/kotlin/io/sentry/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
 
 tasks.named("build").dependsOn("jakartaTransformation")
 
 buildConfig {
     useJavaOutput()
-    packageName("io.sentry.spring")
+    packageName("io.sentry.spring.jakarta")
     buildConfigField("String", "SENTRY_SPRING_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
