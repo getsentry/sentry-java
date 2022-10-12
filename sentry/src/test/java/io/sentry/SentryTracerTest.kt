@@ -813,8 +813,7 @@ class SentryTracerTest {
                 assertEquals("day", it.measurements["days"]!!.unit)
             },
             anyOrNull(),
-            anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 
@@ -831,8 +830,7 @@ class SentryTracerTest {
                 assertEquals("day", it.measurements["metric1"]!!.unit)
             },
             anyOrNull(),
-            anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 }
