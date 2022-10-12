@@ -13,7 +13,6 @@ import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
-import io.sentry.protocol.Message
 import io.sentry.util.HttpHeadersUtils
 import okhttp3.Headers
 import okhttp3.Interceptor
