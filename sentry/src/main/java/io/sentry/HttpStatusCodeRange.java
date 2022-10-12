@@ -6,6 +6,9 @@ package io.sentry;
  * <p>Example for a single status code 400 500
  */
 public final class HttpStatusCodeRange {
+  public static final int DEFAULT_MIN = 500;
+  public static final int DEFAULT_MAX = 599;
+
   private final int min;
   private final int max;
 

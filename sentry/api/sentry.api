@@ -261,6 +261,8 @@ public final class io/sentry/Hint {
 }
 
 public final class io/sentry/HttpStatusCodeRange {
+	public static final field DEFAULT_MAX I
+	public static final field DEFAULT_MIN I
 	public fun <init> (I)V
 	public fun <init> (II)V
 	public fun isInRange (I)Z

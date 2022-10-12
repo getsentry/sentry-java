@@ -25,9 +25,10 @@ import java.io.IOException
 class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
-    // TODO: should this be under the options or here? also define the names
+    // should this be under the options or here? also define the names
     private val captureFailedRequests: Boolean = false,
-    private val failedRequestStatusCode: List<HttpStatusCodeRange> = listOf(HttpStatusCodeRange(500, 599)),
+    private val failedRequestStatusCode: List<HttpStatusCodeRange> = listOf(
+        HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)),
     private val failedRequestsTargets: List<String> = listOf(".*")
 ) : Interceptor {
 
@@ -141,14 +142,17 @@ class SentryOkHttpInterceptor(
             requestUrl = requestUrl.replace("#$urlFragment", "")
         }
 
-        if (!captureFailedRequests || !PropagationTargetsUtils.contain(failedRequestsTargets, requestUrl) || !containsStatusCode(response.code)) {
+        if (!captureFailedRequests ||
+            !PropagationTargetsUtils.contain(failedRequestsTargets, requestUrl) ||
+            !containsStatusCode(response.code)) {
             return
         }
 
         val mechanism = Mechanism().apply {
             type = "SentryOkHttpInterceptor"
         }
-        val exception = SentryHttpClientException("Event was captured because the request status code was ${response.code}")
+        val exception = SentryHttpClientException(
+            "Event was captured because the request status code was ${response.code}")
         val mechanismException = ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
         val event = SentryEvent(mechanismException)
 
@@ -156,7 +160,7 @@ class SentryOkHttpInterceptor(
         hint.set("request", request)
         hint.set("response", response)
 
-        // TODO: remove after fields indexed
+        // remove after fields indexed
 //        val tags = mutableMapOf<String, String>()
 //        tags["status_code"] = response.code.toString()
 //        tags["url"] = requestUrl
@@ -173,7 +177,7 @@ class SentryOkHttpInterceptor(
             fragment = urlFragment
 
             request.body?.contentLength().ifHasValidLength {
-                // TODO: should be mapped in relay and added to the protocol, right now
+                // should be mapped in relay and added to the protocol, right now
                 // relay isn't retaining unmapped fields
                 unknownRequestFields["body_size"] = it
             }
