@@ -1,7 +1,7 @@
 package io.sentry.samples.android
 
+import io.sentry.HttpStatusCodeRange
 import io.sentry.android.okhttp.SentryOkHttpInterceptor
-import io.sentry.android.okhttp.StatusCodeRange
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -13,7 +13,7 @@ object GithubAPI {
             captureFailedRequests = true,
             // TODO: 200 just for testing
             failedRequestStatusCode = listOf(
-                StatusCodeRange(200, 599)
+                HttpStatusCodeRange(200, 599)
             )
         )
     ).build()

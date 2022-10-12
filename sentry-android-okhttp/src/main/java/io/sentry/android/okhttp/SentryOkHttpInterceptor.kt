@@ -156,9 +156,9 @@ class SentryOkHttpInterceptor(
         hint.set("response", response)
 
         // TODO: remove after fields indexed
-        val tags = mutableMapOf<String, String>()
-        tags["status_code"] = response.code.toString()
-        tags["url"] = requestUrl
+//        val tags = mutableMapOf<String, String>()
+//        tags["status_code"] = response.code.toString()
+//        tags["url"] = requestUrl
 
         val unknownRequestFields = mutableMapOf<String, Any>()
 
@@ -190,7 +190,7 @@ class SentryOkHttpInterceptor(
             }
         }
 
-        event.tags = tags
+//        event.tags = tags
         event.request = sentryRequest
         event.contexts.setResponse(sentryResponse)
 

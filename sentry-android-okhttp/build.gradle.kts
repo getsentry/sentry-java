@@ -71,7 +71,6 @@ dependencies {
 
     compileOnly(Config.Libs.okhttpBom)
     compileOnly(Config.Libs.okhttp)
-//    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
