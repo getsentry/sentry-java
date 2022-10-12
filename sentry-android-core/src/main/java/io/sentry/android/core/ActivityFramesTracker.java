@@ -5,7 +5,6 @@ import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.ILogger;
 import io.sentry.MeasurementUnit;
-import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.MainThreadChecker;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
@@ -32,7 +31,6 @@ public final class ActivityFramesTracker {
   private final @NotNull Map<Activity, FrameCounts> frameCountAtStartSnapshots =
       new WeakHashMap<>();
 
-  private final @Nullable ILogger logger;
   private final @NotNull MainLooperHandler handler;
 
   public ActivityFramesTracker(
@@ -44,7 +42,6 @@ public final class ActivityFramesTracker {
     if (androidXAvailable) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
-    this.logger = logger;
     this.handler = handler;
   }
 
@@ -61,7 +58,6 @@ public final class ActivityFramesTracker {
       final @Nullable FrameMetricsAggregator frameMetricsAggregator,
       final @NotNull MainLooperHandler handler) {
     this.frameMetricsAggregator = frameMetricsAggregator;
-    this.logger = null;
     this.handler = handler;
   }
 
@@ -75,7 +71,7 @@ public final class ActivityFramesTracker {
       return;
     }
 
-    runSafelyOnUiThread(() -> frameMetricsAggregator.add(activity), "FrameMetricsAggregator.add");
+    runSafelyOnUiThread(() -> frameMetricsAggregator.add(activity));
     snapshotFrameCountsAtStart(activity);
   }
 
@@ -140,8 +136,7 @@ public final class ActivityFramesTracker {
     // there was no
     // Observers, See
     // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
-    runSafelyOnUiThread(
-        () -> frameMetricsAggregator.remove(activity), "FrameMetricsAggregator.remove");
+    runSafelyOnUiThread(() -> frameMetricsAggregator.remove(activity));
 
     final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
 
@@ -200,13 +195,13 @@ public final class ActivityFramesTracker {
   @SuppressWarnings("NullAway")
   public synchronized void stop() {
     if (isFrameMetricsAggregatorAvailable()) {
-      runSafelyOnUiThread(() -> frameMetricsAggregator.stop(), "FrameMetricsAggregator.stop");
+      runSafelyOnUiThread(() -> frameMetricsAggregator.stop());
       frameMetricsAggregator.reset();
     }
     activityMeasurements.clear();
   }
 
-  private void runSafelyOnUiThread(final Runnable runnable, final String tag) {
+  private void runSafelyOnUiThread(final Runnable runnable) {
     try {
       if (MainThreadChecker.isMainThread()) {
         runnable.run();
@@ -215,17 +210,13 @@ public final class ActivityFramesTracker {
             () -> {
               try {
                 runnable.run();
-              } catch (Throwable t) {
-                if (logger != null) {
-                  logger.log(SentryLevel.ERROR, "Failed to execute " + tag, t);
-                }
+              } catch (Throwable ignored) {
+                // ignored
               }
             });
       }
-    } catch (Throwable t) {
-      if (logger != null) {
-        logger.log(SentryLevel.ERROR, "Failed to execute " + tag, t);
-      }
+    } catch (Throwable ignored) {
+      // ignored
     }
   }
 
