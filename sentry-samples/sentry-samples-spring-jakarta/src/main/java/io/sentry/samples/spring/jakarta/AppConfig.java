@@ -1,8 +1,8 @@
-package io.sentry.samples.spring;
+package io.sentry.samples.spring.jakarta;
 
 import io.sentry.IHub;
-import io.sentry.spring.SentryUserFilter;
-import io.sentry.spring.SentryUserProvider;
+import io.sentry.spring.jakarta.SentryUserFilter;
+import io.sentry.spring.jakarta.SentryUserProvider;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

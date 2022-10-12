@@ -1,6 +1,6 @@
-package io.sentry.samples.spring.boot;
+package io.sentry.samples.spring.boot.jakarta;
 
-import io.sentry.spring.tracing.SentryTransaction;
+import io.sentry.spring.jakarta.tracing.SentryTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;

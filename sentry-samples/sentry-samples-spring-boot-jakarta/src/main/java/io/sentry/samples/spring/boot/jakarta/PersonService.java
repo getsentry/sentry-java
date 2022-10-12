@@ -1,6 +1,6 @@
-package io.sentry.samples.spring.boot;
+package io.sentry.samples.spring.boot.jakarta;
 
-import io.sentry.spring.tracing.SentrySpan;
+import io.sentry.spring.jakarta.tracing.SentrySpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;

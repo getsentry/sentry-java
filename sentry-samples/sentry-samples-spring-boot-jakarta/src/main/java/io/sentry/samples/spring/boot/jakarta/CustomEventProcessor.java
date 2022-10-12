@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot;
+package io.sentry.samples.spring.boot.jakarta;
 
 import io.sentry.EventProcessor;
 import io.sentry.Hint;

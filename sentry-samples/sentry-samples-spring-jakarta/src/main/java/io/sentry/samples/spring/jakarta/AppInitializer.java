@@ -1,6 +1,6 @@
-package io.sentry.samples.spring;
+package io.sentry.samples.spring.jakarta;
 
-import io.sentry.spring.tracing.SentryTracingFilter;
+import io.sentry.spring.jakarta.tracing.SentryTracingFilter;
 import jakarta.servlet.Filter;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.filter.RequestContextFilter;

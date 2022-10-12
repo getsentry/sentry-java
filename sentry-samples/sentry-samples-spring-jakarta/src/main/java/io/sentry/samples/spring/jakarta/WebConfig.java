@@ -1,7 +1,7 @@
-package io.sentry.samples.spring;
+package io.sentry.samples.spring.jakarta;
 
 import io.sentry.IHub;
-import io.sentry.spring.tracing.SentrySpanClientHttpRequestInterceptor;
+import io.sentry.spring.jakarta.tracing.SentrySpanClientHttpRequestInterceptor;
 import java.util.Collections;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;

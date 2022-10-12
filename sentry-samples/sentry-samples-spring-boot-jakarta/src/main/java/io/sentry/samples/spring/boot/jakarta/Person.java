@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.web;
+package io.sentry.samples.spring.boot.jakarta;
 
 public class Person {
   private final String firstName;

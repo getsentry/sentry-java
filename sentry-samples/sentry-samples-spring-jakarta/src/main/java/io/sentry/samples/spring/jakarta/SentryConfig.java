@@ -1,9 +1,9 @@
-package io.sentry.samples.spring;
+package io.sentry.samples.spring.jakarta;
 
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.TracesSamplerCallback;
-import io.sentry.spring.EnableSentry;
-import io.sentry.spring.tracing.SentryTracingConfiguration;
+import io.sentry.spring.jakarta.EnableSentry;
+import io.sentry.spring.jakarta.tracing.SentryTracingConfiguration;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;

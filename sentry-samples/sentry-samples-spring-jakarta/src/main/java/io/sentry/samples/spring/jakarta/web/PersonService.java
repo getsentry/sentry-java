@@ -1,6 +1,6 @@
-package io.sentry.samples.spring.web;
+package io.sentry.samples.spring.jakarta.web;
 
-import io.sentry.spring.tracing.SentrySpan;
+import io.sentry.spring.jakarta.tracing.SentrySpan;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
