@@ -432,10 +432,7 @@ class HubTest {
 
     @Test
     fun `when captureEvent is called with a ScopeCallback that crashes then the event should still be captured`() {
-        val (sut, mockClient) = getEnabledHub()
-        val logger = mock<ILogger>()
-        sut.options.isDebug = true
-        sut.options.setLogger(logger)
+        val (sut, mockClient, logger) = getEnabledHub()
 
         val exception = Exception("scope callback exception")
         sut.captureEvent(SentryEvent(), null) {
@@ -528,10 +525,7 @@ class HubTest {
 
     @Test
     fun `when captureMessage is called with a ScopeCallback that crashes then the message should still be captured`() {
-        val (sut, mockClient) = getEnabledHub()
-        val logger = mock<ILogger>()
-        sut.options.isDebug = true
-        sut.options.setLogger(logger)
+        val (sut, mockClient, logger) = getEnabledHub()
 
         val exception = Exception("scope callback exception")
         sut.captureMessage("Hello World") {
@@ -661,10 +655,7 @@ class HubTest {
 
     @Test
     fun `when captureException is called with a ScopeCallback that crashes then the exception should still be captured`() {
-        val (sut, mockClient) = getEnabledHub()
-        val logger = mock<ILogger>()
-        sut.options.isDebug = true
-        sut.options.setLogger(logger)
+        val (sut, mockClient, logger) = getEnabledHub()
 
         val exception = Exception("scope callback exception")
         sut.captureException(Throwable()) {
@@ -770,12 +761,7 @@ class HubTest {
 
     @Test
     fun `when withScope throws an exception then it should be caught`() {
-        val logger = mock<ILogger>()
-
-        val hub = generateHub { options ->
-            options.setLogger(logger)
-            options.isDebug = true
-        }
+        val (hub, _, logger) = getEnabledHub()
 
         val exception = Exception("scope callback exception")
         val scopeCallback = ScopeCallback {
@@ -812,12 +798,7 @@ class HubTest {
 
     @Test
     fun `when configureScope throws an exception then it should be caught`() {
-        val logger = mock<ILogger>()
-
-        val hub = generateHub { options ->
-            options.setLogger(logger)
-            options.isDebug = true
-        }
+        val (hub, _, logger) = getEnabledHub()
 
         val exception = Exception("scope callback exception")
         val scopeCallback = ScopeCallback {
@@ -1630,16 +1611,21 @@ class HubTest {
         return Hub(options)
     }
 
-    private fun getEnabledHub(): Pair<Hub, ISentryClient> {
+    private fun getEnabledHub(): Triple<Hub, ISentryClient, ILogger> {
+        val logger = mock<ILogger>()
+
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         options.tracesSampleRate = 1.0
+        options.isDebug = true
+        options.setLogger(logger)
+
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
-        return Pair(sut, mockClient)
+        return Triple(sut, mockClient, logger)
     }
 
     private fun hashedFolder(): String {
