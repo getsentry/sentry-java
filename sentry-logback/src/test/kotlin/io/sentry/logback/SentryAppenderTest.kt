@@ -95,7 +95,6 @@ class SentryAppenderTest {
         )
     }
 
-
     @Test
     fun `converts message`() {
         fixture = Fixture(minimumEventLevel = Level.DEBUG)
@@ -119,7 +118,7 @@ class SentryAppenderTest {
         var encoder = PatternLayoutEncoder()
         encoder.pattern = "encoderadded %msg"
         fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder)
-        fixture.logger.info("testing encoding");
+        fixture.logger.info("testing encoding")
 
         verify(fixture.transport).send(
             checkEvent { event ->
@@ -133,8 +132,8 @@ class SentryAppenderTest {
         )
     }
 
-    class ThrowingEncoder: EncoderBase<ILoggingEvent> {
-        constructor(): super()
+    class ThrowingEncoder : EncoderBase<ILoggingEvent> {
+        constructor() : super()
         override fun headerBytes(): ByteArray {
             TODO("Not yet implemented")
         }
@@ -152,7 +151,7 @@ class SentryAppenderTest {
     fun `fallsback when encoder throws`() {
         var encoder = ThrowingEncoder()
         fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder)
-        fixture.logger.info("testing when encoder throws");
+        fixture.logger.info("testing when encoder throws")
 
         verify(fixture.transport).send(
             checkEvent { event ->
@@ -165,7 +164,6 @@ class SentryAppenderTest {
             anyOrNull()
         )
     }
-
 
     @Test
     fun `event date is in UTC`() {
