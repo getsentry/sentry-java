@@ -10,7 +10,7 @@ import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
-import io.sentry.util.SampleRateUtil;
+import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
@@ -745,7 +745,7 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    if (!SampleRateUtil.isValidSampleRate(sampleRate)) {
+    if (!SampleRateUtils.isValidSampleRate(sampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + sampleRate
@@ -769,7 +769,7 @@ public class SentryOptions {
    * @param tracesSampleRate the sample rate
    */
   public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
-    if (!SampleRateUtil.isValidTracesSampleRate(tracesSampleRate)) {
+    if (!SampleRateUtils.isValidTracesSampleRate(tracesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + tracesSampleRate
@@ -1568,7 +1568,7 @@ public class SentryOptions {
    * @param profilesSampleRate the sample rate
    */
   public void setProfilesSampleRate(final @Nullable Double profilesSampleRate) {
-    if (!SampleRateUtil.isValidProfilesSampleRate(profilesSampleRate)) {
+    if (!SampleRateUtils.isValidProfilesSampleRate(profilesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + profilesSampleRate

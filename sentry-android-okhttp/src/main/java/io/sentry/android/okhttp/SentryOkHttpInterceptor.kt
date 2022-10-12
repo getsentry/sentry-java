@@ -14,6 +14,7 @@ import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Message
+import io.sentry.util.HttpHeadersUtils
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -144,23 +145,10 @@ class SentryOkHttpInterceptor(
 
         val mechanism = Mechanism().apply {
             type = "SentryOkHttpInterceptor"
-
-//            // with description, mechanism in the UI is buggy
-//            description = message
-
-            // TODO: should it be synthetic? likely not, mechanism SentryOkHttpInterceptor should be considered for grouping
-//            synthetic = true
         }
         val exception = SentryHttpClientError("Event was captured because the request status code was ${response.code}")
-        // TODO: okhttp thread uses thread pool so its always the same stack trace (okhttp frames only), stacktrace is set as snapshot=true, is that ok?
         val mechanismException = ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
         val event = SentryEvent(mechanismException)
-
-        // TODO: Do we need a message if the request and response already have the info?
-        val sentryMessage = Message().apply {
-            message = "HTTP url: %s status: %s"
-            params = listOf(requestUrl, response.code.toString())
-        }
 
         val hint = Hint()
         hint.set("request", request)
@@ -175,7 +163,8 @@ class SentryOkHttpInterceptor(
 
         val sentryRequest = io.sentry.protocol.Request().apply {
             url = requestUrl
-            cookies = request.headers["Cookie"]
+            // Cookie is only sent if isSendDefaultPii is enabled
+            cookies = if (hub.options.isSendDefaultPii) request.headers["Cookie"] else null
             method = request.method
             queryString = query
             headers = getHeaders(request.headers)
@@ -190,7 +179,8 @@ class SentryOkHttpInterceptor(
         }
 
         val sentryResponse = io.sentry.protocol.Response().apply {
-            cookies = response.headers["Cookie"]
+            // Cookie is only sent if isSendDefaultPii is enabled due to PII
+            cookies = if (hub.options.isSendDefaultPii) response.headers["Cookie"] else null
             headers = getHeaders(response.headers)
             statusCode = response.code
 
@@ -202,7 +192,6 @@ class SentryOkHttpInterceptor(
         event.tags = tags
         event.request = sentryRequest
         event.contexts.setResponse(sentryResponse)
-        event.message = sentryMessage
 
         hub.captureEvent(event, hint)
     }
@@ -217,8 +206,7 @@ class SentryOkHttpInterceptor(
     }
 
     private fun getHeaders(requestHeaders: Headers): MutableMap<String, String>? {
-        // TODO: should it be under isSendDefaultPii?
-        // Server already does data scrubbing
+        // Headers are only sent if isSendDefaultPii is enabled due to PII
         if (!hub.options.isSendDefaultPii) {
             return null
         }
@@ -226,8 +214,13 @@ class SentryOkHttpInterceptor(
         val headers = mutableMapOf<String, String>()
 
         for (i in 0 until requestHeaders.size) {
-            // TODO: should we remove sentry-trace and baggage from headers?
             val name = requestHeaders.name(i)
+
+            // header is only sent if isn't sensitive
+            if (HttpHeadersUtils.containsSensitiveHeader(name)) {
+                continue
+            }
+
             val value = requestHeaders.value(i)
             headers[name] = value
         }

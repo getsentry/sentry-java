@@ -3,7 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
-import io.sentry.util.SampleRateUtil;
+import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -313,7 +313,7 @@ public final class Baggage {
   }
 
   private static @Nullable String sampleRateToString(@Nullable Double sampleRateAsDouble) {
-    if (!SampleRateUtil.isValidTracesSampleRate(sampleRateAsDouble, false)) {
+    if (!SampleRateUtils.isValidTracesSampleRate(sampleRateAsDouble, false)) {
       return null;
     }
 
@@ -333,7 +333,7 @@ public final class Baggage {
     if (sampleRateString != null) {
       try {
         double sampleRate = Double.parseDouble(sampleRateString);
-        if (SampleRateUtil.isValidTracesSampleRate(sampleRate, false)) {
+        if (SampleRateUtils.isValidTracesSampleRate(sampleRate, false)) {
           return sampleRate;
         }
       } catch (NumberFormatException e) {
