@@ -3,7 +3,7 @@ package io.sentry.spring.webflux;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.protocol.Request;
-import io.sentry.util.HttpHeadersUtils;
+import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +42,7 @@ public class SentryRequestResolver {
     for (Map.Entry<String, List<String>> entry : request.entrySet()) {
       // do not copy personal information identifiable headers
       if (hub.getOptions().isSendDefaultPii()
-          || !HttpHeadersUtils.containsSensitiveHeader(entry.getKey())) {
+          || !HttpUtils.containsSensitiveHeader(entry.getKey())) {
         headersMap.put(entry.getKey(), toString(entry.getValue()));
       }
     }

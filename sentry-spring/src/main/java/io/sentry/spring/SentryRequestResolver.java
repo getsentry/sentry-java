@@ -3,7 +3,7 @@ package io.sentry.spring;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IHub;
 import io.sentry.protocol.Request;
-import io.sentry.util.HttpHeadersUtils;
+import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -41,8 +41,7 @@ public class SentryRequestResolver {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
       // do not copy personal information identifiable headers
-      if (hub.getOptions().isSendDefaultPii()
-          || !HttpHeadersUtils.containsSensitiveHeader(headerName)) {
+      if (hub.getOptions().isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
         headersMap.put(headerName, toString(request.getHeaders(headerName)));
       }
     }

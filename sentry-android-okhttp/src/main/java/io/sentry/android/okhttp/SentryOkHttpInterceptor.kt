@@ -3,17 +3,19 @@ package io.sentry.android.okhttp
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
+import io.sentry.HttpStatusCodeRange
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryEvent
 import io.sentry.SpanStatus
-import io.sentry.util.PropagationTargetsUtils
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.exception.ExceptionMechanismException
+import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
-import io.sentry.util.HttpHeadersUtils
+import io.sentry.util.HttpUtils
+import io.sentry.util.PropagationTargetsUtils
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -25,7 +27,7 @@ class SentryOkHttpInterceptor(
     private val beforeSpan: BeforeSpanCallback? = null,
     // TODO: should this be under the options or here? also define the names
     private val captureFailedRequests: Boolean = false,
-    private val failedRequestStatusCode: List<StatusCodeRange> = listOf(StatusCodeRange(500, 599)),
+    private val failedRequestStatusCode: List<HttpStatusCodeRange> = listOf(HttpStatusCodeRange(500, 599)),
     private val failedRequestsTargets: List<String> = listOf(".*")
 ) : Interceptor {
 
@@ -145,7 +147,7 @@ class SentryOkHttpInterceptor(
         val mechanism = Mechanism().apply {
             type = "SentryOkHttpInterceptor"
         }
-        val exception = SentryHttpClientError("Event was captured because the request status code was ${response.code}")
+        val exception = SentryHttpClientException("Event was captured because the request status code was ${response.code}")
         val mechanismException = ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
         val event = SentryEvent(mechanismException)
 
@@ -216,7 +218,7 @@ class SentryOkHttpInterceptor(
             val name = requestHeaders.name(i)
 
             // header is only sent if isn't sensitive
-            if (HttpHeadersUtils.containsSensitiveHeader(name)) {
+            if (HttpUtils.containsSensitiveHeader(name)) {
                 continue
             }
 

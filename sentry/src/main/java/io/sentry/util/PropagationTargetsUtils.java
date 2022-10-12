@@ -2,13 +2,10 @@ package io.sentry.util;
 
 import java.net.URI;
 import java.util.List;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Checks if an URL matches the list of origins.
- */
+/** Checks if an URL matches the list of origins. */
 @ApiStatus.Internal
 public final class PropagationTargetsUtils {
 

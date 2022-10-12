@@ -7,7 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public final class HttpHeadersUtils {
+public final class HttpUtils {
   private static final List<String> SENSITIVE_HEADERS =
       Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
 
