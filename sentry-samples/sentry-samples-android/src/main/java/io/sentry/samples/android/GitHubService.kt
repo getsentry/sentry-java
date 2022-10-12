@@ -17,4 +17,6 @@ interface GitHubService {
 
 class Repo {
     val full_name: String = ""
+//    TODO: throws json serialization error, because it should be a boolean
+//    val private: Int = 1
 }

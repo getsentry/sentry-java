@@ -31,6 +31,7 @@ class SentryOkHttpInterceptor(
     private val failedRequestsTargets: List<String> = listOf(".*")
 ) : Interceptor {
 
+    constructor() : this(HubAdapter.getInstance())
     constructor(hub: IHub) : this(hub, null)
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
@@ -66,6 +67,8 @@ class SentryOkHttpInterceptor(
             span?.status = SpanStatus.fromHttpStatusCode(code)
 
             // OkHttp errors (4xx, 5xx) don't throw, so it's safe to call within this block.
+            // breadcrumbs are added on the finally block because we'd like to know if the device
+            // had an unstable connection or something similar
             captureEvent(request, response)
 
             return response
@@ -119,8 +122,6 @@ class SentryOkHttpInterceptor(
         }
     }
 
-    // TODO: ignore exceptions of the type UnknownHostException
-
     private fun captureEvent(request: Request, response: Response) {
         // not possible to get a parameterized url, but we remove at least the
         // query string and the fragment.
@@ -172,7 +173,8 @@ class SentryOkHttpInterceptor(
             fragment = urlFragment
 
             request.body?.contentLength().ifHasValidLength {
-                // TODO: should be mapped in relay and added to the protocol
+                // TODO: should be mapped in relay and added to the protocol, right now
+                // relay isn't retaining unmapped fields
                 unknownRequestFields["body_size"] = it
             }
 
