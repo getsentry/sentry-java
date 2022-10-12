@@ -130,13 +130,16 @@ object Config {
 
     object TestLibs {
         private val androidxTestVersion = "1.4.0"
+        // todo This beta version is needed to run ui tests on Android 13.
+        //  It will be replaced by androidxTestVersion when 1.5.0 will be out.
+        private val androidxTestVersionBeta = "1.5.0-beta01"
         private val espressoVersion = "3.4.0"
 
         val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-        val androidxCore = "androidx.test:core:$androidxTestVersion"
+        val androidxCore = "androidx.test:core:$androidxTestVersionBeta"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxTestCoreKtx = "androidx.test:core-ktx:$androidxTestVersion"
+        val androidxTestCoreKtx = "androidx.test:core-ktx:$androidxTestVersionBeta"
         val androidxTestRules = "androidx.test:rules:$androidxTestVersion"
         val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
         val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
