@@ -15,8 +15,8 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
-import io.sentry.util.PropagationTargetsUtils
 import io.sentry.TypeCheckHint
+import io.sentry.util.PropagationTargetsUtils
 
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
     HttpInterceptor {

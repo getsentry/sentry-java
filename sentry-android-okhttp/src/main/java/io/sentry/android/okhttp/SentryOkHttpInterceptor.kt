@@ -8,12 +8,12 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryEvent
 import io.sentry.SpanStatus
-import io.sentry.util.PropagationTargetsUtils
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.util.HttpHeadersUtils
+import io.sentry.util.PropagationTargetsUtils
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Request
