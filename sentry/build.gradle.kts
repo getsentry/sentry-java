@@ -34,6 +34,7 @@ dependencies {
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.javaFaker)
     testImplementation(projects.sentryTestSupport)
+    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
 configure<SourceSetContainer> {

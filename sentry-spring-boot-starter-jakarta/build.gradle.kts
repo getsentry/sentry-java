@@ -79,6 +79,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterWebflux)
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
+    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
 configure<SourceSetContainer> {

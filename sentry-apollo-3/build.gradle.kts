@@ -40,6 +40,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.mockWebserver4)
+    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
 configure<SourceSetContainer> {

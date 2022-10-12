@@ -58,6 +58,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
 configure<SourceSetContainer> {

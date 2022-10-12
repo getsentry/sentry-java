@@ -35,6 +35,7 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.Libs.logbackClassic)
+    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
 configure<SourceSetContainer> {

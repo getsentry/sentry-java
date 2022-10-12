@@ -74,6 +74,7 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
+    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
 tasks.withType<Detekt> {

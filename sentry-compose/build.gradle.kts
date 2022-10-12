@@ -55,6 +55,7 @@ kotlin {
                 implementation(Config.TestLibs.kotlinTestJunit)
                 implementation(Config.TestLibs.mockitoKotlin)
                 implementation(Config.TestLibs.mockitoInline)
+                implementation(Config.TestLibs.byteBuddyJava17Compatible)
             }
         }
     }

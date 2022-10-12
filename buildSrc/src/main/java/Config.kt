@@ -156,6 +156,7 @@ object Config {
         val robolectric = "org.robolectric:robolectric:4.7.3"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
         val mockitoInline = "org.mockito:mockito-inline:4.3.1"
+        val byteBuddyJava17Compatible = "net.bytebuddy:byte-buddy:1.12.18"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val mockWebserver4 = "com.squareup.okhttp3:mockwebserver:4.9.3"
