@@ -173,13 +173,32 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public @NotNull SentryId captureProfile(final @NotNull ProfilingTraceData profilingTraceData) {
+    return Sentry.getCurrentHub().captureProfile(profilingTraceData);
+  }
+
+  /**
+   * @deprecated please use {{@link Hub#captureTransaction(SentryTransaction, TraceContext, Hint)}}
+   *     and {{@link Hub#captureProfile(ProfilingTraceData)}} instead.
+   */
+  @Deprecated
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
       @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData) {
-    return Sentry.getCurrentHub()
-        .captureTransaction(transaction, traceContext, hint, profilingTraceData);
+    if (profilingTraceData != null) {
+      captureProfile(profilingTraceData);
+    }
+    return captureTransaction(transaction, traceContext, hint);
+  }
+
+  @Override
+  public @NotNull SentryId captureTransaction(
+      @NotNull SentryTransaction transaction,
+      @Nullable TraceContext traceContext,
+      @Nullable Hint hint) {
+    return Sentry.getCurrentHub().captureTransaction(transaction, traceContext, hint);
   }
 
   @Override
