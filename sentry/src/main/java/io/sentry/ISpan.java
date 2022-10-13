@@ -169,4 +169,29 @@ public interface ISpan {
    */
   @Nullable
   Object getData(@NotNull String key);
+
+  /**
+   * Set a measurement without unit. When setting the measurement without the unit, no formatting
+   * will be applied to the measurement value in the Sentry product, and the value will be shown as
+   * is.
+   *
+   * <p>NOTE: Setting a measurement with the same name on the same transaction multiple times only
+   * keeps the last value.
+   *
+   * @param name the name of the measurement
+   * @param value the value of the measurement
+   */
+  void setMeasurement(@NotNull String name, @NotNull Number value);
+
+  /**
+   * Set a measurement with specific unit.
+   *
+   * <p>NOTE: Setting a measurement with the same name on the same transaction multiple times only
+   * keeps the last value.
+   *
+   * @param name the name of the measurement
+   * @param value the value of the measurement
+   * @param unit the unit the value is measured in
+   */
+  void setMeasurement(@NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit);
 }

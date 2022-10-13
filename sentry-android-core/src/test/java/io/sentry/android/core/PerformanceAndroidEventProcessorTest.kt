@@ -5,12 +5,12 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.MeasurementUnit
 import io.sentry.SentryTracer
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.protocol.MeasurementValue
-import io.sentry.protocol.MeasurementValue.MILLISECOND_UNIT
 import io.sentry.protocol.SentryTransaction
 import java.util.Date
 import kotlin.test.BeforeTest
@@ -156,7 +156,7 @@ class PerformanceAndroidEventProcessorTest {
         val tracer = SentryTracer(context, fixture.hub)
         var tr = SentryTransaction(tracer)
 
-        val metrics = mapOf("frames_total" to MeasurementValue(1f, MILLISECOND_UNIT))
+        val metrics = mapOf("frames_total" to MeasurementValue(1f, MeasurementUnit.Duration.MILLISECOND.apiName()))
         whenever(fixture.activityFramesTracker.takeMetrics(any())).thenReturn(metrics)
 
         tr = sut.process(tr, Hint())
