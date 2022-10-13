@@ -159,12 +159,13 @@ spotless {
         target("**/*.java")
         removeUnusedImports()
         googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**")
+        targetExclude("**/generated/**", "**/vendor/**", "sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
     }
 
     kotlin {
         target("**/*.kt")
         ktlint("0.47.1")
+        targetExclude("sentry-spring-jakarta/**", "sentry-spring-boot-starter-jakarta/**")
     }
     kotlinGradle {
         target("**/*.kts")
