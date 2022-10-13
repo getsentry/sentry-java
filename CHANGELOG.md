@@ -6,6 +6,10 @@
 
 - Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
 
+### Features
+
+- Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
+
 ## 6.5.0
 
 ### Fixes
