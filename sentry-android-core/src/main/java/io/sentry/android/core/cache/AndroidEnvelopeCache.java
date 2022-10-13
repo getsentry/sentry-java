@@ -9,8 +9,10 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppStartState;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.DiskFlushNotification;
+import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.File;
@@ -20,11 +22,19 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class AndroidEnvelopeCache extends EnvelopeCache {
 
+  private final @NotNull ICurrentDateProvider currentDateProvider;
+
   public AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options) {
+    this(options, AndroidCurrentDateProvider.getInstance());
+  }
+
+  AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options,
+    final @NotNull ICurrentDateProvider currentDateProvider) {
     super(
-        options,
-        Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null"),
-        options.getMaxCacheItems());
+      options,
+      Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null"),
+      options.getMaxCacheItems());
+    this.currentDateProvider = currentDateProvider;
   }
 
   @Override
@@ -35,7 +45,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
     final Long appStartTime = AppStartState.getInstance().getAppStartMillis();
     if (HintUtils.hasType(hint, DiskFlushNotification.class) && appStartTime != null) {
-      long timeSinceSdkInit = SystemClock.uptimeMillis() - appStartTime;
+      long timeSinceSdkInit = currentDateProvider.getCurrentTimeMillis() - appStartTime;
       if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
         options
             .getLogger()

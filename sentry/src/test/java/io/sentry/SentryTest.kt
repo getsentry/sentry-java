@@ -4,6 +4,8 @@ import com.nhaarman.mockitokotlin2.argThat
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.cache.EnvelopeCache
+import io.sentry.cache.IEnvelopeCache
 import io.sentry.protocol.SentryId
 import org.junit.rules.TemporaryFolder
 import java.io.File
@@ -231,6 +233,39 @@ class SentryTest {
         val hub = Sentry.getCurrentHub()
         assertNotNull(hub)
         assertFalse(hub is NoOpHub)
+    }
+
+    @Test
+    fun `overrides envelope cache if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = getTempPath()
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.envelopeDiskCache is EnvelopeCache }
+    }
+
+    @Test
+    fun `does not override envelope cache if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = getTempPath()
+            it.setEnvelopeDiskCache(CustomEnvelopCache())
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.envelopeDiskCache is CustomEnvelopCache }
+    }
+
+    private class CustomEnvelopCache : IEnvelopeCache {
+        override fun iterator(): MutableIterator<SentryEnvelope> = TODO()
+        override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
+        override fun discard(envelope: SentryEnvelope) = Unit
     }
 
     private fun getTempPath(): String {

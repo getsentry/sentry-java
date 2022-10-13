@@ -97,4 +97,16 @@ public final class AppStartState {
     this.appStartTime = appStartTime;
     this.appStartMillis = appStartMillis;
   }
+
+  @TestOnly
+  public synchronized void setAppStartMillis(final long appStartMillis) {
+    this.appStartMillis = appStartMillis;
+  }
+
+  @TestOnly
+  public synchronized void reset() {
+    appStartTime = null;
+    appStartMillis = null;
+    appStartEndMillis = null;
+  }
 }

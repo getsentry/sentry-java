@@ -233,12 +233,10 @@ public final class Sentry {
       final File cacheDir = new File(cacheDirPath);
       cacheDir.mkdirs();
       final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
-      // only overwrite the cache impl if it's not set by Android
+      // only overwrite the cache impl if it's not already set
       if (envelopeCache instanceof NoOpEnvelopeCache) {
         options.setEnvelopeDiskCache(EnvelopeCache.create(options));
       }
-    } else {
-      options.setEnvelopeDiskCache(NoOpEnvelopeCache.getInstance());
     }
 
     final String profilingTracesDirPath = options.getProfilingTracesDirPath();

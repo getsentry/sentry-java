@@ -8,6 +8,7 @@ import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -370,7 +371,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @param startupCrashFlushTimeoutMillis the timeout in Millis
    */
-  public void setStartupCrashFlushTimeoutMillis(long startupCrashFlushTimeoutMillis) {
+  @TestOnly
+  void setStartupCrashFlushTimeoutMillis(long startupCrashFlushTimeoutMillis) {
     this.startupCrashFlushTimeoutMillis = startupCrashFlushTimeoutMillis;
   }
 
@@ -388,7 +390,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @param startupCrashDurationThresholdMillis the threshold in Millis
    */
-  public void setStartupCrashDurationThresholdMillis(long startupCrashDurationThresholdMillis) {
+  @TestOnly
+  void setStartupCrashDurationThresholdMillis(long startupCrashDurationThresholdMillis) {
     this.startupCrashDurationThresholdMillis = startupCrashDurationThresholdMillis;
   }
 }

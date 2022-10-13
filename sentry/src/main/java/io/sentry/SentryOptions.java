@@ -28,6 +28,7 @@ import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options */
 @Open
@@ -1085,7 +1086,9 @@ public class SentryOptions {
    *
    * @param executorService the SentryExecutorService
    */
-  void setExecutorService(final @NotNull ISentryExecutorService executorService) {
+  @ApiStatus.Internal
+  @TestOnly
+  public void setExecutorService(final @NotNull ISentryExecutorService executorService) {
     if (executorService != null) {
       this.executorService = executorService;
     }

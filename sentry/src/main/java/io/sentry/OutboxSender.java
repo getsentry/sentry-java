@@ -2,6 +2,7 @@ package io.sentry;
 
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
+import static io.sentry.cache.EnvelopeCache.STARTUP_CRASH_MARKER_FILE;
 
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.Flushable;
