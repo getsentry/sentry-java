@@ -5,6 +5,7 @@
 ### Fixes
 
 - Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
+- Support newer versions of Spring and Spring Boot ([#2289](https://github.com/getsentry/sentry-java/pull/2289))
 
 ## 6.5.0
 

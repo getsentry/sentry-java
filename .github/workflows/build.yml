@@ -16,8 +16,7 @@ jobs:
       matrix:
         # TODO: windows-latest
         os: [ubuntu-latest, macos-latest]
-        # Zulu Community distribution of OpenJDK
-        java: ['11']
+        java: ['17']
 
     steps:
       - name: Git checkout
@@ -27,7 +26,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'adopt'
+          distribution: 'temurin'
 
       - name: Cache Gradle packages
         uses: actions/cache@v2
