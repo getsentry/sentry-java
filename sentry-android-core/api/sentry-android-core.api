@@ -1,6 +1,7 @@
 public final class io/sentry/android/core/ActivityFramesTracker {
 	public fun <init> (Lio/sentry/android/core/LoadClass;)V
 	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/ILogger;)V
+	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/ILogger;Lio/sentry/android/core/MainLooperHandler;)V
 	public fun addActivity (Landroid/app/Activity;)V
 	public fun setMetrics (Landroid/app/Activity;Lio/sentry/protocol/SentryId;)V
 	public fun stop ()V
