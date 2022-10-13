@@ -78,10 +78,7 @@ final class ManifestMetadataReader {
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
   static final String COLLECT_ADDITIONAL_CONTEXT = "io.sentry.additional-context";
 
-  static final String STARTUP_CRASH_FLUSH_TIMEOUT = "io.sentry.startup-crash.flush-timeout";
-
-  static final String STARTUP_CRASH_DURATION_THRESHOLD =
-      "io.sentry.startup-crash.duration-threshold";
+  static final String STARTUP_CRASH_ENABLE = "io.sentry.startup-crashes.enable";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -231,19 +228,9 @@ final class ManifestMetadataReader {
                 COLLECT_ADDITIONAL_CONTEXT,
                 options.isCollectAdditionalContext()));
 
-        options.setStartupCrashDurationThresholdMillis(
-            readLong(
-                metadata,
-                logger,
-                STARTUP_CRASH_DURATION_THRESHOLD,
-                options.getStartupCrashDurationThresholdMillis()));
-
-        options.setStartupCrashFlushTimeoutMillis(
-            readLong(
-                metadata,
-                logger,
-                STARTUP_CRASH_FLUSH_TIMEOUT,
-                options.getStartupCrashFlushTimeoutMillis()));
+        options.setEnableStartupCrashDetection(
+            readBool(
+                metadata, logger, STARTUP_CRASH_ENABLE, options.isEnableStartupCrashDetection()));
 
         if (options.getTracesSampleRate() == null) {
           final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);

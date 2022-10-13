@@ -132,7 +132,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getProfilingTracesHz ()I
 	public fun getProfilingTracesIntervalMillis ()I
 	public fun getStartupCrashDurationThresholdMillis ()J
-	public fun getStartupCrashFlushTimeoutMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
 	public fun isAttachScreenshot ()Z
@@ -142,6 +141,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAppComponentBreadcrumbs ()Z
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
+	public fun isEnableStartupCrashDetection ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableUserInteractionBreadcrumbs ()Z
 	public fun isEnableUserInteractionTracing ()Z
@@ -156,6 +156,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAppComponentBreadcrumbs (Z)V
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
+	public fun setEnableStartupCrashDetection (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableUserInteractionBreadcrumbs (Z)V
 	public fun setEnableUserInteractionTracing (Z)V

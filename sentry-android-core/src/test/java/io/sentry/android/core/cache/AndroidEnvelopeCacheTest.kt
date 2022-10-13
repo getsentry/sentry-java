@@ -1,8 +1,12 @@
 package io.sentry.android.core.cache
 
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import io.sentry.ILogger
 import io.sentry.SentryEnvelope
+import io.sentry.SentryLevel.DEBUG
 import io.sentry.android.core.AppStartState
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.cache.EnvelopeCache
@@ -25,9 +29,11 @@ class AndroidEnvelopeCacheTest {
         }
         val options = SentryAndroidOptions()
         val dateProvider = mock<ICurrentDateProvider>()
+        val logger = mock<ILogger>()
         lateinit var markerFile: File
 
         fun getSut(
+            enableStartupCrashDetection: Boolean = true,
             appStartMillis: Long? = null,
             currentTimeMillis: Long? = null
         ): AndroidEnvelopeCache {
@@ -37,7 +43,9 @@ class AndroidEnvelopeCacheTest {
 
             markerFile = File(outboxDir, EnvelopeCache.STARTUP_CRASH_MARKER_FILE)
 
-            options.setLogger(mock())
+            options.setLogger(logger)
+            options.isDebug = true
+            options.isEnableStartupCrashDetection = enableStartupCrashDetection
 
             if (appStartMillis != null) {
                 AppStartState.getInstance().setAppStartMillis(appStartMillis)
@@ -106,6 +114,16 @@ class AndroidEnvelopeCacheTest {
         cache.store(fixture.envelope, hints)
 
         assertTrue(fixture.markerFile.exists())
+    }
+
+    @Test
+    fun `when startup crashes detection is disabled, does not write startup crash file`() {
+        val cache = fixture.getSut(enableStartupCrashDetection = false)
+
+        cache.store(fixture.envelope)
+
+        verify(fixture.logger).log(eq(DEBUG), eq("Startup Crash detection is disabled."))
+        assertFalse(fixture.markerFile.exists())
     }
 
     internal class DiskFlushHint : DiskFlushNotification {

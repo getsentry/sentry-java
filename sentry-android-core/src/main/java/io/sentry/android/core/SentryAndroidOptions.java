@@ -124,12 +124,21 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Controls the threshold after the application startup time, within which a crash should happen
    * to be considered a Startup Crash.
    *
-   * <p>Startup Crashes are sent on @{@link Sentry#init()} in a blocking way, controlled by {@link
+   * <p>Startup Crashes are sent on {@link Sentry#init()} in a blocking way, controlled by {@link
    * SentryAndroidOptions#startupCrashFlushTimeoutMillis}.
    *
    * <p>Default is 2000 = 2s.
    */
-  private long startupCrashDurationThresholdMillis = 2000; // 2s
+  private final long startupCrashDurationThresholdMillis = 2000; // 2s
+
+  /**
+   * Controls whether the SDK should detect Startup Crashes.
+   *
+   * <p>Startup Crashes are sent on {@link Sentry#init()} in a blocking way.
+   *
+   * <p>Default is true
+   */
+  private boolean enableStartupCrashDetection = true;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -362,7 +371,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @return the timeout in Millis
    */
-  public long getStartupCrashFlushTimeoutMillis() {
+  @ApiStatus.Internal
+  long getStartupCrashFlushTimeoutMillis() {
     return startupCrashFlushTimeoutMillis;
   }
 
@@ -381,17 +391,16 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @return the threshold in Millis
    */
+  @ApiStatus.Internal
   public long getStartupCrashDurationThresholdMillis() {
     return startupCrashDurationThresholdMillis;
   }
 
-  /**
-   * Sets the Startup Crash duration threshold in Millis
-   *
-   * @param startupCrashDurationThresholdMillis the threshold in Millis
-   */
-  @TestOnly
-  void setStartupCrashDurationThresholdMillis(long startupCrashDurationThresholdMillis) {
-    this.startupCrashDurationThresholdMillis = startupCrashDurationThresholdMillis;
+  public boolean isEnableStartupCrashDetection() {
+    return enableStartupCrashDetection;
+  }
+
+  public void setEnableStartupCrashDetection(boolean enableStartupCrashDetection) {
+    this.enableStartupCrashDetection = enableStartupCrashDetection;
   }
 }
