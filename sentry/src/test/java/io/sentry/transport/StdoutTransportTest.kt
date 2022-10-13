@@ -1,12 +1,12 @@
 package io.sentry.transport
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.ISerializer
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import kotlin.test.Test
 
 class StdoutTransportTest {

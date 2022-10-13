@@ -1,6 +1,5 @@
 package io.sentry.spring
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.EventProcessor
 import io.sentry.IHub
 import io.sentry.ITransportFactory
@@ -8,6 +7,7 @@ import io.sentry.Integration
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.mock
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean

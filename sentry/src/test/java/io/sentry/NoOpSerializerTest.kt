@@ -1,6 +1,6 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
+import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -7,17 +7,17 @@ import android.content.res.Resources
 import android.util.DisplayMetrics
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hub
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.core.internal.gestures.SentryWindowCallback
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertTrue
 

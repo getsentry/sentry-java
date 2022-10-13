@@ -1,16 +1,16 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argWhere
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.hints.ApplyScopeData
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import io.sentry.util.noFlushTimeout
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argWhere
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths

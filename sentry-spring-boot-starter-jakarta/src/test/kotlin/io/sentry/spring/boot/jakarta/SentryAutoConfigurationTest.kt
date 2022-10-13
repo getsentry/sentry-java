@@ -1,11 +1,6 @@
 package io.sentry.spring.boot.jakarta
 
 import com.acme.MainBootClass
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
@@ -33,6 +28,11 @@ import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations

@@ -4,11 +4,11 @@ import android.content.res.Resources
 import android.view.MotionEvent
 import android.view.View
 import android.view.Window
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doAnswer
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import kotlin.math.abs
 
 internal inline fun <reified T : View> Window.mockDecorView(

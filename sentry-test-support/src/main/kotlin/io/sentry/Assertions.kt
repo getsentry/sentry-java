@@ -1,8 +1,8 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.internal.createInstance
 import io.sentry.protocol.SentryTransaction
 import org.mockito.Mockito
+import org.mockito.kotlin.internal.createInstance
 
 /**
  * Verifies is [SentryEnvelope] contains first event matching a predicate.

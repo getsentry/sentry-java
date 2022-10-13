@@ -1,12 +1,5 @@
 package io.sentry.spring.boot.jakarta.it
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.reset
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
@@ -16,6 +9,13 @@ import io.sentry.spring.jakarta.tracing.SentrySpan
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication

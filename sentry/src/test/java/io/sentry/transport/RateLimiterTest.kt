@@ -1,12 +1,5 @@
 package io.sentry.transport
 
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.same
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Attachment
 import io.sentry.Hint
 import io.sentry.IHub
@@ -27,6 +20,13 @@ import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.same
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals

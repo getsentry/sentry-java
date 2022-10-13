@@ -4,10 +4,10 @@ import android.app.ActivityManager
 import android.app.ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING
 import android.app.ActivityManager.ProcessErrorStateInfo.NO_ERROR
 import android.content.Context
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

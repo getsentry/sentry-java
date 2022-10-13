@@ -1,11 +1,11 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.argThat
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.SentryId
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture

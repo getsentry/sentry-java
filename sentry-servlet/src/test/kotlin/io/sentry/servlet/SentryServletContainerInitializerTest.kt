@@ -1,9 +1,9 @@
 package io.sentry.servlet
 
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import java.util.EventListener
 import javax.servlet.ServletContext
 import kotlin.test.Test

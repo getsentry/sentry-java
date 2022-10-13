@@ -35,7 +35,7 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlinJava17Compatible)
+    testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
