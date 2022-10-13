@@ -140,8 +140,7 @@ public final class ActivityFramesTracker {
     // there was no
     // Observers, See
     // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
-    runSafelyOnUiThread(
-        () -> frameMetricsAggregator.remove(activity), "FrameMetricsAggregator.remove");
+    runSafelyOnUiThread(() -> frameMetricsAggregator.remove(activity), null);
 
     final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
 
@@ -215,16 +214,16 @@ public final class ActivityFramesTracker {
             () -> {
               try {
                 runnable.run();
-              } catch (Throwable t) {
-                if (logger != null) {
-                  logger.log(SentryLevel.ERROR, "Failed to execute " + tag, t);
+              } catch (Throwable ignored) {
+                if (logger != null && tag != null) {
+                  logger.log(SentryLevel.WARNING, "Failed to execute " + tag);
                 }
               }
             });
       }
-    } catch (Throwable t) {
-      if (logger != null) {
-        logger.log(SentryLevel.ERROR, "Failed to execute " + tag, t);
+    } catch (Throwable ignored) {
+      if (logger != null && tag != null) {
+        logger.log(SentryLevel.WARNING, "Failed to execute " + tag);
       }
     }
   }

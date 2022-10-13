@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
+
 ## 6.5.0
 
 ### Fixes
