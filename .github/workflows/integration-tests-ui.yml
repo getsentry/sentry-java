@@ -15,11 +15,11 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      - name: 'Set up Java: 11'
+      - name: 'Set up Java: 17'
         uses: actions/setup-java@v2
         with:
-          java-version: '11'
-          distribution: 'adopt'
+          java-version: '17'
+          distribution: 'temurin'
 
       # Clean, build and release a test apk
       - name: Make assembleUiTests
