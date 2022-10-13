@@ -180,7 +180,8 @@ public final class SentryAndroid {
    * @param options SentryOptions to retrieve cacheDirPath from
    */
   private static void resetEnvelopeCacheIfNeeded(final @NotNull SentryAndroidOptions options) {
-    if (options.getCacheDirPath() == null && options.getEnvelopeDiskCache() instanceof AndroidEnvelopeCache) {
+    if (options.getCacheDirPath() == null
+        && options.getEnvelopeDiskCache() instanceof AndroidEnvelopeCache) {
       options.setEnvelopeDiskCache(NoOpEnvelopeCache.getInstance());
     }
   }

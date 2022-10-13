@@ -9,7 +9,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.MainEventProcessor
-import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
 import io.sentry.SentryOptions
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.fragment.FragmentLifecycleIntegration

@@ -1,7 +1,6 @@
 package io.sentry.android.core.internal.util;
 
 import android.os.SystemClock;
-import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -16,7 +15,8 @@ public final class AndroidCurrentDateProvider implements ICurrentDateProvider {
 
   private AndroidCurrentDateProvider() {}
 
-  @Override public long getCurrentTimeMillis() {
+  @Override
+  public long getCurrentTimeMillis() {
     return SystemClock.uptimeMillis();
   }
 }

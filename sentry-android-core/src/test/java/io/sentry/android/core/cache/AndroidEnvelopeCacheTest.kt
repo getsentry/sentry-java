@@ -2,9 +2,7 @@ package io.sentry.android.core.cache
 
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.ILogger
 import io.sentry.SentryEnvelope
-import io.sentry.SentryOptions
 import io.sentry.android.core.AppStartState
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.cache.EnvelopeCache

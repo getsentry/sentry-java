@@ -3,7 +3,6 @@ package io.sentry.android.core.cache;
 import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
 
-import android.os.SystemClock;
 import io.sentry.Hint;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryOptions;
@@ -28,12 +27,13 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     this(options, AndroidCurrentDateProvider.getInstance());
   }
 
-  AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options,
-    final @NotNull ICurrentDateProvider currentDateProvider) {
+  AndroidEnvelopeCache(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull ICurrentDateProvider currentDateProvider) {
     super(
-      options,
-      Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null"),
-      options.getMaxCacheItems());
+        options,
+        Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null"),
+        options.getMaxCacheItems());
     this.currentDateProvider = currentDateProvider;
   }
 

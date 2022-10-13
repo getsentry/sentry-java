@@ -5,17 +5,12 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.ILogger
-import io.sentry.ISentryExecutorService
-import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
 import io.sentry.SentryLevel.DEBUG
-import io.sentry.SentryLevel.ERROR
-import io.sentry.SentryOptions
 import org.awaitility.kotlin.await
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit.MILLISECONDS
