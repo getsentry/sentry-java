@@ -171,7 +171,7 @@ object Config {
     object QualityPlugins {
         object Jacoco {
             val version = "0.8.7"
-            val minimumCoverage = BigDecimal.valueOf(0.0)
+            val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
         val spotlessVersion = "6.11.0"
