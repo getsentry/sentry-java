@@ -16,6 +16,7 @@ import org.junit.runner.RunWith
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -160,14 +161,24 @@ class EnvelopeTests : BaseUiTest() {
             options.profilesSampleRate = 1.0
         }
         relayIdlingResource.increment()
-        val transaction = Sentry.startTransaction("e2etests", "test empty")
-        transaction.finish()
-        // Let's modify the trace file to be empty, so that the profile will actually be empty.
+        relayIdlingResource.increment()
         val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
-        val origProfileFile = File(profilesDirPath!!).listFiles()?.maxByOrNull { f -> f.lastModified() }
-        origProfileFile?.writeBytes(ByteArray(0))
+        val transaction = Sentry.startTransaction("e2etests", "test empty")
+
+        var finished = false
+        Thread {
+            while (!finished) {
+                // Let's modify the trace file to be empty, so that the profile will actually be empty.
+                val origProfileFile = File(profilesDirPath!!).listFiles()?.maxByOrNull { f -> f.lastModified() }
+                origProfileFile?.writeBytes(ByteArray(0))
+            }
+        }.start()
+        transaction.finish()
+        finished = true
 
         relay.assert {
+            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
+            assertFails { assertEnvelope {} }
             assertEnvelope {
                 it.assertItem<SentryTransaction>()
                 // Since the profile is empty, it is discarded and not sent to Sentry
