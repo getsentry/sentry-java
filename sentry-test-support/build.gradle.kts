@@ -27,7 +27,6 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib))
     implementation(Config.TestLibs.kotlinTestJunit)
     implementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
 configure<SourceSetContainer> {

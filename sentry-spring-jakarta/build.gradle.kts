@@ -70,7 +70,6 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
 tasks.withType<KotlinCompile> {

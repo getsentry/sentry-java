@@ -82,7 +82,6 @@ dependencies {
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
 
 tasks.withType<Detekt> {

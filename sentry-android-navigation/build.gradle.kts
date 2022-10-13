@@ -76,7 +76,6 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 
     testImplementation(Config.TestLibs.robolectric)
     testImplementation(Config.TestLibs.androidxCore)

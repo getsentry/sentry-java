@@ -103,7 +103,6 @@ dependencies {
     testImplementation(Config.TestLibs.androidxCoreKtx)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryAndroidFragment)

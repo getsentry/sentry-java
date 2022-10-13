@@ -112,5 +112,4 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
 
     testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.byteBuddyJava17Compatible)
 }
