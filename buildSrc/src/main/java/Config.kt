@@ -159,6 +159,7 @@ object Config {
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val robolectric = "org.robolectric:robolectric:4.7.3"
         val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
+        val mockitoKotlinJava17Compatible = "org.mockito.kotlin:mockito-kotlin:4.0.0"
         val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val byteBuddyJava17Compatible = "net.bytebuddy:byte-buddy:1.12.18"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
