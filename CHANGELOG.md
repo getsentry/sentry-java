@@ -6,6 +6,10 @@
 
 - Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
 
+### Fixes
+
+- Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
+
 ## 6.5.0
 
 ### Fixes
