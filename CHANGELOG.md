@@ -5,6 +5,7 @@
 ### Fixes
 
 - Ensure potential callback exceptions are caught #2123 ([#2291](https://github.com/getsentry/sentry-java/pull/2291))
+- Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
 
 ## 6.5.0
 
