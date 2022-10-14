@@ -115,7 +115,7 @@ public final class Sentry {
       throws IllegalAccessException, InstantiationException, NoSuchMethodException,
           InvocationTargetException {
     final T options = clazz.createInstance();
-    optionsConfiguration.configure(options);
+    applyOptionsConfiguration(optionsConfiguration, options);
     init(options, globalHubMode);
   }
 
@@ -138,8 +138,19 @@ public final class Sentry {
       final @NotNull OptionsConfiguration<SentryOptions> optionsConfiguration,
       final boolean globalHubMode) {
     final SentryOptions options = new SentryOptions();
-    optionsConfiguration.configure(options);
+    applyOptionsConfiguration(optionsConfiguration, options);
     init(options, globalHubMode);
+  }
+
+  private static <T extends SentryOptions> void applyOptionsConfiguration(
+      OptionsConfiguration<T> optionsConfiguration, T options) {
+    try {
+      optionsConfiguration.configure(options);
+    } catch (Throwable t) {
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Error in the 'OptionsConfiguration.configure' callback.", t);
+    }
   }
 
   /**
