@@ -4,7 +4,12 @@
 
 ### Fixes
 
+- Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
 - Ignore broken regex for tracePropagationTarget ([#2288](https://github.com/getsentry/sentry-java/pull/2288))
+
+### Features
+
+- Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
 
 ## 6.5.0
 
