@@ -68,6 +68,7 @@ class SentryAppenderTest {
 
     @AfterTest
     fun `stop logback`() {
+        fixture.loggerContext.statusManager.clear()
         fixture.loggerContext.stop()
         Sentry.close()
     }
