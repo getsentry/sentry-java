@@ -433,6 +433,24 @@ class HubTest {
         assertEquals("testValue", argumentCaptor.allValues[0].tags["test"])
         assertNull(argumentCaptor.allValues[1].tags["test"])
     }
+
+    @Test
+    fun `when captureEvent is called with a ScopeCallback that crashes then the event should still be captured`() {
+        val (sut, mockClient, logger) = getEnabledHub()
+
+        val exception = Exception("scope callback exception")
+        sut.captureEvent(SentryEvent(), null) {
+            throw exception
+        }
+
+        verify(mockClient).captureEvent(
+            any(),
+            anyOrNull(),
+            anyOrNull()
+        )
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+    }
     //endregion
 
     //region captureMessage tests
@@ -507,6 +525,24 @@ class HubTest {
 
         assertEquals("testValue", argumentCaptor.allValues[0].tags["test"])
         assertNull(argumentCaptor.allValues[1].tags["test"])
+    }
+
+    @Test
+    fun `when captureMessage is called with a ScopeCallback that crashes then the message should still be captured`() {
+        val (sut, mockClient, logger) = getEnabledHub()
+
+        val exception = Exception("scope callback exception")
+        sut.captureMessage("Hello World") {
+            throw exception
+        }
+
+        verify(mockClient).captureMessage(
+            any(),
+            anyOrNull(),
+            anyOrNull()
+        )
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
     }
 
     //endregion
@@ -621,6 +657,24 @@ class HubTest {
         assertNull(argumentCaptor.allValues[1].tags["test"])
     }
 
+    @Test
+    fun `when captureException is called with a ScopeCallback that crashes then the exception should still be captured`() {
+        val (sut, mockClient, logger) = getEnabledHub()
+
+        val exception = Exception("scope callback exception")
+        sut.captureException(Throwable()) {
+            throw exception
+        }
+
+        verify(mockClient).captureEvent(
+            any(),
+            anyOrNull(),
+            anyOrNull()
+        )
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+    }
+
     //endregion
 
     //region captureUserFeedback tests
@@ -708,6 +762,20 @@ class HubTest {
         sut.withScope(scopeCallback)
         verify(scopeCallback).run(any())
     }
+
+    @Test
+    fun `when withScope throws an exception then it should be caught`() {
+        val (hub, _, logger) = getEnabledHub()
+
+        val exception = Exception("scope callback exception")
+        val scopeCallback = ScopeCallback {
+            throw exception
+        }
+
+        hub.withScope(scopeCallback)
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+    }
     //endregion
 
     //region configureScope tests
@@ -730,6 +798,20 @@ class HubTest {
 
         sut.configureScope(scopeCallback)
         verify(scopeCallback).run(any())
+    }
+
+    @Test
+    fun `when configureScope throws an exception then it should be caught`() {
+        val (hub, _, logger) = getEnabledHub()
+
+        val exception = Exception("scope callback exception")
+        val scopeCallback = ScopeCallback {
+            throw exception
+        }
+
+        hub.configureScope(scopeCallback)
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
     }
     //endregion
 
@@ -1555,16 +1637,21 @@ class HubTest {
         return Hub(options)
     }
 
-    private fun getEnabledHub(): Pair<Hub, ISentryClient> {
+    private fun getEnabledHub(): Triple<Hub, ISentryClient, ILogger> {
+        val logger = mock<ILogger>()
+
         val options = SentryOptions()
         options.cacheDirPath = file.absolutePath
         options.dsn = "https://key@sentry.io/proj"
         options.setSerializer(mock())
         options.tracesSampleRate = 1.0
+        options.isDebug = true
+        options.setLogger(logger)
+
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
-        return Pair(sut, mockClient)
+        return Triple(sut, mockClient, logger)
     }
 
     private fun hashedFolder(): String {

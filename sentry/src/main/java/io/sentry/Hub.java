@@ -830,9 +830,13 @@ public final class Hub implements IHub {
   private Scope buildLocalScope(
       final @NotNull Scope scope, final @Nullable ScopeCallback callback) {
     if (callback != null) {
-      final Scope localScope = new Scope(scope);
-      callback.run(localScope);
-      return localScope;
+      try {
+        final Scope localScope = new Scope(scope);
+        callback.run(localScope);
+        return localScope;
+      } catch (Throwable t) {
+        options.getLogger().log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
+      }
     }
     return scope;
   }
