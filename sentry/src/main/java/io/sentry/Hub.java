@@ -602,11 +602,39 @@ public final class Hub implements IHub {
 
   @ApiStatus.Internal
   @Override
+  public @NotNull SentryId captureProfile(final @NotNull ProfilingTraceData profilingTraceData) {
+    Objects.requireNonNull(profilingTraceData, "Profiling trace data is required");
+
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureProfile' call is a no-op.");
+    } else {
+      StackItem item = null;
+      try {
+        item = stack.peek();
+        sentryId = item.getClient().captureProfile(profilingTraceData);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Error while capturing profile with id: " + profilingTraceData.getProfileId(),
+                e);
+      }
+    }
+    return sentryId;
+  }
+
+  @ApiStatus.Internal
+  @Override
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceContext traceContext,
-      final @Nullable Hint hint,
-      final @Nullable ProfilingTraceData profilingTraceData) {
+      final @Nullable Hint hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -641,8 +669,7 @@ public final class Hub implements IHub {
             item = stack.peek();
             sentryId =
                 item.getClient()
-                    .captureTransaction(
-                        transaction, traceContext, item.getScope(), hint, profilingTraceData);
+                    .captureTransaction(transaction, traceContext, item.getScope(), hint);
           } catch (Throwable e) {
             options
                 .getLogger()

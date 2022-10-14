@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
+
 ### Fixes
 
 - Ensure potential callback exceptions are caught #2123 ([#2291](https://github.com/getsentry/sentry-java/pull/2291))
