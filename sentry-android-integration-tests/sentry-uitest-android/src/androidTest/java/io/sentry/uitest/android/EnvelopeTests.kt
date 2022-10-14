@@ -204,7 +204,6 @@ class EnvelopeTests : BaseUiTest() {
         // We don't call transaction.finish() and let the timeout do its job
 
         relay.assert {
-            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
             assertEnvelope {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()

@@ -67,6 +67,8 @@ class MockRelay(
     /** Shutdown the mock relay server and clear everything. */
     fun shutdown() {
         responses.clear()
+        unassertedEnvelopes.clear()
+        unassertedRequests.clear()
         relay.shutdown()
     }
 
