@@ -1,10 +1,10 @@
-# Sentry Sample Spring Boot
+# Sentry Sample Spring Boot 3.0+
 
-Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot).
+Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot) from version `3.0` onwards.
 
 ## How to run? 
 
-To see events triggered in this sample application in your Sentry dashboard, go to `src/main/resources/application.properties` and replace the test DSN with your own DSN. 
+To see events triggered in this sample application in your Sentry dashboard, go to `src/main/resources/application.properties` and replace the test DSN with your own DSN.
 
 Then, execute a command from the module directory:
 
