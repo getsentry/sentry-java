@@ -1,4 +1,4 @@
-package io.sentry.android.fragment
+package io.sentry.android.fragment.internal
 
 import android.content.Context
 import android.os.Bundle
@@ -14,23 +14,15 @@ import io.sentry.ISpan
 import io.sentry.SentryLevel.INFO
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.ANDROID_FRAGMENT
+import io.sentry.android.fragment.FragmentLifecycleState
 import java.util.WeakHashMap
 
 @Suppress("TooManyFunctions")
-class SentryFragmentLifecycleCallbacks(
+internal class SentryFragmentLifecycleCallbacks(
     private val hub: IHub = HubAdapter.getInstance(),
-    val enableFragmentLifecycleBreadcrumbs: Boolean,
+    val loggedFragmentLifecycleStates: Set<FragmentLifecycleState>,
     val enableAutoFragmentLifecycleTracing: Boolean
 ) : FragmentLifecycleCallbacks() {
-
-    constructor(
-        enableFragmentLifecycleBreadcrumbs: Boolean = true,
-        enableAutoFragmentLifecycleTracing: Boolean = false
-    ) : this(
-        hub = HubAdapter.getInstance(),
-        enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
-        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
-    )
 
     private val isPerformanceEnabled get() = hub.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
 
@@ -41,7 +33,7 @@ class SentryFragmentLifecycleCallbacks(
         fragment: Fragment,
         context: Context
     ) {
-        addBreadcrumb(fragment, "attached")
+        addBreadcrumb(fragment, FragmentLifecycleState.ATTACHED)
     }
 
     override fun onFragmentSaveInstanceState(
@@ -49,7 +41,7 @@ class SentryFragmentLifecycleCallbacks(
         fragment: Fragment,
         outState: Bundle
     ) {
-        addBreadcrumb(fragment, "save instance state")
+        addBreadcrumb(fragment, FragmentLifecycleState.SAVE_INSTANCE_STATE)
     }
 
     override fun onFragmentCreated(
@@ -57,7 +49,7 @@ class SentryFragmentLifecycleCallbacks(
         fragment: Fragment,
         savedInstanceState: Bundle?
     ) {
-        addBreadcrumb(fragment, "created")
+        addBreadcrumb(fragment, FragmentLifecycleState.CREATED)
 
         // we only start the tracing for the fragment if the fragment has been added to its activity
         // and not only to the backstack
@@ -72,48 +64,48 @@ class SentryFragmentLifecycleCallbacks(
         view: View,
         savedInstanceState: Bundle?
     ) {
-        addBreadcrumb(fragment, "view created")
+        addBreadcrumb(fragment, FragmentLifecycleState.VIEW_CREATED)
     }
 
     override fun onFragmentStarted(fragmentManager: FragmentManager, fragment: Fragment) {
-        addBreadcrumb(fragment, "started")
+        addBreadcrumb(fragment, FragmentLifecycleState.STARTED)
     }
 
     override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
-        addBreadcrumb(fragment, "resumed")
+        addBreadcrumb(fragment, FragmentLifecycleState.RESUMED)
 
         stopTracing(fragment)
     }
 
     override fun onFragmentPaused(fragmentManager: FragmentManager, fragment: Fragment) {
-        addBreadcrumb(fragment, "paused")
+        addBreadcrumb(fragment, FragmentLifecycleState.PAUSED)
     }
 
     override fun onFragmentStopped(fragmentManager: FragmentManager, fragment: Fragment) {
-        addBreadcrumb(fragment, "stopped")
+        addBreadcrumb(fragment, FragmentLifecycleState.STOPPED)
     }
 
     override fun onFragmentViewDestroyed(fragmentManager: FragmentManager, fragment: Fragment) {
-        addBreadcrumb(fragment, "view destroyed")
+        addBreadcrumb(fragment, FragmentLifecycleState.VIEW_DESTROYED)
     }
 
     override fun onFragmentDestroyed(fragmentManager: FragmentManager, fragment: Fragment) {
-        addBreadcrumb(fragment, "destroyed")
+        addBreadcrumb(fragment, FragmentLifecycleState.DESTROYED)
 
         stopTracing(fragment)
     }
 
     override fun onFragmentDetached(fragmentManager: FragmentManager, fragment: Fragment) {
-        addBreadcrumb(fragment, "detached")
+        addBreadcrumb(fragment, FragmentLifecycleState.DETACHED)
     }
 
-    private fun addBreadcrumb(fragment: Fragment, state: String) {
-        if (!enableFragmentLifecycleBreadcrumbs) {
+    private fun addBreadcrumb(fragment: Fragment, state: FragmentLifecycleState) {
+        if (!loggedFragmentLifecycleStates.contains(state)) {
             return
         }
         val breadcrumb = Breadcrumb().apply {
             type = "navigation"
-            setData("state", state)
+            setData("state", state.breadcrumbName)
             setData("screen", getFragmentName(fragment))
             category = "ui.fragment.lifecycle"
             level = INFO

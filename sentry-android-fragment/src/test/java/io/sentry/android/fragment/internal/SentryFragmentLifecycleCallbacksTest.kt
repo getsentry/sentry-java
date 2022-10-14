@@ -1,4 +1,4 @@
-package io.sentry.android.fragment
+package io.sentry.android.fragment.internal
 
 import android.content.Context
 import android.os.Bundle
@@ -9,6 +9,7 @@ import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
@@ -20,9 +21,11 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
+import io.sentry.android.fragment.FragmentLifecycleState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@Suppress("SameParameterValue")
 class SentryFragmentLifecycleCallbacksTest {
 
     private class Fixture {
@@ -35,7 +38,7 @@ class SentryFragmentLifecycleCallbacksTest {
         val span = mock<ISpan>()
 
         fun getSut(
-            enableFragmentLifecycleBreadcrumbs: Boolean = true,
+            loggedFragmentLifecycleStates: Set<FragmentLifecycleState> = FragmentLifecycleState.values().toSet(),
             enableAutoFragmentLifecycleTracing: Boolean = false,
             tracesSampleRate: Double? = 1.0,
             isAdded: Boolean = true
@@ -53,7 +56,7 @@ class SentryFragmentLifecycleCallbacksTest {
             whenever(fragment.isAdded).thenReturn(isAdded)
             return SentryFragmentLifecycleCallbacks(
                 hub = hub,
-                enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
+                loggedFragmentLifecycleStates = loggedFragmentLifecycleStates,
                 enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
             )
         }
@@ -71,12 +74,14 @@ class SentryFragmentLifecycleCallbacksTest {
     }
 
     @Test
-    fun `When fragment is attached with disabled breadcrumbs, it should not add breadcrumb`() {
-        val sut = fixture.getSut(enableFragmentLifecycleBreadcrumbs = false)
+    fun `When fragment is attached with subset of logged breadcrumbs, it should add only those breadcrumbs`() {
+        val sut = fixture.getSut(loggedFragmentLifecycleStates = setOf(FragmentLifecycleState.CREATED))
 
+        sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
         sut.onFragmentAttached(fixture.fragmentManager, fixture.fragment, fixture.context)
 
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verifyBreadcrumbAddedCount(1)
+        verifyBreadcrumbAdded("created")
     }
 
     @Test
@@ -272,5 +277,9 @@ class SentryFragmentLifecycleCallbacksTest {
             },
             anyOrNull()
         )
+    }
+
+    private fun verifyBreadcrumbAddedCount(count: Int) {
+        verify(fixture.hub, times(count)).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }

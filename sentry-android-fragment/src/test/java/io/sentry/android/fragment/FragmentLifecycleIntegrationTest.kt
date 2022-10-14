@@ -12,8 +12,9 @@ import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
+import io.sentry.android.fragment.internal.SentryFragmentLifecycleCallbacks
 import kotlin.test.Test
-import kotlin.test.assertFalse
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FragmentLifecycleIntegrationTest {
@@ -91,7 +92,7 @@ class FragmentLifecycleIntegrationTest {
             check { fragmentCallbacks ->
                 val callback = (fragmentCallbacks as SentryFragmentLifecycleCallbacks)
                 assertTrue(callback.enableAutoFragmentLifecycleTracing)
-                assertFalse(callback.enableFragmentLifecycleBreadcrumbs)
+                assertEquals(emptySet(), callback.loggedFragmentLifecycleStates)
             },
             eq(true)
         )
