@@ -19,7 +19,9 @@ public final class TracePropagationTargets {
         return true;
       }
       try {
-        return url.matches(origin);
+        if (url.matches(origin)) {
+          return true;
+        }
       } catch (Exception e) {
         // ignore invalid regex
       }
