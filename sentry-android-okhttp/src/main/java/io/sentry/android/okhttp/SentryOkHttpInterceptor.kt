@@ -27,9 +27,16 @@ class SentryOkHttpInterceptor(
     private val beforeSpan: BeforeSpanCallback? = null,
     // should this be under the options or here? also define the names
     private val captureFailedRequests: Boolean = false,
+<<<<<<< HEAD
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)),
     private val failedRequestTargets: List<String> = listOf(".*")
+=======
+    private val failedRequestStatusCode: List<HttpStatusCodeRange> = listOf(
+        HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
+    ),
+    private val failedRequestsTargets: List<String> = listOf(".*")
+>>>>>>> 9b5e6bb971e6b14f2e79f973be95f809430bb790
 ) : Interceptor {
 
     constructor() : this(HubAdapter.getInstance())
@@ -143,8 +150,14 @@ class SentryOkHttpInterceptor(
         }
 
         if (!captureFailedRequests ||
+<<<<<<< HEAD
             !PropagationTargetsUtils.contain(failedRequestTargets, requestUrl) ||
             !containsStatusCode(response.code)) {
+=======
+            !PropagationTargetsUtils.contain(failedRequestsTargets, requestUrl) ||
+            !containsStatusCode(response.code)
+        ) {
+>>>>>>> 9b5e6bb971e6b14f2e79f973be95f809430bb790
             return
         }
 
@@ -152,7 +165,8 @@ class SentryOkHttpInterceptor(
             type = "SentryOkHttpInterceptor"
         }
         val exception = SentryHttpClientException(
-            "Event was captured because the request status code was ${response.code}")
+            "Event was captured because the request status code was ${response.code}"
+        )
         val mechanismException = ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
         val event = SentryEvent(mechanismException)
 

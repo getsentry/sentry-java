@@ -512,6 +512,18 @@ class BaggageTest {
         assertEquals("%22%28%29%2C%2F%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%7B%7D=value", baggage.toHeaderString(null))
     }
 
+    @Test
+    fun `can skip logger for header from single string`() {
+        val baggage = Baggage.fromHeader("sentry-trace_id=a,sentry-transaction=sentryTransaction")
+        assertEquals("sentry-trace_id=a,sentry-transaction=sentryTransaction", baggage.toHeaderString(null))
+    }
+
+    @Test
+    fun `can skip logger for header from list of strings`() {
+        val baggage = Baggage.fromHeader(listOf("sentry-trace_id=a", "sentry-transaction=sentryTransaction"))
+        assertEquals("sentry-trace_id=a,sentry-transaction=sentryTransaction", baggage.toHeaderString(null))
+    }
+
     /**
      * token          = 1*tchar
      * tchar          = "!" / "#" / "$" / "%" / "&" / "'" / "*"
