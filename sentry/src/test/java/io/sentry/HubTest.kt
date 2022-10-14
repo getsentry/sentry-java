@@ -1302,8 +1302,8 @@ class HubTest {
     @Test
     fun `when startTransaction and profiling is enabled, transaction is profiled only if sampled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
-        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenReturn(mock())
         val mockClient = mock<ISentryClient>()
+        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenAnswer { mockClient.captureProfile(mock()) }
         val hub = generateHub {
             it.setTransactionProfiler(mockTransactionProfiler)
         }
@@ -1324,8 +1324,8 @@ class HubTest {
     @Test
     fun `when startTransaction and is sampled but profiling is disabled, transaction is not profiled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
-        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenReturn(mock())
         val mockClient = mock<ISentryClient>()
+        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenAnswer { mockClient.captureProfile(mock()) }
         val hub = generateHub {
             it.profilesSampleRate = 0.0
             it.setTransactionProfiler(mockTransactionProfiler)

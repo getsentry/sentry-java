@@ -11,13 +11,13 @@ import android.os.Build;
 import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
+import io.sentry.HubAdapter;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionProfiler;
 import io.sentry.ProfilingTraceData;
 import io.sentry.ProfilingTransactionData;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
-import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.util.ArrayList;
@@ -48,7 +48,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private @Nullable File traceFile = null;
   private @Nullable File traceFilesDir = null;
   private @Nullable Future<?> scheduledFinish = null;
-  private volatile @Nullable ProfilingTraceData timedOutProfilingData = null;
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -137,9 +136,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       scheduledFinish =
           options
               .getExecutorService()
-              .schedule(
-                  () -> timedOutProfilingData = onTransactionFinish(transaction, true),
-                  PROFILING_TIMEOUT_MILLIS);
+              .schedule(() -> onTransactionFinish(transaction, true), PROFILING_TIMEOUT_MILLIS);
 
       transactionStartNanos = SystemClock.elapsedRealtimeNanos();
       profileStartCpuMillis = Process.getElapsedCpuTime();
@@ -166,45 +163,20 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @Override
-  public synchronized @Nullable ProfilingTraceData onTransactionFinish(
-      @NotNull ITransaction transaction) {
-    return onTransactionFinish(transaction, false);
+  public synchronized void onTransactionFinish(@NotNull ITransaction transaction) {
+    onTransactionFinish(transaction, false);
   }
 
   @SuppressLint("NewApi")
-  private synchronized @Nullable ProfilingTraceData onTransactionFinish(
+  private synchronized void onTransactionFinish(
       @NotNull ITransaction transaction, boolean isTimeout) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return;
 
-    final ProfilingTraceData profilingData = timedOutProfilingData;
-
-    // Transaction finished, but it's not in the current profile
+    // Transaction finished, but it's not in the current profile. We can skip it
     if (!transactionMap.containsKey(transaction.getEventId().toString())) {
-      // We check if we cached a profiling data due to a timeout with this profile in it
-      // If so, we return it back, otherwise we would simply lose it
-      if (profilingData != null) {
-        // Don't use method reference. This can cause issues on Android
-        List<String> ids =
-            CollectionUtils.map(profilingData.getTransactions(), (data) -> data.getId());
-        if (ids.contains(transaction.getEventId().toString())) {
-          timedOutProfilingData = null;
-          return profilingData;
-        } else {
-          // Another transaction is finishing before the timed out one
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.INFO,
-                  "A timed out profiling data exists, but the finishing transaction %s (%s) is not part of it",
-                  transaction.getName(),
-                  transaction.getSpanContext().getTraceId().toString());
-          return null;
-        }
-      }
-      // A transaction is finishing, but it's not profiled. We can skip it
       options
           .getLogger()
           .log(
@@ -212,7 +184,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
               "Transaction %s (%s) finished, but was not currently being profiled. Skipping",
               transaction.getName(),
               transaction.getSpanContext().getTraceId().toString());
-      return null;
+      return;
     }
 
     if (transactionsCounter > 0) {
@@ -239,7 +211,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
             Process.getElapsedCpuTime(),
             profileStartCpuMillis);
       }
-      return null;
+      return;
     }
 
     Debug.stopMethodTracing();
@@ -259,7 +231,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     if (traceFile == null) {
       options.getLogger().log(SentryLevel.ERROR, "Trace file does not exists");
-      return null;
+      return;
     }
 
     String versionName = "";
@@ -287,26 +259,29 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
     // done in the background when the trace file is read
-    return new ProfilingTraceData(
-        traceFile,
-        transactionList,
-        transaction,
-        Long.toString(transactionDurationNanos),
-        buildInfoProvider.getSdkInfoVersion(),
-        abis != null && abis.length > 0 ? abis[0] : "",
-        () -> CpuInfoUtils.getInstance().readMaxFrequencies(),
-        buildInfoProvider.getManufacturer(),
-        buildInfoProvider.getModel(),
-        buildInfoProvider.getVersionRelease(),
-        buildInfoProvider.isEmulator(),
-        totalMem,
-        options.getProguardUuid(),
-        versionName,
-        versionCode,
-        options.getEnvironment(),
-        isTimeout
-            ? ProfilingTraceData.TRUNCATION_REASON_TIMEOUT
-            : ProfilingTraceData.TRUNCATION_REASON_NORMAL);
+    ProfilingTraceData profilingTraceData =
+        new ProfilingTraceData(
+            traceFile,
+            transactionList,
+            transaction,
+            Long.toString(transactionDurationNanos),
+            buildInfoProvider.getSdkInfoVersion(),
+            abis != null && abis.length > 0 ? abis[0] : "",
+            () -> CpuInfoUtils.getInstance().readMaxFrequencies(),
+            buildInfoProvider.getManufacturer(),
+            buildInfoProvider.getModel(),
+            buildInfoProvider.getVersionRelease(),
+            buildInfoProvider.isEmulator(),
+            totalMem,
+            options.getProguardUuid(),
+            versionName,
+            versionCode,
+            options.getEnvironment(),
+            isTimeout
+                ? ProfilingTraceData.TRUNCATION_REASON_TIMEOUT
+                : ProfilingTraceData.TRUNCATION_REASON_NORMAL);
+
+    HubAdapter.getInstance().captureProfile(profilingTraceData);
   }
 
   /**
