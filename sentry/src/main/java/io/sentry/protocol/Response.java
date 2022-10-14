@@ -46,8 +46,8 @@ public final class Response implements JsonUnknown, JsonSerializable {
     this.cookies = response.cookies;
     this.headers = CollectionUtils.newConcurrentHashMap(response.headers);
     this.unknown = CollectionUtils.newConcurrentHashMap(response.unknown);
-    this.setStatusCode(response.getStatusCode());
-    this.setBodySize(response.getBodySize());
+    this.statusCode = response.statusCode;
+    this.bodySize = response.bodySize;
   }
 
   public @Nullable String getCookies() {
@@ -113,11 +113,11 @@ public final class Response implements JsonUnknown, JsonSerializable {
     if (headers != null) {
       writer.name(JsonKeys.HEADERS).value(logger, headers);
     }
-    if (getStatusCode() != null) {
-      writer.name(JsonKeys.STATUS_CODE).value(logger, getStatusCode());
+    if (statusCode != null) {
+      writer.name(JsonKeys.STATUS_CODE).value(logger, statusCode);
     }
-    if (getBodySize() != null) {
-      writer.name(JsonKeys.BODY_SIZE).value(logger, getBodySize());
+    if (bodySize != null) {
+      writer.name(JsonKeys.BODY_SIZE).value(logger, bodySize);
     }
 
     if (unknown != null) {
@@ -152,10 +152,10 @@ public final class Response implements JsonUnknown, JsonSerializable {
             }
             break;
           case JsonKeys.STATUS_CODE:
-            response.setStatusCode(reader.nextIntegerOrNull());
+            response.statusCode = reader.nextIntegerOrNull();
             break;
           case JsonKeys.BODY_SIZE:
-            response.setBodySize(reader.nextLongOrNull());
+            response.bodySize = reader.nextLongOrNull();
             break;
           default:
             if (unknown == null) {

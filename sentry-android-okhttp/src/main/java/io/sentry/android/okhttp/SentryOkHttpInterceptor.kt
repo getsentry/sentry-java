@@ -168,8 +168,6 @@ class SentryOkHttpInterceptor(
 //        tags["status_code"] = response.code.toString()
 //        tags["url"] = requestUrl
 
-        val unknownRequestFields = mutableMapOf<String, Any>()
-
         val sentryRequest = io.sentry.protocol.Request().apply {
             url = requestUrl
             // Cookie is only sent if isSendDefaultPii is enabled
@@ -182,10 +180,8 @@ class SentryOkHttpInterceptor(
             request.body?.contentLength().ifHasValidLength {
                 // should be mapped in relay and added to the protocol, right now
                 // relay isn't retaining unmapped fields
-                unknownRequestFields["body_size"] = it
+                bodySize = it
             }
-
-            unknown = unknownRequestFields.ifEmpty { null }
         }
 
         val sentryResponse = io.sentry.protocol.Response().apply {
