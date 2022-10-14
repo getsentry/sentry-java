@@ -25,31 +25,26 @@ class ProfilingActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityProfilingBinding.inflate(layoutInflater)
 
         binding.profilingDurationSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(p0: SeekBar, p1: Int, p2: Boolean) {
-                val seconds = getProfileDuration(p0)
-                binding.profilingDurationText.text = getString(R.string.profiling_duration, seconds)
+                binding.profilingDurationText.text = getString(R.string.profiling_duration, getProfileDuration())
             }
             override fun onStartTrackingTouch(p0: SeekBar) {}
             override fun onStopTrackingTouch(p0: SeekBar) {}
         })
-        val initialDurationSeconds = getProfileDuration(binding.profilingDurationSeekbar)
-        binding.profilingDurationText.text = getString(R.string.profiling_duration, initialDurationSeconds)
+        binding.profilingDurationText.text = getString(R.string.profiling_duration, getProfileDuration())
 
         binding.profilingThreadsSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(p0: SeekBar, p1: Int, p2: Boolean) {
-                val backgroundThreads = getBackgroundThreads(p0)
-                binding.profilingThreadsText.text = getString(R.string.profiling_threads, backgroundThreads)
+                binding.profilingThreadsText.text = getString(R.string.profiling_threads, getBackgroundThreads())
             }
             override fun onStartTrackingTouch(p0: SeekBar) {}
             override fun onStopTrackingTouch(p0: SeekBar) {}
         })
-        val initialBackgroundThreads = getBackgroundThreads(binding.profilingThreadsSeekbar)
         binding.profilingThreadsSeekbar.max = Runtime.getRuntime().availableProcessors() - 1
-        binding.profilingThreadsText.text = getString(R.string.profiling_threads, initialBackgroundThreads)
+        binding.profilingThreadsText.text = getString(R.string.profiling_threads, getBackgroundThreads())
 
         binding.profilingList.adapter = ProfilingListAdapter()
         binding.profilingList.layoutManager = LinearLayoutManager(this)
@@ -57,8 +52,8 @@ class ProfilingActivity : AppCompatActivity() {
         binding.profilingStart.setOnClickListener {
             binding.profilingProgressBar.visibility = View.VISIBLE
             profileFinished = false
-            val seconds = getProfileDuration(binding.profilingDurationSeekbar)
-            val threads = getBackgroundThreads(binding.profilingThreadsSeekbar)
+            val seconds = getProfileDuration()
+            val threads = getBackgroundThreads()
             val t = Sentry.startTransaction("Profiling Test", "$seconds s - $threads threads")
             repeat(threads) {
                 executors.submit { runMathOperations() }
@@ -75,14 +70,24 @@ class ProfilingActivity : AppCompatActivity() {
         profileFinished = true
         val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
         if (profilesDirPath == null) {
-            Toast.makeText(this, R.string.profiling_running, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.profiling_no_dir_set, Toast.LENGTH_SHORT).show()
             return
         }
+
+        // We have concurrent profiling now. We have to wait for all transactions to finish (e.g. button click)
+        //  before reading the profile, otherwise it's empty and a crash occurs
+        if (Sentry.getSpan() != null) {
+            val timeout = Sentry.getCurrentHub().options.idleTimeout ?: 0
+            val duration = (getProfileDuration() * 1000).toLong()
+            Thread.sleep((timeout - duration).coerceAtLeast(0))
+        }
+
         // Get the last trace file, which is the current profile
         val origProfileFile = File(profilesDirPath).listFiles()?.maxByOrNull { f -> f.lastModified() }
         // Create a new profile file and copy the content of the original file into it
         val profile = File(cacheDir, UUID.randomUUID().toString())
         origProfileFile?.copyTo(profile)
+
         val profileLength = profile.length()
         val traceData = ProfilingTraceData(profile, t)
         // Create envelope item from copied profile
@@ -136,13 +141,13 @@ class ProfilingActivity : AppCompatActivity() {
         }
     }
 
-    private fun getProfileDuration(s: SeekBar): Float {
+    private fun getProfileDuration(): Float {
         // Minimum duration of the profile is 100 milliseconds
-        return s.progress / 10.0F + 0.1F
+        return binding.profilingDurationSeekbar.progress / 10.0F + 0.1F
     }
 
-    private fun getBackgroundThreads(s: SeekBar): Int {
+    private fun getBackgroundThreads(): Int {
         // Minimum duration of the profile is 100 milliseconds
-        return s.progress.coerceIn(0, Runtime.getRuntime().availableProcessors() - 1)
+        return binding.profilingThreadsSeekbar.progress.coerceIn(0, Runtime.getRuntime().availableProcessors() - 1)
     }
 }
