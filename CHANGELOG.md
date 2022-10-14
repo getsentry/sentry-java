@@ -6,6 +6,10 @@
 
 - Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
 
+### Features
+
+- HTTP Client errors for OkHttp ([#2287](https://github.com/getsentry/sentry-java/pull/2287))
+
 ## 6.5.0
 
 ### Fixes
