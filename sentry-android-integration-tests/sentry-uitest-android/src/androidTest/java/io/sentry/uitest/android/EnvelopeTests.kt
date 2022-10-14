@@ -192,7 +192,7 @@ class EnvelopeTests : BaseUiTest() {
     }
 
     @Test
-    fun sendTimedOutProfile() {
+    fun checkTimedOutProfile() {
         // We increase the IdlingResources timeout to exceed the profiling timeout
         IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
         initSentry(true) { options: SentryOptions ->
@@ -231,6 +231,8 @@ class EnvelopeTests : BaseUiTest() {
         benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
         transaction.finish()
         IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
+        // Let this test send all data, so that it doesn't interfere with other tests
+        Thread.sleep(1000)
     }
 
     private fun swipeList(times: Int) {
