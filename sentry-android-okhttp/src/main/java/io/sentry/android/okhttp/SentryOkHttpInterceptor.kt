@@ -27,9 +27,9 @@ class SentryOkHttpInterceptor(
     private val beforeSpan: BeforeSpanCallback? = null,
     // should this be under the options or here? also define the names
     private val captureFailedRequests: Boolean = false,
-    private val failedRequestStatusCode: List<HttpStatusCodeRange> = listOf(
+    private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)),
-    private val failedRequestsTargets: List<String> = listOf(".*")
+    private val failedRequestTargets: List<String> = listOf(".*")
 ) : Interceptor {
 
     constructor() : this(HubAdapter.getInstance())
@@ -143,7 +143,7 @@ class SentryOkHttpInterceptor(
         }
 
         if (!captureFailedRequests ||
-            !PropagationTargetsUtils.contain(failedRequestsTargets, requestUrl) ||
+            !PropagationTargetsUtils.contain(failedRequestTargets, requestUrl) ||
             !containsStatusCode(response.code)) {
             return
         }
@@ -204,7 +204,7 @@ class SentryOkHttpInterceptor(
     }
 
     private fun containsStatusCode(statusCode: Int): Boolean {
-        for (item in failedRequestStatusCode) {
+        for (item in failedRequestStatusCodes) {
             if (item.isInRange(statusCode)) {
                 return true
             }
