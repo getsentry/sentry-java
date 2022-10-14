@@ -2644,6 +2644,7 @@ public final class io/sentry/protocol/OperatingSystem$JsonKeys {
 public final class io/sentry/protocol/Request : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Request;)V
+	public fun getBodySize ()Ljava/lang/Long;
 	public fun getCookies ()Ljava/lang/String;
 	public fun getData ()Ljava/lang/Object;
 	public fun getEnvs ()Ljava/util/Map;
@@ -2655,6 +2656,7 @@ public final class io/sentry/protocol/Request : io/sentry/JsonSerializable, io/s
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUrl ()Ljava/lang/String;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setBodySize (Ljava/lang/Long;)V
 	public fun setCookies (Ljava/lang/String;)V
 	public fun setData (Ljava/lang/Object;)V
 	public fun setEnvs (Ljava/util/Map;)V
@@ -2674,6 +2676,7 @@ public final class io/sentry/protocol/Request$Deserializer : io/sentry/JsonDeser
 }
 
 public final class io/sentry/protocol/Request$JsonKeys {
+	public static final field BODY_SIZE Ljava/lang/String;
 	public static final field COOKIES Ljava/lang/String;
 	public static final field DATA Ljava/lang/String;
 	public static final field ENV Ljava/lang/String;
