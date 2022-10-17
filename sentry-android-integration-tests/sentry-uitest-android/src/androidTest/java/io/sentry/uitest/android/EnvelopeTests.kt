@@ -15,8 +15,8 @@ import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import java.io.File
 import kotlin.test.Test
-import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -48,24 +48,28 @@ class EnvelopeTests : BaseUiTest() {
             options.profilesSampleRate = 1.0
         }
         relayIdlingResource.increment()
+        relayIdlingResource.increment()
         val transaction = Sentry.startTransaction("e2etests", "test1")
 
         transaction.finish()
         relay.assert {
             assertEnvelope {
-                val transactionItem: SentryTransaction = it.assertItem()
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
-                assertTrue(transactionItem.transaction == "e2etests")
-                assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
-                assertTrue(profilingTraceData.transactionName == "e2etests")
+                assertEquals(profilingTraceData.transactionId, transaction.eventId.toString())
+                assertEquals("e2etests", profilingTraceData.transactionName)
                 assertTrue(profilingTraceData.environment.isNotEmpty())
                 assertTrue(profilingTraceData.cpuArchitecture.isNotEmpty())
                 assertTrue(profilingTraceData.transactions.isNotEmpty())
                 // We should find the transaction id that started the profiling in the list of transactions
                 val transactionData = profilingTraceData.transactions
-                    .firstOrNull { t -> t.id == transactionItem.eventId.toString() }
+                    .firstOrNull { t -> t.id == transaction.eventId.toString() }
                 assertNotNull(transactionData)
+            }
+            assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals("e2etests", transactionItem.transaction)
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
@@ -78,6 +82,7 @@ class EnvelopeTests : BaseUiTest() {
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
         }
+        relayIdlingResource.increment()
         relayIdlingResource.increment()
         relayIdlingResource.increment()
         relayIdlingResource.increment()
@@ -102,19 +107,15 @@ class EnvelopeTests : BaseUiTest() {
             }
             // The profile is sent only in the last transaction envelope
             assertEnvelope {
-                val transactionItem: SentryTransaction = it.assertItem()
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
-                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
-                assertEquals(profilingTraceData.transactionId, transactionItem.eventId.toString())
-                assertTrue(profilingTraceData.transactionName == "e2etests2")
-                assertTrue(profilingTraceData.truncationReason == "normal")
+                assertEquals("e2etests2", profilingTraceData.transactionName)
+                assertEquals("normal", profilingTraceData.truncationReason)
 
                 // The transaction list is not ordered, since it's stored using a map to be able to quickly check the
                 // existence of a certain id. So we order the list to make more meaningful checks on timestamps.
                 val transactions = profilingTraceData.transactions.sortedBy { it.relativeStartNs }
-                assertContains(transactions.map { t -> t.id }, transactionItem.eventId.toString())
-                assertEquals(transactions.last().id, transactionItem.eventId.toString())
+                assertEquals(transactions.last().id, transaction3.eventId.toString())
                 val startTimes = transactions.map { t -> t.relativeStartNs }
                 val endTimes = transactions.mapNotNull { t -> t.relativeEndNs }
                 val startCpuTimes = transactions.map { t -> t.relativeStartCpuMs }
@@ -138,6 +139,12 @@ class EnvelopeTests : BaseUiTest() {
                 // The first and last transactions should be aligned to the start/stop of profile
                 assertEquals(endTimes.last() - startTimes.first(), profilingTraceData.durationNs.toLong())
             }
+            // The profile is sent only in the last transaction envelope
+            assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
+            }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
@@ -150,14 +157,24 @@ class EnvelopeTests : BaseUiTest() {
             options.profilesSampleRate = 1.0
         }
         relayIdlingResource.increment()
-        val transaction = Sentry.startTransaction("e2etests", "test empty")
-        transaction.finish()
-        // Let's modify the trace file to be empty, so that the profile will actually be empty.
+        relayIdlingResource.increment()
         val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
-        val origProfileFile = File(profilesDirPath!!).listFiles()?.maxByOrNull { f -> f.lastModified() }
-        origProfileFile?.writeBytes(ByteArray(0))
+        val transaction = Sentry.startTransaction("e2etests", "test empty")
+
+        var finished = false
+        Thread {
+            while (!finished) {
+                // Let's modify the trace file to be empty, so that the profile will actually be empty.
+                val origProfileFile = File(profilesDirPath!!).listFiles()?.maxByOrNull { f -> f.lastModified() }
+                origProfileFile?.writeBytes(ByteArray(0))
+            }
+        }.start()
+        transaction.finish()
+        finished = true
 
         relay.assert {
+            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
+            assertFails { assertEnvelope {} }
             assertEnvelope {
                 it.assertItem<SentryTransaction>()
                 // Since the profile is empty, it is discarded and not sent to Sentry

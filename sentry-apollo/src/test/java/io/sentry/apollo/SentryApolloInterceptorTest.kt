@@ -91,7 +91,6 @@ class SentryApolloInterceptorTest {
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -106,7 +105,6 @@ class SentryApolloInterceptorTest {
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -121,7 +119,6 @@ class SentryApolloInterceptorTest {
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -157,7 +154,6 @@ class SentryApolloInterceptorTest {
                 assertEquals("overwritten description", httpClientSpan.description)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -173,7 +169,6 @@ class SentryApolloInterceptorTest {
                 assertEquals(1, it.spans.size)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }

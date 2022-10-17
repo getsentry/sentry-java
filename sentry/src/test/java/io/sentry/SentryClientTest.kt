@@ -30,6 +30,7 @@ import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -1044,39 +1045,38 @@ class SentryClientTest {
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
 
         verifyAttachmentsInEnvelope(transaction.eventId)
-        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+        assertFails { verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId)) }
     }
 
     @Test
-    fun `when captureTransaction with attachments and profiling data`() {
-        val transaction = SentryTransaction(fixture.sentryTracer)
-        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingTraceData)
-        verifyAttachmentsInEnvelope(transaction.eventId)
-        verifyProfilingTraceInEnvelope(transaction.eventId)
+    fun `when captureProfile`() {
+        val client = fixture.getSut()
+        client.captureProfile(fixture.profilingTraceData)
+        verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId))
     }
 
     @Test
-    fun `when captureTransaction with profiling data`() {
+    fun `captureTransaction with profile calls captureProfile and captureTransaction`() {
         val transaction = SentryTransaction(fixture.sentryTracer)
-        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
-        assertFails { verifyAttachmentsInEnvelope(transaction.eventId) }
-        verifyProfilingTraceInEnvelope(transaction.eventId)
+        val client = spy(fixture.getSut())
+        client.captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+        verify(client).captureTransaction(transaction, null, null, null)
+        verify(client).captureProfile(fixture.profilingTraceData)
     }
 
     @Test
-    fun `when captureTransaction with empty trace file, profiling data is not sent`() {
-        val transaction = SentryTransaction(fixture.sentryTracer)
-        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+    fun `when captureProfile with empty trace file, profile is not sent`() {
+        val client = fixture.getSut()
+        client.captureProfile(fixture.profilingTraceData)
         fixture.profilingTraceFile.writeText("")
-        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+        assertFails { verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId)) }
     }
 
     @Test
-    fun `when captureTransaction with non existing profiling trace file, profiling trace data is not sent`() {
-        val transaction = SentryTransaction(fixture.sentryTracer)
-        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingNonExistingTraceData)
-        verifyAttachmentsInEnvelope(transaction.eventId)
-        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+    fun `when captureProfile with non existing profiling trace file, profile is not sent`() {
+        val client = fixture.getSut()
+        client.captureProfile(fixture.profilingNonExistingTraceData)
+        assertFails { verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId)) }
     }
 
     @Test
@@ -2052,8 +2052,7 @@ class SentryClientTest {
                     item.header.type == SentryItemType.Profile
                 }
                 assertNotNull(profilingTraceItem?.data)
-            },
-            anyOrNull()
+            }
         )
     }
 

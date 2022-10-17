@@ -2,6 +2,7 @@ package io.sentry
 
 import io.sentry.protocol.SentryId
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -231,6 +232,38 @@ class SentryTest {
         val hub = Sentry.getCurrentHub()
         assertNotNull(hub)
         assertFalse(hub is NoOpHub)
+    }
+
+    @Test
+    fun `when init is called and configure throws an exception then an error is logged`() {
+        val logger = mock<ILogger>()
+        val initException = Exception("init")
+
+        Sentry.init({
+            it.dsn = dsn
+            it.isDebug = true
+            it.setLogger(logger)
+            throw initException
+        }, true)
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(initException))
+    }
+
+    @Test
+    fun `when init with a SentryOptions Subclass is called and configure throws an exception then an error is logged`() {
+        class ExtendedSentryOptions : SentryOptions()
+
+        val logger = mock<ILogger>()
+        val initException = Exception("init")
+
+        Sentry.init(OptionsContainer.create(ExtendedSentryOptions::class.java)) { options: ExtendedSentryOptions ->
+            options.dsn = dsn
+            options.isDebug = true
+            options.setLogger(logger)
+            throw initException
+        }
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(initException))
     }
 
     private fun getTempPath(): String {
