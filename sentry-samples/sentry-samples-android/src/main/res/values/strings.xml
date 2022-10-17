@@ -38,6 +38,7 @@ Nulla interdum gravida augue, vel fringilla lorem bibendum vel. In hac habitasse
   <string name="profiling_duration">Duration of profile %.1f seconds</string>
   <string name="profiling_threads">Background threads to use: %d</string>
   <string name="profiling_running">Profiling is running</string>
+  <string name="profiling_no_dir_set">No profiling dir path set</string>
   <string name="profiling_start">Start Profiling</string>
   <string name="profiling_result">Profile trace file size = %d bytes \nItem payload size = %d bytes \nData sent to Sentry size = %d bytes</string>
 </resources>

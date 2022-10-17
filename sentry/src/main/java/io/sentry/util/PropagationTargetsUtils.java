@@ -14,8 +14,15 @@ public final class PropagationTargetsUtils {
       return false;
     }
     for (final String origin : origins) {
-      if (url.contains(origin) || url.matches(origin)) {
+      if (url.contains(origin)) {
         return true;
+      }
+      try {
+        if (url.matches(origin)) {
+          return true;
+        }
+      } catch (Exception e) {
+        // ignore invalid regex
       }
     }
     return false;

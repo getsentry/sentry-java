@@ -4,7 +4,14 @@
 
 ### Fixes
 
+- Ensure potential callback exceptions are caught #2123 ([#2291](https://github.com/getsentry/sentry-java/pull/2291))
 - Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
+- Ignore broken regex for tracePropagationTarget ([#2288](https://github.com/getsentry/sentry-java/pull/2288))
+
+### Features
+
+- Add support for using Encoder with logback.SentryAppender ([#2246](https://github.com/getsentry/sentry-java/pull/2246))
+- Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
 
 ### Features
 

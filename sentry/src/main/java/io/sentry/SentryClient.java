@@ -263,6 +263,10 @@ public final class SentryClient implements ISentryClient {
           SentryEnvelopeItem.fromProfilingTrace(
               profilingTraceData, options.getMaxTraceFileSize(), options.getSerializer());
       envelopeItems.add(profilingTraceItem);
+
+      if (sentryId == null) {
+        sentryId = new SentryId(profilingTraceData.getProfileId());
+      }
     }
 
     if (attachments != null) {
@@ -493,12 +497,54 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
+  public @NotNull SentryId captureProfile(final @NotNull ProfilingTraceData profilingTraceData) {
+    Objects.requireNonNull(profilingTraceData, "Profiling trace data is required.");
+
+    SentryId sentryId = new SentryId(profilingTraceData.getProfileId());
+
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing profile: %s", sentryId);
+
+    try {
+      final SentryEnvelope envelope = buildEnvelope(null, null, null, null, profilingTraceData);
+
+      if (envelope != null) {
+        transport.send(envelope);
+      } else {
+        sentryId = SentryId.EMPTY_ID;
+      }
+    } catch (IOException | SentryEnvelopeException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing profile %s failed.", sentryId);
+      // if there was an error capturing the profile, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
+    }
+
+    return sentryId;
+  }
+
+  /**
+   * @deprecated please use {{@link ISentryClient#captureTransaction(SentryTransaction,
+   *     TraceContext, Scope, Hint)}} and {{@link ISentryClient#captureProfile(ProfilingTraceData)}}
+   *     instead.
+   */
+  @Deprecated
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
       final @Nullable Scope scope,
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
+    if (profilingTraceData != null) {
+      captureProfile(profilingTraceData);
+    }
+    return captureTransaction(transaction, traceContext, scope, hint);
+  }
+
+  @Override
+  public @NotNull SentryId captureTransaction(
+      @NotNull SentryTransaction transaction,
+      @Nullable TraceContext traceContext,
+      final @Nullable Scope scope,
+      @Nullable Hint hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
     if (hint == null) {
@@ -542,11 +588,7 @@ public final class SentryClient implements ISentryClient {
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
-              transaction,
-              filterForTransaction(getAttachments(hint)),
-              null,
-              traceContext,
-              profilingTraceData);
+              transaction, filterForTransaction(getAttachments(hint)), null, traceContext, null);
 
       if (envelope != null) {
         transport.send(envelope, hint);
