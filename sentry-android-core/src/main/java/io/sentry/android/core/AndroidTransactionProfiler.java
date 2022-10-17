@@ -12,12 +12,15 @@ import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionProfiler;
 import io.sentry.ProfilingTraceData;
 import io.sentry.ProfilingTransactionData;
+import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
+import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.util.ArrayList;
@@ -50,6 +53,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private @Nullable Future<?> scheduledFinish = null;
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
+  private final @NotNull IHub hub;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @Nullable PackageInfo packageInfo;
   private long transactionStartNanos = 0;
@@ -62,8 +66,17 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions sentryAndroidOptions,
       final @NotNull BuildInfoProvider buildInfoProvider) {
+    this(context, sentryAndroidOptions, buildInfoProvider, HubAdapter.getInstance());
+  }
+
+  public AndroidTransactionProfiler(
+      final @NotNull Context context,
+      final @NotNull SentryAndroidOptions sentryAndroidOptions,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull IHub hub) {
     this.context = Objects.requireNonNull(context, "The application context is required");
     this.options = Objects.requireNonNull(sentryAndroidOptions, "SentryAndroidOptions is required");
+    this.hub = Objects.requireNonNull(hub, "Hub is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
     this.packageInfo = ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
@@ -281,7 +294,20 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                 ? ProfilingTraceData.TRUNCATION_REASON_TIMEOUT
                 : ProfilingTraceData.TRUNCATION_REASON_NORMAL);
 
-    HubAdapter.getInstance().captureProfile(profilingTraceData);
+    SentryEnvelope envelope;
+    try {
+      envelope =
+          SentryEnvelope.from(
+              options.getSerializer(),
+              profilingTraceData,
+              options.getMaxTraceFileSize(),
+              options.getSdkVersion());
+    } catch (SentryEnvelopeException e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture profile.", e);
+      return;
+    }
+
+    hub.captureEnvelope(envelope);
   }
 
   /**
