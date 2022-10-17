@@ -12,9 +12,6 @@
 
 - Add support for using Encoder with logback.SentryAppender ([#2246](https://github.com/getsentry/sentry-java/pull/2246))
 - Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
-
-### Features
-
 - Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
 
 ## 6.5.0
