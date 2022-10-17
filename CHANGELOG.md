@@ -7,6 +7,7 @@
 - Ensure potential callback exceptions are caught #2123 ([#2291](https://github.com/getsentry/sentry-java/pull/2291))
 - Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
 - Ignore broken regex for tracePropagationTarget ([#2288](https://github.com/getsentry/sentry-java/pull/2288))
+- Fix `SentryFileWriter`/`SentryFileOutputStream` append overwrites file contents ([#2304](https://github.com/getsentry/sentry-java/pull/2304))
 
 ### Features
 
