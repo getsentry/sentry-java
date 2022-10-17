@@ -128,7 +128,6 @@ class SentryTracerTest {
                 assertEquals(it.transaction, tracer.name)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -187,7 +186,6 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -205,7 +203,6 @@ class SentryTracerTest {
                 assertEquals("op1", it.spans.first().op)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -338,7 +335,6 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
 
@@ -416,7 +412,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         transaction.startChild("op")
         transaction.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
     }
 
     @Test
@@ -425,7 +421,7 @@ class SentryTracerTest {
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull())
     }
 
     @Test
@@ -446,7 +442,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         child.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
     }
 
     @Test
@@ -454,14 +450,13 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
         child.finish()
         verify(fixture.hub, times(1)).captureTransaction(
             check {
                 assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -481,7 +476,6 @@ class SentryTracerTest {
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -657,7 +651,6 @@ class SentryTracerTest {
                 assertEquals("val", it.getExtra("key"))
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -676,7 +669,6 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -704,8 +696,7 @@ class SentryTracerTest {
         verify(fixture.hub, never()).captureTransaction(
             anyOrNull(),
             anyOrNull(),
-            anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 
@@ -721,8 +712,7 @@ class SentryTracerTest {
         verify(fixture.hub).captureTransaction(
             anyOrNull(),
             anyOrNull(),
-            anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 
@@ -783,7 +773,6 @@ class SentryTracerTest {
                 assertEquals(transaction.root.endNanos, span2.endNanos)
             },
             anyOrNull(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -824,8 +813,7 @@ class SentryTracerTest {
                 assertEquals("day", it.measurements["days"]!!.unit)
             },
             anyOrNull(),
-            anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 
@@ -842,8 +830,7 @@ class SentryTracerTest {
                 assertEquals("day", it.measurements["metric1"]!!.unit)
             },
             anyOrNull(),
-            anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 }
