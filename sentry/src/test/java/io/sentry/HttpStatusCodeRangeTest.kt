@@ -27,6 +27,20 @@ class HttpStatusCodeRangeTest {
     }
 
     @Test
+    fun `when range is given and is a match with the lower bound`() {
+        val range = HttpStatusCodeRange(500, 599)
+
+        assertTrue(range.isInRange(500))
+    }
+
+    @Test
+    fun `when range is given and is a match with the upper bound`() {
+        val range = HttpStatusCodeRange(500, 599)
+
+        assertTrue(range.isInRange(599))
+    }
+
+    @Test
     fun `when range is given and it is lower than min`() {
         val range = HttpStatusCodeRange(500, 599)
 

@@ -144,8 +144,8 @@ class SentryOkHttpInterceptor(
         }
 
         if (!captureFailedRequests ||
-            !PropagationTargetsUtils.contain(failedRequestTargets, requestUrl) ||
-            !containsStatusCode(response.code)
+            !containsStatusCode(response.code) ||
+            !PropagationTargetsUtils.contain(failedRequestTargets, requestUrl)
         ) {
             return
         }
@@ -160,8 +160,8 @@ class SentryOkHttpInterceptor(
         val event = SentryEvent(mechanismException)
 
         val hint = Hint()
-        hint.set("request", request)
-        hint.set("response", response)
+        hint.set(OKHTTP_REQUEST, request)
+        hint.set(OKHTTP_RESPONSE, response)
 
         // remove after fields indexed
 //        val tags = mutableMapOf<String, String>()
