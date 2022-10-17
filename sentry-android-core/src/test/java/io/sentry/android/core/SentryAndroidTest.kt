@@ -8,13 +8,17 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.Sentry
+import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.FATAL
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
+import io.sentry.cache.IEnvelopeCache
+import io.sentry.transport.NoOpEnvelopeCache
 import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -130,5 +134,38 @@ class SentryAndroidTest {
         // fragment integration is not auto-installed in the test, since the context is not Application
         // but we just verify here that the single integration is preserved
         assertEquals(refOptions!!.integrations.filterIsInstance<FragmentLifecycleIntegration>().size, 1)
+    }
+
+    @Test
+    fun `AndroidEnvelopeCache is reset if the user disabled caching via cacheDirPath`() {
+        var refOptions: SentryAndroidOptions? = null
+
+        fixture.initSut {
+            it.cacheDirPath = null
+
+            refOptions = it
+        }
+
+        assertTrue { refOptions!!.envelopeDiskCache is NoOpEnvelopeCache }
+    }
+
+    @Test
+    fun `envelopeCache remains unchanged if the user set their own IEnvelopCache impl`() {
+        var refOptions: SentryAndroidOptions? = null
+
+        fixture.initSut {
+            it.cacheDirPath = null
+            it.setEnvelopeDiskCache(CustomEnvelopCache())
+
+            refOptions = it
+        }
+
+        assertTrue { refOptions!!.envelopeDiskCache is CustomEnvelopCache }
+    }
+
+    private class CustomEnvelopCache : IEnvelopeCache {
+        override fun iterator(): MutableIterator<SentryEnvelope> = TODO()
+        override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
+        override fun discard(envelope: SentryEnvelope) = Unit
     }
 }
