@@ -1,8 +1,8 @@
 package io.sentry;
 
 /**
- * The Http status code range. Example for a range: 400 to 499, 500 to 599, 400 to 599
- * The range is inclusive so the min and max is considered part of the range.
+ * The Http status code range. Example for a range: 400 to 499, 500 to 599, 400 to 599 The range is
+ * inclusive so the min and max is considered part of the range.
  *
  * <p>Example for a single status code 400, 500
  */
