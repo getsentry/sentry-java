@@ -1061,29 +1061,4 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.isCollectAdditionalContext)
     }
-
-    @Test
-    fun `applyMetadata reads enableStartupCrashDetection to options`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.STARTUP_CRASH_ENABLE to false)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertFalse(fixture.options.isEnableStartupCrashDetection)
-    }
-
-    @Test
-    fun `applyMetadata reads enableStartupCrashDetection and keep default value if not found`() {
-        // Arrange
-        val context = fixture.getContext()
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertTrue(fixture.options.isEnableStartupCrashDetection)
-    }
 }

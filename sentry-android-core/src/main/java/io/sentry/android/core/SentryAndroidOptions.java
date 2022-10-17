@@ -131,15 +131,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private final long startupCrashDurationThresholdMillis = 2000; // 2s
 
-  /**
-   * Controls whether the SDK should detect Startup Crashes.
-   *
-   * <p>Startup Crashes are sent on {@link Sentry#init()} in a blocking way.
-   *
-   * <p>Default is true
-   */
-  private boolean enableStartupCrashDetection = true;
-
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -394,13 +385,5 @@ public final class SentryAndroidOptions extends SentryOptions {
   @ApiStatus.Internal
   public long getStartupCrashDurationThresholdMillis() {
     return startupCrashDurationThresholdMillis;
-  }
-
-  public boolean isEnableStartupCrashDetection() {
-    return enableStartupCrashDetection;
-  }
-
-  public void setEnableStartupCrashDetection(boolean enableStartupCrashDetection) {
-    this.enableStartupCrashDetection = enableStartupCrashDetection;
   }
 }

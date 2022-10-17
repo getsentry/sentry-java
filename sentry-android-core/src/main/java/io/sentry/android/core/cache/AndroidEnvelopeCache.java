@@ -43,11 +43,6 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
 
-    if (!options.isEnableStartupCrashDetection()) {
-      options.getLogger().log(DEBUG, "Startup Crash detection is disabled.");
-      return;
-    }
-
     final Long appStartTime = AppStartState.getInstance().getAppStartMillis();
     if (HintUtils.hasType(hint, DiskFlushNotification.class) && appStartTime != null) {
       long timeSinceSdkInit = currentDateProvider.getCurrentTimeMillis() - appStartTime;
