@@ -8,10 +8,10 @@ import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.os.Build;
 import io.sentry.ILogger;
-import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.util.Objects;
@@ -132,6 +132,7 @@ final class AndroidOptionsInitializer {
 
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
+    options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
 
     final ActivityFramesTracker activityFramesTracker =
         new ActivityFramesTracker(loadClass, options.getLogger());
@@ -164,9 +165,14 @@ final class AndroidOptionsInitializer {
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
 
+    // read the startup crash marker here to avoid doing double-IO for the SendCachedEnvelope
+    // integrations below
+    final boolean hasStartupCrashMarker = AndroidEnvelopeCache.hasStartupCrashMarker(options);
+
     options.addIntegration(
-        new SendCachedEnvelopeFireAndForgetIntegration(
-            new SendFireAndForgetEnvelopeSender(() -> options.getCacheDirPath())));
+        new SendCachedEnvelopeIntegration(
+            new SendFireAndForgetEnvelopeSender(() -> options.getCacheDirPath()),
+            hasStartupCrashMarker));
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
@@ -184,8 +190,9 @@ final class AndroidOptionsInitializer {
     // this should be executed after NdkIntegration because sentry-native move files on init.
     // and we'd like to send them right away
     options.addIntegration(
-        new SendCachedEnvelopeFireAndForgetIntegration(
-            new SendFireAndForgetOutboxSender(() -> options.getOutboxPath())));
+        new SendCachedEnvelopeIntegration(
+            new SendFireAndForgetOutboxSender(() -> options.getOutboxPath()),
+            hasStartupCrashMarker));
 
     options.addIntegration(new AnrIntegration(context));
     options.addIntegration(new AppLifecycleIntegration());

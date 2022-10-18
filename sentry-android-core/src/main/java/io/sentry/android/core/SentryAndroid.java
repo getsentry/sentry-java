@@ -9,8 +9,10 @@ import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.transport.NoOpEnvelopeCache;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -104,6 +106,7 @@ public final class SentryAndroid {
                 options, context, logger, isFragmentAvailable, isTimberAvailable);
             configuration.configure(options);
             deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
+            resetEnvelopeCacheIfNeeded(options);
           },
           true);
     } catch (IllegalAccessException e) {
@@ -166,6 +169,20 @@ public final class SentryAndroid {
         final Integration integration = timberIntegrations.get(i);
         options.getIntegrations().remove(integration);
       }
+    }
+  }
+
+  /**
+   * Resets envelope cache if {@link SentryOptions#getCacheDirPath()} was set to null by the user
+   * and the IEnvelopCache implementation remained ours (AndroidEnvelopeCache), which relies on
+   * cacheDirPath set.
+   *
+   * @param options SentryOptions to retrieve cacheDirPath from
+   */
+  private static void resetEnvelopeCacheIfNeeded(final @NotNull SentryAndroidOptions options) {
+    if (options.getCacheDirPath() == null
+        && options.getEnvelopeDiskCache() instanceof AndroidEnvelopeCache) {
+      options.setEnvelopeDiskCache(NoOpEnvelopeCache.getInstance());
     }
   }
 }
