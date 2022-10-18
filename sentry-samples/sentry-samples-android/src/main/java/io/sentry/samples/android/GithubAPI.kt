@@ -11,9 +11,8 @@ object GithubAPI {
     private val client = OkHttpClient.Builder().addInterceptor(
         SentryOkHttpInterceptor(
             captureFailedRequests = true,
-            // TODO: 200 just for testing
             failedRequestStatusCodes = listOf(
-                HttpStatusCodeRange(200, 599)
+                HttpStatusCodeRange(400, 599)
             )
         )
     ).build()

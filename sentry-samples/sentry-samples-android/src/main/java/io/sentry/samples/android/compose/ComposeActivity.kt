@@ -90,12 +90,7 @@ fun Github(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(perPage) {
-        try {
-            result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
-        } catch (e: Throwable) {
-            // TODO: event processor that converts retrofit HttpException to a proper sentry event
-            Sentry.captureException(e)
-        }
+        result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
     }
 
     Column(
@@ -113,12 +108,7 @@ fun Github(
         Button(
             onClick = {
                 scope.launch {
-                    try {
-                        result =
-                            GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
-                    } catch (e: Throwable) {
-                        Sentry.captureException(e)
-                    }
+                    result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
                 }
             },
             modifier = Modifier.padding(top = 32.dp)
