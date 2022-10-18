@@ -15,6 +15,12 @@
 - Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
 - Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
 
+### Dependencies
+
+- Bump Native SDK from v0.5.0 to v0.5.1 ([#2306](https://github.com/getsentry/sentry-java/pull/2306))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#051)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.0...0.5.1)
+
 ## 6.5.0
 
 ### Fixes
