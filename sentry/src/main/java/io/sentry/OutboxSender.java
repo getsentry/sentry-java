@@ -3,6 +3,7 @@ package io.sentry;
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
 
+import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
@@ -96,7 +97,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   @Override
   protected boolean isRelevantFileName(final @Nullable String fileName) {
     // ignore current.envelope
-    return fileName != null && !fileName.startsWith(PREFIX_CURRENT_SESSION_FILE);
+    return fileName != null
+        && !fileName.startsWith(PREFIX_CURRENT_SESSION_FILE)
+        && !fileName.startsWith(EnvelopeCache.STARTUP_CRASH_MARKER_FILE);
     // TODO: Use an extension to filter out relevant files
   }
 
