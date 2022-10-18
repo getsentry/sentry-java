@@ -1,8 +1,11 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.inOrder
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.Test
+import java.util.Locale
 import java.util.TimeZone
 
 internal class JsonObjectSerializerTest {
@@ -166,6 +169,60 @@ internal class JsonObjectSerializerTest {
         verify(fixture.writer).endObject()
     }
 
+    @Test
+    fun `serialize locale`() {
+        val inOrder = inOrder(fixture.writer)
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, Locale.US)
+
+        inOrder.verify(fixture.writer).beginObject()
+        inOrder.verify(fixture.writer).name("toString")
+        inOrder.verify(fixture.writer).value("en_US")
+        inOrder.verify(fixture.writer).endObject()
+    }
+
+    @Test
+    fun `serialize locale in map`() {
+        val map = mapOf<String, Locale>("one" to Locale.US)
+        val inOrder = inOrder(fixture.writer)
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, map)
+        inOrder.verify(fixture.writer).beginObject()
+        inOrder.verify(fixture.writer).name("one")
+        inOrder.verify(fixture.writer).beginObject()
+        inOrder.verify(fixture.writer).name("toString")
+        inOrder.verify(fixture.writer).value("en_US")
+        inOrder.verify(fixture.writer, times(2)).endObject()
+    }
+
+    @Test
+    fun `serialize locale in list`() {
+        val list = listOf<Locale>(Locale.US, Locale.GERMAN)
+        val inOrder = inOrder(fixture.writer)
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, list)
+        inOrder.verify(fixture.writer).beginArray()
+        inOrder.verify(fixture.writer).beginObject()
+        inOrder.verify(fixture.writer).name("toString")
+        inOrder.verify(fixture.writer).value("en_US")
+        inOrder.verify(fixture.writer).endObject()
+        inOrder.verify(fixture.writer).beginObject()
+        inOrder.verify(fixture.writer).name("toString")
+        inOrder.verify(fixture.writer).value("de")
+        inOrder.verify(fixture.writer).endObject()
+        inOrder.verify(fixture.writer).endArray()
+    }
+
+    @Test
+    fun `serialize locale in object`() {
+        val obj = ClassWithLocaleProperty(Locale.US)
+        val inOrder = inOrder(fixture.writer)
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, obj)
+        inOrder.verify(fixture.writer).beginObject()
+        inOrder.verify(fixture.writer).name("localeProperty")
+        inOrder.verify(fixture.writer).beginObject()
+        inOrder.verify(fixture.writer).name("toString")
+        inOrder.verify(fixture.writer).value("en_US")
+        inOrder.verify(fixture.writer, times(2)).endObject()
+    }
+
     class UnknownClassWithData(
         private val integer: Int,
         private val string: String
@@ -173,3 +230,4 @@ internal class JsonObjectSerializerTest {
 }
 
 data class ClassWithEnumProperty(val enumProperty: DataCategory)
+data class ClassWithLocaleProperty(val localeProperty: Locale)

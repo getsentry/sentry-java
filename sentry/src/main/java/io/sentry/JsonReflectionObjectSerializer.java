@@ -84,6 +84,9 @@ public final class JsonReflectionObjectSerializer {
       if (Modifier.isTransient(field.getModifiers())) {
         continue;
       }
+      if (Modifier.isStatic(field.getModifiers())) {
+        continue;
+      }
       String fieldName = field.getName();
       try {
         field.setAccessible(true);
@@ -94,6 +97,11 @@ public final class JsonReflectionObjectSerializer {
         logger.log(SentryLevel.INFO, "Cannot access field " + fieldName + ".");
       }
     }
+
+    if (map.isEmpty()) {
+      map.put("toString", object.toString());
+    }
+
     return map;
   }
 

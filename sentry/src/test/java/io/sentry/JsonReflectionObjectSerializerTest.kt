@@ -3,7 +3,10 @@ package io.sentry
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.Test
+import java.util.Locale
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class JsonReflectionObjectSerializerTest {
 
@@ -87,11 +90,16 @@ class JsonReflectionObjectSerializerTest {
     }
 
     @Test
-    fun `serialize object without fields`() {
+    fun `serialize object without fields using toString`() {
         val objectWithoutFields = ClassWithoutFields()
-        val expected = mapOf<String, Any>()
+        val expected = mapOf<String, Any>(
+            "toString" to ""
+        )
         val actual = fixture.getSut().serialize(objectWithoutFields, fixture.logger)
-        assertEquals(expected, actual)
+        assertNotNull(actual)
+        assertTrue(actual is Map<*, *>)
+        assertEquals(1, actual.size)
+        assertEquals(objectWithoutFields.toString(), actual["toString"])
     }
 
     @Test
@@ -261,6 +269,12 @@ class JsonReflectionObjectSerializerTest {
     fun `enum`() {
         val actual = fixture.getSut().serialize(DataCategory.Error, fixture.logger)
         assertEquals("Error", actual)
+    }
+
+    @Test
+    fun `locale`() {
+        val actual = fixture.getSut().serialize(Locale.US, fixture.logger)
+        assertEquals(mapOf("toString" to "en_US"), actual)
     }
 
     // Helper
