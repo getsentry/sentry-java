@@ -30,6 +30,6 @@ class TracePropagationTargetsTest {
 
     @Test
     fun `ignores broken regex`() {
-        assertFalse(TracePropagationTargets.contain(listOf("AABB???"), "http://some.api.com/"))
+        assertFalse(PropagationTargetsUtils.contain(listOf("AABB???"), "http://some.api.com/"))
     }
 }
