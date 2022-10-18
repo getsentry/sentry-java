@@ -1,15 +1,15 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.FileFromResources
 import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals

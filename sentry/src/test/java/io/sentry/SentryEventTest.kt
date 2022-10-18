@@ -1,9 +1,9 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
+import org.mockito.kotlin.mock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Collections

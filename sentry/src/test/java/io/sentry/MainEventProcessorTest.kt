@@ -1,10 +1,5 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.reset
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.hints.ApplyScopeData
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
@@ -13,6 +8,11 @@ import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import org.awaitility.kotlin.await
 import org.mockito.Mockito
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.lang.RuntimeException
 import java.net.InetAddress
 import kotlin.test.AfterTest

@@ -1,6 +1,6 @@
 package io.sentry.transport
 
-import com.nhaarman.mockitokotlin2.mock
+import org.mockito.kotlin.mock
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy

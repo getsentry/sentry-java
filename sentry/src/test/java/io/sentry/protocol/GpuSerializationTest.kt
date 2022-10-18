@@ -1,12 +1,12 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.FileFromResources
 import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import org.junit.Test
+import org.mockito.kotlin.mock
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals

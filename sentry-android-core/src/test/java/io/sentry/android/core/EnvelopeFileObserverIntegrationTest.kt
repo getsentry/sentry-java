@@ -1,11 +1,11 @@
 package io.sentry.android.core
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.Hub
 import io.sentry.SentryOptions
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.AfterTest

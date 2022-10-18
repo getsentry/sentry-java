@@ -1,7 +1,5 @@
 package io.sentry.instrumentation.file
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -9,6 +7,8 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,7 +21,7 @@ class SentryFileOutputStreamTest {
 
         internal fun getSut(
             tmpFile: File? = null,
-            activeTransaction: Boolean = true,
+            activeTransaction: Boolean = true
         ): SentryFileOutputStream {
             whenever(hub.options).thenReturn(SentryOptions())
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)

@@ -40,7 +40,7 @@ public object LaunchDetailsQuery_ResponseAdapter {
         public override fun toJson(
             writer: JsonWriter,
             customScalarAdapters: CustomScalarAdapters,
-            `value`: LaunchDetailsQuery.Data,
+            `value`: LaunchDetailsQuery.Data
         ) {
             writer.name("launch")
             Launch.obj().nullable().toJson(writer, customScalarAdapters, value.launch)
@@ -78,7 +78,7 @@ public object LaunchDetailsQuery_ResponseAdapter {
         public override fun toJson(
             writer: JsonWriter,
             customScalarAdapters: CustomScalarAdapters,
-            `value`: LaunchDetailsQuery.Launch,
+            `value`: LaunchDetailsQuery.Launch
         ) {
             writer.name("id")
             StringAdapter.toJson(writer, customScalarAdapters, value.id)
@@ -119,7 +119,7 @@ public object LaunchDetailsQuery_ResponseAdapter {
         public override fun toJson(
             writer: JsonWriter,
             customScalarAdapters: CustomScalarAdapters,
-            `value`: LaunchDetailsQuery.Mission,
+            `value`: LaunchDetailsQuery.Mission
         ) {
             writer.name("name")
             NullableStringAdapter.toJson(writer, customScalarAdapters, value.name)
@@ -154,7 +154,7 @@ public object LaunchDetailsQuery_ResponseAdapter {
         public override fun toJson(
             writer: JsonWriter,
             customScalarAdapters: CustomScalarAdapters,
-            `value`: LaunchDetailsQuery.Rocket,
+            `value`: LaunchDetailsQuery.Rocket
         ) {
             writer.name("name")
             NullableStringAdapter.toJson(writer, customScalarAdapters, value.name)

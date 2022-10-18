@@ -1,12 +1,5 @@
 package io.sentry.transport
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ISerializer
 import io.sentry.RequestDetails
 import io.sentry.SentryEnvelope
@@ -15,6 +8,13 @@ import io.sentry.SentryOptions
 import io.sentry.SentryOptions.Proxy
 import io.sentry.Session
 import io.sentry.protocol.User
+import org.mockito.kotlin.any
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy.Type

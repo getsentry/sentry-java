@@ -1,20 +1,5 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.doAnswer
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.inOrder
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.mockingDetails
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.spy
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
@@ -35,6 +20,21 @@ import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.util.HintUtils
 import org.junit.Assert.assertArrayEquals
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.mockingDetails
+import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -522,8 +522,10 @@ class SentryClientTest {
 
         verify(logger)
             .log(
-                SentryLevel.WARNING, exception,
-                "Capturing user feedback %s failed.", userFeedback.eventId
+                SentryLevel.WARNING,
+                exception,
+                "Capturing user feedback %s failed.",
+                userFeedback.eventId
             )
     }
 
@@ -806,7 +808,8 @@ class SentryClientTest {
             val event = SentryEvent()
             fixture.getSut().updateSessionData(
                 event,
-                Hint(), scope
+                Hint(),
+                scope
             )
             assertEquals(level, session.status)
         }
@@ -850,7 +853,8 @@ class SentryClientTest {
             val event = SentryEvent()
             fixture.getSut().updateSessionData(
                 event,
-                Hint(), scope
+                Hint(),
+                scope
             )
             assertEquals(errorCount, session.errorCount())
         }
@@ -868,7 +872,8 @@ class SentryClientTest {
             }
             fixture.getSut().updateSessionData(
                 event,
-                Hint(), scope
+                Hint(),
+                scope
             )
             scope.withSession {
                 assertEquals("jamesBond", it!!.userAgent)
@@ -890,7 +895,8 @@ class SentryClientTest {
             }
             fixture.getSut().updateSessionData(
                 event,
-                Hint(), scope
+                Hint(),
+                scope
             )
             assertEquals(userAgent, session.userAgent)
         }

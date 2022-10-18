@@ -1,11 +1,6 @@
 package io.sentry.spring.boot
 
 import com.acme.MainBootClass
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
@@ -33,6 +28,11 @@ import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
@@ -186,7 +186,7 @@ class SentryAutoConfigurationTest {
     @Test
     fun `when tracePropagationTargets are not set, default is returned`() {
         contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
+            "sentry.dsn=http://key@localhost/proj"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.tracePropagationTargets).isNotNull().containsOnly(".*")
@@ -240,7 +240,7 @@ class SentryAutoConfigurationTest {
     fun `sets sentryClientName property on SentryOptions`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it.getBean(SentryOptions::class.java).sentryClientName).isEqualTo("sentry.java.spring-boot")
+                assertThat(it.getBean(SentryOptions::class.java).sentryClientName).isEqualTo("sentry.java.spring-boot${optionalJakartaPrefix()}")
             }
     }
 
@@ -857,5 +857,12 @@ class SentryAutoConfigurationTest {
     private fun ApplicationContext.getSentryUserProviders(): List<SentryUserProvider> {
         val userFilter = this.getBean("sentryUserFilter", FilterRegistrationBean::class.java).filter as SentryUserFilter
         return userFilter.sentryUserProviders
+    }
+
+    private fun optionalJakartaPrefix(): String {
+        if (this.javaClass.packageName.endsWith("jakarta")) {
+            return ".jakarta"
+        }
+        return ""
     }
 }

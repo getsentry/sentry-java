@@ -1,12 +1,7 @@
 @file:Suppress("MaxLineLength")
+
 package io.sentry.android.okhttp
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
@@ -23,6 +18,12 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -49,7 +50,7 @@ class SentryOkHttpInterceptorTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: SentryOkHttpInterceptor.BeforeSpanCallback? = null,
             includeMockServerInTracePropagationTargets: Boolean = true,
-            keepDefaultTracePropagationTargets: Boolean = false,
+            keepDefaultTracePropagationTargets: Boolean = false
         ): OkHttpClient {
             options = SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"

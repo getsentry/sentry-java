@@ -1,7 +1,7 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.util.StringUtils
+import org.mockito.kotlin.mock
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals

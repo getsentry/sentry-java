@@ -12,6 +12,7 @@
 
 - Add support for using Encoder with logback.SentryAppender ([#2246](https://github.com/getsentry/sentry-java/pull/2246))
 - Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
+- Support Spring 6 and Spring Boot 3 ([#2289](https://github.com/getsentry/sentry-java/pull/2289))
 
 ## 6.5.0
 

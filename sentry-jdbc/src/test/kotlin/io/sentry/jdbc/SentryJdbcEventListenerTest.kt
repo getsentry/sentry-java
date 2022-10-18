@@ -1,7 +1,5 @@
 package io.sentry.jdbc
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import com.p6spy.engine.spy.P6DataSource
 import io.sentry.IHub
 import io.sentry.SentryOptions
@@ -9,6 +7,8 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import org.hsqldb.jdbc.JDBCDataSource
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import javax.sql.DataSource
 import kotlin.test.AfterTest
 import kotlin.test.Test

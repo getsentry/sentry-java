@@ -1,12 +1,12 @@
 package io.sentry.servlet.jakarta
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hint
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import jakarta.servlet.http.HttpServletRequest
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.net.URI
 import java.util.Collections
 import kotlin.test.Test

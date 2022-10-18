@@ -1,8 +1,8 @@
 package io.sentry.spring
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.SentryOptions
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes

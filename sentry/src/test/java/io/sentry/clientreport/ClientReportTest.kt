@@ -43,7 +43,7 @@ class ClientReportTest {
             listOf(
                 DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
                 DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
-                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1)
             )
         )
 
@@ -88,7 +88,7 @@ class ClientReportTest {
             listOf(
                 DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
                 DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
-                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1)
             )
         )
 
