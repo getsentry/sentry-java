@@ -26,4 +26,9 @@ class TracePropagationTargetsTest {
     fun `when no origins are defined, returns false for every url`() {
         assertFalse(TracePropagationTargets.contain(emptyList(), "http://some.api.com/"))
     }
+
+    @Test
+    fun `ignores broken regex`() {
+        assertFalse(TracePropagationTargets.contain(listOf("AABB???"), "http://some.api.com/"))
+    }
 }

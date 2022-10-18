@@ -9,8 +9,8 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.MainEventProcessor
-import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
 import io.sentry.SentryOptions
+import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import org.junit.runner.RunWith
@@ -288,12 +288,12 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `SendCachedEnvelopeFireAndForgetIntegration added to integration list`() {
+    fun `SendCachedEnvelopeIntegration added to integration list`() {
         fixture.initSut()
 
         val actual =
             fixture.sentryOptions.integrations
-                .firstOrNull { it is SendCachedEnvelopeFireAndForgetIntegration }
+                .firstOrNull { it is SendCachedEnvelopeIntegration }
         assertNotNull(actual)
     }
 
@@ -363,5 +363,12 @@ class AndroidOptionsInitializerTest {
         val actual =
             fixture.sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
         assertNull(actual)
+    }
+
+    @Test
+    fun `AndroidEnvelopeCache is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.envelopeDiskCache is AndroidEnvelopeCache }
     }
 }
