@@ -25,7 +25,6 @@ import java.io.IOException
 class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
-    // should this be under the options or here? also define the names
     private val captureFailedRequests: Boolean = false,
     private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
         HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
@@ -163,11 +162,6 @@ class SentryOkHttpInterceptor(
         hint.set(OKHTTP_REQUEST, request)
         hint.set(OKHTTP_RESPONSE, response)
 
-        // remove after fields indexed
-//        val tags = mutableMapOf<String, String>()
-//        tags["status_code"] = response.code.toString()
-//        tags["url"] = requestUrl
-
         val sentryRequest = io.sentry.protocol.Request().apply {
             url = requestUrl
             // Cookie is only sent if isSendDefaultPii is enabled
@@ -178,8 +172,6 @@ class SentryOkHttpInterceptor(
             fragment = urlFragment
 
             request.body?.contentLength().ifHasValidLength {
-                // should be mapped in relay and added to the protocol, right now
-                // relay isn't retaining unmapped fields
                 bodySize = it
             }
         }
@@ -195,7 +187,6 @@ class SentryOkHttpInterceptor(
             }
         }
 
-//        event.tags = tags
         event.request = sentryRequest
         event.contexts.setResponse(sentryResponse)
 
