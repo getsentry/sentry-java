@@ -100,13 +100,13 @@ class SendCachedEnvelopeIntegrationTest {
 
     @Test
     fun `when synchronous send times out, continues the task on a background thread`() {
-        val sut = fixture.getSut(hasStartupCrashMarker = true, delaySend = 50)
-        fixture.options.startupCrashFlushTimeoutMillis = 10
+        val sut = fixture.getSut(hasStartupCrashMarker = true, delaySend = 1000)
+        fixture.options.startupCrashFlushTimeoutMillis = 100
 
         sut.register(fixture.hub, fixture.options)
 
         // first wait until synchronous send times out and check that the logger was hit in the catch block
-        await.atLeast(11, MILLISECONDS)
+        await.atLeast(500, MILLISECONDS)
         verify(fixture.logger).log(
             eq(DEBUG),
             eq("Synchronous send timed out, continuing in the background.")
