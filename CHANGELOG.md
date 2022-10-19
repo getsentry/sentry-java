@@ -8,12 +8,19 @@
 - Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
 - Ignore broken regex for tracePropagationTarget ([#2288](https://github.com/getsentry/sentry-java/pull/2288))
 - No longer serialize static fields; use toString as fallback ([#2309](https://github.com/getsentry/sentry-java/pull/2309))
+- Fix `SentryFileWriter`/`SentryFileOutputStream` append overwrites file contents ([#2304](https://github.com/getsentry/sentry-java/pull/2304))
 
 ### Features
 
+- Profile envelopes are sent directly from profiler ([#2298](https://github.com/getsentry/sentry-java/pull/2298))
 - Add support for using Encoder with logback.SentryAppender ([#2246](https://github.com/getsentry/sentry-java/pull/2246))
-- Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
 - Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
+
+### Dependencies
+
+- Bump Native SDK from v0.5.0 to v0.5.1 ([#2306](https://github.com/getsentry/sentry-java/pull/2306))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#051)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.0...0.5.1)
 
 ## 6.5.0
 
