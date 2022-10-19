@@ -153,7 +153,7 @@ class SentryOkHttpInterceptor(
             type = "SentryOkHttpInterceptor"
         }
         val exception = SentryHttpClientException(
-            "Event was captured because the request status code was ${response.code}"
+            "HTTP Client Error with status code: ${response.code}"
         )
         val mechanismException = ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
         val event = SentryEvent(mechanismException)
