@@ -496,34 +496,9 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
-  @Override
-  public @NotNull SentryId captureProfile(final @NotNull ProfilingTraceData profilingTraceData) {
-    Objects.requireNonNull(profilingTraceData, "Profiling trace data is required.");
-
-    SentryId sentryId = new SentryId(profilingTraceData.getProfileId());
-
-    options.getLogger().log(SentryLevel.DEBUG, "Capturing profile: %s", sentryId);
-
-    try {
-      final SentryEnvelope envelope = buildEnvelope(null, null, null, null, profilingTraceData);
-
-      if (envelope != null) {
-        transport.send(envelope);
-      } else {
-        sentryId = SentryId.EMPTY_ID;
-      }
-    } catch (IOException | SentryEnvelopeException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing profile %s failed.", sentryId);
-      // if there was an error capturing the profile, we return an emptyId
-      sentryId = SentryId.EMPTY_ID;
-    }
-
-    return sentryId;
-  }
-
   /**
    * @deprecated please use {{@link ISentryClient#captureTransaction(SentryTransaction,
-   *     TraceContext, Scope, Hint)}} and {{@link ISentryClient#captureProfile(ProfilingTraceData)}}
+   *     TraceContext, Scope, Hint)}} and {{@link ISentryClient#captureEnvelope(SentryEnvelope)}}
    *     instead.
    */
   @Deprecated
@@ -534,7 +509,18 @@ public final class SentryClient implements ISentryClient {
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
     if (profilingTraceData != null) {
-      captureProfile(profilingTraceData);
+      SentryEnvelope envelope;
+      try {
+        envelope =
+            SentryEnvelope.from(
+                options.getSerializer(),
+                profilingTraceData,
+                options.getMaxTraceFileSize(),
+                options.getSdkVersion());
+        captureEnvelope(envelope);
+      } catch (SentryEnvelopeException e) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to capture profile.", e);
+      }
     }
     return captureTransaction(transaction, traceContext, scope, hint);
   }

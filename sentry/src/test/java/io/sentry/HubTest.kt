@@ -1363,29 +1363,13 @@ class HubTest {
     }
     //endregion
 
-    //region captureProfile tests
-    @Test
-    fun `when captureProfile is called on disabled client, do nothing`() {
-        val options = SentryOptions()
-        options.cacheDirPath = file.absolutePath
-        options.dsn = "https://key@sentry.io/proj"
-        options.setSerializer(mock())
-        val sut = Hub(options)
-        val mockClient = mock<ISentryClient>()
-        sut.bindClient(mockClient)
-        sut.close()
-
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), sut)
-        sentryTracer.finish()
-        sut.captureProfile(ProfilingTraceData(profilingTraceFile, sentryTracer))
-        verify(mockClient, never()).captureProfile(any())
-    }
+    //region profiling tests
 
     @Test
     fun `when startTransaction and profiling is enabled, transaction is profiled only if sampled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
-        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenReturn(mock())
         val mockClient = mock<ISentryClient>()
+        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenAnswer { mockClient.captureEnvelope(mock()) }
         val hub = generateHub {
             it.setTransactionProfiler(mockTransactionProfiler)
         }
@@ -1394,20 +1378,20 @@ class HubTest {
         val contexts = TransactionContext("name", "op", TracesSamplingDecision(false, null, true, null))
         val transaction = hub.startTransaction(contexts)
         transaction.finish()
-        verify(mockClient, never()).captureProfile(any())
+        verify(mockClient, never()).captureEnvelope(any())
 
         // Transaction is sampled, so it should be profiled
         val sampledContexts = TransactionContext("name", "op", TracesSamplingDecision(true, null, true, null))
         val sampledTransaction = hub.startTransaction(sampledContexts)
         sampledTransaction.finish()
-        verify(mockClient).captureProfile(any())
+        verify(mockClient).captureEnvelope(any())
     }
 
     @Test
     fun `when startTransaction and is sampled but profiling is disabled, transaction is not profiled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
-        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenReturn(mock())
         val mockClient = mock<ISentryClient>()
+        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenAnswer { mockClient.captureEnvelope(mock()) }
         val hub = generateHub {
             it.profilesSampleRate = 0.0
             it.setTransactionProfiler(mockTransactionProfiler)
@@ -1416,7 +1400,7 @@ class HubTest {
         val contexts = TransactionContext("name", "op")
         val transaction = hub.startTransaction(contexts)
         transaction.finish()
-        verify(mockClient, never()).captureProfile(any())
+        verify(mockClient, never()).captureEnvelope(any())
     }
     //endregion
 
