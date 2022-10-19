@@ -48,7 +48,7 @@ public final class JsonReflectionObjectSerializer {
     } else if (object instanceof String) {
       return object;
     } else if (object instanceof Locale) {
-      return object.toString(); // TODO
+      return object.toString();
     } else if (object instanceof AtomicIntegerArray) {
       return atomicIntegerArrayToList((AtomicIntegerArray) object);
     } else if (object instanceof AtomicBoolean) {
