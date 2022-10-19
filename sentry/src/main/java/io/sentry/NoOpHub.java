@@ -47,11 +47,6 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public @NotNull SentryId captureProfile(@NotNull ProfilingTraceData profilingTraceData) {
-    return SentryId.EMPTY_ID;
-  }
-
-  @Override
   public @NotNull SentryId captureEnvelope(@NotNull SentryEnvelope envelope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
@@ -139,7 +134,7 @@ public final class NoOpHub implements IHub {
 
   /**
    * @deprecated please use {{@link Hub#captureTransaction(SentryTransaction, TraceContext, Hint)}}
-   *     and {{@link Hub#captureProfile(ProfilingTraceData)}} instead.
+   *     and {{@link Hub#captureEnvelope(SentryEnvelope)}} instead.
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
