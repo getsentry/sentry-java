@@ -5,8 +5,14 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.Test
+import java.net.URI
+import java.util.Calendar
+import java.util.Currency
 import java.util.Locale
 import java.util.TimeZone
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicIntegerArray
 
 internal class JsonObjectSerializerTest {
 
@@ -208,6 +214,61 @@ internal class JsonObjectSerializerTest {
         inOrder.verify(fixture.writer).name("localeProperty")
         inOrder.verify(fixture.writer).value("en_US")
         inOrder.verify(fixture.writer).endObject()
+    }
+
+    @Test
+    fun `serializing AtomicIntegerArray`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, AtomicIntegerArray(arrayOf(1, 2, 3).toIntArray()))
+        verify(fixture.writer).beginArray()
+        verify(fixture.writer).value(1 as Number)
+        verify(fixture.writer).value(2 as Number)
+        verify(fixture.writer).value(3 as Number)
+        verify(fixture.writer).endArray()
+    }
+
+    @Test
+    fun `serializing AtomicBoolean`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, AtomicBoolean(true))
+        verify(fixture.writer).value(true)
+    }
+
+    @Test
+    fun `serializing URI`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, URI("http://localhost:8081/api/product?id=99"))
+        verify(fixture.writer).value("http://localhost:8081/api/product?id=99")
+    }
+
+    @Test
+    fun `serializing UUID`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, UUID.fromString("828900a5-15dc-413f-8c17-6ef04d74e074"))
+        verify(fixture.writer).value("828900a5-15dc-413f-8c17-6ef04d74e074")
+    }
+
+    @Test
+    fun `serializing Currency`() {
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, Currency.getInstance("USD"))
+        verify(fixture.writer).value("USD")
+    }
+
+    @Test
+    fun `serializing Calendar`() {
+        val calendar = Calendar.getInstance()
+        calendar.set(2022, 0, 1, 11, 59, 58)
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, calendar)
+        verify(fixture.writer).beginObject()
+        verify(fixture.writer).name("year")
+        verify(fixture.writer).value(2022L as java.lang.Long)
+        verify(fixture.writer).name("month")
+        verify(fixture.writer).value(0L as java.lang.Long)
+        verify(fixture.writer).name("dayOfMonth")
+        verify(fixture.writer).value(1L as java.lang.Long)
+        verify(fixture.writer).name("hourOfDay")
+        verify(fixture.writer).value(11L as java.lang.Long)
+        verify(fixture.writer).name("minute")
+        verify(fixture.writer).value(59L as java.lang.Long)
+        verify(fixture.writer).name("second")
+        verify(fixture.writer).value(58L as java.lang.Long)
+        verify(fixture.writer).endObject()
     }
 
     class UnknownClassWithData(

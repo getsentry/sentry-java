@@ -1,5 +1,8 @@
 package io.sentry;
 
+import static io.sentry.JsonSerializationUtils.atomicIntegerArrayToList;
+import static io.sentry.JsonSerializationUtils.calendarToMap;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.InetAddress;
@@ -141,15 +144,6 @@ public final class JsonReflectionObjectSerializer {
     return list;
   }
 
-  private @NotNull List<Object> atomicIntegerArrayToList(@NotNull AtomicIntegerArray array)
-      throws Exception {
-    List<Object> list = new ArrayList<>();
-    for (int i = 0; i < array.length(); i++) {
-      list.add(array.get(i));
-    }
-    return list;
-  }
-
   private @NotNull List<Object> list(@NotNull Collection<?> collection, @NotNull ILogger logger)
       throws Exception {
     List<Object> list = new ArrayList<>();
@@ -172,18 +166,5 @@ public final class JsonReflectionObjectSerializer {
       }
     }
     return hashMap;
-  }
-
-  private @NotNull Map<String, Object> calendarToMap(@NotNull Calendar calendar) {
-    Map<String, Object> map = new HashMap<>();
-
-    map.put("year", (long) calendar.get(1));
-    map.put("month", (long) calendar.get(2));
-    map.put("dayOfMonth", (long) calendar.get(5));
-    map.put("hourOfDay", (long) calendar.get(11));
-    map.put("minute", (long) calendar.get(12));
-    map.put("second", (long) calendar.get(13));
-
-    return map;
   }
 }
