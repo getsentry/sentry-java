@@ -117,9 +117,9 @@ internal class JsonObjectSerializerTest {
 
     @Test
     fun `serialize unknown object without data`() {
-        fixture.getSUT().serialize(fixture.writer, fixture.logger, object {})
-        verify(fixture.writer).beginObject()
-        verify(fixture.writer).endObject()
+        val value = object {}
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, value)
+        verify(fixture.writer).value(value.toString())
     }
 
     @Test
@@ -174,10 +174,7 @@ internal class JsonObjectSerializerTest {
         val inOrder = inOrder(fixture.writer)
         fixture.getSUT().serialize(fixture.writer, fixture.logger, Locale.US)
 
-        inOrder.verify(fixture.writer).beginObject()
-        inOrder.verify(fixture.writer).name("toString")
         inOrder.verify(fixture.writer).value("en_US")
-        inOrder.verify(fixture.writer).endObject()
     }
 
     @Test
@@ -187,10 +184,8 @@ internal class JsonObjectSerializerTest {
         fixture.getSUT().serialize(fixture.writer, fixture.logger, map)
         inOrder.verify(fixture.writer).beginObject()
         inOrder.verify(fixture.writer).name("one")
-        inOrder.verify(fixture.writer).beginObject()
-        inOrder.verify(fixture.writer).name("toString")
         inOrder.verify(fixture.writer).value("en_US")
-        inOrder.verify(fixture.writer, times(2)).endObject()
+        inOrder.verify(fixture.writer).endObject()
     }
 
     @Test
@@ -199,14 +194,8 @@ internal class JsonObjectSerializerTest {
         val inOrder = inOrder(fixture.writer)
         fixture.getSUT().serialize(fixture.writer, fixture.logger, list)
         inOrder.verify(fixture.writer).beginArray()
-        inOrder.verify(fixture.writer).beginObject()
-        inOrder.verify(fixture.writer).name("toString")
         inOrder.verify(fixture.writer).value("en_US")
-        inOrder.verify(fixture.writer).endObject()
-        inOrder.verify(fixture.writer).beginObject()
-        inOrder.verify(fixture.writer).name("toString")
         inOrder.verify(fixture.writer).value("de")
-        inOrder.verify(fixture.writer).endObject()
         inOrder.verify(fixture.writer).endArray()
     }
 
@@ -217,10 +206,8 @@ internal class JsonObjectSerializerTest {
         fixture.getSUT().serialize(fixture.writer, fixture.logger, obj)
         inOrder.verify(fixture.writer).beginObject()
         inOrder.verify(fixture.writer).name("localeProperty")
-        inOrder.verify(fixture.writer).beginObject()
-        inOrder.verify(fixture.writer).name("toString")
         inOrder.verify(fixture.writer).value("en_US")
-        inOrder.verify(fixture.writer, times(2)).endObject()
+        inOrder.verify(fixture.writer).endObject()
     }
 
     class UnknownClassWithData(

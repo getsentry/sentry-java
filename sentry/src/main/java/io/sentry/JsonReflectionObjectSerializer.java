@@ -2,13 +2,21 @@ package io.sentry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.InetAddress;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +47,22 @@ public final class JsonReflectionObjectSerializer {
       return object;
     } else if (object instanceof String) {
       return object;
+    } else if (object instanceof Locale) {
+      return object.toString(); // TODO
+    } else if (object instanceof AtomicIntegerArray) {
+      return atomicIntegerArrayToList((AtomicIntegerArray) object);
+    } else if (object instanceof AtomicBoolean) {
+      return ((AtomicBoolean) object).get();
+    } else if (object instanceof URI) {
+      return object.toString();
+    } else if (object instanceof InetAddress) {
+      return object.toString();
+    } else if (object instanceof UUID) {
+      return object.toString();
+    } else if (object instanceof Currency) {
+      return object.toString();
+    } else if (object instanceof Calendar) {
+      return calendarToMap((Calendar) object);
     } else if (object.getClass().isEnum()) {
       return object.toString();
     } else {
@@ -63,7 +87,12 @@ public final class JsonReflectionObjectSerializer {
         } else if (object instanceof Map) {
           serializedObject = map((Map<?, ?>) object, logger);
         } else {
-          serializedObject = serializeObject(object, logger);
+          @NotNull Map<String, Object> objectAsMap = serializeObject(object, logger);
+          if (objectAsMap.isEmpty()) {
+            serializedObject = object.toString();
+          } else {
+            serializedObject = objectAsMap;
+          }
         }
       } catch (Exception exception) {
         logger.log(SentryLevel.INFO, "Not serializing object due to throwing sub-path.", exception);
@@ -98,10 +127,6 @@ public final class JsonReflectionObjectSerializer {
       }
     }
 
-    if (map.isEmpty()) {
-      map.put("toString", object.toString());
-    }
-
     return map;
   }
 
@@ -112,6 +137,15 @@ public final class JsonReflectionObjectSerializer {
     List<Object> list = new ArrayList<>();
     for (Object object : objectArray) {
       list.add(serialize(object, logger));
+    }
+    return list;
+  }
+
+  private @NotNull List<Object> atomicIntegerArrayToList(@NotNull AtomicIntegerArray array)
+      throws Exception {
+    List<Object> list = new ArrayList<>();
+    for (int i = 0; i < array.length(); i++) {
+      list.add(array.get(i));
     }
     return list;
   }
@@ -138,5 +172,18 @@ public final class JsonReflectionObjectSerializer {
       }
     }
     return hashMap;
+  }
+
+  private @NotNull Map<String, Object> calendarToMap(@NotNull Calendar calendar) {
+    Map<String, Object> map = new HashMap<>();
+
+    map.put("year", (long) calendar.get(1));
+    map.put("month", (long) calendar.get(2));
+    map.put("dayOfMonth", (long) calendar.get(5));
+    map.put("hourOfDay", (long) calendar.get(11));
+    map.put("minute", (long) calendar.get(12));
+    map.put("second", (long) calendar.get(13));
+
+    return map;
   }
 }
