@@ -81,6 +81,16 @@
     "kernel_version": "1df24aec-3a6f-49a9-8b50-69ae5f9dde08",
     "rooted": true
   },
+  "response":
+  {
+    "cookies": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;",
+    "headers": {
+      "content-type": "text/html"
+    },
+    "status_code": 500,
+    "body_size": 1000,
+    "arbitrary_field": "arbitrary"
+  },
   "runtime":
   {
     "name": "4ed019c4-9af9-43e0-830e-bfde9fe4461c",
