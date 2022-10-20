@@ -24,12 +24,12 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
   private boolean sentStartMeasurement = false;
 
-  private final @NotNull ActivityFramesTracker activityFramesTracker;
+  private final @NotNull IActivityFramesTracker activityFramesTracker;
   private final @NotNull SentryAndroidOptions options;
 
   PerformanceAndroidEventProcessor(
       final @NotNull SentryAndroidOptions options,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull IActivityFramesTracker activityFramesTracker) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.activityFramesTracker =
         Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");

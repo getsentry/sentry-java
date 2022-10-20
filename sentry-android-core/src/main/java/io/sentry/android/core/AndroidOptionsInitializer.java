@@ -134,8 +134,11 @@ final class AndroidOptionsInitializer {
     initializeCacheDirs(context, options);
     options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
 
-    final ActivityFramesTracker activityFramesTracker =
-        new ActivityFramesTracker(loadClass, options.getLogger());
+    final IActivityFramesTracker activityFramesTracker =
+        options.isEnableActivityFramesTracking()
+            ? new ActivityFramesTracker(loadClass, options.getLogger())
+            : new NoOpActivityFramesTracker();
+
     installDefaultIntegrations(
         context,
         options,
@@ -161,7 +164,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final @NotNull IActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
 

@@ -78,6 +78,8 @@ final class ManifestMetadataReader {
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
   static final String COLLECT_ADDITIONAL_CONTEXT = "io.sentry.additional-context";
 
+  static final String PERFORM_ACTIVITY_FRAMES_TRACKING = "io.sentry.activity-frames-tracking";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -284,6 +286,11 @@ final class ManifestMetadataReader {
           options.setTracePropagationTargets(Collections.emptyList());
         } else if (tracePropagationTargets != null) {
           options.setTracePropagationTargets(tracePropagationTargets);
+        }
+
+        if (metadata.containsKey(PERFORM_ACTIVITY_FRAMES_TRACKING)) {
+          options.setEnableActivityFramesTracking(
+              readBool(metadata, logger, PERFORM_ACTIVITY_FRAMES_TRACKING, true));
         }
 
         options.setProguardUuid(

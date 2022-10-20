@@ -1061,4 +1061,42 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.isCollectAdditionalContext)
     }
+
+    @Test
+    fun `applyMetadata reads activity frames tracker flag and keeps default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableActivityFramesTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads activity frames tracker and sets it to enabled if true`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PERFORM_ACTIVITY_FRAMES_TRACKING to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableActivityFramesTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads activity frames tracker and sets it to disabled if false`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PERFORM_ACTIVITY_FRAMES_TRACKING to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableActivityFramesTracking)
+    }
 }

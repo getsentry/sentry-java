@@ -371,4 +371,34 @@ class AndroidOptionsInitializerTest {
 
         assertTrue { fixture.sentryOptions.envelopeDiskCache is AndroidEnvelopeCache }
     }
+
+    @Test
+    fun `When Activity Frames Tracking is enabled, the proper class should be initialized`() {
+        fixture.initSut(hasAppContext = true, configureOptions = {
+            isEnableActivityFramesTracking = true
+        })
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertTrue(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker
+            is ActivityFramesTracker
+        )
+    }
+
+    @Test
+    fun `When Activity Frames Tracking is disabled, a noop should be initialized`() {
+        fixture.initSut(hasAppContext = true, configureOptions = {
+            isEnableActivityFramesTracking = false
+        })
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertTrue(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker
+            is NoOpActivityFramesTracker
+        )
+    }
 }

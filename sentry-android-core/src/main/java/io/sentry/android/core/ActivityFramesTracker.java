@@ -22,7 +22,7 @@ import org.jetbrains.annotations.TestOnly;
  * androidx.core package. It also checks if the FrameMetricsAggregator class is available at
  * runtime.
  */
-public final class ActivityFramesTracker {
+public final class ActivityFramesTracker implements IActivityFramesTracker {
 
   private @Nullable FrameMetricsAggregator frameMetricsAggregator = null;
   private boolean androidXAvailable = true;
@@ -69,6 +69,7 @@ public final class ActivityFramesTracker {
     return androidXAvailable && frameMetricsAggregator != null;
   }
 
+  @Override
   @SuppressWarnings("NullAway")
   public synchronized void addActivity(final @NotNull Activity activity) {
     if (!isFrameMetricsAggregatorAvailable()) {
@@ -123,6 +124,7 @@ public final class ActivityFramesTracker {
     return new FrameCounts(totalFrames, slowFrames, frozenFrames);
   }
 
+  @Override
   @SuppressWarnings("NullAway")
   public synchronized void setMetrics(
       final @NotNull Activity activity, final @NotNull SentryId transactionId) {
@@ -183,6 +185,7 @@ public final class ActivityFramesTracker {
     return new FrameCounts(diffTotalFrames, diffSlowFrames, diffFrozenFrames);
   }
 
+  @Override
   @Nullable
   public synchronized Map<String, @NotNull MeasurementValue> takeMetrics(
       final @NotNull SentryId transactionId) {
@@ -196,6 +199,7 @@ public final class ActivityFramesTracker {
     return stringMeasurementValueMap;
   }
 
+  @Override
   @SuppressWarnings("NullAway")
   public synchronized void stop() {
     if (isFrameMetricsAggregatorAvailable()) {

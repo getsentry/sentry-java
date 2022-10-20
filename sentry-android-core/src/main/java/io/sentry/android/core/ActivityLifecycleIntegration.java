@@ -62,12 +62,12 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ITransaction> activitiesWithOngoingTransactions =
       new WeakHashMap<>();
 
-  private final @NotNull ActivityFramesTracker activityFramesTracker;
+  private final @NotNull IActivityFramesTracker activityFramesTracker;
 
   public ActivityLifecycleIntegration(
       final @NotNull Application application,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull IActivityFramesTracker activityFramesTracker) {
     this.application = Objects.requireNonNull(application, "Application is required");
     Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.activityFramesTracker =
@@ -385,6 +385,12 @@ public final class ActivityLifecycleIntegration
   @NotNull
   WeakHashMap<Activity, ITransaction> getActivitiesWithOngoingTransactions() {
     return activitiesWithOngoingTransactions;
+  }
+
+  @TestOnly
+  @NotNull
+  IActivityFramesTracker getActivityFramesTracker() {
+    return activityFramesTracker;
   }
 
   @TestOnly
