@@ -6,6 +6,7 @@ import static io.sentry.SentryLevel.INFO;
 import static io.sentry.SentryLevel.WARNING;
 import static java.lang.String.format;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.SentryCrashLastRunState;
@@ -47,8 +48,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Open
 @ApiStatus.Internal
-public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
+public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   /** File suffix added to all serialized envelopes files. */
   public static final String SUFFIX_ENVELOPE_FILE = ".envelope";
@@ -58,20 +60,22 @@ public final class EnvelopeCache extends CacheStrategy implements IEnvelopeCache
   public static final String CRASH_MARKER_FILE = "last_crash";
   public static final String NATIVE_CRASH_MARKER_FILE = ".sentry-native/" + CRASH_MARKER_FILE;
 
+  public static final String STARTUP_CRASH_MARKER_FILE = "startup_crash";
+
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
 
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
     final int maxCacheItems = options.getMaxCacheItems();
     if (cacheDirPath == null) {
-      options.getLogger().log(WARNING, "maxCacheItems is null, returning NoOpEnvelopeCache");
+      options.getLogger().log(WARNING, "cacheDirPath is null, returning NoOpEnvelopeCache");
       return NoOpEnvelopeCache.getInstance();
     } else {
       return new EnvelopeCache(options, cacheDirPath, maxCacheItems);
     }
   }
 
-  private EnvelopeCache(
+  public EnvelopeCache(
       final @NotNull SentryOptions options,
       final @NotNull String cacheDirPath,
       final int maxCacheItems) {

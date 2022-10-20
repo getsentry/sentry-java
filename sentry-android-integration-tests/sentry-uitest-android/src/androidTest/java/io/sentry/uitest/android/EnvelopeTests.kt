@@ -3,6 +3,7 @@ package io.sentry.uitest.android
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso
+import androidx.test.espresso.IdlingPolicies
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.ViewMatchers
@@ -14,6 +15,7 @@ import io.sentry.SentryOptions
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import java.io.File
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -176,9 +178,33 @@ class EnvelopeTests : BaseUiTest() {
             // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
             assertFails { assertEnvelope {} }
             assertEnvelope {
-                it.assertItem<SentryTransaction>()
-                // Since the profile is empty, it is discarded and not sent to Sentry
+                val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
+                assertEquals("e2etests", transactionItem.transaction)
+            }
+            assertNoOtherEnvelopes()
+            assertNoOtherRequests()
+        }
+    }
+
+    @Test
+    fun checkTimedOutProfile() {
+        // We increase the IdlingResources timeout to exceed the profiling timeout
+        IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
+        initSentry(true) { options: SentryOptions ->
+            options.tracesSampleRate = 1.0
+            options.profilesSampleRate = 1.0
+        }
+        relayIdlingResource.increment()
+        Sentry.startTransaction("e2etests", "testTimeout")
+        // We don't call transaction.finish() and let the timeout do its job
+
+        relay.assert {
+            assertEnvelope {
+                val profilingTraceData: ProfilingTraceData = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals("e2etests", profilingTraceData.transactionName)
+                assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, profilingTraceData.truncationReason)
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
@@ -201,6 +227,8 @@ class EnvelopeTests : BaseUiTest() {
         benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
         transaction.finish()
         IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
+        // Let this test send all data, so that it doesn't interfere with other tests
+        Thread.sleep(1000)
     }
 
     private fun swipeList(times: Int) {

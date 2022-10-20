@@ -317,6 +317,11 @@ class OutboxSenderTest {
     }
 
     @Test
+    fun `when file name is startup crash marker, should be ignored`() {
+        assertFalse(fixture.getSut().isRelevantFileName(EnvelopeCache.STARTUP_CRASH_MARKER_FILE))
+    }
+
+    @Test
     fun `when file name is relevant, should return true`() {
         assertTrue(fixture.getSut().isRelevantFileName("123.envelope"))
     }

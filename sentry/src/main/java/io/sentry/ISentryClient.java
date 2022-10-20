@@ -193,16 +193,6 @@ public interface ISentryClient {
   }
 
   /**
-   * Captures a profile.
-   *
-   * @param profilingTraceData The profiling trace data captured
-   * @return The Id (SentryId object) of the profile
-   */
-  @NotNull
-  @ApiStatus.Internal
-  SentryId captureProfile(@NotNull ProfilingTraceData profilingTraceData);
-
-  /**
    * Captures a transaction.
    *
    * @param transaction the {@link ITransaction} to send

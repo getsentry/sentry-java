@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix `SentryFileWriter`/`SentryFileOutputStream` append overwrites file contents ([#2304](https://github.com/getsentry/sentry-java/pull/2304))
+
+### Features
+
+- Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
+- Profile envelopes are sent directly from profiler ([#2298](https://github.com/getsentry/sentry-java/pull/2298))
+
+### Dependencies
+
+- Bump Native SDK from v0.5.0 to v0.5.1 ([#2306](https://github.com/getsentry/sentry-java/pull/2306))
+    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#051)
+    - [diff](https://github.com/getsentry/sentry-native/compare/0.5.0...0.5.1)
+
 ## 6.7.0-alpha.1
 
 ### Fixes

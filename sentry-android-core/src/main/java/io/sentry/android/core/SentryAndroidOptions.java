@@ -8,6 +8,7 @@ import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -106,6 +107,29 @@ public final class SentryAndroidOptions extends SentryOptions {
    * (IPC)
    */
   private boolean collectAdditionalContext = true;
+
+  /**
+   * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
+   * previous run. Sentry SDKs normally send events from a background queue, but in the case of
+   * Startup Crashes, it blocks the execution of the {@link Sentry#init()} function for the amount
+   * of startupCrashFlushTimeoutMillis to make sure the events make it to Sentry.
+   *
+   * <p>When the timeout is reached, the execution will continue on background.
+   *
+   * <p>Default is 5000 = 5s.
+   */
+  private long startupCrashFlushTimeoutMillis = 5000; // 5s
+
+  /**
+   * Controls the threshold after the application startup time, within which a crash should happen
+   * to be considered a Startup Crash.
+   *
+   * <p>Startup Crashes are sent on {@link Sentry#init()} in a blocking way, controlled by {@link
+   * SentryAndroidOptions#startupCrashFlushTimeoutMillis}.
+   *
+   * <p>Default is 2000 = 2s.
+   */
+  private final long startupCrashDurationThresholdMillis = 2000; // 2s
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -331,5 +355,35 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setCollectAdditionalContext(boolean collectAdditionalContext) {
     this.collectAdditionalContext = collectAdditionalContext;
+  }
+
+  /**
+   * Returns the Startup Crash flush timeout in Millis
+   *
+   * @return the timeout in Millis
+   */
+  @ApiStatus.Internal
+  long getStartupCrashFlushTimeoutMillis() {
+    return startupCrashFlushTimeoutMillis;
+  }
+
+  /**
+   * Sets the Startup Crash flush timeout in Millis
+   *
+   * @param startupCrashFlushTimeoutMillis the timeout in Millis
+   */
+  @TestOnly
+  void setStartupCrashFlushTimeoutMillis(long startupCrashFlushTimeoutMillis) {
+    this.startupCrashFlushTimeoutMillis = startupCrashFlushTimeoutMillis;
+  }
+
+  /**
+   * Returns the Startup Crash duration threshold in Millis
+   *
+   * @return the threshold in Millis
+   */
+  @ApiStatus.Internal
+  public long getStartupCrashDurationThresholdMillis() {
+    return startupCrashDurationThresholdMillis;
   }
 }

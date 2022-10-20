@@ -1049,34 +1049,48 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when captureProfile`() {
+    fun `when captureEnvelope with ProfilingTraceData`() {
         val client = fixture.getSut()
-        client.captureProfile(fixture.profilingTraceData)
+        val options = fixture.sentryOptions
+        val envelope = SentryEnvelope.from(options.serializer, fixture.profilingTraceData, options.maxTraceFileSize, options.sdkVersion)
+        client.captureEnvelope(envelope)
         verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId))
     }
 
     @Test
-    fun `captureTransaction with profile calls captureProfile and captureTransaction`() {
+    fun `captureTransaction with profile calls captureEnvelope and captureTransaction`() {
         val transaction = SentryTransaction(fixture.sentryTracer)
         val client = spy(fixture.getSut())
         client.captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
         verify(client).captureTransaction(transaction, null, null, null)
-        verify(client).captureProfile(fixture.profilingTraceData)
+        verify(client).captureEnvelope(
+            check {
+                assertEquals(1, it.items.count())
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
+                    assertEquals(item.profileId, fixture.profilingTraceData.profileId)
+                }
+            },
+            anyOrNull()
+        )
     }
 
     @Test
-    fun `when captureProfile with empty trace file, profile is not sent`() {
+    fun `when capture profile with empty trace file, profile is not sent`() {
         val client = fixture.getSut()
-        client.captureProfile(fixture.profilingTraceData)
+        val options = fixture.sentryOptions
+        val envelope = SentryEnvelope.from(options.serializer, fixture.profilingTraceData, options.maxTraceFileSize, options.sdkVersion)
+        client.captureEnvelope(envelope)
         fixture.profilingTraceFile.writeText("")
         assertFails { verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId)) }
     }
 
     @Test
-    fun `when captureProfile with non existing profiling trace file, profile is not sent`() {
+    fun `when capture profile with non existing profiling trace file, profile is not sent`() {
         val client = fixture.getSut()
-        client.captureProfile(fixture.profilingNonExistingTraceData)
-        assertFails { verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId)) }
+        val options = fixture.sentryOptions
+        val envelope = SentryEnvelope.from(options.serializer, fixture.profilingNonExistingTraceData, options.maxTraceFileSize, options.sdkVersion)
+        client.captureEnvelope(envelope)
+        assertFails { verifyProfilingTraceInEnvelope(SentryId(fixture.profilingNonExistingTraceData.profileId)) }
     }
 
     @Test
@@ -2052,7 +2066,8 @@ class SentryClientTest {
                     item.header.type == SentryItemType.Profile
                 }
                 assertNotNull(profilingTraceItem?.data)
-            }
+            },
+            anyOrNull()
         )
     }
 
