@@ -14,9 +14,6 @@
 - Add support for using Encoder with logback.SentryAppender ([#2246](https://github.com/getsentry/sentry-java/pull/2246))
 - Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
 - Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
-
-### Features
-
 - HTTP Client errors for OkHttp ([#2287](https://github.com/getsentry/sentry-java/pull/2287))
 
 ## 6.5.0
