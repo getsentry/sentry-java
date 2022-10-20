@@ -138,6 +138,11 @@ class SentryOkHttpInterceptor(
     }
 
     private fun captureEvent(request: Request, response: Response) {
+        // return if the feature is disabled or its not within the range
+        if (!captureFailedRequests || !containsStatusCode(response.code)) {
+            return
+        }
+
         // not possible to get a parameterized url, but we remove at least the
         // query string and the fragment.
         // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query
@@ -156,10 +161,8 @@ class SentryOkHttpInterceptor(
             requestUrl = requestUrl.replace("#$urlFragment", "")
         }
 
-        if (!captureFailedRequests ||
-            !containsStatusCode(response.code) ||
-            !PropagationTargetsUtils.contain(failedRequestTargets, requestUrl)
-        ) {
+        // return if its not a target match
+        if (!PropagationTargetsUtils.contain(failedRequestTargets, requestUrl)) {
             return
         }
 
