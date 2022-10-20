@@ -1,0 +1,9 @@
+{
+  "cookies": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;",
+  "headers": {
+    "content-type": "text/html"
+  },
+  "status_code": 500,
+  "body_size": 1000,
+  "arbitrary_field": "arbitrary"
+}

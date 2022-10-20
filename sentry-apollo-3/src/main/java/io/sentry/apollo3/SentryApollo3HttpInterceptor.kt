@@ -15,8 +15,8 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
-import io.sentry.TracePropagationTargets
 import io.sentry.TypeCheckHint
+import io.sentry.util.PropagationTargetsUtils
 
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
     HttpInterceptor {
@@ -33,7 +33,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
 
             var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
 
-            if (TracePropagationTargets.contain(hub.options.tracePropagationTargets, request.url)) {
+            if (PropagationTargetsUtils.contain(hub.options.tracePropagationTargets, request.url)) {
                 val sentryTraceHeader = span.toSentryTrace()
                 val baggageHeader = span.toBaggageHeader(request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value })
                 cleanedHeaders.add(HttpHeader(sentryTraceHeader.name, sentryTraceHeader.value))
