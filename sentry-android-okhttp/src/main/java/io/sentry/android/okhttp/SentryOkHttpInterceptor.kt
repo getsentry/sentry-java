@@ -22,6 +22,20 @@ import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
 
+/**
+ * The Sentry's [SentryOkHttpInterceptor], it will automatically add a breadcrumb and start a span
+ * out of the active span bound to the scope for each HTTP Request.
+ * If [captureFailedRequests] is enabled, the SDK will capture HTTP Client errors as well.
+ *
+ * @param hub The [IHub], internal and only used for testing.
+ * @param beforeSpan The [ISpan] can be customized or dropped with the [BeforeSpanCallback].
+ * @param captureFailedRequests The SDK will only capture HTTP Client errors if it is enabled,
+ * Defaults to false.
+ * @param failedRequestStatusCodes The SDK will only capture HTTP Client errors if the HTTP Response
+ * status code is within the defined ranges.
+ * @param failedRequestTargets The SDK will only capture HTTP Client errors if the HTTP Request URL
+ * is a match for any of the defined targets.
+ */
 class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,

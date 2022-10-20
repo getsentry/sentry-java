@@ -9,30 +9,28 @@ import io.sentry.JsonSerializable
 import java.io.StringReader
 import java.io.StringWriter
 
-class SerializationUtils {
+object SerializationUtils {
     // TODO: refactor every ser and deser tests to reuse this utils, a lot of boilerplate
 
-    companion object {
-        fun <T> deserializeJson(json: String, deserializer: JsonDeserializer<T>, logger: ILogger): T {
-            val reader = JsonObjectReader(StringReader(json))
-            return deserializer.deserialize(reader, logger)
-        }
+    fun <T> deserializeJson(json: String, deserializer: JsonDeserializer<T>, logger: ILogger): T {
+        val reader = JsonObjectReader(StringReader(json))
+        return deserializer.deserialize(reader, logger)
+    }
 
-        fun sanitizedFile(path: String): String {
-            return FileFromResources.invoke(path)
-                .replace(Regex("[\n\r]"), "")
-                .replace(" ", "")
-        }
+    fun sanitizedFile(path: String): String {
+        return FileFromResources.invoke(path)
+            .replace(Regex("[\n\r]"), "")
+            .replace(" ", "")
+    }
 
-        fun serializeToString(jsonSerializable: JsonSerializable, logger: ILogger): String {
-            return this.serializeToString { wrt -> jsonSerializable.serialize(wrt, logger) }
-        }
+    fun serializeToString(jsonSerializable: JsonSerializable, logger: ILogger): String {
+        return this.serializeToString { wrt -> jsonSerializable.serialize(wrt, logger) }
+    }
 
-        private fun serializeToString(serialize: (JsonObjectWriter) -> Unit): String {
-            val wrt = StringWriter()
-            val jsonWrt = JsonObjectWriter(wrt, 100)
-            serialize(jsonWrt)
-            return wrt.toString()
-        }
+    private fun serializeToString(serialize: (JsonObjectWriter) -> Unit): String {
+        val wrt = StringWriter()
+        val jsonWrt = JsonObjectWriter(wrt, 100)
+        serialize(jsonWrt)
+        return wrt.toString()
     }
 }

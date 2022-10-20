@@ -108,7 +108,7 @@ class SentryOkHttpInterceptorTest {
             .build()
     }
 
-    private val getRequestWithBaggagHeader = {
+    private val getRequestWithBaggageHeader = {
         Request.Builder()
             .addHeader("baggage", "thirdPartyBaggage=someValue")
             .addHeader(
@@ -187,7 +187,7 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
         val sut = fixture.getSut()
-        sut.newCall(getRequestWithBaggagHeader()).execute()
+        sut.newCall(getRequestWithBaggageHeader()).execute()
         val recorderRequest = fixture.server.takeRequest()
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])

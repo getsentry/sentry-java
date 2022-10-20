@@ -66,8 +66,6 @@ public final class Response implements JsonUnknown, JsonSerializable {
     this.headers = CollectionUtils.newConcurrentHashMap(headers);
   }
 
-  // region json
-
   @Nullable
   @Override
   public Map<String, Object> getUnknown() {
@@ -94,6 +92,8 @@ public final class Response implements JsonUnknown, JsonSerializable {
   public void setBodySize(final @Nullable Long bodySize) {
     this.bodySize = bodySize;
   }
+
+  // region json
 
   public static final class JsonKeys {
     public static final String COOKIES = "cookies";
