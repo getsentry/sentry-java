@@ -3304,6 +3304,12 @@ public final class io/sentry/util/HttpUtils {
 	public static fun containsSensitiveHeader (Ljava/lang/String;)Z
 }
 
+public final class io/sentry/util/JsonSerializationUtils {
+	public fun <init> ()V
+	public static fun atomicIntegerArrayToList (Ljava/util/concurrent/atomic/AtomicIntegerArray;)Ljava/util/List;
+	public static fun calendarToMap (Ljava/util/Calendar;)Ljava/util/Map;
+}
+
 public final class io/sentry/util/LogUtils {
 	public fun <init> ()V
 	public static fun logNotInstanceOf (Ljava/lang/Class;Ljava/lang/Object;Lio/sentry/ILogger;)V

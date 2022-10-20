@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings({"resource", "NullAway"}) // Ignore warnings to preserve original code.
 public final class JsonWriterTest extends TestCase {
@@ -311,6 +312,13 @@ public final class JsonWriterTest extends TestCase {
     jsonWriter.value(false);
     jsonWriter.endArray();
     assertEquals("[true,false]", stringWriter.toString());
+  }
+
+  public void testAtomicInteger() throws IOException {
+    StringWriter stringWriter = new StringWriter();
+    JsonWriter jsonWriter = new JsonWriter(stringWriter);
+    jsonWriter.value(new AtomicInteger(42));
+    assertEquals("42", stringWriter.toString());
   }
 
   public void testBoxedBooleans() throws IOException {
