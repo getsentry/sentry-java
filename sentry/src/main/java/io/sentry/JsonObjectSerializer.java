@@ -1,7 +1,7 @@
 package io.sentry;
 
-import static io.sentry.JsonSerializationUtils.atomicIntegerArrayToList;
-import static io.sentry.JsonSerializationUtils.calendarToMap;
+import static io.sentry.util.JsonSerializationUtils.atomicIntegerArrayToList;
+import static io.sentry.util.JsonSerializationUtils.calendarToMap;
 
 import java.io.IOException;
 import java.net.InetAddress;

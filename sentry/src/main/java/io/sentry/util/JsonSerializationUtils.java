@@ -1,4 +1,4 @@
-package io.sentry;
+package io.sentry.util;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -12,8 +12,8 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class JsonSerializationUtils {
 
-  public static @NotNull Map<String, Object> calendarToMap(@NotNull Calendar calendar) {
-    Map<String, Object> map = new HashMap<>();
+  public static @NotNull Map<String, Object> calendarToMap(final @NotNull Calendar calendar) {
+    final @NotNull Map<String, Object> map = new HashMap<>();
 
     map.put("year", (long) calendar.get(Calendar.YEAR));
     map.put("month", (long) calendar.get(Calendar.MONTH));
@@ -25,9 +25,11 @@ public final class JsonSerializationUtils {
     return map;
   }
 
-  public static @NotNull List<Object> atomicIntegerArrayToList(@NotNull AtomicIntegerArray array) {
-    List<Object> list = new ArrayList<>();
-    for (int i = 0; i < array.length(); i++) {
+  public static @NotNull List<Object> atomicIntegerArrayToList(
+      final @NotNull AtomicIntegerArray array) {
+    final int numberOfItems = array.length();
+    final @NotNull List<Object> list = new ArrayList<>(numberOfItems);
+    for (int i = 0; i < numberOfItems; i++) {
       list.add(array.get(i));
     }
     return list;

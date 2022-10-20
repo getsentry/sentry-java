@@ -581,12 +581,6 @@ public abstract interface class io/sentry/JsonSerializable {
 	public abstract fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 }
 
-public final class io/sentry/JsonSerializationUtils {
-	public fun <init> ()V
-	public static fun atomicIntegerArrayToList (Ljava/util/concurrent/atomic/AtomicIntegerArray;)Ljava/util/List;
-	public static fun calendarToMap (Ljava/util/Calendar;)Ljava/util/Map;
-}
-
 public final class io/sentry/JsonSerializer : io/sentry/ISerializer {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun deserialize (Ljava/io/Reader;Ljava/lang/Class;)Ljava/lang/Object;
@@ -3258,6 +3252,12 @@ public abstract interface class io/sentry/util/HintUtils$SentryHintFallback {
 
 public abstract interface class io/sentry/util/HintUtils$SentryNullableConsumer {
 	public abstract fun accept (Ljava/lang/Object;)V
+}
+
+public final class io/sentry/util/JsonSerializationUtils {
+	public fun <init> ()V
+	public static fun atomicIntegerArrayToList (Ljava/util/concurrent/atomic/AtomicIntegerArray;)Ljava/util/List;
+	public static fun calendarToMap (Ljava/util/Calendar;)Ljava/util/Map;
 }
 
 public final class io/sentry/util/LogUtils {
