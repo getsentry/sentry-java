@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
-import io.sentry.ILogger;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.MainThreadChecker;
@@ -16,60 +15,61 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * A class that tracks slow and frozen frames using the FrameMetricsAggregator class from
  * androidx.core package. It also checks if the FrameMetricsAggregator class is available at
  * runtime.
  */
-public final class ActivityFramesTracker implements IActivityFramesTracker {
+public final class ActivityFramesTracker {
 
   private @Nullable FrameMetricsAggregator frameMetricsAggregator = null;
-  private boolean androidXAvailable = true;
+  private final SentryAndroidOptions options;
 
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
       activityMeasurements = new ConcurrentHashMap<>();
   private final @NotNull Map<Activity, FrameCounts> frameCountAtStartSnapshots =
       new WeakHashMap<>();
 
-  private final @Nullable ILogger logger;
   private final @NotNull MainLooperHandler handler;
 
   public ActivityFramesTracker(
       final @NotNull LoadClass loadClass,
-      final @Nullable ILogger logger,
+      final @NotNull SentryAndroidOptions options,
       final @NotNull MainLooperHandler handler) {
-    androidXAvailable =
-        loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", logger);
+
+    final boolean androidXAvailable =
+        loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", options.getLogger());
+
     if (androidXAvailable) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
-    this.logger = logger;
+    this.options = options;
     this.handler = handler;
   }
 
-  public ActivityFramesTracker(final @NotNull LoadClass loadClass, final @Nullable ILogger logger) {
-    this(loadClass, logger, new MainLooperHandler());
-  }
-
-  public ActivityFramesTracker(final @NotNull LoadClass loadClass) {
-    this(loadClass, null);
+  public ActivityFramesTracker(
+      final @NotNull LoadClass loadClass, final @NotNull SentryAndroidOptions options) {
+    this(loadClass, options, new MainLooperHandler());
   }
 
   @TestOnly
   ActivityFramesTracker(
-      final @Nullable FrameMetricsAggregator frameMetricsAggregator,
-      final @NotNull MainLooperHandler handler) {
+      final @NotNull LoadClass loadClass,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull MainLooperHandler handler,
+      final @Nullable FrameMetricsAggregator frameMetricsAggregator) {
+
+    this(loadClass, options, handler);
     this.frameMetricsAggregator = frameMetricsAggregator;
-    this.logger = null;
-    this.handler = handler;
   }
 
-  private boolean isFrameMetricsAggregatorAvailable() {
-    return androidXAvailable && frameMetricsAggregator != null;
+  @VisibleForTesting
+  public boolean isFrameMetricsAggregatorAvailable() {
+    return frameMetricsAggregator != null && options.isEnableFramesTracking();
   }
 
-  @Override
   @SuppressWarnings("NullAway")
   public synchronized void addActivity(final @NotNull Activity activity) {
     if (!isFrameMetricsAggregatorAvailable()) {
@@ -124,7 +124,6 @@ public final class ActivityFramesTracker implements IActivityFramesTracker {
     return new FrameCounts(totalFrames, slowFrames, frozenFrames);
   }
 
-  @Override
   @SuppressWarnings("NullAway")
   public synchronized void setMetrics(
       final @NotNull Activity activity, final @NotNull SentryId transactionId) {
@@ -185,7 +184,6 @@ public final class ActivityFramesTracker implements IActivityFramesTracker {
     return new FrameCounts(diffTotalFrames, diffSlowFrames, diffFrozenFrames);
   }
 
-  @Override
   @Nullable
   public synchronized Map<String, @NotNull MeasurementValue> takeMetrics(
       final @NotNull SentryId transactionId) {
@@ -199,7 +197,6 @@ public final class ActivityFramesTracker implements IActivityFramesTracker {
     return stringMeasurementValueMap;
   }
 
-  @Override
   @SuppressWarnings("NullAway")
   public synchronized void stop() {
     if (isFrameMetricsAggregatorAvailable()) {
@@ -219,15 +216,15 @@ public final class ActivityFramesTracker implements IActivityFramesTracker {
               try {
                 runnable.run();
               } catch (Throwable ignored) {
-                if (logger != null && tag != null) {
-                  logger.log(SentryLevel.WARNING, "Failed to execute " + tag);
+                if (tag != null) {
+                  options.getLogger().log(SentryLevel.WARNING, "Failed to execute " + tag);
                 }
               }
             });
       }
     } catch (Throwable ignored) {
-      if (logger != null && tag != null) {
-        logger.log(SentryLevel.WARNING, "Failed to execute " + tag);
+      if (tag != null) {
+        options.getLogger().log(SentryLevel.WARNING, "Failed to execute " + tag);
       }
     }
   }

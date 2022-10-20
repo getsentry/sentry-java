@@ -1,15 +1,15 @@
-public final class io/sentry/android/core/ActivityFramesTracker : io/sentry/android/core/IActivityFramesTracker {
-	public fun <init> (Lio/sentry/android/core/LoadClass;)V
-	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/ILogger;)V
-	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/ILogger;Lio/sentry/android/core/MainLooperHandler;)V
+public final class io/sentry/android/core/ActivityFramesTracker {
+	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun <init> (Lio/sentry/android/core/LoadClass;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/MainLooperHandler;)V
 	public fun addActivity (Landroid/app/Activity;)V
+	public fun isFrameMetricsAggregatorAvailable ()Z
 	public fun setMetrics (Landroid/app/Activity;Lio/sentry/protocol/SentryId;)V
 	public fun stop ()V
 	public fun takeMetrics (Lio/sentry/protocol/SentryId;)Ljava/util/Map;
 }
 
 public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/IActivityFramesTracker;)V
+	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
@@ -79,13 +79,6 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public abstract interface class io/sentry/android/core/IActivityFramesTracker {
-	public abstract fun addActivity (Landroid/app/Activity;)V
-	public abstract fun setMetrics (Landroid/app/Activity;Lio/sentry/protocol/SentryId;)V
-	public abstract fun stop ()V
-	public abstract fun takeMetrics (Lio/sentry/protocol/SentryId;)Ljava/util/Map;
-}
-
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 	public abstract fun clearDebugImages ()V
 	public abstract fun loadDebugImages ()Ljava/util/List;
@@ -103,14 +96,6 @@ public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration
 	public fun <init> (Ljava/lang/Class;)V
 	public fun close ()V
 	public final fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
-}
-
-public final class io/sentry/android/core/NoOpActivityFramesTracker : io/sentry/android/core/IActivityFramesTracker {
-	public fun <init> ()V
-	public fun addActivity (Landroid/app/Activity;)V
-	public fun setMetrics (Landroid/app/Activity;Lio/sentry/protocol/SentryId;)V
-	public fun stop ()V
-	public fun takeMetrics (Lio/sentry/protocol/SentryId;)Ljava/util/Map;
 }
 
 public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
@@ -151,12 +136,12 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isAnrReportInDebug ()Z
 	public fun isAttachScreenshot ()Z
 	public fun isCollectAdditionalContext ()Z
-	public fun isEnableActivityFramesTracking ()Z
 	public fun isEnableActivityLifecycleBreadcrumbs ()Z
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
 	public fun isEnableAppComponentBreadcrumbs ()Z
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
+	public fun isEnableFramesTracking ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableUserInteractionBreadcrumbs ()Z
 	public fun isEnableUserInteractionTracing ()Z
@@ -166,12 +151,12 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setAttachScreenshot (Z)V
 	public fun setCollectAdditionalContext (Z)V
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
-	public fun setEnableActivityFramesTracking (Z)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
 	public fun setEnableActivityLifecycleTracingAutoFinish (Z)V
 	public fun setEnableAppComponentBreadcrumbs (Z)V
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
+	public fun setEnableFramesTracking (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableUserInteractionBreadcrumbs (Z)V
 	public fun setEnableUserInteractionTracing (Z)V
