@@ -303,9 +303,8 @@ public final class SentryTracer implements ITransaction {
   public void finish(@Nullable SpanStatus status) {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
-      ProfilingTraceData profilingTraceData = null;
       if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
-        profilingTraceData = hub.getOptions().getTransactionProfiler().onTransactionFinish(this);
+        hub.getOptions().getTransactionProfiler().onTransactionFinish(this);
       }
 
       // try to get the high precision timestamp from the root span
@@ -366,10 +365,6 @@ public final class SentryTracer implements ITransaction {
       }
 
       transaction.getMeasurements().putAll(measurements);
-
-      if (profilingTraceData != null) {
-        hub.captureProfile(profilingTraceData);
-      }
       hub.captureTransaction(transaction, traceContext(), null);
     }
   }
