@@ -17,6 +17,7 @@ class ContextsTest {
         contexts.setOperatingSystem(OperatingSystem())
         contexts.setRuntime(SentryRuntime())
         contexts.setGpu(Gpu())
+        contexts.setResponse(Response())
         contexts.trace = SpanContext("op")
 
         val clone = Contexts(contexts)
@@ -30,6 +31,7 @@ class ContextsTest {
         assertNotSame(contexts.runtime, clone.runtime)
         assertNotSame(contexts.gpu, clone.gpu)
         assertNotSame(contexts.trace, clone.trace)
+        assertNotSame(contexts.response, clone.response)
     }
 
     @Test
