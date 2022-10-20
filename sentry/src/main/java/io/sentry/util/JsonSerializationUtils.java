@@ -15,12 +15,12 @@ public final class JsonSerializationUtils {
   public static @NotNull Map<String, Object> calendarToMap(final @NotNull Calendar calendar) {
     final @NotNull Map<String, Object> map = new HashMap<>();
 
-    map.put("year", (long) calendar.get(Calendar.YEAR));
-    map.put("month", (long) calendar.get(Calendar.MONTH));
-    map.put("dayOfMonth", (long) calendar.get(Calendar.DAY_OF_MONTH));
-    map.put("hourOfDay", (long) calendar.get(Calendar.HOUR_OF_DAY));
-    map.put("minute", (long) calendar.get(Calendar.MINUTE));
-    map.put("second", (long) calendar.get(Calendar.SECOND));
+    map.put("year", calendar.get(Calendar.YEAR));
+    map.put("month", calendar.get(Calendar.MONTH));
+    map.put("dayOfMonth", calendar.get(Calendar.DAY_OF_MONTH));
+    map.put("hourOfDay", calendar.get(Calendar.HOUR_OF_DAY));
+    map.put("minute", calendar.get(Calendar.MINUTE));
+    map.put("second", calendar.get(Calendar.SECOND));
 
     return map;
   }

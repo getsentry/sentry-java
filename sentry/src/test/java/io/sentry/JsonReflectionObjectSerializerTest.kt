@@ -334,12 +334,12 @@ class JsonReflectionObjectSerializerTest {
         calendar.set(2022, 0, 1, 11, 59, 58)
         val actual = fixture.getSut().serialize(calendar, fixture.logger)
         val expected = mapOf<String, Any?>(
-            "month" to 0L,
-            "year" to 2022L,
-            "dayOfMonth" to 1L,
-            "hourOfDay" to 11L,
-            "minute" to 59L,
-            "second" to 58L
+            "month" to 0,
+            "year" to 2022,
+            "dayOfMonth" to 1,
+            "hourOfDay" to 11,
+            "minute" to 59,
+            "second" to 58
         )
         assertEquals(expected, actual)
     }
