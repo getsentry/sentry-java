@@ -23,6 +23,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: 'Set up Java: ${{ matrix.java }}'
+        uses: actions/setup-java@v2
+        with:
+          java-version: 17
+          distribution: 'temurin'
+
       - name: Cache Gradle packages
         uses: actions/cache@v2
         with:
