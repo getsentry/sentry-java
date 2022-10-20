@@ -14,6 +14,7 @@
 - Profile envelopes are sent directly from profiler ([#2298](https://github.com/getsentry/sentry-java/pull/2298))
 - Add support for using Encoder with logback.SentryAppender ([#2246](https://github.com/getsentry/sentry-java/pull/2246))
 - Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
+- Add option to enable or disable Activity Frames Tracker ([#2314](https://github.com/getsentry/sentry-java/pull/2314))
 
 ### Dependencies
 
