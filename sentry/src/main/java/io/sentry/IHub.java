@@ -342,16 +342,6 @@ public interface IHub {
   IHub clone();
 
   /**
-   * Captures a profile and enqueues it for sending to Sentry server.
-   *
-   * @param profilingTraceData the profiling trace data
-   * @return profile's id
-   */
-  @ApiStatus.Internal
-  @NotNull
-  SentryId captureProfile(final @NotNull ProfilingTraceData profilingTraceData);
-
-  /**
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction

@@ -1,7 +1,6 @@
 package io.sentry
 
 import kotlin.test.Test
-import kotlin.test.assertNull
 
 class NoOpTransactionProfilerTest {
     private var profiler = NoOpTransactionProfiler.getInstance()
@@ -11,6 +10,6 @@ class NoOpTransactionProfilerTest {
         profiler.onTransactionStart(NoOpTransaction.getInstance())
 
     @Test
-    fun `onTransactionFinish returns null`() =
-        assertNull(profiler.onTransactionFinish(NoOpTransaction.getInstance()))
+    fun `onTransactionFinish does not throw`() =
+        profiler.onTransactionFinish(NoOpTransaction.getInstance())
 }

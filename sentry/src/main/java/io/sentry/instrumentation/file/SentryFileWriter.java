@@ -30,7 +30,8 @@ public final class SentryFileWriter extends OutputStreamWriter {
     super(new SentryFileOutputStream(fd));
   }
 
-  SentryFileWriter(final @NotNull File file, final @NotNull IHub hub) throws FileNotFoundException {
-    super(new SentryFileOutputStream(file, hub));
+  SentryFileWriter(final @NotNull File file, final boolean append, final @NotNull IHub hub)
+      throws FileNotFoundException {
+    super(new SentryFileOutputStream(file, append, hub));
   }
 }

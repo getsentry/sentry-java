@@ -4,7 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class SampleRateUtil {
+public final class SampleRateUtils {
 
   public static boolean isValidSampleRate(@Nullable Double sampleRate) {
     return isValidSampleRate(sampleRate, true);
