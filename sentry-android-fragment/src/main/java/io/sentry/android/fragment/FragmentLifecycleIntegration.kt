@@ -9,12 +9,11 @@ import io.sentry.IHub
 import io.sentry.Integration
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
-import io.sentry.android.fragment.internal.SentryFragmentLifecycleCallbacks
 import java.io.Closeable
 
 class FragmentLifecycleIntegration(
     private val application: Application,
-    private val loggedFragmentLifecycleStates: Set<FragmentLifecycleState>,
+    private val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
     private val enableAutoFragmentLifecycleTracing: Boolean
 ) :
     ActivityLifecycleCallbacks,
@@ -23,7 +22,7 @@ class FragmentLifecycleIntegration(
 
     constructor(application: Application) : this(
         application = application,
-        loggedFragmentLifecycleStates = FragmentLifecycleState.values().toSet(),
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet(),
         enableAutoFragmentLifecycleTracing = false
     )
 
@@ -33,7 +32,7 @@ class FragmentLifecycleIntegration(
         enableAutoFragmentLifecycleTracing: Boolean
     ) : this(
         application = application,
-        loggedFragmentLifecycleStates = FragmentLifecycleState.values().toSet()
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
@@ -63,7 +62,7 @@ class FragmentLifecycleIntegration(
             ?.registerFragmentLifecycleCallbacks(
                 SentryFragmentLifecycleCallbacks(
                     hub = hub,
-                    loggedFragmentLifecycleStates = loggedFragmentLifecycleStates,
+                    filterFragmentLifecycleBreadcrumbs = filterFragmentLifecycleBreadcrumbs,
                     enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
                 ),
                 true

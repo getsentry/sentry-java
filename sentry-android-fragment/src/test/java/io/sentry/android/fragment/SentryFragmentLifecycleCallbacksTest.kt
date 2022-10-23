@@ -1,4 +1,4 @@
-package io.sentry.android.fragment.internal
+package io.sentry.android.fragment
 
 import android.content.Context
 import android.os.Bundle
@@ -21,7 +21,6 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
-import io.sentry.android.fragment.FragmentLifecycleState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -56,7 +55,7 @@ class SentryFragmentLifecycleCallbacksTest {
             whenever(fragment.isAdded).thenReturn(isAdded)
             return SentryFragmentLifecycleCallbacks(
                 hub = hub,
-                loggedFragmentLifecycleStates = loggedFragmentLifecycleStates,
+                filterFragmentLifecycleBreadcrumbs = loggedFragmentLifecycleStates,
                 enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
             )
         }

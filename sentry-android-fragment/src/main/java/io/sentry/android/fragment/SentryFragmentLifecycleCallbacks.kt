@@ -1,4 +1,4 @@
-package io.sentry.android.fragment.internal
+package io.sentry.android.fragment
 
 import android.content.Context
 import android.os.Bundle
@@ -14,19 +14,44 @@ import io.sentry.ISpan
 import io.sentry.SentryLevel.INFO
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.ANDROID_FRAGMENT
-import io.sentry.android.fragment.FragmentLifecycleState
 import java.util.WeakHashMap
 
 @Suppress("TooManyFunctions")
-internal class SentryFragmentLifecycleCallbacks(
+class SentryFragmentLifecycleCallbacks(
     private val hub: IHub = HubAdapter.getInstance(),
-    val loggedFragmentLifecycleStates: Set<FragmentLifecycleState>,
+    val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
     val enableAutoFragmentLifecycleTracing: Boolean
 ) : FragmentLifecycleCallbacks() {
 
     private val isPerformanceEnabled get() = hub.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
 
     private val fragmentsWithOngoingTransactions = WeakHashMap<Fragment, ISpan>()
+
+    constructor(
+        hub: IHub,
+        enableFragmentLifecycleBreadcrumbs: Boolean,
+        enableAutoFragmentLifecycleTracing: Boolean
+    ) : this(
+        hub = hub,
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
+            .takeIf { enableFragmentLifecycleBreadcrumbs }
+            .orEmpty(),
+        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+    )
+
+    constructor(
+        enableFragmentLifecycleBreadcrumbs: Boolean = true,
+        enableAutoFragmentLifecycleTracing: Boolean = false
+    ) : this(
+        hub = HubAdapter.getInstance(),
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
+            .takeIf { enableFragmentLifecycleBreadcrumbs }
+            .orEmpty(),
+        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+    )
+
+    val enableFragmentLifecycleBreadcrumbs: Boolean
+        get() = filterFragmentLifecycleBreadcrumbs.isNotEmpty()
 
     override fun onFragmentAttached(
         fragmentManager: FragmentManager,
@@ -100,7 +125,7 @@ internal class SentryFragmentLifecycleCallbacks(
     }
 
     private fun addBreadcrumb(fragment: Fragment, state: FragmentLifecycleState) {
-        if (!loggedFragmentLifecycleStates.contains(state)) {
+        if (!filterFragmentLifecycleBreadcrumbs.contains(state)) {
             return
         }
         val breadcrumb = Breadcrumb().apply {
