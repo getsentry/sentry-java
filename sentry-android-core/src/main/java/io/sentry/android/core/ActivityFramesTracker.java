@@ -54,6 +54,14 @@ public final class ActivityFramesTracker {
     this(loadClass, options, new MainLooperHandler());
   }
 
+  /**
+   * @deprecated please use {{@link ActivityFramesTracker#ActivityFramesTracker(LoadClass,
+   *     SentryAndroidOptions)}} instead.
+   */
+  public ActivityFramesTracker(final @NotNull LoadClass loadClass) {
+    this(loadClass, new SentryAndroidOptions());
+  }
+
   @TestOnly
   ActivityFramesTracker(
       final @NotNull LoadClass loadClass,
