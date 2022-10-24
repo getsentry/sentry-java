@@ -10,7 +10,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.Navigator
 import io.sentry.Breadcrumb
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
@@ -72,4 +74,10 @@ public fun NavHostController.withSentryObservableEffect(
         }
     }
     return this
+}
+
+@Composable
+public fun rememberNavController(vararg navigators: Navigator<out NavDestination>): NavHostController {
+    return androidx.navigation.compose.rememberNavController(navigators = navigators)
+        .withSentryObservableEffect()
 }
