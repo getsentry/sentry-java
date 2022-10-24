@@ -15,9 +15,9 @@ jobs:
     env:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
 
-    if: "${{ env.SAUCE_USERNAME != '' }}"
-
     steps:
+      if: "${{ env.SAUCE_USERNAME != '' }}"
+
       - name: Git checkout
         uses: actions/checkout@v2
 
