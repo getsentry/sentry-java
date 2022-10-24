@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.spy
@@ -19,6 +20,7 @@ import io.sentry.ProfilingTraceData
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
+import io.sentry.assertEnvelopeItem
 import io.sentry.test.getCtor
 import org.junit.runner.RunWith
 import java.io.File
@@ -28,7 +30,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -63,7 +64,7 @@ class AndroidTransactionProfilerTest {
             transaction1 = SentryTracer(TransactionContext("", ""), hub)
             transaction2 = SentryTracer(TransactionContext("", ""), hub)
             transaction3 = SentryTracer(TransactionContext("", ""), hub)
-            return AndroidTransactionProfiler(context, options, buildInfoProvider)
+            return AndroidTransactionProfiler(context, options, buildInfoProvider, hub)
         }
     }
 
@@ -100,8 +101,16 @@ class AndroidTransactionProfilerTest {
     fun `profiler profiles current transaction`() {
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
-        val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertEquals(fixture.transaction1.eventId.toString(), traceData!!.transactionId)
+        profiler.onTransactionFinish(fixture.transaction1)
+
+        verify(fixture.hub).captureEnvelope(
+            check {
+                assertEquals(1, it.items.count())
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
+                    assertEquals(item.transactionId, fixture.transaction1.eventId.toString())
+                }
+            }
+        )
     }
 
     @Test
@@ -111,8 +120,8 @@ class AndroidTransactionProfilerTest {
         }
         val profiler = fixture.getSut(context, buildInfo)
         profiler.onTransactionStart(fixture.transaction1)
-        val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertNull(traceData)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub, never()).captureEnvelope(any())
     }
 
     @Test
@@ -122,8 +131,8 @@ class AndroidTransactionProfilerTest {
         }
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
-        val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertNull(traceData)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub, never()).captureEnvelope(any())
     }
 
     @Test
@@ -195,8 +204,8 @@ class AndroidTransactionProfilerTest {
         }
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
-        val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertNull(traceData)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub, never()).captureEnvelope(any())
     }
 
     @Test
@@ -206,8 +215,8 @@ class AndroidTransactionProfilerTest {
         }
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
-        val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertNull(traceData)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub, never()).captureEnvelope(any())
     }
 
     @Test
@@ -217,8 +226,8 @@ class AndroidTransactionProfilerTest {
         }
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
-        val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertNull(traceData)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub, never()).captureEnvelope(any())
     }
 
     @Test
@@ -235,34 +244,8 @@ class AndroidTransactionProfilerTest {
     @Test
     fun `onTransactionFinish works only if previously started`() {
         val profiler = fixture.getSut(context)
-        val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertNull(traceData)
-    }
-
-    @Test
-    fun `onTransactionFinish returns timedOutData to the timed out transaction once, even after other transactions`() {
-        val profiler = fixture.getSut(context)
-
-        val executorService = mock<ISentryExecutorService>()
-        val captor = argumentCaptor<Runnable>()
-        whenever(executorService.schedule(captor.capture(), any())).thenReturn(null)
-        whenever(fixture.options.executorService).thenReturn(executorService)
-        // Start and finish first transaction profiling
-        profiler.onTransactionStart(fixture.transaction1)
-
-        // Set timed out data by calling the timeout scheduled job
-        captor.firstValue.run()
-
-        // Start and finish second transaction. Since profiler returned data, it means no other profiling is running
-        profiler.onTransactionStart(fixture.transaction2)
-        assertEquals(fixture.transaction2.eventId.toString(), profiler.onTransactionFinish(fixture.transaction2)!!.transactionId)
-
-        // First transaction finishes: timed out data is returned
-        val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertEquals(traceData!!.transactionId, fixture.transaction1.eventId.toString())
-
-        // If first transaction is finished again, nothing is returned
-        assertNull(profiler.onTransactionFinish(fixture.transaction1))
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub, never()).captureEnvelope(any())
     }
 
     @Test
@@ -281,9 +264,16 @@ class AndroidTransactionProfilerTest {
         captor.firstValue.run()
 
         // First transaction finishes: timed out data is returned
-        val traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertEquals(traceData!!.transactionId, fixture.transaction1.eventId.toString())
-        assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, traceData.truncationReason)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub).captureEnvelope(
+            check {
+                assertEquals(1, it.items.count())
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
+                    assertEquals(item.transactionId, fixture.transaction1.eventId.toString())
+                    assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, item.truncationReason)
+                }
+            }
+        )
     }
 
     @Test
@@ -292,11 +282,18 @@ class AndroidTransactionProfilerTest {
         profiler.onTransactionStart(fixture.transaction1)
         profiler.onTransactionStart(fixture.transaction2)
 
-        var traceData = profiler.onTransactionFinish(fixture.transaction2)
-        assertNull(traceData)
+        profiler.onTransactionFinish(fixture.transaction2)
+        verify(fixture.hub, never()).captureEnvelope(any())
 
-        traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertEquals(fixture.transaction1.eventId.toString(), traceData!!.transactionId)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub).captureEnvelope(
+            check {
+                assertEquals(1, it.items.count())
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
+                    assertEquals(item.transactionId, fixture.transaction1.eventId.toString())
+                }
+            }
+        )
     }
 
     @Test
@@ -305,20 +302,30 @@ class AndroidTransactionProfilerTest {
         profiler.onTransactionStart(fixture.transaction1)
         profiler.onTransactionStart(fixture.transaction2)
 
-        var traceData = profiler.onTransactionFinish(fixture.transaction1)
-        assertNull(traceData)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub, never()).captureEnvelope(any())
 
         profiler.onTransactionStart(fixture.transaction3)
-        traceData = profiler.onTransactionFinish(fixture.transaction3)
-        assertNull(traceData)
-        traceData = profiler.onTransactionFinish(fixture.transaction2)
-        assertEquals(fixture.transaction2.eventId.toString(), traceData!!.transactionId)
-        val expectedTransactions = listOf(
-            fixture.transaction1.eventId.toString(),
-            fixture.transaction3.eventId.toString(),
-            fixture.transaction2.eventId.toString()
+        profiler.onTransactionFinish(fixture.transaction3)
+        verify(fixture.hub, never()).captureEnvelope(any())
+
+        profiler.onTransactionFinish(fixture.transaction2)
+        verify(fixture.hub).captureEnvelope(
+            check {
+                val expectedTransactions = listOf(
+                    fixture.transaction1.eventId.toString(),
+                    fixture.transaction3.eventId.toString(),
+                    fixture.transaction2.eventId.toString()
+                )
+
+                assertEquals(1, it.items.count())
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
+                    assertEquals(item.transactionId, fixture.transaction2.eventId.toString())
+
+                    assertTrue(item.transactions.map { it.id }.containsAll(expectedTransactions))
+                    assertTrue(expectedTransactions.containsAll(item.transactions.map { it.id }))
+                }
+            }
         )
-        assertTrue(traceData.transactions.map { it.id }.containsAll(expectedTransactions))
-        assertTrue(expectedTransactions.containsAll(traceData.transactions.map { it.id }))
     }
 }

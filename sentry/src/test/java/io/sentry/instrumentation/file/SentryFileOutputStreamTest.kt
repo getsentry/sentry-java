@@ -22,13 +22,14 @@ class SentryFileOutputStreamTest {
         internal fun getSut(
             tmpFile: File? = null,
             activeTransaction: Boolean = true,
+            append: Boolean = false
         ): SentryFileOutputStream {
             whenever(hub.options).thenReturn(SentryOptions())
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
-            return SentryFileOutputStream(tmpFile, hub)
+            return SentryFileOutputStream(tmpFile, append, hub)
         }
     }
 

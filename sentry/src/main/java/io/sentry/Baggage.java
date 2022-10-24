@@ -3,7 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
-import io.sentry.util.SampleRateUtil;
+import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -35,11 +35,31 @@ public final class Baggage {
   final @NotNull ILogger logger;
 
   @NotNull
+  public static Baggage fromHeader(final String headerValue) {
+    return Baggage.fromHeader(
+        headerValue, false, HubAdapter.getInstance().getOptions().getLogger());
+  }
+
+  @NotNull
+  public static Baggage fromHeader(final @Nullable List<String> headerValues) {
+    return Baggage.fromHeader(
+        headerValues, false, HubAdapter.getInstance().getOptions().getLogger());
+  }
+
+  @ApiStatus.Internal
+  @NotNull
+  public static Baggage fromHeader(final String headerValue, final @NotNull ILogger logger) {
+    return Baggage.fromHeader(headerValue, false, logger);
+  }
+
+  @ApiStatus.Internal
+  @NotNull
   public static Baggage fromHeader(
       final @Nullable List<String> headerValues, final @NotNull ILogger logger) {
     return Baggage.fromHeader(headerValues, false, logger);
   }
 
+  @ApiStatus.Internal
   @NotNull
   public static Baggage fromHeader(
       final @Nullable List<String> headerValues,
@@ -53,11 +73,7 @@ public final class Baggage {
     }
   }
 
-  @NotNull
-  public static Baggage fromHeader(final String headerValue, final @NotNull ILogger logger) {
-    return Baggage.fromHeader(headerValue, false, logger);
-  }
-
+  @ApiStatus.Internal
   @NotNull
   public static Baggage fromHeader(
       final @Nullable String headerValue,
@@ -104,10 +120,12 @@ public final class Baggage {
     return new Baggage(keyValues, thirdPartyHeader, mutable, logger);
   }
 
+  @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
     this(new HashMap<>(), null, true, logger);
   }
 
+  @ApiStatus.Internal
   public Baggage(
       final @NotNull Map<String, String> keyValues,
       final @Nullable String thirdPartyHeader,
@@ -119,10 +137,12 @@ public final class Baggage {
     this.thirdPartyHeader = thirdPartyHeader;
   }
 
+  @ApiStatus.Internal
   public void freeze() {
     this.mutable = false;
   }
 
+  @ApiStatus.Internal
   public boolean isMutable() {
     return mutable;
   }
@@ -196,6 +216,7 @@ public final class Baggage {
     return URLDecoder.decode(value, CHARSET);
   }
 
+  @ApiStatus.Internal
   public @Nullable String get(final @Nullable String key) {
     if (key == null) {
       return null;
@@ -204,76 +225,94 @@ public final class Baggage {
     return keyValues.get(key);
   }
 
+  @ApiStatus.Internal
   public @Nullable String getTraceId() {
     return get(DSCKeys.TRACE_ID);
   }
 
+  @ApiStatus.Internal
   public void setTraceId(final @Nullable String traceId) {
     set(DSCKeys.TRACE_ID, traceId);
   }
 
+  @ApiStatus.Internal
   public @Nullable String getPublicKey() {
     return get(DSCKeys.PUBLIC_KEY);
   }
 
+  @ApiStatus.Internal
   public void setPublicKey(final @Nullable String publicKey) {
     set(DSCKeys.PUBLIC_KEY, publicKey);
   }
 
+  @ApiStatus.Internal
   public @Nullable String getEnvironment() {
     return get(DSCKeys.ENVIRONMENT);
   }
 
+  @ApiStatus.Internal
   public void setEnvironment(final @Nullable String environment) {
     set(DSCKeys.ENVIRONMENT, environment);
   }
 
+  @ApiStatus.Internal
   public @Nullable String getRelease() {
     return get(DSCKeys.RELEASE);
   }
 
+  @ApiStatus.Internal
   public void setRelease(final @Nullable String release) {
     set(DSCKeys.RELEASE, release);
   }
 
+  @ApiStatus.Internal
   public @Nullable String getUserId() {
     return get(DSCKeys.USER_ID);
   }
 
+  @ApiStatus.Internal
   public void setUserId(final @Nullable String userId) {
     set(DSCKeys.USER_ID, userId);
   }
 
+  @ApiStatus.Internal
   public @Nullable String getUserSegment() {
     return get(DSCKeys.USER_SEGMENT);
   }
 
+  @ApiStatus.Internal
   public void setUserSegment(final @Nullable String userSegment) {
     set(DSCKeys.USER_SEGMENT, userSegment);
   }
 
+  @ApiStatus.Internal
   public @Nullable String getTransaction() {
     return get(DSCKeys.TRANSACTION);
   }
 
+  @ApiStatus.Internal
   public void setTransaction(final @Nullable String transaction) {
     set(DSCKeys.TRANSACTION, transaction);
   }
 
+  @ApiStatus.Internal
   public @Nullable String getSampleRate() {
     return get(DSCKeys.SAMPLE_RATE);
   }
 
+  @ApiStatus.Internal
   public void setSampleRate(final @Nullable String sampleRate) {
     set(DSCKeys.SAMPLE_RATE, sampleRate);
   }
 
+  @ApiStatus.Internal
   public void set(final @NotNull String key, final @Nullable String value) {
     if (mutable) {
       this.keyValues.put(key, value);
     }
   }
 
+  @ApiStatus.Internal
   public void setValuesFromTransaction(
       final @NotNull ITransaction transaction,
       final @Nullable User user,
@@ -313,7 +352,7 @@ public final class Baggage {
   }
 
   private static @Nullable String sampleRateToString(@Nullable Double sampleRateAsDouble) {
-    if (!SampleRateUtil.isValidTracesSampleRate(sampleRateAsDouble, false)) {
+    if (!SampleRateUtils.isValidTracesSampleRate(sampleRateAsDouble, false)) {
       return null;
     }
 
@@ -328,12 +367,13 @@ public final class Baggage {
         && !TransactionNameSource.URL.equals(transactionNameSource);
   }
 
+  @ApiStatus.Internal
   public @Nullable Double getSampleRateDouble() {
     final String sampleRateString = getSampleRate();
     if (sampleRateString != null) {
       try {
         double sampleRate = Double.parseDouble(sampleRateString);
-        if (SampleRateUtil.isValidTracesSampleRate(sampleRate, false)) {
+        if (SampleRateUtils.isValidTracesSampleRate(sampleRate, false)) {
           return sampleRate;
         }
       } catch (NumberFormatException e) {
@@ -343,6 +383,7 @@ public final class Baggage {
     return null;
   }
 
+  @ApiStatus.Internal
   @Nullable
   public TraceContext toTraceContext() {
     final String traceIdString = getTraceId();
@@ -363,6 +404,7 @@ public final class Baggage {
     }
   }
 
+  @ApiStatus.Internal
   public static final class DSCKeys {
     public static final String TRACE_ID = "sentry-trace_id";
     public static final String PUBLIC_KEY = "sentry-public_key";

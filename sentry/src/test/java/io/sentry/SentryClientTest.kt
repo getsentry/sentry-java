@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.inOrder
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.mockingDetails
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
@@ -1038,39 +1039,52 @@ class SentryClientTest {
         fixture.getSut().captureTransaction(transaction, createScopeWithAttachments(), null)
 
         verifyAttachmentsInEnvelope(transaction.eventId)
-        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+        assertFails { verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId)) }
     }
 
     @Test
-    fun `when captureTransaction with attachments and profiling data`() {
-        val transaction = SentryTransaction(fixture.sentryTracer)
-        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingTraceData)
-        verifyAttachmentsInEnvelope(transaction.eventId)
-        verifyProfilingTraceInEnvelope(transaction.eventId)
+    fun `when captureEnvelope with ProfilingTraceData`() {
+        val client = fixture.getSut()
+        val options = fixture.sentryOptions
+        val envelope = SentryEnvelope.from(options.serializer, fixture.profilingTraceData, options.maxTraceFileSize, options.sdkVersion)
+        client.captureEnvelope(envelope)
+        verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId))
     }
 
     @Test
-    fun `when captureTransaction with profiling data`() {
+    fun `captureTransaction with profile calls captureEnvelope and captureTransaction`() {
         val transaction = SentryTransaction(fixture.sentryTracer)
-        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
-        assertFails { verifyAttachmentsInEnvelope(transaction.eventId) }
-        verifyProfilingTraceInEnvelope(transaction.eventId)
+        val client = spy(fixture.getSut())
+        client.captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+        verify(client).captureTransaction(transaction, null, null, null)
+        verify(client).captureEnvelope(
+            check {
+                assertEquals(1, it.items.count())
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
+                    assertEquals(item.profileId, fixture.profilingTraceData.profileId)
+                }
+            },
+            anyOrNull()
+        )
     }
 
     @Test
-    fun `when captureTransaction with empty trace file, profiling data is not sent`() {
-        val transaction = SentryTransaction(fixture.sentryTracer)
-        fixture.getSut().captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
+    fun `when capture profile with empty trace file, profile is not sent`() {
+        val client = fixture.getSut()
+        val options = fixture.sentryOptions
+        val envelope = SentryEnvelope.from(options.serializer, fixture.profilingTraceData, options.maxTraceFileSize, options.sdkVersion)
+        client.captureEnvelope(envelope)
         fixture.profilingTraceFile.writeText("")
-        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+        assertFails { verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId)) }
     }
 
     @Test
-    fun `when captureTransaction with non existing profiling trace file, profiling trace data is not sent`() {
-        val transaction = SentryTransaction(fixture.sentryTracer)
-        fixture.getSut().captureTransaction(transaction, null, createScopeWithAttachments(), null, fixture.profilingNonExistingTraceData)
-        verifyAttachmentsInEnvelope(transaction.eventId)
-        assertFails { verifyProfilingTraceInEnvelope(transaction.eventId) }
+    fun `when capture profile with non existing profiling trace file, profile is not sent`() {
+        val client = fixture.getSut()
+        val options = fixture.sentryOptions
+        val envelope = SentryEnvelope.from(options.serializer, fixture.profilingNonExistingTraceData, options.maxTraceFileSize, options.sdkVersion)
+        client.captureEnvelope(envelope)
+        assertFails { verifyProfilingTraceInEnvelope(SentryId(fixture.profilingNonExistingTraceData.profileId)) }
     }
 
     @Test

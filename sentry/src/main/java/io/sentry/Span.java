@@ -313,6 +313,17 @@ public final class Span implements ISpan {
     return data.get(key);
   }
 
+  @Override
+  public void setMeasurement(@NotNull String name, @NotNull Number value) {
+    this.transaction.setMeasurement(name, value);
+  }
+
+  @Override
+  public void setMeasurement(
+      @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {
+    this.transaction.setMeasurement(name, value, unit);
+  }
+
   @Nullable
   Long getEndNanos() {
     return endNanos;

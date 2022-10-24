@@ -128,7 +128,6 @@ class SentryTracerTest {
                 assertEquals(it.transaction, tracer.name)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -187,7 +186,6 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -205,7 +203,6 @@ class SentryTracerTest {
                 assertEquals("op1", it.spans.first().op)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -338,7 +335,6 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
 
@@ -367,6 +363,7 @@ class SentryTracerTest {
         transaction.description = "desc"
         transaction.setTag("myTag", "myValue")
         transaction.setData("myData", "myValue")
+        transaction.setMeasurement("myMetric", 1.0f)
         val ex = RuntimeException()
         transaction.throwable = ex
 
@@ -383,12 +380,14 @@ class SentryTracerTest {
         transaction.throwable = RuntimeException()
         transaction.setData("myData", "myNewValue")
         transaction.name = "newName"
+        transaction.setMeasurement("myMetric", 2.0f)
 
         assertEquals(SpanStatus.OK, transaction.status)
         assertEquals("op", transaction.operation)
         assertEquals("desc", transaction.description)
         assertEquals("myValue", transaction.getTag("myTag"))
         assertEquals("myValue", transaction.getData("myData"))
+        assertEquals(1.0f, transaction.measurements["myMetric"]!!.value)
         assertEquals("name", transaction.name)
         assertEquals(ex, transaction.throwable)
     }
@@ -413,7 +412,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         transaction.startChild("op")
         transaction.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
     }
 
     @Test
@@ -422,7 +421,7 @@ class SentryTracerTest {
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull())
     }
 
     @Test
@@ -443,7 +442,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         child.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
     }
 
     @Test
@@ -451,14 +450,13 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
         child.finish()
         verify(fixture.hub, times(1)).captureTransaction(
             check {
                 assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -478,7 +476,6 @@ class SentryTracerTest {
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -654,7 +651,6 @@ class SentryTracerTest {
                 assertEquals("val", it.getExtra("key"))
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -673,7 +669,6 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -701,14 +696,13 @@ class SentryTracerTest {
         verify(fixture.hub, never()).captureTransaction(
             anyOrNull(),
             anyOrNull(),
-            anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 
     @Test
     fun `when idle transaction with children, finishes the transaction after the idle timeout`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 10)
+        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 1000)
 
         val span = transaction.startChild("op")
         span.finish()
@@ -718,8 +712,7 @@ class SentryTracerTest {
         verify(fixture.hub).captureTransaction(
             anyOrNull(),
             anyOrNull(),
-            anyOrNull(),
-            anyOrNull(),
+            anyOrNull()
         )
     }
 
@@ -780,7 +773,6 @@ class SentryTracerTest {
                 assertEquals(transaction.root.endNanos, span2.endNanos)
             },
             anyOrNull(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -803,5 +795,42 @@ class SentryTracerTest {
         assertNotNull(transaction.timer)
         transaction.finish(SpanStatus.OK)
         assertNull(transaction.timer)
+    }
+
+    @Test
+    fun `when tracer is finished, puts custom measurements into underlying transaction`() {
+        val transaction = fixture.getSut()
+        transaction.setMeasurement("metric1", 1.0f)
+        transaction.setMeasurement("days", 2, MeasurementUnit.Duration.DAY)
+        transaction.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(1.0f, it.measurements["metric1"]!!.value)
+                assertEquals(null, it.measurements["metric1"]!!.unit)
+
+                assertEquals(2, it.measurements["days"]!!.value)
+                assertEquals("day", it.measurements["days"]!!.unit)
+            },
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `setting the same measurement multiple times only keeps latest value`() {
+        val transaction = fixture.getSut()
+        transaction.setMeasurement("metric1", 1.0f)
+        transaction.setMeasurement("metric1", 2, MeasurementUnit.Duration.DAY)
+        transaction.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(2, it.measurements["metric1"]!!.value)
+                assertEquals("day", it.measurements["metric1"]!!.unit)
+            },
+            anyOrNull(),
+            anyOrNull()
+        )
     }
 }

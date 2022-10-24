@@ -1,9 +1,11 @@
 package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
+import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.FileUtils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -113,7 +115,7 @@ public final class Sentry {
       throws IllegalAccessException, InstantiationException, NoSuchMethodException,
           InvocationTargetException {
     final T options = clazz.createInstance();
-    optionsConfiguration.configure(options);
+    applyOptionsConfiguration(optionsConfiguration, options);
     init(options, globalHubMode);
   }
 
@@ -136,8 +138,19 @@ public final class Sentry {
       final @NotNull OptionsConfiguration<SentryOptions> optionsConfiguration,
       final boolean globalHubMode) {
     final SentryOptions options = new SentryOptions();
-    optionsConfiguration.configure(options);
+    applyOptionsConfiguration(optionsConfiguration, options);
     init(options, globalHubMode);
+  }
+
+  private static <T extends SentryOptions> void applyOptionsConfiguration(
+      OptionsConfiguration<T> optionsConfiguration, T options) {
+    try {
+      optionsConfiguration.configure(options);
+    } catch (Throwable t) {
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Error in the 'OptionsConfiguration.configure' callback.", t);
+    }
   }
 
   /**
@@ -230,7 +243,11 @@ public final class Sentry {
     if (cacheDirPath != null) {
       final File cacheDir = new File(cacheDirPath);
       cacheDir.mkdirs();
-      options.setEnvelopeDiskCache(EnvelopeCache.create(options));
+      final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
+      // only overwrite the cache impl if it's not already set
+      if (envelopeCache instanceof NoOpEnvelopeCache) {
+        options.setEnvelopeDiskCache(EnvelopeCache.create(options));
+      }
     }
 
     final String profilingTracesDirPath = options.getProfilingTracesDirPath();

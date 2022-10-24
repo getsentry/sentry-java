@@ -1,9 +1,12 @@
 package io.sentry
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argThat
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import io.sentry.cache.EnvelopeCache
+import io.sentry.cache.IEnvelopeCache
 import io.sentry.protocol.SentryId
 import org.junit.rules.TemporaryFolder
 import java.io.File
@@ -231,6 +234,71 @@ class SentryTest {
         val hub = Sentry.getCurrentHub()
         assertNotNull(hub)
         assertFalse(hub is NoOpHub)
+    }
+
+    @Test
+    fun `when init is called and configure throws an exception then an error is logged`() {
+        val logger = mock<ILogger>()
+        val initException = Exception("init")
+
+        Sentry.init({
+            it.dsn = dsn
+            it.isDebug = true
+            it.setLogger(logger)
+            throw initException
+        }, true)
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(initException))
+    }
+
+    @Test
+    fun `when init with a SentryOptions Subclass is called and configure throws an exception then an error is logged`() {
+        class ExtendedSentryOptions : SentryOptions()
+
+        val logger = mock<ILogger>()
+        val initException = Exception("init")
+
+        Sentry.init(OptionsContainer.create(ExtendedSentryOptions::class.java)) { options: ExtendedSentryOptions ->
+            options.dsn = dsn
+            options.isDebug = true
+            options.setLogger(logger)
+            throw initException
+        }
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(initException))
+    }
+
+    @Test
+    fun `overrides envelope cache if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = getTempPath()
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.envelopeDiskCache is EnvelopeCache }
+    }
+
+    @Test
+    fun `does not override envelope cache if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = getTempPath()
+            it.setEnvelopeDiskCache(CustomEnvelopCache())
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.envelopeDiskCache is CustomEnvelopCache }
+    }
+
+    private class CustomEnvelopCache : IEnvelopeCache {
+        override fun iterator(): MutableIterator<SentryEnvelope> = TODO()
+        override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
+        override fun discard(envelope: SentryEnvelope) = Unit
     }
 
     private fun getTempPath(): String {

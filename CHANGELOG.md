@@ -1,5 +1,42 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Ensure potential callback exceptions are caught #2123 ([#2291](https://github.com/getsentry/sentry-java/pull/2291))
+- Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
+- Ignore broken regex for tracePropagationTarget ([#2288](https://github.com/getsentry/sentry-java/pull/2288))
+- No longer serialize static fields; use toString as fallback ([#2309](https://github.com/getsentry/sentry-java/pull/2309))
+- Fix `SentryFileWriter`/`SentryFileOutputStream` append overwrites file contents ([#2304](https://github.com/getsentry/sentry-java/pull/2304))
+- Respect incoming parent sampled decision when continuing a trace ([#2311](https://github.com/getsentry/sentry-java/pull/2311))
+
+### Features
+
+- Profile envelopes are sent directly from profiler ([#2298](https://github.com/getsentry/sentry-java/pull/2298))
+- Add support for using Encoder with logback.SentryAppender ([#2246](https://github.com/getsentry/sentry-java/pull/2246))
+- Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
+- HTTP Client errors for OkHttp ([#2287](https://github.com/getsentry/sentry-java/pull/2287))
+
+### Dependencies
+
+- Bump Native SDK from v0.5.0 to v0.5.1 ([#2306](https://github.com/getsentry/sentry-java/pull/2306))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#051)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.0...0.5.1)
+
+## 6.5.0
+
+### Fixes
+
+- Improve public facing API for creating Baggage from header ([#2284](https://github.com/getsentry/sentry-java/pull/2284))
+
+## 6.5.0-beta.3
+
+### Features
+
+- Provide API for attaching custom measurements to transactions ([#2260](https://github.com/getsentry/sentry-java/pull/2260))
+- Bump spring to 2.7.4 ([#2279](https://github.com/getsentry/sentry-java/pull/2279))
+
 ## 6.5.0-beta.2
 
 ### Features
@@ -13,6 +50,16 @@
 ### Features
 
 - Server-Side Dynamic Sampling Context support  ([#2226](https://github.com/getsentry/sentry-java/pull/2226))
+
+## 6.4.4
+
+### Fixes
+
+- Fix ConcurrentModificationException due to FrameMetricsAggregator manipulation ([#2282](https://github.com/getsentry/sentry-java/pull/2282))
+
+## 6.4.3
+
+- Fix slow and frozen frames tracking ([#2271](https://github.com/getsentry/sentry-java/pull/2271))
 
 ## 6.4.2
 

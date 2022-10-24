@@ -9,10 +9,18 @@ sauce:
     tags:
       - e2e
       - android
+
+defaults:
+  timeout: 30m
+
 espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
   testApp: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
 suites:
+
+  - name: "Android 13 Ui test (api 33)"
+    devices:
+      - id: Google_Pixel_5_13_real_us # Google Pixel 5 - api 33 (13)
 
   - name: "Android 12 Ui test (api 31)"
     devices:

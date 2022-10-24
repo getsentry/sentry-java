@@ -263,6 +263,10 @@ public final class SentryClient implements ISentryClient {
           SentryEnvelopeItem.fromProfilingTrace(
               profilingTraceData, options.getMaxTraceFileSize(), options.getSerializer());
       envelopeItems.add(profilingTraceItem);
+
+      if (sentryId == null) {
+        sentryId = new SentryId(profilingTraceData.getProfileId());
+      }
     }
 
     if (attachments != null) {
@@ -492,13 +496,41 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
-  @Override
+  /**
+   * @deprecated please use {{@link ISentryClient#captureTransaction(SentryTransaction,
+   *     TraceContext, Scope, Hint)}} and {{@link ISentryClient#captureEnvelope(SentryEnvelope)}}
+   *     instead.
+   */
+  @Deprecated
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
       final @Nullable Scope scope,
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
+    if (profilingTraceData != null) {
+      SentryEnvelope envelope;
+      try {
+        envelope =
+            SentryEnvelope.from(
+                options.getSerializer(),
+                profilingTraceData,
+                options.getMaxTraceFileSize(),
+                options.getSdkVersion());
+        captureEnvelope(envelope);
+      } catch (SentryEnvelopeException e) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to capture profile.", e);
+      }
+    }
+    return captureTransaction(transaction, traceContext, scope, hint);
+  }
+
+  @Override
+  public @NotNull SentryId captureTransaction(
+      @NotNull SentryTransaction transaction,
+      @Nullable TraceContext traceContext,
+      final @Nullable Scope scope,
+      @Nullable Hint hint) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
     if (hint == null) {
@@ -542,11 +574,7 @@ public final class SentryClient implements ISentryClient {
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
-              transaction,
-              filterForTransaction(getAttachments(hint)),
-              null,
-              traceContext,
-              profilingTraceData);
+              transaction, filterForTransaction(getAttachments(hint)), null, traceContext, null);
 
       if (envelope != null) {
         transport.send(envelope, hint);
