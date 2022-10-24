@@ -16,8 +16,6 @@ jobs:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
 
     steps:
-      if: "${{ env.SAUCE_USERNAME != '' }}"
-
       - name: Git checkout
         uses: actions/checkout@v2
 
@@ -42,3 +40,4 @@ jobs:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-ui.yml
+        if: "${{ env.SAUCE_USERNAME != '' }}" 

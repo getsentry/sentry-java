@@ -21,8 +21,6 @@ jobs:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
 
     steps:
-      if: "${{ env.SAUCE_USERNAME != '' }}"
-
       - name: Git checkout
         uses: actions/checkout@v2
 
@@ -48,6 +46,7 @@ jobs:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-benchmark.yml
+        if: "${{ env.SAUCE_USERNAME != '' }}"   
 
       - name: Run one test in SauceLab
         uses: saucelabs/saucectl-run-action@9f8b2c03deea98eb6db7b75bffb1595f2da535db # pin@v1
@@ -56,6 +55,7 @@ jobs:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-benchmark-lite.yml
+        if: "${{ env.SAUCE_USERNAME != '' }}"   
 
   app-metrics:
     runs-on: ubuntu-latest
@@ -65,8 +65,6 @@ jobs:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
 
     steps:
-      if: "${{ env.SAUCE_USERNAME != '' }}"
-
       - name: Git checkout
         uses: actions/checkout@v2
 
@@ -95,3 +93,4 @@ jobs:
           config: sentry-android-integration-tests/metrics-test.yml
           sauce-user: ${{ secrets.SAUCE_USERNAME }}
           sauce-key: ${{ secrets.SAUCE_ACCESS_KEY }}
+        if: "${{ env.SAUCE_USERNAME != '' }}"      
