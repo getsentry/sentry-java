@@ -59,6 +59,7 @@ public final class ActivityFramesTracker {
    *     SentryAndroidOptions)}} instead.
    */
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public ActivityFramesTracker(final @NotNull LoadClass loadClass) {
     this(loadClass, new SentryAndroidOptions());
   }
