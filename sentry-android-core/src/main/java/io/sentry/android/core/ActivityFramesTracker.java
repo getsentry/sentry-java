@@ -25,7 +25,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class ActivityFramesTracker {
 
   private @Nullable FrameMetricsAggregator frameMetricsAggregator = null;
-  private final SentryAndroidOptions options;
+  private @NotNull final SentryAndroidOptions options;
 
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
       activityMeasurements = new ConcurrentHashMap<>();
@@ -52,16 +52,6 @@ public final class ActivityFramesTracker {
   public ActivityFramesTracker(
       final @NotNull LoadClass loadClass, final @NotNull SentryAndroidOptions options) {
     this(loadClass, options, new MainLooperHandler());
-  }
-
-  /**
-   * @deprecated please use {{@link ActivityFramesTracker#ActivityFramesTracker(LoadClass,
-   *     SentryAndroidOptions)}} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public ActivityFramesTracker(final @NotNull LoadClass loadClass) {
-    this(loadClass, new SentryAndroidOptions());
   }
 
   @TestOnly
