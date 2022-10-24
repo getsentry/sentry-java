@@ -135,7 +135,8 @@ final class AndroidOptionsInitializer {
     options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
 
     final ActivityFramesTracker activityFramesTracker =
-        new ActivityFramesTracker(loadClass, options.getLogger());
+        new ActivityFramesTracker(loadClass, options);
+
     installDefaultIntegrations(
         context,
         options,

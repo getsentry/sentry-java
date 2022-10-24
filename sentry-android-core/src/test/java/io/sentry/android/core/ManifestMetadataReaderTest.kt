@@ -1086,4 +1086,42 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.isSendDefaultPii)
     }
+
+    @Test
+    fun `applyMetadata reads frames tracking flag and keeps default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableFramesTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads frames tracking and sets it to enabled if true`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PERFORM_FRAMES_TRACKING to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableFramesTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads frames tracking and sets it to disabled if false`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PERFORM_FRAMES_TRACKING to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableFramesTracking)
+    }
 }
