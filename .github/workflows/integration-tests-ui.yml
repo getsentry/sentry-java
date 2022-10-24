@@ -11,6 +11,12 @@ jobs:
     name: Ui tests
     runs-on: ubuntu-latest
 
+    # we copy the secret to the env variable in order to access it in the workflow
+    env:
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+
+    if: "${{ env.SAUCE_ACCESS_KEY != '' }}"
+
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
