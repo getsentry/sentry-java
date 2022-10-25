@@ -11,6 +11,10 @@ jobs:
     name: Ui tests
     runs-on: ubuntu-latest
 
+    # we copy the secret to the env variable in order to access it in the workflow
+    env:
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
@@ -36,3 +40,4 @@ jobs:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-ui.yml
+        if: env.SAUCE_USERNAME != null

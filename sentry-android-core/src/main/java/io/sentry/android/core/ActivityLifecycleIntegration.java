@@ -388,6 +388,12 @@ public final class ActivityLifecycleIntegration
   }
 
   @TestOnly
+  @NotNull
+  ActivityFramesTracker getActivityFramesTracker() {
+    return activityFramesTracker;
+  }
+
+  @TestOnly
   @Nullable
   ISpan getAppStartSpan() {
     return appStartSpan;

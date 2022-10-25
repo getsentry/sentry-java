@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Features
+
+- Customizable fragment lifecycle breadcrumbs ([#2299](https://github.com/getsentry/sentry-java/pull/2299))
+
+## 6.6.0
+
 ### Fixes
 
 - Ensure potential callback exceptions are caught #2123 ([#2291](https://github.com/getsentry/sentry-java/pull/2291))
@@ -17,7 +23,8 @@
 - Add support for using Encoder with logback.SentryAppender ([#2246](https://github.com/getsentry/sentry-java/pull/2246))
 - Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
 - HTTP Client errors for OkHttp ([#2287](https://github.com/getsentry/sentry-java/pull/2287))
-- Customizable fragment lifecycle breadcrumbs ([#2299](https://github.com/getsentry/sentry-java/pull/2299))
+- Add option to enable or disable Frame Tracking ([#2314](https://github.com/getsentry/sentry-java/pull/2314))
+
 
 ### Dependencies
 

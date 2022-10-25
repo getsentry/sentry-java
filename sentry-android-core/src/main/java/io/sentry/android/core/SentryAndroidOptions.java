@@ -131,6 +131,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private final long startupCrashDurationThresholdMillis = 2000; // 2s
 
+  private boolean enableFramesTracking = true;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -355,6 +357,19 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setCollectAdditionalContext(boolean collectAdditionalContext) {
     this.collectAdditionalContext = collectAdditionalContext;
+  }
+
+  public boolean isEnableFramesTracking() {
+    return enableFramesTracking;
+  }
+
+  /**
+   * Enable or disable Frames Tracking, which is used to report slow and frozen frames.
+   *
+   * @param enableFramesTracking true if frames tracking should be enabled, false otherwise.
+   */
+  public void setEnableFramesTracking(boolean enableFramesTracking) {
+    this.enableFramesTracking = enableFramesTracking;
   }
 
   /**
