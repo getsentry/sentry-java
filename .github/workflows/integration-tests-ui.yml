@@ -40,4 +40,4 @@ jobs:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
           config-file: .sauce/sentry-uitest-android-ui.yml
-        if: env.SAUCE_USERNAME !=  null
+        if: env.SAUCE_USERNAME != null
