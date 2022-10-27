@@ -80,6 +80,8 @@ final class ManifestMetadataReader {
 
   static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
 
+  static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -287,6 +289,8 @@ final class ManifestMetadataReader {
         } else if (tracePropagationTargets != null) {
           options.setTracePropagationTargets(tracePropagationTargets);
         }
+
+        options.setEnableFramesTracking(readBool(metadata, logger, PERFORM_FRAMES_TRACKING, true));
 
         options.setProguardUuid(
             readString(metadata, logger, PROGUARD_UUID, options.getProguardUuid()));
