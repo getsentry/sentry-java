@@ -10,9 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.Navigator
 import io.sentry.Breadcrumb
 import io.sentry.ITransaction
 import io.sentry.SentryOptions
@@ -39,7 +37,7 @@ internal class SentryLifecycleObserver(
 
 /**
  * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
- * them to Sentry for when attached to the respective [NavHostController].
+ * them to Sentry for every navigation event when being attached to the respective [NavHostController].
  *
  * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
  * navigation events.
@@ -76,8 +74,14 @@ public fun NavHostController.withSentryObservableEffect(
     return this
 }
 
+/**
+ * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
+ * them to Sentry for every navigation event when being attached to the respective [NavHostController].
+ */
 @Composable
-public fun rememberNavController(vararg navigators: Navigator<out NavDestination>): NavHostController {
-    return androidx.navigation.compose.rememberNavController(navigators = navigators)
-        .withSentryObservableEffect()
+public fun NavHostController.withSentryObservableEffect(): NavHostController {
+    return withSentryObservableEffect(
+        enableNavigationBreadcrumbs = true,
+        enableNavigationTracing = true
+    )
 }
