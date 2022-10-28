@@ -7,7 +7,6 @@ public final class io/sentry/compose/BuildConfig {
 }
 
 public final class io/sentry/compose/SentryNavigationIntegrationKt {
-	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;Landroidx/compose/runtime/Composer;I)Landroidx/navigation/NavHostController;
 	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;ZZLandroidx/compose/runtime/Composer;II)Landroidx/navigation/NavHostController;
 }
 
