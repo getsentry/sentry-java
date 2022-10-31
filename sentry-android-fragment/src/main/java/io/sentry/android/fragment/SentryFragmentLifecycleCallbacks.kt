@@ -23,10 +23,6 @@ class SentryFragmentLifecycleCallbacks(
     val enableAutoFragmentLifecycleTracing: Boolean
 ) : FragmentLifecycleCallbacks() {
 
-    private val isPerformanceEnabled get() = hub.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
-
-    private val fragmentsWithOngoingTransactions = WeakHashMap<Fragment, ISpan>()
-
     constructor(
         hub: IHub,
         enableFragmentLifecycleBreadcrumbs: Boolean,
@@ -49,6 +45,10 @@ class SentryFragmentLifecycleCallbacks(
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
     )
+
+    private val isPerformanceEnabled get() = hub.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
+
+    private val fragmentsWithOngoingTransactions = WeakHashMap<Fragment, ISpan>()
 
     val enableFragmentLifecycleBreadcrumbs: Boolean
         get() = filterFragmentLifecycleBreadcrumbs.isNotEmpty()
