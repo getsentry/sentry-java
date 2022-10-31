@@ -7,6 +7,12 @@
 - Customizable fragment lifecycle breadcrumbs ([#2299](https://github.com/getsentry/sentry-java/pull/2299))
 - Provide hook for Jetpack Compose navigation instrumentation ([#2320](https://github.com/getsentry/sentry-java/pull/2320))
 
+### Dependencies
+
+- Bump Native SDK from v0.5.1 to v0.5.2 ([#2315](https://github.com/getsentry/sentry-java/pull/2315))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#052)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.1...0.5.2)
+
 ## 6.6.0
 
 ### Fixes
