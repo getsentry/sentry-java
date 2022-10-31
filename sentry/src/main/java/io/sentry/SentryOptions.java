@@ -5,7 +5,10 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.internal.modules.IModulesLoader;
+import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
@@ -181,7 +184,7 @@ public class SentryOptions {
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
 
   /**
-   * The transport factory creates instances of {@link io.sentry.transport.ITransport} - internal
+   * The transport factory creates instances of {@link ITransport} - internal
    * construct of the client that abstracts away the event sending.
    */
   private @NotNull ITransportFactory transportFactory = NoOpTransportFactory.getInstance();
@@ -354,6 +357,11 @@ public class SentryOptions {
 
   /** ClientReportRecorder to track count of lost events / transactions / ... * */
   @NotNull IClientReportRecorder clientReportRecorder = new ClientReportRecorder(this);
+
+  /**
+   * Modules (dependencies, packages) that will be send along with each event.
+   */
+  private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
 
   /**
    * Adds an event processor
@@ -1743,6 +1751,21 @@ public class SentryOptions {
   @ApiStatus.Internal
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
+  }
+
+  /**
+   * Returns a ModulesLoader to load external modules (dependencies/packages) of the program.
+   *
+   * @return a modules loader or no-op
+   */
+  @ApiStatus.Internal
+  public @NotNull IModulesLoader getModulesLoader() {
+    return modulesLoader;
+  }
+
+  @ApiStatus.Internal
+  public void setModulesLoader(final @NotNull IModulesLoader modulesLoader) {
+    this.modulesLoader = modulesLoader;
   }
 
   /** The BeforeSend callback */

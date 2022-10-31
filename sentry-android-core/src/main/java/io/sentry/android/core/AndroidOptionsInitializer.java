@@ -12,15 +12,23 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
+import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -154,6 +162,7 @@ final class AndroidOptionsInitializer {
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     options.setTransactionProfiler(
         new AndroidTransactionProfiler(context, options, buildInfoProvider));
+    options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
   }
 
   private static void installDefaultIntegrations(

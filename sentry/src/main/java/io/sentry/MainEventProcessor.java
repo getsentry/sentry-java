@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.hints.Cached;
+import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SentryException;
@@ -60,6 +61,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     setCommons(event);
     setExceptions(event);
     setDebugMeta(event);
+    setModules(event);
 
     if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
@@ -87,6 +89,13 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
         images.add(debugImage);
         event.setDebugMeta(debugMeta);
       }
+    }
+  }
+
+  private void setModules(final @NotNull SentryEvent event) {
+    final Map<String, String> modules = event.getModules();
+    if (modules == null) {
+      event.setModules(options.getModulesLoader().getOrLoadModules());
     }
   }
 
