@@ -26,7 +26,6 @@
 - HTTP Client errors for OkHttp ([#2287](https://github.com/getsentry/sentry-java/pull/2287))
 - Add option to enable or disable Frame Tracking ([#2314](https://github.com/getsentry/sentry-java/pull/2314))
 
-
 ### Dependencies
 
 - Bump Native SDK from v0.5.0 to v0.5.1 ([#2306](https://github.com/getsentry/sentry-java/pull/2306))
