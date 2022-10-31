@@ -13,7 +13,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
-import kotlin.test.assertFalse
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FragmentLifecycleIntegrationTest {
@@ -91,7 +91,7 @@ class FragmentLifecycleIntegrationTest {
             check { fragmentCallbacks ->
                 val callback = (fragmentCallbacks as SentryFragmentLifecycleCallbacks)
                 assertTrue(callback.enableAutoFragmentLifecycleTracing)
-                assertFalse(callback.enableFragmentLifecycleBreadcrumbs)
+                assertEquals(emptySet(), callback.filterFragmentLifecycleBreadcrumbs)
             },
             eq(true)
         )

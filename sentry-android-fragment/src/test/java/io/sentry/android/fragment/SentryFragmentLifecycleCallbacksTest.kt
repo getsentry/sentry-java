@@ -18,11 +18,13 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@Suppress("SameParameterValue")
 class SentryFragmentLifecycleCallbacksTest {
 
     private class Fixture {
@@ -35,7 +37,7 @@ class SentryFragmentLifecycleCallbacksTest {
         val span = mock<ISpan>()
 
         fun getSut(
-            enableFragmentLifecycleBreadcrumbs: Boolean = true,
+            loggedFragmentLifecycleStates: Set<FragmentLifecycleState> = FragmentLifecycleState.values().toSet(),
             enableAutoFragmentLifecycleTracing: Boolean = false,
             tracesSampleRate: Double? = 1.0,
             isAdded: Boolean = true
@@ -53,7 +55,7 @@ class SentryFragmentLifecycleCallbacksTest {
             whenever(fragment.isAdded).thenReturn(isAdded)
             return SentryFragmentLifecycleCallbacks(
                 hub = hub,
-                enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
+                filterFragmentLifecycleBreadcrumbs = loggedFragmentLifecycleStates,
                 enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
             )
         }
@@ -71,12 +73,14 @@ class SentryFragmentLifecycleCallbacksTest {
     }
 
     @Test
-    fun `When fragment is attached with disabled breadcrumbs, it should not add breadcrumb`() {
-        val sut = fixture.getSut(enableFragmentLifecycleBreadcrumbs = false)
+    fun `When fragment is attached with subset of logged breadcrumbs, it should add only those breadcrumbs`() {
+        val sut = fixture.getSut(loggedFragmentLifecycleStates = setOf(FragmentLifecycleState.CREATED))
 
+        sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
         sut.onFragmentAttached(fixture.fragmentManager, fixture.fragment, fixture.context)
 
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verifyBreadcrumbAddedCount(1)
+        verifyBreadcrumbAdded("created")
     }
 
     @Test
@@ -272,5 +276,9 @@ class SentryFragmentLifecycleCallbacksTest {
             },
             anyOrNull()
         )
+    }
+
+    private fun verifyBreadcrumbAddedCount(count: Int) {
+        verify(fixture.hub, times(count)).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }
