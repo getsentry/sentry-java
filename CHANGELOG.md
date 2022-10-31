@@ -2,34 +2,35 @@
 
 ## Unreleased
 
-### Fixes
-
-- Fix `SentryFileWriter`/`SentryFileOutputStream` append overwrites file contents ([#2304](https://github.com/getsentry/sentry-java/pull/2304))
-
 ### Features
 
-- Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
-- Profile envelopes are sent directly from profiler ([#2298](https://github.com/getsentry/sentry-java/pull/2298))
+- Provide hook for Jetpack Compose navigation instrumentation ([#2320](https://github.com/getsentry/sentry-java/pull/2320))
+- Support Spring 6 and Spring Boot 3 ([#2289](https://github.com/getsentry/sentry-java/pull/2289))
 
-### Dependencies
-
-- Bump Native SDK from v0.5.0 to v0.5.1 ([#2306](https://github.com/getsentry/sentry-java/pull/2306))
-    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#051)
-    - [diff](https://github.com/getsentry/sentry-native/compare/0.5.0...0.5.1)
-
-## 6.7.0-alpha.1
+## 6.6.0
 
 ### Fixes
 
 - Ensure potential callback exceptions are caught #2123 ([#2291](https://github.com/getsentry/sentry-java/pull/2291))
 - Remove verbose FrameMetricsAggregator failure logging ([#2293](https://github.com/getsentry/sentry-java/pull/2293))
 - Ignore broken regex for tracePropagationTarget ([#2288](https://github.com/getsentry/sentry-java/pull/2288))
+- No longer serialize static fields; use toString as fallback ([#2309](https://github.com/getsentry/sentry-java/pull/2309))
+- Fix `SentryFileWriter`/`SentryFileOutputStream` append overwrites file contents ([#2304](https://github.com/getsentry/sentry-java/pull/2304))
+- Respect incoming parent sampled decision when continuing a trace ([#2311](https://github.com/getsentry/sentry-java/pull/2311))
 
 ### Features
 
+- Profile envelopes are sent directly from profiler ([#2298](https://github.com/getsentry/sentry-java/pull/2298))
 - Add support for using Encoder with logback.SentryAppender ([#2246](https://github.com/getsentry/sentry-java/pull/2246))
-- Add captureProfile method to hub and client ([#2290](https://github.com/getsentry/sentry-java/pull/2290))
-- Support Spring 6 and Spring Boot 3 ([#2289](https://github.com/getsentry/sentry-java/pull/2289))
+- Report Startup Crashes ([#2277](https://github.com/getsentry/sentry-java/pull/2277))
+- HTTP Client errors for OkHttp ([#2287](https://github.com/getsentry/sentry-java/pull/2287))
+- Add option to enable or disable Frame Tracking ([#2314](https://github.com/getsentry/sentry-java/pull/2314))
+
+### Dependencies
+
+- Bump Native SDK from v0.5.0 to v0.5.1 ([#2306](https://github.com/getsentry/sentry-java/pull/2306))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#051)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.0...0.5.1)
 
 ## 6.5.0
 

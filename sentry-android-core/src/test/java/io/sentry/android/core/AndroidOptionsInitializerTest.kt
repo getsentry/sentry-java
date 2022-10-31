@@ -377,4 +377,47 @@ class AndroidOptionsInitializerTest {
 
         assertTrue { fixture.sentryOptions.envelopeDiskCache is AndroidEnvelopeCache }
     }
+
+    @Test
+    fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be available`() {
+        fixture.initSut(hasAppContext = true, configureOptions = {
+            isEnableFramesTracking = true
+        })
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertTrue(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
+
+    @Test
+    fun `When Frames Tracking is disabled, the Activity Frames Tracker should not be available`() {
+        fixture.initSut(hasAppContext = true, configureOptions = {
+            isEnableFramesTracking = false
+        })
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertFalse(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
+
+    @Test
+    fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be available`() {
+        fixture.sentryOptions.isEnableFramesTracking = false
+        fixture.initSut(hasAppContext = true, configureOptions = {
+            isEnableFramesTracking = true
+        })
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertTrue(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
 }

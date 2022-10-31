@@ -135,5 +135,8 @@
         <!--    how to enable the attach screenshot feature-->
         <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
 
+        <!--    how to enable the send default pii-->
+        <meta-data android:name="io.sentry.send-default-pii" android:value="true" />
+
     </application>
 </manifest>

@@ -11,8 +11,8 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
-import io.sentry.TracePropagationTargets;
 import io.sentry.util.Objects;
+import io.sentry.util.PropagationTargetsUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.reactive.function.client.ClientRequest;
@@ -45,7 +45,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
 
-    if (TracePropagationTargets.contain(
+    if (PropagationTargetsUtils.contain(
         hub.getOptions().getTracePropagationTargets(), request.url())) {
       requestBuilder.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
 

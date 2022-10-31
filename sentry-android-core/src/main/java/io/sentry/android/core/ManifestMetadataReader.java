@@ -78,6 +78,10 @@ final class ManifestMetadataReader {
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
   static final String COLLECT_ADDITIONAL_CONTEXT = "io.sentry.additional-context";
 
+  static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
+
+  static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -286,6 +290,8 @@ final class ManifestMetadataReader {
           options.setTracePropagationTargets(tracePropagationTargets);
         }
 
+        options.setEnableFramesTracking(readBool(metadata, logger, PERFORM_FRAMES_TRACKING, true));
+
         options.setProguardUuid(
             readString(metadata, logger, PROGUARD_UUID, options.getProguardUuid()));
 
@@ -297,6 +303,9 @@ final class ManifestMetadataReader {
         sdkInfo.setName(readStringNotNull(metadata, logger, SDK_NAME, sdkInfo.getName()));
         sdkInfo.setVersion(readStringNotNull(metadata, logger, SDK_VERSION, sdkInfo.getVersion()));
         options.setSdkVersion(sdkInfo);
+
+        options.setSendDefaultPii(
+            readBool(metadata, logger, SEND_DEFAULT_PII, options.isSendDefaultPii()));
       }
 
       options
