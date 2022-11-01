@@ -323,7 +323,7 @@ class SentryTest {
         assertTrue { sentryOptions!!.modulesLoader is CustomModulesLoader }
     }
 
-    private class CustomModulesLoader: IModulesLoader {
+    private class CustomModulesLoader : IModulesLoader {
         override fun getOrLoadModules(): MutableMap<String, String>? = null
     }
 

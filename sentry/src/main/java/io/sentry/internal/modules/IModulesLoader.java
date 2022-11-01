@@ -6,5 +6,6 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public interface IModulesLoader {
-  @Nullable Map<String, String> getOrLoadModules();
+  @Nullable
+  Map<String, String> getOrLoadModules();
 }

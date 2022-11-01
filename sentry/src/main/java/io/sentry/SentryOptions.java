@@ -184,8 +184,8 @@ public class SentryOptions {
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
 
   /**
-   * The transport factory creates instances of {@link ITransport} - internal
-   * construct of the client that abstracts away the event sending.
+   * The transport factory creates instances of {@link ITransport} - internal construct of the
+   * client that abstracts away the event sending.
    */
   private @NotNull ITransportFactory transportFactory = NoOpTransportFactory.getInstance();
 
@@ -358,9 +358,7 @@ public class SentryOptions {
   /** ClientReportRecorder to track count of lost events / transactions / ... * */
   @NotNull IClientReportRecorder clientReportRecorder = new ClientReportRecorder(this);
 
-  /**
-   * Modules (dependencies, packages) that will be send along with each event.
-   */
+  /** Modules (dependencies, packages) that will be send along with each event. */
   private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
 
   /**

@@ -3,7 +3,6 @@ package io.sentry.internal.modules;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,7 +24,8 @@ public abstract class ModulesLoader implements IModulesLoader {
     this.logger = logger;
   }
 
-  @Override public @Nullable Map<String, String> getOrLoadModules() {
+  @Override
+  public @Nullable Map<String, String> getOrLoadModules() {
     if (cachedModules != null) {
       return cachedModules;
     }
@@ -39,7 +39,7 @@ public abstract class ModulesLoader implements IModulesLoader {
   protected Map<String, String> parseStream(final @NotNull InputStream stream) {
     final Map<String, String> modules = new TreeMap<>();
     try (final BufferedReader reader =
-           new BufferedReader(new InputStreamReader(stream, Charset.forName("UTF-8")))) {
+        new BufferedReader(new InputStreamReader(stream, Charset.forName("UTF-8")))) {
       String module = reader.readLine();
       while (module != null) {
         int sep = module.lastIndexOf(':');

@@ -13,7 +13,8 @@ public final class NoOpModulesLoader implements IModulesLoader {
 
   private NoOpModulesLoader() {}
 
-  @Override public @Nullable Map<String, String> getOrLoadModules() {
+  @Override
+  public @Nullable Map<String, String> getOrLoadModules() {
     return null;
   }
 }

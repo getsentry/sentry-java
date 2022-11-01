@@ -22,11 +22,12 @@ public final class ResourcesModulesLoader extends ModulesLoader {
     this.classLoader = classLoader;
   }
 
-  @Override protected Map<String, String> loadModules() {
+  @Override
+  protected Map<String, String> loadModules() {
     final Map<String, String> modules = new TreeMap<>();
     try {
       final InputStream resourcesStream =
-        classLoader.getResourceAsStream(EXTERNAL_MODULES_FILENAME);
+          classLoader.getResourceAsStream(EXTERNAL_MODULES_FILENAME);
 
       if (resourcesStream == null) {
         logger.log(SentryLevel.INFO, "%s file was not found.", EXTERNAL_MODULES_FILENAME);

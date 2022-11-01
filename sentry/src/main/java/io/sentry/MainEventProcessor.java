@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.hints.Cached;
-import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SentryException;

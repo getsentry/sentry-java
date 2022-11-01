@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
+
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -22,8 +24,6 @@ import java.io.InputStream;
 import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 
 /**
  * Android Options initializer, it reads configurations from AndroidManifest and sets to the
