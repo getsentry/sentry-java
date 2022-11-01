@@ -7,6 +7,8 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import io.sentry.cache.EnvelopeCache
 import io.sentry.cache.IEnvelopeCache
+import io.sentry.internal.modules.IModulesLoader
+import io.sentry.internal.modules.ResourcesModulesLoader
 import io.sentry.protocol.SentryId
 import org.junit.rules.TemporaryFolder
 import java.io.File
@@ -19,6 +21,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+
 class SentryTest {
 
     private val dsn = "http://key@localhost/proj"
@@ -293,6 +296,35 @@ class SentryTest {
         }
 
         assertTrue { sentryOptions!!.envelopeDiskCache is CustomEnvelopCache }
+    }
+
+    @Test
+    fun `overrides modules loader if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.modulesLoader is ResourcesModulesLoader }
+    }
+
+    @Test
+    fun `does not override modules loader if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.setModulesLoader(CustomModulesLoader())
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.modulesLoader is CustomModulesLoader }
+    }
+
+    private class CustomModulesLoader: IModulesLoader {
+        override fun getOrLoadModules(): MutableMap<String, String>? = null
     }
 
     private class CustomEnvelopCache : IEnvelopeCache {

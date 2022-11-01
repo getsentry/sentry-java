@@ -11,18 +11,25 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class ResourcesModulesLoader extends ModulesLoader {
 
+  private final @NotNull ClassLoader classLoader;
+
   public ResourcesModulesLoader(final @NotNull ILogger logger) {
+    this(logger, ResourcesModulesLoader.class.getClassLoader());
+  }
+
+  ResourcesModulesLoader(final @NotNull ILogger logger, final @NotNull ClassLoader classLoader) {
     super(logger);
+    this.classLoader = classLoader;
   }
 
   @Override protected Map<String, String> loadModules() {
     final Map<String, String> modules = new TreeMap<>();
     try {
       final InputStream resourcesStream =
-        getClass().getClassLoader().getResourceAsStream(EXTERNAL_MODULES_FILENAME);
+        classLoader.getResourceAsStream(EXTERNAL_MODULES_FILENAME);
 
       if (resourcesStream == null) {
-        logger.log(SentryLevel.DEBUG, "%s file was not found.", EXTERNAL_MODULES_FILENAME);
+        logger.log(SentryLevel.INFO, "%s file was not found.", EXTERNAL_MODULES_FILENAME);
         return modules;
       }
 

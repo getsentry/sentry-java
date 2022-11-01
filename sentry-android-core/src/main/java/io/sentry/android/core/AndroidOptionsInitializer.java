@@ -1,7 +1,5 @@
 package io.sentry.android.core;
 
-import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
-
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -15,22 +13,17 @@ import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
-import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
-import java.util.TreeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 
 /**
  * Android Options initializer, it reads configurations from AndroidManifest and sets to the

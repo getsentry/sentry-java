@@ -1764,8 +1764,8 @@ public class SentryOptions {
   }
 
   @ApiStatus.Internal
-  public void setModulesLoader(final @NotNull IModulesLoader modulesLoader) {
-    this.modulesLoader = modulesLoader;
+  public void setModulesLoader(final @Nullable IModulesLoader modulesLoader) {
+    this.modulesLoader = modulesLoader != null ? modulesLoader : NoOpModulesLoader.getInstance();
   }
 
   /** The BeforeSend callback */

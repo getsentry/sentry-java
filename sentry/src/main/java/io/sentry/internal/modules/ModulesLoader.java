@@ -49,8 +49,6 @@ public abstract class ModulesLoader implements IModulesLoader {
         module = reader.readLine();
       }
       logger.log(SentryLevel.DEBUG, "Extracted %d modules from resources.", modules.size());
-    } catch (FileNotFoundException e) {
-      logger.log(SentryLevel.INFO, "%s file was not found.", EXTERNAL_MODULES_FILENAME);
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Error extracting modules.", e);
     } catch (RuntimeException e) {

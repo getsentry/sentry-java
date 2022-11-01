@@ -3,20 +3,15 @@ package io.sentry.android.core.internal.modules;
 import android.content.Context;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.ModulesLoader;
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
-import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.TreeMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class AssetsModulesLoader extends ModulesLoader {
@@ -39,6 +34,8 @@ public final class AssetsModulesLoader extends ModulesLoader {
     try {
       final InputStream stream = context.getAssets().open(EXTERNAL_MODULES_FILENAME);
       return parseStream(stream);
+    } catch (FileNotFoundException e) {
+      logger.log(SentryLevel.INFO, "%s file was not found.", EXTERNAL_MODULES_FILENAME);
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Error extracting modules.", e);
     }
