@@ -218,12 +218,12 @@ class ScopeTest {
     }
 
     @Test
-    fun `copying scope won't crash if there are a lot of breadcrumbs`() {
+    fun `copying scope won't crash if there are concurrent operations`() {
         val options = SentryOptions().apply {
             maxBreadcrumbs = 10000
         }
         val scope = Scope(options)
-        for (i in 0..options.maxBreadcrumbs) {
+        for (i in 0 until options.maxBreadcrumbs) {
             scope.addBreadcrumb(Breadcrumb.info("item"))
         }
 
