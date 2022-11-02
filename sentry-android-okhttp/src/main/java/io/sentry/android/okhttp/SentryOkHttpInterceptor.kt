@@ -194,7 +194,7 @@ class SentryOkHttpInterceptor(
         }
 
         val sentryResponse = io.sentry.protocol.Response().apply {
-            // Cookie is only sent if isSendDefaultPii is enabled due to PII
+            // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
             cookies = if (hub.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
             headers = getHeaders(response.headers)
             statusCode = response.code
