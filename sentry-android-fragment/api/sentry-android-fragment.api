@@ -8,6 +8,7 @@ public final class io/sentry/android/fragment/BuildConfig {
 
 public final class io/sentry/android/fragment/FragmentLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;)V
+	public fun <init> (Landroid/app/Application;Ljava/util/Set;Z)V
 	public fun <init> (Landroid/app/Application;ZZ)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
@@ -20,15 +21,33 @@ public final class io/sentry/android/fragment/FragmentLifecycleIntegration : and
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/fragment/FragmentLifecycleState : java/lang/Enum {
+	public static final field ATTACHED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field CREATED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field DESTROYED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field DETACHED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field PAUSED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field RESUMED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field SAVE_INSTANCE_STATE Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field STARTED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field STOPPED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field VIEW_CREATED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field VIEW_DESTROYED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static fun values ()[Lio/sentry/android/fragment/FragmentLifecycleState;
+}
+
 public final class io/sentry/android/fragment/SentryFragmentLifecycleCallbacks : androidx/fragment/app/FragmentManager$FragmentLifecycleCallbacks {
 	public static final field Companion Lio/sentry/android/fragment/SentryFragmentLifecycleCallbacks$Companion;
 	public static final field FRAGMENT_LOAD_OP Ljava/lang/String;
+	public fun <init> (Lio/sentry/IHub;Ljava/util/Set;Z)V
+	public synthetic fun <init> (Lio/sentry/IHub;Ljava/util/Set;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lio/sentry/IHub;ZZ)V
-	public synthetic fun <init> (Lio/sentry/IHub;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (ZZ)V
 	public synthetic fun <init> (ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getEnableAutoFragmentLifecycleTracing ()Z
 	public final fun getEnableFragmentLifecycleBreadcrumbs ()Z
+	public final fun getFilterFragmentLifecycleBreadcrumbs ()Ljava/util/Set;
 	public fun onFragmentAttached (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/content/Context;)V
 	public fun onFragmentCreated (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;Landroid/os/Bundle;)V
 	public fun onFragmentDestroyed (Landroidx/fragment/app/FragmentManager;Landroidx/fragment/app/Fragment;)V
