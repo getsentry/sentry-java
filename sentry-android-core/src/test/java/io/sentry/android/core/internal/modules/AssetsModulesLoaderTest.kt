@@ -3,7 +3,6 @@ package io.sentry.android.core.internal.modules
 import android.content.Context
 import android.content.res.AssetManager
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
@@ -11,6 +10,7 @@ import java.io.FileNotFoundException
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class AssetsModulesLoaderTest {
 
@@ -80,14 +80,14 @@ class AssetsModulesLoaderTest {
             sut.orLoadModules
         )
         // the context only called once when there's no in-memory cache
-        verify(fixture.context, times(1)).assets
+        verify(fixture.context).assets
     }
 
     @Test
     fun `when file does not exist, swallows exception and returns empty map`() {
         val sut = fixture.getSut(throws = true)
 
-        assertEquals(emptyMap(), sut.orLoadModules)
+        assertTrue(sut.orLoadModules!!.isEmpty())
     }
 
     @Test
@@ -99,6 +99,6 @@ class AssetsModulesLoaderTest {
             """.trimIndent()
         )
 
-        assertEquals(emptyMap(), sut.orLoadModules)
+        assertTrue(sut.orLoadModules!!.isEmpty())
     }
 }

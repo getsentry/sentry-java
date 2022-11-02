@@ -2,13 +2,13 @@ package io.sentry.internal.modules
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ResourcesModulesLoaderTest {
 
@@ -72,14 +72,14 @@ class ResourcesModulesLoaderTest {
             sut.orLoadModules
         )
         // the classloader only called once when there's no in-memory cache
-        verify(fixture.classLoader, times(1)).getResourceAsStream(any())
+        verify(fixture.classLoader).getResourceAsStream(any())
     }
 
     @Test
     fun `when file does not exist, returns empty map`() {
         val sut = fixture.getSut()
 
-        assertEquals(emptyMap(), sut.orLoadModules)
+        assertTrue(sut.orLoadModules!!.isEmpty())
     }
 
     @Test
@@ -91,6 +91,6 @@ class ResourcesModulesLoaderTest {
             """.trimIndent()
         )
 
-        assertEquals(emptyMap(), sut.orLoadModules)
+        assertTrue(sut.orLoadModules!!.isEmpty())
     }
 }

@@ -7,7 +7,6 @@ import io.sentry.internal.modules.ModulesLoader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.TreeMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -16,20 +15,16 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class AssetsModulesLoader extends ModulesLoader {
 
-  private final @NotNull WeakReference<Context> contextRef;
+  private final @NotNull Context context;
 
   public AssetsModulesLoader(final @NotNull Context context, final @NotNull ILogger logger) {
     super(logger);
-    this.contextRef = new WeakReference<>(context);
+    this.context = context;
   }
 
   @Override
   protected Map<String, String> loadModules() {
     final Map<String, String> modules = new TreeMap<>();
-    final Context context = contextRef.get();
-    if (context == null) {
-      return modules;
-    }
 
     try {
       final InputStream stream = context.getAssets().open(EXTERNAL_MODULES_FILENAME);
