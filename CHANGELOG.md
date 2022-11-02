@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Use correct set-cookie for the HTTP Client response object ([#2326](https://github.com/getsentry/sentry-java/pull/2326))
+
 ### Features
 
 - Customizable fragment lifecycle breadcrumbs ([#2299](https://github.com/getsentry/sentry-java/pull/2299))
