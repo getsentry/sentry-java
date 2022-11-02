@@ -218,6 +218,31 @@ class ScopeTest {
     }
 
     @Test
+    fun `copying scope won't crash if there are a lot of breadcrumbs`() {
+        val options = SentryOptions().apply {
+            maxBreadcrumbs = 10000
+        }
+        val scope = Scope(options)
+        for (i in 0..options.maxBreadcrumbs) {
+            scope.addBreadcrumb(Breadcrumb.info("item"))
+        }
+
+        // remove one breadcrumb after the other on an extra thread
+        Thread({
+            while (scope.breadcrumbs.isNotEmpty()) {
+                scope.breadcrumbs.remove()
+            }
+        }, "thread-breadcrumb-remover").start()
+
+        // clone in the meantime
+        while (scope.breadcrumbs.isNotEmpty()) {
+            Scope(scope)
+        }
+
+        // expect no exception to be thrown ¯\_(ツ)_/¯
+    }
+
+    @Test
     fun `clear scope resets scope to default state`() {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.WARNING
