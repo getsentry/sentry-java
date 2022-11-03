@@ -92,9 +92,16 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   }
 
   private void setModules(final @NotNull SentryEvent event) {
-    final Map<String, String> modules = event.getModules();
+    final Map<String, String> modules = options.getModulesLoader().getOrLoadModules();
     if (modules == null) {
-      event.setModules(options.getModulesLoader().getOrLoadModules());
+      return;
+    }
+
+    final Map<String, String> eventModules = event.getModules();
+    if (eventModules == null) {
+      event.setModules(modules);
+    } else {
+      eventModules.putAll(modules);
     }
   }
 

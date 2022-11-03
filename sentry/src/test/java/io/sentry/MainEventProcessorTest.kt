@@ -491,7 +491,7 @@ class MainEventProcessorTest {
     }
 
     @Test
-    fun `when event has modules, does not override them`() {
+    fun `when event has modules, appends to them`() {
         val sut = fixture.getSut(modules = mapOf("group1:artifact1" to "2.0.0"))
 
         var event = SentryEvent().apply {
@@ -499,8 +499,9 @@ class MainEventProcessorTest {
         }
         event = sut.process(event, Hint())
 
-        assertEquals(1, event.modules!!.size)
+        assertEquals(2, event.modules!!.size)
         assertEquals("1.0.0", event.modules!!["group:artifact"])
+        assertEquals("2.0.0", event.modules!!["group1:artifact1"])
     }
 
     @Test
