@@ -2,6 +2,7 @@ package io.sentry.uitest.android
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -31,6 +32,10 @@ class ProfilingSampleActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            window.setSustainedPerformanceMode(true)
+        }
 
         binding = ActivityProfilingSampleBinding.inflate(layoutInflater)
         setContentView(binding.root)
