@@ -60,6 +60,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     setCommons(event);
     setExceptions(event);
     setDebugMeta(event);
+    setModules(event);
 
     if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
@@ -87,6 +88,20 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
         images.add(debugImage);
         event.setDebugMeta(debugMeta);
       }
+    }
+  }
+
+  private void setModules(final @NotNull SentryEvent event) {
+    final Map<String, String> modules = options.getModulesLoader().getOrLoadModules();
+    if (modules == null) {
+      return;
+    }
+
+    final Map<String, String> eventModules = event.getModules();
+    if (eventModules == null) {
+      event.setModules(modules);
+    } else {
+      eventModules.putAll(modules);
     }
   }
 

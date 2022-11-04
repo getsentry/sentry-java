@@ -11,6 +11,7 @@ import io.sentry.ILogger
 import io.sentry.MainEventProcessor
 import io.sentry.SentryOptions
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import org.junit.runner.RunWith
@@ -413,5 +414,12 @@ class AndroidOptionsInitializerTest {
         assertTrue(
             (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
         )
+    }
+
+    @Test
+    fun `AssetsModulesLoader is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.modulesLoader is AssetsModulesLoader }
     }
 }

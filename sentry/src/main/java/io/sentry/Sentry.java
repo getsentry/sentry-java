@@ -3,6 +3,9 @@ package io.sentry;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
+import io.sentry.internal.modules.IModulesLoader;
+import io.sentry.internal.modules.NoOpModulesLoader;
+import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -268,6 +271,12 @@ public final class Sentry {
                   FileUtils.deleteRecursively(f);
                 }
               });
+    }
+
+    final IModulesLoader modulesLoader = options.getModulesLoader();
+    // only override the ModulesLoader if it's not already set by Android
+    if (modulesLoader instanceof NoOpModulesLoader) {
+      options.setModulesLoader(new ResourcesModulesLoader(options.getLogger()));
     }
 
     return true;
