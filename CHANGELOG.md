@@ -5,11 +5,13 @@
 ### Fixes
 
 - Use correct set-cookie for the HTTP Client response object ([#2326](https://github.com/getsentry/sentry-java/pull/2326))
+- Fix NoSuchElementException in CircularFifoQueue when cloning a Scope ([#2328](https://github.com/getsentry/sentry-java/pull/2328))
 
 ### Features
 
 - Customizable fragment lifecycle breadcrumbs ([#2299](https://github.com/getsentry/sentry-java/pull/2299))
 - Provide hook for Jetpack Compose navigation instrumentation ([#2320](https://github.com/getsentry/sentry-java/pull/2320))
+- Populate `event.modules` with dependencies metadata ([#2324](https://github.com/getsentry/sentry-java/pull/2324))
 - Support Spring 6 and Spring Boot 3 ([#2289](https://github.com/getsentry/sentry-java/pull/2289))
 
 ### Dependencies
