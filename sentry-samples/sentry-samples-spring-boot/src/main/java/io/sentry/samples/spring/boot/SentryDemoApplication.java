@@ -1,8 +1,10 @@
 package io.sentry.samples.spring.boot;
 
+import org.apache.camel.component.servlet.CamelHttpTransportServlet;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
@@ -23,5 +25,14 @@ public class SentryDemoApplication {
   @Bean
   WebClient webClient(WebClient.Builder builder) {
     return builder.build();
+  }
+
+  @Bean
+  ServletRegistrationBean<CamelHttpTransportServlet> servletRegistrationBean() {
+    ServletRegistrationBean<CamelHttpTransportServlet> servlet =
+        new ServletRegistrationBean<CamelHttpTransportServlet>(
+            new CamelHttpTransportServlet(), "/camel/*");
+    servlet.setName("CamelServlet");
+    return servlet;
   }
 }

@@ -30,6 +30,13 @@ dependencies {
     implementation(projects.sentrySpringBootStarter)
     implementation(projects.sentryLogback)
 
+    implementation("org.apache.camel.springboot:camel-servlet-starter:3.15.0")
+    implementation("org.apache.camel.springboot:camel-jackson-starter:3.15.0")
+    implementation("org.apache.camel.springboot:camel-swagger-java-starter:3.15.0")
+    implementation("org.apache.camel.springboot:camel-spring-boot-starter:3.15.0")
+    implementation("org.apache.camel.springboot:camel-jaxb-starter:3.15.0")
+    implementation("org.apache.camel.springboot:camel-spring-jdbc-starter:3.15.0")
+
     // database query tracing
     implementation(projects.sentryJdbc)
     runtimeOnly(Config.TestLibs.hsqldb)
