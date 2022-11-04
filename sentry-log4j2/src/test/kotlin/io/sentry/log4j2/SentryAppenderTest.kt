@@ -1,10 +1,5 @@
 package io.sentry.log4j2
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.HubAdapter
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
@@ -20,6 +15,11 @@ import org.apache.logging.log4j.core.config.AppenderRef
 import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
 import org.apache.logging.log4j.spi.ExtendedLogger
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId

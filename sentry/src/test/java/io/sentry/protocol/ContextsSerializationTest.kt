@@ -1,12 +1,12 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.JsonObjectWriter
 import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.assertEquals
 
 class ContextsSerializationTest {
@@ -53,7 +53,9 @@ class ContextsSerializationTest {
     fun deserialize() {
         val expectedJson = SerializationUtils.sanitizedFile("json/contexts.json")
         val actual = SerializationUtils.deserializeJson(
-            expectedJson, Contexts.Deserializer(), fixture.logger
+            expectedJson,
+            Contexts.Deserializer(),
+            fixture.logger
         )
         val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
 
@@ -66,7 +68,9 @@ class ContextsSerializationTest {
         sut["fixture-key"] = "fixture-value"
         val serialized = SerializationUtils.serializeToString(sut, fixture.logger)
         val deserialized = SerializationUtils.deserializeJson(
-            serialized, Contexts.Deserializer(), fixture.logger
+            serialized,
+            Contexts.Deserializer(),
+            fixture.logger
         )
 
         assertEquals("fixture-value", deserialized["fixture-key"])

@@ -20,12 +20,15 @@ abstract class BaseUiTest {
 
     /** Runner of the test. */
     protected lateinit var runner: AndroidJUnitRunner
+
     /** Application context for the current test. */
     protected lateinit var context: Context
+
     /** Mock dsn used to send envelopes to our mock [relay] server. */
     protected lateinit var mockDsn: String
         // The mockDsn cannot be changed. If a custom dsn needs to be used, it can be set in the options as usual
         private set
+
     /**
      * Idling resource that will be checked by the relay server (if [initSentry] param relayWaitForRequests is true).
      * This should be increased to match any envelope that will be sent during the test,

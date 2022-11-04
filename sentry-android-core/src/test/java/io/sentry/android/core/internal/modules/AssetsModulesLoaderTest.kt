@@ -2,10 +2,10 @@ package io.sentry.android.core.internal.modules
 
 import android.content.Context
 import android.content.res.AssetManager
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.FileNotFoundException
 import java.nio.charset.Charset
 import kotlin.test.Test

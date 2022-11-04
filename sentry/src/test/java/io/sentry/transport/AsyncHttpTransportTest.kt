@@ -1,14 +1,5 @@
 package io.sentry.transport
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.inOrder
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.CachedEvent
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
@@ -21,6 +12,15 @@ import io.sentry.clientreport.NoOpClientReportRecorder
 import io.sentry.dsnString
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals

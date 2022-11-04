@@ -1,8 +1,8 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.ILogger
 import org.junit.Test
+import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
 
 class RequestSerializationTest {
@@ -45,7 +45,9 @@ class RequestSerializationTest {
     fun deserialize() {
         val expectedJson = SerializationUtils.sanitizedFile("json/request.json")
         val actual = SerializationUtils.deserializeJson(
-            expectedJson, Request.Deserializer(), fixture.logger
+            expectedJson,
+            Request.Deserializer(),
+            fixture.logger
         )
         val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
 

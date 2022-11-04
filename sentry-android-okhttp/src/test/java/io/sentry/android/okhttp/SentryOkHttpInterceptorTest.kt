@@ -1,12 +1,7 @@
+@file:Suppress("MaxLineLength")
+
 package io.sentry.android.okhttp
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
@@ -28,6 +23,13 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -58,7 +60,8 @@ class SentryOkHttpInterceptorTest {
             failedRequestTargets: List<String> = listOf(".*"),
             failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
                 HttpStatusCodeRange(
-                    HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX
+                    HttpStatusCodeRange.DEFAULT_MIN,
+                    HttpStatusCodeRange.DEFAULT_MAX
                 )
             ),
             sendDefaultPii: Boolean = false
@@ -441,7 +444,7 @@ class SentryOkHttpInterceptorTest {
     fun `captures an error event with request body size`() {
         val sut = fixture.getSut(
             captureFailedRequests = true,
-            httpStatusCode = 500,
+            httpStatusCode = 500
         )
 
         val body = "fail"

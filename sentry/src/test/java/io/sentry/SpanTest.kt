@@ -1,10 +1,10 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,8 +28,11 @@ class SpanTest {
 
         fun getSut(): Span {
             return Span(
-                SentryId(), SpanId(),
-                SentryTracer(TransactionContext("name", "op"), hub), "op", hub
+                SentryId(),
+                SpanId(),
+                SentryTracer(TransactionContext("name", "op"), hub),
+                "op",
+                hub
             )
         }
     }
@@ -110,11 +113,14 @@ class SpanTest {
         val traceId = SentryId()
         val parentSpanId = SpanId()
         val span = Span(
-            traceId, parentSpanId,
+            traceId,
+            parentSpanId,
             SentryTracer(
-                TransactionContext("name", "op", TracesSamplingDecision(true)), fixture.hub
+                TransactionContext("name", "op", TracesSamplingDecision(true)),
+                fixture.hub
             ),
-            "op", fixture.hub
+            "op",
+            fixture.hub
         )
         val sentryTrace = span.toSentryTrace()
 
@@ -152,7 +158,8 @@ class SpanTest {
     @Test
     fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
         val transaction = SentryTracer(
-            TransactionContext("name", "op"), fixture.hub
+            TransactionContext("name", "op"),
+            fixture.hub
         )
         val span = transaction.startChild("op")
         val ex = RuntimeException()

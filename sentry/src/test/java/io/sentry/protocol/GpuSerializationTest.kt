@@ -1,8 +1,8 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.ILogger
 import org.junit.Test
+import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
 
 class GpuSerializationTest {
@@ -36,7 +36,9 @@ class GpuSerializationTest {
     fun deserialize() {
         val expectedJson = SerializationUtils.sanitizedFile("json/gpu.json")
         val actual = SerializationUtils.deserializeJson<Gpu>(
-            expectedJson, Gpu.Deserializer(), fixture.logger
+            expectedJson,
+            Gpu.Deserializer(),
+            fixture.logger
         )
         val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
 

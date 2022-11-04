@@ -1,8 +1,8 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import org.junit.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import java.net.URI
 import java.util.Calendar
 import java.util.Currency

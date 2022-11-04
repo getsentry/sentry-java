@@ -28,7 +28,6 @@ class EnvelopeTests : BaseUiTest() {
 
     @Test
     fun checkEnvelopeCaptureMessage() {
-
         initSentry(true)
         relayIdlingResource.increment()
         Sentry.captureMessage("Message captured during test")
@@ -46,7 +45,6 @@ class EnvelopeTests : BaseUiTest() {
 
     @Test
     fun checkEnvelopeProfiledTransaction() {
-
         initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
@@ -82,7 +80,6 @@ class EnvelopeTests : BaseUiTest() {
 
     @Test
     fun checkEnvelopeConcurrentTransactions() {
-
         initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
@@ -157,7 +154,6 @@ class EnvelopeTests : BaseUiTest() {
 
     @Test
     fun checkProfileNotSentIfEmpty() {
-
         initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0

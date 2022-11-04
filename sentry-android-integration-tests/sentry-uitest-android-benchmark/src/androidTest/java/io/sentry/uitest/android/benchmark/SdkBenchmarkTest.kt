@@ -16,7 +16,6 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
 
     @Test
     fun benchmarkSdkInit() {
-
         // We compare starting an activity with and without the sdk init, to measure its impact on startup time.
         val opNoSdk = getOperation()
         val opSimpleSdk = getOperation {

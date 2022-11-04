@@ -796,6 +796,6 @@ class BaggageTest {
         "ü" to "%C3%BC",
         "ý" to "%C3%BD",
         "þ" to "%C3%BE",
-        "ÿ" to "%C3%BF",
+        "ÿ" to "%C3%BF"
     )
 }

@@ -2,11 +2,6 @@ package io.sentry.apollo3
 
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.ITransaction
@@ -23,6 +18,11 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -52,7 +52,7 @@ class SentryApollo3InterceptorWithVariablesTest {
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            beforeSpan: BeforeSpanCallback? = null,
+            beforeSpan: BeforeSpanCallback? = null
         ): ApolloClient {
             whenever(hub.options).thenReturn(
                 SentryOptions().apply {

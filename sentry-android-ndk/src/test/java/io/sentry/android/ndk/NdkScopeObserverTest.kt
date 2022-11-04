@@ -1,14 +1,14 @@
 package io.sentry.android.ndk
 
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.JsonSerializer
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.User
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import kotlin.test.Test
 
 class NdkScopeObserverTest {
@@ -103,8 +103,12 @@ class NdkScopeObserverTest {
         sut.addBreadcrumb(breadcrumb)
 
         verify(fixture.nativeScope).addBreadcrumb(
-            eq("debug"), eq(breadcrumb.message),
-            eq(breadcrumb.category), eq(breadcrumb.type), eq(timestamp), eq(data)
+            eq("debug"),
+            eq(breadcrumb.message),
+            eq(breadcrumb.category),
+            eq(breadcrumb.type),
+            eq(timestamp),
+            eq(data)
         )
     }
 }

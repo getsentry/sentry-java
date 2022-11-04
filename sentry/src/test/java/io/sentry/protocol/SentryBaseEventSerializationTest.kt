@@ -1,6 +1,5 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.ILogger
 import io.sentry.JsonDeserializer
 import io.sentry.JsonObjectReader
@@ -9,6 +8,7 @@ import io.sentry.JsonSerializable
 import io.sentry.SentryBaseEvent
 import io.sentry.vendor.gson.stream.JsonToken
 import org.junit.Test
+import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
 
 class SentryBaseEventSerializationTest {
@@ -88,7 +88,9 @@ class SentryBaseEventSerializationTest {
     fun deserialize() {
         val expectedJson = SerializationUtils.sanitizedFile("json/sentry_base_event.json")
         val actual = SerializationUtils.deserializeJson(
-            expectedJson, Sut.Deserializer(), fixture.logger
+            expectedJson,
+            Sut.Deserializer(),
+            fixture.logger
         )
         val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
 

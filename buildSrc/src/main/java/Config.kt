@@ -5,6 +5,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.4"
+    val springBoot3Version = "3.0.0-M5"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.1.1"
@@ -74,6 +75,14 @@ object Config {
         val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
         val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
 
+        val springBoot3Starter = "org.springframework.boot:spring-boot-starter:$springBoot3Version"
+        val springBoot3StarterTest = "org.springframework.boot:spring-boot-starter-test:$springBoot3Version"
+        val springBoot3StarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBoot3Version"
+        val springBoot3StarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBoot3Version"
+        val springBoot3StarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBoot3Version"
+        val springBoot3StarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBoot3Version"
+        val springBoot3StarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBoot3Version"
+
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
         val springSecurityWeb = "org.springframework.security:spring-security-web"
@@ -113,6 +122,7 @@ object Config {
 
         private val navigationVersion = "2.4.2"
         val navigationRuntime = "androidx.navigation:navigation-runtime:$navigationVersion"
+
         // compose deps
         val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
         val composeActivity = "androidx.activity:activity-compose:1.4.0"
@@ -130,6 +140,7 @@ object Config {
 
     object TestLibs {
         private val androidxTestVersion = "1.4.0"
+
         // todo This beta version is needed to run ui tests on Android 13.
         //  It will be replaced by androidxTestVersion when 1.5.0 will be out.
         private val androidxTestVersionBeta = "1.5.0-beta01"
@@ -147,8 +158,8 @@ object Config {
         val androidxJunit = "androidx.test.ext:junit:1.1.3"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val robolectric = "org.robolectric:robolectric:4.7.3"
-        val mockitoKotlin = "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
-        val mockitoInline = "org.mockito:mockito-inline:4.3.1"
+        val mockitoKotlin = "org.mockito.kotlin:mockito-kotlin:4.0.0"
+        val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val mockWebserver4 = "com.squareup.okhttp3:mockwebserver:4.9.3"
@@ -163,9 +174,9 @@ object Config {
             val minimumCoverage = BigDecimal.valueOf(0.6)
         }
         val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "6.2.1"
+        val spotlessVersion = "6.11.0"
         val errorProne = "net.ltgt.errorprone"
-        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:2.0.1"
+        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:3.0.1"
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
@@ -185,6 +196,7 @@ object Config {
         val SENTRY_LOG4J2_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.log4j2"
         val SENTRY_SPRING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring"
         val SENTRY_SPRING_BOOT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot"
+        val SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot.jakarta"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"

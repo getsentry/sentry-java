@@ -47,10 +47,12 @@ class ProfilingSampleActivity : AppCompatActivity() {
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING)
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
                         scrollingIdlingResource.increment()
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE)
+                    }
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                         scrollingIdlingResource.decrement()
+                    }
                 }
             })
         }

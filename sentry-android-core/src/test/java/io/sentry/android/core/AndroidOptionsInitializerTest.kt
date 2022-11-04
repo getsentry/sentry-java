@@ -4,9 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.MainEventProcessor
 import io.sentry.SentryOptions
@@ -15,6 +12,9 @@ import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -54,7 +54,8 @@ class AndroidOptionsInitializerTest {
             mockContext.configureContext()
             sentryOptions.configureOptions()
             AndroidOptionsInitializer.init(
-                sentryOptions, if (useRealContext) context else mockContext
+                sentryOptions,
+                if (useRealContext) context else mockContext
             )
         }
 
@@ -72,8 +73,13 @@ class AndroidOptionsInitializerTest {
             )
             sentryOptions.setDebug(true)
             AndroidOptionsInitializer.init(
-                sentryOptions, mockContext, logger, createBuildInfo(minApi),
-                createClassMock(classToLoad), isFragmentAvailable, isTimberAvailable
+                sentryOptions,
+                mockContext,
+                logger,
+                createBuildInfo(minApi),
+                createClassMock(classToLoad),
+                isFragmentAvailable,
+                isTimberAvailable
             )
         }
 

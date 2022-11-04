@@ -1,7 +1,5 @@
 package io.sentry.android.core.cache
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.SentryEnvelope
 import io.sentry.android.core.AppStartState
 import io.sentry.android.core.SentryAndroidOptions
@@ -9,6 +7,8 @@ import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.HintUtils
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
