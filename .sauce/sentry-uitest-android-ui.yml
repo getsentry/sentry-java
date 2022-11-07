@@ -32,7 +32,7 @@ suites:
 
   - name: "Android 10 Ui test (api 29)"
     devices:
-      - id: OnePlus_7T_real_us # OnePlus 7 Pro - api 29 (10)
+      - id: OnePlus_7T_real_us # OnePlus 7T - api 29 (10)
 
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
 artifacts:
