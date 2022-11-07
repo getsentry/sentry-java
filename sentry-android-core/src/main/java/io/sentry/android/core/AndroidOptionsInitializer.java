@@ -154,8 +154,10 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
+    SentryFrameMetricsCollector frameMetricsCollector =
+        new SentryFrameMetricsCollector(context, options, buildInfoProvider);
     options.setTransactionProfiler(
-        new AndroidTransactionProfiler(context, options, buildInfoProvider));
+        new AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector));
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
   }
 

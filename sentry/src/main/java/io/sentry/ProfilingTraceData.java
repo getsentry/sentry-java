@@ -1,9 +1,11 @@
 package io.sentry;
 
+import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,8 +30,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   // Backgrounded reason is not used, yet, but it's one of the possible values
   @ApiStatus.Internal public static final String TRUNCATION_REASON_BACKGROUNDED = "backgrounded";
 
-  private @NotNull File traceFile;
-  private @Nullable Callable<List<Integer>> deviceCpuFrequenciesReader;
+  private final @NotNull File traceFile;
+  private final @NotNull Callable<List<Integer>> deviceCpuFrequenciesReader;
 
   // Device metadata
   private int androidApiLevel;
@@ -62,6 +64,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String profileId;
   private @NotNull String environment;
   private @NotNull String truncationReason;
+  private final @NotNull Map<String, ProfileMeasurement> measurementsMap;
 
   // Stacktrace (file)
   /** Profile trace encoded with Base64 */
@@ -90,7 +93,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
         null,
         null,
         null,
-        TRUNCATION_REASON_NORMAL);
+        TRUNCATION_REASON_NORMAL,
+        new HashMap<>());
   }
 
   public ProfilingTraceData(
@@ -110,7 +114,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       @Nullable String versionName,
       @Nullable String versionCode,
       @Nullable String environment,
-      @NotNull String truncationReason) {
+      @NotNull String truncationReason,
+      @NotNull Map<String, ProfileMeasurement> measurementsMap) {
     this.traceFile = traceFile;
     this.cpuArchitecture = cpuArchitecture;
     this.deviceCpuFrequenciesReader = deviceCpuFrequenciesReader;
@@ -147,6 +152,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     if (!isTruncationReasonValid()) {
       this.truncationReason = TRUNCATION_REASON_NORMAL;
     }
+    this.measurementsMap = measurementsMap;
   }
 
   private boolean isTruncationReasonValid() {
@@ -257,6 +263,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     return truncationReason;
   }
 
+  public @NotNull Map<String, ProfileMeasurement> getMeasurementsMap() {
+    return measurementsMap;
+  }
+
   public void setAndroidApiLevel(int androidApiLevel) {
     this.androidApiLevel = androidApiLevel;
   }
@@ -295,6 +305,14 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public void setDevicePhysicalMemoryBytes(@NotNull String devicePhysicalMemoryBytes) {
     this.devicePhysicalMemoryBytes = devicePhysicalMemoryBytes;
+  }
+
+  public void setTruncationReason(@NotNull String truncationReason) {
+    this.truncationReason = truncationReason;
+  }
+
+  public void setTransactions(@NotNull List<ProfilingTransactionData> transactions) {
+    this.transactions = transactions;
   }
 
   public void setBuildId(@NotNull String buildId) {
@@ -339,9 +357,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public void readDeviceCpuFrequencies() {
     try {
-      if (deviceCpuFrequenciesReader != null) {
-        this.deviceCpuFrequencies = deviceCpuFrequenciesReader.call();
-      }
+      this.deviceCpuFrequencies = deviceCpuFrequenciesReader.call();
     } catch (Throwable ignored) {
       // should never happen
     }
@@ -374,6 +390,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     public static final String ENVIRONMENT = "environment";
     public static final String SAMPLED_PROFILE = "sampled_profile";
     public static final String TRUNCATION_REASON = "truncation_reason";
+    public static final String MEASUREMENTS = "measurements";
   }
 
   @Override
@@ -409,6 +426,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(sampledProfile);
     }
+    writer.name(JsonKeys.MEASUREMENTS).value(logger, measurementsMap);
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -580,6 +598,13 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
             String truncationReason = reader.nextStringOrNull();
             if (truncationReason != null) {
               data.truncationReason = truncationReason;
+            }
+            break;
+          case JsonKeys.MEASUREMENTS:
+            Map<String, ProfileMeasurement> measurements =
+                reader.nextMapOrNull(logger, new ProfileMeasurement.Deserializer());
+            if (measurements != null) {
+              data.measurementsMap.putAll(measurements);
             }
             break;
           case JsonKeys.SAMPLED_PROFILE:

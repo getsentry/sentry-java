@@ -12,6 +12,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.assertEnvelopeItem
+import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -37,7 +38,7 @@ class AndroidTransactionProfilerTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.AndroidTransactionProfiler"
-    private val ctorTypes = arrayOf(Context::class.java, SentryAndroidOptions::class.java, BuildInfoProvider::class.java)
+    private val ctorTypes = arrayOf(Context::class.java, SentryAndroidOptions::class.java, BuildInfoProvider::class.java, SentryFrameMetricsCollector::class.java)
     private val fixture = Fixture()
 
     private class Fixture {
@@ -54,6 +55,7 @@ class AndroidTransactionProfilerTest {
         }
 
         val hub: IHub = mock()
+        val frameMetricsCollector: SentryFrameMetricsCollector = mock()
 
         lateinit var transaction1: SentryTracer
         lateinit var transaction2: SentryTracer
@@ -64,7 +66,7 @@ class AndroidTransactionProfilerTest {
             transaction1 = SentryTracer(TransactionContext("", ""), hub)
             transaction2 = SentryTracer(TransactionContext("", ""), hub)
             transaction3 = SentryTracer(TransactionContext("", ""), hub)
-            return AndroidTransactionProfiler(context, options, buildInfoProvider, hub)
+            return AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector, hub)
         }
     }
 
@@ -90,10 +92,13 @@ class AndroidTransactionProfilerTest {
             ctor.newInstance(arrayOf(null, mock<SentryAndroidOptions>(), mock()))
         }
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf(mock<Context>(), null, mock()))
+            ctor.newInstance(arrayOf(mock<Context>(), null, mock(), mock()))
         }
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf(mock<Context>(), mock<SentryAndroidOptions>(), null))
+            ctor.newInstance(arrayOf(mock<Context>(), mock<SentryAndroidOptions>(), null, mock()))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ctor.newInstance(arrayOf(mock<Context>(), mock<SentryAndroidOptions>(), mock(), null))
         }
     }
 
@@ -324,6 +329,55 @@ class AndroidTransactionProfilerTest {
 
                     assertTrue(item.transactions.map { it.id }.containsAll(expectedTransactions))
                     assertTrue(expectedTransactions.containsAll(item.transactions.map { it.id }))
+                }
+            }
+        )
+    }
+
+    @Test
+    fun `profiler starts collecting frame metrics when the first transaction starts`() {
+        val profiler = fixture.getSut(context)
+        profiler.onTransactionStart(fixture.transaction1)
+        verify(fixture.frameMetricsCollector, times(1)).startCollection(any())
+        profiler.onTransactionStart(fixture.transaction2)
+        verify(fixture.frameMetricsCollector, times(1)).startCollection(any())
+    }
+
+    @Test
+    fun `profiler stops collecting frame metrics when the last transaction finishes`() {
+        val profiler = fixture.getSut(context)
+        val frameMetricsCollectorId = "id"
+        whenever(fixture.frameMetricsCollector.startCollection(any())).thenReturn(frameMetricsCollectorId)
+        profiler.onTransactionStart(fixture.transaction1)
+        profiler.onTransactionStart(fixture.transaction2)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.frameMetricsCollector, never()).stopCollection(frameMetricsCollectorId)
+        profiler.onTransactionFinish(fixture.transaction2)
+        verify(fixture.frameMetricsCollector).stopCollection(frameMetricsCollectorId)
+    }
+
+    @Test
+    fun `profiler includes measurements in envelope sent`() {
+        val profiler = fixture.getSut(context)
+        profiler.onTransactionStart(fixture.transaction1)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub).captureEnvelope(
+            check {
+                assertEquals(1, it.items.count())
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
+                    assertEquals(fixture.transaction1.eventId.toString(), item.transactionId)
+                    val expectedMeasurements = setOf(
+                        ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
+                        ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
+                        ProfileMeasurement.ID_SCREEN_FRAME_RATES
+                    )
+                    assertEquals(expectedMeasurements, item.measurementsMap.keys)
+                    val slowFrames = item.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]!!
+                    val frozenFrames = item.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]!!
+                    val frameRates = item.measurementsMap[ProfileMeasurement.ID_SCREEN_FRAME_RATES]!!
+                    assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, slowFrames.unit)
+                    assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, frozenFrames.unit)
+                    assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
                 }
             }
         )

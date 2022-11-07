@@ -12,6 +12,7 @@ import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import java.io.File
@@ -48,10 +49,17 @@ class EnvelopeTests : BaseUiTest() {
         initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
+            options.isEnableAutoActivityLifecycleTracing = false
         }
-        relayIdlingResource.increment()
-        relayIdlingResource.increment()
+
+        IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
+        val sampleScenario = launchActivity<ProfilingSampleActivity>()
         val transaction = Sentry.startTransaction("e2etests", "test1")
+        swipeList(1)
+        sampleScenario.moveToState(Lifecycle.State.DESTROYED)
+        IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
+        relayIdlingResource.increment()
+        relayIdlingResource.increment()
 
         transaction.finish()
         relay.assert {
@@ -63,6 +71,19 @@ class EnvelopeTests : BaseUiTest() {
                 assertTrue(profilingTraceData.environment.isNotEmpty())
                 assertTrue(profilingTraceData.cpuArchitecture.isNotEmpty())
                 assertTrue(profilingTraceData.transactions.isNotEmpty())
+                assertTrue(profilingTraceData.measurementsMap.isNotEmpty())
+
+                // We check the measurements have been collected with expected units
+                val slowFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]!!
+                val frozenFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]!!
+                val frameRates = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SCREEN_FRAME_RATES]!!
+                assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, slowFrames.unit)
+                assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, frozenFrames.unit)
+                assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
+
+                // There could be no slow/frozen frames, but we expect at least one frame rate
+                assertTrue(frameRates.values.isNotEmpty())
+
                 // We should find the transaction id that started the profiling in the list of transactions
                 val transactionData = profilingTraceData.transactions
                     .firstOrNull { t -> t.id == transaction.eventId.toString() }
@@ -187,7 +208,7 @@ class EnvelopeTests : BaseUiTest() {
         }
     }
 
-//    @Test
+    @Test
     fun checkTimedOutProfile() {
         // We increase the IdlingResources timeout to exceed the profiling timeout
         IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
@@ -219,6 +240,7 @@ class EnvelopeTests : BaseUiTest() {
             options.dsn = "https://640fae2f19ac4ba78ad740175f50195f@o1137848.ingest.sentry.io/6191083"
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
+            options.isEnableAutoActivityLifecycleTracing = false
         }
 
         val transaction = Sentry.startTransaction("e2etests", "testProfile")

@@ -32,7 +32,7 @@ suites:
 
   - name: "Android 10 (api 29)"
     devices:
-      - id: OnePlus_7_Pro_real # OnePlus 7 Pro - api 29 (10)
+      - id: OnePlus_7T_real_us # OnePlus 7T - api 29 (10)
       - id: Nokia_7_1_real_us # Nokia 7.1 - api 29 (10)
 
 # At the time of writing (July, 4, 2022), the market share per android version is:

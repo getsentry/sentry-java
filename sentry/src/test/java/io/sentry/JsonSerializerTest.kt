@@ -1,6 +1,8 @@
 package io.sentry
 
 import io.sentry.exception.SentryEnvelopeException
+import io.sentry.profilemeasurements.ProfileMeasurement
+import io.sentry.profilemeasurements.ProfileMeasurementValue
 import io.sentry.protocol.Device
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
@@ -384,8 +386,7 @@ class JsonSerializerTest {
 
         assertTrue(
             sdkInfo.packages!!.any {
-                it.name == "maven:io.sentry:sentry-android-core"
-                it.version == "4.5.6"
+                it.name == "io.sentry:maven:sentry-android-core" && it.version == "4.5.6"
             }
         )
     }
@@ -425,8 +426,7 @@ class JsonSerializerTest {
         assertNotNull(sdkVersion.packages)
         assertTrue(
             sdkVersion.packages!!.any {
-                it.name == "abc"
-                it.version == "4.5.6"
+                it.name == "abc" && it.version == "4.5.6"
             }
         )
     }
@@ -499,9 +499,14 @@ class JsonSerializerTest {
         profilingTraceData.deviceOsBuildNumber = "deviceOsBuildNumber"
         profilingTraceData.deviceOsVersion = "11"
         profilingTraceData.isDeviceIsEmulator = true
+        profilingTraceData.cpuArchitecture = "cpuArchitecture"
         profilingTraceData.deviceCpuFrequencies = listOf(1, 2, 3, 4)
         profilingTraceData.devicePhysicalMemoryBytes = "2000000"
         profilingTraceData.buildId = "buildId"
+        profilingTraceData.transactions = listOf(
+            ProfilingTransactionData(NoOpTransaction.getInstance(), 1, 2),
+            ProfilingTransactionData(NoOpTransaction.getInstance(), 2, 3)
+        )
         profilingTraceData.transactionName = "transactionName"
         profilingTraceData.durationNs = "100"
         profilingTraceData.versionName = "versionName"
@@ -510,12 +515,20 @@ class JsonSerializerTest {
         profilingTraceData.traceId = "traceId"
         profilingTraceData.profileId = "profileId"
         profilingTraceData.environment = "environment"
+        profilingTraceData.truncationReason = "truncationReason"
+        profilingTraceData.measurementsMap.putAll(
+            hashMapOf(
+                ProfileMeasurement.ID_SCREEN_FRAME_RATES to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_HZ,
+                        listOf(ProfileMeasurementValue(1, 60.1F))
+                    )
+            )
+        )
         profilingTraceData.sampledProfile = "sampled profile in base 64"
 
-        val stringWriter = StringWriter()
-        fixture.serializer.serialize(profilingTraceData, stringWriter)
-
-        val reader = StringReader(stringWriter.toString())
+        val actual = serializeToString(profilingTraceData)
+        val reader = StringReader(actual)
         val objectReader = JsonObjectReader(reader)
         val element = JsonObjectDeserializer().deserialize(objectReader) as Map<*, *>
 
@@ -527,10 +540,49 @@ class JsonSerializerTest {
         assertEquals("android", element["device_os_name"] as String)
         assertEquals("11", element["device_os_version"] as String)
         assertEquals(true, element["device_is_emulator"] as Boolean)
+        assertEquals("cpuArchitecture", element["architecture"] as String)
         assertEquals(listOf(1, 2, 3, 4), element["device_cpu_frequencies"] as List<Int>)
         assertEquals("2000000", element["device_physical_memory_bytes"] as String)
         assertEquals("android", element["platform"] as String)
         assertEquals("buildId", element["build_id"] as String)
+        assertEquals(
+            listOf(
+                mapOf(
+                    "trace_id" to "00000000000000000000000000000000",
+                    "relative_cpu_end_ms" to null,
+                    "name" to "",
+                    "relative_start_ns" to 1,
+                    "relative_end_ns" to null,
+                    "id" to "00000000000000000000000000000000",
+                    "relative_cpu_start_ms" to 2
+                ),
+                mapOf(
+                    "trace_id" to "00000000000000000000000000000000",
+                    "relative_cpu_end_ms" to null,
+                    "name" to "",
+                    "relative_start_ns" to 2,
+                    "relative_end_ns" to null,
+                    "id" to "00000000000000000000000000000000",
+                    "relative_cpu_start_ms" to 3
+                )
+            ),
+            element["transactions"]
+        )
+        assertEquals(
+            mapOf(
+                ProfileMeasurement.ID_SCREEN_FRAME_RATES to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_HZ,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to "60.1",
+                                "elapsed_since_start_ns" to 1
+                            )
+                        )
+                    )
+            ),
+            element["measurements"]
+        )
         assertEquals("transactionName", element["transaction_name"] as String)
         assertEquals("100", element["duration_ns"] as String)
         assertEquals("versionName", element["version_name"] as String)
@@ -539,6 +591,7 @@ class JsonSerializerTest {
         assertEquals("traceId", element["trace_id"] as String)
         assertEquals("profileId", element["profile_id"] as String)
         assertEquals("environment", element["environment"] as String)
+        assertEquals("truncationReason", element["truncation_reason"] as String)
         assertEquals("sampled profile in base 64", element["sampled_profile"] as String)
     }
 
@@ -574,6 +627,20 @@ class JsonSerializerTest {
                                     "relative_end_ns":21
                                 }
                             ],
+                            "measurements":{
+                                "screen_frame_rates": {
+                                    "unit":"hz",
+                                    "values":[
+                                        {"value":"60.1","elapsed_since_start_ns":"1"}
+                                    ]
+                                },
+                                "frozen_frame_renders": {
+                                    "unit":"nanoseconds",
+                                    "values":[
+                                        {"value":"100","elapsed_since_start_ns":"2"}
+                                    ]
+                                }
+                            },
                             "transaction_name":"transactionName",
                             "duration_ns":"100",
                             "version_name":"versionName",
@@ -582,6 +649,7 @@ class JsonSerializerTest {
                             "trace_id":"traceId",
                             "profile_id":"profileId",
                             "environment":"environment",
+                            "truncation_reason":"truncationReason",
                             "sampled_profile":"sampled profile in base 64"
                             }"""
         val profilingTraceData = fixture.serializer.deserialize(StringReader(json), ProfilingTraceData::class.java)
@@ -616,6 +684,17 @@ class JsonSerializerTest {
             }
         )
         assertEquals(expectedTransactions, profilingTraceData.transactions)
+        val expectedMeasurements = mapOf(
+            ProfileMeasurement.ID_SCREEN_FRAME_RATES to ProfileMeasurement(
+                ProfileMeasurement.UNIT_HZ,
+                listOf(ProfileMeasurementValue(1, 60.1))
+            ),
+            ProfileMeasurement.ID_FROZEN_FRAME_RENDERS to ProfileMeasurement(
+                ProfileMeasurement.UNIT_NANOSECONDS,
+                listOf(ProfileMeasurementValue(2, 100))
+            )
+        )
+        assertEquals(expectedMeasurements, profilingTraceData.measurementsMap)
         assertEquals("transactionName", profilingTraceData.transactionName)
         assertEquals("100", profilingTraceData.durationNs)
         assertEquals("versionName", profilingTraceData.versionName)
@@ -624,7 +703,49 @@ class JsonSerializerTest {
         assertEquals("traceId", profilingTraceData.traceId)
         assertEquals("profileId", profilingTraceData.profileId)
         assertEquals("environment", profilingTraceData.environment)
+        assertEquals("truncationReason", profilingTraceData.truncationReason)
         assertEquals("sampled profile in base 64", profilingTraceData.sampledProfile)
+    }
+
+    @Test
+    fun `serializes profileMeasurement`() {
+        val measurementValues = listOf(ProfileMeasurementValue(1, 2), ProfileMeasurementValue(3, 4))
+        val profileMeasurement = ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, measurementValues)
+        val actual = serializeToString(profileMeasurement)
+        val expected = "{\"unit\":\"nanoseconds\",\"values\":[{\"value\":\"2\",\"elapsed_since_start_ns\":1},{\"value\":\"4\",\"elapsed_since_start_ns\":3}]}"
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `deserializes profileMeasurement`() {
+        val json = """{
+            "unit":"hz",
+            "values":[
+                {"value":"60.1","elapsed_since_start_ns":"1"},{"value":"100","elapsed_since_start_ns":"2"}
+            ]
+        }"""
+        val profileMeasurement = fixture.serializer.deserialize(StringReader(json), ProfileMeasurement::class.java)
+        val expected = ProfileMeasurement(
+            ProfileMeasurement.UNIT_HZ,
+            listOf(ProfileMeasurementValue(1, 60.1), ProfileMeasurementValue(2, 100))
+        )
+        assertEquals(expected, profileMeasurement)
+    }
+
+    @Test
+    fun `serializes profileMeasurementValue`() {
+        val profileMeasurementValue = ProfileMeasurementValue(1, 2)
+        val actual = serializeToString(profileMeasurementValue)
+        val expected = "{\"value\":\"2\",\"elapsed_since_start_ns\":1}"
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `deserializes profileMeasurementValue`() {
+        val json = """{"value":"60.1","elapsed_since_start_ns":"1"}"""
+        val profileMeasurementValue = fixture.serializer.deserialize(StringReader(json), ProfileMeasurementValue::class.java)
+        val expected = ProfileMeasurementValue(1, 60.1)
+        assertEquals(expected, profileMeasurementValue)
     }
 
     @Test
