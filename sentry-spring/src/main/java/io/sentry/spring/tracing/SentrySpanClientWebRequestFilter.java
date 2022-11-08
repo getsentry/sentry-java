@@ -66,7 +66,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     return next.exchange(clientRequestWithSentryTraceHeader)
         .flatMap(
             response -> {
-              span.setStatus(SpanStatus.fromHttpStatusCode(response.rawStatusCode()));
+              span.setStatus(SpanStatus.fromHttpStatusCode(response.statusCode().value()));
               addBreadcrumb(request, response);
               span.finish();
               return Mono.just(response);
@@ -87,7 +87,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
         Breadcrumb.http(
             request.url().toString(),
             request.method().name(),
-            response != null ? response.rawStatusCode() : null);
+            response != null ? response.statusCode().value() : null);
 
     final Hint hint = new Hint();
     hint.set(SPRING_EXCHANGE_FILTER_REQUEST, request);

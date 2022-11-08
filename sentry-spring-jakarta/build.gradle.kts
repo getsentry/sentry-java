@@ -108,10 +108,6 @@ tasks {
     }
 }
 
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-Xlint:-deprecation")
-}
-
 task("jakartaTransformation", JavaExec::class) {
     main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
@@ -124,7 +120,7 @@ task("jakartaTestTransformation", JavaExec::class) {
     args = listOf("../sentry-spring/src/test/kotlin/io/sentry/spring", "src/test/kotlin/io/sentry/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
 
-tasks.named("build").dependsOn("jakartaTransformation")
+// tasks.named("build").dependsOn("jakartaTransformation")
 
 buildConfig {
     useJavaOutput()

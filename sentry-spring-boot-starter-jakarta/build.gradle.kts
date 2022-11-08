@@ -128,7 +128,7 @@ task("jakartaMainClassTransformation", JavaExec::class) {
     args = listOf("../sentry-spring-boot-starter/src/test/kotlin/com/acme", "src/test/kotlin/com/acme", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
 
-tasks.named("build").dependsOn("jakartaTransformation")
+// tasks.named("build").dependsOn("jakartaTransformation")
 
 buildConfig {
     useJavaOutput()
