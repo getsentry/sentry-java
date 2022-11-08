@@ -64,6 +64,11 @@ class EnvelopeTests : BaseUiTest() {
         transaction.finish()
         relay.assert {
             assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals("e2etests", transactionItem.transaction)
+            }
+            assertEnvelope {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals(profilingTraceData.transactionId, transaction.eventId.toString())
@@ -88,11 +93,6 @@ class EnvelopeTests : BaseUiTest() {
                 val transactionData = profilingTraceData.transactions
                     .firstOrNull { t -> t.id == transaction.eventId.toString() }
                 assertNotNull(transactionData)
-            }
-            assertEnvelope {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals("e2etests", transactionItem.transaction)
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
@@ -130,6 +130,12 @@ class EnvelopeTests : BaseUiTest() {
             }
             // The profile is sent only in the last transaction envelope
             assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
+            }
+            // The profile is sent only in the last transaction envelope
+            assertEnvelope {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals("e2etests2", profilingTraceData.transactionName)
@@ -162,12 +168,6 @@ class EnvelopeTests : BaseUiTest() {
                 // The first and last transactions should be aligned to the start/stop of profile
                 assertEquals(endTimes.last() - startTimes.first(), profilingTraceData.durationNs.toLong())
             }
-            // The profile is sent only in the last transaction envelope
-            assertEnvelope {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
-            }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
@@ -196,13 +196,13 @@ class EnvelopeTests : BaseUiTest() {
         finished = true
 
         relay.assert {
-            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
-            assertFails { assertEnvelope {} }
             assertEnvelope {
                 val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals("e2etests", transactionItem.transaction)
             }
+            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
+            assertFails { assertEnvelope {} }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
