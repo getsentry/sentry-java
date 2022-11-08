@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add support for Opentelemetry ([#]())
+- Add support for Opentelemetry ([#2344](https://github.com/getsentry/sentry-java/pull/2344))
 
 ## 6.7.0
 
