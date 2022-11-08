@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add support for Opentelemetry ([#]())
+
 ## 6.7.0
 
 ### Fixes
