@@ -16,7 +16,6 @@ import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -25,6 +24,8 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
+import java.util.concurrent.Future
+import java.util.concurrent.FutureTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -47,11 +48,25 @@ class AndroidTransactionProfilerTest {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
         val mockLogger = mock<ILogger>()
+        var lastScheduledRunnable: Runnable? = null
+        val mockExecutorService = object : ISentryExecutorService {
+            override fun submit(runnable: Runnable): Future<*> {
+                runnable.run()
+                return FutureTask {}
+            }
+            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
+                lastScheduledRunnable = runnable
+                return FutureTask {}
+            }
+            override fun close(timeoutMillis: Long) {}
+        }
+
         val options = spy(SentryAndroidOptions()).apply {
             dsn = mockDsn
             profilesSampleRate = 1.0
             isDebug = true
             setLogger(mockLogger)
+            executorService = mockExecutorService
         }
 
         val hub: IHub = mock()
@@ -257,16 +272,11 @@ class AndroidTransactionProfilerTest {
     fun `timedOutData has timeout truncation reason`() {
         val profiler = fixture.getSut(context)
 
-        val executorService = mock<ISentryExecutorService>()
-        val captor = argumentCaptor<Runnable>()
-        whenever(executorService.schedule(captor.capture(), any())).thenReturn(null)
-        whenever(fixture.options.executorService).thenReturn(executorService)
-
         // Start and finish first transaction profiling
         profiler.onTransactionStart(fixture.transaction1)
 
         // Set timed out data by calling the timeout scheduled job
-        captor.firstValue.run()
+        fixture.lastScheduledRunnable?.run()
 
         // First transaction finishes: timed out data is returned
         profiler.onTransactionFinish(fixture.transaction1)
