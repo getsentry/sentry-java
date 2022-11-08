@@ -78,7 +78,7 @@ public final class Gpu implements JsonUnknown, JsonSerializable {
     return vendorId;
   }
 
-  public void setVendorId(String vendorId) {
+  public void setVendorId(@Nullable String vendorId) {
     this.vendorId = vendorId;
   }
 
