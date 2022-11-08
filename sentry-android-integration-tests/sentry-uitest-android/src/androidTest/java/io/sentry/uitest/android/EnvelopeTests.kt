@@ -11,7 +11,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
-import io.sentry.SentryOptions
+import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import java.io.File
@@ -45,7 +45,7 @@ class EnvelopeTests : BaseUiTest() {
 
     @Test
     fun checkEnvelopeProfiledTransaction() {
-        initSentry(true) { options: SentryOptions ->
+        initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
         }
@@ -80,7 +80,7 @@ class EnvelopeTests : BaseUiTest() {
 
     @Test
     fun checkEnvelopeConcurrentTransactions() {
-        initSentry(true) { options: SentryOptions ->
+        initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
         }
@@ -154,7 +154,7 @@ class EnvelopeTests : BaseUiTest() {
 
     @Test
     fun checkProfileNotSentIfEmpty() {
-        initSentry(true) { options: SentryOptions ->
+        initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
         }
@@ -187,11 +187,11 @@ class EnvelopeTests : BaseUiTest() {
         }
     }
 
-    @Test
+//    @Test
     fun checkTimedOutProfile() {
         // We increase the IdlingResources timeout to exceed the profiling timeout
         IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
-        initSentry(true) { options: SentryOptions ->
+        initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
         }
@@ -215,7 +215,7 @@ class EnvelopeTests : BaseUiTest() {
     fun sendProfiledTransaction() {
         // This is a dogfooding test
         IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
-        initSentry(false) { options: SentryOptions ->
+        initSentry(false) { options: SentryAndroidOptions ->
             options.dsn = "https://640fae2f19ac4ba78ad740175f50195f@o1137848.ingest.sentry.io/6191083"
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0

@@ -1379,6 +1379,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
+	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
@@ -1457,6 +1458,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
+	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
@@ -2188,6 +2190,28 @@ public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/Out
 	public fun <init> (Ljava/io/FileDescriptor;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Z)V
+}
+
+public abstract interface class io/sentry/internal/modules/IModulesLoader {
+	public abstract fun getOrLoadModules ()Ljava/util/Map;
+}
+
+public abstract class io/sentry/internal/modules/ModulesLoader : io/sentry/internal/modules/IModulesLoader {
+	public static final field EXTERNAL_MODULES_FILENAME Ljava/lang/String;
+	protected final field logger Lio/sentry/ILogger;
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun getOrLoadModules ()Ljava/util/Map;
+	protected abstract fun loadModules ()Ljava/util/Map;
+	protected fun parseStream (Ljava/io/InputStream;)Ljava/util/Map;
+}
+
+public final class io/sentry/internal/modules/NoOpModulesLoader : io/sentry/internal/modules/IModulesLoader {
+	public static fun getInstance ()Lio/sentry/internal/modules/NoOpModulesLoader;
+	public fun getOrLoadModules ()Ljava/util/Map;
+}
+
+public final class io/sentry/internal/modules/ResourcesModulesLoader : io/sentry/internal/modules/ModulesLoader {
+	public fun <init> (Lio/sentry/ILogger;)V
 }
 
 public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
