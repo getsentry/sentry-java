@@ -262,6 +262,15 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
+    fun `profiler uses background threads`() {
+        val profiler = fixture.getSut(context)
+        fixture.options.executorService = mock()
+        profiler.onTransactionStart(fixture.transaction1)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub, never()).captureEnvelope(any())
+    }
+
+    @Test
     fun `onTransactionFinish works only if previously started`() {
         val profiler = fixture.getSut(context)
         profiler.onTransactionFinish(fixture.transaction1)
