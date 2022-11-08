@@ -1,0 +1,8 @@
+public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetry/sdk/trace/SpanProcessor {
+	public fun <init> ()V
+	public fun isEndRequired ()Z
+	public fun isStartRequired ()Z
+	public fun onEnd (Lio/opentelemetry/sdk/trace/ReadableSpan;)V
+	public fun onStart (Lio/opentelemetry/context/Context;Lio/opentelemetry/sdk/trace/ReadWriteSpan;)V
+}
+
