@@ -9,6 +9,7 @@ import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ProfilingTraceData
+import io.sentry.ProfilingTransactionData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.SentryAndroidOptions
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -193,7 +195,11 @@ class EnvelopeTests : BaseUiTest() {
             }
         }.start()
         transaction.finish()
-        finished = true
+        // The profiler is stopped in background on the executor service, so we can stop deleting the trace file
+        // only after the profiler is stopped. This means we have to stop the deletion in the executorService
+        Sentry.getCurrentHub().options.executorService.submit {
+            finished = true
+        }
 
         relay.assert {
             assertEnvelope {
@@ -202,7 +208,7 @@ class EnvelopeTests : BaseUiTest() {
                 assertEquals("e2etests", transactionItem.transaction)
             }
             // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
-            assertFails { assertEnvelope {} }
+            assertFailsWith<IllegalArgumentException> { assertEnvelope {} }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
