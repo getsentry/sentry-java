@@ -13,6 +13,7 @@ import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.util.Objects;
@@ -157,6 +158,7 @@ final class AndroidOptionsInitializer {
     options.setTransactionProfiler(
         new AndroidTransactionProfiler(context, options, buildInfoProvider));
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+    options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
   }
 
   private static void installDefaultIntegrations(

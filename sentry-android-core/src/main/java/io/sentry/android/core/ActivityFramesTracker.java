@@ -5,7 +5,7 @@ import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryLevel;
-import io.sentry.android.core.internal.util.MainThreadChecker;
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import java.util.HashMap;
@@ -208,7 +208,7 @@ public final class ActivityFramesTracker {
 
   private void runSafelyOnUiThread(final Runnable runnable, final String tag) {
     try {
-      if (MainThreadChecker.isMainThread()) {
+      if (AndroidMainThreadChecker.getInstance().isMainThread()) {
         runnable.run();
       } else {
         handler.post(

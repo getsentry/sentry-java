@@ -12,6 +12,8 @@ import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.util.IMainThreadChecker;
+import io.sentry.util.NoOpMainThreadChecker;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
@@ -360,6 +362,8 @@ public class SentryOptions {
 
   /** Modules (dependencies, packages) that will be send along with each event. */
   private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
+
+  private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
   /**
    * Adds an event processor
@@ -1764,6 +1768,14 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setModulesLoader(final @Nullable IModulesLoader modulesLoader) {
     this.modulesLoader = modulesLoader != null ? modulesLoader : NoOpModulesLoader.getInstance();
+  }
+
+  public @NotNull IMainThreadChecker getMainThreadChecker() {
+    return mainThreadChecker;
+  }
+
+  public void setMainThreadChecker(final @NotNull  IMainThreadChecker mainThreadChecker) {
+    this.mainThreadChecker = mainThreadChecker;
   }
 
   /** The BeforeSend callback */

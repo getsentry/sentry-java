@@ -28,7 +28,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.ConnectivityChecker;
 import io.sentry.android.core.internal.util.DeviceOrientations;
-import io.sentry.android.core.internal.util.MainThreadChecker;
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
@@ -216,7 +216,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (event.getThreads() != null) {
       for (SentryThread thread : event.getThreads()) {
         if (thread.isCurrent() == null) {
-          thread.setCurrent(MainThreadChecker.isMainThread(thread));
+          thread.setCurrent(AndroidMainThreadChecker.getInstance().isMainThread(thread));
         }
       }
     }
