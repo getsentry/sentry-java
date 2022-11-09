@@ -361,6 +361,9 @@ public class SentryOptions {
   /** Modules (dependencies, packages) that will be send along with each event. */
   private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
 
+  /** Which framework is responsible for instrumenting. */
+  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
+
   /**
    * Adds an event processor
    *
@@ -1739,6 +1742,28 @@ public class SentryOptions {
     } else {
       clientReportRecorder = new NoOpClientReportRecorder();
     }
+  }
+
+  /**
+   * Sets the instrumenter used for performance instrumentation.
+   *
+   * <p>If you set this to something other than {{@link Instrumenter#SENTRY}} Sentry will not create
+   * any transactions automatically nor will it create transactions if you call
+   * startTransaction(...), nor will it create child spans if you call startChild(...)
+   *
+   * @param instrumenter - the instrumenter to use
+   */
+  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    this.instrumenter = instrumenter;
+  }
+
+  /**
+   * Returns the instrumenter used for performance instrumentation
+   *
+   * @return the configured instrumenter
+   */
+  public @NotNull Instrumenter getInstrumenter() {
+    return instrumenter;
   }
 
   /**

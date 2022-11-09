@@ -906,6 +906,41 @@ class HubTest {
 
         assertEquals("test", scope?.transactionName)
     }
+
+    @Test
+    fun `when startTransaction is called with different instrumenter, no-op is returned`() {
+        val hub = generateHub()
+
+        val transactionContext = TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
+        val transactionOptions = TransactionOptions()
+        val tx = hub.startTransaction(transactionContext, transactionOptions)
+
+        assertTrue(tx is NoOpTransaction)
+    }
+
+    @Test
+    fun `when startTransaction is called with different instrumenter, no-op is returned 2`() {
+        val hub = generateHub() {
+            it.instrumenter = Instrumenter.OTEL
+        }
+
+        val tx = hub.startTransaction("test", "op")
+
+        assertTrue(tx is NoOpTransaction)
+    }
+
+    @Test
+    fun `when startTransaction is called with configured instrumenter, it works`() {
+        val hub = generateHub() {
+            it.instrumenter = Instrumenter.OTEL
+        }
+
+        val transactionContext = TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
+        val transactionOptions = TransactionOptions()
+        val tx = hub.startTransaction(transactionContext, transactionOptions)
+
+        assertFalse(tx is NoOpTransaction)
+    }
     //endregion
 
     //region setUser tests

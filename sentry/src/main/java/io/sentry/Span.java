@@ -117,12 +117,14 @@ public final class Span implements ISpan {
   public @NotNull ISpan startChild(
       final @NotNull String operation,
       final @Nullable String description,
-      final @Nullable Date timestamp) {
+      final @Nullable Date timestamp,
+      final @NotNull Instrumenter instrumenter) {
     if (finished.get()) {
       return NoOpSpan.getInstance();
     }
 
-    return transaction.startChild(context.getSpanId(), operation, description, timestamp);
+    return transaction.startChild(
+        context.getSpanId(), operation, description, timestamp, instrumenter);
   }
 
   @Override
