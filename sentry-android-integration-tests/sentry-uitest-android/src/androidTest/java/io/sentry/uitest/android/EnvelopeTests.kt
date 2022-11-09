@@ -9,7 +9,6 @@ import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ProfilingTraceData
-import io.sentry.ProfilingTransactionData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.SentryAndroidOptions
@@ -20,7 +19,6 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
