@@ -53,8 +53,8 @@ class EnvelopeTests : BaseUiTest() {
         }
 
         IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
-        val sampleScenario = launchActivity<ProfilingSampleActivity>()
         val transaction = Sentry.startTransaction("e2etests", "test1")
+        val sampleScenario = launchActivity<ProfilingSampleActivity>()
         swipeList(1)
         sampleScenario.moveToState(Lifecycle.State.DESTROYED)
         IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)

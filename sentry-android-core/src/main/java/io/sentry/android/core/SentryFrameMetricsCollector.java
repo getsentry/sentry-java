@@ -95,12 +95,12 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {}
-
-  @Override
-  public void onActivityStarted(@NonNull Activity activity) {
+  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
     setCurrentWindow(activity.getWindow());
   }
+
+  @Override
+  public void onActivityStarted(@NonNull Activity activity) {}
 
   @Override
   public void onActivityResumed(@NonNull Activity activity) {}
