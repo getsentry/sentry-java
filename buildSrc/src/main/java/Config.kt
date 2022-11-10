@@ -131,6 +131,10 @@ object Config {
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.3.0"
+
+        val otelVersion = "1.19.0"
+        val otelJavaagentVersion = "1.19.2"
+        val otelJavaagentAlphaVersion = "1.19.2-alpha"
     }
 
     object AnnotationProcessors {
