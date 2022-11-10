@@ -1,7 +1,6 @@
 package io.sentry.uitest.android.benchmark
 
 import android.content.Context
-import android.provider.Settings
 import android.view.Choreographer
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
