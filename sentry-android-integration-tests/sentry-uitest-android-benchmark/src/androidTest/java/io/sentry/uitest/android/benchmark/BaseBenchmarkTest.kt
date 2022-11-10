@@ -1,6 +1,7 @@
 package io.sentry.uitest.android.benchmark
 
 import android.content.Context
+import android.provider.Settings
 import android.view.Choreographer
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
@@ -24,6 +25,10 @@ abstract class BaseBenchmarkTest {
         runner.runOnMainSync {
             choreographer = Choreographer.getInstance()
         }
+        // We disable "Don't keep activities" developer option after receiving an error on Saucelabs:
+        // "Don't keep activities" developer options must be disabled for ActivityScenario
+        Settings.System.putInt(context.contentResolver, Settings.Global.ALWAYS_FINISH_ACTIVITIES,  0);
+
         // We need the refresh rate, but we can get it only from the activity, so we start and destroy one
         val benchmarkScenario = launchActivity<BenchmarkActivity>()
         benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
