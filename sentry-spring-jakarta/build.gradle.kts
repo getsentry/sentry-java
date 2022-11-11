@@ -1,5 +1,5 @@
-import net.ltgt.gradle.errorprone.errorprone
 import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
+import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
