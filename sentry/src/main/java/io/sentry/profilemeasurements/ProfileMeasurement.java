@@ -27,7 +27,7 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
   public static final String ID_UNKNOWN = "unknown";
 
   public static final String UNIT_HZ = "hz";
-  public static final String UNIT_NANOSECONDS = "nanoseconds";
+  public static final String UNIT_NANOSECONDS = "nanosecond";
   public static final String UNIT_UNKNOWN = "unknown";
 
   private @Nullable Map<String, Object> unknown;

@@ -12,7 +12,6 @@ import io.sentry.SentryLevel
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.assertEnvelopeItem
-import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -354,32 +353,5 @@ class AndroidTransactionProfilerTest {
         verify(fixture.frameMetricsCollector, never()).stopCollection(frameMetricsCollectorId)
         profiler.onTransactionFinish(fixture.transaction2)
         verify(fixture.frameMetricsCollector).stopCollection(frameMetricsCollectorId)
-    }
-
-    @Test
-    fun `profiler includes measurements in envelope sent`() {
-        val profiler = fixture.getSut(context)
-        profiler.onTransactionStart(fixture.transaction1)
-        profiler.onTransactionFinish(fixture.transaction1)
-        verify(fixture.hub).captureEnvelope(
-            check {
-                assertEquals(1, it.items.count())
-                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
-                    assertEquals(fixture.transaction1.eventId.toString(), item.transactionId)
-                    val expectedMeasurements = setOf(
-                        ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
-                        ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
-                        ProfileMeasurement.ID_SCREEN_FRAME_RATES
-                    )
-                    assertEquals(expectedMeasurements, item.measurementsMap.keys)
-                    val slowFrames = item.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]!!
-                    val frozenFrames = item.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]!!
-                    val frameRates = item.measurementsMap[ProfileMeasurement.ID_SCREEN_FRAME_RATES]!!
-                    assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, slowFrames.unit)
-                    assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, frozenFrames.unit)
-                    assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
-                }
-            }
-        )
     }
 }

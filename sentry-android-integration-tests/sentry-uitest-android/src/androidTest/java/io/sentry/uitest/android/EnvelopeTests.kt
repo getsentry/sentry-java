@@ -74,14 +74,18 @@ class EnvelopeTests : BaseUiTest() {
                 assertTrue(profilingTraceData.measurementsMap.isNotEmpty())
 
                 // We check the measurements have been collected with expected units
-                val slowFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]!!
-                val frozenFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]!!
+                val slowFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]
+                val frozenFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]
                 val frameRates = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SCREEN_FRAME_RATES]!!
-                assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, slowFrames.unit)
-                assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, frozenFrames.unit)
-                assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
-
+                // Slow and frozen frames can be null (in case there were none)
+                if (slowFrames != null) {
+                    assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, slowFrames.unit)
+                }
+                if (frozenFrames != null) {
+                    assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, frozenFrames.unit)
+                }
                 // There could be no slow/frozen frames, but we expect at least one frame rate
+                assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
                 assertTrue(frameRates.values.isNotEmpty())
 
                 // We should find the transaction id that started the profiling in the list of transactions

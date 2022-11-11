@@ -70,10 +70,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @NotNull Map<String, ProfilingTransactionData> transactionMap = new HashMap<>();
   private final @NotNull ArrayDeque<ProfileMeasurementValue> screenFrameRateMeasurements =
       new ArrayDeque<>();
-  private final @NotNull ArrayDeque<ProfileMeasurementValue>
-      adverseFrameRenderTimestampMeasurements = new ArrayDeque<>();
-  private final @NotNull ArrayDeque<ProfileMeasurementValue>
-      adverseFrozenFrameTimestampMeasurements = new ArrayDeque<>();
+  private final @NotNull ArrayDeque<ProfileMeasurementValue> slowFrameRenderMeasurements =
+      new ArrayDeque<>();
+  private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
+      new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
 
   public AndroidTransactionProfiler(
@@ -190,8 +190,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     measurementsMap.clear();
     screenFrameRateMeasurements.clear();
-    adverseFrameRenderTimestampMeasurements.clear();
-    adverseFrozenFrameTimestampMeasurements.clear();
+    slowFrameRenderMeasurements.clear();
+    frozenFrameRenderMeasurements.clear();
 
     frameMetricsCollectorId =
         frameMetricsCollector.startCollection(
@@ -212,10 +212,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                 boolean isSlow = durationNanos > nanosInSecond / (refreshRate - 1);
                 float newRefreshRate = (int) (refreshRate * 100) / 100F;
                 if (durationNanos > frozenFrameThresholdNanos) {
-                  adverseFrozenFrameTimestampMeasurements.addLast(
+                  frozenFrameRenderMeasurements.addLast(
                       new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
                 } else if (isSlow) {
-                  adverseFrameRenderTimestampMeasurements.addLast(
+                  slowFrameRenderMeasurements.addLast(
                       new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
                 }
                 if (newRefreshRate != lastRefreshRate) {
@@ -343,17 +343,22 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           profileStartCpuMillis);
     }
 
-    measurementsMap.put(
-        ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
-        new ProfileMeasurement(
-            ProfileMeasurement.UNIT_NANOSECONDS, adverseFrameRenderTimestampMeasurements));
-    measurementsMap.put(
-        ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
-        new ProfileMeasurement(
-            ProfileMeasurement.UNIT_NANOSECONDS, adverseFrozenFrameTimestampMeasurements));
-    measurementsMap.put(
-        ProfileMeasurement.ID_SCREEN_FRAME_RATES,
-        new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
+    if (!slowFrameRenderMeasurements.isEmpty()) {
+      measurementsMap.put(
+          ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
+          new ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, slowFrameRenderMeasurements));
+    }
+    if (!frozenFrameRenderMeasurements.isEmpty()) {
+      measurementsMap.put(
+          ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
+          new ProfileMeasurement(
+              ProfileMeasurement.UNIT_NANOSECONDS, frozenFrameRenderMeasurements));
+    }
+    if (!screenFrameRateMeasurements.isEmpty()) {
+      measurementsMap.put(
+          ProfileMeasurement.ID_SCREEN_FRAME_RATES,
+          new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
+    }
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
     // done in the background when the trace file is read
