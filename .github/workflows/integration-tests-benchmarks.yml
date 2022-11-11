@@ -40,7 +40,7 @@ jobs:
         run: make stop
 
       - name: Run All Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@a76db27b924cf05a47c402eb2f3316980612341d # pin@v1
+        uses: saucelabs/saucectl-run-action@a76db27b924cf05a47c402eb2f3316980612341d # pin@v2
         if: github.event_name != 'pull_request' && env.SAUCE_USERNAME != null
         with:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
