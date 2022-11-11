@@ -23,6 +23,7 @@ final class ClasspathPropertiesLoader implements PropertiesLoader {
   }
 
   public ClasspathPropertiesLoader(@NotNull ILogger logger) {
+    // TODO check not null
     this("sentry.properties", ClasspathPropertiesLoader.class.getClassLoader(), logger);
   }
 

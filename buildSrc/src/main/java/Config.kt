@@ -133,6 +133,7 @@ object Config {
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.3.0"
 
         val otelVersion = "1.19.0"
+        val otelAlphaVersion = "1.19.0-alpha"
         val otelJavaagentVersion = "1.19.2"
         val otelJavaagentAlphaVersion = "1.19.2-alpha"
     }

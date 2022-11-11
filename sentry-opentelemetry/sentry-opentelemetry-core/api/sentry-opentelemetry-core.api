@@ -6,3 +6,22 @@ public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetr
 	public fun onStart (Lio/opentelemetry/context/Context;Lio/opentelemetry/sdk/trace/ReadWriteSpan;)V
 }
 
+public final class io/sentry/opentelemetry/SpanDescription {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public fun getDescription ()Ljava/lang/String;
+	public fun getOp ()Ljava/lang/String;
+	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
+public final class io/sentry/opentelemetry/SpanDescriptionExtractor {
+	public fun <init> ()V
+	public fun extractSpanDescription (Lio/opentelemetry/sdk/trace/ReadableSpan;)Lio/sentry/opentelemetry/SpanDescription;
+}
+
+public final class io/sentry/opentelemetry/TraceData {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun getParentSpanId ()Ljava/lang/String;
+	public fun getSpanId ()Ljava/lang/String;
+	public fun getTraceId ()Ljava/lang/String;
+}
+

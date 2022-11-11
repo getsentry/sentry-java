@@ -314,9 +314,14 @@ public final class SentryTracer implements ITransaction {
     this.finish(this.getStatus());
   }
 
-  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   @Override
   public void finish(@Nullable SpanStatus status) {
+    this.finish(status, null);
+  }
+
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
+  @Override
+  public void finish(@Nullable SpanStatus status, @Nullable Date finishDate) {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
       if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
@@ -326,6 +331,13 @@ public final class SentryTracer implements ITransaction {
       // try to get the high precision timestamp from the root span
       Long endTime = System.nanoTime();
       Double finishTimestamp = root.getHighPrecisionTimestamp(endTime);
+
+      // if a finishDate was passed in, use that instead
+      if (finishDate != null) {
+        finishTimestamp = DateUtils.dateToSeconds(finishDate);
+        endTime = null;
+      }
+
       // if it's not set -> fallback to the current time
       if (finishTimestamp == null) {
         finishTimestamp = DateUtils.dateToSeconds(DateUtils.getCurrentDateTime());

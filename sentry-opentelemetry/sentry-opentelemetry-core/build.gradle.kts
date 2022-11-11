@@ -22,6 +22,7 @@ dependencies {
     compileOnly(projects.sentry)
 
     compileOnly("io.opentelemetry:opentelemetry-sdk:${Config.Libs.otelVersion}")
+    compileOnly("io.opentelemetry:opentelemetry-semconv:${Config.Libs.otelAlphaVersion}")
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

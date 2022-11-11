@@ -145,7 +145,8 @@ public final class TransactionContext extends SpanContext {
     this.setSamplingDecision(samplingDecision);
   }
 
-  private TransactionContext(
+  @ApiStatus.Internal
+  public TransactionContext(
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull SentryId traceId,

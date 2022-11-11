@@ -161,6 +161,7 @@ public final class io/sentry/DateUtils {
 	public static fun getDateTimeWithMillisPrecision (Ljava/lang/String;)Ljava/util/Date;
 	public static fun getTimestamp (Ljava/util/Date;)Ljava/lang/String;
 	public static fun millisToSeconds (D)D
+	public static fun nanosToDate (J)Ljava/util/Date;
 	public static fun nanosToMillis (D)D
 }
 
@@ -171,6 +172,11 @@ public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
+}
+
+public final class io/sentry/DsnUtil {
+	public fun <init> ()V
+	public static fun urlContainsDsnHost (Lio/sentry/SentryOptions;Ljava/lang/String;)Z
 }
 
 public final class io/sentry/DuplicateEventDetectionEventProcessor : io/sentry/EventProcessor {
@@ -484,6 +490,7 @@ public abstract interface class io/sentry/ISerializer {
 public abstract interface class io/sentry/ISpan {
 	public abstract fun finish ()V
 	public abstract fun finish (Lio/sentry/SpanStatus;)V
+	public abstract fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
 	public abstract fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun getDescription ()Ljava/lang/String;
 	public abstract fun getOperation ()Ljava/lang/String;
@@ -728,6 +735,7 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
@@ -756,6 +764,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
@@ -1553,6 +1562,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;ZLio/sentry/TransactionFinishedCallback;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
 	public fun getChildren ()Ljava/util/List;
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
@@ -1664,6 +1674,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IHub;Ljava/util/Date;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
@@ -1853,6 +1864,7 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/protocol/TransactionNameSource;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;Lio/sentry/Baggage;)V
 	public static fun fromSentryTrace (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
 	public static fun fromSentryTrace (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;)Lio/sentry/TransactionContext;
 	public static fun fromSentryTrace (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;

@@ -106,6 +106,9 @@ public final class NoOpTransaction implements ITransaction {
   public void finish(@Nullable SpanStatus status) {}
 
   @Override
+  public void finish(@Nullable SpanStatus status, @Nullable Date timestamp) {}
+
+  @Override
   public void setOperation(@NotNull String operation) {}
 
   @Override
