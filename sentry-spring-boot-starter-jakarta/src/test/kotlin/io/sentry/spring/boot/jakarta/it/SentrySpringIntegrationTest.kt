@@ -176,7 +176,6 @@ class SentrySpringIntegrationTest {
     }
 
     @Test
-    @Ignore("Ignore until Spring Security 6.0.0-RC2 is released, https://github.com/spring-projects/spring-security/issues/12070")
     fun `tracing filter does not overwrite resposne status code`() {
         val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 

@@ -1,6 +1,7 @@
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import net.ltgt.gradle.errorprone.errorprone
+import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 
 plugins {
@@ -19,9 +20,9 @@ repositories {
     maven { url = uri("https://repo.spring.io/milestone") }
 }
 
-the<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension>().apply {
+the<DependencyManagementExtension>().apply {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:${Config.springBoot3Version}")
+        mavenBom(SpringBootPlugin.BOM_COORDINATES)
     }
 }
 
