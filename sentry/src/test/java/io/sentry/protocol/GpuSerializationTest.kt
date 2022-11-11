@@ -13,7 +13,7 @@ class GpuSerializationTest {
         fun getSut() = Gpu().apply {
             name = "d623a6b5-e1ab-4402-931b-c06f5a43a5ae"
             id = -596576280
-            vendorId = 1874778041
+            vendorId = "1874778041"
             vendorName = "d732cf76-07dc-48e2-8920-96d6bfc2439d"
             memorySize = -1484004451
             apiType = "95dfc8bc-88ae-4d66-b85f-6c88ad45b80f"
