@@ -28,7 +28,7 @@ suites:
     devices:
       - id: OnePlus_9_Pro_real_us # OnePlus 9 Pro - api 30 (11) - high end
       - id: Google_Pixel_4_real_us # Google Pixel 4 - api 30 (11) - mid end
-      - id: OnePlus_Nord_N200_5G_real_us # OnePlus Nord N200 5G - api 30 (11) - low end
+      - id: Google_Pixel_3a_real # Google Pixel 3a - api 30 (11) - low end
 
   - name: "Android 10 (api 29)"
     devices:
