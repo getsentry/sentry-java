@@ -8,7 +8,7 @@
 
 ### Features
 
-- Update Spring Boot Jakarta to Spring Boot 3.0.0-RC1 ([#2347](https://github.com/getsentry/sentry-java/pull/2347))
+- Update Spring Boot Jakarta to Spring Boot 3.0.0-RC2 ([#2347](https://github.com/getsentry/sentry-java/pull/2347))
 
 ## 6.7.0
 
