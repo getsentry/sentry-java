@@ -77,6 +77,7 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Baggage baggage;
   private @NotNull TransactionNameSource transactionNameSource;
   private final @NotNull Map<String, MeasurementValue> measurements;
+  private final @NotNull Instrumenter instrumenter;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -110,6 +111,7 @@ public final class SentryTracer implements ITransaction {
     this.measurements = new ConcurrentHashMap<>();
     this.root = new Span(context, this, hub, startTimestamp);
     this.name = context.getName();
+    this.instrumenter = context.getInstrumenter();
     this.hub = hub;
     this.waitForChildren = waitForChildren;
     this.idleTimeout = idleTimeout;
@@ -195,8 +197,9 @@ public final class SentryTracer implements ITransaction {
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
       final @Nullable String description,
-      final @Nullable Date timestamp) {
-    return createChild(parentSpanId, operation, description, timestamp);
+      final @Nullable Date timestamp,
+      final @NotNull Instrumenter instrumenter) {
+    return createChild(parentSpanId, operation, description, timestamp, instrumenter);
   }
 
   /**
@@ -207,7 +210,7 @@ public final class SentryTracer implements ITransaction {
    */
   @NotNull
   private ISpan createChild(final @NotNull SpanId parentSpanId, final @NotNull String operation) {
-    return createChild(parentSpanId, operation, null, null);
+    return createChild(parentSpanId, operation, null, null, Instrumenter.SENTRY);
   }
 
   @NotNull
@@ -215,8 +218,13 @@ public final class SentryTracer implements ITransaction {
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
       final @Nullable String description,
-      @Nullable Date timestamp) {
+      @Nullable Date timestamp,
+      final @NotNull Instrumenter instrumenter) {
     if (root.isFinished()) {
+      return NoOpSpan.getInstance();
+    }
+
+    if (!this.instrumenter.equals(instrumenter)) {
       return NoOpSpan.getInstance();
     }
 
@@ -256,26 +264,34 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
-      final @NotNull String operation, @Nullable String description, @Nullable Date timestamp) {
-    return createChild(operation, description, timestamp);
+      final @NotNull String operation,
+      @Nullable String description,
+      @Nullable Date timestamp,
+      @NotNull Instrumenter instrumenter) {
+    return createChild(operation, description, timestamp, instrumenter);
   }
 
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    return createChild(operation, description, null);
+    return createChild(operation, description, null, Instrumenter.SENTRY);
   }
 
   private @NotNull ISpan createChild(
       final @NotNull String operation,
       final @Nullable String description,
-      @Nullable Date timestamp) {
+      @Nullable Date timestamp,
+      final @NotNull Instrumenter instrumenter) {
     if (root.isFinished()) {
       return NoOpSpan.getInstance();
     }
 
+    if (!this.instrumenter.equals(instrumenter)) {
+      return NoOpSpan.getInstance();
+    }
+
     if (children.size() < hub.getOptions().getMaxSpans()) {
-      return root.startChild(operation, description, timestamp);
+      return root.startChild(operation, description, timestamp, instrumenter);
     } else {
       hub.getOptions()
           .getLogger()

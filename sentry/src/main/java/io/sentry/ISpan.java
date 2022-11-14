@@ -20,7 +20,10 @@ public interface ISpan {
   @ApiStatus.Internal
   @NotNull
   ISpan startChild(
-      @NotNull String operation, @Nullable String description, @Nullable Date timestamp);
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable Date timestamp,
+      @NotNull Instrumenter instrumenter);
 
   /**
    * Starts a child Span.

@@ -502,7 +502,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun setThrowable (Ljava/lang/Throwable;)V
 	public abstract fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public abstract fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public abstract fun traceContext ()Lio/sentry/TraceContext;
@@ -529,6 +529,13 @@ public abstract interface class io/sentry/ITransactionProfiler {
 
 public abstract interface class io/sentry/ITransportFactory {
 	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
+}
+
+public final class io/sentry/Instrumenter : java/lang/Enum {
+	public static final field OTEL Lio/sentry/Instrumenter;
+	public static final field SENTRY Lio/sentry/Instrumenter;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/Instrumenter;
+	public static fun values ()[Lio/sentry/Instrumenter;
 }
 
 public abstract interface class io/sentry/Integration {
@@ -740,7 +747,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -779,7 +786,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -1369,6 +1376,7 @@ public class io/sentry/SentryOptions {
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
+	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getLogger ()Lio/sentry/ILogger;
 	public fun getMaxAttachmentSize ()J
@@ -1449,6 +1457,7 @@ public class io/sentry/SentryOptions {
 	public fun setFlushTimeoutMillis (J)V
 	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
+	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
@@ -1578,7 +1587,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -1684,7 +1693,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -1848,10 +1857,12 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public static fun fromSentryTrace (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;Ljava/lang/String;Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;)Lio/sentry/TransactionContext;
 	public static fun fromSentryTrace (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryTraceHeader;)Lio/sentry/TransactionContext;
 	public fun getBaggage ()Lio/sentry/Baggage;
+	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getName ()Ljava/lang/String;
 	public fun getParentSampled ()Ljava/lang/Boolean;
 	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
+	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setParentSampled (Ljava/lang/Boolean;)V
 	public fun setParentSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V
 }

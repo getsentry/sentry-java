@@ -23,7 +23,10 @@ public final class NoOpSpan implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(
-      @NotNull String operation, @Nullable String description, @Nullable Date timestamp) {
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable Date timestamp,
+      @NotNull Instrumenter instrumenter) {
     return NoOpSpan.getInstance();
   }
 

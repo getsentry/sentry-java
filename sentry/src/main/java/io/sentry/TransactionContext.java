@@ -12,6 +12,7 @@ public final class TransactionContext extends SpanContext {
   private final @NotNull TransactionNameSource transactionNameSource;
   private @Nullable TracesSamplingDecision parentSamplingDecision;
   private @Nullable Baggage baggage;
+  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
 
   /**
    * Creates {@link TransactionContext} from sentry-trace header.
@@ -202,5 +203,13 @@ public final class TransactionContext extends SpanContext {
 
   public @NotNull TransactionNameSource getTransactionNameSource() {
     return transactionNameSource;
+  }
+
+  public @NotNull Instrumenter getInstrumenter() {
+    return instrumenter;
+  }
+
+  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    this.instrumenter = instrumenter;
   }
 }
