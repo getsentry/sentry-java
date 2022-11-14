@@ -5,6 +5,7 @@ import androidx.lifecycle.LifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.SentryLevel;
+import io.sentry.Session;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import java.util.Timer;
@@ -74,15 +75,25 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       cancelTask();
 
       final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
-      final long lastUpdatedSession = this.lastUpdatedSession.get();
 
-      if (lastUpdatedSession == 0L
-          || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
-        addSessionBreadcrumb("start");
-        hub.startSession();
-        runningSession.set(true);
-      }
-      this.lastUpdatedSession.set(currentTimeMillis);
+      hub.withScope(
+          scope -> {
+            long lastUpdatedSession = this.lastUpdatedSession.get();
+            if (lastUpdatedSession == 0L) {
+              @Nullable Session currentSession = scope.getSession();
+              if (currentSession != null && currentSession.getStarted() != null) {
+                lastUpdatedSession = currentSession.getStarted().getTime();
+              }
+            }
+
+            if (lastUpdatedSession == 0L
+                || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
+              addSessionBreadcrumb("start");
+              hub.startSession();
+              runningSession.set(true);
+            }
+            this.lastUpdatedSession.set(currentTimeMillis);
+          });
     }
   }
 

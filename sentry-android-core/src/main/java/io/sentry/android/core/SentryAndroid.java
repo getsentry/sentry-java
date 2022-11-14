@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
+import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
@@ -109,6 +110,11 @@ public final class SentryAndroid {
             resetEnvelopeCacheIfNeeded(options);
           },
           true);
+
+      final @NotNull IHub hub = Sentry.getCurrentHub();
+      if (hub.getOptions().isEnableAutoSessionTracking()) {
+        hub.startSession();
+      }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
