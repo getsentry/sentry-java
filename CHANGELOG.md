@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Features
+- Start a session after init if AutoSessionTracking is enabled ([#2356](https://github.com/getsentry/sentry-java/pull/2356))
+
 ## 6.7.0
 
 ### Fixes
