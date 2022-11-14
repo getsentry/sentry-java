@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,4 +78,11 @@ public interface ITransaction extends ISpan {
 
   /** Schedules when transaction should be automatically finished. */
   void scheduleFinish();
+
+  @ApiStatus.Internal
+  void setContext(@NotNull String key, @NotNull Object context);
+
+  @ApiStatus.Internal
+  @NotNull
+  Map<String, Object> getContexts();
 }

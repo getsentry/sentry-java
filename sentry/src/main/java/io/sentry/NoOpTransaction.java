@@ -5,6 +5,8 @@ import io.sentry.protocol.TransactionNameSource;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -177,4 +179,14 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public void setMeasurement(
       @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {}
+
+  @ApiStatus.Internal
+  @Override
+  public void setContext(@NotNull String key, @NotNull Object context) {}
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull Map<String, Object> getContexts() {
+    return new ConcurrentHashMap<>();
+  }
 }

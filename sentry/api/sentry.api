@@ -516,6 +516,7 @@ public abstract interface class io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
+	public abstract fun getContexts ()Ljava/util/Map;
 	public abstract fun getEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLatestActiveSpan ()Lio/sentry/Span;
 	public abstract fun getName ()Ljava/lang/String;
@@ -525,6 +526,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun isProfileSampled ()Ljava/lang/Boolean;
 	public abstract fun isSampled ()Ljava/lang/Boolean;
 	public abstract fun scheduleFinish ()V
+	public abstract fun setContext (Ljava/lang/String;Ljava/lang/Object;)V
 	public abstract fun setName (Ljava/lang/String;)V
 	public abstract fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 }
@@ -765,6 +767,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
+	public fun getContexts ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
@@ -783,6 +786,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun isProfileSampled ()Ljava/lang/Boolean;
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun scheduleFinish ()V
+	public fun setContext (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
@@ -1564,6 +1568,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
 	public fun getChildren ()Ljava/util/List;
+	public fun getContexts ()Ljava/util/Map;
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
@@ -1585,6 +1590,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun isProfileSampled ()Ljava/lang/Boolean;
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun scheduleFinish ()V
+	public fun setContext (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
 	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V

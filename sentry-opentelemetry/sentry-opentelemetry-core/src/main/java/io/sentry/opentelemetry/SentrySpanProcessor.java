@@ -176,8 +176,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
         spanDescription.getDescription(), spanDescription.getTransactionNameSource());
 
     final @NotNull Map<String, Object> otelContext = toOtelContext(otelSpan);
-    System.out.println(otelContext);
-    // TODO set otel context on transaction
+    sentryTransaction.setContext("otel", otelContext);
   }
 
   private @NotNull Map<String, Object> toOtelContext(final @NotNull ReadableSpan otelSpan) {

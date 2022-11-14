@@ -78,6 +78,7 @@ public final class SentryTracer implements ITransaction {
   private @NotNull TransactionNameSource transactionNameSource;
   private final @NotNull Map<String, MeasurementValue> measurements;
   private final @NotNull Instrumenter instrumenter;
+  private final @NotNull Map<String, Object> contexts = new ConcurrentHashMap<>();
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -659,6 +660,18 @@ public final class SentryTracer implements ITransaction {
   @NotNull
   Map<String, MeasurementValue> getMeasurements() {
     return measurements;
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public void setContext(@NotNull String key, @NotNull Object context) {
+    contexts.put(key, context);
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull Map<String, Object> getContexts() {
+    return contexts;
   }
 
   private static final class FinishStatus {
