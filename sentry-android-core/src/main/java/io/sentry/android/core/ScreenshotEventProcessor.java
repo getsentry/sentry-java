@@ -17,6 +17,7 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -51,10 +52,18 @@ public final class ScreenshotEventProcessor
     application.registerActivityLifecycleCallbacks(this);
   }
 
+  public void setCurrentActivity(@NonNull Activity activity) {
+    if (currentActivity != null && currentActivity.get() == activity) {
+      return;
+    }
+    currentActivity = new WeakReference<>(activity);
+  }
+
   @SuppressWarnings("NullAway")
   @Override
   public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hint hint) {
-    if (!lifecycleCallbackInstalled) {
+    if (!lifecycleCallbackInstalled
+        || !HintUtils.shouldApplyScopeData(hint)) {
       return event;
     }
     if (!options.isAttachScreenshot()) {
@@ -165,13 +174,6 @@ public final class ScreenshotEventProcessor
     if (currentActivity != null && currentActivity.get() == activity) {
       currentActivity = null;
     }
-  }
-
-  private void setCurrentActivity(@NonNull Activity activity) {
-    if (currentActivity != null && currentActivity.get() == activity) {
-      return;
-    }
-    currentActivity = new WeakReference<>(activity);
   }
 
   @SuppressLint("NewApi")
