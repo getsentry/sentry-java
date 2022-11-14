@@ -3379,6 +3379,12 @@ public final class io/sentry/util/StringUtils {
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 }
 
+public final class io/sentry/util/UrlUtils {
+	public fun <init> ()V
+	public static fun maybeStripSensitiveDataFromUrl (Ljava/lang/String;Z)Ljava/lang/String;
+	public static fun maybeStripSensitiveDataFromUrlNullable (Ljava/lang/String;Z)Ljava/lang/String;
+}
+
 public class io/sentry/vendor/Base64 {
 	public static final field CRLF I
 	public static final field DEFAULT I

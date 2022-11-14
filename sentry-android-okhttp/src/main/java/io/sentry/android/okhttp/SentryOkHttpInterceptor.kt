@@ -16,6 +16,7 @@ import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
 import io.sentry.util.HttpUtils
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.UrlUtils
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -53,7 +54,7 @@ class SentryOkHttpInterceptor(
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()
 
-        val url = request.url.toString()
+        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url.toString(), hub.options.isSendDefaultPii)
         val method = request.method
 
         // read transaction from the bound scope
@@ -96,7 +97,8 @@ class SentryOkHttpInterceptor(
         } finally {
             finishSpan(span, request, response)
 
-            val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
+            val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url.toString(), hub.options.isSendDefaultPii)
+            val breadcrumb = Breadcrumb.http(url, request.method, code)
             request.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("request_body_size", it)
             }
@@ -180,7 +182,7 @@ class SentryOkHttpInterceptor(
         hint.set(OKHTTP_RESPONSE, response)
 
         val sentryRequest = io.sentry.protocol.Request().apply {
-            url = requestUrl
+            url = UrlUtils.maybeStripSensitiveDataFromUrl(requestUrl, hub.options.isSendDefaultPii)
             // Cookie is only sent if isSendDefaultPii is enabled
             cookies = if (hub.options.isSendDefaultPii) request.headers["Cookie"] else null
             method = request.method

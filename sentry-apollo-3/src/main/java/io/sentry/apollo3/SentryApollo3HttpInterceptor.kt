@@ -17,6 +17,7 @@ import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.UrlUtils
 
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
     HttpInterceptor {
@@ -80,7 +81,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
     }
 
     private fun startChild(request: HttpRequest, activeSpan: ISpan): ISpan {
-        val url = request.url
+        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url, hub.options.isSendDefaultPii)
         val method = request.method
 
         val operationName = operationNameFromHeaders(request)
@@ -121,8 +122,9 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         }
         span.finish()
 
+        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url, hub.options.isSendDefaultPii)
         val breadcrumb =
-            Breadcrumb.http(request.url, request.method.name, statusCode)
+            Breadcrumb.http(url, request.method.name, statusCode)
 
         request.body?.contentLength.ifHasValidLength { contentLength ->
             breadcrumb.setData("request_body_size", contentLength)

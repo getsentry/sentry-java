@@ -15,6 +15,7 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.PropagationTargetsUtils;
+import io.sentry.util.UrlUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +51,9 @@ public final class SentryFeignClient implements Client {
       }
 
       ISpan span = activeSpan.startChild("http.client");
-      String url = request.url();
+      final @NotNull String url =
+          UrlUtils.maybeStripSensitiveDataFromUrl(
+              request.url(), hub.getOptions().isSendDefaultPii());
       span.setDescription(request.httpMethod().name() + " " + url);
 
       final RequestWrapper requestWrapper = new RequestWrapper(request);
@@ -99,11 +102,11 @@ public final class SentryFeignClient implements Client {
   }
 
   private void addBreadcrumb(final @NotNull Request request, final @Nullable Response response) {
+    final @NotNull String url =
+        UrlUtils.maybeStripSensitiveDataFromUrl(request.url(), hub.getOptions().isSendDefaultPii());
     final Breadcrumb breadcrumb =
         Breadcrumb.http(
-            request.url(),
-            request.httpMethod().name(),
-            response != null ? response.status() : null);
+            url, request.httpMethod().name(), response != null ? response.status() : null);
     breadcrumb.setData("request_body_size", request.body() != null ? request.body().length : 0);
     if (response != null && response.body() != null && response.body().length() != null) {
       breadcrumb.setData("response_body_size", response.body().length());

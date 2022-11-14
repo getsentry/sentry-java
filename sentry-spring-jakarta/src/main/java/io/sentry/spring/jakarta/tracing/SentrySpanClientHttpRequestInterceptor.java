@@ -14,6 +14,8 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.PropagationTargetsUtils;
+import io.sentry.util.UrlUtils;
+
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +49,8 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final ISpan span = activeSpan.startChild("http.client");
       final String methodName =
           request.getMethod() != null ? request.getMethod().name() : "unknown";
-      span.setDescription(methodName + " " + request.getURI());
+      final @NotNull String url = UrlUtils.maybeStripSensitiveDataFromUrl(request.getURI().toString(), hub.getOptions().isSendDefaultPii());
+      span.setDescription(methodName + " " + url);
 
       final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
 
@@ -87,9 +90,10 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final @Nullable Integer responseStatusCode,
       final @Nullable ClientHttpResponse response) {
     final String methodName = request.getMethod() != null ? request.getMethod().name() : "unknown";
+    final @NotNull String url = UrlUtils.maybeStripSensitiveDataFromUrl(request.getURI().toString(), hub.getOptions().isSendDefaultPii());
 
     final Breadcrumb breadcrumb =
-        Breadcrumb.http(request.getURI().toString(), methodName, responseStatusCode);
+        Breadcrumb.http(url, methodName, responseStatusCode);
     breadcrumb.setData("request_body_size", body.length);
 
     final Hint hint = new Hint();
