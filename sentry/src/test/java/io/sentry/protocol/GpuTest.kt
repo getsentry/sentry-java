@@ -26,7 +26,7 @@ class GpuTest {
         val gpu = Gpu()
         gpu.name = "name"
         gpu.id = 10
-        gpu.vendorId = 20
+        gpu.vendorId = "20"
         gpu.vendorName = "vendor name"
         gpu.memorySize = 1024
         gpu.apiType = "api type"
@@ -40,7 +40,7 @@ class GpuTest {
 
         assertEquals("name", clone.name)
         assertEquals(10, clone.id)
-        assertEquals(20, clone.vendorId)
+        assertEquals("20", clone.vendorId)
         assertEquals("vendor name", clone.vendorName)
         assertEquals(1024, clone.memorySize)
         assertEquals("api type", clone.apiType)
