@@ -3,6 +3,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 pluginManagement {
     repositories {
         maven { url = uri("https://repo.spring.io/milestone") }
+        mavenCentral()
         gradlePluginPortal()
     }
 }

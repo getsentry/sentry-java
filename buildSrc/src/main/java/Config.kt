@@ -5,7 +5,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.4"
-    val springBoot3Version = "3.0.0-M5"
+    val springBoot3Version = "3.0.0-RC2"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.1.1"
@@ -143,18 +143,16 @@ object Config {
     }
 
     object TestLibs {
-        private val androidxTestVersion = "1.4.0"
-
-        // todo This beta version is needed to run ui tests on Android 13.
-        //  It will be replaced by androidxTestVersion when 1.5.0 will be out.
-        private val androidxTestVersionBeta = "1.5.0-beta01"
-        private val espressoVersion = "3.4.0"
+        // todo These rc versions are needed to run ui tests on Android 13.
+        //  They will be replaced by stable version when 1.5.0/3.5.0 will be out.
+        private val androidxTestVersion = "1.5.0-rc01"
+        private val espressoVersion = "3.5.0-rc01"
 
         val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-        val androidxCore = "androidx.test:core:$androidxTestVersionBeta"
+        val androidxCore = "androidx.test:core:$androidxTestVersion"
         val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxTestCoreKtx = "androidx.test:core-ktx:$androidxTestVersionBeta"
+        val androidxTestCoreKtx = "androidx.test:core-ktx:$androidxTestVersion"
         val androidxTestRules = "androidx.test:rules:$androidxTestVersion"
         val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
         val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
