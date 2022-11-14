@@ -25,7 +25,9 @@ public class SentryRequestResolver {
 
   public @NotNull Request resolveSentryRequest(final @NotNull ServerHttpRequest httpRequest) {
     final Request sentryRequest = new Request();
-    sentryRequest.setMethod(httpRequest.getMethodValue());
+    final String methodName =
+        httpRequest.getMethod() != null ? httpRequest.getMethod().name() : "unknown";
+    sentryRequest.setMethod(methodName);
     sentryRequest.setQueryString(httpRequest.getURI().getQuery());
     sentryRequest.setUrl(httpRequest.getURI().toString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));

@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix `Gpu.vendorId` should be a String ([#2343](https://github.com/getsentry/sentry-java/pull/2343))
+
 ### Features
 
+- Update Spring Boot Jakarta to Spring Boot 3.0.0-RC2 ([#2347](https://github.com/getsentry/sentry-java/pull/2347))
 - Add support for Opentelemetry ([#2344](https://github.com/getsentry/sentry-java/pull/2344))
 
 ## 6.7.0

@@ -2534,7 +2534,7 @@ public final class io/sentry/protocol/Gpu : io/sentry/JsonSerializable, io/sentr
 	public fun getName ()Ljava/lang/String;
 	public fun getNpotSupport ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun getVendorId ()Ljava/lang/Integer;
+	public fun getVendorId ()Ljava/lang/String;
 	public fun getVendorName ()Ljava/lang/String;
 	public fun getVersion ()Ljava/lang/String;
 	public fun isMultiThreadedRendering ()Ljava/lang/Boolean;
@@ -2546,7 +2546,7 @@ public final class io/sentry/protocol/Gpu : io/sentry/JsonSerializable, io/sentr
 	public fun setName (Ljava/lang/String;)V
 	public fun setNpotSupport (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
-	public fun setVendorId (Ljava/lang/Integer;)V
+	public fun setVendorId (Ljava/lang/String;)V
 	public fun setVendorName (Ljava/lang/String;)V
 	public fun setVersion (Ljava/lang/String;)V
 }
