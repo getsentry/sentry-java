@@ -62,8 +62,7 @@ public final class ScreenshotEventProcessor
   @SuppressWarnings("NullAway")
   @Override
   public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hint hint) {
-    if (!lifecycleCallbackInstalled
-        || !HintUtils.shouldApplyScopeData(hint)) {
+    if (!lifecycleCallbackInstalled || !HintUtils.shouldApplyScopeData(hint)) {
       return event;
     }
     if (!options.isAttachScreenshot()) {
