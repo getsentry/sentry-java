@@ -1,6 +1,9 @@
 package io.sentry.util;
 
 import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
+import static io.sentry.TypeCheckHint.SENTRY_IS_FROM_HYBRID_SDK;
+import static io.sentry.TypeCheckHint.SENTRY_REACT_NATIVE_SDK_NAME;
+import static io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME;
 
 import io.sentry.Hint;
 import io.sentry.ILogger;
@@ -15,6 +18,24 @@ import org.jetbrains.annotations.Nullable;
 public final class HintUtils {
 
   private HintUtils() {}
+
+  @ApiStatus.Internal
+  public static void setIsFromHybridSdk(Hint hint, String sdkName) {
+    if (sdkName.startsWith(SENTRY_REACT_NATIVE_SDK_NAME)
+        || sdkName.startsWith(SENTRY_DART_SDK_NAME)) {
+      HintUtils.setIsFromHybridSdk(hint, true);
+    }
+  }
+
+  @ApiStatus.Internal
+  public static void setIsFromHybridSdk(Hint hint, boolean isFromHybridSdk) {
+    hint.set(SENTRY_IS_FROM_HYBRID_SDK, isFromHybridSdk);
+  }
+
+  @ApiStatus.Internal
+  public static boolean getIsFromHybridSdk(Hint hint) {
+    return Boolean.TRUE.equals(hint.getAs(SENTRY_IS_FROM_HYBRID_SDK, Boolean.class));
+  }
 
   @ApiStatus.Internal
   public static Hint createWithTypeCheckHint(Object typeCheckHint) {

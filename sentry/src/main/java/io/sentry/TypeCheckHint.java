@@ -6,6 +6,9 @@ import org.jetbrains.annotations.ApiStatus;
 public final class TypeCheckHint {
 
   @ApiStatus.Internal public static final String SENTRY_TYPE_CHECK_HINT = "sentry:typeCheckHint";
+  @ApiStatus.Internal public static final String SENTRY_IS_FROM_HYBRID_SDK = "sentry:isFromHybridSdk";
+  @ApiStatus.Internal public static final String SENTRY_REACT_NATIVE_SDK_NAME = "sentry.javascript.react-native";
+  @ApiStatus.Internal public static final String SENTRY_DART_SDK_NAME = "sentry.dart";
 
   /** Used for Synthetic exceptions. */
   public static final String SENTRY_SYNTHETIC_EXCEPTION = "syntheticException";
