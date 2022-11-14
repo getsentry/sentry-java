@@ -70,7 +70,3 @@ task("jakartaTransformation", JavaExec::class) {
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
     args = listOf("../sentry-samples-spring/src/main/java/io/sentry/samples/spring", "src/main/java/io/sentry/samples/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
-
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-Xlint:-deprecation")
-}

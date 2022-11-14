@@ -4,6 +4,17 @@
 
 ### Fixes
 
+- Fix `Gpu.vendorId` should be a String ([#2343](https://github.com/getsentry/sentry-java/pull/2343))
+- Don't set device name on Android if `sendDefaultPii` is disabled ([#2354](https://github.com/getsentry/sentry-java/pull/2354))
+
+### Features
+
+- Update Spring Boot Jakarta to Spring Boot 3.0.0-RC2 ([#2347](https://github.com/getsentry/sentry-java/pull/2347))
+
+## 6.7.0
+
+### Fixes
+
 - Use correct set-cookie for the HTTP Client response object ([#2326](https://github.com/getsentry/sentry-java/pull/2326))
 - Fix NoSuchElementException in CircularFifoQueue when cloning a Scope ([#2328](https://github.com/getsentry/sentry-java/pull/2328))
 

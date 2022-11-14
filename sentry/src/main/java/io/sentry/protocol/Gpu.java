@@ -22,7 +22,7 @@ public final class Gpu implements JsonUnknown, JsonSerializable {
   /** The PCI identifier of the graphics device. */
   private @Nullable Integer id;
   /** The PCI vendor identifier of the graphics device. */
-  private @Nullable Integer vendorId;
+  private @Nullable String vendorId;
   /** The vendor name as reported by the graphics device. */
   private @Nullable String vendorName;
   /** The total GPU memory available in Megabytes. */
@@ -74,11 +74,11 @@ public final class Gpu implements JsonUnknown, JsonSerializable {
     this.id = id;
   }
 
-  public @Nullable Integer getVendorId() {
+  public @Nullable String getVendorId() {
     return vendorId;
   }
 
-  public void setVendorId(Integer vendorId) {
+  public void setVendorId(@Nullable String vendorId) {
     this.vendorId = vendorId;
   }
 
@@ -213,7 +213,7 @@ public final class Gpu implements JsonUnknown, JsonSerializable {
             gpu.id = reader.nextIntegerOrNull();
             break;
           case JsonKeys.VENDOR_ID:
-            gpu.vendorId = reader.nextIntegerOrNull();
+            gpu.vendorId = reader.nextStringOrNull();
             break;
           case JsonKeys.VENDOR_NAME:
             gpu.vendorName = reader.nextStringOrNull();

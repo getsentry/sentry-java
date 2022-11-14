@@ -21,16 +21,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: 'Set up Java: ${{ matrix.java }}'
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           java-version: 17
           distribution: 'temurin'
 
       - name: Cache Gradle packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.gradle/caches
@@ -40,7 +40,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@e0e5ded33cabb451ae0a9768fc7b0410bad9ad44 # pin@v2
+        uses: github/codeql-action/init@c3b6fce4ee2ca25bc1066aa3bf73962fda0e8898 # pin@v2
         with:
           languages: ${{ matrix.language }}
 
@@ -48,4 +48,4 @@ jobs:
           ./gradlew assemble
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@e0e5ded33cabb451ae0a9768fc7b0410bad9ad44 # pin@v2
+        uses: github/codeql-action/analyze@c3b6fce4ee2ca25bc1066aa3bf73962fda0e8898 # pin@v2

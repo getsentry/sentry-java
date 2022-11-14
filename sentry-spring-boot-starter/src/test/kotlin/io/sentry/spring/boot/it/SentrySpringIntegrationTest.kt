@@ -32,13 +32,12 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
+import org.springframework.security.web.SecurityFilterChain
 import org.springframework.stereotype.Service
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -46,7 +45,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
-import java.lang.RuntimeException
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -270,17 +268,10 @@ open class HelloService {
 }
 
 @Configuration
-open class SecurityConfiguration : WebSecurityConfigurerAdapter() {
-
-    override fun configure(http: HttpSecurity) {
-        http.csrf().disable()
-            .authorizeRequests().anyRequest().authenticated()
-            .and()
-            .httpBasic()
-    }
+open class SecurityConfiguration {
 
     @Bean
-    override fun userDetailsService(): UserDetailsService {
+    open fun userDetailsService(): InMemoryUserDetailsManager {
         val encoder: PasswordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
         val user: UserDetails = User
             .builder()
@@ -290,6 +281,17 @@ open class SecurityConfiguration : WebSecurityConfigurerAdapter() {
             .roles("USER")
             .build()
         return InMemoryUserDetailsManager(user)
+    }
+
+    @Bean
+    @Throws(Exception::class)
+    open fun filterChain(http: HttpSecurity): SecurityFilterChain {
+        http.csrf().disable()
+            .authorizeRequests().anyRequest().authenticated()
+            .and()
+            .httpBasic()
+
+        return http.build()
     }
 }
 
