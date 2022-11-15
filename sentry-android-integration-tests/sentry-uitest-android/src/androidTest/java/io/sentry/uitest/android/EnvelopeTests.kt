@@ -19,7 +19,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -69,6 +69,11 @@ class EnvelopeTests : BaseUiTest() {
                 assertEquals("ProfilingSampleActivity", transactionItem.transaction)
             }
             assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals("e2etests", transactionItem.transaction)
+            }
+            assertEnvelope {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals(profilingTraceData.transactionId, transaction.eventId.toString())
@@ -97,11 +102,6 @@ class EnvelopeTests : BaseUiTest() {
                 val transactionData = profilingTraceData.transactions
                     .firstOrNull { t -> t.id == transaction.eventId.toString() }
                 assertNotNull(transactionData)
-            }
-            assertEnvelope {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals("e2etests", transactionItem.transaction)
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
@@ -139,6 +139,12 @@ class EnvelopeTests : BaseUiTest() {
             }
             // The profile is sent only in the last transaction envelope
             assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
+            }
+            // The profile is sent only in the last transaction envelope
+            assertEnvelope {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals("e2etests2", profilingTraceData.transactionName)
@@ -171,12 +177,6 @@ class EnvelopeTests : BaseUiTest() {
                 // The first and last transactions should be aligned to the start/stop of profile
                 assertEquals(endTimes.last() - startTimes.first(), profilingTraceData.durationNs.toLong())
             }
-            // The profile is sent only in the last transaction envelope
-            assertEnvelope {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
-            }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
@@ -202,16 +202,20 @@ class EnvelopeTests : BaseUiTest() {
             }
         }.start()
         transaction.finish()
-        finished = true
+        // The profiler is stopped in background on the executor service, so we can stop deleting the trace file
+        // only after the profiler is stopped. This means we have to stop the deletion in the executorService
+        Sentry.getCurrentHub().options.executorService.submit {
+            finished = true
+        }
 
         relay.assert {
-            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
-            assertFails { assertEnvelope {} }
             assertEnvelope {
                 val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals("e2etests", transactionItem.transaction)
             }
+            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
+            assertFailsWith<IllegalArgumentException> { assertEnvelope {} }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }

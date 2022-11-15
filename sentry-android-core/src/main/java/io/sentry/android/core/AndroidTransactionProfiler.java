@@ -139,9 +139,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     traceFilesDir = new File(tracesFilesDirPath);
   }
 
-  @SuppressLint("NewApi")
   @Override
   public synchronized void onTransactionStart(final @NotNull ITransaction transaction) {
+    options.getExecutorService().submit(() -> onTransactionStartSafe(transaction));
+  }
+
+  @SuppressLint("NewApi")
+  private void onTransactionStartSafe(final @NotNull ITransaction transaction) {
 
     // Debug.startMethodTracingSampling() is only available since Lollipop
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return;
@@ -151,24 +155,14 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     // traceFilesDir is null or intervalUs is 0 only if there was a problem in the init, but
     // we already logged that
-    if (traceFilesDir == null || intervalUs == 0 || !traceFilesDir.exists()) {
+    if (traceFilesDir == null || intervalUs == 0 || !traceFilesDir.canWrite()) {
       return;
     }
 
     transactionsCounter++;
     // When the first transaction is starting, we can start profiling
     if (transactionsCounter == 1) {
-
-      traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
-
-      if (traceFile.exists()) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Trace file already exists: %s", traceFile.getPath());
-        transactionsCounter--;
-        return;
-      }
-      onFirstTransactionStarted(transaction, traceFile);
+      onFirstTransactionStarted(transaction);
     } else {
       ProfilingTransactionData transactionData =
           new ProfilingTransactionData(
@@ -186,8 +180,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @SuppressLint("NewApi")
-  private void onFirstTransactionStarted(
-      final @NotNull ITransaction transaction, final @NotNull File traceFile) {
+  private void onFirstTransactionStarted(final @NotNull ITransaction transaction) {
+    // We create a file with a uuid name, so no need to check if it already exists
+    traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
 
     measurementsMap.clear();
     screenFrameRateMeasurements.clear();
@@ -245,11 +240,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @Override
   public synchronized void onTransactionFinish(final @NotNull ITransaction transaction) {
-    onTransactionFinish(transaction, false);
+    options.getExecutorService().submit(() -> onTransactionFinish(transaction, false));
   }
 
   @SuppressLint("NewApi")
-  private synchronized void onTransactionFinish(
+  private void onTransactionFinish(
       final @NotNull ITransaction transaction, final boolean isTimeout) {
 
     // onTransactionStart() is only available since Lollipop
