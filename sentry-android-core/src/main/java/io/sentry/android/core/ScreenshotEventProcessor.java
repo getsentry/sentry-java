@@ -87,6 +87,7 @@ public final class ScreenshotEventProcessor
       this.options
           .getLogger()
           .log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
+      return null;
     }
 
     final View view = activity.getWindow().getDecorView().getRootView();
