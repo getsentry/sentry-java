@@ -26,7 +26,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     this(0L, 0);
   }
 
-  public ProfileMeasurementValue(@NotNull Long relativeStartNs, @NotNull Number value) {
+  public ProfileMeasurementValue(final @NotNull Long relativeStartNs, final @NotNull Number value) {
     this.relativeStartNs = relativeStartNs;
     this.value = value.toString();
   }
@@ -54,7 +54,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull JsonObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.VALUE).value(logger, value);
@@ -76,7 +76,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
   }
 
   @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {
+  public void setUnknown(final @Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
@@ -84,7 +84,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
 
     @Override
     public @NotNull ProfileMeasurementValue deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       ProfileMeasurementValue data = new ProfileMeasurementValue();
       Map<String, Object> unknown = null;

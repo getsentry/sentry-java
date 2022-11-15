@@ -1,4 +1,4 @@
-package io.sentry.android.core.internal
+package io.sentry.android.core.internal.util
 
 import android.app.Activity
 import android.content.Context
@@ -10,7 +10,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.SentryOptions
 import io.sentry.android.core.BuildInfoProvider
-import io.sentry.android.core.SentryFrameMetricsCollector
 import io.sentry.test.getCtor
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
@@ -27,7 +26,7 @@ import kotlin.test.assertNull
 class SentryFrameMetricsCollectorTest {
     private lateinit var context: Context
 
-    private val className = "io.sentry.android.core.SentryFrameMetricsCollector"
+    private val className = "io.sentry.android.core.internal.util.SentryFrameMetricsCollector"
     private val ctorTypes = arrayOf(Context::class.java, SentryOptions::class.java, BuildInfoProvider::class.java)
     private val fixture = Fixture()
 
@@ -131,7 +130,7 @@ class SentryFrameMetricsCollectorTest {
 
         collector.startCollection(mock())
         assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
-        collector.onActivityStarted(fixture.activity)
+        collector.onActivityCreated(fixture.activity, mock())
         assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
     }
 
@@ -140,7 +139,7 @@ class SentryFrameMetricsCollectorTest {
         val collector = fixture.getSut(context)
 
         collector.startCollection(mock())
-        collector.onActivityStarted(fixture.activity)
+        collector.onActivityCreated(fixture.activity, mock())
         assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
         collector.onActivityStopped(fixture.activity)
         assertEquals(1, fixture.removeOnFrameMetricsAvailableListenerCounter)
@@ -152,7 +151,7 @@ class SentryFrameMetricsCollectorTest {
 
         assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
         assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
-        collector.onActivityStarted(fixture.activity)
+        collector.onActivityCreated(fixture.activity, mock())
         collector.onActivityStopped(fixture.activity)
         assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
         assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
@@ -162,7 +161,7 @@ class SentryFrameMetricsCollectorTest {
     fun `startCollection calls addOnFrameMetricsAvailableListener if an activity is already started`() {
         val collector = fixture.getSut(context)
 
-        collector.onActivityStarted(fixture.activity)
+        collector.onActivityCreated(fixture.activity, mock())
         assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
         collector.startCollection(mock())
         assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
@@ -172,7 +171,7 @@ class SentryFrameMetricsCollectorTest {
     fun `stopCollection calls removeOnFrameMetricsAvailableListener even if an activity is still started`() {
         val collector = fixture.getSut(context)
         val id = collector.startCollection(mock())
-        collector.onActivityStarted(fixture.activity)
+        collector.onActivityCreated(fixture.activity, mock())
 
         assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
         collector.stopCollection(id)
@@ -187,8 +186,8 @@ class SentryFrameMetricsCollectorTest {
         assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
         assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
 
-        collector.onActivityStarted(fixture.activity)
-        collector.onActivityStarted(fixture.activity)
+        collector.onActivityCreated(fixture.activity, mock())
+        collector.onActivityCreated(fixture.activity, mock())
 
         collector.onActivityStopped(fixture.activity)
         collector.onActivityStopped(fixture.activity)
@@ -201,7 +200,7 @@ class SentryFrameMetricsCollectorTest {
     fun `stopCollection works only after startCollection`() {
         val collector = fixture.getSut(context)
         collector.startCollection(mock())
-        collector.onActivityStarted(fixture.activity)
+        collector.onActivityCreated(fixture.activity, mock())
         collector.stopCollection("testId")
         assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
     }
@@ -210,8 +209,8 @@ class SentryFrameMetricsCollectorTest {
     fun `collector tracks multiple activities`() {
         val collector = fixture.getSut(context)
         collector.startCollection(mock())
-        collector.onActivityStarted(fixture.activity)
-        collector.onActivityStarted(fixture.activity2)
+        collector.onActivityCreated(fixture.activity, mock())
+        collector.onActivityCreated(fixture.activity2, mock())
         assertEquals(2, fixture.addOnFrameMetricsAvailableListenerCounter)
         collector.onActivityStopped(fixture.activity)
         collector.onActivityStopped(fixture.activity2)
@@ -223,7 +222,7 @@ class SentryFrameMetricsCollectorTest {
         val collector = fixture.getSut(context)
         val id1 = collector.startCollection(mock())
         val id2 = collector.startCollection(mock())
-        collector.onActivityStarted(fixture.activity)
+        collector.onActivityCreated(fixture.activity, mock())
         assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
         collector.stopCollection(id1)
         assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)

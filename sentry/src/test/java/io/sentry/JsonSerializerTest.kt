@@ -635,7 +635,7 @@ class JsonSerializerTest {
                                     ]
                                 },
                                 "frozen_frame_renders": {
-                                    "unit":"nanoseconds",
+                                    "unit":"nanosecond",
                                     "values":[
                                         {"value":"100","elapsed_since_start_ns":"2"}
                                     ]
@@ -712,7 +712,7 @@ class JsonSerializerTest {
         val measurementValues = listOf(ProfileMeasurementValue(1, 2), ProfileMeasurementValue(3, 4))
         val profileMeasurement = ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, measurementValues)
         val actual = serializeToString(profileMeasurement)
-        val expected = "{\"unit\":\"nanoseconds\",\"values\":[{\"value\":\"2\",\"elapsed_since_start_ns\":1},{\"value\":\"4\",\"elapsed_since_start_ns\":3}]}"
+        val expected = "{\"unit\":\"nanosecond\",\"values\":[{\"value\":\"2\",\"elapsed_since_start_ns\":1},{\"value\":\"4\",\"elapsed_since_start_ns\":3}]}"
         assertEquals(expected, actual)
     }
 

@@ -27,7 +27,7 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
   public static final String ID_UNKNOWN = "unknown";
 
   public static final String UNIT_HZ = "hz";
-  public static final String UNIT_NANOSECONDS = "nanoseconds";
+  public static final String UNIT_NANOSECONDS = "nanosecond";
   public static final String UNIT_UNKNOWN = "unknown";
 
   private @Nullable Map<String, Object> unknown;
@@ -39,7 +39,7 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
   }
 
   public ProfileMeasurement(
-      @NotNull String unit, @NotNull Collection<ProfileMeasurementValue> values) {
+      final @NotNull String unit, final @NotNull Collection<ProfileMeasurementValue> values) {
     this.unit = unit;
     this.values = values;
   }
@@ -67,7 +67,7 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull JsonObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.UNIT).value(logger, unit);
@@ -93,11 +93,11 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {
+  public void setUnknown(final @Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
-  public void setUnit(@NotNull String unit) {
+  public void setUnit(final @NotNull String unit) {
     this.unit = unit;
   }
 
@@ -105,7 +105,7 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
     return values;
   }
 
-  public void setValues(@NotNull Collection<ProfileMeasurementValue> values) {
+  public void setValues(final @NotNull Collection<ProfileMeasurementValue> values) {
     this.values = values;
   }
 
@@ -113,7 +113,7 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
 
     @Override
     public @NotNull ProfileMeasurement deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       ProfileMeasurement data = new ProfileMeasurement();
       Map<String, Object> unknown = null;

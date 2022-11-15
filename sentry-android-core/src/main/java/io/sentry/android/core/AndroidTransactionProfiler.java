@@ -21,6 +21,7 @@ import io.sentry.ProfilingTransactionData;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
@@ -70,10 +71,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @NotNull Map<String, ProfilingTransactionData> transactionMap = new HashMap<>();
   private final @NotNull ArrayDeque<ProfileMeasurementValue> screenFrameRateMeasurements =
       new ArrayDeque<>();
-  private final @NotNull ArrayDeque<ProfileMeasurementValue>
-      adverseFrameRenderTimestampMeasurements = new ArrayDeque<>();
-  private final @NotNull ArrayDeque<ProfileMeasurementValue>
-      adverseFrozenFrameTimestampMeasurements = new ArrayDeque<>();
+  private final @NotNull ArrayDeque<ProfileMeasurementValue> slowFrameRenderMeasurements =
+      new ArrayDeque<>();
+  private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
+      new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
 
   public AndroidTransactionProfiler(
@@ -139,12 +140,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @Override
-  public synchronized void onTransactionStart(@NotNull ITransaction transaction) {
+  public synchronized void onTransactionStart(final @NotNull ITransaction transaction) {
     options.getExecutorService().submit(() -> onTransactionStartSafe(transaction));
   }
 
   @SuppressLint("NewApi")
-  private void onTransactionStartSafe(@NotNull ITransaction transaction) {
+  private void onTransactionStartSafe(final @NotNull ITransaction transaction) {
 
     // Debug.startMethodTracingSampling() is only available since Lollipop
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return;
@@ -179,14 +180,15 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @SuppressLint("NewApi")
-  private void onFirstTransactionStarted(@NotNull ITransaction transaction) {
+  private void onFirstTransactionStarted(
+      final @NotNull ITransaction transaction, final @NotNull File traceFile) {
     // We create a file with a uuid name, so no need to check if it already exists
     traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
 
     measurementsMap.clear();
     screenFrameRateMeasurements.clear();
-    adverseFrameRenderTimestampMeasurements.clear();
-    adverseFrozenFrameTimestampMeasurements.clear();
+    slowFrameRenderMeasurements.clear();
+    frozenFrameRenderMeasurements.clear();
 
     frameMetricsCollectorId =
         frameMetricsCollector.startCollection(
@@ -207,10 +209,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                 boolean isSlow = durationNanos > nanosInSecond / (refreshRate - 1);
                 float newRefreshRate = (int) (refreshRate * 100) / 100F;
                 if (durationNanos > frozenFrameThresholdNanos) {
-                  adverseFrozenFrameTimestampMeasurements.addLast(
+                  frozenFrameRenderMeasurements.addLast(
                       new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
                 } else if (isSlow) {
-                  adverseFrameRenderTimestampMeasurements.addLast(
+                  slowFrameRenderMeasurements.addLast(
                       new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
                 }
                 if (newRefreshRate != lastRefreshRate) {
@@ -238,12 +240,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @Override
-  public synchronized void onTransactionFinish(@NotNull ITransaction transaction) {
+  public synchronized void onTransactionFinish(final @NotNull ITransaction transaction) {
     options.getExecutorService().submit(() -> onTransactionFinish(transaction, false));
   }
 
   @SuppressLint("NewApi")
-  private void onTransactionFinish(@NotNull ITransaction transaction, boolean isTimeout) {
+  private void onTransactionFinish(final @NotNull ITransaction transaction, final boolean isTimeout) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
@@ -291,7 +293,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @SuppressLint("NewApi")
-  private void onLastTransactionFinished(ITransaction transaction, boolean isTimeout) {
+  private void onLastTransactionFinished(final ITransaction transaction, final boolean isTimeout) {
     Debug.stopMethodTracing();
     frameMetricsCollector.stopCollection(frameMetricsCollectorId);
 
@@ -337,17 +339,22 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           profileStartCpuMillis);
     }
 
-    measurementsMap.put(
-        ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
-        new ProfileMeasurement(
-            ProfileMeasurement.UNIT_NANOSECONDS, adverseFrameRenderTimestampMeasurements));
-    measurementsMap.put(
-        ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
-        new ProfileMeasurement(
-            ProfileMeasurement.UNIT_NANOSECONDS, adverseFrozenFrameTimestampMeasurements));
-    measurementsMap.put(
-        ProfileMeasurement.ID_SCREEN_FRAME_RATES,
-        new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
+    if (!slowFrameRenderMeasurements.isEmpty()) {
+      measurementsMap.put(
+          ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
+          new ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, slowFrameRenderMeasurements));
+    }
+    if (!frozenFrameRenderMeasurements.isEmpty()) {
+      measurementsMap.put(
+          ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
+          new ProfileMeasurement(
+              ProfileMeasurement.UNIT_NANOSECONDS, frozenFrameRenderMeasurements));
+    }
+    if (!screenFrameRateMeasurements.isEmpty()) {
+      measurementsMap.put(
+          ProfileMeasurement.ID_SCREEN_FRAME_RATES,
+          new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
+    }
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
     // done in the background when the trace file is read
