@@ -245,7 +245,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @SuppressLint("NewApi")
-  private void onTransactionFinish(final @NotNull ITransaction transaction, final boolean isTimeout) {
+  private void onTransactionFinish(
+      final @NotNull ITransaction transaction, final boolean isTimeout) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
