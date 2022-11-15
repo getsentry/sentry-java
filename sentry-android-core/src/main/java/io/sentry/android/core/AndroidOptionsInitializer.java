@@ -210,7 +210,8 @@ final class AndroidOptionsInitializer {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
       options.addEventProcessor(
-          ScreenshotEventProcessor.createInstance((Application) context, options, buildInfoProvider));
+          ScreenshotEventProcessor.createInstance(
+              (Application) context, options, buildInfoProvider));
     } else {
       options
           .getLogger()

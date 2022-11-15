@@ -55,11 +55,11 @@ public final class ScreenshotEventProcessor
   }
 
   public static ScreenshotEventProcessor createInstance(
-    final @NotNull Application application,
-    final @NotNull SentryAndroidOptions options,
-    final @NotNull BuildInfoProvider buildInfoProvider
-  ) {
-    ScreenshotEventProcessor.instance = new ScreenshotEventProcessor(application, options, buildInfoProvider);
+      final @NotNull Application application,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    ScreenshotEventProcessor.instance =
+        new ScreenshotEventProcessor(application, options, buildInfoProvider);
     return ScreenshotEventProcessor.instance;
   }
 
@@ -85,22 +85,22 @@ public final class ScreenshotEventProcessor
         || activity.getWindow().getDecorView() == null
         || activity.getWindow().getDecorView().getRootView() == null) {
       this.options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
     }
 
     final View view = activity.getWindow().getDecorView().getRootView();
     if (view.getWidth() <= 0 || view.getHeight() <= 0) {
       this.options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
+          .getLogger()
+          .log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
       return null;
     }
 
     try {
       // ARGB_8888 -> This configuration is very flexible and offers the best quality
       final Bitmap bitmap =
-        Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+          Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
 
       final Canvas canvas = new Canvas(bitmap);
       view.draw(canvas);
@@ -113,8 +113,8 @@ public final class ScreenshotEventProcessor
 
       if (byteArrayOutputStream.size() <= 0) {
         this.options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Screenshot is 0 bytes, not attaching the image.");
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Screenshot is 0 bytes, not attaching the image.");
         return null;
       }
 
@@ -125,7 +125,6 @@ public final class ScreenshotEventProcessor
     }
     return null;
   }
-
 
   @SuppressWarnings("NullAway")
   @Override

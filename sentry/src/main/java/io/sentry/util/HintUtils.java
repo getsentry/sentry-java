@@ -1,9 +1,9 @@
 package io.sentry.util;
 
-import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
+import static io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME;
 import static io.sentry.TypeCheckHint.SENTRY_IS_FROM_HYBRID_SDK;
 import static io.sentry.TypeCheckHint.SENTRY_REACT_NATIVE_SDK_NAME;
-import static io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME;
+import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import io.sentry.Hint;
 import io.sentry.ILogger;
