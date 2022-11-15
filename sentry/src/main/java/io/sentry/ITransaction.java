@@ -1,9 +1,9 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.List;
-import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -84,5 +84,5 @@ public interface ITransaction extends ISpan {
 
   @ApiStatus.Internal
   @NotNull
-  Map<String, Object> getContexts();
+  Contexts getContexts();
 }

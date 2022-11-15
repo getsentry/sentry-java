@@ -1,5 +1,6 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
@@ -183,8 +184,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
     final @NotNull SpanData spanData = otelSpan.toSpanData();
     final @NotNull Map<String, Object> context = new HashMap<>();
 
-    context.put("attributes", spanData.getAttributes().asMap());
-    context.put("resource", spanData.getResource().getAttributes().asMap());
+    context.put("attributes", toMapWithStringKeys(spanData.getAttributes()));
+    context.put("resource", toMapWithStringKeys(spanData.getResource().getAttributes()));
 
     return context;
   }
@@ -232,5 +233,20 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
   private boolean hasSentryBeenInitialized() {
     return Sentry.isEnabled();
+  }
+
+  private @NotNull Map<String, Object> toMapWithStringKeys(@Nullable Attributes attributes) {
+    @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>();
+
+    if (attributes != null) {
+      attributes.forEach(
+          (key, value) -> {
+            if (key != null) {
+              mapWithStringKeys.put(key.getKey(), value);
+            }
+          });
+    }
+
+    return mapWithStringKeys;
   }
 }

@@ -145,8 +145,8 @@ tasks {
             attributes.put("Premain-Class", "io.opentelemetry.javaagent.OpenTelemetryAgent")
             attributes.put("Can-Redefine-Classes", "true")
             attributes.put("Can-Retransform-Classes", "true")
-            attributes.put("Implementation-Vendor", "Demo")
-            attributes.put("Implementation-Version", "demo-${project.version}-otel-${Config.Libs.otelJavaagentVersion}")
+            attributes.put("Implementation-Vendor", "Sentry")
+            attributes.put("Implementation-Version", "sentry-${project.version}-otel-${Config.Libs.otelJavaagentVersion}")
         }
     }
 

@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -78,7 +79,7 @@ public final class SentryTracer implements ITransaction {
   private @NotNull TransactionNameSource transactionNameSource;
   private final @NotNull Map<String, MeasurementValue> measurements;
   private final @NotNull Instrumenter instrumenter;
-  private final @NotNull Map<String, Object> contexts = new ConcurrentHashMap<>();
+  private final @NotNull Contexts contexts = new Contexts();
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -670,7 +671,7 @@ public final class SentryTracer implements ITransaction {
 
   @ApiStatus.Internal
   @Override
-  public @NotNull Map<String, Object> getContexts() {
+  public @NotNull Contexts getContexts() {
     return contexts;
   }
 
