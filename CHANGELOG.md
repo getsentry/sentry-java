@@ -8,7 +8,7 @@
 
 ### Features
 
-- added FrameMetrics to Android profiling data ([#2342](https://github.com/getsentry/sentry-java/pull/2342))
+- Add FrameMetrics to Android profiling data ([#2342](https://github.com/getsentry/sentry-java/pull/2342))
 
 ## 6.7.0
 

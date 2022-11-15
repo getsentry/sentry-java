@@ -1,4 +1,4 @@
-package io.sentry.android.core;
+package io.sentry.android.core.internal.util;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -10,10 +10,10 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.FrameMetrics;
 import android.view.Window;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
@@ -40,19 +40,19 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   @SuppressWarnings("deprecation")
   @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
-      @NotNull Context context,
-      @NotNull SentryOptions options,
-      @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull Context context,
+      final @NotNull SentryOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this(context, options, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
   @SuppressWarnings("deprecation")
   @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
-      @NotNull Context context,
-      @NotNull SentryOptions options,
-      @NotNull BuildInfoProvider buildInfoProvider,
-      @NotNull WindowFrameMetricsManager windowFrameMetricsManager) {
+      final @NotNull Context context,
+      final @NotNull SentryOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull WindowFrameMetricsManager windowFrameMetricsManager) {
     Objects.requireNonNull(context, "The context is required");
     Objects.requireNonNull(options, "SentryOptions is required");
     this.buildInfoProvider =
@@ -71,7 +71,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     isAvailable = true;
 
     HandlerThread handlerThread =
-        new HandlerThread("io.sentry.android.core.SentryFrameMetricsCollector");
+        new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector");
     handlerThread.setUncaughtExceptionHandler(
         (thread, e) ->
             options.getLogger().log(SentryLevel.ERROR, "Error during frames measurements.", e));
@@ -95,31 +95,31 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+  public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle savedInstanceState) {
     setCurrentWindow(activity.getWindow());
   }
 
   @Override
-  public void onActivityStarted(@NonNull Activity activity) {}
+  public void onActivityStarted(@NotNull Activity activity) {}
 
   @Override
-  public void onActivityResumed(@NonNull Activity activity) {}
+  public void onActivityResumed(@NotNull Activity activity) {}
 
   @Override
-  public void onActivityPaused(@NonNull Activity activity) {}
+  public void onActivityPaused(@NotNull Activity activity) {}
 
   @Override
-  public void onActivityStopped(@NonNull Activity activity) {
-    cleanCurrentWindow(activity.getWindow());
+  public void onActivityStopped(@NotNull Activity activity) {
+    clearCurrentWindow(activity.getWindow());
   }
 
   @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {}
+  public void onActivitySaveInstanceState(@NotNull Activity activity, @NotNull Bundle outState) {}
 
   @Override
-  public void onActivityDestroyed(@NonNull Activity activity) {}
+  public void onActivityDestroyed(@NotNull Activity activity) {}
 
-  public @Nullable String startCollection(FrameMetricsCollectorListener listener) {
+  public @Nullable String startCollection(final @NotNull FrameMetricsCollectorListener listener) {
     if (!isAvailable) {
       return null;
     }
@@ -129,7 +129,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     return uid;
   }
 
-  public void stopCollection(@Nullable String listenerId) {
+  public void stopCollection(final @Nullable String listenerId) {
     if (!isAvailable) {
       return;
     }
@@ -138,12 +138,12 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     }
     Window window = currentWindow != null ? currentWindow.get() : null;
     if (window != null && listenerMap.isEmpty()) {
-      cleanCurrentWindow(window);
+      clearCurrentWindow(window);
     }
   }
 
   @SuppressLint("NewApi")
-  private void cleanCurrentWindow(@NonNull Window window) {
+  private void clearCurrentWindow(final @NotNull Window window) {
     if (currentWindow != null && currentWindow.get() == window) {
       currentWindow = null;
     }
@@ -156,7 +156,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     }
   }
 
-  private void setCurrentWindow(@NotNull Window window) {
+  private void setCurrentWindow(final @NotNull Window window) {
     if (currentWindow != null && currentWindow.get() == window) {
       return;
     }
@@ -183,23 +183,23 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @ApiStatus.Internal
   public interface FrameMetricsCollectorListener {
-    void onFrameMetricCollected(@NotNull FrameMetrics frameMetrics, float refreshRate);
+    void onFrameMetricCollected(final @NotNull FrameMetrics frameMetrics, final float refreshRate);
   }
 
   @ApiStatus.Internal
   public interface WindowFrameMetricsManager {
     @RequiresApi(api = Build.VERSION_CODES.N)
     default void addOnFrameMetricsAvailableListener(
-        @NotNull Window window,
-        @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener,
-        @Nullable Handler handler) {
+        final @NotNull Window window,
+        final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener,
+        final @Nullable Handler handler) {
       window.addOnFrameMetricsAvailableListener(frameMetricsAvailableListener, handler);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     default void removeOnFrameMetricsAvailableListener(
-        @NotNull Window window,
-        @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener) {
+        final @NotNull Window window,
+        final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener) {
       window.removeOnFrameMetricsAvailableListener(frameMetricsAvailableListener);
     }
   }

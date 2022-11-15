@@ -11,6 +11,7 @@ import io.sentry.ProfilingTraceData
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.assertEnvelopeItem
 import io.sentry.test.getCtor
 import org.junit.runner.RunWith

@@ -21,6 +21,7 @@ import io.sentry.ProfilingTransactionData;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
@@ -140,7 +141,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @SuppressLint("NewApi")
   @Override
-  public synchronized void onTransactionStart(@NotNull ITransaction transaction) {
+  public synchronized void onTransactionStart(final @NotNull ITransaction transaction) {
 
     // Debug.startMethodTracingSampling() is only available since Lollipop
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return;
@@ -186,7 +187,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @SuppressLint("NewApi")
   private void onFirstTransactionStarted(
-      @NotNull ITransaction transaction, @NotNull File traceFile) {
+      final @NotNull ITransaction transaction, final @NotNull File traceFile) {
 
     measurementsMap.clear();
     screenFrameRateMeasurements.clear();
@@ -243,13 +244,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @Override
-  public synchronized void onTransactionFinish(@NotNull ITransaction transaction) {
+  public synchronized void onTransactionFinish(final @NotNull ITransaction transaction) {
     onTransactionFinish(transaction, false);
   }
 
   @SuppressLint("NewApi")
   private synchronized void onTransactionFinish(
-      @NotNull ITransaction transaction, boolean isTimeout) {
+      final @NotNull ITransaction transaction, final boolean isTimeout) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
@@ -297,7 +298,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @SuppressLint("NewApi")
-  private void onLastTransactionFinished(ITransaction transaction, boolean isTimeout) {
+  private void onLastTransactionFinished(final ITransaction transaction, final boolean isTimeout) {
     Debug.stopMethodTracing();
     frameMetricsCollector.stopCollection(frameMetricsCollectorId);
 

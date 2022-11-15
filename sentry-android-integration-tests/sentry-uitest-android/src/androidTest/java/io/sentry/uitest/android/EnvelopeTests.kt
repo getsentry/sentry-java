@@ -49,9 +49,9 @@ class EnvelopeTests : BaseUiTest() {
         initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
-            options.isEnableAutoActivityLifecycleTracing = false
         }
 
+        relayIdlingResource.increment()
         IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
         val transaction = Sentry.startTransaction("e2etests", "test1")
         val sampleScenario = launchActivity<ProfilingSampleActivity>()
@@ -63,6 +63,11 @@ class EnvelopeTests : BaseUiTest() {
 
         transaction.finish()
         relay.assert {
+            assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals("ProfilingSampleActivity", transactionItem.transaction)
+            }
             assertEnvelope {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
@@ -244,7 +249,6 @@ class EnvelopeTests : BaseUiTest() {
             options.dsn = "https://640fae2f19ac4ba78ad740175f50195f@o1137848.ingest.sentry.io/6191083"
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
-            options.isEnableAutoActivityLifecycleTracing = false
         }
 
         val transaction = Sentry.startTransaction("e2etests", "testProfile")

@@ -1,4 +1,4 @@
-package io.sentry.android.core.internal
+package io.sentry.android.core.internal.util
 
 import android.app.Activity
 import android.content.Context
@@ -10,7 +10,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.SentryOptions
 import io.sentry.android.core.BuildInfoProvider
-import io.sentry.android.core.SentryFrameMetricsCollector
 import io.sentry.test.getCtor
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
@@ -27,7 +26,7 @@ import kotlin.test.assertNull
 class SentryFrameMetricsCollectorTest {
     private lateinit var context: Context
 
-    private val className = "io.sentry.android.core.SentryFrameMetricsCollector"
+    private val className = "io.sentry.android.core.internal.util.SentryFrameMetricsCollector"
     private val ctorTypes = arrayOf(Context::class.java, SentryOptions::class.java, BuildInfoProvider::class.java)
     private val fixture = Fixture()
 
