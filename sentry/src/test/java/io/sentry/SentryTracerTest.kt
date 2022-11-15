@@ -208,6 +208,31 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when transaction is finished, context is set`() {
+        val tracer = fixture.getSut()
+        val otelContext = mapOf(
+            "attributes" to mapOf(
+                "db.connection_string" to "hsqldb:mem:",
+                "db.statement" to "CREATE TABLE person ( id INTEGER IDENTITY PRIMARY KEY, firstName VARCHAR(?) NOT NULL, lastName VARCHAR(?) NOT NULL )"
+            ),
+            "resource" to mapOf(
+                "process.runtime.version" to "17.0.4.1+1",
+                "telemetry.auto.version" to "sentry-6.7.0-otel-1.19.2"
+            )
+        )
+        tracer.setContext("otel", otelContext)
+        tracer.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(otelContext, it.contexts["otel"])
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `returns sentry-trace header`() {
         val tracer = fixture.getSut()
 
