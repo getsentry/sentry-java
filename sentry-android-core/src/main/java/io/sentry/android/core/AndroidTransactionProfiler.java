@@ -180,8 +180,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @SuppressLint("NewApi")
-  private void onFirstTransactionStarted(
-      final @NotNull ITransaction transaction, final @NotNull File traceFile) {
+  private void onFirstTransactionStarted(final @NotNull ITransaction transaction) {
     // We create a file with a uuid name, so no need to check if it already exists
     traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
 
@@ -245,7 +244,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   @SuppressLint("NewApi")
-  private void onTransactionFinish(final @NotNull ITransaction transaction, final boolean isTimeout) {
+  private void onTransactionFinish(
+      final @NotNull ITransaction transaction, final boolean isTimeout) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
