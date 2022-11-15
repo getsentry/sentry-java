@@ -18,6 +18,9 @@ public final class StringUtils {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+  private static final String CORRUPTED_NIL_UUID = "0000-0000";
+  private static final String PROPER_NIL_UUID = "00000000-0000-0000-0000-000000000000";
+
   private StringUtils() {}
 
   public static @Nullable String getStringAfterDot(final @Nullable String str) {
@@ -137,5 +140,20 @@ public final class StringUtils {
       }
     }
     return count;
+  }
+
+  /**
+   * Normalizes UUID string representation to adhere to the actual UUID standard
+   *
+   * <p>Because Motorola decided that nil UUIDs should look like this: "0000-0000" ;)
+   *
+   * @param uuidString the original UUID string representation
+   * @return proper UUID string, in case it's a corrupted one
+   */
+  public static String normalizeUUID(final @NotNull String uuidString) {
+    if (uuidString.equals(CORRUPTED_NIL_UUID)) {
+      return PROPER_NIL_UUID;
+    }
+    return uuidString;
   }
 }

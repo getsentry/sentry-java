@@ -1,12 +1,13 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import io.sentry.util.StringUtils;
 import java.io.IOException;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 
 public final class SpanId implements JsonSerializable {
-  public static final SpanId EMPTY_ID = new SpanId(new UUID(0, 0).toString());
+  public static final SpanId EMPTY_ID = new SpanId(new UUID(0, 0));
 
   private final @NotNull String value;
 
@@ -19,7 +20,7 @@ public final class SpanId implements JsonSerializable {
   }
 
   private SpanId(final @NotNull UUID uuid) {
-    this(uuid.toString().replace("-", "").substring(0, 16));
+    this(StringUtils.normalizeUUID(uuid.toString()).replace("-", "").substring(0, 16));
   }
 
   @Override
