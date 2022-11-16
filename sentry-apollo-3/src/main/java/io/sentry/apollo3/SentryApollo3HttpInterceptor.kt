@@ -81,7 +81,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
     }
 
     private fun startChild(request: HttpRequest, activeSpan: ISpan): ISpan {
-        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url, hub.options.isSendDefaultPii)
+        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url, hub.options)
         val method = request.method
 
         val operationName = operationNameFromHeaders(request)
@@ -122,7 +122,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         }
         span.finish()
 
-        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url, hub.options.isSendDefaultPii)
+        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url, hub.options)
         val breadcrumb =
             Breadcrumb.http(url, request.method.name, statusCode)
 

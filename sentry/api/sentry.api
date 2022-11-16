@@ -3381,8 +3381,9 @@ public final class io/sentry/util/StringUtils {
 
 public final class io/sentry/util/UrlUtils {
 	public fun <init> ()V
-	public static fun maybeStripSensitiveDataFromUrl (Ljava/lang/String;Z)Ljava/lang/String;
-	public static fun maybeStripSensitiveDataFromUrlNullable (Ljava/lang/String;Z)Ljava/lang/String;
+	public static fun maybeStripSensitiveDataFromQuery (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
+	public static fun maybeStripSensitiveDataFromUrl (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
+	public static fun maybeStripSensitiveDataFromUrlNullable (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
 }
 
 public class io/sentry/vendor/Base64 {

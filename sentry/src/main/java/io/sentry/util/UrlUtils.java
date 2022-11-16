@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import io.sentry.SentryOptions;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
@@ -10,17 +11,17 @@ public final class UrlUtils {
   private static final @NotNull Pattern USER_INFO_REGEX = Pattern.compile("(.+://)(.*@)(.*)");
 
   public static @Nullable String maybeStripSensitiveDataFromUrlNullable(
-      final @Nullable String url, final boolean isSendDefaultPii) {
+      final @Nullable String url, final @NotNull SentryOptions options) {
     if (url == null) {
       return null;
     }
 
-    return maybeStripSensitiveDataFromUrl(url, isSendDefaultPii);
+    return maybeStripSensitiveDataFromUrl(url, options);
   }
 
   public static @NotNull String maybeStripSensitiveDataFromUrl(
-      final @NotNull String url, final boolean isSendDefaultPii) {
-    if (isSendDefaultPii) {
+      final @NotNull String url, final @NotNull SentryOptions options) {
+    if (options.isSendDefaultPii()) {
       return url;
     }
 
@@ -37,35 +38,46 @@ public final class UrlUtils {
     if (queryParamSeparatorIndex >= 0) {
       final @NotNull String urlWithoutQuery =
           modifiedUrl.substring(0, queryParamSeparatorIndex).trim();
-      final @NotNull StringBuilder urlBuilder = new StringBuilder(urlWithoutQuery);
-      @NotNull String query = modifiedUrl.substring(queryParamSeparatorIndex).trim();
-      @NotNull String anchorPart = "";
+      final @NotNull String query = modifiedUrl.substring(queryParamSeparatorIndex).trim();
 
-      final int anchorInQueryIndex = query.indexOf("#");
-      if (anchorInQueryIndex >= 0) {
-        anchorPart = query.substring(anchorInQueryIndex);
-        query = query.substring(0, anchorInQueryIndex);
-      }
-
-      final @NotNull String[] queryParams = query.split("&", -1);
-      @NotNull String separator = "";
-      for (final @NotNull String queryParam : queryParams) {
-        final @NotNull String[] queryParamParts = queryParam.split("=", -1);
-        urlBuilder.append(separator);
-        if (queryParamParts.length == 2) {
-          urlBuilder.append(queryParamParts[0]);
-          urlBuilder.append("=%s");
-        } else {
-          urlBuilder.append(queryParam);
-        }
-        separator = "&";
-      }
-
-      urlBuilder.append(anchorPart);
-
-      modifiedUrl = urlBuilder.toString();
+      modifiedUrl = urlWithoutQuery + maybeStripSensitiveDataFromQuery(query, options);
     }
 
     return modifiedUrl;
+  }
+
+  public static @NotNull String maybeStripSensitiveDataFromQuery(
+      @NotNull String query, final @NotNull SentryOptions options) {
+    if (options.isSendDefaultPii()) {
+      return query;
+    }
+
+    final @NotNull StringBuilder queryBuilder = new StringBuilder();
+    @NotNull String modifiedQuery = query;
+    @NotNull String anchorPart = "";
+
+    final int anchorInQueryIndex = modifiedQuery.indexOf("#");
+    if (anchorInQueryIndex >= 0) {
+      anchorPart = query.substring(anchorInQueryIndex);
+      modifiedQuery = query.substring(0, anchorInQueryIndex);
+    }
+
+    final @NotNull String[] queryParams = modifiedQuery.split("&", -1);
+    @NotNull String separator = "";
+    for (final @NotNull String queryParam : queryParams) {
+      final @NotNull String[] queryParamParts = queryParam.split("=", -1);
+      queryBuilder.append(separator);
+      if (queryParamParts.length == 2) {
+        queryBuilder.append(queryParamParts[0]);
+        queryBuilder.append("=%s");
+      } else {
+        queryBuilder.append(queryParam);
+      }
+      separator = "&";
+    }
+
+    queryBuilder.append(anchorPart);
+
+    return queryBuilder.toString();
   }
 }

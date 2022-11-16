@@ -54,7 +54,7 @@ class SentryOkHttpInterceptor(
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()
 
-        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url.toString(), hub.options.isSendDefaultPii)
+        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url.toString(), hub.options)
         val method = request.method
 
         // read transaction from the bound scope
@@ -97,7 +97,7 @@ class SentryOkHttpInterceptor(
         } finally {
             finishSpan(span, request, response)
 
-            val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url.toString(), hub.options.isSendDefaultPii)
+            val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url.toString(), hub.options)
             val breadcrumb = Breadcrumb.http(url, request.method, code)
             request.body?.contentLength().ifHasValidLength {
                 breadcrumb.setData("request_body_size", it)
@@ -182,11 +182,11 @@ class SentryOkHttpInterceptor(
         hint.set(OKHTTP_RESPONSE, response)
 
         val sentryRequest = io.sentry.protocol.Request().apply {
-            url = UrlUtils.maybeStripSensitiveDataFromUrl(requestUrl, hub.options.isSendDefaultPii)
+            url = UrlUtils.maybeStripSensitiveDataFromUrl(requestUrl, hub.options)
             // Cookie is only sent if isSendDefaultPii is enabled
             cookies = if (hub.options.isSendDefaultPii) request.headers["Cookie"] else null
             method = request.method
-            queryString = query
+            queryString = query?.let { UrlUtils.maybeStripSensitiveDataFromQuery(it, hub.options) }
             headers = getHeaders(request.headers)
             fragment = urlFragment
 

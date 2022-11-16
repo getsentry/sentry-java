@@ -52,8 +52,7 @@ public final class SentryFeignClient implements Client {
 
       ISpan span = activeSpan.startChild("http.client");
       final @NotNull String url =
-          UrlUtils.maybeStripSensitiveDataFromUrl(
-              request.url(), hub.getOptions().isSendDefaultPii());
+          UrlUtils.maybeStripSensitiveDataFromUrl(request.url(), hub.getOptions());
       span.setDescription(request.httpMethod().name() + " " + url);
 
       final RequestWrapper requestWrapper = new RequestWrapper(request);
@@ -103,7 +102,7 @@ public final class SentryFeignClient implements Client {
 
   private void addBreadcrumb(final @NotNull Request request, final @Nullable Response response) {
     final @NotNull String url =
-        UrlUtils.maybeStripSensitiveDataFromUrl(request.url(), hub.getOptions().isSendDefaultPii());
+        UrlUtils.maybeStripSensitiveDataFromUrl(request.url(), hub.getOptions());
     final Breadcrumb breadcrumb =
         Breadcrumb.http(
             url, request.httpMethod().name(), response != null ? response.status() : null);

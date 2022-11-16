@@ -115,7 +115,7 @@ class SentryApolloInterceptor(
                 val httpResponse = it.httpResponse.get()
                 val httpRequest = httpResponse.request()
 
-                val url = UrlUtils.maybeStripSensitiveDataFromUrl(httpRequest.url().toString(), hub.options.isSendDefaultPii)
+                val url = UrlUtils.maybeStripSensitiveDataFromUrl(httpRequest.url().toString(), hub.options)
                 val breadcrumb = Breadcrumb.http(url, httpRequest.method(), httpResponse.code())
 
                 httpRequest.body()?.contentLength().ifHasValidLength { contentLength ->

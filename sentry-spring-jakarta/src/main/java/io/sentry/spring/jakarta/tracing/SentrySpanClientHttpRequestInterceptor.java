@@ -49,7 +49,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final ISpan span = activeSpan.startChild("http.client");
       final String methodName =
           request.getMethod() != null ? request.getMethod().name() : "unknown";
-      final @NotNull String url = UrlUtils.maybeStripSensitiveDataFromUrl(request.getURI().toString(), hub.getOptions().isSendDefaultPii());
+      final @NotNull String url = UrlUtils.maybeStripSensitiveDataFromUrl(request.getURI().toString(), hub.getOptions());
       span.setDescription(methodName + " " + url);
 
       final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
@@ -90,7 +90,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final @Nullable Integer responseStatusCode,
       final @Nullable ClientHttpResponse response) {
     final String methodName = request.getMethod() != null ? request.getMethod().name() : "unknown";
-    final @NotNull String url = UrlUtils.maybeStripSensitiveDataFromUrl(request.getURI().toString(), hub.getOptions().isSendDefaultPii());
+    final @NotNull String url = UrlUtils.maybeStripSensitiveDataFromUrl(request.getURI().toString(), hub.getOptions());
 
     final Breadcrumb breadcrumb =
         Breadcrumb.http(url, methodName, responseStatusCode);

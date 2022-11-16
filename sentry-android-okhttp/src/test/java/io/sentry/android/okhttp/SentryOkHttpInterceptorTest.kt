@@ -410,7 +410,8 @@ class SentryOkHttpInterceptorTest {
         val sut = fixture.getSut(
             captureFailedRequests = true,
             httpStatusCode = statusCode,
-            responseBody = "fail"
+            responseBody = "fail",
+            sendDefaultPii = true
         )
 
         val request = getRequest(url = "/hello?myQuery=myValue#myFragment")
@@ -425,6 +426,45 @@ class SentryOkHttpInterceptorTest {
                 assertEquals("GET", sentryRequest.method)
 
                 // because of isSendDefaultPii
+                assertNotNull(sentryRequest.headers)
+                assertNull(sentryRequest.cookies)
+
+                val sentryResponse = it.contexts.response!!
+                assertEquals(statusCode, sentryResponse.statusCode)
+                assertEquals(response.body!!.contentLength(), sentryResponse.bodySize)
+
+                // because of isSendDefaultPii
+                assertNotNull(sentryResponse.headers)
+                assertNull(sentryResponse.cookies)
+
+                assertTrue(it.throwable is SentryHttpClientException)
+            },
+            any<Hint>()
+        )
+    }
+
+    @Test
+    fun `stips sensitive information if not sendDefaultPii`() {
+        val statusCode = 500
+        val sut = fixture.getSut(
+            captureFailedRequests = true,
+            httpStatusCode = statusCode,
+            responseBody = "fail",
+            sendDefaultPii = false
+        )
+
+        val request = getRequest(url = "/hello?myQuery=myValue#myFragment")
+        val response = sut.newCall(request).execute()
+
+        verify(fixture.hub).captureEvent(
+            check {
+                val sentryRequest = it.request!!
+                assertEquals("http://localhost:${fixture.server.port}/hello", sentryRequest.url)
+                assertEquals("myQuery=%s", sentryRequest.queryString)
+                assertEquals("myFragment", sentryRequest.fragment)
+                assertEquals("GET", sentryRequest.method)
+
+                // because of isSendDefaultPii
                 assertNull(sentryRequest.headers)
                 assertNull(sentryRequest.cookies)
 
@@ -433,8 +473,8 @@ class SentryOkHttpInterceptorTest {
                 assertEquals(response.body!!.contentLength(), sentryResponse.bodySize)
 
                 // because of isSendDefaultPii
-                assertNull(sentryRequest.headers)
-                assertNull(sentryRequest.cookies)
+                assertNull(sentryResponse.headers)
+                assertNull(sentryResponse.cookies)
 
                 assertTrue(it.throwable is SentryHttpClientException)
             },
