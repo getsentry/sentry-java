@@ -9,8 +9,12 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Process;
+import androidx.annotation.NonNull;
 import io.sentry.Breadcrumb;
+import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
@@ -56,6 +60,9 @@ public final class ActivityLifecycleIntegration
   private boolean foregroundImportance = false;
 
   private @Nullable ISpan appStartSpan;
+  private @Nullable ISpan ttidSpan;
+  private @NotNull Date lastPausedTime = DateUtils.getCurrentDateTime();
+  private final @NotNull Handler mainHandler = new Handler(Looper.getMainLooper());
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
@@ -198,7 +205,23 @@ public final class ActivityLifecycleIntegration
         appStartSpan =
             transaction.startChild(
                 getAppStartOp(coldStart), getAppStartDesc(coldStart), appStartTime);
+        // The first activity ttidSpan should start at the same time as the app start time
+        ttidSpan = transaction.startChild("TTID", activityName + ".ttid", appStartTime);
+      } else {
+        // Other activities (or in case appStartTime is not available) the ttid span should
+        // start when the previous activity called its onPause method.
+        ttidSpan = transaction.startChild("TTID", activityName + ".ttid", lastPausedTime);
       }
+
+      // Posting a task to the main thread's handler will make it executed after it finished
+      // its current job. That is, right after the activity draws the layout.
+      mainHandler.post(
+          () -> {
+            // finishes ttidSpan span
+            if (ttidSpan != null && !ttidSpan.isFinished()) {
+              ttidSpan.finish();
+            }
+          });
 
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
@@ -256,6 +279,11 @@ public final class ActivityLifecycleIntegration
       // finished manually when this method is called.
       if (transaction.isFinished()) {
         return;
+      }
+
+      // in case the ttidSpan isn't completed yet, we finish it as cancelled to avoid memory leak
+      if (ttidSpan != null && !ttidSpan.isFinished()) {
+        ttidSpan.finish(SpanStatus.CANCELLED);
       }
 
       SpanStatus status = transaction.getStatus();
@@ -341,7 +369,19 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
+  public void onActivityPrePaused(@NonNull Activity activity) {
+    // only executed if API >= 29 otherwise it happens on onActivityPaused
+    if (isAllActivityCallbacksAvailable) {
+      lastPausedTime = DateUtils.getCurrentDateTime();
+    }
+  }
+
+  @Override
   public synchronized void onActivityPaused(final @NotNull Activity activity) {
+    // only executed if API < 29 otherwise it happens on onActivityPrePaused
+    if (!isAllActivityCallbacksAvailable) {
+      lastPausedTime = DateUtils.getCurrentDateTime();
+    }
     addBreadcrumb(activity, "paused");
   }
 
@@ -366,12 +406,18 @@ public final class ActivityLifecycleIntegration
       appStartSpan.finish(SpanStatus.CANCELLED);
     }
 
+    // in case the ttidSpan isn't completed yet, we finish it as cancelled to avoid memory leak
+    if (ttidSpan != null && !ttidSpan.isFinished()) {
+      ttidSpan.finish(SpanStatus.CANCELLED);
+    }
+
     // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
     // we make sure to finish it when the activity gets destroyed.
     stopTracing(activity, true);
 
     // set it to null in case its been just finished as cancelled
     appStartSpan = null;
+    ttidSpan = null;
 
     // clear it up, so we don't start again for the same activity if the activity is in the activity
     // stack still.
@@ -397,6 +443,12 @@ public final class ActivityLifecycleIntegration
   @Nullable
   ISpan getAppStartSpan() {
     return appStartSpan;
+  }
+
+  @TestOnly
+  @Nullable
+  ISpan getTtidSpan() {
+    return ttidSpan;
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {
