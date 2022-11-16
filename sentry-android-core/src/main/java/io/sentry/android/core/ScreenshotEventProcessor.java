@@ -45,8 +45,7 @@ public final class ScreenshotEventProcessor
   @SuppressWarnings("NullAway")
   @Override
   public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hint hint) {
-    if (!lifecycleCallbackInstalled
-        || !event.isErrored()) {
+    if (!lifecycleCallbackInstalled || !event.isErrored()) {
       return event;
     }
     if (!options.isAttachScreenshot()) {
@@ -61,8 +60,7 @@ public final class ScreenshotEventProcessor
 
       return event;
     }
-    if (currentActivityHolder.getActivity() == null
-        || HintUtils.isFromHybridSdk(hint)) {
+    if (currentActivityHolder.getActivity() == null || HintUtils.isFromHybridSdk(hint)) {
       return event;
     }
 
