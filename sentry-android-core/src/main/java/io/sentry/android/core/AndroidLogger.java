@@ -12,7 +12,7 @@ public final class AndroidLogger implements ILogger {
 
   private final String tag;
 
-  public AndroidLogger(){
+  public AndroidLogger() {
     tag = "Sentry";
   }
 
