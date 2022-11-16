@@ -45,7 +45,9 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       }
 
       final ISpan span = activeSpan.startChild("http.client");
-      span.setDescription(request.getMethodValue() + " " + request.getURI());
+      final String methodName =
+          request.getMethod() != null ? request.getMethod().name() : "unknown";
+      span.setDescription(methodName + " " + request.getURI());
 
       final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
 
@@ -63,8 +65,8 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       try {
         response = execution.execute(request, body);
         // handles both success and error responses
-        span.setStatus(SpanStatus.fromHttpStatusCode(response.getRawStatusCode()));
-        responseStatusCode = response.getRawStatusCode();
+        span.setStatus(SpanStatus.fromHttpStatusCode(response.getStatusCode().value()));
+        responseStatusCode = response.getStatusCode().value();
         return response;
       } catch (Throwable e) {
         // handles cases like connection errors
@@ -84,8 +86,10 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final @NotNull byte[] body,
       final @Nullable Integer responseStatusCode,
       final @Nullable ClientHttpResponse response) {
+    final String methodName = request.getMethod() != null ? request.getMethod().name() : "unknown";
+
     final Breadcrumb breadcrumb =
-        Breadcrumb.http(request.getURI().toString(), request.getMethodValue(), responseStatusCode);
+        Breadcrumb.http(request.getURI().toString(), methodName, responseStatusCode);
     breadcrumb.setData("request_body_size", body.length);
 
     final Hint hint = new Hint();

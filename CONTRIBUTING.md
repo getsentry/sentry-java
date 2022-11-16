@@ -5,7 +5,7 @@ We suggest opening an issue to discuss bigger changes before investing on a big 
 
 # Requirements
 
-The project currently requires you run JDK 11.
+The project currently requires you run JDK 17.
 
 ## Android
 

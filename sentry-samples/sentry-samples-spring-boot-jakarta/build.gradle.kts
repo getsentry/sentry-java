@@ -59,10 +59,6 @@ tasks.withType<KotlinCompile> {
     }
 }
 
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-Xlint:-deprecation")
-}
-
 task("jakartaTransformation", JavaExec::class) {
     main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
