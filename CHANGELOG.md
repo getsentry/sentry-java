@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.7.1
 
 ### Fixes
 
