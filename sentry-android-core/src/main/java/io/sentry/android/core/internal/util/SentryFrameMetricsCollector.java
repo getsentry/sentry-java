@@ -94,13 +94,15 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
         };
   }
 
+  // addOnFrameMetricsAvailableListener internally calls Activity.getWindow().getDecorView(),
+  //  which cannot be called before setContentView. That's why we call it in onActivityStarted()
   @Override
-  public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle savedInstanceState) {
-    setCurrentWindow(activity.getWindow());
-  }
+  public void onActivityCreated(@NotNull Activity activity, @Nullable Bundle savedInstanceState) {}
 
   @Override
-  public void onActivityStarted(@NotNull Activity activity) {}
+  public void onActivityStarted(@NotNull Activity activity) {
+    setCurrentWindow(activity.getWindow());
+  }
 
   @Override
   public void onActivityResumed(@NotNull Activity activity) {}
