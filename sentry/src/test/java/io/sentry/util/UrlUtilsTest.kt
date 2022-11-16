@@ -43,7 +43,7 @@ class UrlUtilsTest {
 
     @Test
     fun `strips token from query params as later param`() {
-        assertEquals("https://sentry.io?q=1&s=2&token=%s", UrlUtils.maybeStripSensitiveDataFromUrl("https://sentry.io?q=1&s=2&token=secret", false))
+        assertEquals("https://sentry.io?q=%s&s=%s&token=%s", UrlUtils.maybeStripSensitiveDataFromUrl("https://sentry.io?q=1&s=2&token=secret", false))
     }
 
     @Test
@@ -53,7 +53,7 @@ class UrlUtilsTest {
 
     @Test
     fun `strips token from query params as later param and keeps anchor`() {
-        assertEquals("https://sentry.io?q=1&s=2&token=%s#top", UrlUtils.maybeStripSensitiveDataFromUrl("https://sentry.io?q=1&s=2&token=secret#top", false))
+        assertEquals("https://sentry.io?q=%s&s=%s&token=%s#top", UrlUtils.maybeStripSensitiveDataFromUrl("https://sentry.io?q=1&s=2&token=secret#top", false))
     }
 
     @Test
@@ -63,6 +63,6 @@ class UrlUtilsTest {
 
     @Test
     fun `strips token from query params after anchor with &`() {
-        assertEquals("https://api.github.com/users/getsentry/repos/#fragment?q=1&token=%s", UrlUtils.maybeStripSensitiveDataFromUrl("https://api.github.com/users/getsentry/repos/#fragment?q=1&token=query", false))
+        assertEquals("https://api.github.com/users/getsentry/repos/#fragment?q=%s&token=%s", UrlUtils.maybeStripSensitiveDataFromUrl("https://api.github.com/users/getsentry/repos/#fragment?q=1&token=query", false))
     }
 }
