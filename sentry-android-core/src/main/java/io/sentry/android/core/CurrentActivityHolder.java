@@ -5,19 +5,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public class CurrentActivityHolder {
 
-  private static @Nullable CurrentActivityHolder instance;
+  private static @NotNull CurrentActivityHolder instance = new CurrentActivityHolder();
 
   private @Nullable WeakReference<Activity> currentActivity;
 
   public static CurrentActivityHolder getInstance() {
-    if (instance != null) {
-      return instance;
-    }
-    instance = new CurrentActivityHolder();
     return instance;
   }
 

@@ -1,14 +1,15 @@
 package io.sentry.android.core.internal.util;
 
-import static io.sentry.android.core.internal.util.ActivityUtils.isActivityValid;
-
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.os.Build;
 import android.view.View;
 import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.BuildInfoProvider;
+
 import java.io.ByteArrayOutputStream;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -16,12 +17,12 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public class ScreenshotUtils {
   public static @Nullable byte[] takeScreenshot(
-      final @Nullable Activity activity, final @NotNull ILogger logger) {
+      final @Nullable Activity activity, final @NotNull ILogger logger, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (activity == null) {
       return null;
     }
 
-    if (!isActivityValid(activity)
+    if (!isActivityValid(activity, buildInfoProvider)
         || activity.getWindow() == null
         || activity.getWindow().getDecorView() == null
         || activity.getWindow().getDecorView().getRootView() == null) {
@@ -60,5 +61,16 @@ public class ScreenshotUtils {
       logger.log(SentryLevel.ERROR, "Taking screenshot failed.", e);
     }
     return null;
+  }
+
+  public static boolean isActivityValid(final @Nullable Activity activity, final @NotNull BuildInfoProvider buildInfoProvider) {
+    if (activity == null) {
+      return false;
+    }
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+      return !activity.isFinishing() && !activity.isDestroyed();
+    } else {
+      return !activity.isFinishing();
+    }
   }
 }

@@ -30,14 +30,14 @@ public final class ScreenshotEventProcessor
 
   private final @NotNull Application application;
   private final @NotNull SentryAndroidOptions options;
-  private final @NotNull CurrentActivityHolder currentActivityHolder;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean lifecycleCallbackInstalled = true;
 
   public ScreenshotEventProcessor(
-      final @NotNull Application application, final @NotNull SentryAndroidOptions options) {
+      final @NotNull Application application, final @NotNull SentryAndroidOptions options, final @NotNull BuildInfoProvider buildInfoProvider) {
     this.application = Objects.requireNonNull(application, "Application is required");
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
-    this.currentActivityHolder = CurrentActivityHolder.getInstance();
+    this.buildInfoProvider = Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
 
     application.registerActivityLifecycleCallbacks(this);
   }
@@ -60,24 +60,24 @@ public final class ScreenshotEventProcessor
 
       return event;
     }
-    if (currentActivityHolder.getActivity() == null || HintUtils.isFromHybridSdk(hint)) {
+    if (CurrentActivityHolder.getInstance().getActivity() == null || HintUtils.isFromHybridSdk(hint)) {
       return event;
     }
 
     final byte[] screenshot =
-        takeScreenshot(currentActivityHolder.getActivity(), options.getLogger());
+        takeScreenshot(CurrentActivityHolder.getInstance().getActivity(), options.getLogger(), buildInfoProvider);
     if (screenshot == null) {
       return event;
     }
 
     hint.setScreenshot(Attachment.fromScreenshot(screenshot));
-    hint.set(ANDROID_ACTIVITY, currentActivityHolder.getActivity());
+    hint.set(ANDROID_ACTIVITY, CurrentActivityHolder.getInstance().getActivity());
     return event;
   }
 
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    currentActivityHolder.setActivity(activity);
+    CurrentActivityHolder.getInstance().setActivity(activity);
   }
 
   @Override
@@ -112,17 +112,17 @@ public final class ScreenshotEventProcessor
   public void close() throws IOException {
     if (options.isAttachScreenshot()) {
       application.unregisterActivityLifecycleCallbacks(this);
-      currentActivityHolder.clearActivity();
+      CurrentActivityHolder.getInstance().clearActivity();
     }
   }
 
   private void cleanCurrentActivity(@NonNull Activity activity) {
-    if (currentActivityHolder.getActivity() == activity) {
-      currentActivityHolder.clearActivity();
+    if (CurrentActivityHolder.getInstance().getActivity() == activity) {
+      CurrentActivityHolder.getInstance().clearActivity();
     }
   }
 
   private void setCurrentActivity(@NonNull Activity activity) {
-    currentActivityHolder.setActivity(activity);
+    CurrentActivityHolder.getInstance().setActivity(activity);
   }
 }

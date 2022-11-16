@@ -28,6 +28,7 @@ class ScreenshotEventProcessorTest {
 
     private class Fixture {
         val application = mock<Application>()
+        val buildInfo = mock<BuildInfoProvider>()
         val activity = mock<Activity>()
         val window = mock<Window>()
         val view = mock<View>()
@@ -48,7 +49,7 @@ class ScreenshotEventProcessorTest {
         fun getSut(attachScreenshot: Boolean = false): ScreenshotEventProcessor {
             options.isAttachScreenshot = attachScreenshot
 
-            return ScreenshotEventProcessor(application, options)
+            return ScreenshotEventProcessor(application, options, buildInfo)
         }
     }
 
