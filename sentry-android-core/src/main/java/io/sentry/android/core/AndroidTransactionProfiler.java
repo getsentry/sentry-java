@@ -55,7 +55,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull IHub hub;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @Nullable PackageInfo packageInfo;
   private long transactionStartNanos = 0;
   private long profileStartCpuMillis = 0;
   private boolean isInitialized = false;
@@ -79,7 +78,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     this.hub = Objects.requireNonNull(hub, "Hub is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
-    this.packageInfo = ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
   }
 
   private void init() {
@@ -247,14 +245,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return;
     }
 
-    String versionName = "";
-    String versionCode = "";
     String totalMem = "0";
     ActivityManager.MemoryInfo memInfo = getMemInfo();
-    if (packageInfo != null) {
-      versionName = ContextUtils.getVersionName(packageInfo);
-      versionCode = ContextUtils.getVersionCode(packageInfo, buildInfoProvider);
-    }
     if (memInfo != null) {
       totalMem = Long.toString(memInfo.totalMem);
     }
@@ -287,8 +279,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
             buildInfoProvider.isEmulator(),
             totalMem,
             options.getProguardUuid(),
-            versionName,
-            versionCode,
+            options.getRelease(),
             options.getEnvironment(),
             isTimeout
                 ? ProfilingTraceData.TRUNCATION_REASON_TIMEOUT

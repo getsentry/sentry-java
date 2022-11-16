@@ -28,8 +28,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   // Backgrounded reason is not used, yet, but it's one of the possible values
   @ApiStatus.Internal public static final String TRUNCATION_REASON_BACKGROUNDED = "backgrounded";
 
-  private @NotNull File traceFile;
-  private @Nullable Callable<List<Integer>> deviceCpuFrequenciesReader;
+  private final @NotNull File traceFile;
+  private final @Nullable Callable<List<Integer>> deviceCpuFrequenciesReader;
 
   // Device metadata
   private int androidApiLevel;
@@ -47,14 +47,13 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String buildId;
 
   // Transaction info
-  private @NotNull List<ProfilingTransactionData> transactions;
+  private final @NotNull List<ProfilingTransactionData> transactions;
   private @NotNull String transactionName;
   // duration_ns is a String to avoid issues with numbers and json
   private @NotNull String durationNs;
 
   // App info
-  private @NotNull String versionName;
-  private @NotNull String versionCode;
+  private @NotNull String release;
 
   // Stacktrace context
   private @NotNull String transactionId;
@@ -89,7 +88,6 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
         null,
         null,
         null,
-        null,
         TRUNCATION_REASON_NORMAL);
   }
 
@@ -107,8 +105,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       @Nullable Boolean deviceIsEmulator,
       @Nullable String devicePhysicalMemoryBytes,
       @Nullable String buildId,
-      @Nullable String versionName,
-      @Nullable String versionCode,
+      @Nullable String release,
       @Nullable String environment,
       @NotNull String truncationReason) {
     this.traceFile = traceFile;
@@ -135,8 +132,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.durationNs = durationNanos;
 
     // App info
-    this.versionName = versionName != null ? versionName : "";
-    this.versionCode = versionCode != null ? versionCode : "";
+    this.release = release != null ? release : "";
 
     // Stacktrace context
     this.transactionId = transaction.getEventId().toString();
@@ -209,12 +205,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     return transactionName;
   }
 
-  public @NotNull String getVersionName() {
-    return versionName;
-  }
-
-  public @NotNull String getVersionCode() {
-    return versionCode;
+  public @NotNull String getRelease() {
+    return release;
   }
 
   public @NotNull String getTransactionId() {
@@ -309,12 +301,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.durationNs = durationNs;
   }
 
-  public void setVersionName(@NotNull String versionName) {
-    this.versionName = versionName;
-  }
-
-  public void setVersionCode(@NotNull String versionCode) {
-    this.versionCode = versionCode;
+  public void setRelease(@NotNull String release) {
+    this.release = release;
   }
 
   public void setTransactionId(@NotNull String transactionId) {
@@ -365,7 +353,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     public static final String BUILD_ID = "build_id";
     public static final String TRANSACTION_NAME = "transaction_name";
     public static final String DURATION_NS = "duration_ns";
-    public static final String VERSION_NAME = "version_name";
+    public static final String RELEASE = "version_name";
     public static final String VERSION_CODE = "version_code";
     public static final String TRANSACTION_LIST = "transactions";
     public static final String TRANSACTION_ID = "transaction_id";
@@ -396,8 +384,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.BUILD_ID).value(buildId);
     writer.name(JsonKeys.TRANSACTION_NAME).value(transactionName);
     writer.name(JsonKeys.DURATION_NS).value(durationNs);
-    writer.name(JsonKeys.VERSION_NAME).value(versionName);
-    writer.name(JsonKeys.VERSION_CODE).value(versionCode);
+    writer.name(JsonKeys.RELEASE).value(release);
+    writer.name(JsonKeys.VERSION_CODE).value("");
     if (!transactions.isEmpty()) {
       writer.name(JsonKeys.TRANSACTION_LIST).value(logger, transactions);
     }
@@ -533,16 +521,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
               data.durationNs = durationNs;
             }
             break;
-          case JsonKeys.VERSION_NAME:
+          case JsonKeys.RELEASE:
             String versionName = reader.nextStringOrNull();
             if (versionName != null) {
-              data.versionName = versionName;
-            }
-            break;
-          case JsonKeys.VERSION_CODE:
-            String versionCode = reader.nextStringOrNull();
-            if (versionCode != null) {
-              data.versionCode = versionCode;
+              data.release = versionName;
             }
             break;
           case JsonKeys.TRANSACTION_LIST:

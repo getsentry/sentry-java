@@ -504,8 +504,7 @@ class JsonSerializerTest {
         profilingTraceData.buildId = "buildId"
         profilingTraceData.transactionName = "transactionName"
         profilingTraceData.durationNs = "100"
-        profilingTraceData.versionName = "versionName"
-        profilingTraceData.versionCode = "versionCode"
+        profilingTraceData.release = "release"
         profilingTraceData.transactionId = "transactionId"
         profilingTraceData.traceId = "traceId"
         profilingTraceData.profileId = "profileId"
@@ -533,8 +532,8 @@ class JsonSerializerTest {
         assertEquals("buildId", element["build_id"] as String)
         assertEquals("transactionName", element["transaction_name"] as String)
         assertEquals("100", element["duration_ns"] as String)
-        assertEquals("versionName", element["version_name"] as String)
-        assertEquals("versionCode", element["version_code"] as String)
+        assertEquals("release", element["version_name"] as String)
+        assertEquals("", element["version_code"] as String)
         assertEquals("transactionId", element["transaction_id"] as String)
         assertEquals("traceId", element["trace_id"] as String)
         assertEquals("profileId", element["profile_id"] as String)
@@ -576,8 +575,8 @@ class JsonSerializerTest {
                             ],
                             "transaction_name":"transactionName",
                             "duration_ns":"100",
-                            "version_name":"versionName",
-                            "version_code":"versionCode",
+                            "version_name":"release",
+                            "version_code":"",
                             "transaction_id":"transactionId",
                             "trace_id":"traceId",
                             "profile_id":"profileId",
@@ -618,8 +617,7 @@ class JsonSerializerTest {
         assertEquals(expectedTransactions, profilingTraceData.transactions)
         assertEquals("transactionName", profilingTraceData.transactionName)
         assertEquals("100", profilingTraceData.durationNs)
-        assertEquals("versionName", profilingTraceData.versionName)
-        assertEquals("versionCode", profilingTraceData.versionCode)
+        assertEquals("release", profilingTraceData.release)
         assertEquals("transactionId", profilingTraceData.transactionId)
         assertEquals("traceId", profilingTraceData.traceId)
         assertEquals("profileId", profilingTraceData.profileId)
