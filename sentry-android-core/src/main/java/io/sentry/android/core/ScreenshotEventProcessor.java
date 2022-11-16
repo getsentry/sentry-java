@@ -34,10 +34,13 @@ public final class ScreenshotEventProcessor
   private boolean lifecycleCallbackInstalled = true;
 
   public ScreenshotEventProcessor(
-      final @NotNull Application application, final @NotNull SentryAndroidOptions options, final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull Application application,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this.application = Objects.requireNonNull(application, "Application is required");
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
-    this.buildInfoProvider = Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+    this.buildInfoProvider =
+        Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
 
     application.registerActivityLifecycleCallbacks(this);
   }
@@ -60,12 +63,16 @@ public final class ScreenshotEventProcessor
 
       return event;
     }
-    if (CurrentActivityHolder.getInstance().getActivity() == null || HintUtils.isFromHybridSdk(hint)) {
+    if (CurrentActivityHolder.getInstance().getActivity() == null
+        || HintUtils.isFromHybridSdk(hint)) {
       return event;
     }
 
     final byte[] screenshot =
-        takeScreenshot(CurrentActivityHolder.getInstance().getActivity(), options.getLogger(), buildInfoProvider);
+        takeScreenshot(
+            CurrentActivityHolder.getInstance().getActivity(),
+            options.getLogger(),
+            buildInfoProvider);
     if (screenshot == null) {
       return event;
     }

@@ -9,7 +9,6 @@ import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
-
 import java.io.ByteArrayOutputStream;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +16,9 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public class ScreenshotUtils {
   public static @Nullable byte[] takeScreenshot(
-      final @Nullable Activity activity, final @NotNull ILogger logger, final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @Nullable Activity activity,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     if (activity == null) {
       return null;
     }
@@ -63,7 +64,8 @@ public class ScreenshotUtils {
     return null;
   }
 
-  public static boolean isActivityValid(final @Nullable Activity activity, final @NotNull BuildInfoProvider buildInfoProvider) {
+  public static boolean isActivityValid(
+      final @Nullable Activity activity, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (activity == null) {
       return false;
     }
