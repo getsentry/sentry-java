@@ -10,7 +10,15 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class AndroidLogger implements ILogger {
 
-  private static final String tag = "Sentry";
+  private final String tag;
+
+  public AndroidLogger(){
+    tag = "Sentry";
+  }
+
+  public AndroidLogger(@NotNull String tag) {
+    this.tag = tag;
+  }
 
   @SuppressWarnings("AnnotateFormatMethod")
   @Override
