@@ -22,6 +22,14 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
+	public fun <init> ()V
+	public fun isEnabled (Lio/sentry/SentryLevel;)Z
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
+}
+
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V

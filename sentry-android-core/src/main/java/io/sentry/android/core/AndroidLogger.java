@@ -3,10 +3,12 @@ package io.sentry.android.core;
 import android.util.Log;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class AndroidLogger implements ILogger {
+@ApiStatus.Internal
+public final class AndroidLogger implements ILogger {
 
   private static final String tag = "Sentry";
 
