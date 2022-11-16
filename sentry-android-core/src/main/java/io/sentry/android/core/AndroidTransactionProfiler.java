@@ -6,7 +6,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
-import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.os.Debug;
 import android.os.Process;
