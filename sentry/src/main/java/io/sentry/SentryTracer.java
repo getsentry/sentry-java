@@ -665,7 +665,7 @@ public final class SentryTracer implements ITransaction {
 
   @ApiStatus.Internal
   @Override
-  public void setContext(@NotNull String key, @NotNull Object context) {
+  public void setContext(final @NotNull String key, final @NotNull Object context) {
     contexts.put(key, context);
   }
 

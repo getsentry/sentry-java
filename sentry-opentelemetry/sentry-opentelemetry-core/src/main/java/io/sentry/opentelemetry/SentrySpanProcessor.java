@@ -235,8 +235,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
     return Sentry.isEnabled();
   }
 
-  private @NotNull Map<String, Object> toMapWithStringKeys(@Nullable Attributes attributes) {
-    @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>();
+  private @NotNull Map<String, Object> toMapWithStringKeys(final @Nullable Attributes attributes) {
+    final @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>();
 
     if (attributes != null) {
       attributes.forEach(
