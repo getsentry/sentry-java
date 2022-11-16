@@ -19,21 +19,18 @@ public final class HintUtils {
 
   private HintUtils() {}
 
-  @ApiStatus.Internal
-  public static void setIsFromHybridSdk(Hint hint, String sdkName) {
+  public static void setIsFromHybridSdk(@NotNull Hint hint, @NotNull String sdkName) {
     if (sdkName.startsWith(SENTRY_REACT_NATIVE_SDK_NAME)
         || sdkName.startsWith(SENTRY_DART_SDK_NAME)) {
       HintUtils.setIsFromHybridSdk(hint, true);
     }
   }
 
-  @ApiStatus.Internal
-  public static void setIsFromHybridSdk(Hint hint, boolean isFromHybridSdk) {
+  public static void setIsFromHybridSdk(@NotNull Hint hint, boolean isFromHybridSdk) {
     hint.set(SENTRY_IS_FROM_HYBRID_SDK, isFromHybridSdk);
   }
 
-  @ApiStatus.Internal
-  public static boolean getIsFromHybridSdk(Hint hint) {
+  public static boolean isFromHybridSdk(@NotNull Hint hint) {
     return Boolean.TRUE.equals(hint.getAs(SENTRY_IS_FROM_HYBRID_SDK, Boolean.class));
   }
 

@@ -1,0 +1,64 @@
+package io.sentry.android.core.internal.util;
+
+import static io.sentry.android.core.internal.util.ActivityUtils.isActivityValid;
+
+import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.view.View;
+import androidx.annotation.Nullable;
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
+import java.io.ByteArrayOutputStream;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+
+@ApiStatus.Internal
+public class ScreenshotUtils {
+  public static @Nullable byte[] takeScreenshot(
+      final @Nullable Activity activity, final @NotNull ILogger logger) {
+    if (activity == null) {
+      return null;
+    }
+
+    if (!isActivityValid(activity)
+        || activity.getWindow() == null
+        || activity.getWindow().getDecorView() == null
+        || activity.getWindow().getDecorView().getRootView() == null) {
+      logger.log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
+      return null;
+    }
+
+    final View view = activity.getWindow().getDecorView().getRootView();
+    if (view.getWidth() <= 0 || view.getHeight() <= 0) {
+      logger.log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
+      return null;
+    }
+
+    try {
+      // ARGB_8888 -> This configuration is very flexible and offers the best quality
+      final Bitmap bitmap =
+          Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+
+      final Canvas canvas = new Canvas(bitmap);
+      view.draw(canvas);
+
+      final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+      // 0 meaning compress for small size, 100 meaning compress for max quality.
+      // Some formats, like PNG which is lossless, will ignore the quality setting.
+      bitmap.compress(Bitmap.CompressFormat.PNG, 0, byteArrayOutputStream);
+
+      if (byteArrayOutputStream.size() <= 0) {
+        logger.log(SentryLevel.DEBUG, "Screenshot is 0 bytes, not attaching the image.");
+        return null;
+      }
+
+      // screenshot png is around ~100-150 kb
+      return byteArrayOutputStream.toByteArray();
+    } catch (Throwable e) {
+      logger.log(SentryLevel.ERROR, "Taking screenshot failed.", e);
+    }
+    return null;
+  }
+}

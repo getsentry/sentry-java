@@ -72,6 +72,14 @@ public final class io/sentry/android/core/BuildInfoProvider {
 	public fun isEmulator ()Ljava/lang/Boolean;
 }
 
+public class io/sentry/android/core/CurrentActivityHolder {
+	public fun <init> ()V
+	public fun clearActivity ()V
+	public fun getActivity ()Landroid/app/Activity;
+	public static fun getInstance ()Lio/sentry/android/core/CurrentActivityHolder;
+	public fun setActivity (Landroid/app/Activity;)V
+}
+
 public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> ()V
 	public fun close ()V
@@ -105,10 +113,8 @@ public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/
 }
 
 public final class io/sentry/android/core/ScreenshotEventProcessor : android/app/Application$ActivityLifecycleCallbacks, io/sentry/EventProcessor, java/io/Closeable {
-	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun close ()V
-	public static fun createInstance (Landroid/app/Application;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)Lio/sentry/android/core/ScreenshotEventProcessor;
-	public static fun getInstance ()Lio/sentry/android/core/ScreenshotEventProcessor;
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V
@@ -117,8 +123,6 @@ public final class io/sentry/android/core/ScreenshotEventProcessor : android/app
 	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onActivityStopped (Landroid/app/Activity;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
-	public fun setCurrentActivity (Landroid/app/Activity;)V
-	public fun takeScreenshot ()[B
 }
 
 public final class io/sentry/android/core/SentryAndroid {
