@@ -139,10 +139,8 @@ object Config {
     }
 
     object TestLibs {
-        // todo These rc versions are needed to run ui tests on Android 13.
-        //  They will be replaced by stable version when 1.5.0/3.5.0 will be out.
-        private val androidxTestVersion = "1.5.0-rc01"
-        private val espressoVersion = "3.5.0-rc01"
+        private val androidxTestVersion = "1.5.0"
+        private val espressoVersion = "3.5.0"
 
         val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
