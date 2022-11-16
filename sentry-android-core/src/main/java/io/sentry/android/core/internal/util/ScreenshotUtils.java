@@ -1,5 +1,6 @@
 package io.sentry.android.core.internal.util;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -64,6 +65,7 @@ public class ScreenshotUtils {
     return null;
   }
 
+  @SuppressLint("NewApi")
   public static boolean isActivityValid(
       final @Nullable Activity activity, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (activity == null) {
