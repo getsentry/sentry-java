@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add ttid span to ActivityLifecycleIntegration ([#2369](https://github.com/getsentry/sentry-java/pull/2369))
+
 ## 6.7.1
 
 ### Fixes
