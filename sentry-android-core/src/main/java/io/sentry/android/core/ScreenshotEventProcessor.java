@@ -116,13 +116,13 @@ public final class ScreenshotEventProcessor
     }
   }
 
-  private void setCurrentActivity(@NonNull Activity activity) {
-    currentActivityHolder.setActivity(activity);
-  }
-
   private void cleanCurrentActivity(@NonNull Activity activity) {
     if (currentActivityHolder.getActivity() == activity) {
       currentActivityHolder.clearActivity();
     }
+  }
+
+  private void setCurrentActivity(@NonNull Activity activity) {
+    currentActivityHolder.setActivity(activity);
   }
 }
