@@ -1,8 +1,9 @@
 package io.sentry.util;
 
 import static io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME;
+import static io.sentry.TypeCheckHint.SENTRY_DOTNET_SDK_NAME;
 import static io.sentry.TypeCheckHint.SENTRY_IS_FROM_HYBRID_SDK;
-import static io.sentry.TypeCheckHint.SENTRY_REACT_NATIVE_SDK_NAME;
+import static io.sentry.TypeCheckHint.SENTRY_JAVASCRIPT_SDK_NAME;
 import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import io.sentry.Hint;
@@ -20,14 +21,11 @@ public final class HintUtils {
   private HintUtils() {}
 
   public static void setIsFromHybridSdk(@NotNull Hint hint, @NotNull String sdkName) {
-    if (sdkName.startsWith(SENTRY_REACT_NATIVE_SDK_NAME)
-        || sdkName.startsWith(SENTRY_DART_SDK_NAME)) {
-      HintUtils.setIsFromHybridSdk(hint, true);
+    if (sdkName.startsWith(SENTRY_JAVASCRIPT_SDK_NAME)
+        || sdkName.startsWith(SENTRY_DART_SDK_NAME)
+        || sdkName.startsWith(SENTRY_DOTNET_SDK_NAME)) {
+      hint.set(SENTRY_IS_FROM_HYBRID_SDK, true);
     }
-  }
-
-  public static void setIsFromHybridSdk(@NotNull Hint hint, boolean isFromHybridSdk) {
-    hint.set(SENTRY_IS_FROM_HYBRID_SDK, isFromHybridSdk);
   }
 
   public static boolean isFromHybridSdk(@NotNull Hint hint) {

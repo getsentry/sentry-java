@@ -17,13 +17,9 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public class ScreenshotUtils {
   public static @Nullable byte[] takeScreenshot(
-      final @Nullable Activity activity,
+      final @NotNull Activity activity,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (activity == null) {
-      return null;
-    }
-
     if (!isActivityValid(activity, buildInfoProvider)
         || activity.getWindow() == null
         || activity.getWindow().getDecorView() == null

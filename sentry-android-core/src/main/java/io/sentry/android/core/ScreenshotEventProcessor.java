@@ -63,7 +63,7 @@ public final class ScreenshotEventProcessor
 
       return event;
     }
-    final Activity activity = CurrentActivityHolder.getInstance().getActivity()
+    final Activity activity = CurrentActivityHolder.getInstance().getActivity();
     if (activity == null
         || HintUtils.isFromHybridSdk(hint)) {
       return event;
