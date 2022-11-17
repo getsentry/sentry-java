@@ -63,14 +63,15 @@ public final class ScreenshotEventProcessor
 
       return event;
     }
-    if (CurrentActivityHolder.getInstance().getActivity() == null
+    final Activity activity = CurrentActivityHolder.getInstance().getActivity()
+    if (activity == null
         || HintUtils.isFromHybridSdk(hint)) {
       return event;
     }
 
     final byte[] screenshot =
         takeScreenshot(
-            CurrentActivityHolder.getInstance().getActivity(),
+            activity,
             options.getLogger(),
             buildInfoProvider);
     if (screenshot == null) {
@@ -78,7 +79,7 @@ public final class ScreenshotEventProcessor
     }
 
     hint.setScreenshot(Attachment.fromScreenshot(screenshot));
-    hint.set(ANDROID_ACTIVITY, CurrentActivityHolder.getInstance().getActivity());
+    hint.set(ANDROID_ACTIVITY, activity);
     return event;
   }
 

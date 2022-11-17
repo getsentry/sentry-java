@@ -66,7 +66,7 @@ public class ScreenshotUtils {
   }
 
   @SuppressLint("NewApi")
-  public static boolean isActivityValid(
+  private static boolean isActivityValid(
       final @Nullable Activity activity, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (activity == null) {
       return false;

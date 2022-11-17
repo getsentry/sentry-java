@@ -10,13 +10,13 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class AndroidLogger implements ILogger {
 
-  private final String tag;
+  private final @NotNull String tag;
 
   public AndroidLogger() {
     this("Sentry");
   }
 
-  public AndroidLogger(@NotNull String tag) {
+  public AndroidLogger(final @NotNull String tag) {
     this.tag = tag;
   }
 
