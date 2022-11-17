@@ -63,10 +63,7 @@ public class ScreenshotUtils {
 
   @SuppressLint("NewApi")
   private static boolean isActivityValid(
-      final @Nullable Activity activity, final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (activity == null) {
-      return false;
-    }
+      final @NotNull Activity activity, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
       return !activity.isFinishing() && !activity.isDestroyed();
     } else {

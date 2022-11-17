@@ -20,7 +20,7 @@ public final class HintUtils {
 
   private HintUtils() {}
 
-  public static void setIsFromHybridSdk(@NotNull Hint hint, @NotNull String sdkName) {
+  public static void setIsFromHybridSdk(final @NotNull Hint hint, final @NotNull String sdkName) {
     if (sdkName.startsWith(SENTRY_JAVASCRIPT_SDK_NAME)
         || sdkName.startsWith(SENTRY_DART_SDK_NAME)
         || sdkName.startsWith(SENTRY_DOTNET_SDK_NAME)) {
@@ -28,7 +28,7 @@ public final class HintUtils {
     }
   }
 
-  public static boolean isFromHybridSdk(@NotNull Hint hint) {
+  public static boolean isFromHybridSdk(final @NotNull Hint hint) {
     return Boolean.TRUE.equals(hint.getAs(SENTRY_IS_FROM_HYBRID_SDK, Boolean.class));
   }
 

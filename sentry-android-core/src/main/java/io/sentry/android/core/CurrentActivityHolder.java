@@ -10,11 +10,11 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public class CurrentActivityHolder {
 
-  private static @NotNull CurrentActivityHolder instance = new CurrentActivityHolder();
+  private static final @NotNull CurrentActivityHolder instance = new CurrentActivityHolder();
 
   private @Nullable WeakReference<Activity> currentActivity;
 
-  public static CurrentActivityHolder getInstance() {
+  public static @NonNull CurrentActivityHolder getInstance() {
     return instance;
   }
 
@@ -25,7 +25,7 @@ public class CurrentActivityHolder {
     return null;
   }
 
-  public void setActivity(@NonNull Activity activity) {
+  public void setActivity(final @NonNull Activity activity) {
     if (currentActivity != null && currentActivity.get() == activity) {
       return;
     }
