@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryFrameMetricsCollector implements Application.ActivityLifecycleCallbacks {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull Set<Window> trackedWindows = new HashSet<>();
+  private final @NotNull SentryOptions options;
   private @Nullable Handler handler;
   private @Nullable WeakReference<Window> currentWindow;
   private final @NotNull HashMap<String, FrameMetricsCollectorListener> listenerMap =
@@ -54,7 +55,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull WindowFrameMetricsManager windowFrameMetricsManager) {
     Objects.requireNonNull(context, "The context is required");
-    Objects.requireNonNull(options, "SentryOptions is required");
+    this.options = Objects.requireNonNull(options, "SentryOptions is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.windowFrameMetricsManager =
@@ -151,8 +152,14 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     }
     if (trackedWindows.contains(window)) {
       if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N) {
-        windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
-            window, frameMetricsAvailableListener);
+        try {
+          windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
+              window, frameMetricsAvailableListener);
+        } catch (Exception e) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
+        }
       }
       trackedWindows.remove(window);
     }
