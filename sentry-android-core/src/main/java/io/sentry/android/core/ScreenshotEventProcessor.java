@@ -64,16 +64,11 @@ public final class ScreenshotEventProcessor
       return event;
     }
     final Activity activity = CurrentActivityHolder.getInstance().getActivity();
-    if (activity == null
-        || HintUtils.isFromHybridSdk(hint)) {
+    if (activity == null || HintUtils.isFromHybridSdk(hint)) {
       return event;
     }
 
-    final byte[] screenshot =
-        takeScreenshot(
-            activity,
-            options.getLogger(),
-            buildInfoProvider);
+    final byte[] screenshot = takeScreenshot(activity, options.getLogger(), buildInfoProvider);
     if (screenshot == null) {
       return event;
     }
