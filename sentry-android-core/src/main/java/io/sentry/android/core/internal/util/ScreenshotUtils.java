@@ -34,15 +34,13 @@ public class ScreenshotUtils {
       return null;
     }
 
-    try {
+    try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
       // ARGB_8888 -> This configuration is very flexible and offers the best quality
       final Bitmap bitmap =
           Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
 
       final Canvas canvas = new Canvas(bitmap);
       view.draw(canvas);
-
-      final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
       // 0 meaning compress for small size, 100 meaning compress for max quality.
       // Some formats, like PNG which is lossless, will ignore the quality setting.
