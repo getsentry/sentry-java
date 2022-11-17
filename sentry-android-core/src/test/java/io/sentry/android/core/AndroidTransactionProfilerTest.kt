@@ -71,7 +71,21 @@ class AndroidTransactionProfilerTest {
     @BeforeTest
     fun `set up`() {
         context = ApplicationProvider.getApplicationContext()
-        AndroidOptionsInitializer.init(fixture.options, context, fixture.mockLogger, false, false)
+        val buildInfoProvider = BuildInfoProvider(fixture.mockLogger)
+        AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
+            fixture.options,
+            context,
+            fixture.mockLogger,
+            buildInfoProvider
+        )
+        AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
+            fixture.options,
+            context,
+            buildInfoProvider,
+            LoadClass(),
+            false,
+            false
+        )
         // Profiler doesn't start if the folder doesn't exists.
         // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
         File(fixture.options.profilingTracesDirPath!!).mkdirs()

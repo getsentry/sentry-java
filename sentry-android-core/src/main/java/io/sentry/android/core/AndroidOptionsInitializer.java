@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.os.Build;
+import androidx.annotation.NonNull;
 import io.sentry.ILogger;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
@@ -24,6 +25,7 @@ import java.io.InputStream;
 import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Android Options initializer, it reads configurations from AndroidManifest and sets to the
@@ -41,35 +43,10 @@ final class AndroidOptionsInitializer {
    * @param options the SentryAndroidOptions
    * @param context the Application context
    */
-  static void init(final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
-    Objects.requireNonNull(context, "The application context is required.");
-    Objects.requireNonNull(options, "The options object is required.");
-
-    init(options, context, new AndroidLogger(), false, false);
-  }
-
-  /**
-   * Init method of the Android Options initializer
-   *
-   * @param options the SentryAndroidOptions
-   * @param context the Application context
-   * @param logger the ILogger interface
-   * @param isFragmentAvailable whether the Fragment integration is available on the classpath
-   * @param isTimberAvailable whether the Timber integration is available on the classpath
-   */
-  static void init(
-      final @NotNull SentryAndroidOptions options,
-      @NotNull Context context,
-      final @NotNull ILogger logger,
-      final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
-    init(
-        options,
-        context,
-        logger,
-        new BuildInfoProvider(logger),
-        isFragmentAvailable,
-        isTimberAvailable);
+  static void loadDefaultAndMetadataOptions(
+      final @NotNull SentryAndroidOptions options, @NotNull Context context) {
+    final ILogger logger = new AndroidLogger();
+    loadDefaultAndMetadataOptions(options, context, logger, new BuildInfoProvider(logger));
   }
 
   /**
@@ -79,45 +56,12 @@ final class AndroidOptionsInitializer {
    * @param context the Application context
    * @param logger the ILogger interface
    * @param buildInfoProvider the BuildInfoProvider interface
-   * @param isFragmentAvailable whether the Fragment integration is available on the classpath
-   * @param isTimberAvailable whether the Timber integration is available on the classpath
    */
-  static void init(
+  static void loadDefaultAndMetadataOptions(
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
-    init(
-        options,
-        context,
-        logger,
-        buildInfoProvider,
-        new LoadClass(),
-        isFragmentAvailable,
-        isTimberAvailable);
-  }
-
-  /**
-   * Init method of the Android Options initializer
-   *
-   * @param options the SentryAndroidOptions
-   * @param context the Application context
-   * @param logger the ILogger interface
-   * @param buildInfoProvider the BuildInfoProvider interface
-   * @param loadClass the LoadClass wrapper
-   * @param isFragmentAvailable whether the Fragment integration is available on the classpath
-   * @param isTimberAvailable whether the Timber integration is available on the classpath
-   */
-  static void init(
-      final @NotNull SentryAndroidOptions options,
-      @NotNull Context context,
-      final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
-      final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
     // it returns null if ContextImpl, so let's check for nullability
@@ -135,6 +79,28 @@ final class AndroidOptionsInitializer {
     initializeCacheDirs(context, options);
     options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
 
+    readDefaultOptionValues(options, context, buildInfoProvider);
+  }
+
+  @TestOnly
+  static void initializeIntegrationsAndProcessors(
+      @NonNull SentryAndroidOptions options, @NonNull Context context) {
+    initializeIntegrationsAndProcessors(
+        options,
+        context,
+        new BuildInfoProvider(new AndroidLogger()),
+        new LoadClass(),
+        false,
+        false);
+  }
+
+  static void initializeIntegrationsAndProcessors(
+      @NonNull SentryAndroidOptions options,
+      @NonNull Context context,
+      @NonNull BuildInfoProvider buildInfoProvider,
+      @NonNull LoadClass loadClass,
+      boolean isFragmentAvailable,
+      boolean isTimberAvailable) {
     final ActivityFramesTracker activityFramesTracker =
         new ActivityFramesTracker(loadClass, options);
 
@@ -146,8 +112,6 @@ final class AndroidOptionsInitializer {
         activityFramesTracker,
         isFragmentAvailable,
         isTimberAvailable);
-
-    readDefaultOptionValues(options, context, buildInfoProvider);
 
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
