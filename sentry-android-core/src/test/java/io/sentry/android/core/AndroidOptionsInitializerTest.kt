@@ -80,13 +80,13 @@ class AndroidOptionsInitializerTest {
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 sentryOptions,
-                mockContext,
+                context,
                 logger,
                 buildInfo
             )
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
                 sentryOptions,
-                mockContext,
+                context,
                 buildInfo,
                 createClassMock(classToLoad),
                 isFragmentAvailable,
@@ -410,7 +410,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `When Frames Tracking is disabled, the Activity Frames Tracker should not be available`() {
-        fixture.initSut(hasAppContext = true, configureOptions = {
+        fixture.initSut(hasAppContext = true, useRealContext = true, configureOptions = {
             isEnableFramesTracking = false
         })
 
