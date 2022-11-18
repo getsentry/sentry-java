@@ -24,6 +24,7 @@ abstract class BaseBenchmarkTest {
         runner.runOnMainSync {
             choreographer = Choreographer.getInstance()
         }
+
         // We need the refresh rate, but we can get it only from the activity, so we start and destroy one
         val benchmarkScenario = launchActivity<BenchmarkActivity>()
         benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
