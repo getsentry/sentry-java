@@ -13,6 +13,7 @@ import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -124,8 +125,10 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
+    final SentryFrameMetricsCollector frameMetricsCollector =
+        new SentryFrameMetricsCollector(context, options, buildInfoProvider);
     options.setTransactionProfiler(
-        new AndroidTransactionProfiler(context, options, buildInfoProvider));
+        new AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector));
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
   }
 
