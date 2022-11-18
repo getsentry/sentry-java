@@ -17,6 +17,7 @@ import io.sentry.util.Objects;
 import java.io.File;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class AndroidEnvelopeCache extends EnvelopeCache {
@@ -56,6 +57,11 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
         writeStartupCrashMarkerFile();
       }
     }
+  }
+
+  @TestOnly
+  public @NotNull File getDirectory() {
+    return directory;
   }
 
   private void writeStartupCrashMarkerFile() {

@@ -5,6 +5,7 @@
 ### Fixes
 
 - Remove profiler main thread io ([#2348](https://github.com/getsentry/sentry-java/pull/2348))
+- Fix ensure all options are processed before integrations are loaded ([#2377](https://github.com/getsentry/sentry-java/pull/2377))
 
 ### Features
 
