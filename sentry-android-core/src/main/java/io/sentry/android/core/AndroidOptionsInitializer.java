@@ -43,6 +43,7 @@ final class AndroidOptionsInitializer {
    * @param options the SentryAndroidOptions
    * @param context the Application context
    */
+  @TestOnly
   static void loadDefaultAndMetadataOptions(
       final @NotNull SentryAndroidOptions options, @NotNull Context context) {
     final ILogger logger = new AndroidLogger();
