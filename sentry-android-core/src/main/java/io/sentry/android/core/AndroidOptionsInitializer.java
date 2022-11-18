@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.os.Build;
-import androidx.annotation.NonNull;
 import io.sentry.ILogger;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
@@ -45,7 +44,7 @@ final class AndroidOptionsInitializer {
    */
   @TestOnly
   static void loadDefaultAndMetadataOptions(
-      final @NotNull SentryAndroidOptions options, @NotNull Context context) {
+      final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
     final ILogger logger = new AndroidLogger();
     loadDefaultAndMetadataOptions(options, context, logger, new BuildInfoProvider(logger));
   }
@@ -85,7 +84,7 @@ final class AndroidOptionsInitializer {
 
   @TestOnly
   static void initializeIntegrationsAndProcessors(
-      @NonNull SentryAndroidOptions options, @NonNull Context context) {
+      final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
     initializeIntegrationsAndProcessors(
         options,
         context,
@@ -96,12 +95,12 @@ final class AndroidOptionsInitializer {
   }
 
   static void initializeIntegrationsAndProcessors(
-      @NonNull SentryAndroidOptions options,
-      @NonNull Context context,
-      @NonNull BuildInfoProvider buildInfoProvider,
-      @NonNull LoadClass loadClass,
-      boolean isFragmentAvailable,
-      boolean isTimberAvailable) {
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull LoadClass loadClass,
+      final boolean isFragmentAvailable,
+      final boolean isTimberAvailable) {
     final ActivityFramesTracker activityFramesTracker =
         new ActivityFramesTracker(loadClass, options);
 
