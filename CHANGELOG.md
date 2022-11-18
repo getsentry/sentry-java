@@ -5,6 +5,11 @@
 ### Features
 
 - Add ttid span to ActivityLifecycleIntegration ([#2369](https://github.com/getsentry/sentry-java/pull/2369))
+- Add FrameMetrics to Android profiling data ([#2342](https://github.com/getsentry/sentry-java/pull/2342))
+
+### Fixes
+
+- Remove profiler main thread io ([#2348](https://github.com/getsentry/sentry-java/pull/2348))
 
 ## 6.7.1
 
@@ -17,6 +22,8 @@
 
 ### Features
 
+- Don't set device name on Android if `sendDefaultPii` is disabled ([#2354](https://github.com/getsentry/sentry-java/pull/2354))
+- Fix corrupted UUID on Motorola devices ([#2363](https://github.com/getsentry/sentry-java/pull/2363))
 - Update Spring Boot Jakarta to Spring Boot 3.0.0-RC2 ([#2347](https://github.com/getsentry/sentry-java/pull/2347))
 
 ## 6.7.0
