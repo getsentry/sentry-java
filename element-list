@@ -11,6 +11,7 @@ io.sentry.jul
 io.sentry.log4j2
 io.sentry.logback
 io.sentry.openfeign
+io.sentry.profilemeasurements
 io.sentry.protocol
 io.sentry.servlet
 io.sentry.servlet.jakarta
