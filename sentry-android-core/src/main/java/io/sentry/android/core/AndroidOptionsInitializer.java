@@ -15,6 +15,7 @@ import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -77,7 +78,6 @@ final class AndroidOptionsInitializer {
 
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
-    options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
 
     readDefaultOptionValues(options, context, buildInfoProvider);
   }
@@ -101,6 +101,12 @@ final class AndroidOptionsInitializer {
       final @NotNull LoadClass loadClass,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable) {
+
+    if (options.getCacheDirPath() != null
+        && options.getEnvelopeDiskCache() instanceof NoOpEnvelopeCache) {
+      options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
+    }
+
     final ActivityFramesTracker activityFramesTracker =
         new ActivityFramesTracker(loadClass, options);
 
