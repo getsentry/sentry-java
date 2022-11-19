@@ -4,11 +4,13 @@ import io.sentry.protocol.SentryStackFrame;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** class responsible for converting Java StackTraceElements to SentryStackFrames */
-final class SentryStackTraceFactory {
+@ApiStatus.Internal
+public final class SentryStackTraceFactory {
 
   /** list of inApp excludes */
   private final @Nullable List<String> inAppExcludes;
@@ -29,7 +31,7 @@ final class SentryStackTraceFactory {
    * @return list of SentryStackFrames or null if none
    */
   @Nullable
-  List<SentryStackFrame> getStackFrames(@Nullable final StackTraceElement[] elements) {
+  public List<SentryStackFrame> getStackFrames(@Nullable final StackTraceElement[] elements) {
     List<SentryStackFrame> sentryStackFrames = null;
 
     if (elements != null && elements.length > 0) {

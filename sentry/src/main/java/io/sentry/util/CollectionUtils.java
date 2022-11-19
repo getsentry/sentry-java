@@ -121,6 +121,23 @@ public final class CollectionUtils {
   }
 
   /**
+   * Returns a new list which entries match a predicate specified by a parameter.
+   *
+   * @param predicate - the predicate
+   * @return a new map
+   */
+  public static @NotNull <T> List<T> filterListEntries(
+    final @NotNull List<T> list, final @NotNull Predicate<T> predicate) {
+    final List<T> filteredList = new ArrayList<>();
+    for (final T entry : list) {
+      if (predicate.test(entry)) {
+        filteredList.add(entry);
+      }
+    }
+    return filteredList;
+  }
+
+  /**
    * A simplified copy of Java 8 Predicate.
    *
    * @param <T> the type

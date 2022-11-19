@@ -3,7 +3,10 @@ package io.sentry.instrumentation.file;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.SentryOptions;
+import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanStatus;
+import io.sentry.protocol.SentryStackFrame;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Platform;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -11,6 +14,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -95,8 +100,21 @@ final class FileIOSpanManager {
         currentSpan.setDescription(byteCountToString);
       }
       currentSpan.setData("file.size", byteCount);
-      currentSpan.setData("ui_thread", options.getMainThreadChecker().isMainThread());
+      currentSpan.setData("blocked_ui_thread", options.getMainThreadChecker().isMainThread());
+      attachStacktrace();
       currentSpan.finish(spanStatus);
+    }
+  }
+
+  private void attachStacktrace() {
+    final SentryStackTraceFactory sentryStackTraceFactory =
+      new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
+    final StackTraceElement[] stacktrace = new Exception().getStackTrace();
+    final List<SentryStackFrame> frames = sentryStackTraceFactory.getStackFrames(stacktrace);
+    if (currentSpan != null && frames != null) {
+      final List<SentryStackFrame> relevantFrames =
+        CollectionUtils.filterListEntries(frames, (frame) -> Boolean.TRUE.equals(frame.isInApp()));
+      currentSpan.setData("call_stack", relevantFrames);
     }
   }
 
