@@ -198,7 +198,7 @@ class SentryFragmentLifecycleCallbacksTest {
                 assertEquals(SentryFragmentLifecycleCallbacks.FRAGMENT_LOAD_OP, it)
             },
             check {
-                assertEquals("Fragment", it)
+                assertEquals("androidx.fragment.app.Fragment", it)
             }
         )
     }
