@@ -1,6 +1,6 @@
 ##---------------Begin: proguard configuration for Fragment  ----------
 
-# The Android SDK checks at runtime if this class is available via Class.forName
+# The Android SDK checks at runtime if these classes are available via Class.forName
 -keep class io.sentry.android.fragment.FragmentLifecycleIntegration { <init>(...); }
 -keepnames class androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks
 
