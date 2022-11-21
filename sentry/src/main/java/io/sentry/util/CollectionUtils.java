@@ -124,7 +124,7 @@ public final class CollectionUtils {
    * Returns a new list which entries match a predicate specified by a parameter.
    *
    * @param predicate - the predicate
-   * @return a new map
+   * @return a new list
    */
   public static @NotNull <T> List<T> filterListEntries(
     final @NotNull List<T> list, final @NotNull Predicate<T> predicate) {

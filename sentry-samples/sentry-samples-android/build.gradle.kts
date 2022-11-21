@@ -69,8 +69,6 @@ android {
 
     buildTypes {
         getByName("debug") {
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             addManifestPlaceholders(
                 mapOf(
                     "sentryDebug" to true,

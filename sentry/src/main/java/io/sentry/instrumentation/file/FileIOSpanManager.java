@@ -113,7 +113,15 @@ final class FileIOSpanManager {
     final List<SentryStackFrame> frames = sentryStackTraceFactory.getStackFrames(stacktrace);
     if (currentSpan != null && frames != null) {
       final List<SentryStackFrame> relevantFrames =
-        CollectionUtils.filterListEntries(frames, (frame) -> Boolean.TRUE.equals(frame.isInApp()));
+        CollectionUtils.filterListEntries(frames, (frame) -> {
+          final String module = frame.getModule();
+          boolean isSystemFrame = false;
+          if (module != null) {
+            isSystemFrame = module.startsWith("sun.") || module.startsWith("java.") ||
+              module.startsWith("android.") || module.startsWith("com.android.");
+          }
+          return Boolean.TRUE.equals(frame.isInApp()) || !isSystemFrame;
+        });
       currentSpan.setData("call_stack", relevantFrames);
     }
   }
