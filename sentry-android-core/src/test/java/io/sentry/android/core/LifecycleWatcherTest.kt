@@ -10,12 +10,12 @@ import io.sentry.SentryLevel
 import io.sentry.Session
 import io.sentry.Session.State
 import io.sentry.transport.ICurrentDateProvider
-import org.awaitility.kotlin.await
 import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -87,8 +87,7 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
         watcher.onStop(fixture.ownerMock)
-        await.untilFalse(watcher.isRunningSession)
-        verify(fixture.hub).endSession()
+        verify(fixture.hub, timeout(10000)).endSession()
     }
 
     @Test
@@ -137,9 +136,8 @@ class LifecycleWatcherTest {
     @Test
     fun `When session tracking is enabled, add breadcrumb on stop`() {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
-        watcher.isRunningSession.set(true)
         watcher.onStop(fixture.ownerMock)
-        await.untilFalse(watcher.isRunningSession)
+        verify(fixture.hub, timeout(10000)).endSession()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("app.lifecycle", it.category)
