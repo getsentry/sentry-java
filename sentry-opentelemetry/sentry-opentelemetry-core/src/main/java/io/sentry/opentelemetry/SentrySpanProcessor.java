@@ -72,28 +72,29 @@ public final class SentrySpanProcessor implements SpanProcessor {
               otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL);
       spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
-      String transactionName = otelSpan.getName();
-      TransactionNameSource transactionNameSource = TransactionNameSource.CUSTOM;
-      String op = otelSpan.getName();
+      final @NotNull String transactionName = otelSpan.getName();
+      final @NotNull TransactionNameSource transactionNameSource = TransactionNameSource.CUSTOM;
+      final @Nullable String op = otelSpan.getName();
+      final SpanId spanId = new SpanId(traceData.getSpanId());
 
-      TransactionContext transactionContext =
+      final @NotNull TransactionContext transactionContext =
           traceData.getSentryTraceHeader() == null
               ? new TransactionContext(
                   transactionName,
                   op,
                   new SentryId(traceData.getTraceId()),
-                  new SpanId(traceData.getSpanId()),
+                  spanId,
                   transactionNameSource,
                   null,
                   null,
                   null)
-              // TODO do we get wrong traceId / spanId by using sentry trace header?
               : TransactionContext.fromSentryTrace(
                   transactionName,
                   transactionNameSource,
                   op,
                   traceData.getSentryTraceHeader(),
-                  traceData.getBaggage());
+                  traceData.getBaggage(),
+                  spanId);
       ;
       transactionContext.setInstrumenter(Instrumenter.OTEL);
 

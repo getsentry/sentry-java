@@ -2,6 +2,8 @@ package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.TraceFlags;
+import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
@@ -61,6 +63,14 @@ public final class SentryPropagator implements TextMapPropagator {
 
     try {
       SentryTraceHeader sentryTraceHeader = new SentryTraceHeader(sentryTraceString);
+
+      SpanContext otelSpanContext =
+          SpanContext.createFromRemoteParent(
+              sentryTraceHeader.getTraceId().toString(),
+              sentryTraceHeader.getSpanId().toString(),
+              TraceFlags.getSampled(),
+              TraceState.getDefault());
+
       @NotNull
       Context modifiedContext = context.with(SentryOtelKeys.SENTRY_TRACE_KEY, sentryTraceHeader);
 
@@ -69,6 +79,9 @@ public final class SentryPropagator implements TextMapPropagator {
         Baggage baggage = Baggage.fromHeader(baggageString);
         modifiedContext = modifiedContext.with(SentryOtelKeys.SENTRY_BAGGAGE_KEY, baggage);
       }
+
+      Span wrappedSpan = Span.wrap(otelSpanContext);
+      modifiedContext = modifiedContext.with(wrappedSpan);
 
       return modifiedContext;
     } catch (InvalidSentryTraceHeaderException e) {
