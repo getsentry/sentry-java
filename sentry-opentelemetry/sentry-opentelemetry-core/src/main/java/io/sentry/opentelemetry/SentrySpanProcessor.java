@@ -43,16 +43,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
   @Override
   public void onStart(final @NotNull Context parentContext, final @NotNull ReadWriteSpan otelSpan) {
-    if (!hasSentryBeenInitialized()) {
-      return;
-    }
-
-    if (!Instrumenter.OTEL.equals(Sentry.getCurrentHub().getOptions().getInstrumenter())) {
-      return;
-    }
-
-    final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
-    if (!otelSpanContext.isValid()) {
+    if (!ensurePrerequisites(otelSpan)) {
       return;
     }
 
@@ -114,16 +105,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
   @Override
   public void onEnd(final @NotNull ReadableSpan otelSpan) {
-    if (!hasSentryBeenInitialized()) {
-      return;
-    }
-
-    if (!Instrumenter.OTEL.equals(Sentry.getCurrentHub().getOptions().getInstrumenter())) {
-      return;
-    }
-
-    final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
-    if (!otelSpanContext.isValid()) {
+    if (!ensurePrerequisites(otelSpan)) {
       return;
     }
 
@@ -156,6 +138,33 @@ public final class SentrySpanProcessor implements SpanProcessor {
     return true;
   }
 
+  private boolean ensurePrerequisites(final @NotNull ReadableSpan otelSpan) {
+    if (!hasSentryBeenInitialized()) {
+      return false;
+    }
+
+    if (!Instrumenter.OTEL.equals(Sentry.getCurrentHub().getOptions().getInstrumenter())) {
+      return false;
+    }
+
+    final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
+    if (!otelSpanContext.isValid()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private boolean isSentryRequest(final @NotNull ReadableSpan otelSpan) {
+    final @NotNull SpanKind kind = otelSpan.getKind();
+    if (!spanKindsConsideredForSentryRequests.contains(kind)) {
+      return false;
+    }
+
+    final @Nullable String httpUrl = otelSpan.getAttribute(SemanticAttributes.HTTP_URL);
+    return DsnUtil.urlContainsDsnHost(Sentry.getCurrentHub().getOptions(), httpUrl);
+  }
+
   private @NotNull TraceData getTraceData(
       final @NotNull ReadableSpan otelSpan, final @Nullable Context parentContext) {
     final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
@@ -181,23 +190,13 @@ public final class SentrySpanProcessor implements SpanProcessor {
     return new TraceData(otelTraceId, otelSpanId, otelParentSpanId, sentryTraceHeader, baggage);
   }
 
-  private boolean isSentryRequest(final @NotNull ReadableSpan otelSpan) {
-    final @NotNull SpanKind kind = otelSpan.getKind();
-    if (!spanKindsConsideredForSentryRequests.contains(kind)) {
-      return false;
-    }
-
-    final @Nullable String httpUrl = otelSpan.getAttribute(SemanticAttributes.HTTP_URL);
-    return DsnUtil.urlContainsDsnHost(Sentry.getCurrentHub().getOptions(), httpUrl);
-  }
-
   private void updateTransactionWithOtelData(
       final @NotNull ITransaction sentryTransaction, final @NotNull ReadableSpan otelSpan) {
-    final @NotNull SpanDescription spanDescription =
+    final @NotNull OtelSpanInfo otelSpanInfo =
         spanDescriptionExtractor.extractSpanDescription(otelSpan);
-    sentryTransaction.setOperation(spanDescription.getOp());
+    sentryTransaction.setOperation(otelSpanInfo.getOp());
     sentryTransaction.setName(
-        spanDescription.getDescription(), spanDescription.getTransactionNameSource());
+        otelSpanInfo.getDescription(), otelSpanInfo.getTransactionNameSource());
 
     final @NotNull Map<String, Object> otelContext = toOtelContext(otelSpan);
     sentryTransaction.setContext("otel", otelContext);
@@ -228,10 +227,10 @@ public final class SentrySpanProcessor implements SpanProcessor {
               }
             });
 
-    final @NotNull SpanDescription spanDescription =
+    final @NotNull OtelSpanInfo otelSpanInfo =
         spanDescriptionExtractor.extractSpanDescription(otelSpan);
-    sentrySpan.setOperation(spanDescription.getOp());
-    sentrySpan.setDescription(spanDescription.getDescription());
+    sentrySpan.setOperation(otelSpanInfo.getOp());
+    sentrySpan.setDescription(otelSpanInfo.getDescription());
   }
 
   private SpanStatus mapOtelStatus(final @NotNull ReadableSpan otelSpan) {

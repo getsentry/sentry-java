@@ -1,3 +1,10 @@
+public final class io/sentry/opentelemetry/OtelSpanInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public fun getDescription ()Ljava/lang/String;
+	public fun getOp ()Ljava/lang/String;
+	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
 public final class io/sentry/opentelemetry/SentryOtelKeys {
 	public static final field SENTRY_BAGGAGE_KEY Lio/opentelemetry/context/ContextKey;
 	public static final field SENTRY_TRACE_KEY Lio/opentelemetry/context/ContextKey;
@@ -26,16 +33,9 @@ public final class io/sentry/opentelemetry/SentrySpanStorage {
 	public fun store (Ljava/lang/String;Lio/sentry/ISpan;)V
 }
 
-public final class io/sentry/opentelemetry/SpanDescription {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
-	public fun getDescription ()Ljava/lang/String;
-	public fun getOp ()Ljava/lang/String;
-	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
-}
-
 public final class io/sentry/opentelemetry/SpanDescriptionExtractor {
 	public fun <init> ()V
-	public fun extractSpanDescription (Lio/opentelemetry/sdk/trace/ReadableSpan;)Lio/sentry/opentelemetry/SpanDescription;
+	public fun extractSpanDescription (Lio/opentelemetry/sdk/trace/ReadableSpan;)Lio/sentry/opentelemetry/OtelSpanInfo;
 }
 
 public final class io/sentry/opentelemetry/TraceData {
