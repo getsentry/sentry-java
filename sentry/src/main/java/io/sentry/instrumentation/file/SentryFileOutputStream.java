@@ -74,8 +74,7 @@ public final class SentryFileOutputStream extends FileOutputStream {
     if (delegate == null) {
       delegate = new FileOutputStream(file, append);
     }
-    return new FileOutputStreamInitData(
-        file, append, span, delegate, hub.getOptions());
+    return new FileOutputStreamInitData(file, append, span, delegate, hub.getOptions());
   }
 
   private static FileOutputStreamInitData init(
@@ -84,8 +83,7 @@ public final class SentryFileOutputStream extends FileOutputStream {
     if (delegate == null) {
       delegate = new FileOutputStream(fd);
     }
-    return new FileOutputStreamInitData(
-        null, false, span, delegate, hub.getOptions());
+    return new FileOutputStreamInitData(null, false, span, delegate, hub.getOptions());
   }
 
   @Override

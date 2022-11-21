@@ -12,11 +12,11 @@ import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
-import io.sentry.util.thread.IMainThreadChecker;
-import io.sentry.util.thread.NoOpMainThreadChecker;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
+import io.sentry.util.thread.IMainThreadChecker;
+import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1774,7 +1774,7 @@ public class SentryOptions {
     return mainThreadChecker;
   }
 
-  public void setMainThreadChecker(final @NotNull  IMainThreadChecker mainThreadChecker) {
+  public void setMainThreadChecker(final @NotNull IMainThreadChecker mainThreadChecker) {
     this.mainThreadChecker = mainThreadChecker;
   }
 

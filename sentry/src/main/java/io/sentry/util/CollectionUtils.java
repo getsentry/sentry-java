@@ -127,7 +127,7 @@ public final class CollectionUtils {
    * @return a new list
    */
   public static @NotNull <T> List<T> filterListEntries(
-    final @NotNull List<T> list, final @NotNull Predicate<T> predicate) {
+      final @NotNull List<T> list, final @NotNull Predicate<T> predicate) {
     final List<T> filteredList = new ArrayList<>();
     for (final T entry : list) {
       if (predicate.test(entry)) {

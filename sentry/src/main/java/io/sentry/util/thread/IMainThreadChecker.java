@@ -25,8 +25,7 @@ public interface IMainThreadChecker {
    * @return true if it is the main thread or false otherwise
    */
   default boolean isMainThread() {
-    return
-      isMainThread(Thread.currentThread());
+    return isMainThread(Thread.currentThread());
   }
 
   /**

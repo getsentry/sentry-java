@@ -11,7 +11,8 @@ public final class NoOpMainThreadChecker implements IMainThreadChecker {
     return instance;
   }
 
-  @Override public boolean isMainThread(long threadId) {
+  @Override
+  public boolean isMainThread(long threadId) {
     return false;
   }
 }

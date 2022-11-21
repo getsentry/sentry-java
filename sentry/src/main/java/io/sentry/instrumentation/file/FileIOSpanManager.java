@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -108,20 +107,25 @@ final class FileIOSpanManager {
 
   private void attachStacktrace() {
     final SentryStackTraceFactory sentryStackTraceFactory =
-      new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
+        new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
     final StackTraceElement[] stacktrace = new Exception().getStackTrace();
     final List<SentryStackFrame> frames = sentryStackTraceFactory.getStackFrames(stacktrace);
     if (currentSpan != null && frames != null) {
       final List<SentryStackFrame> relevantFrames =
-        CollectionUtils.filterListEntries(frames, (frame) -> {
-          final String module = frame.getModule();
-          boolean isSystemFrame = false;
-          if (module != null) {
-            isSystemFrame = module.startsWith("sun.") || module.startsWith("java.") ||
-              module.startsWith("android.") || module.startsWith("com.android.");
-          }
-          return Boolean.TRUE.equals(frame.isInApp()) || !isSystemFrame;
-        });
+          CollectionUtils.filterListEntries(
+              frames,
+              (frame) -> {
+                final String module = frame.getModule();
+                boolean isSystemFrame = false;
+                if (module != null) {
+                  isSystemFrame =
+                      module.startsWith("sun.")
+                          || module.startsWith("java.")
+                          || module.startsWith("android.")
+                          || module.startsWith("com.android.");
+                }
+                return Boolean.TRUE.equals(frame.isInApp()) || !isSystemFrame;
+              });
       currentSpan.setData("call_stack", relevantFrames);
     }
   }

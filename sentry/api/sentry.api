@@ -1375,6 +1375,7 @@ public class io/sentry/SentryOptions {
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getLogger ()Lio/sentry/ILogger;
+	public fun getMainThreadChecker ()Lio/sentry/util/thread/IMainThreadChecker;
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxCacheItems ()I
@@ -1454,6 +1455,7 @@ public class io/sentry/SentryOptions {
 	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
+	public fun setMainThreadChecker (Lio/sentry/util/thread/IMainThreadChecker;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxCacheItems (I)V
@@ -1530,6 +1532,11 @@ public final class io/sentry/SentryOptions$RequestSize : java/lang/Enum {
 
 public abstract interface class io/sentry/SentryOptions$TracesSamplerCallback {
 	public abstract fun sample (Lio/sentry/SamplingContext;)Ljava/lang/Double;
+}
+
+public final class io/sentry/SentryStackTraceFactory {
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public fun getStackFrames ([Ljava/lang/StackTraceElement;)Ljava/util/List;
 }
 
 public final class io/sentry/SentryTraceHeader {
@@ -3331,6 +3338,7 @@ public abstract class io/sentry/transport/TransportResult {
 }
 
 public final class io/sentry/util/CollectionUtils {
+	public static fun filterListEntries (Ljava/util/List;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/List;
 	public static fun filterMapEntries (Ljava/util/Map;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/Map;
 	public static fun map (Ljava/util/List;Lio/sentry/util/CollectionUtils$Mapper;)Ljava/util/List;
 	public static fun newArrayList (Ljava/util/List;)Ljava/util/List;
@@ -3437,6 +3445,24 @@ public final class io/sentry/util/StringUtils {
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun normalizeUUID (Ljava/lang/String;)Ljava/lang/String;
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/util/thread/IMainThreadChecker {
+	public fun isMainThread ()Z
+	public abstract fun isMainThread (J)Z
+	public fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
+	public fun isMainThread (Ljava/lang/Thread;)Z
+}
+
+public final class io/sentry/util/thread/MainThreadChecker : io/sentry/util/thread/IMainThreadChecker {
+	public static fun getInstance ()Lio/sentry/util/thread/MainThreadChecker;
+	public fun isMainThread (J)Z
+}
+
+public final class io/sentry/util/thread/NoOpMainThreadChecker : io/sentry/util/thread/IMainThreadChecker {
+	public fun <init> ()V
+	public static fun getInstance ()Lio/sentry/util/thread/NoOpMainThreadChecker;
+	public fun isMainThread (J)Z
 }
 
 public class io/sentry/vendor/Base64 {

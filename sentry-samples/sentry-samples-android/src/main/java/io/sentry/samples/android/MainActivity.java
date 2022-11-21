@@ -81,9 +81,9 @@ public class MainActivity extends AppCompatActivity {
           String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
           File file = getApplication().getFileStreamPath(fileName);
           try (final FileOutputStream fileOutputStream = new SentryFileOutputStream(file);
-               final OutputStreamWriter outputStreamWriter =
+              final OutputStreamWriter outputStreamWriter =
                   new OutputStreamWriter(fileOutputStream);
-               final Writer writer = new BufferedWriter(outputStreamWriter)) {
+              final Writer writer = new BufferedWriter(outputStreamWriter)) {
             for (int i = 0; i < 1024; i++) {
               // To keep the sample code simple this happens on the main thread. Don't do this in a
               // real app.
