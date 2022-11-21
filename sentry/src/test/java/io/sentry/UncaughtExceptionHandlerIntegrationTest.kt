@@ -1,91 +1,97 @@
 package io.sentry
 
 import io.sentry.exception.ExceptionMechanismException
+import io.sentry.hints.DiskFlushNotification
 import io.sentry.protocol.SentryId
-import io.sentry.util.noFlushTimeout
+import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.io.PrintStream
 import java.nio.file.Files
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
+import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class UncaughtExceptionHandlerIntegrationTest {
 
-    private lateinit var file: File
+    class Fixture {
+        val file = Files.createTempDirectory("sentry-disk-cache-test").toAbsolutePath().toFile()
+        internal val handler = mock<UncaughtExceptionHandler>()
+        val defaultHandler = mock<Thread.UncaughtExceptionHandler>()
+        val thread = mock<Thread>()
+        val throwable = Throwable("test")
+        val hub = mock<IHub>()
+        val options = SentryOptions()
+        val logger = mock<ILogger>()
 
-    @BeforeTest
-    fun `set up`() {
-        file = Files.createTempDirectory("sentry-disk-cache-test").toAbsolutePath().toFile()
+        fun getSut(
+            flushTimeoutMillis: Long = 0L,
+            hasDefaultHandler: Boolean = false,
+            enableUncaughtExceptionHandler: Boolean = true,
+            isPrintUncaughtStackTrace: Boolean = false
+        ): UncaughtExceptionHandlerIntegration {
+            options.flushTimeoutMillis = flushTimeoutMillis
+            options.isEnableUncaughtExceptionHandler = enableUncaughtExceptionHandler
+            options.isPrintUncaughtStackTrace = isPrintUncaughtStackTrace
+            options.setLogger(logger)
+            options.isDebug = true
+            whenever(handler.defaultUncaughtExceptionHandler).thenReturn(if (hasDefaultHandler) defaultHandler else null)
+            return UncaughtExceptionHandlerIntegration(handler)
+        }
     }
 
-    @AfterTest
-    fun shutdown() {
-        Files.delete(file.toPath())
-    }
+    private val fixture = Fixture()
 
     @Test
     fun `when UncaughtExceptionHandlerIntegration is initialized, uncaught handler is unchanged`() {
-        val handlerMock = mock<UncaughtExceptionHandler>()
-        UncaughtExceptionHandlerIntegration(handlerMock)
-        verify(handlerMock, never()).defaultUncaughtExceptionHandler = any()
+        fixture.getSut(isPrintUncaughtStackTrace = false)
+
+        verify(fixture.handler, never()).defaultUncaughtExceptionHandler = any()
     }
 
     @Test
     fun `when uncaughtException is called, sentry captures exception`() {
-        val handlerMock = mock<UncaughtExceptionHandler>()
-        val threadMock = mock<Thread>()
-        val throwableMock = mock<Throwable>()
-        val hubMock = mock<IHub>()
-        val options = SentryOptions().noFlushTimeout()
-        val sut = UncaughtExceptionHandlerIntegration(handlerMock)
-        sut.register(hubMock, options)
-        sut.uncaughtException(threadMock, throwableMock)
-        verify(hubMock).captureEvent(any(), any<Hint>())
+        val sut = fixture.getSut(isPrintUncaughtStackTrace = false)
+
+        sut.register(fixture.hub, fixture.options)
+        sut.uncaughtException(fixture.thread, fixture.throwable)
+
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
     }
 
     @Test
     fun `when register is called, current handler is not lost`() {
-        val handlerMock = mock<UncaughtExceptionHandler>()
-        val threadMock = mock<Thread>()
-        val throwableMock = mock<Throwable>()
-        val defaultHandlerMock = mock<Thread.UncaughtExceptionHandler>()
-        whenever(handlerMock.defaultUncaughtExceptionHandler).thenReturn(defaultHandlerMock)
-        val hubMock = mock<IHub>()
-        val options = SentryOptions().noFlushTimeout()
-        val sut = UncaughtExceptionHandlerIntegration(handlerMock)
-        sut.register(hubMock, options)
-        sut.uncaughtException(threadMock, throwableMock)
-        verify(defaultHandlerMock).uncaughtException(threadMock, throwableMock)
+        val sut = fixture.getSut(hasDefaultHandler = true, isPrintUncaughtStackTrace = false)
+
+        sut.register(fixture.hub, fixture.options)
+        sut.uncaughtException(fixture.thread, fixture.throwable)
+
+        verify(fixture.defaultHandler).uncaughtException(fixture.thread, fixture.throwable)
     }
 
     @Test
     fun `when uncaughtException is called, exception captured has handled=false`() {
-        val handlerMock = mock<UncaughtExceptionHandler>()
-        val threadMock = mock<Thread>()
-        val throwableMock = mock<Throwable>()
-        val hubMock = mock<IHub>()
-        whenever(hubMock.captureException(any())).thenAnswer { invocation ->
-            val e = (invocation.arguments[1] as ExceptionMechanismException)
+        whenever(fixture.hub.captureException(any())).thenAnswer { invocation ->
+            val e = invocation.getArgument<ExceptionMechanismException>(1)
             assertNotNull(e)
             assertNotNull(e.exceptionMechanism)
             assertTrue(e.exceptionMechanism.isHandled!!)
             SentryId.EMPTY_ID
         }
-        val options = SentryOptions().noFlushTimeout()
-        val sut = UncaughtExceptionHandlerIntegration(handlerMock)
-        sut.register(hubMock, options)
-        sut.uncaughtException(threadMock, throwableMock)
-        verify(hubMock).captureEvent(any(), any<Hint>())
+
+        val sut = fixture.getSut(isPrintUncaughtStackTrace = false)
+
+        sut.register(fixture.hub, fixture.options)
+        sut.uncaughtException(fixture.thread, fixture.throwable)
+
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -94,63 +100,57 @@ class UncaughtExceptionHandlerIntegrationTest {
         val options = SentryOptions()
         options.dsn = "https://key@sentry.io/proj"
         options.addIntegration(integrationMock)
-        options.cacheDirPath = file.absolutePath
+        options.cacheDirPath = fixture.file.absolutePath
         options.setSerializer(mock())
-//        val expected = HubAdapter.getInstance()
         val hub = Hub(options)
-//        verify(integrationMock).register(expected, options)
         hub.close()
         verify(integrationMock).close()
     }
 
     @Test
     fun `When defaultUncaughtExceptionHandler is disabled, should not install Sentry UncaughtExceptionHandler`() {
-        val options = SentryOptions()
-        options.isEnableUncaughtExceptionHandler = false
-        val hub = mock<IHub>()
-        val handlerMock = mock<UncaughtExceptionHandler>()
-        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
-        integration.register(hub, options)
-        verify(handlerMock, never()).defaultUncaughtExceptionHandler = any()
+        val sut = fixture.getSut(
+            enableUncaughtExceptionHandler = false,
+            isPrintUncaughtStackTrace = false
+        )
+
+        sut.register(fixture.hub, fixture.options)
+
+        verify(fixture.handler, never()).defaultUncaughtExceptionHandler = any()
     }
 
     @Test
     fun `When defaultUncaughtExceptionHandler is enabled, should install Sentry UncaughtExceptionHandler`() {
-        val options = SentryOptions()
-        val hub = mock<IHub>()
-        val handlerMock = mock<UncaughtExceptionHandler>()
-        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
-        integration.register(hub, options)
-        verify(handlerMock).defaultUncaughtExceptionHandler = argWhere { it is UncaughtExceptionHandlerIntegration }
+        val sut = fixture.getSut(isPrintUncaughtStackTrace = false)
+
+        sut.register(fixture.hub, fixture.options)
+
+        verify(fixture.handler).defaultUncaughtExceptionHandler =
+            argWhere { it is UncaughtExceptionHandlerIntegration }
     }
 
     @Test
     fun `When defaultUncaughtExceptionHandler is set and integration is closed, default uncaught exception handler is reset to previous handler`() {
-        val handlerMock = mock<UncaughtExceptionHandler>()
-        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
+        val sut = fixture.getSut(hasDefaultHandler = true, isPrintUncaughtStackTrace = false)
 
-        val defaultExceptionHandler = mock<Thread.UncaughtExceptionHandler>()
-        whenever(handlerMock.defaultUncaughtExceptionHandler)
-            .thenReturn(defaultExceptionHandler)
-        integration.register(mock(), SentryOptions())
-        whenever(handlerMock.defaultUncaughtExceptionHandler)
-            .thenReturn(integration)
-        integration.close()
-        verify(handlerMock).defaultUncaughtExceptionHandler = defaultExceptionHandler
+        sut.register(fixture.hub, fixture.options)
+        whenever(fixture.handler.defaultUncaughtExceptionHandler)
+            .thenReturn(sut)
+        sut.close()
+
+        verify(fixture.handler).defaultUncaughtExceptionHandler = fixture.defaultHandler
     }
 
     @Test
     fun `When defaultUncaughtExceptionHandler is not set and integration is closed, default uncaught exception handler is reset to null`() {
-        val handlerMock = mock<UncaughtExceptionHandler>()
-        val integration = UncaughtExceptionHandlerIntegration(handlerMock)
+        val sut = fixture.getSut(isPrintUncaughtStackTrace = false)
 
-        whenever(handlerMock.defaultUncaughtExceptionHandler)
-            .thenReturn(null)
-        integration.register(mock(), SentryOptions())
-        whenever(handlerMock.defaultUncaughtExceptionHandler)
-            .thenReturn(integration)
-        integration.close()
-        verify(handlerMock).defaultUncaughtExceptionHandler = null
+        sut.register(fixture.hub, fixture.options)
+        whenever(fixture.handler.defaultUncaughtExceptionHandler)
+            .thenReturn(sut)
+        sut.close()
+
+        verify(fixture.handler).defaultUncaughtExceptionHandler = null
     }
 
     @Test
@@ -160,12 +160,10 @@ class UncaughtExceptionHandlerIntegrationTest {
             val outputStreamCaptor = ByteArrayOutputStream()
             System.setErr(PrintStream(outputStreamCaptor))
 
-            val handlerMock = mock<UncaughtExceptionHandler>()
-            val options = SentryOptions().noFlushTimeout()
-            options.isPrintUncaughtStackTrace = true
-            val sut = UncaughtExceptionHandlerIntegration(handlerMock)
-            sut.register(mock<IHub>(), options)
-            sut.uncaughtException(mock<Thread>(), RuntimeException("This should be printed!"))
+            val sut = fixture.getSut(isPrintUncaughtStackTrace = true)
+
+            sut.register(fixture.hub, fixture.options)
+            sut.uncaughtException(fixture.thread, RuntimeException("This should be printed!"))
 
             assertTrue(
                 outputStreamCaptor.toString()
@@ -178,5 +176,52 @@ class UncaughtExceptionHandlerIntegrationTest {
         } finally {
             System.setErr(standardErr)
         }
+    }
+
+    @Test
+    fun `waits for event to flush on disk`() {
+        val capturedEventId = SentryId()
+
+        whenever(fixture.hub.captureEvent(any(), any<Hint>())).thenAnswer { invocation ->
+            val hint = HintUtils.getSentrySdkHint(invocation.getArgument(1))
+                as DiskFlushNotification
+            thread {
+                Thread.sleep(1000L)
+                hint.markFlushed()
+            }
+            capturedEventId
+        }
+
+        val sut = fixture.getSut(flushTimeoutMillis = 5000)
+
+        sut.register(fixture.hub, fixture.options)
+        sut.uncaughtException(fixture.thread, fixture.throwable)
+
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
+        // shouldn't fall into timed out state, because we marked event as flushed on another thread
+        verify(fixture.logger, never()).log(
+            any(),
+            argThat { startsWith("Timed out") },
+            any<Any>()
+        )
+    }
+
+    @Test
+    fun `does not block flushing when the event was dropped`() {
+        whenever(fixture.hub.captureEvent(any(), any<Hint>())).thenReturn(SentryId.EMPTY_ID)
+
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+        sut.uncaughtException(fixture.thread, fixture.throwable)
+
+        verify(fixture.hub).captureEvent(any(), any<Hint>())
+        // we do not call markFlushed, hence it should time out waiting for flush, but because
+        // we drop the event, it should not even come to this if-check
+        verify(fixture.logger, never()).log(
+            any(),
+            argThat { startsWith("Timed out") },
+            any<Any>()
+        )
     }
 }

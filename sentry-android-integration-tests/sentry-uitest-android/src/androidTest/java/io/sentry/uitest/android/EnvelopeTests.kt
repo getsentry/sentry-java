@@ -12,13 +12,14 @@ import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -49,12 +50,29 @@ class EnvelopeTests : BaseUiTest() {
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
         }
+
         relayIdlingResource.increment()
-        relayIdlingResource.increment()
+        IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
         val transaction = Sentry.startTransaction("e2etests", "test1")
+        val sampleScenario = launchActivity<ProfilingSampleActivity>()
+        swipeList(1)
+        sampleScenario.moveToState(Lifecycle.State.DESTROYED)
+        IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
+        relayIdlingResource.increment()
+        relayIdlingResource.increment()
 
         transaction.finish()
         relay.assert {
+            assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals("ProfilingSampleActivity", transactionItem.transaction)
+            }
+            assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals("e2etests", transactionItem.transaction)
+            }
             assertEnvelope {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
@@ -63,15 +81,27 @@ class EnvelopeTests : BaseUiTest() {
                 assertTrue(profilingTraceData.environment.isNotEmpty())
                 assertTrue(profilingTraceData.cpuArchitecture.isNotEmpty())
                 assertTrue(profilingTraceData.transactions.isNotEmpty())
+                assertTrue(profilingTraceData.measurementsMap.isNotEmpty())
+
+                // We check the measurements have been collected with expected units
+                val slowFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]
+                val frozenFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]
+                val frameRates = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SCREEN_FRAME_RATES]!!
+                // Slow and frozen frames can be null (in case there were none)
+                if (slowFrames != null) {
+                    assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, slowFrames.unit)
+                }
+                if (frozenFrames != null) {
+                    assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, frozenFrames.unit)
+                }
+                // There could be no slow/frozen frames, but we expect at least one frame rate
+                assertEquals(ProfileMeasurement.UNIT_HZ, frameRates.unit)
+                assertTrue(frameRates.values.isNotEmpty())
+
                 // We should find the transaction id that started the profiling in the list of transactions
                 val transactionData = profilingTraceData.transactions
                     .firstOrNull { t -> t.id == transaction.eventId.toString() }
                 assertNotNull(transactionData)
-            }
-            assertEnvelope {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals("e2etests", transactionItem.transaction)
             }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
@@ -109,6 +139,12 @@ class EnvelopeTests : BaseUiTest() {
             }
             // The profile is sent only in the last transaction envelope
             assertEnvelope {
+                val transactionItem: SentryTransaction = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
+            }
+            // The profile is sent only in the last transaction envelope
+            assertEnvelope {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals("e2etests2", profilingTraceData.transactionName)
@@ -141,12 +177,6 @@ class EnvelopeTests : BaseUiTest() {
                 // The first and last transactions should be aligned to the start/stop of profile
                 assertEquals(endTimes.last() - startTimes.first(), profilingTraceData.durationNs.toLong())
             }
-            // The profile is sent only in the last transaction envelope
-            assertEnvelope {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
-            }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
@@ -172,22 +202,26 @@ class EnvelopeTests : BaseUiTest() {
             }
         }.start()
         transaction.finish()
-        finished = true
+        // The profiler is stopped in background on the executor service, so we can stop deleting the trace file
+        // only after the profiler is stopped. This means we have to stop the deletion in the executorService
+        Sentry.getCurrentHub().options.executorService.submit {
+            finished = true
+        }
 
         relay.assert {
-            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
-            assertFails { assertEnvelope {} }
             assertEnvelope {
                 val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals("e2etests", transactionItem.transaction)
             }
+            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
+            assertFailsWith<IllegalArgumentException> { assertEnvelope {} }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
     }
 
-//    @Test
+    @Test
     fun checkTimedOutProfile() {
         // We increase the IdlingResources timeout to exceed the profiling timeout
         IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
