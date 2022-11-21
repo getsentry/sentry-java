@@ -32,30 +32,25 @@ public final class HintUtils {
     return Boolean.TRUE.equals(hint.getAs(SENTRY_IS_FROM_HYBRID_SDK, Boolean.class));
   }
 
-  @ApiStatus.Internal
   public static Hint createWithTypeCheckHint(Object typeCheckHint) {
     Hint hint = new Hint();
     setTypeCheckHint(hint, typeCheckHint);
     return hint;
   }
 
-  @ApiStatus.Internal
   public static void setTypeCheckHint(@NotNull Hint hint, Object typeCheckHint) {
     hint.set(SENTRY_TYPE_CHECK_HINT, typeCheckHint);
   }
 
-  @ApiStatus.Internal
   public static @Nullable Object getSentrySdkHint(@NotNull Hint hint) {
     return hint.get(SENTRY_TYPE_CHECK_HINT);
   }
 
-  @ApiStatus.Internal
   public static boolean hasType(@NotNull Hint hint, @NotNull Class<?> clazz) {
     final Object sentrySdkHint = getSentrySdkHint(hint);
     return clazz.isInstance(sentrySdkHint);
   }
 
-  @ApiStatus.Internal
   public static <T> void runIfDoesNotHaveType(
       @NotNull Hint hint, @NotNull Class<T> clazz, SentryNullableConsumer<Object> lambda) {
     runIfHasType(
@@ -67,13 +62,11 @@ public final class HintUtils {
         });
   }
 
-  @ApiStatus.Internal
   public static <T> void runIfHasType(
       @NotNull Hint hint, @NotNull Class<T> clazz, SentryConsumer<T> lambda) {
     runIfHasType(hint, clazz, lambda, (value, clazz2) -> {});
   }
 
-  @ApiStatus.Internal
   public static <T> void runIfHasTypeLogIfNot(
       @NotNull Hint hint, @NotNull Class<T> clazz, ILogger logger, SentryConsumer<T> lambda) {
     runIfHasType(
@@ -86,7 +79,6 @@ public final class HintUtils {
   }
 
   @SuppressWarnings("unchecked")
-  @ApiStatus.Internal
   public static <T> void runIfHasType(
       @NotNull Hint hint,
       @NotNull Class<T> clazz,
@@ -106,7 +98,6 @@ public final class HintUtils {
    *
    * @return true if it should apply scope's data or false otherwise
    */
-  @ApiStatus.Internal
   public static boolean shouldApplyScopeData(@NotNull Hint hint) {
     return !hasType(hint, Cached.class) || hasType(hint, ApplyScopeData.class);
   }
