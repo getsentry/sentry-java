@@ -12,7 +12,7 @@ public class CurrentActivityHolder {
 
   private static final @NotNull CurrentActivityHolder instance = new CurrentActivityHolder();
 
-  private CurrentActivityHolder() { }
+  private CurrentActivityHolder() {}
 
   private @Nullable WeakReference<Activity> currentActivity;
 
