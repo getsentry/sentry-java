@@ -15,7 +15,7 @@ class ThirdFragment : Fragment(R.layout.third_fragment) {
         view.findViewById<View>(R.id.third_button).setOnClickListener {
             throw RuntimeException("Test")
         }
-        val sp.an = Sentry.getSpan()
+        val span = Sentry.getSpan()
         val child = span?.startChild("calc")
 
         GithubAPI.service.listRepos("getsentry").enqueue(object :
