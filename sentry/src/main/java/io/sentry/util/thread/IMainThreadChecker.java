@@ -1,4 +1,4 @@
-package io.sentry.util;
+package io.sentry.util.thread;
 
 import io.sentry.protocol.SentryThread;
 import org.jetbrains.annotations.ApiStatus;

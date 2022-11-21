@@ -1,7 +1,7 @@
 package io.sentry.android.core.internal.util;
 
 import android.os.Looper;
-import io.sentry.util.IMainThreadChecker;
+import io.sentry.util.thread.IMainThreadChecker;
 import org.jetbrains.annotations.ApiStatus;
 
 /** Class that checks if a given thread is the Android Main/UI thread */
