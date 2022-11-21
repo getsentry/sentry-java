@@ -241,6 +241,7 @@ public final class io/sentry/android/core/UserInteractionIntegration : android/a
 
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun getDirectory ()Ljava/io/File;
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }

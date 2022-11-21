@@ -13,8 +13,10 @@ import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -24,6 +26,7 @@ import java.io.InputStream;
 import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Android Options initializer, it reads configurations from AndroidManifest and sets to the
@@ -41,35 +44,11 @@ final class AndroidOptionsInitializer {
    * @param options the SentryAndroidOptions
    * @param context the Application context
    */
-  static void init(final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
-    Objects.requireNonNull(context, "The application context is required.");
-    Objects.requireNonNull(options, "The options object is required.");
-
-    init(options, context, new AndroidLogger(), false, false);
-  }
-
-  /**
-   * Init method of the Android Options initializer
-   *
-   * @param options the SentryAndroidOptions
-   * @param context the Application context
-   * @param logger the ILogger interface
-   * @param isFragmentAvailable whether the Fragment integration is available on the classpath
-   * @param isTimberAvailable whether the Timber integration is available on the classpath
-   */
-  static void init(
-      final @NotNull SentryAndroidOptions options,
-      @NotNull Context context,
-      final @NotNull ILogger logger,
-      final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
-    init(
-        options,
-        context,
-        logger,
-        new BuildInfoProvider(logger),
-        isFragmentAvailable,
-        isTimberAvailable);
+  @TestOnly
+  static void loadDefaultAndMetadataOptions(
+      final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
+    final ILogger logger = new AndroidLogger();
+    loadDefaultAndMetadataOptions(options, context, logger, new BuildInfoProvider(logger));
   }
 
   /**
@@ -79,45 +58,12 @@ final class AndroidOptionsInitializer {
    * @param context the Application context
    * @param logger the ILogger interface
    * @param buildInfoProvider the BuildInfoProvider interface
-   * @param isFragmentAvailable whether the Fragment integration is available on the classpath
-   * @param isTimberAvailable whether the Timber integration is available on the classpath
    */
-  static void init(
+  static void loadDefaultAndMetadataOptions(
       final @NotNull SentryAndroidOptions options,
       @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
-    init(
-        options,
-        context,
-        logger,
-        buildInfoProvider,
-        new LoadClass(),
-        isFragmentAvailable,
-        isTimberAvailable);
-  }
-
-  /**
-   * Init method of the Android Options initializer
-   *
-   * @param options the SentryAndroidOptions
-   * @param context the Application context
-   * @param logger the ILogger interface
-   * @param buildInfoProvider the BuildInfoProvider interface
-   * @param loadClass the LoadClass wrapper
-   * @param isFragmentAvailable whether the Fragment integration is available on the classpath
-   * @param isTimberAvailable whether the Timber integration is available on the classpath
-   */
-  static void init(
-      final @NotNull SentryAndroidOptions options,
-      @NotNull Context context,
-      final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
-      final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
     // it returns null if ContextImpl, so let's check for nullability
@@ -133,7 +79,34 @@ final class AndroidOptionsInitializer {
 
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
-    options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
+
+    readDefaultOptionValues(options, context, buildInfoProvider);
+  }
+
+  @TestOnly
+  static void initializeIntegrationsAndProcessors(
+      final @NotNull SentryAndroidOptions options, final @NotNull Context context) {
+    initializeIntegrationsAndProcessors(
+        options,
+        context,
+        new BuildInfoProvider(new AndroidLogger()),
+        new LoadClass(),
+        false,
+        false);
+  }
+
+  static void initializeIntegrationsAndProcessors(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull LoadClass loadClass,
+      final boolean isFragmentAvailable,
+      final boolean isTimberAvailable) {
+
+    if (options.getCacheDirPath() != null
+        && options.getEnvelopeDiskCache() instanceof NoOpEnvelopeCache) {
+      options.setEnvelopeDiskCache(new AndroidEnvelopeCache(options));
+    }
 
     final ActivityFramesTracker activityFramesTracker =
         new ActivityFramesTracker(loadClass, options);
@@ -147,15 +120,15 @@ final class AndroidOptionsInitializer {
         isFragmentAvailable,
         isTimberAvailable);
 
-    readDefaultOptionValues(options, context, buildInfoProvider);
-
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
 
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
+    final SentryFrameMetricsCollector frameMetricsCollector =
+        new SentryFrameMetricsCollector(context, options, buildInfoProvider);
     options.setTransactionProfiler(
-        new AndroidTransactionProfiler(context, options, buildInfoProvider));
+        new AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector));
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
   }
 
