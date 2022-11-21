@@ -15,6 +15,7 @@
 # which comes through AGP 7.3.0-betaX and 7.4.0-alphaX
 -keepclassmembers enum io.sentry.** { *; }
 
+# To filter out io.sentry frames from stacktraces
 -keeppackagenames io.sentry.**
 
 # don't warn jetbrains annotations

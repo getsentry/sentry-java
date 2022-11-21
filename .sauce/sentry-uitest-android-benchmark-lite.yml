@@ -20,7 +20,7 @@ suites:
 
   - name: "Android 11 (api 30)"
     devices:
-      - id: Google_Pixel_2_real_us # Google Pixel 2 - api 30 (11)
+      - id: Google_Pixel_3a_real # Google Pixel 3a - api 30 (11)
 
 artifacts:
   download:

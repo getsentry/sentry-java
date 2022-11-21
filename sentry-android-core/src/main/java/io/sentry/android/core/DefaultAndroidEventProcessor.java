@@ -94,6 +94,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
     // dont ref. to method reference, theres a bug on it
+    //noinspection Convert2MethodRef
     contextData = executorService.submit(() -> loadContextData());
 
     executorService.shutdown();
@@ -282,7 +283,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // TODO: missing usable memory
 
     Device device = new Device();
-    device.setName(getDeviceName());
+    if (options.isSendDefaultPii()) {
+      device.setName(getDeviceName());
+    }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
     device.setFamily(getFamily());

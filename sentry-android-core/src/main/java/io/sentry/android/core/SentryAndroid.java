@@ -9,10 +9,8 @@ import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
-import io.sentry.transport.NoOpEnvelopeCache;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -102,11 +100,23 @@ public final class SentryAndroid {
                 (isTimberUpstreamAvailable
                     && classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
 
-            AndroidOptionsInitializer.init(
-                options, context, logger, isFragmentAvailable, isTimberAvailable);
+            final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
+            final LoadClass loadClass = new LoadClass();
+
+            AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
+                options, context, logger, buildInfoProvider);
+
             configuration.configure(options);
+
+            AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
+                options,
+                context,
+                buildInfoProvider,
+                loadClass,
+                isFragmentAvailable,
+                isTimberAvailable);
+
             deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
-            resetEnvelopeCacheIfNeeded(options);
           },
           true);
     } catch (IllegalAccessException e) {
@@ -132,7 +142,8 @@ public final class SentryAndroid {
 
   /**
    * Deduplicate potentially duplicated Fragment and Timber integrations, which can be added
-   * automatically by our SDK as well as by the user. The user's ones win over ours.
+   * automatically by our SDK as well as by the user. The user's ones (provided first in the
+   * options.integrations list) win over ours.
    *
    * @param options SentryOptions to retrieve integrations from
    */
@@ -158,31 +169,17 @@ public final class SentryAndroid {
     }
 
     if (fragmentIntegrations.size() > 1) {
-      for (int i = 0; i < fragmentIntegrations.size() - 1; i++) {
+      for (int i = 1; i < fragmentIntegrations.size(); i++) {
         final Integration integration = fragmentIntegrations.get(i);
         options.getIntegrations().remove(integration);
       }
     }
 
     if (timberIntegrations.size() > 1) {
-      for (int i = 0; i < timberIntegrations.size() - 1; i++) {
+      for (int i = 1; i < timberIntegrations.size(); i++) {
         final Integration integration = timberIntegrations.get(i);
         options.getIntegrations().remove(integration);
       }
-    }
-  }
-
-  /**
-   * Resets envelope cache if {@link SentryOptions#getCacheDirPath()} was set to null by the user
-   * and the IEnvelopCache implementation remained ours (AndroidEnvelopeCache), which relies on
-   * cacheDirPath set.
-   *
-   * @param options SentryOptions to retrieve cacheDirPath from
-   */
-  private static void resetEnvelopeCacheIfNeeded(final @NotNull SentryAndroidOptions options) {
-    if (options.getCacheDirPath() == null
-        && options.getEnvelopeDiskCache() instanceof AndroidEnvelopeCache) {
-      options.setEnvelopeDiskCache(NoOpEnvelopeCache.getInstance());
     }
   }
 }

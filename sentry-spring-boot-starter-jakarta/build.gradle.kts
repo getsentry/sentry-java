@@ -1,4 +1,3 @@
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -128,7 +127,7 @@ task("jakartaMainClassTransformation", JavaExec::class) {
     args = listOf("../sentry-spring-boot-starter/src/test/kotlin/com/acme", "src/test/kotlin/com/acme", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
 
-tasks.named("build").dependsOn("jakartaTransformation")
+// tasks.named("build").dependsOn("jakartaTransformation")
 
 buildConfig {
     useJavaOutput()
