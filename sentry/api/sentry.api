@@ -1901,6 +1901,10 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OKHTTP_RESPONSE Ljava/lang/String;
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
+	public static final field SENTRY_DART_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_DOTNET_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_IS_FROM_HYBRID_SDK Ljava/lang/String;
+	public static final field SENTRY_JAVASCRIPT_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
 	public static final field SENTRY_TYPE_CHECK_HINT Ljava/lang/String;
 	public static final field SERVLET_REQUEST Ljava/lang/String;
@@ -3362,10 +3366,12 @@ public final class io/sentry/util/HintUtils {
 	public static fun createWithTypeCheckHint (Ljava/lang/Object;)Lio/sentry/Hint;
 	public static fun getSentrySdkHint (Lio/sentry/Hint;)Ljava/lang/Object;
 	public static fun hasType (Lio/sentry/Hint;Ljava/lang/Class;)Z
+	public static fun isFromHybridSdk (Lio/sentry/Hint;)Z
 	public static fun runIfDoesNotHaveType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryNullableConsumer;)V
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;)V
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;Lio/sentry/util/HintUtils$SentryHintFallback;)V
 	public static fun runIfHasTypeLogIfNot (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/ILogger;Lio/sentry/util/HintUtils$SentryConsumer;)V
+	public static fun setIsFromHybridSdk (Lio/sentry/Hint;Ljava/lang/String;)V
 	public static fun setTypeCheckHint (Lio/sentry/Hint;Ljava/lang/Object;)V
 	public static fun shouldApplyScopeData (Lio/sentry/Hint;)Z
 }
