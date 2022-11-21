@@ -280,31 +280,6 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     this.unknown = unknown;
   }
 
-  @Override public String toString() {
-    return "SentryStackFrame{" +
-      "preContext=" + preContext +
-      ", postContext=" + postContext +
-      ", vars=" + vars +
-      ", framesOmitted=" + framesOmitted +
-      ", filename='" + filename + '\'' +
-      ", function='" + function + '\'' +
-      ", module='" + module + '\'' +
-      ", lineno=" + lineno +
-      ", colno=" + colno +
-      ", absPath='" + absPath + '\'' +
-      ", contextLine='" + contextLine + '\'' +
-      ", inApp=" + inApp +
-      ", _package='" + _package + '\'' +
-      ", _native=" + _native +
-      ", platform='" + platform + '\'' +
-      ", imageAddr='" + imageAddr + '\'' +
-      ", symbolAddr='" + symbolAddr + '\'' +
-      ", instructionAddr='" + instructionAddr + '\'' +
-      ", unknown=" + unknown +
-      ", rawFunction='" + rawFunction + '\'' +
-      '}';
-  }
-
   public static final class JsonKeys {
     public static final String FILENAME = "filename";
     public static final String FUNCTION = "function";

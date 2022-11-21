@@ -1,7 +1,6 @@
 plugins {
     id("com.android.application")
     kotlin("android")
-//    id("com.guardsquare.proguard")
 }
 
 android {
@@ -84,7 +83,7 @@ android {
 
             addManifestPlaceholders(
                 mapOf(
-                    "sentryDebug" to true,
+                    "sentryDebug" to false,
                     "sentryEnvironment" to "release"
                 )
             )
@@ -101,15 +100,6 @@ android {
         }
     }
 }
-
-//proguard {
-//    configurations {
-//        register("debug") {
-//            defaultConfiguration("proguard-android-optimize.txt")
-//            configuration("proguard-rules.pro")
-//        }
-//    }
-//}
 
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))

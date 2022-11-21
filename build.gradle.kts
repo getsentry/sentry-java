@@ -36,7 +36,6 @@ buildscript {
 
         classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
         classpath(Config.BuildPlugins.composeGradlePlugin)
-        classpath("com.guardsquare:proguard-gradle:7.3.0")
     }
 }
 
@@ -91,7 +90,7 @@ allprojects {
             dependsOn("cleanTest")
         }
         withType<JavaCompile> {
-            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Xlint:-classfile", "-Xlint:-processing"))
+            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing"))
         }
     }
 }
