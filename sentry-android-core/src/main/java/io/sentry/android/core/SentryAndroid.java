@@ -10,6 +10,7 @@ import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
@@ -123,6 +124,7 @@ public final class SentryAndroid {
 
       final @NotNull IHub hub = Sentry.getCurrentHub();
       if (hub.getOptions().isEnableAutoSessionTracking()) {
+        hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
         hub.startSession();
       }
     } catch (IllegalAccessException e) {

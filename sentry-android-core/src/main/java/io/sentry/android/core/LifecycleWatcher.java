@@ -6,6 +6,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.Session;
+import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import java.util.Timer;
@@ -147,11 +148,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   private void addSessionBreadcrumb(final @NotNull String state) {
-    final Breadcrumb breadcrumb = new Breadcrumb();
-    breadcrumb.setType("session");
-    breadcrumb.setData("state", state);
-    breadcrumb.setCategory("app.lifecycle");
-    breadcrumb.setLevel(SentryLevel.INFO);
+    final Breadcrumb breadcrumb = BreadcrumbFactory.forSession(state);
     hub.addBreadcrumb(breadcrumb);
   }
 
