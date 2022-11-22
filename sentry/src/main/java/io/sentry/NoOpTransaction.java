@@ -96,8 +96,8 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @NotNull BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    return new BaggageHeader("");
+  public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
+    return null;
   }
 
   @Override
@@ -187,5 +187,10 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public @NotNull Contexts getContexts() {
     return new Contexts();
+  }
+
+  @Override
+  public boolean isNoOp() {
+    return true;
   }
 }

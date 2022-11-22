@@ -205,4 +205,12 @@ public interface ISpan {
    * @param unit the unit the value is measured in
    */
   void setMeasurement(@NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit);
+
+  /**
+   * Whether this span instance is a NOOP that doesn't collect information
+   *
+   * @return true if NOOP
+   */
+  @ApiStatus.Internal
+  boolean isNoOp();
 }

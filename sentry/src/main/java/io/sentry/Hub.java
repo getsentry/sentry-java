@@ -753,7 +753,7 @@ public final class Hub implements IHub {
               SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
     } else {
       final ISpan span = stack.peek().getScope().getSpan();
-      if (span != null) {
+      if (span != null && !span.isNoOp()) {
         traceHeader = span.toSentryTrace();
       }
     }

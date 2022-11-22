@@ -39,7 +39,7 @@ public final class SentryPropagator implements TextMapPropagator {
       return;
     }
     final @Nullable ISpan sentrySpan = spanStorage.get(otelSpanContext.getSpanId());
-    if (sentrySpan == null) {
+    if (sentrySpan == null || sentrySpan.isNoOp()) {
       return;
     }
 
