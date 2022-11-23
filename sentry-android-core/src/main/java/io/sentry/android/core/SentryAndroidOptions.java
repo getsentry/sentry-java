@@ -39,7 +39,6 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
-
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *

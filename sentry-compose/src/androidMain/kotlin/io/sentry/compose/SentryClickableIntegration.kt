@@ -18,7 +18,7 @@ public fun wrapClickable(clickable: () -> Unit, clickLabel: String?): () -> Unit
                 .logger
                 .log(
                     SentryLevel.DEBUG,
-                    "Modifier.clickable clickLabel is null, skipping breadcrumb/transaction creation.",
+                    "Modifier.clickable clickLabel is null, skipping breadcrumb/transaction creation."
                 )
         } else {
             addBreadcrumb(hub, clickLabel)
