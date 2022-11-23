@@ -361,6 +361,12 @@ public class SentryOptions {
   /** Modules (dependencies, packages) that will be send along with each event. */
   private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
 
+  /** Enables the Auto instrumentation for user interaction tracing. */
+  private boolean enableUserInteractionTracing = false;
+
+  /** Enable or disable automatic breadcrumbs for User interactions Using Window.Callback */
+  private boolean enableUserInteractionBreadcrumbs = true;
+
   /**
    * Adds an event processor
    *
@@ -1739,6 +1745,22 @@ public class SentryOptions {
     } else {
       clientReportRecorder = new NoOpClientReportRecorder();
     }
+  }
+
+  public boolean isEnableUserInteractionTracing() {
+    return enableUserInteractionTracing;
+  }
+
+  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
+    this.enableUserInteractionTracing = enableUserInteractionTracing;
+  }
+
+  public boolean isEnableUserInteractionBreadcrumbs() {
+    return enableUserInteractionBreadcrumbs;
+  }
+
+  public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
+    this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
   }
 
   /**
