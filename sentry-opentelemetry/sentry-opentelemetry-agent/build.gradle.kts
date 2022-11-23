@@ -147,6 +147,10 @@ tasks {
             attributes.put("Can-Retransform-Classes", "true")
             attributes.put("Implementation-Vendor", "Sentry")
             attributes.put("Implementation-Version", "sentry-${project.version}-otel-${Config.Libs.otelJavaagentVersion}")
+            attributes.put("Sentry-Version-Name", project.version)
+            attributes.put("Sentry-Opentelemetry-SDK-Name", Config.Sentry.SENTRY_OPENTELEMETRY_AGENT_SDK_NAME)
+            attributes.put("Sentry-Opentelemetry-Version-Name", Config.Libs.otelVersion)
+            attributes.put("Sentry-Opentelemetry-Javaagent-Version-Name", Config.Libs.otelJavaagentVersion)
         }
     }
 
