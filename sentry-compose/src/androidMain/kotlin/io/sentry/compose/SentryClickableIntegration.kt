@@ -21,8 +21,8 @@ public fun wrapClickable(clickable: () -> Unit, clickLabel: String?): () -> Unit
                     "Modifier.clickable clickLabel is null, skipping breadcrumb/transaction creation."
                 )
         } else {
-            addBreadcrumb(hub, clickLabel)
             startTransaction(hub, clickLabel)
+            addBreadcrumb(hub, clickLabel)
         }
 
         clickable()
@@ -48,20 +48,19 @@ private fun startTransaction(hub: IHub, label: String) {
         return
     }
 
-    val transactionOptions = TransactionOptions().apply {
-        isWaitForChildren = true
-        idleTimeout = hub.options.idleTimeout
-        isTrimEnd = true
-    }
-
-    val transaction: ITransaction = hub.startTransaction(
-        TransactionContext(label, TransactionNameSource.COMPONENT, "ui.action.click"),
-        transactionOptions
-    )
-
     hub.configureScope { scope: Scope? ->
         scope?.withTransaction { scopeTransaction: ITransaction? ->
             if (scopeTransaction == null) {
+                val transactionOptions = TransactionOptions().apply {
+                    isWaitForChildren = true
+                    idleTimeout = hub.options.idleTimeout
+                    isTrimEnd = true
+                }
+
+                val transaction: ITransaction = hub.startTransaction(
+                    TransactionContext(label, TransactionNameSource.COMPONENT, "ui.action.click"),
+                    transactionOptions
+                )
                 scope.transaction = transaction
             } else {
                 hub.options
@@ -69,7 +68,7 @@ private fun startTransaction(hub: IHub, label: String) {
                     .log(
                         SentryLevel.DEBUG,
                         "Transaction '%s' won't be bound to the Scope since there's one already in there.",
-                        transaction.name
+                        label
                     )
             }
         }
