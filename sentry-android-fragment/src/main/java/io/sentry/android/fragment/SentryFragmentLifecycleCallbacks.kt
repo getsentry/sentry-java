@@ -137,7 +137,7 @@ class SentryFragmentLifecycleCallbacks(
         }
 
         val hint = Hint()
-            .also { it.set(ANDROID_FRAGMENT, fragment) }
+            .also { it.setWeak(ANDROID_FRAGMENT, fragment) }
 
         hub.addBreadcrumb(breadcrumb, hint)
     }

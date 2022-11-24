@@ -131,7 +131,7 @@ public final class ActivityLifecycleIntegration
       breadcrumb.setLevel(SentryLevel.INFO);
 
       final Hint hint = new Hint();
-      hint.set(ANDROID_ACTIVITY, activity);
+      hint.setWeak(ANDROID_ACTIVITY, activity);
 
       hub.addBreadcrumb(breadcrumb, hint);
     }

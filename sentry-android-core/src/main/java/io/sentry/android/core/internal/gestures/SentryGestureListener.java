@@ -191,7 +191,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     final Hint hint = new Hint();
     hint.set(ANDROID_MOTION_EVENT, motionEvent);
-    hint.set(ANDROID_VIEW, target);
+    hint.setWeak(ANDROID_VIEW, target);
 
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(

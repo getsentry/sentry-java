@@ -74,7 +74,7 @@ public final class ScreenshotEventProcessor
     }
 
     hint.setScreenshot(Attachment.fromScreenshot(screenshot));
-    hint.set(ANDROID_ACTIVITY, activity);
+    hint.setWeak(ANDROID_ACTIVITY, activity);
     return event;
   }
 
