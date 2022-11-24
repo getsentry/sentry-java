@@ -29,7 +29,7 @@ public final class SentryAutoConfigurationCustomizerProvider
     if (sentryPropertiesFile != null || sentryDsn != null) {
       Sentry.init(
           options -> {
-            options.setEnableExternalConfiguration(sentryPropertiesFile != null);
+            options.setEnableExternalConfiguration(true);
             options.setInstrumenter(Instrumenter.OTEL);
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options);
             if (sdkVersion != null) {
