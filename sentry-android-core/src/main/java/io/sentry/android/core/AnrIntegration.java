@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Build;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
