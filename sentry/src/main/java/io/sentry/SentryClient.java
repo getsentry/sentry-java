@@ -179,8 +179,6 @@ public final class SentryClient implements ISentryClient {
           buildEnvelope(event, attachments, session, traceContext, null);
 
       if (envelope != null) {
-        // clear all attributes as they're not required for the transport and may leak memory
-        // (e.g. if referencing android activities)
         hint.clear();
         transport.send(envelope, hint);
       }
@@ -486,6 +484,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
+      hint.clear();
       transport.send(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
@@ -580,6 +579,7 @@ public final class SentryClient implements ISentryClient {
               transaction, filterForTransaction(getAttachments(hint)), null, traceContext, null);
 
       if (envelope != null) {
+        hint.clear();
         transport.send(envelope, hint);
       } else {
         sentryId = SentryId.EMPTY_ID;
