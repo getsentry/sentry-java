@@ -94,7 +94,8 @@ public final class Hint {
 
   /**
    * Clears all attributes added via {@link #set(String, Object)} Note: SDK internal attributes are
-   * being kept.
+   * being kept. This is useful to avoid leaking any objects (e.g. Android activities) being
+   * referenced.
    */
   @ApiStatus.Internal
   public synchronized void clear() {
