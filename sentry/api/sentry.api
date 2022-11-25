@@ -249,6 +249,7 @@ public final class io/sentry/Hint {
 	public fun <init> ()V
 	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addAttachments (Ljava/util/List;)V
+	public fun clear ()V
 	public fun clearAttachments ()V
 	public fun get (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getAs (Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;

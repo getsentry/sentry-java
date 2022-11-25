@@ -179,6 +179,9 @@ public final class SentryClient implements ISentryClient {
           buildEnvelope(event, attachments, session, traceContext, null);
 
       if (envelope != null) {
+        // clear all attributes as they're not required for the transport and may leak memory
+        // (e.g. if referencing android activities)
+        hint.clear();
         transport.send(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
