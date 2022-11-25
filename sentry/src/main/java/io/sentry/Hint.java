@@ -1,6 +1,5 @@
 package io.sentry;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,12 +8,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class Hint {
-
-  static final class WeakHint<T> extends WeakReference<T> {
-    public WeakHint(@Nullable T referent) {
-      super(referent);
-    }
-  }
 
   private static final @NotNull Map<String, Class<?>> PRIMITIVE_MAPPINGS;
 
@@ -30,7 +23,7 @@ public final class Hint {
     PRIMITIVE_MAPPINGS.put("double", Double.class);
   }
 
-  private final @NotNull Map<String, Object> internalStorage = new HashMap<>();
+  private final @NotNull Map<String, Object> internalStorage = new HashMap<String, Object>();
   private final @NotNull List<Attachment> attachments = new ArrayList<>();
   private @Nullable Attachment screenshot = null;
 
@@ -50,33 +43,14 @@ public final class Hint {
     internalStorage.put(name, hint);
   }
 
-  /**
-   * Adds extra information to this hint.
-   *
-   * @param name the name of the hint
-   * @param hint the hint value, internally stored as a WeakReference and automatically unwrapped
-   *     when calling {@link #get(String)} {@link #getAs(String, Class)}
-   */
-  public void setWeak(@NotNull String name, @Nullable Object hint) {
-    internalStorage.put(name, new WeakHint<>(hint));
-  }
-
-  @SuppressWarnings("unchecked")
   public @Nullable Object get(@NotNull String name) {
-    final @Nullable Object value = internalStorage.get(name);
-    if (value instanceof WeakHint) {
-      return ((WeakHint<Object>) value).get();
-    } else {
-      return value;
-    }
+    return internalStorage.get(name);
   }
 
   @SuppressWarnings("unchecked")
   public <T extends Object> @Nullable T getAs(@NotNull String name, @NotNull Class<T> clazz) {
-    @Nullable Object hintValue = internalStorage.get(name);
-    if (hintValue instanceof WeakHint) {
-      hintValue = ((WeakHint<Object>) hintValue).get();
-    }
+    Object hintValue = internalStorage.get(name);
+
     if (clazz.isInstance(hintValue)) {
       return (T) hintValue;
     } else if (isCastablePrimitive(hintValue, clazz)) {

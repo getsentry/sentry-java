@@ -258,7 +258,6 @@ public final class io/sentry/Hint {
 	public fun replaceAttachments (Ljava/util/List;)V
 	public fun set (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setScreenshot (Lio/sentry/Attachment;)V
-	public fun setWeak (Ljava/lang/String;Ljava/lang/Object;)V
 	public static fun withAttachment (Lio/sentry/Attachment;)Lio/sentry/Hint;
 	public static fun withAttachments (Ljava/util/List;)Lio/sentry/Hint;
 }
