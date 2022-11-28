@@ -15,7 +15,7 @@
 
 ### Features
 
-- Add support for Opentelemetry ([#2344](https://github.com/getsentry/sentry-java/pull/2344))
+- Add experimental support for OpenTelemetry ([README](sentry-opentelemetry/README.md))([#2344](https://github.com/getsentry/sentry-java/pull/2344))
 
 ### Dependencies
 
