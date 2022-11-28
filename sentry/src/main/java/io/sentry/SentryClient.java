@@ -178,8 +178,8 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelope envelope =
           buildEnvelope(event, attachments, session, traceContext, null);
 
+      hint.clear();
       if (envelope != null) {
-        hint.clear();
         transport.send(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
@@ -578,8 +578,8 @@ public final class SentryClient implements ISentryClient {
           buildEnvelope(
               transaction, filterForTransaction(getAttachments(hint)), null, traceContext, null);
 
+      hint.clear();
       if (envelope != null) {
-        hint.clear();
         transport.send(envelope, hint);
       } else {
         sentryId = SentryId.EMPTY_ID;
