@@ -77,6 +77,7 @@ public interface ISpan {
    * @param status - the status
    * @param timestamp - the end timestamp
    */
+  @ApiStatus.Internal
   void finish(@Nullable SpanStatus status, @Nullable Date timestamp);
 
   /**

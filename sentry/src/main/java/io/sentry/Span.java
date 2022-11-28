@@ -163,6 +163,7 @@ public final class Span implements ISpan {
   }
 
   @Override
+  @ApiStatus.Internal
   public void finish(@Nullable SpanStatus status, @Nullable Date timestamp) {
     if (timestamp == null) {
       finish(status);

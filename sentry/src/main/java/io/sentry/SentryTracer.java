@@ -323,6 +323,7 @@ public final class SentryTracer implements ITransaction {
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   @Override
+  @ApiStatus.Internal
   public void finish(@Nullable SpanStatus status, @Nullable Date finishDate) {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
