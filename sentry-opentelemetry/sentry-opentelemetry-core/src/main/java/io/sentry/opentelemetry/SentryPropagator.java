@@ -39,7 +39,7 @@ public final class SentryPropagator implements TextMapPropagator {
       return;
     }
     final @Nullable ISpan sentrySpan = spanStorage.get(otelSpanContext.getSpanId());
-    if (sentrySpan == null) {
+    if (sentrySpan == null || sentrySpan.isNoOp()) {
       return;
     }
 
@@ -75,10 +75,8 @@ public final class SentryPropagator implements TextMapPropagator {
       Context modifiedContext = context.with(SentryOtelKeys.SENTRY_TRACE_KEY, sentryTraceHeader);
 
       final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
-      if (baggageString != null) {
-        Baggage baggage = Baggage.fromHeader(baggageString);
-        modifiedContext = modifiedContext.with(SentryOtelKeys.SENTRY_BAGGAGE_KEY, baggage);
-      }
+      Baggage baggage = Baggage.fromHeader(baggageString);
+      modifiedContext = modifiedContext.with(SentryOtelKeys.SENTRY_BAGGAGE_KEY, baggage);
 
       Span wrappedSpan = Span.wrap(otelSpanContext);
       modifiedContext = modifiedContext.with(wrappedSpan);

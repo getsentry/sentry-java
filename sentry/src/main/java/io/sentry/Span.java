@@ -340,6 +340,11 @@ public final class Span implements ISpan {
     return endNanos;
   }
 
+  @Override
+  public boolean isNoOp() {
+    return false;
+  }
+
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {
     this.spanFinishedCallback = callback;
   }
