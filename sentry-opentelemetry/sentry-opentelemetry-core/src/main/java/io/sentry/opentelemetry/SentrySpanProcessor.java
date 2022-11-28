@@ -1,5 +1,6 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
@@ -10,12 +11,14 @@ import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
+import io.sentry.Baggage;
 import io.sentry.DateUtils;
 import io.sentry.DsnUtil;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
 import io.sentry.Sentry;
+import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
@@ -27,30 +30,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentrySpanProcessor implements SpanProcessor {
 
-  private final @NotNull Map<String, ISpan> spans = new ConcurrentHashMap<>();
   private final @NotNull List<SpanKind> spanKindsConsideredForSentryRequests =
       Arrays.asList(SpanKind.CLIENT, SpanKind.INTERNAL);
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
       new SpanDescriptionExtractor();
+  private final @NotNull SentrySpanStorage spanStorage = SentrySpanStorage.getInstance();
 
   @Override
   public void onStart(final @NotNull Context parentContext, final @NotNull ReadWriteSpan otelSpan) {
-    if (!hasSentryBeenInitialized()) {
-      return;
-    }
-
-    if (!Instrumenter.OTEL.equals(Sentry.getCurrentHub().getOptions().getInstrumenter())) {
-      return;
-    }
-
-    final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
-    if (!otelSpanContext.isValid()) {
+    if (!ensurePrerequisites(otelSpan)) {
       return;
     }
 
@@ -58,29 +51,42 @@ public final class SentrySpanProcessor implements SpanProcessor {
       return;
     }
 
-    final @NotNull TraceData traceData = getTraceData(otelSpan);
+    final @NotNull TraceData traceData = getTraceData(otelSpan, parentContext);
     final @Nullable ISpan sentryParentSpan =
-        traceData.getParentSpanId() == null ? null : spans.get(traceData.getParentSpanId());
+        traceData.getParentSpanId() == null ? null : spanStorage.get(traceData.getParentSpanId());
 
     if (sentryParentSpan != null) {
-      System.out.println("found a parent span: " + traceData.getParentSpanId());
       final @NotNull Date startDate =
           DateUtils.nanosToDate(otelSpan.toSpanData().getStartEpochNanos());
       final @NotNull ISpan sentryChildSpan =
           sentryParentSpan.startChild(
               otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL);
-      spans.put(traceData.getSpanId(), sentryChildSpan);
+      spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
-      TransactionContext transactionContext =
-          new TransactionContext(
-              otelSpan.getName(),
-              otelSpan.getName(),
-              new SentryId(traceData.getTraceId()),
-              new SpanId(traceData.getSpanId()),
-              TransactionNameSource.CUSTOM,
-              null,
-              null,
-              null);
+      final @NotNull String transactionName = otelSpan.getName();
+      final @NotNull TransactionNameSource transactionNameSource = TransactionNameSource.CUSTOM;
+      final @Nullable String op = otelSpan.getName();
+      final SpanId spanId = new SpanId(traceData.getSpanId());
+
+      final @NotNull TransactionContext transactionContext =
+          traceData.getSentryTraceHeader() == null
+              ? new TransactionContext(
+                  transactionName,
+                  op,
+                  new SentryId(traceData.getTraceId()),
+                  spanId,
+                  transactionNameSource,
+                  null,
+                  null,
+                  null)
+              : TransactionContext.fromSentryTrace(
+                  transactionName,
+                  transactionNameSource,
+                  op,
+                  traceData.getSentryTraceHeader(),
+                  traceData.getBaggage(),
+                  spanId);
+      ;
       transactionContext.setInstrumenter(Instrumenter.OTEL);
 
       TransactionOptions transactionOptions = new TransactionOptions();
@@ -88,7 +94,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
           DateUtils.nanosToDate(otelSpan.toSpanData().getStartEpochNanos()));
 
       ISpan sentryTransaction = Sentry.startTransaction(transactionContext, transactionOptions);
-      spans.put(traceData.getSpanId(), sentryTransaction);
+      spanStorage.store(traceData.getSpanId(), sentryTransaction);
     }
   }
 
@@ -99,21 +105,12 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
   @Override
   public void onEnd(final @NotNull ReadableSpan otelSpan) {
-    if (!hasSentryBeenInitialized()) {
+    if (!ensurePrerequisites(otelSpan)) {
       return;
     }
 
-    if (!Instrumenter.OTEL.equals(Sentry.getCurrentHub().getOptions().getInstrumenter())) {
-      return;
-    }
-
-    final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
-    if (!otelSpanContext.isValid()) {
-      return;
-    }
-
-    final @NotNull TraceData traceData = getTraceData(otelSpan);
-    final @Nullable ISpan sentrySpan = spans.remove(traceData.getSpanId());
+    final @NotNull TraceData traceData = getTraceData(otelSpan, null);
+    final @Nullable ISpan sentrySpan = spanStorage.removeAndGet(traceData.getSpanId());
 
     if (sentrySpan == null) {
       return;
@@ -141,20 +138,21 @@ public final class SentrySpanProcessor implements SpanProcessor {
     return true;
   }
 
-  private @NotNull TraceData getTraceData(final @NotNull ReadableSpan otelSpan) {
+  private boolean ensurePrerequisites(final @NotNull ReadableSpan otelSpan) {
+    if (!hasSentryBeenInitialized()) {
+      return false;
+    }
+
+    if (!Instrumenter.OTEL.equals(Sentry.getCurrentHub().getOptions().getInstrumenter())) {
+      return false;
+    }
+
     final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
-    final @NotNull String otelSpanId = otelSpanContext.getSpanId();
-    final @NotNull String otelParentSpanIdMaybeInvalid =
-        otelSpan.getParentSpanContext().getSpanId();
-    final @NotNull String otelTraceId = otelSpanContext.getTraceId();
-    final @Nullable String otelParentSpanId =
-        io.opentelemetry.api.trace.SpanId.isValid(otelParentSpanIdMaybeInvalid)
-            ? otelParentSpanIdMaybeInvalid
-            : null;
+    if (!otelSpanContext.isValid()) {
+      return false;
+    }
 
-    // TODO read parentSampled and baggage from context set by propagator
-
-    return new TraceData(otelTraceId, otelSpanId, otelParentSpanId);
+    return true;
   }
 
   private boolean isSentryRequest(final @NotNull ReadableSpan otelSpan) {
@@ -167,25 +165,49 @@ public final class SentrySpanProcessor implements SpanProcessor {
     return DsnUtil.urlContainsDsnHost(Sentry.getCurrentHub().getOptions(), httpUrl);
   }
 
+  private @NotNull TraceData getTraceData(
+      final @NotNull ReadableSpan otelSpan, final @Nullable Context parentContext) {
+    final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
+    final @NotNull String otelSpanId = otelSpanContext.getSpanId();
+    final @NotNull String otelParentSpanIdMaybeInvalid =
+        otelSpan.getParentSpanContext().getSpanId();
+    final @NotNull String otelTraceId = otelSpanContext.getTraceId();
+    final @Nullable String otelParentSpanId =
+        io.opentelemetry.api.trace.SpanId.isValid(otelParentSpanIdMaybeInvalid)
+            ? otelParentSpanIdMaybeInvalid
+            : null;
+
+    @Nullable SentryTraceHeader sentryTraceHeader = null;
+    @Nullable Baggage baggage = null;
+
+    if (parentContext != null) {
+      sentryTraceHeader = parentContext.get(SentryOtelKeys.SENTRY_TRACE_KEY);
+      if (sentryTraceHeader != null) {
+        baggage = parentContext.get(SentryOtelKeys.SENTRY_BAGGAGE_KEY);
+      }
+    }
+
+    return new TraceData(otelTraceId, otelSpanId, otelParentSpanId, sentryTraceHeader, baggage);
+  }
+
   private void updateTransactionWithOtelData(
       final @NotNull ITransaction sentryTransaction, final @NotNull ReadableSpan otelSpan) {
-    final @NotNull SpanDescription spanDescription =
+    final @NotNull OtelSpanInfo otelSpanInfo =
         spanDescriptionExtractor.extractSpanDescription(otelSpan);
-    sentryTransaction.setOperation(spanDescription.getOp());
+    sentryTransaction.setOperation(otelSpanInfo.getOp());
     sentryTransaction.setName(
-        spanDescription.getDescription(), spanDescription.getTransactionNameSource());
+        otelSpanInfo.getDescription(), otelSpanInfo.getTransactionNameSource());
 
     final @NotNull Map<String, Object> otelContext = toOtelContext(otelSpan);
-    System.out.println(otelContext);
-    // TODO set otel context on transaction
+    sentryTransaction.setContext("otel", otelContext);
   }
 
   private @NotNull Map<String, Object> toOtelContext(final @NotNull ReadableSpan otelSpan) {
     final @NotNull SpanData spanData = otelSpan.toSpanData();
     final @NotNull Map<String, Object> context = new HashMap<>();
 
-    context.put("attributes", spanData.getAttributes().asMap());
-    context.put("resource", spanData.getResource().getAttributes().asMap());
+    context.put("attributes", toMapWithStringKeys(spanData.getAttributes()));
+    context.put("resource", toMapWithStringKeys(spanData.getResource().getAttributes()));
 
     return context;
   }
@@ -205,10 +227,10 @@ public final class SentrySpanProcessor implements SpanProcessor {
               }
             });
 
-    final @NotNull SpanDescription spanDescription =
+    final @NotNull OtelSpanInfo otelSpanInfo =
         spanDescriptionExtractor.extractSpanDescription(otelSpan);
-    sentrySpan.setOperation(spanDescription.getOp());
-    sentrySpan.setDescription(spanDescription.getDescription());
+    sentrySpan.setOperation(otelSpanInfo.getOp());
+    sentrySpan.setDescription(otelSpanInfo.getDescription());
   }
 
   private SpanStatus mapOtelStatus(final @NotNull ReadableSpan otelSpan) {
@@ -233,5 +255,20 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
   private boolean hasSentryBeenInitialized() {
     return Sentry.isEnabled();
+  }
+
+  private @NotNull Map<String, Object> toMapWithStringKeys(final @Nullable Attributes attributes) {
+    final @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>();
+
+    if (attributes != null) {
+      attributes.forEach(
+          (key, value) -> {
+            if (key != null) {
+              mapWithStringKeys.put(key.getKey(), value);
+            }
+          });
+    }
+
+    return mapWithStringKeys;
   }
 }

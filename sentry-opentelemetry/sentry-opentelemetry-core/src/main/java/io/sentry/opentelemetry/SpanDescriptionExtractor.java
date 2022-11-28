@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SpanDescriptionExtractor {
 
-  public @NotNull SpanDescription extractSpanDescription(final @NotNull ReadableSpan otelSpan) {
+  public @NotNull OtelSpanInfo extractSpanDescription(final @NotNull ReadableSpan otelSpan) {
     final @NotNull String name = otelSpan.getName();
 
     final @Nullable String httpMethod = otelSpan.getAttribute(SemanticAttributes.HTTP_METHOD);
@@ -24,10 +24,10 @@ public final class SpanDescriptionExtractor {
       return descriptionForDbSystem(otelSpan);
     }
 
-    return new SpanDescription(name, name, TransactionNameSource.CUSTOM);
+    return new OtelSpanInfo(name, name, TransactionNameSource.CUSTOM);
   }
 
-  private SpanDescription descriptionForHttpMethod(
+  private OtelSpanInfo descriptionForHttpMethod(
       final @NotNull ReadableSpan otelSpan, final @NotNull String httpMethod) {
     final @NotNull String name = otelSpan.getName();
     final @NotNull SpanKind kind = otelSpan.getKind();
@@ -44,19 +44,19 @@ public final class SpanDescriptionExtractor {
     final @NotNull String op = opBuilder.toString();
 
     if (httpPath == null) {
-      return new SpanDescription(op, name, TransactionNameSource.CUSTOM);
+      return new OtelSpanInfo(op, name, TransactionNameSource.CUSTOM);
     }
 
     final @NotNull String description = httpMethod + " " + httpPath;
     final @NotNull TransactionNameSource transactionNameSource =
         httpRoute != null ? TransactionNameSource.ROUTE : TransactionNameSource.URL;
 
-    return new SpanDescription(op, description, transactionNameSource);
+    return new OtelSpanInfo(op, description, transactionNameSource);
   }
 
-  private SpanDescription descriptionForDbSystem(final @NotNull ReadableSpan otelSpan) {
+  private OtelSpanInfo descriptionForDbSystem(final @NotNull ReadableSpan otelSpan) {
     @Nullable String dbStatement = otelSpan.getAttribute(SemanticAttributes.DB_STATEMENT);
     @NotNull String description = dbStatement != null ? dbStatement : otelSpan.getName();
-    return new SpanDescription("db", description, TransactionNameSource.TASK);
+    return new OtelSpanInfo("db", description, TransactionNameSource.TASK);
   }
 }
