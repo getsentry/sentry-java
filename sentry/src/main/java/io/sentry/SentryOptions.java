@@ -8,6 +8,7 @@ import io.sentry.clientreport.NoOpClientReportRecorder;
 import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -114,6 +115,12 @@ public class SentryOptions {
    * object or nothing to skip reporting the event
    */
   private @Nullable BeforeSendCallback beforeSend;
+
+  /**
+   * This function is called with an SDK specific transaction object and can return a modified
+   * transaction object or nothing to skip reporting the transaction
+   */
+  private @Nullable BeforeSendTransactionCallback beforeSendTransaction;
 
   /**
    * This function is called with an SDK specific breadcrumb object before the breadcrumb is added
@@ -610,6 +617,25 @@ public class SentryOptions {
    */
   public void setBeforeSend(@Nullable BeforeSendCallback beforeSend) {
     this.beforeSend = beforeSend;
+  }
+
+  /**
+   * Returns the BeforeSendTransaction callback
+   *
+   * @return the beforeSendTransaction callback or null if not set
+   */
+  public @Nullable BeforeSendTransactionCallback getBeforeSendTransaction() {
+    return beforeSendTransaction;
+  }
+
+  /**
+   * Sets the beforeSendTransaction callback
+   *
+   * @param beforeSendTransaction the beforeSendTransaction callback
+   */
+  public void setBeforeSendTransaction(
+      @Nullable BeforeSendTransactionCallback beforeSendTransaction) {
+    this.beforeSendTransaction = beforeSendTransaction;
   }
 
   /**
@@ -1778,6 +1804,21 @@ public class SentryOptions {
      */
     @Nullable
     SentryEvent execute(@NotNull SentryEvent event, @NotNull Hint hint);
+  }
+
+  /** The BeforeSendTransaction callback */
+  public interface BeforeSendTransactionCallback {
+
+    /**
+     * Mutates or drop a transaction before being sent
+     *
+     * @param transaction the transaction
+     * @param hint the hints
+     * @return the original transaction or the mutated transaction or null if transaction was
+     *     dropped
+     */
+    @Nullable
+    SentryTransaction execute(@NotNull SentryTransaction transaction, @NotNull Hint hint);
   }
 
   /** The BeforeBreadcrumb callback */
