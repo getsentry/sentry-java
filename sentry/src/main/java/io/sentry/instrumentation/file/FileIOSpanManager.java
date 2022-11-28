@@ -1,10 +1,15 @@
 package io.sentry.instrumentation.file;
 
+import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanStatus;
+import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.exception.FileIOMainThreadException;
+import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Platform;
@@ -99,34 +104,24 @@ final class FileIOSpanManager {
         currentSpan.setDescription(byteCountToString);
       }
       currentSpan.setData("file.size", byteCount);
-      currentSpan.setData("blocked_ui_thread", options.getMainThreadChecker().isMainThread());
-      attachStacktrace();
       currentSpan.finish(spanStatus);
+      if (options.getMainThreadChecker().isMainThread()) {
+        createError();
+      }
     }
   }
 
-  private void attachStacktrace() {
-    final SentryStackTraceFactory sentryStackTraceFactory =
-        new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
-    final StackTraceElement[] stacktrace = new Exception().getStackTrace();
-    final List<SentryStackFrame> frames = sentryStackTraceFactory.getStackFrames(stacktrace);
-    if (currentSpan != null && frames != null) {
-      final List<SentryStackFrame> relevantFrames =
-          CollectionUtils.filterListEntries(
-              frames,
-              (frame) -> {
-                final String module = frame.getModule();
-                boolean isSystemFrame = false;
-                if (module != null) {
-                  isSystemFrame =
-                      module.startsWith("sun.")
-                          || module.startsWith("java.")
-                          || module.startsWith("android.")
-                          || module.startsWith("com.android.");
-                }
-                return Boolean.TRUE.equals(frame.isInApp()) || !isSystemFrame;
-              });
-      currentSpan.setData("call_stack", relevantFrames);
+  private void createError() {
+    final FileIOMainThreadException exception = new FileIOMainThreadException("File I/O on Main Thread");
+    final Mechanism mechanism = new Mechanism();
+    mechanism.setType("File I/O");
+    final ExceptionMechanismException
+      mechanismException = new ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true);
+    final SentryEvent event = new SentryEvent(mechanismException);
+
+    HubAdapter.getInstance().captureEvent(event);
+    if (currentSpan != null) {
+      currentSpan.setThrowable(exception);
     }
   }
 

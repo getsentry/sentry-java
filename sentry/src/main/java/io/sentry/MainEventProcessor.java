@@ -70,7 +70,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     return event;
   }
 
-  private void setDebugMeta(final @NotNull SentryEvent event) {
+  private void setDebugMeta(final @NotNull SentryBaseEvent event) {
     if (options.getProguardUuid() != null) {
       DebugMeta debugMeta = event.getDebugMeta();
 
@@ -134,6 +134,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   public @NotNull SentryTransaction process(
       final @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
     setCommons(transaction);
+    setDebugMeta(transaction);
 
     if (shouldApplyScopeData(transaction, hint)) {
       processNonCachedEvent(transaction);
