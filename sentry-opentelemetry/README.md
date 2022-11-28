@@ -1,5 +1,7 @@
 # sentry-opentelemetry
 
+*NOTE: Our OpenTelemetry modules are still experimental. Any feedback is welcome.*
+
 ## Modules
 
 ### [`sentry-opentelemetry-agent`](sentry-opentelemetry-agent/README.md)

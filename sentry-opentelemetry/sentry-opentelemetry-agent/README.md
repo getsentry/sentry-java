@@ -1,5 +1,7 @@
 # sentry-opentelemetry-agent
 
+*NOTE: Our OpenTelemetry modules are still experimental. Any feedback is welcome.*
+
 ## How to use it
 
 Download the latest `sentry-opentelemetry-agent.jar` and use it when launching your Java
