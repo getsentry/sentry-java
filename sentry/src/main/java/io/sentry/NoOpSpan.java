@@ -47,8 +47,8 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public @NotNull BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    return new BaggageHeader("");
+  public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
+    return null;
   }
 
   @Override
@@ -124,4 +124,9 @@ public final class NoOpSpan implements ISpan {
   @Override
   public void setMeasurement(
       @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {}
+
+  @Override
+  public boolean isNoOp() {
+    return true;
+  }
 }

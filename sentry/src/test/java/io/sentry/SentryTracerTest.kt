@@ -10,6 +10,8 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -116,6 +118,15 @@ class SentryTracerTest {
         val tracer = fixture.getSut()
         tracer.finish(SpanStatus.ABORTED)
         assertNotNull(tracer.timestamp)
+        assertEquals(SpanStatus.ABORTED, tracer.status)
+    }
+
+    @Test
+    fun `when transaction is finished with status and timestamp, timestamp and status are set`() {
+        val tracer = fixture.getSut()
+        val date = Date.from(LocalDateTime.of(2022, 12, 24, 23, 59, 58, 0).toInstant(ZoneOffset.UTC))
+        tracer.finish(SpanStatus.ABORTED, date)
+        assertEquals(tracer.timestamp, DateUtils.dateToSeconds(date))
         assertEquals(SpanStatus.ABORTED, tracer.status)
     }
 
