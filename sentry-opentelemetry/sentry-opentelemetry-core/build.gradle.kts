@@ -36,6 +36,9 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.awaitility)
+
+    testImplementation("io.opentelemetry:opentelemetry-sdk:${Config.Libs.otelVersion}")
+    testImplementation("io.opentelemetry:opentelemetry-semconv:${Config.Libs.otelAlphaVersion}")
 }
 
 configure<SourceSetContainer> {

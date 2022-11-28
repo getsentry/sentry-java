@@ -14,10 +14,11 @@ import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import io.sentry.Baggage;
 import io.sentry.DateUtils;
 import io.sentry.DsnUtil;
+import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
-import io.sentry.Sentry;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
@@ -40,6 +41,15 @@ public final class SentrySpanProcessor implements SpanProcessor {
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
       new SpanDescriptionExtractor();
   private final @NotNull SentrySpanStorage spanStorage = SentrySpanStorage.getInstance();
+  private final @NotNull IHub hub;
+
+  public SentrySpanProcessor() {
+    this(HubAdapter.getInstance());
+  }
+
+  SentrySpanProcessor(@NotNull IHub hub) {
+    this.hub = hub;
+  }
 
   @Override
   public void onStart(final @NotNull Context parentContext, final @NotNull ReadWriteSpan otelSpan) {
@@ -93,7 +103,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
       transactionOptions.setStartTimestamp(
           DateUtils.nanosToDate(otelSpan.toSpanData().getStartEpochNanos()));
 
-      ISpan sentryTransaction = Sentry.startTransaction(transactionContext, transactionOptions);
+      ISpan sentryTransaction = hub.startTransaction(transactionContext, transactionOptions);
       spanStorage.store(traceData.getSpanId(), sentryTransaction);
     }
   }
@@ -143,7 +153,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
       return false;
     }
 
-    if (!Instrumenter.OTEL.equals(Sentry.getCurrentHub().getOptions().getInstrumenter())) {
+    if (!Instrumenter.OTEL.equals(hub.getOptions().getInstrumenter())) {
       return false;
     }
 
@@ -162,7 +172,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
     }
 
     final @Nullable String httpUrl = otelSpan.getAttribute(SemanticAttributes.HTTP_URL);
-    return DsnUtil.urlContainsDsnHost(Sentry.getCurrentHub().getOptions(), httpUrl);
+    return DsnUtil.urlContainsDsnHost(hub.getOptions(), httpUrl);
   }
 
   private @NotNull TraceData getTraceData(
@@ -254,7 +264,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
   }
 
   private boolean hasSentryBeenInitialized() {
-    return Sentry.isEnabled();
+    return hub.isEnabled();
   }
 
   private @NotNull Map<String, Object> toMapWithStringKeys(final @Nullable Attributes attributes) {
