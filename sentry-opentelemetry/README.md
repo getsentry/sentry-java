@@ -2,6 +2,14 @@
 
 *NOTE: Our OpenTelemetry modules are still experimental. Any feedback is welcome.*
 
+## OpenTelemetry
+
+More information on OpenTelemetry can be found on their [website](https://opentelemetry.io/) as well
+as their docs and GitHub repos:
+- https://opentelemetry.io/docs/instrumentation/java/getting-started/
+- https://github.com/open-telemetry/opentelemetry-java
+- https://github.com/open-telemetry/opentelemetry-java-instrumentation
+
 ## Modules
 
 ### [`sentry-opentelemetry-agent`](sentry-opentelemetry-agent/README.md)
