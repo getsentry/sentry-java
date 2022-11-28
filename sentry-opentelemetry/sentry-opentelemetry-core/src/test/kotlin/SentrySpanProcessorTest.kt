@@ -1,2 +1,1 @@
-class SentrySpanProcessorTest {
-}
+class SentrySpanProcessorTest
