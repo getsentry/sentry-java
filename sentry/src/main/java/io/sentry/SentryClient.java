@@ -178,6 +178,7 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelope envelope =
           buildEnvelope(event, attachments, session, traceContext, null);
 
+      hint.clear();
       if (envelope != null) {
         transport.send(envelope, hint);
       }
@@ -483,6 +484,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
+      hint.clear();
       transport.send(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
@@ -588,6 +590,7 @@ public final class SentryClient implements ISentryClient {
           buildEnvelope(
               transaction, filterForTransaction(getAttachments(hint)), null, traceContext, null);
 
+      hint.clear();
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {
