@@ -26,7 +26,7 @@ public final class TransactionContext extends SpanContext {
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull SentryTraceHeader sentryTrace) {
-    return fromSentryTrace(name, TransactionNameSource.CUSTOM, operation, sentryTrace, null);
+    return fromSentryTrace(name, TransactionNameSource.CUSTOM, operation, sentryTrace, null, null);
   }
 
   /**
@@ -72,7 +72,8 @@ public final class TransactionContext extends SpanContext {
       final @NotNull TransactionNameSource transactionNameSource,
       final @NotNull String operation,
       final @NotNull SentryTraceHeader sentryTrace,
-      final @Nullable Baggage baggage) {
+      final @Nullable Baggage baggage,
+      final @Nullable SpanId spanId) {
     @Nullable Boolean parentSampled = sentryTrace.isSampled();
     TracesSamplingDecision samplingDecision =
         parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
@@ -89,11 +90,13 @@ public final class TransactionContext extends SpanContext {
       }
     }
 
+    final @NotNull SpanId spanIdToUse = spanId == null ? new SpanId() : spanId;
+
     return new TransactionContext(
         name,
         operation,
         sentryTrace.getTraceId(),
-        new SpanId(),
+        spanIdToUse,
         transactionNameSource,
         sentryTrace.getSpanId(),
         samplingDecision,
@@ -145,7 +148,8 @@ public final class TransactionContext extends SpanContext {
     this.setSamplingDecision(samplingDecision);
   }
 
-  private TransactionContext(
+  @ApiStatus.Internal
+  public TransactionContext(
       final @NotNull String name,
       final @NotNull String operation,
       final @NotNull SentryId traceId,

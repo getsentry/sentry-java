@@ -72,6 +72,14 @@ public interface ISpan {
   void finish(@Nullable SpanStatus status);
 
   /**
+   * Sets span timestamp marking this span as finished.
+   *
+   * @param status - the status
+   * @param timestamp - the end timestamp
+   */
+  void finish(@Nullable SpanStatus status, @Nullable Date timestamp);
+
+  /**
    * Sets span operation.
    *
    * @param operation - the operation
@@ -197,4 +205,12 @@ public interface ISpan {
    * @param unit the unit the value is measured in
    */
   void setMeasurement(@NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit);
+
+  /**
+   * Whether this span instance is a NOOP that doesn't collect information
+   *
+   * @return true if NOOP
+   */
+  @ApiStatus.Internal
+  boolean isNoOp();
 }

@@ -162,6 +162,15 @@ public final class Span implements ISpan {
     finish(status, DateUtils.dateToSeconds(DateUtils.getCurrentDateTime()), null);
   }
 
+  @Override
+  public void finish(@Nullable SpanStatus status, @Nullable Date timestamp) {
+    if (timestamp == null) {
+      finish(status);
+    } else {
+      finish(status, DateUtils.dateToSeconds(timestamp), null);
+    }
+  }
+
   /**
    * Used to finish unfinished spans by {@link SentryTracer}.
    *
@@ -329,6 +338,11 @@ public final class Span implements ISpan {
   @Nullable
   Long getEndNanos() {
     return endNanos;
+  }
+
+  @Override
+  public boolean isNoOp() {
+    return false;
   }
 
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {

@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -78,6 +79,7 @@ public final class SentryTracer implements ITransaction {
   private @NotNull TransactionNameSource transactionNameSource;
   private final @NotNull Map<String, MeasurementValue> measurements;
   private final @NotNull Instrumenter instrumenter;
+  private final @NotNull Contexts contexts = new Contexts();
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
     this(context, hub, null);
@@ -314,9 +316,14 @@ public final class SentryTracer implements ITransaction {
     this.finish(this.getStatus());
   }
 
-  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   @Override
   public void finish(@Nullable SpanStatus status) {
+    this.finish(status, null);
+  }
+
+  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
+  @Override
+  public void finish(@Nullable SpanStatus status, @Nullable Date finishDate) {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
       if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
@@ -326,6 +333,13 @@ public final class SentryTracer implements ITransaction {
       // try to get the high precision timestamp from the root span
       Long endTime = System.nanoTime();
       Double finishTimestamp = root.getHighPrecisionTimestamp(endTime);
+
+      // if a finishDate was passed in, use that instead
+      if (finishDate != null) {
+        finishTimestamp = DateUtils.dateToSeconds(finishDate);
+        endTime = null;
+      }
+
       // if it's not set -> fallback to the current time
       if (finishTimestamp == null) {
         finishTimestamp = DateUtils.dateToSeconds(DateUtils.getCurrentDateTime());
@@ -647,6 +661,23 @@ public final class SentryTracer implements ITransaction {
   @NotNull
   Map<String, MeasurementValue> getMeasurements() {
     return measurements;
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public void setContext(final @NotNull String key, final @NotNull Object context) {
+    contexts.put(key, context);
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull Contexts getContexts() {
+    return contexts;
+  }
+
+  @Override
+  public boolean isNoOp() {
+    return false;
   }
 
   private static final class FinishStatus {
