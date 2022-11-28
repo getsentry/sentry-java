@@ -15,6 +15,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.spring.ContextTagsEventProcessor
 import io.sentry.spring.HttpServletRequestSentryUserProvider
@@ -272,6 +273,15 @@ class SentryAutoConfigurationTest {
             .withUserConfiguration(CustomBeforeSendCallbackConfiguration::class.java)
             .run {
                 assertThat(it.getBean(SentryOptions::class.java).beforeSend).isInstanceOf(CustomBeforeSendCallback::class.java)
+            }
+    }
+
+    @Test
+    fun `registers beforeSendTransactionCallback on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(CustomBeforeSendTransactionCallbackConfiguration::class.java)
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).beforeSendTransaction).isInstanceOf(CustomBeforeSendTransactionCallback::class.java)
             }
     }
 
@@ -718,6 +728,17 @@ class SentryAutoConfigurationTest {
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
         override fun execute(event: SentryEvent, hint: Hint): SentryEvent? = null
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    open class CustomBeforeSendTransactionCallbackConfiguration {
+
+        @Bean
+        open fun beforeSendTransactionCallback() = CustomBeforeSendTransactionCallback()
+    }
+
+    class CustomBeforeSendTransactionCallback : SentryOptions.BeforeSendTransactionCallback {
+        override fun execute(event: SentryTransaction, hint: Hint): SentryTransaction? = null
     }
 
     @Configuration(proxyBeanMethods = false)

@@ -695,6 +695,22 @@ class SentryClientTest {
     }
 
     @Test
+    fun `transaction dropped by beforeSendTransaction is recorded`() {
+        fixture.sentryOptions.setBeforeSendTransaction { transaction, hint ->
+            null
+        }
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1))
+        )
+    }
+
+    @Test
     fun `transaction dropped by scope event processor is recorded`() {
         val transaction = SentryTransaction(fixture.sentryTracer)
         val scope = createScope()
@@ -742,6 +758,70 @@ class SentryClientTest {
             fixture.sentryOptions.clientReportRecorder,
             listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1))
         )
+    }
+
+    @Test
+    fun `when beforeSendTransaction is set, callback is invoked`() {
+        var invoked = false
+        fixture.sentryOptions.setBeforeSendTransaction { t, _ -> invoked = true; t }
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
+
+        assertTrue(invoked)
+    }
+
+    @Test
+    fun `when beforeSendTransaction is returns null, event is dropped`() {
+        fixture.sentryOptions.setBeforeSendTransaction { _: SentryTransaction, _: Any? -> null }
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
+
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1))
+        )
+    }
+
+    @Test
+    fun `when beforeSendTransaction returns new instance, new instance is sent`() {
+        val expected = SentryTransaction(fixture.sentryTracer).apply {
+            setTag("test", "test")
+        }
+        fixture.sentryOptions.setBeforeSendTransaction { _, _ -> expected }
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
+
+        verify(fixture.transport).send(
+            check {
+                val tx = getTransactionFromData(it.items.first().data)
+                assertEquals("test", tx.tags!!["test"])
+            },
+            anyOrNull()
+        )
+        verifyNoMoreInteractions(fixture.transport)
+    }
+
+    @Test
+    fun `when beforeSendTransaction throws an exception, breadcrumb is added and event is sent`() {
+        val exception = Exception("test")
+
+        exception.stackTrace.toString()
+        fixture.sentryOptions.setBeforeSendTransaction { _, _ -> throw exception }
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+        fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
+
+        assertNotNull(transaction.breadcrumbs) {
+            assertEquals("test", it.first().data["sentry:message"])
+            assertEquals("SentryClient", it.first().category)
+            assertEquals(SentryLevel.ERROR, it.first().level)
+            assertEquals("BeforeSendTransaction callback failed.", it.first().message)
+        }
     }
 
     @Test
