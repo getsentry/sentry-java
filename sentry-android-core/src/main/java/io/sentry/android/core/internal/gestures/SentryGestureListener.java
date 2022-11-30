@@ -4,7 +4,6 @@ import static io.sentry.TypeCheckHint.ANDROID_MOTION_EVENT;
 import static io.sentry.TypeCheckHint.ANDROID_VIEW;
 
 import android.app.Activity;
-import android.content.res.Resources;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -38,7 +37,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private final @NotNull SentryAndroidOptions options;
   private final boolean isAndroidXAvailable;
 
-  private @Nullable WeakReference<View> activeView = null;
+  private @Nullable ViewUtils.UiElement activeUiElement = null;
   private @Nullable ITransaction activeTransaction = null;
   private @Nullable String activeEventType = null;
 
@@ -57,7 +56,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   public void onUp(final @NotNull MotionEvent motionEvent) {
     final View decorView = ensureWindowDecorView("onUp");
-    final View scrollTarget = scrollState.targetRef.get();
+    final ViewUtils.UiElement scrollTarget = scrollState.target;
     if (decorView == null || scrollTarget == null) {
       return;
     }
@@ -98,12 +97,13 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     @SuppressWarnings("Convert2MethodRef")
-    final @Nullable View target =
+    final @Nullable ViewUtils.UiElement target =
         ViewUtils.findTarget(
+            isAndroidXAvailable,
             decorView,
             motionEvent.getX(),
             motionEvent.getY(),
-            view -> ViewUtils.isViewTappable(view));
+            ViewUtils.TargetType.CLICKABLE);
 
     if (target == null) {
       options
@@ -129,28 +129,23 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     if (scrollState.type == null) {
-      final @Nullable View target =
+      final @Nullable ViewUtils.UiElement target =
           ViewUtils.findTarget(
+              isAndroidXAvailable,
               decorView,
               firstEvent.getX(),
               firstEvent.getY(),
-              new ViewTargetSelector() {
-                @Override
-                public boolean select(@NotNull View view) {
-                  return ViewUtils.isViewScrollable(view, isAndroidXAvailable);
-                }
-
-                @Override
-                public boolean skipChildren() {
-                  return true;
-                }
-              });
+              ViewUtils.TargetType.SCROLLABLE);
 
       if (target == null) {
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "Unable to find scroll target. No breadcrumb captured.");
         return false;
+      } else {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Scroll target found: " + target.getIdentifier());
       }
 
       scrollState.setTarget(target);
@@ -177,34 +172,31 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   // region utils
   private void addBreadcrumb(
-      final @NotNull View target,
+      final @NotNull ViewUtils.UiElement target,
       final @NotNull String eventType,
       final @NotNull Map<String, Object> additionalData,
       final @NotNull MotionEvent motionEvent) {
 
-    if (hub.getOptions().isEnableUserInteractionBreadcrumbs()) {
+    if (!hub.getOptions().isEnableUserInteractionBreadcrumbs()) {
       return;
-    }
-
-    @NotNull String className;
-    @Nullable String canonicalName = target.getClass().getCanonicalName();
-    if (canonicalName != null) {
-      className = canonicalName;
-    } else {
-      className = target.getClass().getSimpleName();
     }
 
     final Hint hint = new Hint();
     hint.set(ANDROID_MOTION_EVENT, motionEvent);
-    hint.set(ANDROID_VIEW, target);
+    hint.set(ANDROID_VIEW, target.getView());
 
     hub.addBreadcrumb(
         Breadcrumb.userInteraction(
-            eventType, ViewUtils.getResourceIdWithFallback(target), className, additionalData),
+            eventType,
+            target.getResourceName(),
+            target.getClassName(),
+            target.getTag(),
+            additionalData),
         hint);
   }
 
-  private void startTracing(final @NotNull View target, final @NotNull String eventType) {
+  private void startTracing(
+      final @NotNull ViewUtils.UiElement target, final @NotNull String eventType) {
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
       return;
     }
@@ -215,21 +207,11 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return;
     }
 
-    final String viewId;
-    try {
-      viewId = ViewUtils.getResourceId(target);
-    } catch (Resources.NotFoundException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "View id cannot be retrieved from Resources, no transaction captured.");
-      return;
-    }
+    final @Nullable String viewIdentifier = target.getIdentifier();
+    final ViewUtils.UiElement uiElement = activeUiElement;
 
-    final View view = (activeView != null) ? activeView.get() : null;
     if (activeTransaction != null) {
-      if (target.equals(view)
+      if (target.equals(uiElement)
           && eventType.equals(activeEventType)
           && !activeTransaction.isFinished()) {
         options
@@ -237,7 +219,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
             .log(
                 SentryLevel.DEBUG,
                 "The view with id: "
-                    + viewId
+                    + viewIdentifier
                     + " already has an ongoing transaction assigned. Rescheduling finish");
 
         final Long idleTimeout = options.getIdleTimeout();
@@ -255,7 +237,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     // we can only bind to the scope if there's no running transaction
-    final String name = getActivityName(activity) + "." + viewId;
+    final String name = getActivityName(activity) + "." + viewIdentifier;
     final String op = UI_ACTION + "." + eventType;
 
     final TransactionOptions transactionOptions = new TransactionOptions();
@@ -273,7 +255,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         });
 
     activeTransaction = transaction;
-    activeView = new WeakReference<>(target);
+    activeUiElement = target;
     activeEventType = eventType;
   }
 
@@ -286,8 +268,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
           clearScope(scope);
         });
     activeTransaction = null;
-    if (activeView != null) {
-      activeView.clear();
+    if (activeUiElement != null) {
+      activeUiElement = null;
     }
     activeEventType = null;
   }
@@ -355,12 +337,12 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   // region scroll logic
   private static final class ScrollState {
     private @Nullable String type = null;
-    private WeakReference<View> targetRef = new WeakReference<>(null);
+    private @Nullable ViewUtils.UiElement target;
     private float startX = 0f;
     private float startY = 0f;
 
-    private void setTarget(final @NotNull View target) {
-      targetRef = new WeakReference<>(target);
+    private void setTarget(final @NotNull ViewUtils.UiElement target) {
+      this.target = target;
     }
 
     /**
@@ -390,7 +372,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     private void reset() {
-      targetRef.clear();
+      target = null;
       type = null;
       startX = 0f;
       startY = 0f;
