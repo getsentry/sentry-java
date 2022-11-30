@@ -2,13 +2,9 @@
 
 ## 6.9.1
 
-### Various fixes & improvements
+### Fixes
 
-- Revert "Revert "Re-add OTEL modules to craft"" (30ac01fa) by @adinauer
-- Revert "Re-add OTEL modules to craft" (874a2fa2) by @adinauer
-- Re-add OTEL modules to craft (29f82a5a) by @adinauer
-- Disable craft for OTEL modules for now (05d356be) by @adinauer
-- Include otel module distributions in build archive (2a40b036) by @adinauer
+- OpenTelemetry modules were missing in `6.9.0` so we released the same code again as `6.9.1` including OpenTelemetry modules
 
 ## 6.9.0
 
