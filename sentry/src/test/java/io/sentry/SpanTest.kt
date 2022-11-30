@@ -63,7 +63,7 @@ class SpanTest {
 
     @Test
     fun `when span is created with a start timestamp, finish timestamp is equals to high precision timestamp`() {
-        val span = fixture.getSut().startChild("op", "desc", Date()) as Span
+        val span = fixture.getSut().startChild("op", "desc", Date(), Instrumenter.SENTRY) as Span
         span.finish()
 
         assertNotNull(span.timestamp)
@@ -141,6 +141,24 @@ class SpanTest {
     }
 
     @Test
+    fun `starting a child with different instrumenter no-ops`() {
+        val transaction = getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
+        val span = transaction.startChild("operation", "description")
+
+        span.startChild("op")
+        assertEquals(0, transaction.spans.size)
+    }
+
+    @Test
+    fun `starting a child with same instrumenter adds span to transaction`() {
+        val transaction = getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
+        val span = transaction.startChild("operation", "description", null, Instrumenter.OTEL)
+
+        span.startChild("op", "desc", null, Instrumenter.OTEL)
+        assertEquals(2, transaction.spans.size)
+    }
+
+    @Test
     fun `when span was not finished, isFinished returns false`() {
         val span = startChildFromSpan()
 
@@ -200,7 +218,7 @@ class SpanTest {
         span.finish(SpanStatus.OK)
         assertTrue(span.isFinished)
 
-        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null))
+        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null, Instrumenter.SENTRY))
         assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc"))
 
         span.finish(SpanStatus.UNKNOWN_ERROR)
@@ -248,8 +266,8 @@ class SpanTest {
         }
     }
 
-    private fun getTransaction(): SentryTracer {
-        return SentryTracer(TransactionContext("name", "op"), fixture.hub)
+    private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
+        return SentryTracer(transactionContext, fixture.hub)
     }
 
     private fun startChildFromSpan(): Span {

@@ -5,7 +5,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
-    val springBoot3Version = "3.0.0-RC2"
+    val springBoot3Version = "3.0.0"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.1.1"
@@ -131,6 +131,11 @@ object Config {
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.3.0"
+
+        val otelVersion = "1.19.0"
+        val otelAlphaVersion = "1.19.0-alpha"
+        val otelJavaagentVersion = "1.19.2"
+        val otelJavaagentAlphaVersion = "1.19.2-alpha"
     }
 
     object AnnotationProcessors {
@@ -193,6 +198,7 @@ object Config {
         val SENTRY_SPRING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring"
         val SENTRY_SPRING_BOOT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot"
         val SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot.jakarta"
+        val SENTRY_OPENTELEMETRY_AGENT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agent"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"
