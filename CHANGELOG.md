@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased
+## 6.9.1
+
+### Various fixes & improvements
+
+- Revert "Revert "Re-add OTEL modules to craft"" (30ac01fa) by @adinauer
+- Revert "Re-add OTEL modules to craft" (874a2fa2) by @adinauer
+- Re-add OTEL modules to craft (29f82a5a) by @adinauer
+- Disable craft for OTEL modules for now (05d356be) by @adinauer
+- Include otel module distributions in build archive (2a40b036) by @adinauer
+
+## 6.9.0
 
 ### Fixes
 
