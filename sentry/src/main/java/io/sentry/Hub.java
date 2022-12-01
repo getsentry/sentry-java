@@ -699,6 +699,15 @@ public final class Hub implements IHub {
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
+    } else if (!options.getInstrumenter().equals(transactionContext.getInstrumenter())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
+              transactionContext.getInstrumenter(),
+              options.getInstrumenter());
+      transaction = NoOpTransaction.getInstance();
     } else if (!options.isTracingEnabled()) {
       options
           .getLogger()
@@ -744,7 +753,7 @@ public final class Hub implements IHub {
               SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
     } else {
       final ISpan span = stack.peek().getScope().getSpan();
-      if (span != null) {
+      if (span != null && !span.isNoOp()) {
         traceHeader = span.toSentryTrace();
       }
     }

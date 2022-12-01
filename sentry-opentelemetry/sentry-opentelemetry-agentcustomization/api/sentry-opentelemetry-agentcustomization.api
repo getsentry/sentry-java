@@ -1,0 +1,16 @@
+public final class io/sentry/opentelemetry/SentryAutoConfigurationCustomizerProvider : io/opentelemetry/sdk/autoconfigure/spi/AutoConfigurationCustomizerProvider {
+	public fun <init> ()V
+	public fun customize (Lio/opentelemetry/sdk/autoconfigure/spi/AutoConfigurationCustomizer;)V
+}
+
+public final class io/sentry/opentelemetry/SentryBootstrapPackagesProvider : io/opentelemetry/javaagent/tooling/bootstrap/BootstrapPackagesConfigurer {
+	public fun <init> ()V
+	public fun configure (Lio/opentelemetry/javaagent/tooling/bootstrap/BootstrapPackagesBuilder;Lio/opentelemetry/sdk/autoconfigure/spi/ConfigProperties;)V
+}
+
+public final class io/sentry/opentelemetry/SentryPropagatorProvider : io/opentelemetry/sdk/autoconfigure/spi/ConfigurablePropagatorProvider {
+	public fun <init> ()V
+	public fun getName ()Ljava/lang/String;
+	public fun getPropagator (Lio/opentelemetry/sdk/autoconfigure/spi/ConfigProperties;)Lio/opentelemetry/context/propagation/TextMapPropagator;
+}
+
