@@ -112,14 +112,14 @@ public final class UserInteractionIntegration
 
     this.hub = Objects.requireNonNull(hub, "Hub is required");
 
+    final boolean integrationEnabled =
+        this.options.isEnableUserInteractionBreadcrumbs()
+            || this.options.isEnableUserInteractionTracing();
     this.options
         .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "UserInteractionIntegration enabled: %s",
-            this.options.isEnableUserInteractionBreadcrumbs());
+        .log(SentryLevel.DEBUG, "UserInteractionIntegration enabled: %s", integrationEnabled);
 
-    if (this.options.isEnableUserInteractionBreadcrumbs()) {
+    if (integrationEnabled) {
       if (isAndroidXAvailable) {
         application.registerActivityLifecycleCallbacks(this);
         this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
