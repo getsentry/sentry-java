@@ -525,9 +525,10 @@ class ActivityLifecycleIntegrationTest {
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
-        sut.onActivityDestroyed(activity)
+        assertNotNull(sut.ttidSpanMap[activity])
 
-        assertNull(sut.ttidSpan)
+        sut.onActivityDestroyed(activity)
+        assertNull(sut.ttidSpanMap[activity])
     }
 
     @Test

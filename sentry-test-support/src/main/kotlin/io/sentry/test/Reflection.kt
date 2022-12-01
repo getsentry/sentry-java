@@ -37,11 +37,13 @@ fun Class<*>.containsMethod(name: String, parameterTypes: Array<Class<*>>): Bool
 fun Class<*>.containsMethod(name: String, parameterTypes: Class<*>): Boolean =
     containsMethod(name, arrayOf(parameterTypes))
 
-inline fun <reified T> Any.getProperty(name: String): T =
+inline fun <reified T> Any.getProperty(name: String): T = this.getProperty(this::class.java, name)
+
+inline fun <reified T> Any.getProperty(clz: Class<*>, name: String): T =
     try {
-        this::class.java.getDeclaredField(name)
+        clz.getDeclaredField(name)
     } catch (_: NoSuchFieldException) {
-        this::class.java.superclass.getDeclaredField(name)
+        clz.superclass.getDeclaredField(name)
     }.apply {
         this.isAccessible = true
     }.get(this) as T
