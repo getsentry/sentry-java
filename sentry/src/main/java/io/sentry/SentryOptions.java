@@ -371,7 +371,7 @@ public class SentryOptions {
   /** Enables the Auto instrumentation for user interaction tracing. */
   private boolean enableUserInteractionTracing = false;
 
-  /** Enable or disable automatic breadcrumbs for User interactions Using Window.Callback */
+  /** Enable or disable automatic breadcrumbs for User interactions */
   private boolean enableUserInteractionBreadcrumbs = true;
 
   /** Which framework is responsible for instrumenting. */
