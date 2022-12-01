@@ -49,12 +49,13 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String buildId;
 
   // Transaction info
-  private final @NotNull List<ProfilingTransactionData> transactions;
+  private @NotNull List<ProfilingTransactionData> transactions;
   private @NotNull String transactionName;
   // duration_ns is a String to avoid issues with numbers and json
   private @NotNull String durationNs;
 
   // App info
+  private @NotNull String versionCode;
   private @NotNull String release;
 
   // Stacktrace context
@@ -138,6 +139,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.durationNs = durationNanos;
 
     // App info
+    this.versionCode = "";
     this.release = release != null ? release : "";
 
     // Stacktrace context
@@ -322,6 +324,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public void setRelease(@NotNull String release) {
     this.release = release;
+  }
 
   public void setTransactionId(final @NotNull String transactionId) {
     this.transactionId = transactionId;
@@ -402,7 +405,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.TRANSACTION_NAME).value(transactionName);
     writer.name(JsonKeys.DURATION_NS).value(durationNs);
     writer.name(JsonKeys.RELEASE).value(release);
-    writer.name(JsonKeys.VERSION_CODE).value("");
+    writer.name(JsonKeys.VERSION_CODE).value(versionCode);
     if (!transactions.isEmpty()) {
       writer.name(JsonKeys.TRANSACTION_LIST).value(logger, transactions);
     }
@@ -537,6 +540,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
             String durationNs = reader.nextStringOrNull();
             if (durationNs != null) {
               data.durationNs = durationNs;
+            }
+            break;
+          case JsonKeys.VERSION_CODE:
+            String versionCode = reader.nextStringOrNull();
+            if (versionCode != null) {
+              data.versionCode = versionCode;
             }
             break;
           case JsonKeys.RELEASE:

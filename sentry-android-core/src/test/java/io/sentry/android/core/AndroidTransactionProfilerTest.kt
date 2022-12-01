@@ -380,7 +380,8 @@ class AndroidTransactionProfilerTest {
                 }
             }
         )
-        
+    }
+
     fun `profiler starts collecting frame metrics when the first transaction starts`() {
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)
