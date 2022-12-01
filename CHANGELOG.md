@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Set transactionNameSource to CUSTOM when setting transaction name ([#2405](https://github.com/getsentry/sentry-java/pull/2405))
+
 ## 6.9.1
 
 ### Fixes
