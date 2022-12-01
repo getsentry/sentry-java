@@ -15,10 +15,6 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
-    maven {
-        url = uri("https://repo.spring.io/plugins-snapshot")
-    }
-    maven { url = uri("https://repo.spring.io/milestone") }
 }
 
 val jakartaTransform by configurations.creating

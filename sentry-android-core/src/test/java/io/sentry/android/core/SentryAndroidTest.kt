@@ -10,16 +10,21 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.FATAL
+import io.sentry.SentryOptions
+import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import io.sentry.cache.IEnvelopeCache
 import io.sentry.transport.NoOpEnvelopeCache
+import io.sentry.util.StringUtils
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import java.nio.file.Files
+import kotlin.io.path.absolutePathString
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -161,6 +166,24 @@ class SentryAndroidTest {
         }
 
         assertTrue { refOptions!!.envelopeDiskCache is CustomEnvelopCache }
+    }
+
+    @Test
+    fun `When initializing Sentry manually and changing both cache dir and dsn, the corresponding options should reflect that change`() {
+        var options: SentryOptions? = null
+
+        val mockContext = ContextUtilsTest.createMockContext(true)
+        val cacheDirPath = Files.createTempDirectory("new_cache").absolutePathString()
+        SentryAndroid.init(mockContext) {
+            it.dsn = "https://key@sentry.io/123"
+            it.cacheDirPath = cacheDirPath
+            options = it
+        }
+
+        val dsnHash = StringUtils.calculateStringHash(options!!.dsn, options!!.logger)
+        val expectedCacheDir = "$cacheDirPath/$dsnHash"
+        assertEquals(expectedCacheDir, options!!.cacheDirPath)
+        assertEquals(expectedCacheDir, (options!!.envelopeDiskCache as AndroidEnvelopeCache).directory.absolutePath)
     }
 
     private class CustomEnvelopCache : IEnvelopeCache {

@@ -56,6 +56,9 @@ public class SentryInitBeanPostProcessor
             .getBeanProvider(SentryOptions.BeforeSendCallback.class)
             .ifAvailable(options::setBeforeSend);
         applicationContext
+            .getBeanProvider(SentryOptions.BeforeSendTransactionCallback.class)
+            .ifAvailable(options::setBeforeSendTransaction);
+        applicationContext
             .getBeanProvider(SentryOptions.BeforeBreadcrumbCallback.class)
             .ifAvailable(options::setBeforeBreadcrumb);
         applicationContext

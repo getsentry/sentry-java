@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.List;
@@ -77,4 +78,11 @@ public interface ITransaction extends ISpan {
 
   /** Schedules when transaction should be automatically finished. */
   void scheduleFinish();
+
+  @ApiStatus.Internal
+  void setContext(@NotNull String key, @NotNull Object context);
+
+  @ApiStatus.Internal
+  @NotNull
+  Contexts getContexts();
 }

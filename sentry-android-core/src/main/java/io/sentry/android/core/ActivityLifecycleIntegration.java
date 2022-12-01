@@ -21,6 +21,7 @@ import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
+import io.sentry.Instrumenter;
 import io.sentry.Integration;
 import io.sentry.Scope;
 import io.sentry.SentryLevel;
@@ -210,7 +211,10 @@ public final class ActivityLifecycleIntegration
         // start specific span for app start
         appStartSpan =
             transaction.startChild(
-                getAppStartOp(coldStart), getAppStartDesc(coldStart), appStartTime);
+                getAppStartOp(coldStart),
+                getAppStartDesc(coldStart),
+                appStartTime,
+                Instrumenter.SENTRY);
         // The first activity ttidSpan should start at the same time as the app start time
         ttidSpanMap.put(
             activity, transaction.startChild("TTID", activityName + ".ttid", appStartTime));
