@@ -114,6 +114,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   @Override
   public void onActivityStopped(@NotNull Activity activity) {
     clearCurrentWindow(activity.getWindow());
+    if (currentWindow != null && currentWindow.get() == activity.getWindow()) {
+      currentWindow = null;
+    }
   }
 
   @Override
@@ -147,9 +150,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @SuppressLint("NewApi")
   private void clearCurrentWindow(final @NotNull Window window) {
-    if (currentWindow != null && currentWindow.get() == window) {
-      currentWindow = null;
-    }
     if (trackedWindows.contains(window)) {
       if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N) {
         try {
