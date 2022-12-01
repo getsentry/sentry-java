@@ -50,13 +50,12 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
+import org.springframework.security.web.SecurityFilterChain
 import org.springframework.stereotype.Service
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -75,6 +74,7 @@ import kotlin.test.Test
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     classes = [App::class],
+
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 class SentrySpringIntegrationTest {
@@ -445,18 +445,12 @@ class ExceptionHandlers {
     fun handle(e: CustomException) = ResponseEntity.badRequest().build<Void>()
 }
 
-@Configuration
-open class SecurityConfiguration : WebSecurityConfigurerAdapter() {
 
-    override fun configure(http: HttpSecurity) {
-        http.csrf().disable()
-            .authorizeRequests().anyRequest().authenticated()
-            .and()
-            .httpBasic()
-    }
+@Configuration
+open class SecurityConfiguration {
 
     @Bean
-    override fun userDetailsService(): UserDetailsService {
+    open fun userDetailsService(): InMemoryUserDetailsManager {
         val encoder: PasswordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
         val user: UserDetails = User
             .builder()
@@ -466,5 +460,16 @@ open class SecurityConfiguration : WebSecurityConfigurerAdapter() {
             .roles("USER")
             .build()
         return InMemoryUserDetailsManager(user)
+    }
+
+    @Bean
+    @Throws(Exception::class)
+    open fun filterChain(http: HttpSecurity): SecurityFilterChain {
+        http.csrf().disable()
+            .authorizeRequests().anyRequest().authenticated()
+            .and()
+            .httpBasic()
+
+        return http.build()
     }
 }

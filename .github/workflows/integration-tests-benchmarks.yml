@@ -91,4 +91,4 @@ jobs:
           config: sentry-android-integration-tests/metrics-test.yml
           sauce-user: ${{ secrets.SAUCE_USERNAME }}
           sauce-key: ${{ secrets.SAUCE_ACCESS_KEY }}
-        if: env.SAUCE_USERNAME != null      
+        if: env.SAUCE_USERNAME != null

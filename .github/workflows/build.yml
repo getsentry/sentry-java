@@ -30,7 +30,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Cache Gradle packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.gradle/caches
@@ -57,6 +57,7 @@ jobs:
           if-no-files-found: error
           path: |
             ./*/build/distributions/*.zip
+            ./sentry-opentelemetry/*/build/distributions/*.zip
             ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*
 
       - name: Upload coverage to Codecov

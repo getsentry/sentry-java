@@ -46,9 +46,9 @@ public final class SentryWebFilter implements WebFilter {
               final Hint hint = new Hint();
               hint.set(WEBFLUX_FILTER_REQUEST, request);
               hint.set(WEBFLUX_FILTER_RESPONSE, response);
-
-              hub.addBreadcrumb(
-                  Breadcrumb.http(request.getURI().toString(), request.getMethodValue()), hint);
+              final String methodName =
+                  request.getMethod() != null ? request.getMethod().name() : "unknown";
+              hub.addBreadcrumb(Breadcrumb.http(request.getURI().toString(), methodName), hint);
               hub.configureScope(
                   scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
             });

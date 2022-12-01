@@ -15,10 +15,6 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
-    maven {
-        url = uri("https://repo.spring.io/plugins-snapshot")
-    }
-    maven { url = uri("https://repo.spring.io/milestone") }
 }
 
 val jakartaTransform by configurations.creating
@@ -57,10 +53,6 @@ tasks.withType<KotlinCompile> {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
-}
-
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-Xlint:-deprecation")
 }
 
 task("jakartaTransformation", JavaExec::class) {

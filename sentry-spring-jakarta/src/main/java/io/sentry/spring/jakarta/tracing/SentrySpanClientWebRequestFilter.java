@@ -41,12 +41,11 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     final ISpan span = activeSpan.startChild("http.client");
     span.setDescription(request.method().name() + " " + request.url());
 
-    final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
-
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
 
-    if (PropagationTargetsUtils.contain(
+    if (!span.isNoOp() && PropagationTargetsUtils.contain(
         hub.getOptions().getTracePropagationTargets(), request.url())) {
+      final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
       requestBuilder.header(sentryTraceHeader.getName(), sentryTraceHeader.getValue());
 
       final @Nullable BaggageHeader baggageHeader =
@@ -66,7 +65,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     return next.exchange(clientRequestWithSentryTraceHeader)
         .flatMap(
             response -> {
-              span.setStatus(SpanStatus.fromHttpStatusCode(response.rawStatusCode()));
+              span.setStatus(SpanStatus.fromHttpStatusCode(response.statusCode().value()));
               addBreadcrumb(request, response);
               span.finish();
               return Mono.just(response);
@@ -87,7 +86,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
         Breadcrumb.http(
             request.url().toString(),
             request.method().name(),
-            response != null ? response.rawStatusCode() : null);
+            response != null ? response.statusCode().value() : null);
 
     final Hint hint = new Hint();
     hint.set(SPRING_EXCHANGE_FILTER_REQUEST, request);

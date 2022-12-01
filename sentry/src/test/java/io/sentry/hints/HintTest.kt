@@ -1,7 +1,9 @@
 package io.sentry.hints
 
 import io.sentry.Attachment
+import io.sentry.CachedEvent
 import io.sentry.Hint
+import io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -195,6 +197,24 @@ class HintTest {
         hint.replaceAttachments(listOf(attachment3, attachment4))
 
         assertEquals(listOf(attachment3, attachment4), hint.attachments)
+    }
+
+    @Test
+    fun `calling clear does not remove internal sentry attrs, attachments or screenshots`() {
+        val userAttribute = "app_label"
+
+        val hint = Hint()
+        hint.set(SENTRY_TYPE_CHECK_HINT, CachedEvent())
+        hint.set(userAttribute, "test label")
+        hint.addAttachment(newAttachment("test attachment"))
+        hint.screenshot = newAttachment("2")
+
+        hint.clear()
+
+        assertNotNull(hint.get(SENTRY_TYPE_CHECK_HINT))
+        assertNull(hint.get(userAttribute))
+        assertEquals(1, hint.attachments.size)
+        assertNotNull(hint.screenshot)
     }
 
     companion object {

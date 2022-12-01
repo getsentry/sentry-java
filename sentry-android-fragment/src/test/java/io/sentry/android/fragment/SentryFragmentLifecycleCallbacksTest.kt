@@ -198,7 +198,7 @@ class SentryFragmentLifecycleCallbacksTest {
                 assertEquals(SentryFragmentLifecycleCallbacks.FRAGMENT_LOAD_OP, it)
             },
             check {
-                assertEquals("Fragment", it)
+                assertEquals("androidx.fragment.app.Fragment", it)
             }
         )
     }
@@ -272,7 +272,7 @@ class SentryFragmentLifecycleCallbacksTest {
                 assertEquals("navigation", breadcrumb.type)
                 assertEquals(INFO, breadcrumb.level)
                 assertEquals(expectedState, breadcrumb.getData("state"))
-                assertEquals(fixture.fragment.javaClass.simpleName, breadcrumb.getData("screen"))
+                assertEquals(fixture.fragment.javaClass.canonicalName, breadcrumb.getData("screen"))
             },
             anyOrNull()
         )

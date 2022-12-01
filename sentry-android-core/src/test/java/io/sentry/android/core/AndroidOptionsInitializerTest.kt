@@ -52,8 +52,12 @@ class AndroidOptionsInitializerTest {
                 whenever(mockContext.applicationContext.cacheDir).thenReturn(file)
             }
             mockContext.configureContext()
+            AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
+                sentryOptions,
+                if (useRealContext) context else mockContext
+            )
             sentryOptions.configureOptions()
-            AndroidOptionsInitializer.init(
+            AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
                 sentryOptions,
                 if (useRealContext) context else mockContext
             )
@@ -71,12 +75,19 @@ class AndroidOptionsInitializerTest {
                     putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
                 }
             )
-            sentryOptions.setDebug(true)
-            AndroidOptionsInitializer.init(
+            sentryOptions.isDebug = true
+            val buildInfo = createBuildInfo(minApi)
+
+            AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 sentryOptions,
-                mockContext,
+                context,
                 logger,
-                createBuildInfo(minApi),
+                buildInfo
+            )
+            AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
+                sentryOptions,
+                context,
+                buildInfo,
                 createClassMock(classToLoad),
                 isFragmentAvailable,
                 isTimberAvailable
@@ -381,9 +392,13 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be available`() {
-        fixture.initSut(hasAppContext = true, configureOptions = {
-            isEnableFramesTracking = true
-        })
+        fixture.initSut(
+            hasAppContext = true,
+            useRealContext = true,
+            configureOptions = {
+                isEnableFramesTracking = true
+            }
+        )
 
         val activityLifeCycleIntegration = fixture.sentryOptions.integrations
             .first { it is ActivityLifecycleIntegration }
@@ -395,7 +410,7 @@ class AndroidOptionsInitializerTest {
 
     @Test
     fun `When Frames Tracking is disabled, the Activity Frames Tracker should not be available`() {
-        fixture.initSut(hasAppContext = true, configureOptions = {
+        fixture.initSut(hasAppContext = true, useRealContext = true, configureOptions = {
             isEnableFramesTracking = false
         })
 
@@ -410,9 +425,13 @@ class AndroidOptionsInitializerTest {
     @Test
     fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be available`() {
         fixture.sentryOptions.isEnableFramesTracking = false
-        fixture.initSut(hasAppContext = true, configureOptions = {
-            isEnableFramesTracking = true
-        })
+        fixture.initSut(
+            hasAppContext = true,
+            useRealContext = true,
+            configureOptions = {
+                isEnableFramesTracking = true
+            }
+        )
 
         val activityLifeCycleIntegration = fixture.sentryOptions.integrations
             .first { it is ActivityLifecycleIntegration }

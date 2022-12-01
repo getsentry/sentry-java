@@ -1,6 +1,7 @@
-import com.android.build.gradle.internal.tasks.factory.dependsOn
+import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 
 plugins {
@@ -16,12 +17,11 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://repo.spring.io/milestone") }
 }
 
-the<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension>().apply {
+the<DependencyManagementExtension>().apply {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:${Config.springBoot3Version}")
+        mavenBom(SpringBootPlugin.BOM_COORDINATES)
     }
 }
 
@@ -108,10 +108,6 @@ tasks {
     }
 }
 
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-Xlint:-deprecation")
-}
-
 task("jakartaTransformation", JavaExec::class) {
     main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
@@ -124,7 +120,7 @@ task("jakartaTestTransformation", JavaExec::class) {
     args = listOf("../sentry-spring/src/test/kotlin/io/sentry/spring", "src/test/kotlin/io/sentry/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
 }
 
-tasks.named("build").dependsOn("jakartaTransformation")
+// tasks.named("build").dependsOn("jakartaTransformation")
 
 buildConfig {
     useJavaOutput()

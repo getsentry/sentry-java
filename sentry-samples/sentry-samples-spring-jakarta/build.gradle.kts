@@ -19,10 +19,6 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
-    maven {
-        url = uri("https://repo.spring.io/plugins-snapshot")
-    }
-    maven { url = uri("https://repo.spring.io/milestone") }
 }
 
 dependencyManagement {
@@ -69,8 +65,4 @@ task("jakartaTransformation", JavaExec::class) {
     main = "org.eclipse.transformer.cli.JakartaTransformerCLI"
     classpath = configurations.getByName("jakartaTransform") // sourceSets["main"].compileClasspath
     args = listOf("../sentry-samples-spring/src/main/java/io/sentry/samples/spring", "src/main/java/io/sentry/samples/spring/jakarta", "-o", "-tf", "sentry-jakarta-text-master.properties")
-}
-
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-Xlint:-deprecation")
 }
