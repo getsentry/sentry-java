@@ -6,6 +6,10 @@
 
 - No longer disable OpenTelemetry exporters in default Java Agent config ([#2408](https://github.com/getsentry/sentry-java/pull/2408))
 
+### Features
+
+- Add SENTRY_AUTO_INIT environment variable to control OpenTelemetry Agent init ([#2410](https://github.com/getsentry/sentry-java/pull/2410))
+
 ## 6.9.1
 
 ### Fixes
