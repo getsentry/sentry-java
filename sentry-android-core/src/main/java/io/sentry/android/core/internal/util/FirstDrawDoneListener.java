@@ -14,6 +14,10 @@ import org.jetbrains.annotations.NotNull;
 /**
  * OnDrawListener that unregisters itself and invokes callback when the next draw is done. This API
  * 16+ implementation is an approximation of the initial-display-time defined by Android Vitals.
+ *
+ * <p>Adapted from <a
+ * href="https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/util/FirstDrawDoneListener.java">Firebase</a>
+ * under the Apache License, Version 2.0.
  */
 @SuppressLint("ObsoleteSdkInt")
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
