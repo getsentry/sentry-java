@@ -532,6 +532,22 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `When Activity is destroyed, sets ttfdSpan to null`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        assertNotNull(sut.ttfdSpanMap[activity])
+
+        sut.onActivityDestroyed(activity)
+        assertNull(sut.ttfdSpanMap[activity])
+    }
+
+    @Test
     fun `When new Activity and transaction is created, finish previous ones`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0

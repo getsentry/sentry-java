@@ -30,6 +30,7 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.android.core.internal.util.FullyDrawnReporter;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -68,6 +69,7 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private @NotNull Date lastPausedTime = DateUtils.getCurrentDateTime();
   private final @NotNull Handler mainHandler = new Handler(Looper.getMainLooper());
+  private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
@@ -159,7 +161,8 @@ public final class ActivityLifecycleIntegration
         activitiesWithOngoingTransactions.entrySet()) {
       final ITransaction transaction = entry.getValue();
       final ISpan ttidSpan = ttidSpanMap.get(entry.getKey());
-      finishTransaction(transaction, ttidSpan);
+      final ISpan ttfdSpan = ttfdSpanMap.get(entry.getKey());
+      finishTransaction(transaction, ttidSpan, ttfdSpan);
     }
   }
 
@@ -228,6 +231,10 @@ public final class ActivityLifecycleIntegration
             transaction.startChild(
                 "TTID", activityName + ".ttid", lastPausedTime, Instrumenter.SENTRY));
       }
+      ttfdSpanMap.put(
+        activity,
+        transaction.startChild(
+          "TTFD", activityName + ".ttfd", lastPausedTime, Instrumenter.SENTRY));
 
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
@@ -276,12 +283,13 @@ public final class ActivityLifecycleIntegration
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
       final ISpan ttidSpan = ttidSpanMap.get(activity);
-      finishTransaction(transaction, ttidSpan);
+      final ISpan ttfdSpan = ttfdSpanMap.get(activity);
+      finishTransaction(transaction, ttidSpan, ttfdSpan);
     }
   }
 
   private void finishTransaction(
-      final @Nullable ITransaction transaction, final @Nullable ISpan ttidSpan) {
+      final @Nullable ITransaction transaction, final @Nullable ISpan ttidSpan, final @Nullable ISpan ttfdSpan) {
     if (transaction != null) {
       // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
       // finished manually when this method is called.
@@ -292,6 +300,11 @@ public final class ActivityLifecycleIntegration
       // in case the ttidSpan isn't completed yet, we finish it as cancelled to avoid memory leak
       if (ttidSpan != null && !ttidSpan.isFinished()) {
         ttidSpan.finish(SpanStatus.CANCELLED);
+      }
+
+      // in case the ttfdSpan isn't completed yet, we finish it as cancelled to avoid memory leak
+      if (ttfdSpan != null && !ttfdSpan.isFinished()) {
+        ttfdSpan.finish(SpanStatus.CANCELLED);
       }
 
       SpanStatus status = transaction.getStatus();
@@ -319,6 +332,20 @@ public final class ActivityLifecycleIntegration
     startTracing(activity);
 
     firstActivityCreated = true;
+
+    ISpan ttfdSpan = ttfdSpanMap.get(activity);
+    FullyDrawnReporter.getInstance().registerFullyDrawnListener(new FullyDrawnReporter.FullyDrawnReporterListener() {
+      @Override
+      public boolean onFullyDrawn(@NotNull final Activity reportedActivity) {
+        ISpan reportedTtfdSpan = ttfdSpanMap.get(reportedActivity);
+        // finishes ttfdSpan span
+        if (ttfdSpan == reportedTtfdSpan && reportedTtfdSpan != null && !ttfdSpan.isFinished()) {
+          ttfdSpan.finish();
+          return true;
+        }
+        return false;
+      }
+    });
   }
 
   @Override
@@ -445,8 +472,9 @@ public final class ActivityLifecycleIntegration
 
     // set it to null in case its been just finished as cancelled
     appStartSpan = null;
-    // ttidSpan is finished in the stopTracing() method
+    // ttidSpan and ttfd are finished in the stopTracing() method
     ttidSpanMap.remove(activity);
+    ttfdSpanMap.remove(activity);
 
     // clear it up, so we don't start again for the same activity if the activity is in the activity
     // stack still.
@@ -478,6 +506,12 @@ public final class ActivityLifecycleIntegration
   @NotNull
   WeakHashMap<Activity, ISpan> getTtidSpanMap() {
     return ttidSpanMap;
+  }
+
+  @TestOnly
+  @NotNull
+  WeakHashMap<Activity, ISpan> getTtfdSpanMap() {
+    return ttfdSpanMap;
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {

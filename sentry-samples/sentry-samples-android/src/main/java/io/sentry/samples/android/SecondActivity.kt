@@ -76,6 +76,7 @@ class SecondActivity : AppCompatActivity() {
 
                 showText(true, "error: ${t.message}")
 
+                Sentry.reportFullyDrawn(this@SecondActivity)
                 // I opt out enableActivityLifecycleTracingAutoFinish so I know best when to end my transaction
                 // be sure to finish all your spans before this
                 val transaction = Sentry.getSpan()
@@ -89,6 +90,7 @@ class SecondActivity : AppCompatActivity() {
 
                 showText(text = "items: ${repos.size}")
 
+                Sentry.reportFullyDrawn(this@SecondActivity)
                 // I opt out enableActivityLifecycleTracingAutoFinish so I know best when to end my transaction
                 // be sure to finish all your spans before this
                 val transaction = Sentry.getSpan()

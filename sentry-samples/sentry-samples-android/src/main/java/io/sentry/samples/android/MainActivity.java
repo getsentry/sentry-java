@@ -196,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
+    Sentry.reportFullyDrawn(this);
   }
 
   @Override
