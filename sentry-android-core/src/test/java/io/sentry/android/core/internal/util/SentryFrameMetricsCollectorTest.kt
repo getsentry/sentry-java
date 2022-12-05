@@ -11,10 +11,12 @@ import io.sentry.ILogger
 import io.sentry.SentryOptions
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.test.getCtor
+import io.sentry.test.getProperty
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import java.lang.ref.WeakReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -228,5 +230,25 @@ class SentryFrameMetricsCollectorTest {
         assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
         collector.stopCollection(id2)
         assertEquals(1, fixture.removeOnFrameMetricsAvailableListenerCounter)
+    }
+
+    @Test
+    fun `collector removes current window only when last activity stops`() {
+        val collector = fixture.getSut(context)
+        val id1 = collector.startCollection(mock())
+        collector.onActivityStarted(fixture.activity)
+        collector.onActivityStarted(fixture.activity2)
+
+        // Stopping collecting data doesn't clear current tracked window reference
+        collector.stopCollection(id1)
+        assertNotNull(collector.getProperty<WeakReference<Window>?>("currentWindow"))
+
+        // Stopping first activity doesn't clear current tracked window reference
+        collector.onActivityStopped(fixture.activity)
+        assertNotNull(collector.getProperty<WeakReference<Window>?>("currentWindow"))
+
+        // Stopping last activity clears current tracked window reference
+        collector.onActivityStopped(fixture.activity2)
+        assertNull(collector.getProperty<WeakReference<Window>?>("currentWindow"))
     }
 }
