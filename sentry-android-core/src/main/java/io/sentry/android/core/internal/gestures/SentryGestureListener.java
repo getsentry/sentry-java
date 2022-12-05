@@ -18,6 +18,7 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.internal.gestures.UiElement;
 import io.sentry.protocol.TransactionNameSource;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -35,9 +36,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private final @NotNull WeakReference<Activity> activityRef;
   private final @NotNull IHub hub;
   private final @NotNull SentryAndroidOptions options;
-  private final boolean isAndroidXAvailable;
 
-  private @Nullable ViewUtils.UiElement activeUiElement = null;
+  private @Nullable UiElement activeUiElement = null;
   private @Nullable ITransaction activeTransaction = null;
   private @Nullable String activeEventType = null;
 
@@ -46,17 +46,15 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   public SentryGestureListener(
       final @NotNull Activity currentActivity,
       final @NotNull IHub hub,
-      final @NotNull SentryAndroidOptions options,
-      final boolean isAndroidXAvailable) {
+      final @NotNull SentryAndroidOptions options) {
     this.activityRef = new WeakReference<>(currentActivity);
     this.hub = hub;
     this.options = options;
-    this.isAndroidXAvailable = isAndroidXAvailable;
   }
 
   public void onUp(final @NotNull MotionEvent motionEvent) {
     final View decorView = ensureWindowDecorView("onUp");
-    final ViewUtils.UiElement scrollTarget = scrollState.target;
+    final UiElement scrollTarget = scrollState.target;
     if (decorView == null || scrollTarget == null) {
       return;
     }
@@ -96,14 +94,9 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return false;
     }
 
-    @SuppressWarnings("Convert2MethodRef")
-    final @Nullable ViewUtils.UiElement target =
+    final @Nullable UiElement target =
         ViewUtils.findTarget(
-            isAndroidXAvailable,
-            decorView,
-            motionEvent.getX(),
-            motionEvent.getY(),
-            ViewUtils.TargetType.CLICKABLE);
+            options, decorView, motionEvent.getX(), motionEvent.getY(), UiElement.Type.CLICKABLE);
 
     if (target == null) {
       options
@@ -129,13 +122,9 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     if (scrollState.type == null) {
-      final @Nullable ViewUtils.UiElement target =
+      final @Nullable UiElement target =
           ViewUtils.findTarget(
-              isAndroidXAvailable,
-              decorView,
-              firstEvent.getX(),
-              firstEvent.getY(),
-              ViewUtils.TargetType.SCROLLABLE);
+              options, decorView, firstEvent.getX(), firstEvent.getY(), UiElement.Type.SCROLLABLE);
 
       if (target == null) {
         options
@@ -172,7 +161,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
   // region utils
   private void addBreadcrumb(
-      final @NotNull ViewUtils.UiElement target,
+      final @NotNull UiElement target,
       final @NotNull String eventType,
       final @NotNull Map<String, Object> additionalData,
       final @NotNull MotionEvent motionEvent) {
@@ -195,8 +184,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         hint);
   }
 
-  private void startTracing(
-      final @NotNull ViewUtils.UiElement target, final @NotNull String eventType) {
+  private void startTracing(final @NotNull UiElement target, final @NotNull String eventType) {
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
       return;
     }
@@ -208,7 +196,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     final @Nullable String viewIdentifier = target.getIdentifier();
-    final ViewUtils.UiElement uiElement = activeUiElement;
+    final UiElement uiElement = activeUiElement;
 
     if (activeTransaction != null) {
       if (target.equals(uiElement)
@@ -337,11 +325,11 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   // region scroll logic
   private static final class ScrollState {
     private @Nullable String type = null;
-    private @Nullable ViewUtils.UiElement target;
+    private @Nullable UiElement target;
     private float startX = 0f;
     private float startY = 0f;
 
-    private void setTarget(final @NotNull ViewUtils.UiElement target) {
+    private void setTarget(final @NotNull UiElement target) {
       this.target = target;
     }
 

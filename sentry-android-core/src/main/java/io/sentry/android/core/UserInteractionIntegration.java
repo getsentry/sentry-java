@@ -25,16 +25,12 @@ public final class UserInteractionIntegration
   private @Nullable SentryAndroidOptions options;
 
   private final boolean isAndroidXAvailable;
-  private final boolean isAndroidXScrollViewAvailable;
 
   public UserInteractionIntegration(
       final @NotNull Application application, final @NotNull LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
-
     isAndroidXAvailable =
         classLoader.isClassAvailable("androidx.core.view.GestureDetectorCompat", options);
-    isAndroidXScrollViewAvailable =
-        classLoader.isClassAvailable("androidx.core.view.ScrollingView", options);
   }
 
   private void startTracking(final @NotNull Activity activity) {
@@ -53,7 +49,7 @@ public final class UserInteractionIntegration
       }
 
       final SentryGestureListener gestureListener =
-          new SentryGestureListener(activity, hub, options, isAndroidXScrollViewAvailable);
+          new SentryGestureListener(activity, hub, options);
       window.setCallback(new SentryWindowCallback(delegate, activity, gestureListener, options));
     }
   }

@@ -5,7 +5,10 @@ import io.sentry.Scope;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.protocol.SdkVersion;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
@@ -126,6 +129,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   private final long startupCrashDurationThresholdMillis = 2000; // 2s
 
   private boolean enableFramesTracking = true;
+
+  private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -348,6 +353,15 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnableFramesTracking(boolean enableFramesTracking) {
     this.enableFramesTracking = enableFramesTracking;
+  }
+
+  public List<GestureTargetLocator> getGestureTargetLocators() {
+    return gestureTargetLocators;
+  }
+
+  public void setGestureTargetLocators(@NotNull final List<GestureTargetLocator> evaluators) {
+    gestureTargetLocators.clear();
+    gestureTargetLocators.addAll(evaluators);
   }
 
   /**
