@@ -23,14 +23,12 @@ public final class SentryAutoConfigurationCustomizerProvider
 
   @Override
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
-    final @Nullable String sentryPropertiesFile = System.getenv("SENTRY_PROPERTIES_FILE");
-    final @Nullable String sentryDsn = System.getenv("SENTRY_DSN");
-
-    if (sentryPropertiesFile != null || sentryDsn != null) {
+    if (isSentryAutoInitEnabled()) {
       Sentry.init(
           options -> {
             options.setEnableExternalConfiguration(true);
             options.setInstrumenter(Instrumenter.OTEL);
+            options.addEventProcessor(new OpenTelemetryLinkErrorEventProcessor());
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options);
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);
@@ -41,6 +39,19 @@ public final class SentryAutoConfigurationCustomizerProvider
     autoConfiguration
         .addTracerProviderCustomizer(this::configureSdkTracerProvider)
         .addPropertiesSupplier(this::getDefaultProperties);
+  }
+
+  private boolean isSentryAutoInitEnabled() {
+    final @Nullable String sentryAutoInit = System.getenv("SENTRY_AUTO_INIT");
+
+    if (sentryAutoInit != null) {
+      return "true".equalsIgnoreCase(sentryAutoInit);
+    } else {
+      final @Nullable String sentryPropertiesFile = System.getenv("SENTRY_PROPERTIES_FILE");
+      final @Nullable String sentryDsn = System.getenv("SENTRY_DSN");
+
+      return sentryPropertiesFile != null || sentryDsn != null;
+    }
   }
 
   private @Nullable SdkVersion createSdkVersion(final @NotNull SentryOptions sentryOptions) {
