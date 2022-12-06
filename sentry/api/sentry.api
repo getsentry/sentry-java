@@ -1562,6 +1562,13 @@ public abstract interface class io/sentry/SentryOptions$TracesSamplerCallback {
 	public abstract fun sample (Lio/sentry/SamplingContext;)Ljava/lang/Double;
 }
 
+public final class io/sentry/SentrySpanStorage {
+	public fun get (Ljava/lang/String;)Lio/sentry/ISpan;
+	public static fun getInstance ()Lio/sentry/SentrySpanStorage;
+	public fun removeAndGet (Ljava/lang/String;)Lio/sentry/ISpan;
+	public fun store (Ljava/lang/String;Lio/sentry/ISpan;)V
+}
+
 public final class io/sentry/SentryTraceHeader {
 	public static final field SENTRY_TRACE_HEADER Ljava/lang/String;
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/Boolean;)V
