@@ -28,6 +28,7 @@ public final class SentryAutoConfigurationCustomizerProvider
           options -> {
             options.setEnableExternalConfiguration(true);
             options.setInstrumenter(Instrumenter.OTEL);
+            options.addEventProcessor(new OpenTelemetryLinkErrorEventProcessor());
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options);
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);

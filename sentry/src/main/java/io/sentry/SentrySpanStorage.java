@@ -1,6 +1,5 @@
-package io.sentry.opentelemetry;
+package io.sentry;
 
-import io.sentry.ISpan;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
