@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.9.2
 
 ### Fixes
 
