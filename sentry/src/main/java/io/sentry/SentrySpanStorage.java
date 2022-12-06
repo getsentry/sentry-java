@@ -6,6 +6,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Has been moved to `sentry` gradle module to include it in the bootstrap classloader without
+ * having to introduce yet another module for OpenTelemetry support.
+ */
 @ApiStatus.Internal
 public final class SentrySpanStorage {
   private static volatile @Nullable SentrySpanStorage INSTANCE;
