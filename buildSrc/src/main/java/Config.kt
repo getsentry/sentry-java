@@ -59,6 +59,7 @@ object Config {
         val androidxRecylerView = "androidx.recyclerview:recyclerview:1.2.1"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
+        val slf4jApi2 = "org.slf4j:slf4j-api:2.0.5"
         val slf4jJdk14 = "org.slf4j:slf4j-jdk14:1.7.30"
         val logbackVersion = "1.2.9"
         val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
@@ -66,6 +67,8 @@ object Config {
         val log4j2Version = "2.17.0"
         val log4j2Api = "org.apache.logging.log4j:log4j-api:$log4j2Version"
         val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
+
+        val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind"
 
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
