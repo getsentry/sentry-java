@@ -92,8 +92,6 @@ public final class SentryAutoConfigurationCustomizerProvider
 
   private Map<String, String> getDefaultProperties() {
     Map<String, String> properties = new HashMap<>();
-    properties.put("otel.traces.exporter", "none");
-    properties.put("otel.metrics.exporter", "none");
     properties.put("otel.propagators", "sentry");
     return properties;
   }
