@@ -520,7 +520,7 @@ class JsonSerializerTest {
                 ProfileMeasurement.ID_SCREEN_FRAME_RATES to
                     ProfileMeasurement(
                         ProfileMeasurement.UNIT_HZ,
-                        listOf(ProfileMeasurementValue(1, 60.1F))
+                        listOf(ProfileMeasurementValue(1, 60.1))
                     )
             )
         )
@@ -574,8 +574,8 @@ class JsonSerializerTest {
                         "unit" to ProfileMeasurement.UNIT_HZ,
                         "values" to listOf(
                             mapOf(
-                                "value" to "60.1",
-                                "elapsed_since_start_ns" to 1
+                                "value" to 60.1,
+                                "elapsed_since_start_ns" to "1"
                             )
                         )
                     )
@@ -710,7 +710,7 @@ class JsonSerializerTest {
         val measurementValues = listOf(ProfileMeasurementValue(1, 2), ProfileMeasurementValue(3, 4))
         val profileMeasurement = ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, measurementValues)
         val actual = serializeToString(profileMeasurement)
-        val expected = "{\"unit\":\"nanosecond\",\"values\":[{\"value\":\"2\",\"elapsed_since_start_ns\":1},{\"value\":\"4\",\"elapsed_since_start_ns\":3}]}"
+        val expected = "{\"unit\":\"nanosecond\",\"values\":[{\"value\":2.0,\"elapsed_since_start_ns\":\"1\"},{\"value\":4.0,\"elapsed_since_start_ns\":\"3\"}]}"
         assertEquals(expected, actual)
     }
 
@@ -734,7 +734,7 @@ class JsonSerializerTest {
     fun `serializes profileMeasurementValue`() {
         val profileMeasurementValue = ProfileMeasurementValue(1, 2)
         val actual = serializeToString(profileMeasurementValue)
-        val expected = "{\"value\":\"2\",\"elapsed_since_start_ns\":1}"
+        val expected = "{\"value\":2.0,\"elapsed_since_start_ns\":\"1\"}"
         assertEquals(expected, actual)
     }
 
