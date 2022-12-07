@@ -167,7 +167,7 @@ object Config {
         val androidxTestRules = "androidx.test:rules:$androidxTestVersion"
         val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
         val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
-        val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.1"
+        val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.2"
         val androidxJunit = "androidx.test.ext:junit:1.1.3"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val robolectric = "org.robolectric:robolectric:4.7.3"
