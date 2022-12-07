@@ -14,7 +14,7 @@ android {
     namespace = "io.sentry.uitest.android"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersionNdk
+        minSdk = 21
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 1
         versionName = "1.0.0"
@@ -33,6 +33,11 @@ android {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = Config.composeVersion
     }
 
     signingConfigs {
@@ -84,8 +89,12 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
     implementation(projects.sentryAndroid)
+    implementation(projects.sentryCompose)
     implementation(Config.Libs.appCompat)
     implementation(Config.Libs.androidxCore)
+    implementation(Config.Libs.composeActivity)
+    implementation(Config.Libs.composeFoundation)
+    implementation(Config.Libs.composeMaterial)
     implementation(Config.Libs.androidxRecylerView)
     implementation(Config.Libs.constraintLayout)
     implementation(Config.TestLibs.espressoIdlingResource)
@@ -103,6 +112,8 @@ dependencies {
     androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
     androidTestImplementation(Config.TestLibs.mockWebserver)
     androidTestImplementation(Config.TestLibs.androidxJunit)
+    androidTestImplementation(Config.TestLibs.composeJunit)
+    androidTestImplementation(Config.TestLibs.mockitoKotlin)
     androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
 }
 
