@@ -112,8 +112,6 @@ dependencies {
     androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
     androidTestImplementation(Config.TestLibs.mockWebserver)
     androidTestImplementation(Config.TestLibs.androidxJunit)
-    androidTestImplementation(Config.TestLibs.composeJunit)
-    androidTestImplementation(Config.TestLibs.mockitoKotlin)
     androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
 }
 
