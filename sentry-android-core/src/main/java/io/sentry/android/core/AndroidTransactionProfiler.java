@@ -6,7 +6,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
-import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.os.Debug;
 import android.os.Process;
@@ -61,7 +60,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull IHub hub;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @Nullable PackageInfo packageInfo;
   private long transactionStartNanos = 0;
   private long profileStartCpuMillis = 0;
   private boolean isInitialized = false;
@@ -103,7 +101,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
-    this.packageInfo = ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
   }
 
   private void init() {
@@ -201,6 +198,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                   @NotNull FrameMetrics frameMetrics, float refreshRate) {
                 long frameTimestampRelativeNanos =
                     SystemClock.elapsedRealtimeNanos() - transactionStartNanos;
+
+                // We don't allow negative relative timestamps.
+                // So we add a check, even if this should never happen.
+                if (frameTimestampRelativeNanos < 0) {
+                  return;
+                }
                 long durationNanos = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION);
                 // Most frames take just a few nanoseconds longer than the optimal calculated
                 // duration.
@@ -316,14 +319,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       return;
     }
 
-    String versionName = "";
-    String versionCode = "";
     String totalMem = "0";
     ActivityManager.MemoryInfo memInfo = getMemInfo();
-    if (packageInfo != null) {
-      versionName = ContextUtils.getVersionName(packageInfo);
-      versionCode = ContextUtils.getVersionCode(packageInfo, buildInfoProvider);
-    }
     if (memInfo != null) {
       totalMem = Long.toString(memInfo.totalMem);
     }
@@ -373,8 +370,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
             buildInfoProvider.isEmulator(),
             totalMem,
             options.getProguardUuid(),
-            versionName,
-            versionCode,
+            options.getRelease(),
             options.getEnvironment(),
             isTimeout
                 ? ProfilingTraceData.TRUNCATION_REASON_TIMEOUT
