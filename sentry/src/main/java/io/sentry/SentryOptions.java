@@ -378,7 +378,7 @@ public class SentryOptions {
   /** Which framework is responsible for instrumenting. */
   private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
 
-  /** Contains a list of GestureTargetLocator instances used for user interaction tracking **/
+  /** Contains a list of GestureTargetLocator instances used for user interaction tracking * */
   private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
 
   /**
@@ -1844,7 +1844,8 @@ public class SentryOptions {
   }
 
   /**
-   * Returns a list of all {@link GestureTargetLocator} instances used to determine which {@link io.sentry.internal.gestures.UiElement} was part of an user interaction.
+   * Returns a list of all {@link GestureTargetLocator} instances used to determine which {@link
+   * io.sentry.internal.gestures.UiElement} was part of an user interaction.
    *
    * @return a list of {@link GestureTargetLocator}
    */
@@ -1853,7 +1854,8 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the list of {@link GestureTargetLocator} being used to determine relevant {@link io.sentry.internal.gestures.UiElement} for user interactions.
+   * Sets the list of {@link GestureTargetLocator} being used to determine relevant {@link
+   * io.sentry.internal.gestures.UiElement} for user interactions.
    *
    * @param locators a list of {@link GestureTargetLocator}
    */

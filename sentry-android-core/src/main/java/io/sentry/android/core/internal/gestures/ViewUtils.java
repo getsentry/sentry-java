@@ -47,8 +47,8 @@ final class ViewUtils {
         }
       }
 
-      for (GestureTargetLocator provider : options.getGestureTargetLocators()) {
-        final @Nullable UiElement newTarget = provider.locate(view, x, y, targetType);
+      for (GestureTargetLocator locator : options.getGestureTargetLocators()) {
+        final @Nullable UiElement newTarget = locator.locate(view, x, y, targetType);
         if (newTarget != null) {
           if (targetType == UiElement.Type.CLICKABLE) {
             target = newTarget;

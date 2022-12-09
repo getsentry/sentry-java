@@ -1,7 +1,7 @@
 package io.sentry.internal.gestures;
 
+import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +39,7 @@ public final class UiElement {
     if (resourceName != null) {
       return resourceName;
     } else {
-      return Objects.requireNonNull(tag);
+      return Objects.requireNonNull(tag, "UiElement.tag can't be null");
     }
   }
 
@@ -49,7 +49,7 @@ public final class UiElement {
 
   @Override
   public int hashCode() {
-    return java.util.Objects.hash(viewRef, resourceName, tag);
+    return Objects.hash(viewRef, resourceName, tag);
   }
 
   public enum Type {
