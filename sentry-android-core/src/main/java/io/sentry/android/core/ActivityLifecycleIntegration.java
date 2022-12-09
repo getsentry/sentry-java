@@ -220,14 +220,14 @@ public final class ActivityLifecycleIntegration
         ttidSpanMap.put(
             activity,
             transaction.startChild(
-              TTID_OP, getTtidDesc(activityName), appStartTime, Instrumenter.SENTRY));
+                TTID_OP, getTtidDesc(activityName), appStartTime, Instrumenter.SENTRY));
       } else {
         // Other activities (or in case appStartTime is not available) the ttid span should
         // start when the previous activity called its onPause method.
         ttidSpanMap.put(
             activity,
             transaction.startChild(
-              TTID_OP, getTtidDesc(activityName), lastPausedTime, Instrumenter.SENTRY));
+                TTID_OP, getTtidDesc(activityName), lastPausedTime, Instrumenter.SENTRY));
       }
 
       // lets bind to the scope so other integrations can pick it up
