@@ -50,6 +50,7 @@ public final class ActivityLifecycleIntegration
   static final String UI_LOAD_OP = "ui.load";
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
+  static final String TTID_OP = "ui.load.initial_display";
 
   private final @NotNull Application application;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -219,14 +220,14 @@ public final class ActivityLifecycleIntegration
         ttidSpanMap.put(
             activity,
             transaction.startChild(
-                "TTID", activityName + ".ttid", appStartTime, Instrumenter.SENTRY));
+              TTID_OP, getTtidDesc(activityName), appStartTime, Instrumenter.SENTRY));
       } else {
         // Other activities (or in case appStartTime is not available) the ttid span should
         // start when the previous activity called its onPause method.
         ttidSpanMap.put(
             activity,
             transaction.startChild(
-                "TTID", activityName + ".ttid", lastPausedTime, Instrumenter.SENTRY));
+              TTID_OP, getTtidDesc(activityName), lastPausedTime, Instrumenter.SENTRY));
       }
 
       // lets bind to the scope so other integrations can pick it up
@@ -486,6 +487,10 @@ public final class ActivityLifecycleIntegration
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
       AppStartState.getInstance().setColdStart(savedInstanceState == null);
     }
+  }
+
+  private @NotNull String getTtidDesc(final @NotNull String activityName) {
+    return activityName + " initial display";
   }
 
   private @NotNull String getAppStartDesc(final boolean coldStart) {
