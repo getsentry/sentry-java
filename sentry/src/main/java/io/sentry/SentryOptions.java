@@ -5,6 +5,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.protocol.SdkVersion;
@@ -376,6 +377,9 @@ public class SentryOptions {
 
   /** Which framework is responsible for instrumenting. */
   private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
+
+  /** Contains a list of GestureTargetLocator instances used for user interaction tracking **/
+  private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
 
   /**
    * Adds an event processor
@@ -1837,6 +1841,25 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setModulesLoader(final @Nullable IModulesLoader modulesLoader) {
     this.modulesLoader = modulesLoader != null ? modulesLoader : NoOpModulesLoader.getInstance();
+  }
+
+  /**
+   * Returns a list of all {@link GestureTargetLocator} instances used to determine which {@link io.sentry.internal.gestures.UiElement} was part of an user interaction.
+   *
+   * @return a list of {@link GestureTargetLocator}
+   */
+  public List<GestureTargetLocator> getGestureTargetLocators() {
+    return gestureTargetLocators;
+  }
+
+  /**
+   * Sets the list of {@link GestureTargetLocator} being used to determine relevant {@link io.sentry.internal.gestures.UiElement} for user interactions.
+   *
+   * @param locators a list of {@link GestureTargetLocator}
+   */
+  public void setGestureTargetLocators(@NotNull final List<GestureTargetLocator> locators) {
+    gestureTargetLocators.clear();
+    gestureTargetLocators.addAll(locators);
   }
 
   /** The BeforeSend callback */

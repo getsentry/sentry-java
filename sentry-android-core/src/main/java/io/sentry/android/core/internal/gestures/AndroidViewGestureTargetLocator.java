@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class AndroidViewGestureTargetLocator implements GestureTargetLocator {
+public final class AndroidViewGestureTargetLocator implements GestureTargetLocator {
 
   private final boolean isAndroidXAvailable;
   private final int[] coordinates = new int[2];
