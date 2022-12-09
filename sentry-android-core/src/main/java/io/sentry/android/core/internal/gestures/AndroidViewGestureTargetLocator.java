@@ -16,7 +16,7 @@ public class AndroidViewGestureTargetLocator implements GestureTargetLocator {
   private final boolean isAndroidXAvailable;
   private final int[] coordinates = new int[2];
 
-  public AndroidViewGestureTargetLocator(boolean isAndroidXAvailable) {
+  public AndroidViewGestureTargetLocator(final boolean isAndroidXAvailable) {
     this.isAndroidXAvailable = isAndroidXAvailable;
   }
 
