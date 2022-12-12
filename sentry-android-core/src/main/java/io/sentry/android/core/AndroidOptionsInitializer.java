@@ -146,7 +146,7 @@ final class AndroidOptionsInitializer {
       final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
       gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
       if (isComposeGestureTargetLocatorAvailable) {
-        gestureTargetLocators.add(new ComposeGestureTargetLocator(options));
+        gestureTargetLocators.add(new ComposeGestureTargetLocator());
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }

@@ -21,6 +21,7 @@ include(
     "sentry-android-fragment",
     "sentry-android-navigation",
     "sentry-compose",
+    "sentry-compose-helper",
     "sentry-apollo",
     "sentry-apollo-3",
     "sentry-test-support",
