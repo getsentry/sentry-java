@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add logging for OpenTelemetry integration ([#2425](https://github.com/getsentry/sentry-java/pull/2425))
+
 ### Dependencies
 
 - Bump Native SDK from v0.5.2 to v0.5.3 ([#2423](https://github.com/getsentry/sentry-java/pull/2423))
