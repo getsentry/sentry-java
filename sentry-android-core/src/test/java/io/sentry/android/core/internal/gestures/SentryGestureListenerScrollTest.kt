@@ -34,6 +34,7 @@ class SentryGestureListenerScrollTest {
         val resources = mock<Resources>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
+            isEnableUserInteractionBreadcrumbs = true
         }
         val hub = mock<IHub>()
 

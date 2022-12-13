@@ -762,6 +762,11 @@ public final class Scope {
     }
   }
 
+  @ApiStatus.Internal
+  public @Nullable Session getSession() {
+    return session;
+  }
+
   /** the IWithTransaction callback */
   @ApiStatus.Internal
   public interface IWithTransaction {

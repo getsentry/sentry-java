@@ -3,12 +3,14 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
+import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
@@ -119,6 +121,12 @@ public final class SentryAndroid {
             deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
           },
           true);
+
+      final @NotNull IHub hub = Sentry.getCurrentHub();
+      if (hub.getOptions().isEnableAutoSessionTracking()) {
+        hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
+        hub.startSession();
+      }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
