@@ -62,7 +62,9 @@ public final class SentryPropagator implements TextMapPropagator {
           .getLogger()
           .log(
               SentryLevel.DEBUG,
-              "Not injecting Sentry tracing information as no Sentry span has been found or it is a NoOp.");
+              "Not injecting Sentry tracing information for span %s as no Sentry span has been found or it is a NoOp (trace %s). This might simply mean this is a request to Sentry.",
+              otelSpanContext.getSpanId(),
+              otelSpanContext.getTraceId());
       return;
     }
 

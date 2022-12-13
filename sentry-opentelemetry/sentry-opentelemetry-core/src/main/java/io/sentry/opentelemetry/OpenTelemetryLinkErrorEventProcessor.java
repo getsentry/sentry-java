@@ -59,28 +59,37 @@ public final class OpenTelemetryLinkErrorEventProcessor implements EventProcesso
               .getLogger()
               .log(
                   SentryLevel.DEBUG,
-                  "Linking Sentry event to span %s created via OpenTelemetry.",
-                  spanId);
+                  "Linking Sentry event %s to span %s created via OpenTelemetry (trace %s).",
+                  event.getEventId(),
+                  spanId,
+                  traceId);
         } else {
           hub.getOptions()
               .getLogger()
               .log(
                   SentryLevel.DEBUG,
-                  "Not linking Sentry event to any transaction created via OpenTelemetry as none has been found.");
+                  "Not linking Sentry event %s to any transaction created via OpenTelemetry as none has been found for span %s (trace %s).",
+                  event.getEventId(),
+                  spanId,
+                  traceId);
         }
       } else {
         hub.getOptions()
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
-                "Not linking Sentry event to any transaction created via OpenTelemetry as traceId or spanId are invalid.");
+                "Not linking Sentry event %s to any transaction created via OpenTelemetry as traceId %s or spanId %s are invalid.",
+                event.getEventId(),
+                traceId,
+                spanId);
       }
     } else {
       hub.getOptions()
           .getLogger()
           .log(
               SentryLevel.DEBUG,
-              "Not linking Sentry event to any transaction created via OpenTelemetry as instrumenter is set to %s.",
+              "Not linking Sentry event %s to any transaction created via OpenTelemetry as instrumenter is set to %s.",
+              event.getEventId(),
               instrumenter);
     }
 
