@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
-    kotlin("jvm")
     jacoco
     id("org.jetbrains.compose")
     id(Config.QualityPlugins.gradleVersions)
@@ -19,9 +18,9 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    api(projects.sentry)
-    api(compose.runtime)
-    api(compose.ui)
+    implementation(projects.sentry)
+    implementation(compose.runtime)
+    implementation(compose.ui)
 }
 
 configure<SourceSetContainer> {

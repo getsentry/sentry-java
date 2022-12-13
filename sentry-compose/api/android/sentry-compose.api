@@ -6,10 +6,6 @@ public final class io/sentry/compose/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/compose/SentryClickableIntegrationKt {
-	public static final fun wrapClickable (Lkotlin/jvm/functions/Function0;Ljava/lang/String;)Lkotlin/jvm/functions/Function0;
-}
-
 public final class io/sentry/compose/SentryNavigationIntegrationKt {
 	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;ZZLandroidx/compose/runtime/Composer;II)Landroidx/navigation/NavHostController;
 }

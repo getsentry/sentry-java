@@ -37,9 +37,6 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
         continue;
       }
 
-      final boolean isPlaced = node.isPlaced();
-      final boolean inBounds = layoutNodeBoundsContain(node, x, y);
-
       if (node.isPlaced() && layoutNodeBoundsContain(node, x, y)) {
         boolean isClickable = false;
         boolean isScrollable = false;
@@ -54,18 +51,14 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
                 semanticsModifierCore.getSemanticsConfiguration();
             for (Map.Entry<? extends SemanticsPropertyKey<?>, ?> entry : semanticsConfiguration) {
               final @Nullable String key = entry.getKey().getName();
-              switch (key) {
-                case "ScrollBy":
-                  isScrollable = true;
-                  break;
-                case "OnClick":
-                  isClickable = true;
-                  break;
-                case "TestTag":
-                  if (entry.getValue() instanceof String) {
-                    testTag = (String) entry.getValue();
-                  }
-                  break;
+              if ("ScrollBy".equals(key)) {
+                isScrollable = true;
+              } else if ("OnClick".equals(key)) {
+                isClickable = true;
+              } else if ("TestTag".equals(key)) {
+                if (entry.getValue() instanceof String) {
+                  testTag = (String) entry.getValue();
+                }
               }
             }
           }

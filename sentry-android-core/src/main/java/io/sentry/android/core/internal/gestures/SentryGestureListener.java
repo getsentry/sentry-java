@@ -166,7 +166,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       final @NotNull Map<String, Object> additionalData,
       final @NotNull MotionEvent motionEvent) {
 
-    if (!hub.getOptions().isEnableUserInteractionBreadcrumbs()) {
+    if (!options.isEnableUserInteractionBreadcrumbs()) {
       return;
     }
 
