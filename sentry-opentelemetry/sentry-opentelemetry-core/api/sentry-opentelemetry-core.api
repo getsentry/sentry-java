@@ -1,0 +1,47 @@
+public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/EventProcessor {
+	public fun <init> ()V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
+public final class io/sentry/opentelemetry/OtelSpanInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public fun getDescription ()Ljava/lang/String;
+	public fun getOp ()Ljava/lang/String;
+	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
+public final class io/sentry/opentelemetry/SentryOtelKeys {
+	public static final field SENTRY_BAGGAGE_KEY Lio/opentelemetry/context/ContextKey;
+	public static final field SENTRY_TRACE_KEY Lio/opentelemetry/context/ContextKey;
+	public fun <init> ()V
+}
+
+public final class io/sentry/opentelemetry/SentryPropagator : io/opentelemetry/context/propagation/TextMapPropagator {
+	public fun <init> ()V
+	public fun extract (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapGetter;)Lio/opentelemetry/context/Context;
+	public fun fields ()Ljava/util/Collection;
+	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
+}
+
+public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetry/sdk/trace/SpanProcessor {
+	public fun <init> ()V
+	public fun isEndRequired ()Z
+	public fun isStartRequired ()Z
+	public fun onEnd (Lio/opentelemetry/sdk/trace/ReadableSpan;)V
+	public fun onStart (Lio/opentelemetry/context/Context;Lio/opentelemetry/sdk/trace/ReadWriteSpan;)V
+}
+
+public final class io/sentry/opentelemetry/SpanDescriptionExtractor {
+	public fun <init> ()V
+	public fun extractSpanDescription (Lio/opentelemetry/sdk/trace/ReadableSpan;)Lio/sentry/opentelemetry/OtelSpanInfo;
+}
+
+public final class io/sentry/opentelemetry/TraceData {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;)V
+	public fun getBaggage ()Lio/sentry/Baggage;
+	public fun getParentSpanId ()Ljava/lang/String;
+	public fun getSentryTraceHeader ()Lio/sentry/SentryTraceHeader;
+	public fun getSpanId ()Ljava/lang/String;
+	public fun getTraceId ()Ljava/lang/String;
+}
+

@@ -19,10 +19,6 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
-    maven {
-        url = uri("https://repo.spring.io/plugins-snapshot")
-    }
-    maven { url = uri("https://repo.spring.io/milestone") }
 }
 
 dependencyManagement {
@@ -38,13 +34,15 @@ dependencies {
     jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.cli:0.5.0")
     jakartaTransform("org.eclipse.transformer:org.eclipse.transformer.jakarta:0.5.0")
 
-    implementation(Config.Libs.servletApi)
+    implementation(Config.Libs.servletApiJakarta)
     implementation(Config.Libs.springWeb)
     implementation(Config.Libs.springAop)
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springSecurityWeb)
     implementation(Config.Libs.springSecurityConfig)
     implementation(Config.Libs.logbackClassic)
+    implementation(Config.Libs.slf4jApi2)
+    implementation(Config.Libs.jacksonDatabind)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringJakarta)

@@ -10,6 +10,8 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -120,6 +122,15 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when transaction is finished with status and timestamp, timestamp and status are set`() {
+        val tracer = fixture.getSut()
+        val date = Date.from(LocalDateTime.of(2022, 12, 24, 23, 59, 58, 0).toInstant(ZoneOffset.UTC))
+        tracer.finish(SpanStatus.ABORTED, date)
+        assertEquals(tracer.timestamp, DateUtils.dateToSeconds(date))
+        assertEquals(SpanStatus.ABORTED, tracer.status)
+    }
+
+    @Test
     fun `when transaction is finished, transaction is captured`() {
         val tracer = fixture.getSut()
         tracer.finish()
@@ -201,6 +212,31 @@ class SentryTracerTest {
             check {
                 assertEquals(1, it.spans.size)
                 assertEquals("op1", it.spans.first().op)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when transaction is finished, context is set`() {
+        val tracer = fixture.getSut()
+        val otelContext = mapOf(
+            "attributes" to mapOf(
+                "db.connection_string" to "hsqldb:mem:",
+                "db.statement" to "CREATE TABLE person ( id INTEGER IDENTITY PRIMARY KEY, firstName VARCHAR(?) NOT NULL, lastName VARCHAR(?) NOT NULL )"
+            ),
+            "resource" to mapOf(
+                "process.runtime.version" to "17.0.4.1+1",
+                "telemetry.auto.version" to "sentry-6.7.0-otel-1.19.2"
+            )
+        )
+        tracer.setContext("otel", otelContext)
+        tracer.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(otelContext, it.contexts["otel"])
             },
             anyOrNull<TraceContext>(),
             anyOrNull()

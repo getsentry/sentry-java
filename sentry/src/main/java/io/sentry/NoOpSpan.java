@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import java.util.Date;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +24,10 @@ public final class NoOpSpan implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(
-      @NotNull String operation, @Nullable String description, @Nullable Date timestamp) {
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable Date timestamp,
+      @NotNull Instrumenter instrumenter) {
     return NoOpSpan.getInstance();
   }
 
@@ -44,8 +48,8 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public @NotNull BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    return new BaggageHeader("");
+  public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
+    return null;
   }
 
   @Override
@@ -53,6 +57,10 @@ public final class NoOpSpan implements ISpan {
 
   @Override
   public void finish(@Nullable SpanStatus status) {}
+
+  @Override
+  @ApiStatus.Internal
+  public void finish(@Nullable SpanStatus status, @Nullable Date timestamp) {}
 
   @Override
   public void setOperation(@NotNull String operation) {}
@@ -118,4 +126,9 @@ public final class NoOpSpan implements ISpan {
   @Override
   public void setMeasurement(
       @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {}
+
+  @Override
+  public boolean isNoOp() {
+    return true;
+  }
 }
