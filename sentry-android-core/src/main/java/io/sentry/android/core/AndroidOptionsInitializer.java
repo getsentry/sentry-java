@@ -147,7 +147,10 @@ final class AndroidOptionsInitializer {
       } catch (NoClassDefFoundError error) {
         options
             .getLogger()
-            .log(SentryLevel.DEBUG, "ComposeGestureTargetLocator not available, consider adding the `sentry-compose` library.", error);
+            .log(
+                SentryLevel.DEBUG,
+                "ComposeGestureTargetLocator not available, consider adding the `sentry-compose` library.",
+                error);
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }
