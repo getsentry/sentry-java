@@ -142,7 +142,7 @@ tasks.withType<DokkaTask>().configureEach {
 
 /**
  * Due to https://youtrack.jetbrains.com/issue/KT-30878
- * you can not java sources in a KMP-enabled project which has the android-lib plugin applied.
+ * you can not have java sources in a KMP-enabled project which has the android-lib plugin applied.
  * Thus we compile relevant java code in sentry-compose-helper first and embed it in here.
  */
 val embedComposeHelperConfig by configurations.creating {
