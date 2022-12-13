@@ -276,8 +276,7 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NotNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      final ISpan ttidSpan = ttidSpanMap.get(activity);
-      finishTransaction(transaction, ttidSpan);
+      finishTransaction(transaction, null);
     }
   }
 
@@ -291,9 +290,7 @@ public final class ActivityLifecycleIntegration
       }
 
       // in case the ttidSpan isn't completed yet, we finish it as cancelled to avoid memory leak
-      if (ttidSpan != null && !ttidSpan.isFinished()) {
-        ttidSpan.finish(SpanStatus.CANCELLED);
-      }
+      finishSpan(ttidSpan, SpanStatus.CANCELLED);
 
       SpanStatus status = transaction.getStatus();
       // status might be set by other integrations, let's not overwrite it
@@ -365,24 +362,11 @@ public final class ActivityLifecycleIntegration
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN
         && rootView != null) {
       FirstDrawDoneListener.registerForNextDraw(
-          rootView,
-          () -> {
-            // finishes ttidSpan span
-            if (ttidSpan != null && !ttidSpan.isFinished()) {
-              ttidSpan.finish();
-            }
-          },
-          buildInfoProvider);
+          rootView, () -> finishSpan(ttidSpan), buildInfoProvider);
     } else {
       // Posting a task to the main thread's handler will make it executed after it finished
       // its current job. That is, right after the activity draws the layout.
-      mainHandler.post(
-          () -> {
-            // finishes ttidSpan span
-            if (ttidSpan != null && !ttidSpan.isFinished()) {
-              ttidSpan.finish();
-            }
-          });
+      mainHandler.post(() -> finishSpan(ttidSpan));
     }
     addBreadcrumb(activity, "resumed");
 
@@ -436,9 +420,11 @@ public final class ActivityLifecycleIntegration
 
     // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
     // memory leak
-    if (appStartSpan != null && !appStartSpan.isFinished()) {
-      appStartSpan.finish(SpanStatus.CANCELLED);
-    }
+    finishSpan(appStartSpan, SpanStatus.CANCELLED);
+
+    // we finish the ttidSpan as cancelled in case it isn't completed yet
+    final ISpan ttidSpan = ttidSpanMap.get(activity);
+    finishSpan(ttidSpan, SpanStatus.CANCELLED);
 
     // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
     // we make sure to finish it when the activity gets destroyed.
@@ -446,7 +432,6 @@ public final class ActivityLifecycleIntegration
 
     // set it to null in case its been just finished as cancelled
     appStartSpan = null;
-    // ttidSpan is finished in the stopTracing() method
     ttidSpanMap.remove(activity);
 
     // clear it up, so we don't start again for the same activity if the activity is in the activity
@@ -454,6 +439,18 @@ public final class ActivityLifecycleIntegration
     // if the activity is opened again and not in memory, transactions will be created normally.
     if (performanceEnabled) {
       activitiesWithOngoingTransactions.remove(activity);
+    }
+  }
+
+  private void finishSpan(@Nullable ISpan span) {
+    if (span != null && !span.isFinished()) {
+      span.finish();
+    }
+  }
+
+  private void finishSpan(@Nullable ISpan span, @NotNull SpanStatus status) {
+    if (span != null && !span.isFinished()) {
+      span.finish(status);
     }
   }
 
