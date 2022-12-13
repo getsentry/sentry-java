@@ -989,6 +989,7 @@ public final class io/sentry/Scope {
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getRequest ()Lio/sentry/protocol/Request;
+	public fun getSession ()Lio/sentry/Session;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTags ()Ljava/util/Map;
 	public fun getTransaction ()Lio/sentry/ITransaction;
