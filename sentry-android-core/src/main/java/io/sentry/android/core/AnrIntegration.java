@@ -6,6 +6,7 @@ import android.os.Build;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
+import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;

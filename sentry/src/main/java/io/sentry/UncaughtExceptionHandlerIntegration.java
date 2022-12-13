@@ -1,18 +1,14 @@
 package io.sentry;
 
-import static io.sentry.SentryLevel.ERROR;
-
 import io.sentry.exception.ExceptionMechanismException;
-import io.sentry.hints.DiskFlushNotification;
-import io.sentry.hints.Flushable;
+import io.sentry.hints.BlockingFlushHint;
 import io.sentry.hints.SessionEnd;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -149,33 +145,11 @@ public final class UncaughtExceptionHandlerIntegration
     }
   }
 
-  private static final class UncaughtExceptionHint
-      implements DiskFlushNotification, Flushable, SessionEnd {
-
-    private final CountDownLatch latch;
-    private final long flushTimeoutMillis;
-    private final @NotNull ILogger logger;
+  @ApiStatus.Internal
+  public static final class UncaughtExceptionHint extends BlockingFlushHint implements SessionEnd {
 
     UncaughtExceptionHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
-      this.flushTimeoutMillis = flushTimeoutMillis;
-      latch = new CountDownLatch(1);
-      this.logger = logger;
-    }
-
-    @Override
-    public boolean waitFlush() {
-      try {
-        return latch.await(flushTimeoutMillis, TimeUnit.MILLISECONDS);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        logger.log(ERROR, "Exception while awaiting for flush in UncaughtExceptionHint", e);
-      }
-      return false;
-    }
-
-    @Override
-    public void markFlushed() {
-      latch.countDown();
+      super(flushTimeoutMillis, logger);
     }
   }
 }

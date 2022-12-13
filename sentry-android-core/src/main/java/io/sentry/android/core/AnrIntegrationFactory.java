@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.os.Build;
 import io.sentry.Integration;
-import io.sentry.SentryOptions;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,7 +13,7 @@ public final class AnrIntegrationFactory {
   public static Integration create(final @NotNull Context context,
     final @NotNull BuildInfoProvider buildInfoProvider) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R) {
-      return new AnrIntegrationApi30(context);
+      return new AnrIntegrationV2(context);
     } else {
       return new AnrIntegration(context);
     }
