@@ -10,6 +10,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.Instrumenter;
 import io.sentry.SentryEvent;
+import io.sentry.SentryLevel;
 import io.sentry.SentrySpanStorage;
 import io.sentry.SpanContext;
 import io.sentry.protocol.SentryId;
@@ -33,7 +34,8 @@ public final class OpenTelemetryLinkErrorEventProcessor implements EventProcesso
 
   @Override
   public @Nullable SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
-    if (Instrumenter.OTEL.equals(hub.getOptions().getInstrumenter())) {
+    final @NotNull Instrumenter instrumenter = hub.getOptions().getInstrumenter();
+    if (Instrumenter.OTEL.equals(instrumenter)) {
       @NotNull final Span otelSpan = Span.current();
       @NotNull final String traceId = otelSpan.getSpanContext().getTraceId();
       @NotNull final String spanId = otelSpan.getSpanContext().getSpanId();
@@ -53,8 +55,33 @@ public final class OpenTelemetryLinkErrorEventProcessor implements EventProcesso
                   null);
 
           event.getContexts().setTrace(spanContext);
+          hub.getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Linking Sentry event to span %s created via OpenTelemetry.",
+                  spanId);
+        } else {
+          hub.getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Not linking Sentry event to any transaction created via OpenTelemetry as none has been found.");
         }
+      } else {
+        hub.getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not linking Sentry event to any transaction created via OpenTelemetry as traceId or spanId are invalid.");
       }
+    } else {
+      hub.getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not linking Sentry event to any transaction created via OpenTelemetry as instrumenter is set to %s.",
+              instrumenter);
     }
 
     return event;

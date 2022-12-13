@@ -142,30 +142,32 @@ class SentrySpanProcessorTest {
 
     @Test
     fun `does nothing on start if Sentry has not been initialized`() {
-        val hub = mock<IHub>()
+        fixture.setup()
         val context = mock<Context>()
         val span = mock<ReadWriteSpan>()
 
-        whenever(hub.isEnabled).thenReturn(false)
+        whenever(fixture.hub.isEnabled).thenReturn(false)
 
-        SentrySpanProcessor(hub).onStart(context, span)
+        SentrySpanProcessor(fixture.hub).onStart(context, span)
 
-        verify(hub).isEnabled
-        verifyNoMoreInteractions(hub)
+        verify(fixture.hub).isEnabled
+        verify(fixture.hub).options
+        verifyNoMoreInteractions(fixture.hub)
         verifyNoInteractions(context, span)
     }
 
     @Test
     fun `does nothing on end if Sentry has not been initialized`() {
-        val hub = mock<IHub>()
+        fixture.setup()
         val span = mock<ReadableSpan>()
 
-        whenever(hub.isEnabled).thenReturn(false)
+        whenever(fixture.hub.isEnabled).thenReturn(false)
 
-        SentrySpanProcessor(hub).onEnd(span)
+        SentrySpanProcessor(fixture.hub).onEnd(span)
 
-        verify(hub).isEnabled
-        verifyNoMoreInteractions(hub)
+        verify(fixture.hub).isEnabled
+        verify(fixture.hub).options
+        verifyNoMoreInteractions(fixture.hub)
         verifyNoInteractions(span)
     }
 
