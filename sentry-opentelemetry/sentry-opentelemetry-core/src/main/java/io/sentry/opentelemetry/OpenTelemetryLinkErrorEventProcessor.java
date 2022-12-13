@@ -6,6 +6,7 @@ import io.opentelemetry.api.trace.TraceId;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.HubAdapter;
+import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.Instrumenter;
 import io.sentry.SentryEvent;
@@ -14,14 +15,25 @@ import io.sentry.SpanContext;
 import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 public final class OpenTelemetryLinkErrorEventProcessor implements EventProcessor {
 
+  private final @NotNull IHub hub;
   private final @NotNull SentrySpanStorage spanStorage = SentrySpanStorage.getInstance();
+
+  public OpenTelemetryLinkErrorEventProcessor() {
+    this(HubAdapter.getInstance());
+  }
+
+  @TestOnly
+  OpenTelemetryLinkErrorEventProcessor(final @NotNull IHub hub) {
+    this.hub = hub;
+  }
 
   @Override
   public @Nullable SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
-    if (Instrumenter.OTEL.equals(HubAdapter.getInstance().getOptions().getInstrumenter())) {
+    if (Instrumenter.OTEL.equals(hub.getOptions().getInstrumenter())) {
       @NotNull final Span otelSpan = Span.current();
       @NotNull final String traceId = otelSpan.getSpanContext().getTraceId();
       @NotNull final String spanId = otelSpan.getSpanContext().getSpanId();
