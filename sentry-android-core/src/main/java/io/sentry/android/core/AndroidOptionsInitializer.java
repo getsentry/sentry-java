@@ -138,15 +138,16 @@ final class AndroidOptionsInitializer {
 
     final boolean isAndroidXScrollViewAvailable =
         loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
-    final boolean isComposeGestureTargetLocatorAvailable =
-        loadClass.isClassAvailable(
-            "io.sentry.compose.gestures.ComposeGestureTargetLocator", options.getLogger());
 
     if (options.getGestureTargetLocators().isEmpty()) {
       final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
       gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
-      if (isComposeGestureTargetLocatorAvailable) {
+      try {
         gestureTargetLocators.add(new ComposeGestureTargetLocator());
+      } catch (NoClassDefFoundError error) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "ComposeGestureTargetLocator not available, consider adding the `sentry-compose` library.", error);
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }

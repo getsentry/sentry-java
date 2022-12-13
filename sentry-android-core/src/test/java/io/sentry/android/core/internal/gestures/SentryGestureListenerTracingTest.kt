@@ -52,12 +52,15 @@ class SentryGestureListenerTracingTest {
         ): SentryGestureListener {
             options.tracesSampleRate = tracesSampleRate
             options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
+            options.isEnableUserInteractionBreadcrumbs = true
+            options.gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
+
             whenever(hub.options).thenReturn(options)
 
             this.transaction = transaction ?: SentryTracer(TransactionContext("name", "op"), hub)
 
-            target = mockView<T>(event = event, clickable = true)
-            window.mockDecorView<ViewGroup>(event = event) {
+            target = mockView<T>(event = event, clickable = true, context = context)
+            window.mockDecorView<ViewGroup>(event = event, context = context) {
                 whenever(it.childCount).thenReturn(1)
                 whenever(it.getChildAt(0)).thenReturn(target)
             }
@@ -80,8 +83,7 @@ class SentryGestureListenerTracingTest {
             return SentryGestureListener(
                 activity,
                 hub,
-                options,
-                true
+                options
             )
         }
     }
@@ -228,13 +230,13 @@ class SentryGestureListenerTracingTest {
 
         clearInvocations(fixture.hub)
         // second view interaction with another view
-        val newTarget = mockView<View>(event = fixture.event, clickable = true)
+        val newTarget = mockView<View>(event = fixture.event, clickable = true, context = fixture.context)
         val newContext = mock<Context>()
         val newRes = mock<Resources>()
         newRes.mockForTarget(newTarget, "test_checkbox")
         whenever(newContext.resources).thenReturn(newRes)
         whenever(newTarget.context).thenReturn(newContext)
-        fixture.window.mockDecorView<ViewGroup>(event = fixture.event) {
+        fixture.window.mockDecorView<ViewGroup>(event = fixture.event, context = fixture.context) {
             whenever(it.childCount).thenReturn(1)
             whenever(it.getChildAt(0)).thenReturn(newTarget)
         }

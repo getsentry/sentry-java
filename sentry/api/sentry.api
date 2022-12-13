@@ -2260,6 +2260,7 @@ public abstract interface class io/sentry/internal/gestures/GestureTargetLocator
 
 public final class io/sentry/internal/gestures/UiElement {
 	public fun <init> (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
 	public fun getClassName ()Ljava/lang/String;
 	public fun getIdentifier ()Ljava/lang/String;
 	public fun getResourceName ()Ljava/lang/String;

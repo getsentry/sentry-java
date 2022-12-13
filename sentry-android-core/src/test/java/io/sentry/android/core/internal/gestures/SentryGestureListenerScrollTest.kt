@@ -35,6 +35,8 @@ class SentryGestureListenerScrollTest {
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
             isEnableUserInteractionBreadcrumbs = true
+            isEnableUserInteractionTracing = true
+            gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
         }
         val hub = mock<IHub>()
 
@@ -47,12 +49,12 @@ class SentryGestureListenerScrollTest {
         internal inline fun <reified T : View> getSut(
             resourceName: String = "test_scroll_view",
             touchWithinBounds: Boolean = true,
-            direction: String = "",
-            isAndroidXAvailable: Boolean = true
+            direction: String = ""
         ): SentryGestureListener {
             target = mockView<T>(
                 event = firstEvent,
-                touchWithinBounds = touchWithinBounds
+                touchWithinBounds = touchWithinBounds,
+                context = context
             )
             window.mockDecorView<ViewGroup>(event = firstEvent) {
                 whenever(it.childCount).thenReturn(1)
@@ -70,8 +72,7 @@ class SentryGestureListenerScrollTest {
             return SentryGestureListener(
                 activity,
                 hub,
-                options,
-                isAndroidXAvailable
+                options
             )
         }
     }
@@ -170,7 +171,7 @@ class SentryGestureListenerScrollTest {
 
     @Test
     fun `if androidX is not available, does not capture a breadcrumb for ScrollingView`() {
-        val sut = fixture.getSut<ScrollableView>(isAndroidXAvailable = false)
+        val sut = fixture.getSut<ScrollableView>()
 
         sut.onDown(fixture.firstEvent)
         fixture.eventsInBetween.forEach {

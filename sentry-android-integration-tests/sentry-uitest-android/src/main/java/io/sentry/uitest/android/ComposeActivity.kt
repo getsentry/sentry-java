@@ -21,8 +21,13 @@ import androidx.compose.ui.unit.dp
 
 class ComposeActivity : AppCompatActivity() {
 
+    companion object {
+        private const val ITEM_COUNT: Int = 100
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             MaterialTheme {
                 Surface(
@@ -45,7 +50,7 @@ class ComposeActivity : AppCompatActivity() {
                                 Text("Login")
                             }
                         }
-                        items(100) {
+                        items(ITEM_COUNT) {
                             Box(
                                 modifier = Modifier
                                     .size(96.dp)

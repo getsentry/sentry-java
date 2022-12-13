@@ -43,6 +43,17 @@ public final class UiElement {
     }
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    UiElement uiElement = (UiElement) o;
+
+    return Objects.equals(className, uiElement.className)
+        && Objects.equals(resourceName, uiElement.resourceName)
+        && Objects.equals(tag, uiElement.tag);
+  }
+
   public @Nullable Object getView() {
     return viewRef.get();
   }
