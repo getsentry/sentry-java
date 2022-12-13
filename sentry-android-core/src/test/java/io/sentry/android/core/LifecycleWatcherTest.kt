@@ -2,17 +2,24 @@ package io.sentry.android.core
 
 import androidx.lifecycle.LifecycleOwner
 import io.sentry.Breadcrumb
+import io.sentry.DateUtils
 import io.sentry.IHub
+import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
+import io.sentry.Session
+import io.sentry.Session.State
 import io.sentry.transport.ICurrentDateProvider
-import org.awaitility.kotlin.await
+import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -25,8 +32,26 @@ class LifecycleWatcherTest {
         val hub = mock<IHub>()
         val dateProvider = mock<ICurrentDateProvider>()
 
-        fun getSUT(sessionIntervalMillis: Long = 0L, enableAutoSessionTracking: Boolean = true, enableAppLifecycleBreadcrumbs: Boolean = true): LifecycleWatcher {
-            return LifecycleWatcher(hub, sessionIntervalMillis, enableAutoSessionTracking, enableAppLifecycleBreadcrumbs, dateProvider)
+        fun getSUT(
+            sessionIntervalMillis: Long = 0L,
+            enableAutoSessionTracking: Boolean = true,
+            enableAppLifecycleBreadcrumbs: Boolean = true,
+            session: Session? = null
+        ): LifecycleWatcher {
+            val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+            val scope = mock<Scope>()
+            whenever(scope.session).thenReturn(session)
+            whenever(hub.withScope(argumentCaptor.capture())).thenAnswer {
+                argumentCaptor.value.run(scope)
+            }
+
+            return LifecycleWatcher(
+                hub,
+                sessionIntervalMillis,
+                enableAutoSessionTracking,
+                enableAppLifecycleBreadcrumbs,
+                dateProvider
+            )
         }
     }
 
@@ -62,8 +87,7 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
         watcher.onStart(fixture.ownerMock)
         watcher.onStop(fixture.ownerMock)
-        await.untilFalse(watcher.isRunningSession)
-        verify(fixture.hub).endSession()
+        verify(fixture.hub, timeout(10000)).endSession()
     }
 
     @Test
@@ -112,9 +136,8 @@ class LifecycleWatcherTest {
     @Test
     fun `When session tracking is enabled, add breadcrumb on stop`() {
         val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
-        watcher.isRunningSession.set(true)
         watcher.onStop(fixture.ownerMock)
-        await.untilFalse(watcher.isRunningSession)
+        verify(fixture.hub, timeout(10000)).endSession()
         verify(fixture.hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("app.lifecycle", it.category)
@@ -192,5 +215,55 @@ class LifecycleWatcherTest {
     fun `timer is not created if session tracking is disabled`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
         assertNull(watcher.timer)
+    }
+
+    @Test
+    fun `if the hub has already a fresh session running, don't start new one`() {
+        val watcher = fixture.getSUT(
+            enableAppLifecycleBreadcrumbs = false,
+            session = Session(
+                State.Ok,
+                DateUtils.getCurrentDateTime(),
+                DateUtils.getCurrentDateTime(),
+                0,
+                "abc",
+                UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+                true,
+                0,
+                10.0,
+                null,
+                null,
+                null,
+                "release"
+            )
+        )
+
+        watcher.onStart(fixture.ownerMock)
+        verify(fixture.hub, never()).startSession()
+    }
+
+    @Test
+    fun `if the hub has a long running session, start new one`() {
+        val watcher = fixture.getSUT(
+            enableAppLifecycleBreadcrumbs = false,
+            session = Session(
+                State.Ok,
+                DateUtils.getDateTime(-1),
+                DateUtils.getDateTime(-1),
+                0,
+                "abc",
+                UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+                true,
+                0,
+                10.0,
+                null,
+                null,
+                null,
+                "release"
+            )
+        )
+
+        watcher.onStart(fixture.ownerMock)
+        verify(fixture.hub).startSession()
     }
 }
