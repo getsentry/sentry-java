@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add time-to-initial-display span to Activity transactions ([#2369](https://github.com/getsentry/sentry-java/pull/2369))
 - Start a session after init if AutoSessionTracking is enabled ([#2356](https://github.com/getsentry/sentry-java/pull/2356))
 - Provide automatic breadcrumbs and transactions for click/scroll events for Compose ([#2390](https://github.com/getsentry/sentry-java/pull/2390))
 
@@ -60,14 +61,14 @@
 
 ## 6.8.0
 
+### Features
+
+- Add FrameMetrics to Android profiling data ([#2342](https://github.com/getsentry/sentry-java/pull/2342))
+
 ### Fixes
 
 - Remove profiler main thread io ([#2348](https://github.com/getsentry/sentry-java/pull/2348))
 - Fix ensure all options are processed before integrations are loaded ([#2377](https://github.com/getsentry/sentry-java/pull/2377))
-
-### Features
-
-- Add FrameMetrics to Android profiling data ([#2342](https://github.com/getsentry/sentry-java/pull/2342))
 
 ## 6.7.1
 
