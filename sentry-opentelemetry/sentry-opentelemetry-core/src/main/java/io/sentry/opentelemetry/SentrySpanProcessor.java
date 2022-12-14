@@ -19,6 +19,7 @@ import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
+import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;

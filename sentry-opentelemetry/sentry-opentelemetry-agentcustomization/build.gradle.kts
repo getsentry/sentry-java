@@ -22,10 +22,10 @@ dependencies {
     compileOnly(projects.sentry)
     implementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 
-    compileOnly("io.opentelemetry:opentelemetry-sdk:${Config.Libs.otelVersion}")
-    compileOnly("io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:${Config.Libs.otelVersion}")
-    compileOnly("io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api:${Config.Libs.otelJavaagentAlphaVersion}")
-    compileOnly("io.opentelemetry.javaagent:opentelemetry-javaagent-tooling:${Config.Libs.otelJavaagentAlphaVersion}")
+    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
+    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentExtensionApi)
+    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentTooling)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

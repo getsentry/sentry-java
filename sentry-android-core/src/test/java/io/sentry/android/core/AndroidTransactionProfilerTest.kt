@@ -368,6 +368,20 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
+    fun `profiling trace data contains release field`() {
+        val profiler = fixture.getSut(context)
+        profiler.onTransactionStart(fixture.transaction1)
+        profiler.onTransactionFinish(fixture.transaction1)
+        verify(fixture.hub).captureEnvelope(
+            check {
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
+                    assertEquals(fixture.options.release, item.release)
+                    assertNotNull(item.release)
+                }
+            }
+        )
+    }
+
     fun `profiler starts collecting frame metrics when the first transaction starts`() {
         val profiler = fixture.getSut(context)
         profiler.onTransactionStart(fixture.transaction1)

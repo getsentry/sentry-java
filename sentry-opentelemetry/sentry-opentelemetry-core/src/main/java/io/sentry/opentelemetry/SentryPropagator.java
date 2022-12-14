@@ -11,6 +11,7 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.ISpan;
+import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import java.util.Arrays;

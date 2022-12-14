@@ -1,3 +1,8 @@
+public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/EventProcessor {
+	public fun <init> ()V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
 public final class io/sentry/opentelemetry/OtelSpanInfo {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun getDescription ()Ljava/lang/String;
@@ -24,13 +29,6 @@ public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetr
 	public fun isStartRequired ()Z
 	public fun onEnd (Lio/opentelemetry/sdk/trace/ReadableSpan;)V
 	public fun onStart (Lio/opentelemetry/context/Context;Lio/opentelemetry/sdk/trace/ReadWriteSpan;)V
-}
-
-public final class io/sentry/opentelemetry/SentrySpanStorage {
-	public fun get (Ljava/lang/String;)Lio/sentry/ISpan;
-	public static fun getInstance ()Lio/sentry/opentelemetry/SentrySpanStorage;
-	public fun removeAndGet (Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun store (Ljava/lang/String;Lio/sentry/ISpan;)V
 }
 
 public final class io/sentry/opentelemetry/SpanDescriptionExtractor {
