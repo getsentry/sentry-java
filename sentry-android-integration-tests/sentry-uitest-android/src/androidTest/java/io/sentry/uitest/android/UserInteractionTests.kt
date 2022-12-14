@@ -1,6 +1,5 @@
 package io.sentry.uitest.android
 
-import android.util.DisplayMetrics
 import android.view.InputDevice
 import android.view.MotionEvent
 import androidx.lifecycle.Lifecycle
