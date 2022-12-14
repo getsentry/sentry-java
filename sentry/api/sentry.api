@@ -107,6 +107,7 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public static fun ui (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun user (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun userInteraction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
+	public static fun userInteraction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lio/sentry/Breadcrumb;
 	public static fun userInteraction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lio/sentry/Breadcrumb;
 }
 
@@ -1392,6 +1393,7 @@ public class io/sentry/SentryOptions {
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getFlushTimeoutMillis ()J
+	public fun getGestureTargetLocators ()Ljava/util/List;
 	public fun getHostnameVerifier ()Ljavax/net/ssl/HostnameVerifier;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
@@ -1445,6 +1447,8 @@ public class io/sentry/SentryOptions {
 	public fun isEnableScopeSync ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableUncaughtExceptionHandler ()Z
+	public fun isEnableUserInteractionBreadcrumbs ()Z
+	public fun isEnableUserInteractionTracing ()Z
 	public fun isPrintUncaughtStackTrace ()Z
 	public fun isProfilingEnabled ()Z
 	public fun isSendClientReports ()Z
@@ -1472,11 +1476,14 @@ public class io/sentry/SentryOptions {
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableShutdownHook (Z)V
 	public fun setEnableUncaughtExceptionHandler (Z)V
+	public fun setEnableUserInteractionBreadcrumbs (Z)V
+	public fun setEnableUserInteractionTracing (Z)V
 	public fun setEnvelopeDiskCache (Lio/sentry/cache/IEnvelopeCache;)V
 	public fun setEnvelopeReader (Lio/sentry/IEnvelopeReader;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setFlushTimeoutMillis (J)V
+	public fun setGestureTargetLocators (Ljava/util/List;)V
 	public fun setHostnameVerifier (Ljavax/net/ssl/HostnameVerifier;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
@@ -2245,6 +2252,28 @@ public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/Out
 	public fun <init> (Ljava/io/FileDescriptor;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Z)V
+}
+
+public abstract interface class io/sentry/internal/gestures/GestureTargetLocator {
+	public abstract fun locate (Ljava/lang/Object;FFLio/sentry/internal/gestures/UiElement$Type;)Lio/sentry/internal/gestures/UiElement;
+}
+
+public final class io/sentry/internal/gestures/UiElement {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getClassName ()Ljava/lang/String;
+	public fun getIdentifier ()Ljava/lang/String;
+	public fun getResourceName ()Ljava/lang/String;
+	public fun getTag ()Ljava/lang/String;
+	public fun getView ()Ljava/lang/Object;
+	public fun hashCode ()I
+}
+
+public final class io/sentry/internal/gestures/UiElement$Type : java/lang/Enum {
+	public static final field CLICKABLE Lio/sentry/internal/gestures/UiElement$Type;
+	public static final field SCROLLABLE Lio/sentry/internal/gestures/UiElement$Type;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/internal/gestures/UiElement$Type;
+	public static fun values ()[Lio/sentry/internal/gestures/UiElement$Type;
 }
 
 public abstract interface class io/sentry/internal/modules/IModulesLoader {
@@ -3452,6 +3481,8 @@ public final class io/sentry/util/LogUtils {
 }
 
 public final class io/sentry/util/Objects {
+	public static fun equals (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public static fun hash ([Ljava/lang/Object;)I
 	public static fun requireNonNull (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
 }
 
