@@ -1,19 +1,21 @@
 package io.sentry.android.core
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Hint
 import io.sentry.IHub
+import io.sentry.MeasurementUnit
 import io.sentry.SentryTracer
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentryTransaction
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PerformanceAndroidEventProcessorTest {
@@ -23,12 +25,13 @@ class PerformanceAndroidEventProcessorTest {
 
         val hub = mock<IHub>()
         val context = TransactionContext("name", "op", TracesSamplingDecision(true))
-        val tracer = SentryTracer(context, hub)
+        lateinit var tracer: SentryTracer
         val activityFramesTracker = mock<ActivityFramesTracker>()
 
         fun getSut(tracesSampleRate: Double? = 1.0): PerformanceAndroidEventProcessor {
             options.tracesSampleRate = tracesSampleRate
             whenever(hub.options).thenReturn(options)
+            tracer = SentryTracer(context, hub)
             return PerformanceAndroidEventProcessor(options, activityFramesTracker)
         }
     }
@@ -62,6 +65,19 @@ class PerformanceAndroidEventProcessorTest {
         tr = sut.process(tr, Hint())
 
         assertTrue(tr.measurements.containsKey("app_start_warm"))
+    }
+
+    @Test
+    fun `set app cold start unit measurement`() {
+        val sut = fixture.getSut()
+
+        var tr = getTransaction()
+        setAppStart()
+
+        tr = sut.process(tr, Hint())
+
+        val measurement = tr.measurements["app_start_cold"]
+        assertEquals("millisecond", measurement?.unit)
     }
 
     @Test
@@ -140,7 +156,7 @@ class PerformanceAndroidEventProcessorTest {
         val tracer = SentryTracer(context, fixture.hub)
         var tr = SentryTransaction(tracer)
 
-        val metrics = mapOf("frames_total" to MeasurementValue(1f))
+        val metrics = mapOf("frames_total" to MeasurementValue(1f, MeasurementUnit.Duration.MILLISECOND.apiName()))
         whenever(fixture.activityFramesTracker.takeMetrics(any())).thenReturn(metrics)
 
         tr = sut.process(tr, Hint())

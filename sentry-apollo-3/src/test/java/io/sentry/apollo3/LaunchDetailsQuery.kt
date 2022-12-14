@@ -12,7 +12,7 @@ import io.sentry.apollo3.selections.LaunchDetailsQuerySelections
 import kotlin.String
 
 public data class LaunchDetailsQuery(
-    public val id: String,
+    public val id: String
 ) : Query<LaunchDetailsQuery.Data> {
     public override fun id(): String = OPERATION_ID
 
@@ -37,7 +37,7 @@ public data class LaunchDetailsQuery(
         .build()
 
     public data class Data(
-        public val launch: Launch?,
+        public val launch: Launch?
     ) : Query.Data
 
     public data class Launch(
@@ -49,12 +49,12 @@ public data class LaunchDetailsQuery(
 
     public data class Mission(
         public val name: String?,
-        public val missionPatch: String?,
+        public val missionPatch: String?
     )
 
     public data class Rocket(
         public val name: String?,
-        public val type: String?,
+        public val type: String?
     )
 
     public companion object {

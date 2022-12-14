@@ -1,12 +1,12 @@
 package io.sentry.android.timber
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.IHub
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.SdkVersion
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import timber.log.Timber
 import kotlin.test.BeforeTest
 import kotlin.test.Test

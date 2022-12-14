@@ -1,17 +1,12 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
-import io.sentry.FileFromResources
 import io.sentry.ILogger
-import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
-import io.sentry.JsonSerializable
 import org.junit.Test
-import java.io.StringReader
-import java.io.StringWriter
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.assertEquals
 
 class ContextsSerializationTest {
@@ -26,6 +21,7 @@ class ContextsSerializationTest {
             setOperatingSystem(OperatingSystemSerializationTest.Fixture().getSut())
             setRuntime(SentryRuntimeSerializationTest.Fixture().getSut())
             setGpu(GpuSerializationTest.Fixture().getSut())
+            setResponse(ResponseSerializationTest.Fixture().getSut())
             trace = SpanContextSerializationTest.Fixture().getSut()
         }
     }
@@ -33,8 +29,9 @@ class ContextsSerializationTest {
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("json/contexts.json")
-        val actual = serialize(fixture.getSut())
+        val expected = SerializationUtils.sanitizedFile("json/contexts.json")
+        val actual = SerializationUtils.serializeToString(fixture.getSut(), fixture.logger)
+
         assertEquals(expected, actual)
     }
 
@@ -54,9 +51,14 @@ class ContextsSerializationTest {
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("json/contexts.json")
-        val actual = deserialize(expectedJson)
-        val actualJson = serialize(actual)
+        val expectedJson = SerializationUtils.sanitizedFile("json/contexts.json")
+        val actual = SerializationUtils.deserializeJson(
+            expectedJson,
+            Contexts.Deserializer(),
+            fixture.logger
+        )
+        val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
+
         assertEquals(expectedJson, actualJson)
     }
 
@@ -64,28 +66,13 @@ class ContextsSerializationTest {
     fun deserializeUnknownEntry() {
         val sut = fixture.getSut()
         sut["fixture-key"] = "fixture-value"
-        val serialized = serialize(sut)
-        val deserialized = deserialize(serialized)
+        val serialized = SerializationUtils.serializeToString(sut, fixture.logger)
+        val deserialized = SerializationUtils.deserializeJson(
+            serialized,
+            Contexts.Deserializer(),
+            fixture.logger
+        )
+
         assertEquals("fixture-value", deserialized["fixture-key"])
-    }
-
-    // Helper
-
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
-            .replace(Regex("[\n\r]"), "")
-            .replace(" ", "")
-    }
-
-    private fun serialize(jsonSerializable: JsonSerializable): String {
-        val wrt = StringWriter()
-        val jsonWrt = JsonObjectWriter(wrt, 100)
-        jsonSerializable.serialize(jsonWrt, fixture.logger)
-        return wrt.toString()
-    }
-
-    private fun deserialize(json: String): Contexts {
-        val reader = JsonObjectReader(StringReader(json))
-        return Contexts.Deserializer().deserialize(reader, fixture.logger)
     }
 }

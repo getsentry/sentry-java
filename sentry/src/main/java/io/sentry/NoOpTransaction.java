@@ -1,9 +1,12 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.TransactionNameSource;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,9 +23,18 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public void setName(@NotNull String name) {}
 
+  @ApiStatus.Internal
+  @Override
+  public void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource) {}
+
   @Override
   public @NotNull String getName() {
     return "";
+  }
+
+  @Override
+  public @NotNull TransactionNameSource getTransactionNameSource() {
+    return TransactionNameSource.CUSTOM;
   }
 
   @Override
@@ -32,7 +44,10 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
-      @NotNull String operation, @Nullable String description, @Nullable Date timestamp) {
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable Date timestamp,
+      @NotNull Instrumenter instrumenter) {
     return NoOpSpan.getInstance();
   }
 
@@ -81,8 +96,8 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @NotNull BaggageHeader toBaggageHeader() {
-    return new BaggageHeader("");
+  public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
+    return null;
   }
 
   @Override
@@ -90,6 +105,10 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public void finish(@Nullable SpanStatus status) {}
+
+  @Override
+  @ApiStatus.Internal
+  public void finish(@Nullable SpanStatus status, @Nullable Date timestamp) {}
 
   @Override
   public void setOperation(@NotNull String operation) {}
@@ -137,6 +156,11 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
+  public @Nullable Boolean isProfileSampled() {
+    return null;
+  }
+
+  @Override
   public @Nullable TracesSamplingDecision getSamplingDecision() {
     return null;
   }
@@ -147,5 +171,27 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public @Nullable Object getData(@NotNull String key) {
     return null;
+  }
+
+  @Override
+  public void setMeasurement(@NotNull String name, @NotNull Number value) {}
+
+  @Override
+  public void setMeasurement(
+      @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {}
+
+  @ApiStatus.Internal
+  @Override
+  public void setContext(@NotNull String key, @NotNull Object context) {}
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull Contexts getContexts() {
+    return new Contexts();
+  }
+
+  @Override
+  public boolean isNoOp() {
+    return true;
   }
 }

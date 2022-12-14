@@ -2,16 +2,16 @@ package io.sentry.android.core
 
 import android.content.Context
 import android.content.Intent
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

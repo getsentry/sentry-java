@@ -6,7 +6,9 @@ import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.SdkVersion;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
@@ -36,9 +38,6 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
-
-  /** Enable or disable automatic breadcrumbs for User interactions Using Window.Callback */
-  private boolean enableUserInteractionBreadcrumbs = true;
 
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
@@ -84,11 +83,12 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableActivityLifecycleTracingAutoFinish = true;
 
-  /** Interval for profiling traces in milliseconds. Defaults to 100 times per second */
-  private int profilingTracesIntervalMillis = 1_000 / 100;
-
-  /** Enables the Auto instrumentation for user interaction tracing. */
-  private boolean enableUserInteractionTracing = false;
+  /**
+   * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
+   * lockstep sampling. More on
+   * https://stackoverflow.com/questions/45470758/what-is-lockstep-sampling
+   */
+  private int profilingTracesHz = 101;
 
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
@@ -101,6 +101,31 @@ public final class SentryAndroidOptions extends SentryOptions {
    * (IPC)
    */
   private boolean collectAdditionalContext = true;
+
+  /**
+   * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
+   * previous run. Sentry SDKs normally send events from a background queue, but in the case of
+   * Startup Crashes, it blocks the execution of the {@link Sentry#init()} function for the amount
+   * of startupCrashFlushTimeoutMillis to make sure the events make it to Sentry.
+   *
+   * <p>When the timeout is reached, the execution will continue on background.
+   *
+   * <p>Default is 5000 = 5s.
+   */
+  private long startupCrashFlushTimeoutMillis = 5000; // 5s
+
+  /**
+   * Controls the threshold after the application startup time, within which a crash should happen
+   * to be considered a Startup Crash.
+   *
+   * <p>Startup Crashes are sent on {@link Sentry#init()} in a blocking way, controlled by {@link
+   * SentryAndroidOptions#startupCrashFlushTimeoutMillis}.
+   *
+   * <p>Default is 2000 = 2s.
+   */
+  private final long startupCrashDurationThresholdMillis = 2000; // 2s
+
+  private boolean enableFramesTracking = true;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -210,14 +235,6 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAppComponentBreadcrumbs = enableAppComponentBreadcrumbs;
   }
 
-  public boolean isEnableUserInteractionBreadcrumbs() {
-    return enableUserInteractionBreadcrumbs;
-  }
-
-  public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
-    this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
-  }
-
   /**
    * Enable or disable all the automatic breadcrumbs
    *
@@ -228,25 +245,44 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableAppComponentBreadcrumbs = enable;
     enableSystemEventBreadcrumbs = enable;
     enableAppLifecycleBreadcrumbs = enable;
-    enableUserInteractionBreadcrumbs = enable;
+    setEnableUserInteractionBreadcrumbs(enable);
   }
 
   /**
    * Returns the interval for profiling traces in milliseconds.
    *
    * @return the interval for profiling traces in milliseconds.
+   * @deprecated has no effect and will be removed in future versions. It now just returns 0.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public int getProfilingTracesIntervalMillis() {
-    return profilingTracesIntervalMillis;
+    return 0;
   }
 
   /**
    * Sets the interval for profiling traces in milliseconds.
    *
    * @param profilingTracesIntervalMillis - the interval for profiling traces in milliseconds.
+   * @deprecated has no effect and will be removed in future versions.
    */
-  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {
-    this.profilingTracesIntervalMillis = profilingTracesIntervalMillis;
+  @Deprecated
+  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {}
+
+  /**
+   * Returns the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second.
+   *
+   * @return Rate the profiler will sample rates at.
+   */
+  @ApiStatus.Internal
+  public int getProfilingTracesHz() {
+    return profilingTracesHz;
+  }
+
+  /** Sets the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second. */
+  @ApiStatus.Internal
+  public void setProfilingTracesHz(final int profilingTracesHz) {
+    this.profilingTracesHz = profilingTracesHz;
   }
 
   /**
@@ -293,19 +329,54 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachScreenshot = attachScreenshot;
   }
 
-  public boolean isEnableUserInteractionTracing() {
-    return enableUserInteractionTracing;
-  }
-
-  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
-    this.enableUserInteractionTracing = enableUserInteractionTracing;
-  }
-
   public boolean isCollectAdditionalContext() {
     return collectAdditionalContext;
   }
 
   public void setCollectAdditionalContext(boolean collectAdditionalContext) {
     this.collectAdditionalContext = collectAdditionalContext;
+  }
+
+  public boolean isEnableFramesTracking() {
+    return enableFramesTracking;
+  }
+
+  /**
+   * Enable or disable Frames Tracking, which is used to report slow and frozen frames.
+   *
+   * @param enableFramesTracking true if frames tracking should be enabled, false otherwise.
+   */
+  public void setEnableFramesTracking(boolean enableFramesTracking) {
+    this.enableFramesTracking = enableFramesTracking;
+  }
+
+  /**
+   * Returns the Startup Crash flush timeout in Millis
+   *
+   * @return the timeout in Millis
+   */
+  @ApiStatus.Internal
+  long getStartupCrashFlushTimeoutMillis() {
+    return startupCrashFlushTimeoutMillis;
+  }
+
+  /**
+   * Sets the Startup Crash flush timeout in Millis
+   *
+   * @param startupCrashFlushTimeoutMillis the timeout in Millis
+   */
+  @TestOnly
+  void setStartupCrashFlushTimeoutMillis(long startupCrashFlushTimeoutMillis) {
+    this.startupCrashFlushTimeoutMillis = startupCrashFlushTimeoutMillis;
+  }
+
+  /**
+   * Returns the Startup Crash duration threshold in Millis
+   *
+   * @return the threshold in Millis
+   */
+  @ApiStatus.Internal
+  public long getStartupCrashDurationThresholdMillis() {
+    return startupCrashDurationThresholdMillis;
   }
 }

@@ -2,18 +2,22 @@ package io.sentry.logback
 
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.encoder.Encoder
+import ch.qos.logback.core.encoder.EncoderBase
 import ch.qos.logback.core.status.Status
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.transport.ITransport
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -31,7 +35,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryAppenderTest {
-    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, contextTags: List<String>? = null) {
+    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, contextTags: List<String>? = null, encoder: Encoder<ILoggingEvent>? = null) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
         val transportFactory = mock<ITransportFactory>()
@@ -49,10 +53,13 @@ class SentryAppenderTest {
             appender.setMinimumEventLevel(minimumEventLevel)
             appender.context = loggerContext
             appender.setTransportFactory(transportFactory)
+            encoder?.context = loggerContext
+            appender.setEncoder(encoder)
             val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
             rootLogger.level = Level.TRACE
             rootLogger.addAppender(appender)
             appender.start()
+            encoder?.start()
             loggerContext.start()
         }
     }
@@ -61,6 +68,7 @@ class SentryAppenderTest {
 
     @AfterTest
     fun `stop logback`() {
+        fixture.loggerContext.statusManager.clear()
         fixture.loggerContext.stop()
         Sentry.close()
     }
@@ -99,6 +107,58 @@ class SentryAppenderTest {
                     assertEquals("testing message conversion 1, 2", message.formatted)
                     assertEquals("testing message conversion {}, {}", message.message)
                     assertEquals(listOf("1", "2"), message.params)
+                }
+                assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `encodes message`() {
+        var encoder = PatternLayoutEncoder()
+        encoder.pattern = "encoderadded %msg"
+        fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder)
+        fixture.logger.info("testing encoding")
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.message) { message ->
+                    assertEquals("encoderadded testing encoding", message.formatted)
+                    assertEquals("testing encoding", message.message)
+                }
+                assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
+            },
+            anyOrNull()
+        )
+    }
+
+    class ThrowingEncoder : EncoderBase<ILoggingEvent> {
+        constructor() : super()
+        override fun headerBytes(): ByteArray {
+            TODO("Not yet implemented")
+        }
+
+        override fun footerBytes(): ByteArray {
+            TODO("Not yet implemented")
+        }
+
+        override fun encode(event: ILoggingEvent?): ByteArray {
+            TODO("Not yet implemented")
+        }
+    }
+
+    @Test
+    fun `fallsback when encoder throws`() {
+        var encoder = ThrowingEncoder()
+        fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder)
+        fixture.logger.info("testing when encoder throws")
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertNotNull(event.message) { message ->
+                    assertEquals("testing when encoder throws", message.formatted)
+                    assertEquals("testing when encoder throws", message.message)
                 }
                 assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
             },

@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -96,7 +97,7 @@ public final class Scope {
     this.fingerprint = new ArrayList<>(scope.fingerprint);
     this.eventProcessors = new CopyOnWriteArrayList<>(scope.eventProcessors);
 
-    final Queue<Breadcrumb> breadcrumbsRef = scope.breadcrumbs;
+    final Breadcrumb[] breadcrumbsRef = scope.breadcrumbs.toArray(new Breadcrumb[0]);
 
     Queue<Breadcrumb> breadcrumbsClone = createBreadcrumbsList(scope.options.getMaxBreadcrumbs());
 
@@ -172,7 +173,7 @@ public final class Scope {
     if (transaction != null) {
       final ITransaction tx = this.transaction;
       if (tx != null) {
-        tx.setName(transaction);
+        tx.setName(transaction, TransactionNameSource.CUSTOM);
       }
       this.transactionName = transaction;
     } else {
@@ -759,6 +760,11 @@ public final class Scope {
     synchronized (transactionLock) {
       callback.accept(transaction);
     }
+  }
+
+  @ApiStatus.Internal
+  public @Nullable Session getSession() {
+    return session;
   }
 
   /** the IWithTransaction callback */

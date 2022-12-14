@@ -33,6 +33,8 @@ class RequestTest {
         assertEquals("envs", clone.envs!!["envs"])
         assertEquals("others", clone.others!!["others"])
         assertEquals("unknown", clone.unknown!!["unknown"])
+        assertEquals(1000, clone.bodySize)
+        assertEquals("fragment", clone.fragment)
     }
 
     @Test
@@ -47,7 +49,9 @@ class RequestTest {
         request.others!!["others"] = "newOthers"
         request.others!!["anotherOne"] = "anotherOne"
         val newUnknown = mapOf(Pair("unknown", "newUnknown"), Pair("otherUnknown", "otherUnknown"))
-        request.setUnknown(newUnknown)
+        request.unknown = newUnknown
+        request.bodySize = 1001
+        request.fragment = "fragment2"
 
         assertEquals("get", clone.method)
         assertEquals("http://localhost:8080", clone.url)
@@ -58,6 +62,8 @@ class RequestTest {
         assertEquals(1, clone.others!!.size)
         assertEquals("unknown", clone.unknown!!["unknown"])
         assertEquals(1, clone.unknown!!.size)
+        assertEquals(1000, clone.bodySize)
+        assertEquals("fragment", clone.fragment)
     }
 
     @Test
@@ -111,6 +117,8 @@ class RequestTest {
             setOthers(others)
             val unknown = mapOf(Pair("unknown", "unknown"))
             setUnknown(unknown)
+            bodySize = 1000
+            fragment = "fragment"
         }
     }
 }

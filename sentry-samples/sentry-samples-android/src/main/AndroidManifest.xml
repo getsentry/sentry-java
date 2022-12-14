@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="io.sentry.samples.android">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!--  extra recommended permission, we'd be able to check network status-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -54,6 +53,10 @@
             android:exported="false" />
 
       <activity
+            android:name=".ProfilingActivity"
+            android:exported="false" />
+
+      <activity
             android:name=".compose.ComposeActivity"
             android:exported="false" />
 
@@ -100,7 +103,7 @@
         <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
 
         <!--    how to enable profiling when starting transactions -->
-        <!--    <meta-data android:name="io.sentry.traces.profiling.enable" android:value="true" />-->
+        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />
 
         <!--    how to disable the Activity auto instrumentation for tracing-->
         <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->
@@ -131,6 +134,9 @@
 
         <!--    how to enable the attach screenshot feature-->
         <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
+
+        <!--    how to enable the send default pii-->
+        <meta-data android:name="io.sentry.send-default-pii" android:value="true" />
 
     </application>
 </manifest>

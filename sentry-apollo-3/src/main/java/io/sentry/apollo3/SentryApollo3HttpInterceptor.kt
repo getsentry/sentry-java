@@ -7,6 +7,7 @@ import com.apollographql.apollo3.exception.ApolloHttpException
 import com.apollographql.apollo3.exception.ApolloNetworkException
 import com.apollographql.apollo3.network.http.HttpInterceptor
 import com.apollographql.apollo3.network.http.HttpInterceptorChain
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HubAdapter
@@ -14,8 +15,8 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
-import io.sentry.TracingOrigins
 import io.sentry.TypeCheckHint
+import io.sentry.util.PropagationTargetsUtils
 
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IHub = HubAdapter.getInstance(), private val beforeSpan: BeforeSpanCallback? = null) :
     HttpInterceptor {
@@ -34,20 +35,22 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         } else {
             val span = startChild(request, activeSpan)
 
-            val cleanedHeaders = removeSentryInternalHeaders(request.headers)
+            var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
+
+            if (!span.isNoOp && PropagationTargetsUtils.contain(hub.options.tracePropagationTargets, request.url)) {
+                val sentryTraceHeader = span.toSentryTrace()
+                val baggageHeader = span.toBaggageHeader(request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value })
+                cleanedHeaders.add(HttpHeader(sentryTraceHeader.name, sentryTraceHeader.value))
+
+                baggageHeader?.let { newHeader ->
+                    cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
+                        add(HttpHeader(newHeader.name, newHeader.value))
+                    }
+                }
+            }
 
             val requestBuilder = request.newBuilder().apply {
                 headers(cleanedHeaders)
-            }
-
-            if (TracingOrigins.contain(hub.options.tracingOrigins, request.url)) {
-                val sentryTraceHeader = span.toSentryTrace()
-                val baggageHeader = span.toBaggageHeader()
-                requestBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
-
-                baggageHeader?.let {
-                    requestBuilder.addHeader(it.name, it.value)
-                }
             }
 
             val modifiedRequest = requestBuilder.build()

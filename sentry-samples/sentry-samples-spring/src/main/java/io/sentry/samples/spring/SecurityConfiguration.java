@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -15,7 +14,10 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+@SuppressWarnings("deprecation") // WebSecurityConfigurerAdapter has been deprecated
+public class SecurityConfiguration
+    extends org.springframework.security.config.annotation.web.configuration
+        .WebSecurityConfigurerAdapter {
 
   // this API is meant to be consumed by non-browser clients thus the CSRF protection is not needed.
   @Override

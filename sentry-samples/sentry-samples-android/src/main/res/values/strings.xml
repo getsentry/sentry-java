@@ -19,6 +19,7 @@
   <string name="open_gestures_activity">Open Gestures Activity</string>
   <string name="open_permissions_activity">Open Permissions Activity</string>
   <string name="open_compose_activity">Open Compose Activity</string>
+  <string name="open_profiling_activity">Open Profiling Activity</string>
   <string name="test_timber_integration">Test Timber</string>
   <string name="back_main">Back to Main Activity</string>
   <string name="tap_me">text</string>
@@ -34,4 +35,10 @@ Nulla interdum gravida augue, vel fringilla lorem bibendum vel. In hac habitasse
   </string>
   <string name="camera_permission">Camera Permission</string>
   <string name="write_permission">Write External Storage Permission</string>
+  <string name="profiling_duration">Duration of profile %.1f seconds</string>
+  <string name="profiling_threads">Background threads to use: %d</string>
+  <string name="profiling_running">Profiling is running</string>
+  <string name="profiling_no_dir_set">No profiling dir path set</string>
+  <string name="profiling_start">Start Profiling</string>
+  <string name="profiling_result">Profile trace file size = %d bytes \nItem payload size = %d bytes \nData sent to Sentry size = %d bytes</string>
 </resources>

@@ -11,6 +11,7 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor.FetchSourceType
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
 import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
+import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HubAdapter
@@ -40,21 +41,29 @@ class SentryApolloInterceptor(
             chain.proceedAsync(request, dispatcher, callBack)
         } else {
             val span = startChild(request, activeSpan)
-            val sentryTraceHeader = span.toSentryTrace()
 
-            // we have no access to URI, no way to verify tracing origins
-            val requestHeaderBuilder = request.requestHeaders.toBuilder()
-            requestHeaderBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
-            span.toBaggageHeader()?.let {
-                requestHeaderBuilder.addHeader(it.name, it.value)
+            val requestWithHeader = if (span.isNoOp) {
+                request
+            } else {
+                val sentryTraceHeader = span.toSentryTrace()
+
+                // we have no access to URI, no way to verify tracing origins
+                val requestHeaderBuilder = request.requestHeaders.toBuilder()
+                requestHeaderBuilder.addHeader(sentryTraceHeader.name, sentryTraceHeader.value)
+                span.toBaggageHeader(listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)))
+                    ?.let {
+                        requestHeaderBuilder.addHeader(it.name, it.value)
+                    }
+                val headers = requestHeaderBuilder.build()
+                request.toBuilder().requestHeaders(headers).build()
             }
-            val headers = requestHeaderBuilder.build()
-            val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
+
             span.setData("operationId", requestWithHeader.operation.operationId())
             span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
 
             chain.proceedAsync(
-                requestWithHeader, dispatcher,
+                requestWithHeader,
+                dispatcher,
                 object : CallBack {
                     override fun onResponse(response: InterceptorResponse) {
                         // onResponse is called only for statuses 2xx

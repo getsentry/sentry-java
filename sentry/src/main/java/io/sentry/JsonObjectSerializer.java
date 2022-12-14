@@ -1,11 +1,22 @@
 package io.sentry;
 
+import static io.sentry.util.JsonSerializationUtils.atomicIntegerArrayToList;
+import static io.sentry.util.JsonSerializationUtils.calendarToMap;
+
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.URI;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Currency;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +57,24 @@ public final class JsonObjectSerializer {
       serializeCollection(writer, logger, Arrays.asList((Object[]) object));
     } else if (object instanceof Map) {
       serializeMap(writer, logger, (Map<?, ?>) object);
+    } else if (object instanceof Locale) {
+      writer.value(object.toString());
+    } else if (object instanceof AtomicIntegerArray) {
+      serializeCollection(writer, logger, atomicIntegerArrayToList((AtomicIntegerArray) object));
+    } else if (object instanceof AtomicBoolean) {
+      writer.value(((AtomicBoolean) object).get());
+    } else if (object instanceof URI) {
+      writer.value(object.toString());
+    } else if (object instanceof InetAddress) {
+      writer.value(object.toString());
+    } else if (object instanceof UUID) {
+      writer.value(object.toString());
+    } else if (object instanceof Currency) {
+      writer.value(object.toString());
+    } else if (object instanceof Calendar) {
+      serializeMap(writer, logger, calendarToMap((Calendar) object));
+    } else if (object.getClass().isEnum()) {
+      writer.value(object.toString());
     } else {
       try {
         Object serializableObject = jsonReflectionObjectSerializer.serialize(object, logger);

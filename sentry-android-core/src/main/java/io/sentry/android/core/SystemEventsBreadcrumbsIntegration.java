@@ -204,6 +204,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       if (extras != null && !extras.isEmpty()) {
         for (String item : extras.keySet()) {
           try {
+            @SuppressWarnings("deprecation")
             Object value = extras.get(item);
             if (value != null) {
               newExtras.put(item, value.toString());

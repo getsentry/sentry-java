@@ -1,6 +1,7 @@
 package io.sentry;
 
 import java.util.Date;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +20,10 @@ public interface ISpan {
   @ApiStatus.Internal
   @NotNull
   ISpan startChild(
-      @NotNull String operation, @Nullable String description, @Nullable Date timestamp);
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable Date timestamp,
+      @NotNull Instrumenter instrumenter);
 
   /**
    * Starts a child Span.
@@ -55,7 +59,7 @@ public interface ISpan {
    */
   @Nullable
   @ApiStatus.Experimental
-  BaggageHeader toBaggageHeader();
+  BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders);
 
   /** Sets span timestamp marking this span as finished. */
   void finish();
@@ -66,6 +70,15 @@ public interface ISpan {
    * @param status - the status
    */
   void finish(@Nullable SpanStatus status);
+
+  /**
+   * Sets span timestamp marking this span as finished.
+   *
+   * @param status - the status
+   * @param timestamp - the end timestamp
+   */
+  @ApiStatus.Internal
+  void finish(@Nullable SpanStatus status, @Nullable Date timestamp);
 
   /**
    * Sets span operation.
@@ -168,4 +181,37 @@ public interface ISpan {
    */
   @Nullable
   Object getData(@NotNull String key);
+
+  /**
+   * Set a measurement without unit. When setting the measurement without the unit, no formatting
+   * will be applied to the measurement value in the Sentry product, and the value will be shown as
+   * is.
+   *
+   * <p>NOTE: Setting a measurement with the same name on the same transaction multiple times only
+   * keeps the last value.
+   *
+   * @param name the name of the measurement
+   * @param value the value of the measurement
+   */
+  void setMeasurement(@NotNull String name, @NotNull Number value);
+
+  /**
+   * Set a measurement with specific unit.
+   *
+   * <p>NOTE: Setting a measurement with the same name on the same transaction multiple times only
+   * keeps the last value.
+   *
+   * @param name the name of the measurement
+   * @param value the value of the measurement
+   * @param unit the unit the value is measured in
+   */
+  void setMeasurement(@NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit);
+
+  /**
+   * Whether this span instance is a NOOP that doesn't collect information
+   *
+   * @return true if NOOP
+   */
+  @ApiStatus.Internal
+  boolean isNoOp();
 }

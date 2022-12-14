@@ -226,6 +226,9 @@ public final class SentryEnvelopeItem {
               // base64
               byte[] traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
               String base64Trace = Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
+              if (base64Trace.isEmpty()) {
+                throw new SentryEnvelopeException("Profiling trace file is empty");
+              }
               profilingTraceData.setSampledProfile(base64Trace);
               profilingTraceData.readDeviceCpuFrequencies();
 

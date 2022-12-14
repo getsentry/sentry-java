@@ -12,6 +12,7 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.io.Closeable;
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -27,7 +28,7 @@ public final class Hub implements IHub {
   private volatile boolean isEnabled;
   private final @NotNull Stack stack;
   private final @NotNull TracesSampler tracesSampler;
-  private final @NotNull Map<Throwable, Pair<ISpan, String>> throwableToSpan =
+  private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
 
   public Hub(final @NotNull SentryOptions options) {
@@ -237,12 +238,15 @@ public final class Hub implements IHub {
 
   private void assignTraceContext(final @NotNull SentryEvent event) {
     if (options.isTracingEnabled() && event.getThrowable() != null) {
-      final Pair<ISpan, String> pair =
+      final Pair<WeakReference<ISpan>, String> pair =
           throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
       if (pair != null) {
-        final ISpan span = pair.getFirst();
-        if (event.getContexts().getTrace() == null && span != null) {
-          event.getContexts().setTrace(span.getSpanContext());
+        final WeakReference<ISpan> spanWeakRef = pair.getFirst();
+        if (event.getContexts().getTrace() == null && spanWeakRef != null) {
+          final ISpan span = spanWeakRef.get();
+          if (span != null) {
+            event.getContexts().setTrace(span.getSpanContext());
+          }
         }
         final String transactionName = pair.getSecond();
         if (event.getTransaction() == null && transactionName != null) {
@@ -601,8 +605,7 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceContext traceContext,
-      final @Nullable Hint hint,
-      final @Nullable ProfilingTraceData profilingTraceData) {
+      final @Nullable Hint hint) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -637,8 +640,7 @@ public final class Hub implements IHub {
             item = stack.peek();
             sentryId =
                 item.getClient()
-                    .captureTransaction(
-                        transaction, traceContext, item.getScope(), hint, profilingTraceData);
+                    .captureTransaction(transaction, traceContext, item.getScope(), hint);
           } catch (Throwable e) {
             options
                 .getLogger()
@@ -653,6 +655,22 @@ public final class Hub implements IHub {
     return sentryId;
   }
 
+  @ApiStatus.Internal
+  @Override
+  public @NotNull ITransaction startTransaction(
+      final @NotNull TransactionContext transactionContext,
+      final @NotNull TransactionOptions transactionOptions) {
+    return createTransaction(
+        transactionContext,
+        transactionOptions.getCustomSamplingContext(),
+        transactionOptions.isBindToScope(),
+        transactionOptions.getStartTimestamp(),
+        transactionOptions.isWaitForChildren(),
+        transactionOptions.getIdleTimeout(),
+        transactionOptions.isTrimEnd(),
+        transactionOptions.getTransactionFinishedCallback());
+  }
+
   @Override
   public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
@@ -660,46 +678,6 @@ public final class Hub implements IHub {
       final boolean bindToScope) {
     return createTransaction(
         transactionContext, customSamplingContext, bindToScope, null, false, null, false, null);
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContext,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope,
-      @Nullable Date startTimestamp) {
-    return createTransaction(
-        transactionContext,
-        customSamplingContext,
-        bindToScope,
-        startTimestamp,
-        false,
-        null,
-        false,
-        null);
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope,
-      final @Nullable Date startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    return createTransaction(
-        transactionContexts,
-        customSamplingContext,
-        bindToScope,
-        startTimestamp,
-        waitForChildren,
-        idleTimeout,
-        trimEnd,
-        transactionFinishedCallback);
   }
 
   private @NotNull ITransaction createTransaction(
@@ -720,6 +698,15 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
+      transaction = NoOpTransaction.getInstance();
+    } else if (!options.getInstrumenter().equals(transactionContext.getInstrumenter())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
+              transactionContext.getInstrumenter(),
+              options.getInstrumenter());
       transaction = NoOpTransaction.getInstance();
     } else if (!options.isTracingEnabled()) {
       options
@@ -745,7 +732,7 @@ public final class Hub implements IHub {
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
-      if (samplingDecision.getSampled() && options.isProfilingEnabled()) {
+      if (samplingDecision.getSampled() && samplingDecision.getProfileSampled()) {
         final ITransactionProfiler transactionProfiler = options.getTransactionProfiler();
         transactionProfiler.onTransactionStart(transaction);
       }
@@ -766,7 +753,7 @@ public final class Hub implements IHub {
               SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
     } else {
       final ISpan span = stack.peek().getScope().getSpan();
-      if (span != null) {
+      if (span != null && !span.isNoOp()) {
         traceHeader = span.toSentryTrace();
       }
     }
@@ -799,7 +786,7 @@ public final class Hub implements IHub {
     final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
     // the most inner span should be assigned to a throwable
     if (!throwableToSpan.containsKey(rootCause)) {
-      throwableToSpan.put(rootCause, new Pair<>(span, transactionName));
+      throwableToSpan.put(rootCause, new Pair<>(new WeakReference<>(span), transactionName));
     }
   }
 
@@ -807,11 +794,14 @@ public final class Hub implements IHub {
   SpanContext getSpanContext(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable is required");
     final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
-    final Pair<ISpan, String> pair = this.throwableToSpan.get(rootCause);
+    final Pair<WeakReference<ISpan>, String> pair = this.throwableToSpan.get(rootCause);
     if (pair != null) {
-      final ISpan span = pair.getFirst();
-      if (span != null) {
-        return span.getSpanContext();
+      final WeakReference<ISpan> spanWeakRef = pair.getFirst();
+      if (spanWeakRef != null) {
+        final ISpan span = spanWeakRef.get();
+        if (span != null) {
+          return span.getSpanContext();
+        }
       }
     }
     return null;
@@ -820,9 +810,13 @@ public final class Hub implements IHub {
   private Scope buildLocalScope(
       final @NotNull Scope scope, final @Nullable ScopeCallback callback) {
     if (callback != null) {
-      final Scope localScope = new Scope(scope);
-      callback.run(localScope);
-      return localScope;
+      try {
+        final Scope localScope = new Scope(scope);
+        callback.run(localScope);
+        return localScope;
+      } catch (Throwable t) {
+        options.getLogger().log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
+      }
     }
     return scope;
   }

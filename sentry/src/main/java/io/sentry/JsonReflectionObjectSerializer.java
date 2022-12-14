@@ -1,14 +1,25 @@
 package io.sentry;
 
+import static io.sentry.util.JsonSerializationUtils.atomicIntegerArrayToList;
+import static io.sentry.util.JsonSerializationUtils.calendarToMap;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.InetAddress;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +50,24 @@ public final class JsonReflectionObjectSerializer {
       return object;
     } else if (object instanceof String) {
       return object;
+    } else if (object instanceof Locale) {
+      return object.toString();
+    } else if (object instanceof AtomicIntegerArray) {
+      return atomicIntegerArrayToList((AtomicIntegerArray) object);
+    } else if (object instanceof AtomicBoolean) {
+      return ((AtomicBoolean) object).get();
+    } else if (object instanceof URI) {
+      return object.toString();
+    } else if (object instanceof InetAddress) {
+      return object.toString();
+    } else if (object instanceof UUID) {
+      return object.toString();
+    } else if (object instanceof Currency) {
+      return object.toString();
+    } else if (object instanceof Calendar) {
+      return calendarToMap((Calendar) object);
+    } else if (object.getClass().isEnum()) {
+      return object.toString();
     } else {
       if (visiting.contains(object)) {
         logger.log(SentryLevel.INFO, "Cyclic reference detected. Calling toString() on object.");
@@ -61,7 +90,12 @@ public final class JsonReflectionObjectSerializer {
         } else if (object instanceof Map) {
           serializedObject = map((Map<?, ?>) object, logger);
         } else {
-          serializedObject = serializeObject(object, logger);
+          @NotNull Map<String, Object> objectAsMap = serializeObject(object, logger);
+          if (objectAsMap.isEmpty()) {
+            serializedObject = object.toString();
+          } else {
+            serializedObject = objectAsMap;
+          }
         }
       } catch (Exception exception) {
         logger.log(SentryLevel.INFO, "Not serializing object due to throwing sub-path.", exception);
@@ -82,6 +116,9 @@ public final class JsonReflectionObjectSerializer {
       if (Modifier.isTransient(field.getModifiers())) {
         continue;
       }
+      if (Modifier.isStatic(field.getModifiers())) {
+        continue;
+      }
       String fieldName = field.getName();
       try {
         field.setAccessible(true);
@@ -92,6 +129,7 @@ public final class JsonReflectionObjectSerializer {
         logger.log(SentryLevel.INFO, "Cannot access field " + fieldName + ".");
       }
     }
+
     return map;
   }
 

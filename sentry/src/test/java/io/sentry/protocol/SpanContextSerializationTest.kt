@@ -1,6 +1,5 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.FileFromResources
 import io.sentry.ILogger
 import io.sentry.JsonObjectReader
@@ -11,6 +10,7 @@ import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import org.junit.Test
+import org.mockito.kotlin.mock
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
@@ -50,6 +50,7 @@ class SpanContextSerializationTest {
         val expectedJson = sanitizedFile("json/span_context.json")
         val actual = deserialize(expectedJson)
         assertNull(actual.sampled)
+        assertNull(actual.profileSampled)
         assertNotNull(actual.tags)
         val actualJson = serializeToString(actual)
         assertEquals(expectedJson, actualJson)

@@ -22,9 +22,9 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
   public Contexts() {}
 
   public Contexts(final @NotNull Contexts contexts) {
-    for (Map.Entry<String, Object> entry : contexts.entrySet()) {
+    for (final Map.Entry<String, Object> entry : contexts.entrySet()) {
       if (entry != null) {
-        Object value = entry.getValue();
+        final Object value = entry.getValue();
         if (App.TYPE.equals(entry.getKey()) && value instanceof App) {
           this.setApp(new App((App) value));
         } else if (Browser.TYPE.equals(entry.getKey()) && value instanceof Browser) {
@@ -40,6 +40,8 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
           this.setGpu(new Gpu((Gpu) value));
         } else if (SpanContext.TYPE.equals(entry.getKey()) && value instanceof SpanContext) {
           this.setTrace(new SpanContext((SpanContext) value));
+        } else if (Response.TYPE.equals(entry.getKey()) && value instanceof Response) {
+          this.setResponse(new Response((Response) value));
         } else {
           this.put(entry.getKey(), value);
         }
@@ -109,17 +111,25 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
     this.put(Gpu.TYPE, gpu);
   }
 
+  public @Nullable Response getResponse() {
+    return toContextType(Response.TYPE, Response.class);
+  }
+
+  public void setResponse(final @NotNull Response response) {
+    this.put(Response.TYPE, response);
+  }
+
   // region json
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull JsonObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     // Serialize in alphabetical order to keep determinism.
-    List<String> sortedKeys = Collections.list(keys());
-    java.util.Collections.sort(sortedKeys);
-    for (String key : sortedKeys) {
-      Object value = get(key);
+    final List<String> sortedKeys = Collections.list(keys());
+    Collections.sort(sortedKeys);
+    for (final String key : sortedKeys) {
+      final Object value = get(key);
       if (value != null) {
         writer.name(key).value(logger, value);
       }
@@ -130,9 +140,9 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
   public static final class Deserializer implements JsonDeserializer<Contexts> {
 
     @Override
-    public @NotNull Contexts deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
-        throws Exception {
-      Contexts contexts = new Contexts();
+    public @NotNull Contexts deserialize(
+        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+      final Contexts contexts = new Contexts();
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {
         final String nextName = reader.nextName();
@@ -158,6 +168,9 @@ public final class Contexts extends ConcurrentHashMap<String, Object> implements
             break;
           case SpanContext.TYPE:
             contexts.setTrace(new SpanContext.Deserializer().deserialize(reader, logger));
+            break;
+          case Response.TYPE:
+            contexts.setResponse(new Response.Deserializer().deserialize(reader, logger));
             break;
           default:
             Object object = reader.nextObjectOrNull();

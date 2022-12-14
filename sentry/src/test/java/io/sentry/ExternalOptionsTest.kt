@@ -1,11 +1,11 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.config.PropertiesProviderFactory
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -114,6 +114,13 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with profilesSampleRate using external properties`() {
+        withPropertiesFile("profiles-sample-rate=0.2") {
+            assertEquals(0.2, it.profilesSampleRate)
+        }
+    }
+
+    @Test
     fun `creates options with enableDeduplication using external properties`() {
         withPropertiesFile("enable-deduplication=true") {
             assertNotNull(it.enableDeduplication) {
@@ -139,9 +146,30 @@ class ExternalOptionsTest {
     }
 
     @Test
-    fun `creates options with tracing origins using external properties`() {
+    fun `creates options with trace propagation targets using external properties`() {
+        withPropertiesFile("""trace-propagation-targets=localhost,^(http|https)://api\\..*$""") {
+            assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracePropagationTargets)
+        }
+    }
+
+    @Test
+    fun `creates options without trace propagation targets results in default tracePropagationTargets being null`() {
+        withPropertiesFile("""""") {
+            assertEquals(null, it.tracePropagationTargets)
+        }
+    }
+
+    @Test
+    fun `creates options with empty trace propagation targets, results in empty list`() {
+        withPropertiesFile("""trace-propagation-targets=""") {
+            assertTrue(it.tracePropagationTargets?.isEmpty() == true)
+        }
+    }
+
+    @Test
+    fun `creates options with tracingOrigins using external properties`() {
         withPropertiesFile("""tracing-origins=localhost,^(http|https)://api\\..*$""") {
-            assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracingOrigins)
+            assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), it.tracePropagationTargets)
         }
     }
 

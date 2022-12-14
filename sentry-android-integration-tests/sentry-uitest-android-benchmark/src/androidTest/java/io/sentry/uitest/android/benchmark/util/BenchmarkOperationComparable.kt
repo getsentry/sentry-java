@@ -12,7 +12,6 @@ internal data class BenchmarkOperationComparable(
 ) {
     /** Compare two [BenchmarkOperation], calculating increases of each parameter. */
     fun compare(other: BenchmarkOperationComparable, iterations: Int, refreshRate: Float): BenchmarkComparisonResult {
-
         val cores = Runtime.getRuntime().availableProcessors()
         val durationIncreaseNanos = ArrayList<Long>()
         val durationIncreasePercentage = ArrayList<Double>()

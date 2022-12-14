@@ -10,19 +10,19 @@ import android.view.Window
 import android.widget.AbsListView
 import android.widget.ListAdapter
 import androidx.core.view.ScrollingView
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.inOrder
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -34,6 +34,9 @@ class SentryGestureListenerScrollTest {
         val resources = mock<Resources>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
+            isEnableUserInteractionBreadcrumbs = true
+            isEnableUserInteractionTracing = true
+            gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
         }
         val hub = mock<IHub>()
 
@@ -46,12 +49,12 @@ class SentryGestureListenerScrollTest {
         internal inline fun <reified T : View> getSut(
             resourceName: String = "test_scroll_view",
             touchWithinBounds: Boolean = true,
-            direction: String = "",
-            isAndroidXAvailable: Boolean = true
+            direction: String = ""
         ): SentryGestureListener {
             target = mockView<T>(
                 event = firstEvent,
-                touchWithinBounds = touchWithinBounds
+                touchWithinBounds = touchWithinBounds,
+                context = context
             )
             window.mockDecorView<ViewGroup>(event = firstEvent) {
                 whenever(it.childCount).thenReturn(1)
@@ -69,8 +72,7 @@ class SentryGestureListenerScrollTest {
             return SentryGestureListener(
                 activity,
                 hub,
-                options,
-                isAndroidXAvailable
+                options
             )
         }
     }
@@ -169,7 +171,7 @@ class SentryGestureListenerScrollTest {
 
     @Test
     fun `if androidX is not available, does not capture a breadcrumb for ScrollingView`() {
-        val sut = fixture.getSut<ScrollableView>(isAndroidXAvailable = false)
+        val sut = fixture.getSut<ScrollableView>()
 
         sut.onDown(fixture.firstEvent)
         fixture.eventsInBetween.forEach {

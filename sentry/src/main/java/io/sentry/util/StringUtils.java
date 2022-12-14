@@ -18,6 +18,9 @@ public final class StringUtils {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+  private static final String CORRUPTED_NIL_UUID = "0000-0000";
+  private static final String PROPER_NIL_UUID = "00000000-0000-0000-0000-000000000000";
+
   private StringUtils() {}
 
   public static @Nullable String getStringAfterDot(final @Nullable String str) {
@@ -120,5 +123,37 @@ public final class StringUtils {
       logger.log(SentryLevel.INFO, "string: %s could not calculate its hash", e, str);
     }
     return null;
+  }
+
+  /**
+   * Counts the occurrences of a character in a String
+   *
+   * @param str the String
+   * @param character the character to count
+   * @return The number of occurrences of the character in the String
+   */
+  public static int countOf(@NotNull String str, char character) {
+    int count = 0;
+    for (int i = 0; i < str.length(); i++) {
+      if (str.charAt(i) == character) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Normalizes UUID string representation to adhere to the actual UUID standard
+   *
+   * <p>Because Motorola decided that nil UUIDs should look like this: "0000-0000" ;)
+   *
+   * @param uuidString the original UUID string representation
+   * @return proper UUID string, in case it's a corrupted one
+   */
+  public static String normalizeUUID(final @NotNull String uuidString) {
+    if (uuidString.equals(CORRUPTED_NIL_UUID)) {
+      return PROPER_NIL_UUID;
+    }
+    return uuidString;
   }
 }

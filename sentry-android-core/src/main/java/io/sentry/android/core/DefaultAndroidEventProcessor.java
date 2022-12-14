@@ -94,6 +94,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
     // dont ref. to method reference, theres a bug on it
+    //noinspection Convert2MethodRef
     contextData = executorService.submit(() -> loadContextData());
 
     executorService.shutdown();
@@ -224,9 +225,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private void setPackageInfo(final @NotNull SentryBaseEvent event, final @NotNull App app) {
     final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(context, PackageManager.GET_PERMISSIONS, options.getLogger());
+        ContextUtils.getPackageInfo(
+            context, PackageManager.GET_PERMISSIONS, options.getLogger(), buildInfoProvider);
     if (packageInfo != null) {
-      String versionCode = ContextUtils.getVersionCode(packageInfo);
+      String versionCode = ContextUtils.getVersionCode(packageInfo, buildInfoProvider);
 
       setDist(event, versionCode);
       setAppPackageInfo(app, packageInfo);
@@ -281,7 +283,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // TODO: missing usable memory
 
     Device device = new Device();
-    device.setName(getDeviceName());
+    if (options.isSendDefaultPii()) {
+      device.setName(getDeviceName());
+    }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
     device.setFamily(getFamily());
@@ -749,7 +753,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setAppPackageInfo(final @NotNull App app, final @NotNull PackageInfo packageInfo) {
     app.setAppIdentifier(packageInfo.packageName);
     app.setAppVersion(packageInfo.versionName);
-    app.setAppBuild(ContextUtils.getVersionCode(packageInfo));
+    app.setAppBuild(ContextUtils.getVersionCode(packageInfo, buildInfoProvider));
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN) {
       final Map<String, String> permissions = new HashMap<>();
@@ -849,7 +853,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private @Nullable Map<String, String> getSideLoadedInfo() {
     String packageName = null;
     try {
-      final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, options.getLogger());
+      final PackageInfo packageInfo =
+          ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
       final PackageManager packageManager = context.getPackageManager();
 
       if (packageInfo != null && packageManager != null) {

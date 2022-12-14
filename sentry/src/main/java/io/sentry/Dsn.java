@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.Objects;
 import java.net.URI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +50,7 @@ final class Dsn {
 
   Dsn(@Nullable String dsn) throws IllegalArgumentException {
     try {
+      Objects.requireNonNull(dsn, "The DSN is required.");
       URI uri = new URI(dsn).normalize();
       String userInfo = uri.getUserInfo();
       if (userInfo == null || userInfo.isEmpty()) {

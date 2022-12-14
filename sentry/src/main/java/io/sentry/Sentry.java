@@ -1,13 +1,17 @@
 package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
+import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
+import io.sentry.internal.modules.IModulesLoader;
+import io.sentry.internal.modules.NoOpModulesLoader;
+import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.FileUtils;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -114,7 +118,7 @@ public final class Sentry {
       throws IllegalAccessException, InstantiationException, NoSuchMethodException,
           InvocationTargetException {
     final T options = clazz.createInstance();
-    optionsConfiguration.configure(options);
+    applyOptionsConfiguration(optionsConfiguration, options);
     init(options, globalHubMode);
   }
 
@@ -137,8 +141,19 @@ public final class Sentry {
       final @NotNull OptionsConfiguration<SentryOptions> optionsConfiguration,
       final boolean globalHubMode) {
     final SentryOptions options = new SentryOptions();
-    optionsConfiguration.configure(options);
+    applyOptionsConfiguration(optionsConfiguration, options);
     init(options, globalHubMode);
+  }
+
+  private static <T extends SentryOptions> void applyOptionsConfiguration(
+      OptionsConfiguration<T> optionsConfiguration, T options) {
+    try {
+      optionsConfiguration.configure(options);
+    } catch (Throwable t) {
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Error in the 'OptionsConfiguration.configure' callback.", t);
+    }
   }
 
   /**
@@ -231,7 +246,11 @@ public final class Sentry {
     if (cacheDirPath != null) {
       final File cacheDir = new File(cacheDirPath);
       cacheDir.mkdirs();
-      options.setEnvelopeDiskCache(EnvelopeCache.create(options));
+      final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
+      // only overwrite the cache impl if it's not already set
+      if (envelopeCache instanceof NoOpEnvelopeCache) {
+        options.setEnvelopeDiskCache(EnvelopeCache.create(options));
+      }
     }
 
     final String profilingTracesDirPath = options.getProfilingTracesDirPath();
@@ -252,6 +271,12 @@ public final class Sentry {
                   FileUtils.deleteRecursively(f);
                 }
               });
+    }
+
+    final IModulesLoader modulesLoader = options.getModulesLoader();
+    // only override the ModulesLoader if it's not already set by Android
+    if (modulesLoader instanceof NoOpModulesLoader) {
+      options.setModulesLoader(new ResourcesModulesLoader(options.getLogger()));
     }
 
     return true;
@@ -760,36 +785,18 @@ public final class Sentry {
         .startTransaction(transactionContexts, customSamplingContext, bindToScope);
   }
 
+  /**
+   * Creates a Transaction and returns the instance.
+   *
+   * @param transactionContext the transaction context
+   * @param transactionOptions options for the transaction
+   * @return created transaction.
+   */
   @ApiStatus.Internal
   public static @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope,
-      final @Nullable Date startTimestamp) {
-    return getCurrentHub()
-        .startTransaction(transactionContexts, customSamplingContext, bindToScope, startTimestamp);
-  }
-
-  @ApiStatus.Internal
-  public static @NotNull ITransaction startTransaction(
-      final @NotNull TransactionContext transactionContexts,
-      final @Nullable CustomSamplingContext customSamplingContext,
-      final boolean bindToScope,
-      final @Nullable Date startTimestamp,
-      final boolean waitForChildren,
-      final @Nullable Long idleTimeout,
-      final boolean trimEnd,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    return getCurrentHub()
-        .startTransaction(
-            transactionContexts,
-            customSamplingContext,
-            bindToScope,
-            startTimestamp,
-            waitForChildren,
-            idleTimeout,
-            trimEnd,
-            transactionFinishedCallback);
+      final @NotNull TransactionContext transactionContext,
+      final @NotNull TransactionOptions transactionOptions) {
+    return getCurrentHub().startTransaction(transactionContext, transactionOptions);
   }
 
   /**

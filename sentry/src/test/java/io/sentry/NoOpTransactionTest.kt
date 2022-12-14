@@ -2,6 +2,7 @@ package io.sentry
 
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class NoOpTransactionTest {
 
@@ -21,5 +22,10 @@ class NoOpTransactionTest {
     @Test
     fun `getOperation does not return null`() {
         assertNotNull(transaction.operation)
+    }
+
+    @Test
+    fun `isProfileSampled returns null`() {
+        assertNull(transaction.isProfileSampled)
     }
 }

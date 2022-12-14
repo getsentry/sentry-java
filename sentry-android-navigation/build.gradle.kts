@@ -10,6 +10,7 @@ plugins {
 
 android {
     compileSdk = Config.Android.compileSdkVersion
+    namespace = "io.sentry.android.navigation"
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion

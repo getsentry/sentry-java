@@ -104,6 +104,17 @@ public final class DateUtils {
   }
 
   /**
+   * Converts nanoseconds to {{@link java.util.Date}} rounded down to milliseconds
+   *
+   * @param nanos - nanoseconds
+   * @return date rounded down to milliseconds
+   */
+  public static Date nanosToDate(final long nanos) {
+    Double millis = nanosToMillis(Double.valueOf(nanos));
+    return getDateTime(millis.longValue());
+  }
+
+  /**
    * Convert {@link Date} to epoch time in seconds represented as {@link Double}.
    *
    * @param date - date

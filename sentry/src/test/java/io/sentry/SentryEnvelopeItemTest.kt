@@ -1,13 +1,13 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.User
 import io.sentry.test.injectForField
 import io.sentry.vendor.Base64
 import org.junit.Assert.assertArrayEquals
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.Test

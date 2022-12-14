@@ -7,6 +7,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import ch.qos.logback.core.encoder.Encoder;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
@@ -20,6 +21,7 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +41,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
+  private @Nullable Encoder<ILoggingEvent> encoder;
 
   @Override
   public void start() {
@@ -91,7 +94,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeStamp()));
     final Message message = new Message();
     message.setMessage(loggingEvent.getMessage());
-    message.setFormatted(loggingEvent.getFormattedMessage());
+    message.setFormatted(formatted(loggingEvent));
     message.setParams(toParams(loggingEvent.getArgumentArray()));
     event.setMessage(message);
     event.setLogger(loggingEvent.getLoggerName());
@@ -137,6 +140,19 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     return event;
   }
 
+  private String formatted(@NotNull ILoggingEvent loggingEvent) {
+    if (encoder != null) {
+      try {
+        return new String(encoder.encode(loggingEvent), StandardCharsets.UTF_8);
+      } catch (final Throwable t) {
+        // catch exceptions from possibly incorrectly configured encoder
+        // and fallback to default formatted message
+        addWarn("Failed to encode logging event", t);
+      }
+    }
+    return loggingEvent.getFormattedMessage();
+  }
+
   private @NotNull List<String> toParams(@Nullable Object[] arguments) {
     if (arguments != null) {
       return Arrays.stream(arguments)
@@ -158,7 +174,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setLevel(formatLevel(loggingEvent.getLevel()));
     breadcrumb.setCategory(loggingEvent.getLoggerName());
-    breadcrumb.setMessage(loggingEvent.getFormattedMessage());
+    breadcrumb.setMessage(formatted(loggingEvent));
     return breadcrumb;
   }
 
@@ -221,5 +237,9 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   @ApiStatus.Internal
   void setTransportFactory(final @Nullable ITransportFactory transportFactory) {
     this.transportFactory = transportFactory;
+  }
+
+  public void setEncoder(Encoder<ILoggingEvent> encoder) {
+    this.encoder = encoder;
   }
 }

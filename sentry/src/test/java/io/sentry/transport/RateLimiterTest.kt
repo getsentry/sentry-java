@@ -1,14 +1,8 @@
 package io.sentry.transport
 
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.same
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Attachment
 import io.sentry.Hint
+import io.sentry.IHub
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.SentryEnvelope
@@ -26,6 +20,13 @@ import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.same
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -73,8 +74,10 @@ class RateLimiterTest {
     fun `parse X-Sentry-Rate-Limit and set its values and retry after should be true`() {
         val rateLimiter = fixture.getSUT()
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
+        val hub: IHub = mock()
+        whenever(hub.options).thenReturn(SentryOptions())
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), hub))
         val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, transaction)
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem))
 
@@ -88,8 +91,10 @@ class RateLimiterTest {
     fun `parse X-Sentry-Rate-Limit and set its values and retry after should be false`() {
         val rateLimiter = fixture.getSUT()
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
+        val hub: IHub = mock()
+        whenever(hub.options).thenReturn(SentryOptions())
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), mock()))
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), hub))
         val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, transaction)
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem))
 

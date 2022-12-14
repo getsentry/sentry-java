@@ -5,15 +5,21 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.internal.gestures.GestureTargetLocator;
+import io.sentry.internal.modules.IModulesLoader;
+import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryTransaction;
+import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
-import io.sentry.util.SampleRateUtil;
+import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +33,7 @@ import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options */
 @Open
@@ -111,6 +118,12 @@ public class SentryOptions {
   private @Nullable BeforeSendCallback beforeSend;
 
   /**
+   * This function is called with an SDK specific transaction object and can return a modified
+   * transaction object or nothing to skip reporting the transaction
+   */
+  private @Nullable BeforeSendTransactionCallback beforeSendTransaction;
+
+  /**
    * This function is called with an SDK specific breadcrumb object before the breadcrumb is added
    * to the scope. When nothing is returned from the function, the breadcrumb is dropped
    */
@@ -179,8 +192,8 @@ public class SentryOptions {
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
 
   /**
-   * The transport factory creates instances of {@link io.sentry.transport.ITransport} - internal
-   * construct of the client that abstracts away the event sending.
+   * The transport factory creates instances of {@link ITransport} - internal construct of the
+   * client that abstracts away the event sending.
    */
   private @NotNull ITransportFactory transportFactory = NoOpTransportFactory.getInstance();
 
@@ -298,10 +311,21 @@ public class SentryOptions {
    * Controls if the `baggage` header is attached to HTTP client integrations and if the `trace`
    * header is attached to envelopes.
    */
-  private boolean traceSampling = false;
+  private boolean traceSampling = true;
 
-  /** Control if profiling is enabled or not for transactions */
-  private boolean profilingEnabled = false;
+  /**
+   * Configures the profiles sample rate as a percentage of sampled transactions to be sent in the
+   * range of 0.0 to 1.0. if 1.0 is set it means that 100% of sampled transactions will send a
+   * profile. If set to 0.1 only 10% of sampled transactions will send a profile. Profiles are
+   * picked randomly. Default is null (disabled)
+   */
+  private @Nullable Double profilesSampleRate;
+
+  /**
+   * This function is called by {@link TracesSampler} to determine if a profile is sampled - meant
+   * to be sent to Sentry.
+   */
+  private @Nullable ProfilesSamplerCallback profilesSampler;
 
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
@@ -312,7 +336,10 @@ public class SentryOptions {
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
-  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+  private @Nullable List<String> tracePropagationTargets = null;
+
+  private final @NotNull List<String> defaultTracePropagationTargets =
+      Collections.singletonList(".*");
 
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
@@ -338,6 +365,21 @@ public class SentryOptions {
 
   /** ClientReportRecorder to track count of lost events / transactions / ... * */
   @NotNull IClientReportRecorder clientReportRecorder = new ClientReportRecorder(this);
+
+  /** Modules (dependencies, packages) that will be send along with each event. */
+  private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
+
+  /** Enables the Auto instrumentation for user interaction tracing. */
+  private boolean enableUserInteractionTracing = false;
+
+  /** Enable or disable automatic breadcrumbs for User interactions */
+  private boolean enableUserInteractionBreadcrumbs = true;
+
+  /** Which framework is responsible for instrumenting. */
+  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
+
+  /** Contains a list of GestureTargetLocator instances used for user interaction tracking * */
+  private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
 
   /**
    * Adds an event processor
@@ -591,6 +633,25 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the BeforeSendTransaction callback
+   *
+   * @return the beforeSendTransaction callback or null if not set
+   */
+  public @Nullable BeforeSendTransactionCallback getBeforeSendTransaction() {
+    return beforeSendTransaction;
+  }
+
+  /**
+   * Sets the beforeSendTransaction callback
+   *
+   * @param beforeSendTransaction the beforeSendTransaction callback
+   */
+  public void setBeforeSendTransaction(
+      @Nullable BeforeSendTransactionCallback beforeSendTransaction) {
+    this.beforeSendTransaction = beforeSendTransaction;
+  }
+
+  /**
    * Returns the beforeBreadcrumb callback
    *
    * @return the beforeBreadcrumb callback or null if not set
@@ -730,7 +791,7 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(Double sampleRate) {
-    if (!SampleRateUtil.isValidSampleRate(sampleRate)) {
+    if (!SampleRateUtils.isValidSampleRate(sampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + sampleRate
@@ -754,7 +815,7 @@ public class SentryOptions {
    * @param tracesSampleRate the sample rate
    */
   public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
-    if (!SampleRateUtil.isValidTracesSampleRate(tracesSampleRate)) {
+    if (!SampleRateUtils.isValidTracesSampleRate(tracesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
               + tracesSampleRate
@@ -1070,7 +1131,9 @@ public class SentryOptions {
    *
    * @param executorService the SentryExecutorService
    */
-  void setExecutorService(final @NotNull ISentryExecutorService executorService) {
+  @ApiStatus.Internal
+  @TestOnly
+  public void setExecutorService(final @NotNull ISentryExecutorService executorService) {
     if (executorService != null) {
       this.executorService = executorService;
     }
@@ -1450,9 +1513,10 @@ public class SentryOptions {
    *
    * <p>Note: this is an experimental API and will be removed without notice.
    *
+   * @deprecated please use {{@link SentryOptions#setTracePropagationTargets(List)}} instead
    * @param traceSampling - if trace sampling should be enabled
    */
-  @ApiStatus.Experimental
+  @Deprecated
   public void setTraceSampling(boolean traceSampling) {
     this.traceSampling = traceSampling;
   }
@@ -1500,16 +1564,65 @@ public class SentryOptions {
    * @return if profiling is enabled for transactions.
    */
   public boolean isProfilingEnabled() {
-    return profilingEnabled;
+    return (getProfilesSampleRate() != null && getProfilesSampleRate() > 0)
+        || getProfilesSampler() != null;
   }
 
   /**
    * Sets whether profiling is enabled for transactions.
    *
+   * @deprecated use {{@link SentryOptions#setProfilesSampleRate(Double)} }
    * @param profilingEnabled - whether profiling is enabled for transactions
    */
+  @Deprecated
   public void setProfilingEnabled(boolean profilingEnabled) {
-    this.profilingEnabled = profilingEnabled;
+    if (getProfilesSampleRate() == null) {
+      setProfilesSampleRate(profilingEnabled ? 1.0 : null);
+    }
+  }
+
+  /**
+   * Returns the callback used to determine if a profile is sampled.
+   *
+   * @return the callback
+   */
+  public @Nullable ProfilesSamplerCallback getProfilesSampler() {
+    return profilesSampler;
+  }
+
+  /**
+   * Sets the callback used to determine if a profile is sampled.
+   *
+   * @param profilesSampler the callback
+   */
+  public void setProfilesSampler(final @Nullable ProfilesSamplerCallback profilesSampler) {
+    this.profilesSampler = profilesSampler;
+  }
+
+  /**
+   * Returns the profiles sample rate. Default is null (disabled).
+   *
+   * @return the sample rate
+   */
+  public @Nullable Double getProfilesSampleRate() {
+    return profilesSampleRate;
+  }
+
+  /**
+   * Sets the profilesSampleRate. Can be anything between 0.0 and 1.0 or null (default), to disable
+   * it. It’s dependent on the {{@link SentryOptions#setTracesSampleRate(Double)} } If a transaction
+   * is sampled, then a profile could be sampled with a probability given by profilesSampleRate.
+   *
+   * @param profilesSampleRate the sample rate
+   */
+  public void setProfilesSampleRate(final @Nullable Double profilesSampleRate) {
+    if (!SampleRateUtils.isValidProfilesSampleRate(profilesSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + profilesSampleRate
+              + " is not valid. Use null to disable or values between 0.0 and 1.0.");
+    }
+    this.profilesSampleRate = profilesSampleRate;
   }
 
   /**
@@ -1528,19 +1641,65 @@ public class SentryOptions {
   /**
    * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    *
+   * @deprecated use {{@link SentryOptions#getTracePropagationTargets()} }
    * @return the list of origins
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public @NotNull List<String> getTracingOrigins() {
-    return tracingOrigins;
+    return getTracePropagationTargets();
   }
 
   /**
    * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
    *
+   * @deprecated use {{@link SentryOptions#setTracePropagationTargets(List)}}
    * @param tracingOrigin - the tracing origin
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.tracingOrigins.add(tracingOrigin);
+    if (tracePropagationTargets == null) {
+      tracePropagationTargets = new CopyOnWriteArrayList<>();
+    }
+    if (!tracingOrigin.isEmpty()) {
+      tracePropagationTargets.add(tracingOrigin);
+    }
+  }
+
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  @ApiStatus.Internal
+  public void setTracingOrigins(final @Nullable List<String> tracingOrigins) {
+    setTracePropagationTargets(tracingOrigins);
+  }
+
+  /**
+   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
+   *
+   * @return the list of targets
+   */
+  public @NotNull List<String> getTracePropagationTargets() {
+    if (tracePropagationTargets == null) {
+      return defaultTracePropagationTargets;
+    }
+    return tracePropagationTargets;
+  }
+
+  @ApiStatus.Internal
+  public void setTracePropagationTargets(final @Nullable List<String> tracePropagationTargets) {
+    if (tracePropagationTargets == null) {
+      this.tracePropagationTargets = tracePropagationTargets;
+    } else {
+      @NotNull final List<String> filteredTracePropagationTargets = new ArrayList<>();
+      for (String target : tracePropagationTargets) {
+        if (!target.isEmpty()) {
+          filteredTracePropagationTargets.add(target);
+        }
+      }
+
+      this.tracePropagationTargets = filteredTracePropagationTargets;
+    }
   }
 
   /**
@@ -1621,6 +1780,44 @@ public class SentryOptions {
     }
   }
 
+  public boolean isEnableUserInteractionTracing() {
+    return enableUserInteractionTracing;
+  }
+
+  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
+    this.enableUserInteractionTracing = enableUserInteractionTracing;
+  }
+
+  public boolean isEnableUserInteractionBreadcrumbs() {
+    return enableUserInteractionBreadcrumbs;
+  }
+
+  public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
+    this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
+  }
+
+  /**
+   * Sets the instrumenter used for performance instrumentation.
+   *
+   * <p>If you set this to something other than {{@link Instrumenter#SENTRY}} Sentry will not create
+   * any transactions automatically nor will it create transactions if you call
+   * startTransaction(...), nor will it create child spans if you call startChild(...)
+   *
+   * @param instrumenter - the instrumenter to use
+   */
+  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    this.instrumenter = instrumenter;
+  }
+
+  /**
+   * Returns the instrumenter used for performance instrumentation
+   *
+   * @return the configured instrumenter
+   */
+  public @NotNull Instrumenter getInstrumenter() {
+    return instrumenter;
+  }
+
   /**
    * Returns a ClientReportRecorder or a NoOp if sending of client reports has been disabled.
    *
@@ -1629,6 +1826,42 @@ public class SentryOptions {
   @ApiStatus.Internal
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
+  }
+
+  /**
+   * Returns a ModulesLoader to load external modules (dependencies/packages) of the program.
+   *
+   * @return a modules loader or no-op
+   */
+  @ApiStatus.Internal
+  public @NotNull IModulesLoader getModulesLoader() {
+    return modulesLoader;
+  }
+
+  @ApiStatus.Internal
+  public void setModulesLoader(final @Nullable IModulesLoader modulesLoader) {
+    this.modulesLoader = modulesLoader != null ? modulesLoader : NoOpModulesLoader.getInstance();
+  }
+
+  /**
+   * Returns a list of all {@link GestureTargetLocator} instances used to determine which {@link
+   * io.sentry.internal.gestures.UiElement} was part of an user interaction.
+   *
+   * @return a list of {@link GestureTargetLocator}
+   */
+  public List<GestureTargetLocator> getGestureTargetLocators() {
+    return gestureTargetLocators;
+  }
+
+  /**
+   * Sets the list of {@link GestureTargetLocator} being used to determine relevant {@link
+   * io.sentry.internal.gestures.UiElement} for user interactions.
+   *
+   * @param locators a list of {@link GestureTargetLocator}
+   */
+  public void setGestureTargetLocators(@NotNull final List<GestureTargetLocator> locators) {
+    gestureTargetLocators.clear();
+    gestureTargetLocators.addAll(locators);
   }
 
   /** The BeforeSend callback */
@@ -1643,6 +1876,21 @@ public class SentryOptions {
      */
     @Nullable
     SentryEvent execute(@NotNull SentryEvent event, @NotNull Hint hint);
+  }
+
+  /** The BeforeSendTransaction callback */
+  public interface BeforeSendTransactionCallback {
+
+    /**
+     * Mutates or drop a transaction before being sent
+     *
+     * @param transaction the transaction
+     * @param hint the hints
+     * @return the original transaction or the mutated transaction or null if transaction was
+     *     dropped
+     */
+    @Nullable
+    SentryTransaction execute(@NotNull SentryTransaction transaction, @NotNull Hint hint);
   }
 
   /** The BeforeBreadcrumb callback */
@@ -1664,6 +1912,20 @@ public class SentryOptions {
 
     /**
      * Calculates the sampling value used to determine if transaction is going to be sent to Sentry
+     * backend.
+     *
+     * @param samplingContext the sampling context
+     * @return sampling value or {@code null} if decision has not been taken
+     */
+    @Nullable
+    Double sample(@NotNull SamplingContext samplingContext);
+  }
+
+  /** The profiles sampler callback. */
+  public interface ProfilesSamplerCallback {
+
+    /**
+     * Calculates the sampling value used to determine if a profile is going to be sent to Sentry
      * backend.
      *
      * @param samplingContext the sampling context
@@ -1752,6 +2014,9 @@ public class SentryOptions {
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
     }
+    if (options.getProfilesSampleRate() != null) {
+      setProfilesSampleRate(options.getProfilesSampleRate());
+    }
     if (options.getDebug() != null) {
       setDebug(options.getDebug());
     }
@@ -1777,9 +2042,10 @@ public class SentryOptions {
         new HashSet<>(options.getIgnoredExceptionsForType())) {
       addIgnoredExceptionForType(exceptionType);
     }
-    final List<String> tracingOrigins = new ArrayList<>(options.getTracingOrigins());
-    for (final String tracingOrigin : tracingOrigins) {
-      addTracingOrigin(tracingOrigin);
+    if (options.getTracePropagationTargets() != null) {
+      final List<String> tracePropagationTargets =
+          new ArrayList<>(options.getTracePropagationTargets());
+      setTracePropagationTargets(tracePropagationTargets);
     }
     final List<String> contextTags = new ArrayList<>(options.getContextTags());
     for (final String contextTag : contextTags) {

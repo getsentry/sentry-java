@@ -1,14 +1,14 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.protocol.Request
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
 import org.junit.Assert.assertArrayEquals
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,8 +30,8 @@ class ScopeTest {
         user.id = "123"
         user.ipAddress = "123.x"
         user.username = "userName"
-        val others = mutableMapOf(Pair("others", "others"))
-        user.others = others
+        val data = mutableMapOf(Pair("data", "data"))
+        user.data = data
 
         scope.user = user
 
@@ -215,6 +215,31 @@ class ScopeTest {
 
         assertEquals(1, clone.attachments.size)
         assertTrue(clone.attachments is CopyOnWriteArrayList)
+    }
+
+    @Test
+    fun `copying scope won't crash if there are concurrent operations`() {
+        val options = SentryOptions().apply {
+            maxBreadcrumbs = 10000
+        }
+        val scope = Scope(options)
+        for (i in 0 until options.maxBreadcrumbs) {
+            scope.addBreadcrumb(Breadcrumb.info("item"))
+        }
+
+        // remove one breadcrumb after the other on an extra thread
+        Thread({
+            while (scope.breadcrumbs.isNotEmpty()) {
+                scope.breadcrumbs.remove()
+            }
+        }, "thread-breadcrumb-remover").start()
+
+        // clone in the meantime
+        while (scope.breadcrumbs.isNotEmpty()) {
+            Scope(scope)
+        }
+
+        // expect no exception to be thrown ¯\_(ツ)_/¯
     }
 
     @Test
@@ -767,7 +792,8 @@ class ScopeTest {
         scope.addAttachment(Attachment(""))
 
         assertNotSame(
-            scope.attachments, scope.attachments,
+            scope.attachments,
+            scope.attachments,
             "Scope.attachments must return a new instance on each call."
         )
     }

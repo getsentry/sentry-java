@@ -5,6 +5,7 @@ import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
+import io.sentry.util.StringUtils;
 import java.io.IOException;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
@@ -27,12 +28,12 @@ public final class SentryId implements JsonSerializable {
   }
 
   public SentryId(final @NotNull String sentryIdString) {
-    this.uuid = fromStringSentryId(sentryIdString);
+    this.uuid = fromStringSentryId(StringUtils.normalizeUUID(sentryIdString));
   }
 
   @Override
   public String toString() {
-    return uuid.toString().replace("-", "");
+    return StringUtils.normalizeUUID(uuid.toString()).replace("-", "");
   }
 
   @Override

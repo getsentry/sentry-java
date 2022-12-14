@@ -1,7 +1,7 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
 import org.junit.Test
+import org.mockito.kotlin.mock
 import java.io.StringReader
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -143,6 +143,35 @@ class JsonObjectReaderTest {
             Deserializable("fooo", "baar")
         )
         val actual = reader.nextList(logger, Deserializable.Deserializer())
+        assertEquals(expected, actual)
+    }
+
+    // nextMap
+
+    @Test
+    fun `returns null for null map`() {
+        val jsonString = "{\"key\": null}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        assertNull(reader.nextMapOrNull(fixture.logger, Deserializable.Deserializer()))
+    }
+
+    @Test
+    fun `returns map of deserializables`() {
+        val deserializableA = "{\"foo\": \"foo\", \"bar\": \"bar\"}"
+        val deserializableB = "{\"foo\": \"fooo\", \"bar\": \"baar\"}"
+        val jsonString = "{\"deserializable\": { \"a\":$deserializableA,\"b\":$deserializableB}}"
+        val reader = fixture.getSut(jsonString)
+        reader.beginObject()
+        reader.nextName()
+
+        val expected = mapOf(
+            "a" to Deserializable("foo", "bar"),
+            "b" to Deserializable("fooo", "baar")
+        )
+        val actual = reader.nextMapOrNull(fixture.logger, Deserializable.Deserializer())
         assertEquals(expected, actual)
     }
 

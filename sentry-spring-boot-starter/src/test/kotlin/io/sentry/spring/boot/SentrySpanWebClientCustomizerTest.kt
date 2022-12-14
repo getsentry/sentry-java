@@ -1,10 +1,5 @@
 package io.sentry.spring.boot
 
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.Scope
@@ -21,6 +16,11 @@ import okhttp3.mockwebserver.RecordedRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
@@ -35,18 +35,20 @@ class SentrySpanWebClientCustomizerTest {
         lateinit var sentryOptions: SentryOptions
         val hub = mock<IHub>()
         var mockServer = MockWebServer()
-        val transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
+        lateinit var transaction: SentryTracer
         private val customizer = SentrySpanWebClientCustomizer(hub)
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false, includeMockServerInTracingOrigins: Boolean = true): WebClient {
             sentryOptions = SentryOptions().apply {
                 if (includeMockServerInTracingOrigins) {
-                    tracingOrigins.add(mockServer.hostName)
+                    setTracePropagationTargets(listOf(mockServer.hostName))
                 } else {
-                    tracingOrigins.add("other-api")
+                    setTracePropagationTargets(listOf("other-api"))
                 }
+                dsn = "http://key@localhost/proj"
             }
             whenever(hub.options).thenReturn(sentryOptions)
+            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
             val webClientBuilder = WebClient.builder()
             customizer.customize(webClientBuilder)
             val webClient = webClientBuilder.build()

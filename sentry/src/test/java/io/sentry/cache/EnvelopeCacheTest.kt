@@ -1,10 +1,5 @@
 package io.sentry.cache
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.ISerializer
 import io.sentry.SentryCrashLastRunState
@@ -20,6 +15,11 @@ import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path

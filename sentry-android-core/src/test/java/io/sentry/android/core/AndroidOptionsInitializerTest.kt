@@ -4,16 +4,17 @@ import android.content.Context
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.MainEventProcessor
-import io.sentry.SendCachedEnvelopeFireAndForgetIntegration
 import io.sentry.SentryOptions
+import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -51,9 +52,14 @@ class AndroidOptionsInitializerTest {
                 whenever(mockContext.applicationContext.cacheDir).thenReturn(file)
             }
             mockContext.configureContext()
+            AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
+                sentryOptions,
+                if (useRealContext) context else mockContext
+            )
             sentryOptions.configureOptions()
-            AndroidOptionsInitializer.init(
-                sentryOptions, if (useRealContext) context else mockContext
+            AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
+                sentryOptions,
+                if (useRealContext) context else mockContext
             )
         }
 
@@ -69,10 +75,22 @@ class AndroidOptionsInitializerTest {
                     putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
                 }
             )
-            sentryOptions.setDebug(true)
-            AndroidOptionsInitializer.init(
-                sentryOptions, mockContext, logger, createBuildInfo(minApi),
-                createClassMock(classToLoad), isFragmentAvailable, isTimberAvailable
+            sentryOptions.isDebug = true
+            val buildInfo = createBuildInfo(minApi)
+
+            AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
+                sentryOptions,
+                context,
+                logger,
+                buildInfo
+            )
+            AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
+                sentryOptions,
+                context,
+                buildInfo,
+                createClassMock(classToLoad),
+                isFragmentAvailable,
+                isTimberAvailable
             )
         }
 
@@ -288,12 +306,12 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `SendCachedEnvelopeFireAndForgetIntegration added to integration list`() {
+    fun `SendCachedEnvelopeIntegration added to integration list`() {
         fixture.initSut()
 
         val actual =
             fixture.sentryOptions.integrations
-                .firstOrNull { it is SendCachedEnvelopeFireAndForgetIntegration }
+                .firstOrNull { it is SendCachedEnvelopeIntegration }
         assertNotNull(actual)
     }
 
@@ -363,5 +381,70 @@ class AndroidOptionsInitializerTest {
         val actual =
             fixture.sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
         assertNull(actual)
+    }
+
+    @Test
+    fun `AndroidEnvelopeCache is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.envelopeDiskCache is AndroidEnvelopeCache }
+    }
+
+    @Test
+    fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be available`() {
+        fixture.initSut(
+            hasAppContext = true,
+            useRealContext = true,
+            configureOptions = {
+                isEnableFramesTracking = true
+            }
+        )
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertTrue(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
+
+    @Test
+    fun `When Frames Tracking is disabled, the Activity Frames Tracker should not be available`() {
+        fixture.initSut(hasAppContext = true, useRealContext = true, configureOptions = {
+            isEnableFramesTracking = false
+        })
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertFalse(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
+
+    @Test
+    fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be available`() {
+        fixture.sentryOptions.isEnableFramesTracking = false
+        fixture.initSut(
+            hasAppContext = true,
+            useRealContext = true,
+            configureOptions = {
+                isEnableFramesTracking = true
+            }
+        )
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertTrue(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
+
+    @Test
+    fun `AssetsModulesLoader is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.modulesLoader is AssetsModulesLoader }
     }
 }

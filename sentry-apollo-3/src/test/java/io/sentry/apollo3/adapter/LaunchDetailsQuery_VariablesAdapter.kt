@@ -20,7 +20,7 @@ object LaunchDetailsQuery_VariablesAdapter : Adapter<LaunchDetailsQuery> {
     override fun toJson(
         writer: JsonWriter,
         customScalarAdapters: CustomScalarAdapters,
-        `value`: LaunchDetailsQuery,
+        `value`: LaunchDetailsQuery
     ) {
         writer.name("id")
         StringAdapter.toJson(writer, customScalarAdapters, value.id)

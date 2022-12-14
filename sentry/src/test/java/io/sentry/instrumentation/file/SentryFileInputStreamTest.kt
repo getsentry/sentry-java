@@ -1,7 +1,5 @@
 package io.sentry.instrumentation.file
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -10,18 +8,21 @@ import io.sentry.SpanStatus.INTERNAL_ERROR
 import io.sentry.TransactionContext
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.File
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class SentryFileInputStreamTest {
 
     class Fixture {
         val hub = mock<IHub>()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var sentryTracer: SentryTracer
         private val options = SentryOptions()
 
         internal fun getSut(
@@ -34,6 +35,7 @@ class SentryFileInputStreamTest {
             whenever(hub.options).thenReturn(
                 options.apply { isSendDefaultPii = sendDefaultPii }
             )
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }
@@ -49,6 +51,7 @@ class SentryFileInputStreamTest {
             delegate: FileInputStream
         ): SentryFileInputStream {
             whenever(hub.options).thenReturn(options)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             whenever(hub.span).thenReturn(sentryTracer)
             return SentryFileInputStream.Factory.create(
                 delegate,
@@ -94,6 +97,13 @@ class SentryFileInputStreamTest {
         assertEquals(fileIOSpan.throwable, null)
         assertEquals(fileIOSpan.isFinished, true)
         assertEquals(fileIOSpan.status, SpanStatus.OK)
+    }
+
+    @Test
+    fun `when stream is closed, releases file descriptor`() {
+        val fis = fixture.getSut(tmpFile)
+        fis.use { it.readAllBytes() }
+        assertFalse(fis.fd.valid())
     }
 
     @Test

@@ -11,6 +11,7 @@ plugins {
 
 android {
     compileSdk = Config.Android.compileSdkVersion
+    namespace = "io.sentry.android.core"
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion
@@ -80,6 +81,7 @@ dependencies {
     api(projects.sentry)
     compileOnly(projects.sentryAndroidFragment)
     compileOnly(projects.sentryAndroidTimber)
+    compileOnly(projects.sentryCompose)
 
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)

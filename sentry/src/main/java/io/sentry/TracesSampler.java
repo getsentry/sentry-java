@@ -27,10 +27,33 @@ final class TracesSampler {
       return samplingContextSamplingDecision;
     }
 
+    Double profilesSampleRate = null;
+    if (options.getProfilesSampler() != null) {
+      try {
+        profilesSampleRate = options.getProfilesSampler().sample(samplingContext);
+      } catch (Throwable t) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'ProfilesSamplerCallback' callback.", t);
+      }
+    }
+    if (profilesSampleRate == null) {
+      profilesSampleRate = options.getProfilesSampleRate();
+    }
+    Boolean profilesSampled = profilesSampleRate != null && sample(profilesSampleRate);
+
     if (options.getTracesSampler() != null) {
-      final Double samplerResult = options.getTracesSampler().sample(samplingContext);
+      Double samplerResult = null;
+      try {
+        samplerResult = options.getTracesSampler().sample(samplingContext);
+      } catch (Throwable t) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'TracesSamplerCallback' callback.", t);
+      }
       if (samplerResult != null) {
-        return new TracesSamplingDecision(sample(samplerResult), samplerResult);
+        return new TracesSamplingDecision(
+            sample(samplerResult), samplerResult, profilesSampled, profilesSampleRate);
       }
     }
 
@@ -43,10 +66,13 @@ final class TracesSampler {
     final Double tracesSampleRateFromOptions = options.getTracesSampleRate();
     if (tracesSampleRateFromOptions != null) {
       return new TracesSamplingDecision(
-          sample(tracesSampleRateFromOptions), tracesSampleRateFromOptions);
+          sample(tracesSampleRateFromOptions),
+          tracesSampleRateFromOptions,
+          profilesSampled,
+          profilesSampleRate);
     }
 
-    return new TracesSamplingDecision(false);
+    return new TracesSamplingDecision(false, null, false, null);
   }
 
   private boolean sample(final @NotNull Double aDouble) {

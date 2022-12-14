@@ -214,7 +214,7 @@
         {
             "name": "d623a6b5-e1ab-4402-931b-c06f5a43a5ae",
             "id": -596576280,
-            "vendor_id": 1874778041,
+            "vendor_id": "1874778041",
             "vendor_name": "d732cf76-07dc-48e2-8920-96d6bfc2439d",
             "memory_size": -1484004451,
             "api_type": "95dfc8bc-88ae-4d66-b85f-6c88ad45b80f",
@@ -230,6 +230,16 @@
             "build": "bd197b97-eb68-49c3-9d07-ef789caf3069",
             "kernel_version": "1df24aec-3a6f-49a9-8b50-69ae5f9dde08",
             "rooted": true
+        },
+        "response":
+        {
+            "cookies": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;",
+            "headers": {
+                "content-type": "text/html"
+            },
+            "status_code": 500,
+            "body_size": 1000,
+            "arbitrary_field": "arbitrary"
         },
         "runtime":
         {
@@ -291,7 +301,9 @@
         "other":
         {
             "669ff1c1-517b-46dc-a889-131555364a56": "89043294-f6e1-4e2e-b152-1fdf9b1102fc"
-        }
+        },
+        "fragment": "fragment",
+        "body_size": 1000
     },
     "tags":
     {
@@ -306,7 +318,7 @@
         "id": "efb2084b-1871-4b59-8897-b4bd9f196a01",
         "username": "60c05dff-7140-4d94-9a61-c9cdd9ca9b96",
         "ip_address": "51d22b77-f663-4dbe-8103-8b749d1d9a48",
-        "other":
+        "data":
         {
             "dc2813d0-0f66-4a3f-a995-71268f61a8fa": "991659ad-7c59-4dd3-bb89-0bd5c74014bd"
         }

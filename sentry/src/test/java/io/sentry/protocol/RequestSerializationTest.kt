@@ -1,14 +1,8 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.mock
-import io.sentry.FileFromResources
 import io.sentry.ILogger
-import io.sentry.JsonObjectReader
-import io.sentry.JsonObjectWriter
-import io.sentry.JsonSerializable
 import org.junit.Test
-import java.io.StringReader
-import java.io.StringWriter
+import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
 
 class RequestSerializationTest {
@@ -33,42 +27,30 @@ class RequestSerializationTest {
             others = mapOf(
                 "669ff1c1-517b-46dc-a889-131555364a56" to "89043294-f6e1-4e2e-b152-1fdf9b1102fc"
             )
+            bodySize = 1000
+            fragment = "fragment"
         }
     }
     private val fixture = Fixture()
 
     @Test
     fun serialize() {
-        val expected = sanitizedFile("json/request.json")
-        val actual = serialize(fixture.getSut())
+        val expected = SerializationUtils.sanitizedFile("json/request.json")
+        val actual = SerializationUtils.serializeToString(fixture.getSut(), fixture.logger)
+
         assertEquals(expected, actual)
     }
 
     @Test
     fun deserialize() {
-        val expectedJson = sanitizedFile("json/request.json")
-        val actual = deserialize(expectedJson)
-        val actualJson = serialize(actual)
+        val expectedJson = SerializationUtils.sanitizedFile("json/request.json")
+        val actual = SerializationUtils.deserializeJson(
+            expectedJson,
+            Request.Deserializer(),
+            fixture.logger
+        )
+        val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
+
         assertEquals(expectedJson, actualJson)
-    }
-
-    // Helper
-
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
-            .replace(Regex("[\n\r]"), "")
-            .replace(" ", "")
-    }
-
-    private fun serialize(jsonSerializable: JsonSerializable): String {
-        val wrt = StringWriter()
-        val jsonWrt = JsonObjectWriter(wrt, 100)
-        jsonSerializable.serialize(jsonWrt, fixture.logger)
-        return wrt.toString()
-    }
-
-    private fun deserialize(json: String): Request {
-        val reader = JsonObjectReader(StringReader(json))
-        return Request.Deserializer().deserialize(reader, fixture.logger)
     }
 }

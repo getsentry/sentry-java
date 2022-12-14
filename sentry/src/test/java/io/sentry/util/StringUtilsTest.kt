@@ -1,6 +1,7 @@
 package io.sentry.util
 
-import com.nhaarman.mockitokotlin2.mock
+import org.mockito.kotlin.mock
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -114,5 +115,18 @@ class StringUtilsTest {
         val hashEmpty = StringUtils.calculateStringHash("", mock())
 
         assertNull(hashEmpty)
+    }
+
+    @Test
+    fun `returns proper nil UUID if the given string is corrupted`() {
+        val normalized = StringUtils.normalizeUUID("0000-0000")
+        assertEquals("00000000-0000-0000-0000-000000000000", normalized)
+    }
+
+    @Test
+    fun `returns the unchanged UUID if it was not corrupted`() {
+        val original = UUID.randomUUID().toString()
+        val normalized = StringUtils.normalizeUUID(original)
+        assertEquals(original, normalized)
     }
 }

@@ -8,7 +8,8 @@ import java.security.Permission;
  * checkPermission requests a FilePermissions for StringsKt.class, which again calls
  * checkPermission.
  */
-public final class DenyReadFileSecurityManager extends SecurityManager {
+@SuppressWarnings("removal")
+public final class DenyReadFileSecurityManager extends java.lang.SecurityManager {
 
   private final String pathname;
 

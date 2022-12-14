@@ -2,12 +2,8 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-import io.sentry.util.SampleRateUtil;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -16,14 +12,14 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Experimental
 public final class TraceContext implements JsonUnknown, JsonSerializable {
-  private @NotNull SentryId traceId;
-  private @NotNull String publicKey;
-  private @Nullable String release;
-  private @Nullable String environment;
-  private @Nullable String userId;
-  private @Nullable String userSegment;
-  private @Nullable String transaction;
-  private @Nullable String sampleRate;
+  private final @NotNull SentryId traceId;
+  private final @NotNull String publicKey;
+  private final @Nullable String release;
+  private final @Nullable String environment;
+  private final @Nullable String userId;
+  private final @Nullable String userSegment;
+  private final @Nullable String transaction;
+  private final @Nullable String sampleRate;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
@@ -51,25 +47,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     this.sampleRate = sampleRate;
   }
 
-  TraceContext(
-      final @NotNull ITransaction transaction,
-      final @Nullable User user,
-      final @NotNull SentryOptions sentryOptions,
-      final @Nullable TracesSamplingDecision samplingDecision) {
-    // user_id isn't part of the dynamic sampling context right now because
-    // of PII concerns.
-    // https://develop.sentry.dev/sdk/performance/dynamic-sampling-context/#the-temporal-problem
-    this(
-        transaction.getSpanContext().getTraceId(),
-        new Dsn(sentryOptions.getDsn()).getPublicKey(),
-        sentryOptions.getRelease(),
-        sentryOptions.getEnvironment(),
-        null, // getUserId(sentryOptions, user),
-        user != null ? getSegment(user) : null,
-        transaction.getName(),
-        sampleRateToString(sampleRate(samplingDecision)));
-  }
-
   @SuppressWarnings("UnusedMethod")
   private static @Nullable String getUserId(
       final @NotNull SentryOptions options, final @Nullable User user) {
@@ -78,33 +55,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     }
 
     return null;
-  }
-
-  private static @Nullable String getSegment(final @NotNull User user) {
-    final Map<String, String> others = user.getOthers();
-    if (others != null) {
-      return others.get("segment");
-    } else {
-      return null;
-    }
-  }
-
-  private static @Nullable Double sampleRate(@Nullable TracesSamplingDecision samplingDecision) {
-    if (samplingDecision == null) {
-      return null;
-    }
-
-    return samplingDecision.getSampleRate();
-  }
-
-  private static @Nullable String sampleRateToString(@Nullable Double sampleRateAsDouble) {
-    if (!SampleRateUtil.isValidTracesSampleRate(sampleRateAsDouble, false)) {
-      return null;
-    }
-
-    DecimalFormat df =
-        new DecimalFormat("#.################", DecimalFormatSymbols.getInstance(Locale.ROOT));
-    return df.format(sampleRateAsDouble);
   }
 
   public @NotNull SentryId getTraceId() {
@@ -139,22 +89,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     return sampleRate;
   }
 
-  public @NotNull Baggage toBaggage(@NotNull ILogger logger) {
-    Baggage baggage = new Baggage(logger);
-
-    baggage.setTraceId(traceId.toString());
-    baggage.setPublicKey(publicKey);
-    baggage.setSampleRate(sampleRate);
-    baggage.setRelease(release);
-    baggage.setEnvironment(environment);
-    baggage.setTransaction(transaction);
-    baggage.setUserId(userId);
-    baggage.setUserSegment(userSegment);
-
-    return baggage;
-  }
-
-  /** @deprecated only here to support parsing legacy JSON with non flattened user */
+  /**
+   * @deprecated only here to support parsing legacy JSON with non flattened user
+   */
   @Deprecated
   private static final class TraceContextUser implements JsonUnknown {
     private @Nullable String id;

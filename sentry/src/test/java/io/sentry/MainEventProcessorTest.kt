@@ -1,10 +1,5 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.reset
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.hints.ApplyScopeData
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
@@ -13,6 +8,11 @@ import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import org.awaitility.kotlin.await
 import org.mockito.Mockito
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.lang.RuntimeException
 import java.net.InetAddress
 import kotlin.test.AfterTest
@@ -32,16 +32,30 @@ class MainEventProcessorTest {
             dist = "dist"
             sdkVersion = SdkVersion("test", "1.2.3")
         }
+        val hub = mock<IHub>()
         val getLocalhost = mock<InetAddress>()
-        val sentryTracer = SentryTracer(TransactionContext("", ""), mock())
+        lateinit var sentryTracer: SentryTracer
         private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
 
-        fun getSut(attachThreads: Boolean = true, attachStackTrace: Boolean = true, environment: String? = "environment", tags: Map<String, String> = emptyMap(), sendDefaultPii: Boolean? = null, serverName: String? = "server", host: String? = null, resolveHostDelay: Long? = null, hostnameCacheDuration: Long = 10, proguardUuid: String? = null): MainEventProcessor {
+        fun getSut(
+            attachThreads: Boolean = true,
+            attachStackTrace: Boolean = true,
+            environment: String? = "environment",
+            tags: Map<String, String> = emptyMap(),
+            sendDefaultPii: Boolean? = null,
+            serverName: String? = "server",
+            host: String? = null,
+            resolveHostDelay: Long? = null,
+            hostnameCacheDuration: Long = 10,
+            proguardUuid: String? = null,
+            modules: Map<String, String>? = null
+        ): MainEventProcessor {
             sentryOptions.isAttachThreads = attachThreads
             sentryOptions.isAttachStacktrace = attachStackTrace
             sentryOptions.isAttachServerName = true
             sentryOptions.environment = environment
             sentryOptions.serverName = serverName
+            sentryOptions.setModulesLoader { modules }
             if (sendDefaultPii != null) {
                 sentryOptions.isSendDefaultPii = sendDefaultPii
             }
@@ -55,6 +69,9 @@ class MainEventProcessorTest {
                 }
                 host
             }
+            whenever(hub.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("", ""), hub)
+
             val hostnameCache = HostnameCache(hostnameCacheDuration) { getLocalhost }
             hostnameCacheMock.`when`<Any> { HostnameCache.getInstance() }.thenReturn(hostnameCache)
 
@@ -344,7 +361,8 @@ class MainEventProcessorTest {
 
     @Test
     fun `uses cache to retrieve servername for subsequent events`() {
-        val processor = fixture.getSut(serverName = null, host = "aHost", hostnameCacheDuration = 1000)
+        val processor =
+            fixture.getSut(serverName = null, host = "aHost", hostnameCacheDuration = 1000)
         val firstEvent = SentryEvent()
         processor.process(firstEvent, Hint())
         assertEquals("aHost", firstEvent.serverName)
@@ -473,9 +491,38 @@ class MainEventProcessorTest {
         }
     }
 
-    private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) = SentryEvent().apply {
-        val mockThrowable = mock<Throwable>()
-        val actualThrowable = UncaughtExceptionHandlerIntegration.getUnhandledThrowable(crashedThread, mockThrowable)
-        throwable = actualThrowable
+    @Test
+    fun `when event has modules, appends to them`() {
+        val sut = fixture.getSut(modules = mapOf("group1:artifact1" to "2.0.0"))
+
+        var event = SentryEvent().apply {
+            modules = mapOf("group:artifact" to "1.0.0")
+        }
+        event = sut.process(event, Hint())
+
+        assertEquals(2, event.modules!!.size)
+        assertEquals("1.0.0", event.modules!!["group:artifact"])
+        assertEquals("2.0.0", event.modules!!["group1:artifact1"])
     }
+
+    @Test
+    fun `sets event modules`() {
+        val sut = fixture.getSut(modules = mapOf("group1:artifact1" to "2.0.0"))
+
+        var event = SentryEvent()
+        event = sut.process(event, Hint())
+
+        assertEquals(1, event.modules!!.size)
+        assertEquals("2.0.0", event.modules!!["group1:artifact1"])
+    }
+
+    private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) =
+        SentryEvent().apply {
+            val mockThrowable = mock<Throwable>()
+            val actualThrowable = UncaughtExceptionHandlerIntegration.getUnhandledThrowable(
+                crashedThread,
+                mockThrowable
+            )
+            throwable = actualThrowable
+        }
 }

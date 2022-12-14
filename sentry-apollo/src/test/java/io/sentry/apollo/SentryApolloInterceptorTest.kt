@@ -3,11 +3,6 @@ package io.sentry.apollo
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.coroutines.await
 import com.apollographql.apollo.exception.ApolloException
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.ITransaction
@@ -24,6 +19,11 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -56,7 +56,11 @@ class SentryApolloInterceptorTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: SentryApolloInterceptor.BeforeSpanCallback? = null
         ): ApolloClient {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    dsn = "http://key@localhost/proj"
+                }
+            )
 
             server.enqueue(
                 MockResponse()
@@ -87,7 +91,6 @@ class SentryApolloInterceptorTest {
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -102,7 +105,6 @@ class SentryApolloInterceptorTest {
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -117,7 +119,6 @@ class SentryApolloInterceptorTest {
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -153,7 +154,6 @@ class SentryApolloInterceptorTest {
                 assertEquals("overwritten description", httpClientSpan.description)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -169,7 +169,6 @@ class SentryApolloInterceptorTest {
                 assertEquals(1, it.spans.size)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }

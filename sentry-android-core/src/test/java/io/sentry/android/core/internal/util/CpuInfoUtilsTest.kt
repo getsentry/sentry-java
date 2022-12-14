@@ -1,10 +1,10 @@
 package io.sentry.android.core.internal.util
 
-import com.nhaarman.mockitokotlin2.spy
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

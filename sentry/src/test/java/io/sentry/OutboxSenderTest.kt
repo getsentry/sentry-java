@@ -1,19 +1,19 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argWhere
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.spy
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.util.HintUtils
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argWhere
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.File
 import java.io.FileNotFoundException
 import java.nio.file.Files
@@ -123,7 +123,8 @@ class OutboxSenderTest {
                 assertEquals(expected, it)
                 assertTrue(it.isSampled)
             },
-            any(), any()
+            any(),
+            any()
         )
         assertFalse(File(path).exists())
 
@@ -313,6 +314,11 @@ class OutboxSenderTest {
     @Test
     fun `when file name is current prefix, should be ignored`() {
         assertFalse(fixture.getSut().isRelevantFileName(EnvelopeCache.PREFIX_CURRENT_SESSION_FILE))
+    }
+
+    @Test
+    fun `when file name is startup crash marker, should be ignored`() {
+        assertFalse(fixture.getSut().isRelevantFileName(EnvelopeCache.STARTUP_CRASH_MARKER_FILE))
     }
 
     @Test

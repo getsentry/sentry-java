@@ -1,10 +1,10 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.protocol.SentryId
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,8 +28,11 @@ class SpanTest {
 
         fun getSut(): Span {
             return Span(
-                SentryId(), SpanId(),
-                SentryTracer(TransactionContext("name", "op"), hub), "op", hub
+                SentryId(),
+                SpanId(),
+                SentryTracer(TransactionContext("name", "op"), hub),
+                "op",
+                hub
             )
         }
     }
@@ -60,7 +63,7 @@ class SpanTest {
 
     @Test
     fun `when span is created with a start timestamp, finish timestamp is equals to high precision timestamp`() {
-        val span = fixture.getSut().startChild("op", "desc", Date()) as Span
+        val span = fixture.getSut().startChild("op", "desc", Date(), Instrumenter.SENTRY) as Span
         span.finish()
 
         assertNotNull(span.timestamp)
@@ -110,11 +113,14 @@ class SpanTest {
         val traceId = SentryId()
         val parentSpanId = SpanId()
         val span = Span(
-            traceId, parentSpanId,
+            traceId,
+            parentSpanId,
             SentryTracer(
-                TransactionContext("name", "op", TracesSamplingDecision(true)), fixture.hub
+                TransactionContext("name", "op", TracesSamplingDecision(true)),
+                fixture.hub
             ),
-            "op", fixture.hub
+            "op",
+            fixture.hub
         )
         val sentryTrace = span.toSentryTrace()
 
@@ -131,6 +137,24 @@ class SpanTest {
         val span = transaction.startChild("operation", "description")
 
         span.startChild("op")
+        assertEquals(2, transaction.spans.size)
+    }
+
+    @Test
+    fun `starting a child with different instrumenter no-ops`() {
+        val transaction = getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
+        val span = transaction.startChild("operation", "description")
+
+        span.startChild("op")
+        assertEquals(0, transaction.spans.size)
+    }
+
+    @Test
+    fun `starting a child with same instrumenter adds span to transaction`() {
+        val transaction = getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
+        val span = transaction.startChild("operation", "description", null, Instrumenter.OTEL)
+
+        span.startChild("op", "desc", null, Instrumenter.OTEL)
         assertEquals(2, transaction.spans.size)
     }
 
@@ -152,7 +176,8 @@ class SpanTest {
     @Test
     fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
         val transaction = SentryTracer(
-            TransactionContext("name", "op"), fixture.hub
+            TransactionContext("name", "op"),
+            fixture.hub
         )
         val span = transaction.startChild("op")
         val ex = RuntimeException()
@@ -193,7 +218,7 @@ class SpanTest {
         span.finish(SpanStatus.OK)
         assertTrue(span.isFinished)
 
-        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null))
+        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null, Instrumenter.SENTRY))
         assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc"))
 
         span.finish(SpanStatus.UNKNOWN_ERROR)
@@ -217,7 +242,18 @@ class SpanTest {
         val transaction = getTransaction()
         val span = transaction.startChild("operation", "description")
 
-        assertEquals(transaction.traceContext(), span.traceContext())
+        val transactionTraceContext = transaction.traceContext()
+        val spanTraceContext = span.traceContext()
+        assertNotNull(transactionTraceContext)
+        assertNotNull(spanTraceContext)
+        assertEquals(transactionTraceContext.traceId, spanTraceContext.traceId)
+        assertEquals(transactionTraceContext.transaction, spanTraceContext.transaction)
+        assertEquals(transactionTraceContext.environment, spanTraceContext.environment)
+        assertEquals(transactionTraceContext.release, spanTraceContext.release)
+        assertEquals(transactionTraceContext.publicKey, spanTraceContext.publicKey)
+        assertEquals(transactionTraceContext.sampleRate, spanTraceContext.sampleRate)
+        assertEquals(transactionTraceContext.userId, spanTraceContext.userId)
+        assertEquals(transactionTraceContext.userSegment, spanTraceContext.userSegment)
     }
 
     @Test
@@ -225,13 +261,13 @@ class SpanTest {
         val transaction = getTransaction()
         val span = transaction.startChild("operation", "description")
 
-        assertNotNull(transaction.toBaggageHeader()) {
-            assertEquals(it.value, span.toBaggageHeader()!!.value)
+        assertNotNull(transaction.toBaggageHeader(null)) {
+            assertEquals(it.value, span.toBaggageHeader(null)!!.value)
         }
     }
 
-    private fun getTransaction(): SentryTracer {
-        return SentryTracer(TransactionContext("name", "op"), fixture.hub)
+    private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
+        return SentryTracer(transactionContext, fixture.hub)
     }
 
     private fun startChildFromSpan(): Span {

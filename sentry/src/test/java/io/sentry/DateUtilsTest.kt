@@ -88,6 +88,28 @@ class DateUtilsTest {
         assertEquals("2020-06-07T12:38:12.631Z", timestamp)
     }
 
+    @Test
+    fun `nanos can be converted to Date losing nano precision`() {
+        val millis = 1591533492L * 1000L + 631L
+        val nanos = (millis * 1000L * 1000L) + (427L * 1000L)
+        val date = DateUtils.nanosToDate(nanos)
+        assertEquals(millis, date.time)
+    }
+
+    @Test
+    fun `nanos can be converted to Date but rounds down to next ms`() {
+        val millis = 1591533492L * 1000L + 631L
+        val nanos = (millis * 1000L * 1000L) + (999L * 1000L)
+        val date = DateUtils.nanosToDate(nanos)
+        assertEquals(millis, date.time)
+    }
+
+    @Test
+    fun `nanos can be 0`() {
+        val date = DateUtils.nanosToDate(0)
+        assertEquals(0, date.time)
+    }
+
     private fun convertDate(date: Date): LocalDateTime {
         return Instant.ofEpochMilli(date.time)
             .atZone(utcTimeZone)

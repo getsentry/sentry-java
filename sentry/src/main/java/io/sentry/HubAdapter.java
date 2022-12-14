@@ -1,9 +1,9 @@
 package io.sentry;
 
+import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
-import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -173,14 +173,39 @@ public final class HubAdapter implements IHub {
     return Sentry.getCurrentHub().clone();
   }
 
-  @Override
+  /**
+   * @deprecated please use {{@link Hub#captureTransaction(SentryTransaction, TraceContext, Hint)}}
+   *     and {{@link Hub#captureEnvelope(SentryEnvelope)}} instead.
+   */
+  @Deprecated
   public @NotNull SentryId captureTransaction(
       @NotNull SentryTransaction transaction,
       @Nullable TraceContext traceContext,
       @Nullable Hint hint,
       @Nullable ProfilingTraceData profilingTraceData) {
-    return Sentry.getCurrentHub()
-        .captureTransaction(transaction, traceContext, hint, profilingTraceData);
+    if (profilingTraceData != null) {
+      SentryEnvelope envelope;
+      try {
+        envelope =
+            SentryEnvelope.from(
+                getOptions().getSerializer(),
+                profilingTraceData,
+                getOptions().getMaxTraceFileSize(),
+                getOptions().getSdkVersion());
+        captureEnvelope(envelope);
+      } catch (SentryEnvelopeException e) {
+        getOptions().getLogger().log(SentryLevel.ERROR, "Failed to capture profile.", e);
+      }
+    }
+    return captureTransaction(transaction, traceContext, hint);
+  }
+
+  @Override
+  public @NotNull SentryId captureTransaction(
+      @NotNull SentryTransaction transaction,
+      @Nullable TraceContext traceContext,
+      @Nullable Hint hint) {
+    return Sentry.getCurrentHub().captureTransaction(transaction, traceContext, hint);
   }
 
   @Override
@@ -196,37 +221,11 @@ public final class HubAdapter implements IHub {
     return Sentry.startTransaction(transactionContexts, customSamplingContext, bindToScope);
   }
 
-  @ApiStatus.Internal
   @Override
   public @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope,
-      @Nullable Date startTimestamp) {
-    return Sentry.startTransaction(
-        transactionContexts, customSamplingContext, bindToScope, startTimestamp);
-  }
-
-  @ApiStatus.Internal
-  @Override
-  public @NotNull ITransaction startTransaction(
-      @NotNull TransactionContext transactionContexts,
-      @Nullable CustomSamplingContext customSamplingContext,
-      boolean bindToScope,
-      @Nullable Date startTimestamp,
-      boolean waitForChildren,
-      @Nullable Long idleTimeout,
-      boolean trimEnd,
-      @Nullable TransactionFinishedCallback transactionFinishedCallback) {
-    return Sentry.startTransaction(
-        transactionContexts,
-        customSamplingContext,
-        bindToScope,
-        startTimestamp,
-        waitForChildren,
-        idleTimeout,
-        trimEnd,
-        transactionFinishedCallback);
+      @NotNull TransactionContext transactionContext,
+      @NotNull TransactionOptions transactionOptions) {
+    return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
   @Override

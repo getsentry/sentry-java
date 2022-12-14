@@ -11,6 +11,7 @@ plugins {
 
 android {
     compileSdk = Config.Android.compileSdkVersion
+    namespace = "io.sentry.android.timber"
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion

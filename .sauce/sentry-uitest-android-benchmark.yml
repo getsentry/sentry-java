@@ -20,17 +20,26 @@ suites:
 
   # Devices are chosen so that there is a high-end and a low-end device for each api level
   - name: "Android 12 (api 31)"
+    testOptions:
+      clearPackageData: true
+      useTestOrchestrator: true
     devices:
       - id: Google_Pixel_6_Pro_real_us # Google Pixel 6 Pro - api 31 (12) - high end
-      - id: Google_Pixel_3_12_real_us # Google Pixel 3 - api 31 (12) - low end
+      - id: Google_Pixel_6a_real_us # Google Pixel 6a - api 31 (12) - low end
 
   - name: "Android 11 (api 30)"
+    testOptions:
+      clearPackageData: true
+      useTestOrchestrator: true
     devices:
       - id: OnePlus_9_Pro_real_us # OnePlus 9 Pro - api 30 (11) - high end
       - id: Google_Pixel_4_real_us # Google Pixel 4 - api 30 (11) - mid end
-      - id: Google_Pixel_2_real_us # Google Pixel 2 - api 30 (11) - low end
+      - id: Google_Pixel_3a_real # Google Pixel 3a - api 30 (11) - low end
 
   - name: "Android 10 (api 29)"
+    testOptions:
+      clearPackageData: true
+      useTestOrchestrator: true
     devices:
       - id: Google_Pixel_4_XL_real_us1 # Google Pixel 4 XL - api 29 (10)
       - id: Nokia_7_1_real_us # Nokia 7.1 - api 29 (10)

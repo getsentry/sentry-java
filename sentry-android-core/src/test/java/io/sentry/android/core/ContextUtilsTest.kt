@@ -6,9 +6,9 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.AssetManager
 import android.os.Bundle
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.FileNotFoundException
 
 object ContextUtilsTest {

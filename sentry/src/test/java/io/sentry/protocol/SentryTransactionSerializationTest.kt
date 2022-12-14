@@ -1,6 +1,5 @@
 package io.sentry.protocol
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.DateUtils
 import io.sentry.FileFromResources
 import io.sentry.ILogger
@@ -8,6 +7,7 @@ import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import org.junit.Test
+import org.mockito.kotlin.mock
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
@@ -25,8 +25,10 @@ class SentryTransactionSerializationTest {
                 SentrySpanSerializationTest.Fixture().getSut()
             ),
             mapOf(
-                "386384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut()
-            )
+                "386384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut(),
+                "186384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut(0.4000000059604645, "test2")
+            ),
+            TransactionInfo(TransactionNameSource.CUSTOM.apiName())
         ).apply {
             SentryBaseEventSerializationTest.Fixture().update(this)
         }
@@ -49,7 +51,15 @@ class SentryTransactionSerializationTest {
     }
 
     @Test
-    fun `deserialize legacy date format`() {
+    fun `deserialize without measurement unit`() {
+        val expectedJson = sanitizedFile("json/sentry_transaction_no_measurement_unit.json")
+        val actual = deserialize(expectedJson)
+        val actualJson = serialize(actual)
+        assertEquals(expectedJson, actualJson)
+    }
+
+    @Test
+    fun `deserialize legacy date format and missing transaction name source`() {
         val expectedJson = sanitizedFile("json/sentry_transaction_legacy_date_format.json")
         val actual = deserialize(expectedJson)
         val actualJson = serialize(actual)

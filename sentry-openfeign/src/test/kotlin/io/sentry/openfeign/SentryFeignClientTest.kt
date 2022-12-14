@@ -1,14 +1,9 @@
 package io.sentry.openfeign
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import feign.Client
 import feign.Feign
 import feign.FeignException
+import feign.HeaderMap
 import feign.RequestLine
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
@@ -20,6 +15,12 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,11 +35,14 @@ class SentryFeignClientTest {
     class Fixture {
         val hub = mock<IHub>()
         val server = MockWebServer()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
-        val sentryOptions = SentryOptions()
+        val sentryTracer: SentryTracer
+        val sentryOptions = SentryOptions().apply {
+            dsn = "http://key@localhost/proj"
+        }
 
         init {
             whenever(hub.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
         }
 
         fun getSut(
@@ -89,6 +93,26 @@ class SentryFeignClientTest {
     }
 
     @Test
+    fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
+        fixture.sentryOptions.isTraceSampling = true
+        fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
+        val sut = fixture.getSut()
+
+        sut.getOkWithBaggageHeader(mapOf("baggage" to listOf("thirdPartyBaggage=someValue", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")))
+
+        val recorderRequest = fixture.server.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+
+        val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
+        assertEquals(baggageHeaderValues.size, 1)
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
+    }
+
+    @Test
     fun `when there is no active span, does not add sentry trace header to the request`() {
         fixture.sentryOptions.isTraceSampling = true
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
@@ -101,7 +125,7 @@ class SentryFeignClientTest {
 
     @Test
     fun `when request url not in tracing origins, does not add sentry trace header to the request`() {
-        fixture.sentryOptions.addTracingOrigin("http://some-other-url.sentry.io")
+        fixture.sentryOptions.setTracePropagationTargets(listOf("http://some-other-url.sentry.io"))
         fixture.sentryOptions.isTraceSampling = true
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut()
@@ -252,6 +276,9 @@ class SentryFeignClientTest {
     interface MockApi {
         @RequestLine("GET /status/200")
         fun getOk(): String
+
+        @RequestLine("GET /status/200")
+        fun getOkWithBaggageHeader(@HeaderMap headers: Map<String, Any>): String
 
         @RequestLine("POST /post-with-body")
         fun postWithBody(body: String)

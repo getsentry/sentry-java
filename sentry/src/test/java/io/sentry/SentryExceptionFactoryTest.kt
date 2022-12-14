@@ -1,10 +1,10 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

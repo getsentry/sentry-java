@@ -1,11 +1,6 @@
 package io.sentry.spring.boot
 
 import com.acme.MainBootClass
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
@@ -20,6 +15,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.spring.ContextTagsEventProcessor
 import io.sentry.spring.HttpServletRequestSentryUserProvider
@@ -33,6 +29,11 @@ import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
@@ -152,7 +153,7 @@ class SentryAutoConfigurationTest {
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
             "sentry.ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,io.sentry.Sentry",
-            "sentry.tracing-origins=localhost,^(http|https)://api\\..*\$"
+            "sentry.trace-propagation-targets=localhost,^(http|https)://api\\..*\$"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -179,7 +180,39 @@ class SentryAutoConfigurationTest {
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
-            assertThat(options.tracingOrigins).containsOnly("localhost", "^(http|https)://api\\..*\$")
+            assertThat(options.tracePropagationTargets).containsOnly("localhost", "^(http|https)://api\\..*\$")
+        }
+    }
+
+    @Test
+    fun `when tracePropagationTargets are not set, default is returned`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj"
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.tracePropagationTargets).isNotNull().containsOnly(".*")
+        }
+    }
+
+    @Test
+    fun `when tracePropagationTargets property is set to empty list, empty list is returned`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+            "sentry.trace-propagation-targets="
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.tracePropagationTargets).isNotNull().isEmpty()
+        }
+    }
+
+    @Test
+    fun `when setting tracingOrigins it still works`() {
+        contextRunner.withPropertyValues(
+            "sentry.dsn=http://key@localhost/proj",
+            "sentry.tracing-origins=somehost,otherhost"
+        ).run {
+            val options = it.getBean(SentryProperties::class.java)
+            assertThat(options.tracePropagationTargets).isNotNull().isEqualTo(listOf("somehost", "otherhost"))
         }
     }
 
@@ -208,7 +241,7 @@ class SentryAutoConfigurationTest {
     fun `sets sentryClientName property on SentryOptions`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it.getBean(SentryOptions::class.java).sentryClientName).isEqualTo("sentry.java.spring-boot")
+                assertThat(it.getBean(SentryOptions::class.java).sentryClientName).isEqualTo("sentry.java.spring-boot${optionalJakartaPrefix()}")
             }
     }
 
@@ -240,6 +273,15 @@ class SentryAutoConfigurationTest {
             .withUserConfiguration(CustomBeforeSendCallbackConfiguration::class.java)
             .run {
                 assertThat(it.getBean(SentryOptions::class.java).beforeSend).isInstanceOf(CustomBeforeSendCallback::class.java)
+            }
+    }
+
+    @Test
+    fun `registers beforeSendTransactionCallback on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(CustomBeforeSendTransactionCallbackConfiguration::class.java)
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).beforeSendTransaction).isInstanceOf(CustomBeforeSendTransactionCallback::class.java)
             }
     }
 
@@ -689,6 +731,17 @@ class SentryAutoConfigurationTest {
     }
 
     @Configuration(proxyBeanMethods = false)
+    open class CustomBeforeSendTransactionCallbackConfiguration {
+
+        @Bean
+        open fun beforeSendTransactionCallback() = CustomBeforeSendTransactionCallback()
+    }
+
+    class CustomBeforeSendTransactionCallback : SentryOptions.BeforeSendTransactionCallback {
+        override fun execute(event: SentryTransaction, hint: Hint): SentryTransaction? = null
+    }
+
+    @Configuration(proxyBeanMethods = false)
     open class CustomBeforeBreadcrumbCallbackConfiguration {
 
         @Bean
@@ -825,5 +878,12 @@ class SentryAutoConfigurationTest {
     private fun ApplicationContext.getSentryUserProviders(): List<SentryUserProvider> {
         val userFilter = this.getBean("sentryUserFilter", FilterRegistrationBean::class.java).filter as SentryUserFilter
         return userFilter.sentryUserProviders
+    }
+
+    private fun optionalJakartaPrefix(): String {
+        if (this.javaClass.packageName.endsWith("jakarta")) {
+            return ".jakarta"
+        }
+        return ""
     }
 }

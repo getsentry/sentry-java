@@ -13,7 +13,10 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
+import io.sentry.TransactionContext
+import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
+import io.sentry.protocol.TransactionNameSource
 import java.lang.ref.WeakReference
 
 /**
@@ -120,8 +123,16 @@ class SentryNavigationListener @JvmOverloads constructor(
         // we add '/' to the name to match dart and web pattern
         name = "/" + name.substringBefore('/') // strip out arguments from the tx name
 
-        val transaction =
-            hub.startTransaction(name, NAVIGATION_OP, true, hub.options.idleTimeout, true)
+        val transactonOptions = TransactionOptions().also {
+            it.isWaitForChildren = true
+            it.idleTimeout = hub.options.idleTimeout
+            it.isTrimEnd = true
+        }
+
+        val transaction = hub.startTransaction(
+            TransactionContext(name, TransactionNameSource.ROUTE, NAVIGATION_OP),
+            transactonOptions
+        )
 
         if (arguments.isNotEmpty()) {
             transaction.setData("arguments", arguments)

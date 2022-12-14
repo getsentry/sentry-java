@@ -26,12 +26,13 @@ public final class ExternalOptions {
   private @Nullable Boolean debug;
   private @Nullable Boolean enableDeduplication;
   private @Nullable Double tracesSampleRate;
+  private @Nullable Double profilesSampleRate;
   private @Nullable SentryOptions.RequestSize maxRequestBodySize;
   private final @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
   private @Nullable SentryOptions.Proxy proxy;
   private final @NotNull List<String> inAppExcludes = new CopyOnWriteArrayList<>();
   private final @NotNull List<String> inAppIncludes = new CopyOnWriteArrayList<>();
-  private final @NotNull List<String> tracingOrigins = new CopyOnWriteArrayList<>();
+  private @Nullable List<String> tracePropagationTargets = null;
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
   private @Nullable Long idleTimeout;
@@ -54,6 +55,7 @@ public final class ExternalOptions {
     options.setPrintUncaughtStackTrace(
         propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
+    options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
     options.setSendClientReports(propertiesProvider.getBooleanProperty("send-client-reports"));
@@ -82,9 +84,25 @@ public final class ExternalOptions {
     for (final String inAppExclude : propertiesProvider.getList("in-app-excludes")) {
       options.addInAppExclude(inAppExclude);
     }
-    for (final String tracingOrigin : propertiesProvider.getList("tracing-origins")) {
-      options.addTracingOrigin(tracingOrigin);
+
+    @Nullable List<String> tracePropagationTargets = null;
+
+    if (propertiesProvider.getProperty("trace-propagation-targets") != null) {
+      tracePropagationTargets = propertiesProvider.getList("trace-propagation-targets");
     }
+
+    // TODO: Remove once tracing-origins has been removed
+    if (tracePropagationTargets == null
+        && propertiesProvider.getProperty("tracing-origins") != null) {
+      tracePropagationTargets = propertiesProvider.getList("tracing-origins");
+    }
+
+    if (tracePropagationTargets != null) {
+      for (final String tracePropagationTarget : tracePropagationTargets) {
+        options.addTracePropagationTarget(tracePropagationTarget);
+      }
+    }
+
     for (final String contextTag : propertiesProvider.getList("context-tags")) {
       options.addContextTag(contextTag);
     }
@@ -164,8 +182,13 @@ public final class ExternalOptions {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
-  public @NotNull List<String> getTracingOrigins() {
-    return tracingOrigins;
+  @Deprecated
+  public @Nullable List<String> getTracingOrigins() {
+    return tracePropagationTargets;
+  }
+
+  public @Nullable List<String> getTracePropagationTargets() {
+    return tracePropagationTargets;
   }
 
   public @Nullable Boolean getDebug() {
@@ -190,6 +213,14 @@ public final class ExternalOptions {
 
   public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
     this.tracesSampleRate = tracesSampleRate;
+  }
+
+  public @Nullable Double getProfilesSampleRate() {
+    return profilesSampleRate;
+  }
+
+  public void setProfilesSampleRate(final @Nullable Double profilesSampleRate) {
+    this.profilesSampleRate = profilesSampleRate;
   }
 
   public @Nullable SentryOptions.RequestSize getMaxRequestBodySize() {
@@ -244,8 +275,19 @@ public final class ExternalOptions {
     inAppExcludes.add(exclude);
   }
 
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.tracingOrigins.add(tracingOrigin);
+    this.addTracePropagationTarget(tracingOrigin);
+  }
+
+  public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {
+    if (tracePropagationTargets == null) {
+      tracePropagationTargets = new CopyOnWriteArrayList<>();
+    }
+    if (!tracePropagationTarget.isEmpty()) {
+      this.tracePropagationTargets.add(tracePropagationTarget);
+    }
   }
 
   public void addContextTag(final @NotNull String contextTag) {

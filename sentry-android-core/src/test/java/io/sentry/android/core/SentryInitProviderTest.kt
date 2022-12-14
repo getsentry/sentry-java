@@ -132,7 +132,8 @@ class SentryInitProviderTest {
         val mockContext = ContextUtilsTest.mockMetaData(metaData = metaData)
         metaData.putBoolean(ManifestMetadataReader.NDK_ENABLE, false)
 
-        AndroidOptionsInitializer.init(sentryOptions, mockContext)
+        AndroidOptionsInitializer.loadDefaultAndMetadataOptions(sentryOptions, mockContext)
+        AndroidOptionsInitializer.initializeIntegrationsAndProcessors(sentryOptions, mockContext)
 
         assertFalse(sentryOptions.isEnableNdk)
     }

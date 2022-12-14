@@ -2,9 +2,9 @@ package io.sentry.compose
 
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavController
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.android.navigation.SentryNavigationListener
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import kotlin.test.Test
 
 internal class SentryLifecycleObserverTest {

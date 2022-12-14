@@ -35,7 +35,6 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
 
     @Test
     fun benchmarkSameOperation() {
-
         // We compare two operation that are the same. We expect the increases to be negligible, as the results
         // should be very similar.
         val op1 = BenchmarkOperation(choreographer, op = getOperation(runner))
@@ -53,7 +52,6 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
 
     @Test
     fun benchmarkProfiledTransaction() {
-
         // We compare the same operation with and without profiled transaction.
         // We expect the profiled transaction operation to be slower, but not slower than 5%.
         val benchmarkOperationNoTransaction = BenchmarkOperation(choreographer, op = getOperation(runner))
@@ -64,7 +62,7 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
                     SentryAndroid.init(context) { options: SentryOptions ->
                         options.dsn = "https://key@uri/1234567"
                         options.tracesSampleRate = 1.0
-                        options.isProfilingEnabled = true
+                        options.profilesSampleRate = 1.0
                         options.isEnableAutoSessionTracking = false
                     }
                 }
@@ -91,7 +89,7 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         comparisonResult.printResults()
 
         // Currently we just want to assert the cpu overhead
-        assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5F)
+        assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5.5F)
     }
 
     /**

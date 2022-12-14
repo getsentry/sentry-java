@@ -3,24 +3,34 @@ package io.sentry.android.core
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
+import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.Sentry
+import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.FATAL
+import io.sentry.SentryOptions
+import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
+import io.sentry.cache.IEnvelopeCache
+import io.sentry.transport.NoOpEnvelopeCache
+import io.sentry.util.StringUtils
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import java.nio.file.Files
+import kotlin.io.path.absolutePathString
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -130,5 +140,76 @@ class SentryAndroidTest {
         // fragment integration is not auto-installed in the test, since the context is not Application
         // but we just verify here that the single integration is preserved
         assertEquals(refOptions!!.integrations.filterIsInstance<FragmentLifecycleIntegration>().size, 1)
+    }
+
+    @Test
+    fun `AndroidEnvelopeCache is reset if the user disabled caching via cacheDirPath`() {
+        var refOptions: SentryAndroidOptions? = null
+
+        fixture.initSut {
+            it.cacheDirPath = null
+
+            refOptions = it
+        }
+
+        assertTrue { refOptions!!.envelopeDiskCache is NoOpEnvelopeCache }
+    }
+
+    @Test
+    fun `envelopeCache remains unchanged if the user set their own IEnvelopCache impl`() {
+        var refOptions: SentryAndroidOptions? = null
+
+        fixture.initSut {
+            it.cacheDirPath = null
+            it.setEnvelopeDiskCache(CustomEnvelopCache())
+
+            refOptions = it
+        }
+
+        assertTrue { refOptions!!.envelopeDiskCache is CustomEnvelopCache }
+    }
+
+    @Test
+    fun `When initializing Sentry manually and changing both cache dir and dsn, the corresponding options should reflect that change`() {
+        var options: SentryOptions? = null
+
+        val mockContext = ContextUtilsTest.createMockContext(true)
+        val cacheDirPath = Files.createTempDirectory("new_cache").absolutePathString()
+        SentryAndroid.init(mockContext) {
+            it.dsn = "https://key@sentry.io/123"
+            it.cacheDirPath = cacheDirPath
+            options = it
+        }
+
+        val dsnHash = StringUtils.calculateStringHash(options!!.dsn, options!!.logger)
+        val expectedCacheDir = "$cacheDirPath/$dsnHash"
+        assertEquals(expectedCacheDir, options!!.cacheDirPath)
+        assertEquals(expectedCacheDir, (options!!.envelopeDiskCache as AndroidEnvelopeCache).directory.absolutePath)
+    }
+
+    @Test
+    fun `init starts a session if auto session tracking is enabled`() {
+        fixture.initSut { options ->
+            options.isEnableAutoSessionTracking = true
+        }
+        Sentry.getCurrentHub().withScope { scope ->
+            assertNotNull(scope.session)
+        }
+    }
+
+    @Test
+    fun `init does not start a session by if auto session tracking is disabled`() {
+        fixture.initSut { options ->
+            options.isEnableAutoSessionTracking = false
+        }
+        Sentry.getCurrentHub().withScope { scope ->
+            assertNull(scope.session)
+        }
+    }
+
+    private class CustomEnvelopCache : IEnvelopeCache {
+        override fun iterator(): MutableIterator<SentryEnvelope> = TODO()
+        override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
+        override fun discard(envelope: SentryEnvelope) = Unit
     }
 }

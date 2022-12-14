@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -116,12 +117,14 @@ public final class Span implements ISpan {
   public @NotNull ISpan startChild(
       final @NotNull String operation,
       final @Nullable String description,
-      final @Nullable Date timestamp) {
+      final @Nullable Date timestamp,
+      final @NotNull Instrumenter instrumenter) {
     if (finished.get()) {
       return NoOpSpan.getInstance();
     }
 
-    return transaction.startChild(context.getSpanId(), operation, description, timestamp);
+    return transaction.startChild(
+        context.getSpanId(), operation, description, timestamp, instrumenter);
   }
 
   @Override
@@ -145,8 +148,8 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public @Nullable BaggageHeader toBaggageHeader() {
-    return transaction.toBaggageHeader();
+  public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
+    return transaction.toBaggageHeader(thirdPartyBaggageHeaders);
   }
 
   @Override
@@ -157,6 +160,16 @@ public final class Span implements ISpan {
   @Override
   public void finish(@Nullable SpanStatus status) {
     finish(status, DateUtils.dateToSeconds(DateUtils.getCurrentDateTime()), null);
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public void finish(@Nullable SpanStatus status, @Nullable Date timestamp) {
+    if (timestamp == null) {
+      finish(status);
+    } else {
+      finish(status, DateUtils.dateToSeconds(timestamp), null);
+    }
   }
 
   /**
@@ -259,6 +272,10 @@ public final class Span implements ISpan {
     return context.getSampled();
   }
 
+  public @Nullable Boolean isProfileSampled() {
+    return context.getProfileSampled();
+  }
+
   public @Nullable TracesSamplingDecision getSamplingDecision() {
     return context.getSamplingDecision();
   }
@@ -308,9 +325,25 @@ public final class Span implements ISpan {
     return data.get(key);
   }
 
+  @Override
+  public void setMeasurement(@NotNull String name, @NotNull Number value) {
+    this.transaction.setMeasurement(name, value);
+  }
+
+  @Override
+  public void setMeasurement(
+      @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {
+    this.transaction.setMeasurement(name, value, unit);
+  }
+
   @Nullable
   Long getEndNanos() {
     return endNanos;
+  }
+
+  @Override
+  public boolean isNoOp() {
+    return false;
   }
 
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {

@@ -3,8 +3,8 @@ package io.sentry.android.core
 import android.content.pm.ProviderInfo
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.mock
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test

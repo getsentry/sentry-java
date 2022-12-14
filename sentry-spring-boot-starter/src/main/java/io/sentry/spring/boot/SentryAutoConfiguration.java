@@ -71,6 +71,8 @@ public class SentryAutoConfiguration {
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public @NotNull Sentry.OptionsConfiguration<SentryOptions> sentryOptionsConfiguration(
         final @NotNull ObjectProvider<SentryOptions.BeforeSendCallback> beforeSendCallback,
+        final @NotNull ObjectProvider<SentryOptions.BeforeSendTransactionCallback>
+                beforeSendTransactionCallback,
         final @NotNull ObjectProvider<SentryOptions.BeforeBreadcrumbCallback>
                 beforeBreadcrumbCallback,
         final @NotNull ObjectProvider<SentryOptions.TracesSamplerCallback> tracesSamplerCallback,
@@ -81,6 +83,7 @@ public class SentryAutoConfiguration {
         final @NotNull InAppIncludesResolver inAppPackagesResolver) {
       return options -> {
         beforeSendCallback.ifAvailable(options::setBeforeSend);
+        beforeSendTransactionCallback.ifAvailable(options::setBeforeSendTransaction);
         beforeBreadcrumbCallback.ifAvailable(options::setBeforeBreadcrumb);
         tracesSamplerCallback.ifAvailable(options::setTracesSampler);
         eventProcessors.forEach(options::addEventProcessor);

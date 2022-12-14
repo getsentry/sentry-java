@@ -1,7 +1,5 @@
 package io.sentry.instrumentation.file
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.IHub
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -9,6 +7,8 @@ import io.sentry.SpanStatus.OK
 import io.sentry.TransactionContext
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,14 +16,15 @@ import kotlin.test.assertEquals
 class SentryFileReaderTest {
     class Fixture {
         val hub = mock<IHub>()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+        lateinit var sentryTracer: SentryTracer
 
         internal fun getSut(
             tmpFile: File,
-            activeTransaction: Boolean = true,
+            activeTransaction: Boolean = true
         ): SentryFileReader {
             tmpFile.writeText("TEXT")
             whenever(hub.options).thenReturn(SentryOptions())
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
             }

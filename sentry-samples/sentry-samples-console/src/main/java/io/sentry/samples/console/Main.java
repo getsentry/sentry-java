@@ -37,6 +37,16 @@ public class Main {
                 return event;
               });
 
+          options.setBeforeSendTransaction(
+              (transaction, hint) -> {
+                // Drop a transaction:
+                if (transaction.getTag("SomeTransactionTag") != null) {
+                  return null;
+                }
+
+                return transaction;
+              });
+
           // Allows inspecting and modifying, returning a new or simply rejecting (returning null)
           options.setBeforeBreadcrumb(
               (breadcrumb, hint) -> {

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:tools="http://schemas.android.com/tools"
-  package="io.sentry.uitest.android">
+  xmlns:tools="http://schemas.android.com/tools">
 
   <application
     android:theme="@style/Theme.AppCompat"
@@ -13,6 +12,9 @@
 
     <activity android:name=".EmptyActivity" />
     <activity android:name=".ProfilingSampleActivity" />
+    <activity
+      android:theme="@style/Theme.AppCompat.NoActionBar"
+      android:name=".ComposeActivity" />
 
     <provider
       android:name="io.sentry.android.core.SentryInitProvider"

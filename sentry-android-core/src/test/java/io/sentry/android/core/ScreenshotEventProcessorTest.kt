@@ -5,17 +5,17 @@ import android.app.Application
 import android.view.View
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.Attachment
 import io.sentry.Hint
 import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -61,17 +61,10 @@ class ScreenshotEventProcessorTest {
     }
 
     @Test
-    fun `when attach screenshot is enabled, registerActivityLifecycleCallbacks`() {
-        fixture.getSut(true)
+    fun `when adding screenshot event processor, registerActivityLifecycleCallbacks`() {
+        fixture.getSut()
 
         verify(fixture.application).registerActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `when attach screenshot is disabled, does not registerActivityLifecycleCallbacks`() {
-        fixture.getSut(false)
-
-        verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
     }
 
     @Test
@@ -85,7 +78,7 @@ class ScreenshotEventProcessorTest {
 
     @Test
     fun `when close is called and  attach screenshot is disabled, does not unregisterActivityLifecycleCallbacks`() {
-        val sut = fixture.getSut(false)
+        val sut = fixture.getSut()
 
         sut.close()
 
@@ -93,8 +86,19 @@ class ScreenshotEventProcessorTest {
     }
 
     @Test
+    fun `when process is called and attachScreenshot is disabled, unregisterActivityLifecycleCallbacks`() {
+        val sut = fixture.getSut()
+        val hint = Hint()
+
+        val event = fixture.mainProcessor.process(getEvent(), hint)
+        sut.process(event, hint)
+
+        verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+    }
+
+    @Test
     fun `when process is called and attachScreenshot is disabled, does nothing`() {
-        val sut = fixture.getSut(false)
+        val sut = fixture.getSut()
         val hint = Hint()
 
         sut.onActivityCreated(fixture.activity, null)

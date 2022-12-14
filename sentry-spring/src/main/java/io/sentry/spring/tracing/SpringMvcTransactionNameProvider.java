@@ -1,5 +1,6 @@
 package io.sentry.spring.tracing;
 
+import io.sentry.protocol.TransactionNameSource;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -24,5 +25,11 @@ public final class SpringMvcTransactionNameProvider implements TransactionNamePr
     } else {
       return null;
     }
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull TransactionNameSource provideTransactionSource() {
+    return TransactionNameSource.ROUTE;
   }
 }

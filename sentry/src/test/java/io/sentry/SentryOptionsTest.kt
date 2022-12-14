@@ -1,7 +1,7 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.util.StringUtils
+import org.mockito.kotlin.mock
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -174,8 +174,84 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, profilingEnabled is false`() {
+    fun `when options is initialized, isProfilingEnabled is false`() {
         assertFalse(SentryOptions().isProfilingEnabled)
+    }
+
+    @Test
+    fun `when profilesSampleRate is null and profilesSampler is null, isProfilingEnabled is false`() {
+        val options = SentryOptions().apply {
+            this.profilesSampleRate = null
+            this.profilesSampler = null
+        }
+        assertFalse(options.isProfilingEnabled)
+    }
+
+    @Test
+    fun `when profilesSampleRate is 0 and profilesSampler is null, isProfilingEnabled is false`() {
+        val options = SentryOptions().apply {
+            this.profilesSampleRate = 0.0
+            this.profilesSampler = null
+        }
+        assertFalse(options.isProfilingEnabled)
+    }
+
+    @Test
+    fun `when profilesSampleRate is set to a value higher than 0, isProfilingEnabled is true`() {
+        val options = SentryOptions().apply {
+            this.profilesSampleRate = 0.1
+        }
+        assertTrue(options.isProfilingEnabled)
+    }
+
+    @Test
+    fun `when profilesSampler is set to a value, isProfilingEnabled is true`() {
+        val options = SentryOptions().apply {
+            this.profilesSampler = SentryOptions.ProfilesSamplerCallback { 1.0 }
+        }
+        assertTrue(options.isProfilingEnabled)
+    }
+
+    @Test
+    fun `when setProfilesSampleRate is set to exactly 0, value is set`() {
+        val options = SentryOptions().apply {
+            this.profilesSampleRate = 0.0
+        }
+        assertEquals(0.0, options.profilesSampleRate)
+    }
+
+    @Test
+    fun `when setProfilesSampleRate is set to higher than 1_0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().profilesSampleRate = 1.0000000000001 }
+    }
+
+    @Test
+    fun `when setProfilesSampleRate is set to lower than 0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().profilesSampleRate = -0.0000000000001 }
+    }
+
+    @Test
+    fun `when profilingEnabled is set to true, profilesSampleRate is set to 1`() {
+        val options = SentryOptions()
+        options.isProfilingEnabled = true
+        assertEquals(1.0, options.profilesSampleRate)
+    }
+
+    @Test
+    fun `when profilingEnabled is set to false, profilesSampleRate is set to null`() {
+        val options = SentryOptions()
+        options.isProfilingEnabled = false
+        assertNull(options.profilesSampleRate)
+    }
+
+    @Test
+    fun `when profilesSampleRate is set, setting profilingEnabled is ignored`() {
+        val options = SentryOptions()
+        options.profilesSampleRate = 0.2
+        options.isProfilingEnabled = true
+        assertEquals(0.2, options.profilesSampleRate)
+        options.isProfilingEnabled = false
+        assertEquals(0.2, options.profilesSampleRate)
     }
 
     @Test
@@ -206,10 +282,11 @@ class SentryOptionsTest {
         externalOptions.setTag("tag2", "value2")
         externalOptions.enableUncaughtExceptionHandler = false
         externalOptions.tracesSampleRate = 0.5
+        externalOptions.profilesSampleRate = 0.5
         externalOptions.addInAppInclude("com.app")
         externalOptions.addInAppExclude("io.off")
-        externalOptions.addTracingOrigin("localhost")
-        externalOptions.addTracingOrigin("api.foo.com")
+        externalOptions.addTracePropagationTarget("localhost")
+        externalOptions.addTracePropagationTarget("api.foo.com")
         externalOptions.addContextTag("userId")
         externalOptions.addContextTag("requestId")
         externalOptions.proguardUuid = "1234"
@@ -229,9 +306,10 @@ class SentryOptionsTest {
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         assertFalse(options.isEnableUncaughtExceptionHandler)
         assertEquals(0.5, options.tracesSampleRate)
+        assertEquals(0.5, options.profilesSampleRate)
         assertEquals(listOf("com.app"), options.inAppIncludes)
         assertEquals(listOf("io.off"), options.inAppExcludes)
-        assertEquals(listOf("localhost", "api.foo.com"), options.tracingOrigins)
+        assertEquals(listOf("localhost", "api.foo.com"), options.tracePropagationTargets)
         assertEquals(listOf("userId", "requestId"), options.contextTags)
         assertEquals("1234", options.proguardUuid)
         assertEquals(1500L, options.idleTimeout)
@@ -257,6 +335,23 @@ class SentryOptionsTest {
         options.merge(externalOptions)
 
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2", "tag3" to "value3"), options.tags)
+    }
+
+    @Test
+    fun `merging options when tracePropagationTargets is not set preserves the default value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.merge(externalOptions)
+        assertEquals(listOf(".*"), options.tracePropagationTargets)
+    }
+
+    @Test
+    fun `merging options when tracePropagationTargets is empty`() {
+        val externalOptions = ExternalOptions()
+        externalOptions.addTracePropagationTarget("")
+        val options = SentryOptions()
+        options.merge(externalOptions)
+        assertEquals(listOf(), options.tracePropagationTargets)
     }
 
     @Test

@@ -84,17 +84,32 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     if (this.options == null) {
       return;
     }
+
     watcher =
         new LifecycleWatcher(
             hub,
             this.options.getSessionTrackingIntervalMillis(),
             this.options.isEnableAutoSessionTracking(),
             this.options.isEnableAppLifecycleBreadcrumbs());
-    ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
-    options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
-    final SdkVersion sdkVersion = this.options.getSdkVersion();
-    if (sdkVersion != null) {
-      sdkVersion.addIntegration("AppLifecycle");
+
+    try {
+      ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
+      options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
+      final SdkVersion sdkVersion = this.options.getSdkVersion();
+      if (sdkVersion != null) {
+        sdkVersion.addIntegration("AppLifecycle");
+      }
+    } catch (Throwable e) {
+      // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
+      // connection with conflicting dependencies of the androidx.lifecycle.
+      // //See the issue here: https://github.com/getsentry/sentry-java/pull/2228
+      watcher = null;
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "AppLifecycleIntegration failed to get Lifecycle and could not be installed.",
+              e);
     }
   }
 

@@ -44,7 +44,7 @@ internal class SentryLifecycleObserver(
 
 /**
  * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
- * them to Sentry for when attached to the respective [NavHostController].
+ * them to Sentry for every navigation event when being attached to the respective [NavHostController].
  *
  * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
  * navigation events.
@@ -79,4 +79,19 @@ public fun NavHostController.withSentryObservableEffect(
         }
     }
     return this
+}
+
+/**
+ * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
+ * them to Sentry for every navigation event when being attached to the respective [NavHostController].
+ *
+ * Used by the sentry android gradle plugin for Jetpack Compose instrumentation.
+ *
+ */
+@Composable
+internal fun NavHostController.withSentryObservableEffect(): NavHostController {
+    return withSentryObservableEffect(
+        enableNavigationBreadcrumbs = true,
+        enableNavigationTracing = true
+    )
 }

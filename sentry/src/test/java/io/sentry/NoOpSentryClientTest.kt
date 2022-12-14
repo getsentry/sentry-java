@@ -1,8 +1,8 @@
 package io.sentry
 
-import com.nhaarman.mockitokotlin2.mock
 import io.sentry.protocol.SentryId
 import io.sentry.test.callMethod
+import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

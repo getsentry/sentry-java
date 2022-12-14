@@ -2,11 +2,6 @@ package io.sentry.apollo3
 
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.IHub
@@ -25,6 +20,11 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -56,7 +56,8 @@ class SentryApollo3InterceptorTest {
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            beforeSpan: BeforeSpanCallback? = null,
+            addThirdPartyBaggageHeader: Boolean = false,
+            beforeSpan: BeforeSpanCallback? = null
         ): ApolloClient {
             whenever(hub.options).thenReturn(
                 SentryOptions().apply {
@@ -80,6 +81,11 @@ class SentryApollo3InterceptorTest {
                 .serverUrl(server.url("/").toString())
                 .addHttpInterceptor(httpInterceptor)
 
+            if (addThirdPartyBaggageHeader) {
+                builder.addHttpHeader("baggage", "thirdPartyBaggage=someValue")
+                    .addHttpHeader("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
+            }
+
             return builder.build()
         }
     }
@@ -96,7 +102,6 @@ class SentryApollo3InterceptorTest {
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -111,7 +116,6 @@ class SentryApollo3InterceptorTest {
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -126,7 +130,6 @@ class SentryApollo3InterceptorTest {
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -149,6 +152,21 @@ class SentryApollo3InterceptorTest {
     }
 
     @Test
+    fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
+        executeQuery(sut = fixture.getSut(addThirdPartyBaggageHeader = true))
+        val recorderRequest = fixture.server.takeRequest()
+        assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+
+        val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
+        assertEquals(baggageHeaderValues.size, 1)
+        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-transaction=op"))
+        assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
+    }
+
+    @Test
     fun `customizer modifies span`() {
         executeQuery(
 
@@ -167,7 +185,6 @@ class SentryApollo3InterceptorTest {
                 assertEquals("overwritten description", httpClientSpan.description)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -185,7 +202,6 @@ class SentryApollo3InterceptorTest {
                 assertEquals(0, it.spans.size)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }
@@ -205,7 +221,6 @@ class SentryApollo3InterceptorTest {
                 assertEquals(1, it.spans.size)
             },
             anyOrNull<TraceContext>(),
-            anyOrNull(),
             anyOrNull()
         )
     }

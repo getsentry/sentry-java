@@ -1,9 +1,11 @@
 package io.sentry;
 
+import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -17,8 +19,19 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
-  private @NotNull File traceFile;
-  private @Nullable Callable<List<Integer>> deviceCpuFrequenciesReader;
+  /**
+   * Default value for {@link SentryEvent#getEnvironment()} set when both event and {@link
+   * SentryOptions} do not have the environment field set.
+   */
+  private static final String DEFAULT_ENVIRONMENT = "production";
+
+  @ApiStatus.Internal public static final String TRUNCATION_REASON_NORMAL = "normal";
+  @ApiStatus.Internal public static final String TRUNCATION_REASON_TIMEOUT = "timeout";
+  // Backgrounded reason is not used, yet, but it's one of the possible values
+  @ApiStatus.Internal public static final String TRUNCATION_REASON_BACKGROUNDED = "backgrounded";
+
+  private final @NotNull File traceFile;
+  private final @NotNull Callable<List<Integer>> deviceCpuFrequenciesReader;
 
   // Device metadata
   private int androidApiLevel;
@@ -29,25 +42,29 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String deviceOsName;
   private @NotNull String deviceOsVersion;
   private boolean deviceIsEmulator;
+  private @NotNull String cpuArchitecture;
   private @NotNull List<Integer> deviceCpuFrequencies = new ArrayList<>();
   private @NotNull String devicePhysicalMemoryBytes;
   private @NotNull String platform;
   private @NotNull String buildId;
 
   // Transaction info
+  private @NotNull List<ProfilingTransactionData> transactions;
   private @NotNull String transactionName;
   // duration_ns is a String to avoid issues with numbers and json
   private @NotNull String durationNs;
 
   // App info
-  private @NotNull String versionName;
   private @NotNull String versionCode;
+  private @NotNull String release;
 
   // Stacktrace context
   private @NotNull String transactionId;
   private @NotNull String traceId;
   private @NotNull String profileId;
   private @NotNull String environment;
+  private @NotNull String truncationReason;
+  private final @NotNull Map<String, ProfileMeasurement> measurementsMap;
 
   // Stacktrace (file)
   /** Profile trace encoded with Base64 */
@@ -57,12 +74,15 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this(new File("dummy"), NoOpTransaction.getInstance());
   }
 
-  public ProfilingTraceData(@NotNull File traceFile, @NotNull ITransaction transaction) {
+  public ProfilingTraceData(
+      final @NotNull File traceFile, final @NotNull ITransaction transaction) {
     this(
         traceFile,
+        new ArrayList<>(),
         transaction,
         "0",
         0,
+        "",
         // Don't use method reference. This can cause issues on Android
         () -> new ArrayList<>(),
         null,
@@ -73,14 +93,17 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
         null,
         null,
         null,
-        null);
+        TRUNCATION_REASON_NORMAL,
+        new HashMap<>());
   }
 
   public ProfilingTraceData(
       @NotNull File traceFile,
+      @NotNull List<ProfilingTransactionData> transactions,
       @NotNull ITransaction transaction,
       @NotNull String durationNanos,
       int sdkInt,
+      @NotNull String cpuArchitecture,
       @NotNull Callable<List<Integer>> deviceCpuFrequenciesReader,
       @Nullable String deviceManufacturer,
       @Nullable String deviceModel,
@@ -88,10 +111,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       @Nullable Boolean deviceIsEmulator,
       @Nullable String devicePhysicalMemoryBytes,
       @Nullable String buildId,
-      @Nullable String versionName,
-      @Nullable String versionCode,
-      @Nullable String environment) {
+      @Nullable String release,
+      @Nullable String environment,
+      @NotNull String truncationReason,
+      final @NotNull Map<String, ProfileMeasurement> measurementsMap) {
     this.traceFile = traceFile;
+    this.cpuArchitecture = cpuArchitecture;
     this.deviceCpuFrequenciesReader = deviceCpuFrequenciesReader;
 
     // Device metadata
@@ -109,18 +134,30 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this.buildId = buildId != null ? buildId : "";
 
     // Transaction info
+    this.transactions = transactions;
     this.transactionName = transaction.getName();
     this.durationNs = durationNanos;
 
     // App info
-    this.versionName = versionName != null ? versionName : "";
-    this.versionCode = versionCode != null ? versionCode : "";
+    this.versionCode = "";
+    this.release = release != null ? release : "";
 
     // Stacktrace context
     this.transactionId = transaction.getEventId().toString();
     this.traceId = transaction.getSpanContext().getTraceId().toString();
     this.profileId = UUID.randomUUID().toString();
-    this.environment = environment != null ? environment : "";
+    this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
+    this.truncationReason = truncationReason;
+    if (!isTruncationReasonValid()) {
+      this.truncationReason = TRUNCATION_REASON_NORMAL;
+    }
+    this.measurementsMap = measurementsMap;
+  }
+
+  private boolean isTruncationReasonValid() {
+    return truncationReason.equals(TRUNCATION_REASON_NORMAL)
+        || truncationReason.equals(TRUNCATION_REASON_TIMEOUT)
+        || truncationReason.equals(TRUNCATION_REASON_BACKGROUNDED);
   }
 
   private @Nullable Map<String, Object> unknown;
@@ -131,6 +168,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public int getAndroidApiLevel() {
     return androidApiLevel;
+  }
+
+  public @NotNull String getCpuArchitecture() {
+    return cpuArchitecture;
   }
 
   public @NotNull String getDeviceLocale() {
@@ -173,16 +214,16 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     return transactionName;
   }
 
-  public @NotNull String getVersionName() {
-    return versionName;
-  }
-
-  public @NotNull String getVersionCode() {
-    return versionCode;
+  public @NotNull String getRelease() {
+    return release;
   }
 
   public @NotNull String getTransactionId() {
     return transactionId;
+  }
+
+  public @NotNull List<ProfilingTransactionData> getTransactions() {
+    return transactions;
   }
 
   public @NotNull String getTraceId() {
@@ -213,87 +254,101 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     return devicePhysicalMemoryBytes;
   }
 
-  public void setAndroidApiLevel(int androidApiLevel) {
+  public @NotNull String getTruncationReason() {
+    return truncationReason;
+  }
+
+  public @NotNull Map<String, ProfileMeasurement> getMeasurementsMap() {
+    return measurementsMap;
+  }
+
+  public void setAndroidApiLevel(final int androidApiLevel) {
     this.androidApiLevel = androidApiLevel;
   }
 
-  public void setDeviceLocale(@NotNull String deviceLocale) {
+  public void setCpuArchitecture(final @NotNull String cpuArchitecture) {
+    this.cpuArchitecture = cpuArchitecture;
+  }
+
+  public void setDeviceLocale(final @NotNull String deviceLocale) {
     this.deviceLocale = deviceLocale;
   }
 
-  public void setDeviceManufacturer(@NotNull String deviceManufacturer) {
+  public void setDeviceManufacturer(final @NotNull String deviceManufacturer) {
     this.deviceManufacturer = deviceManufacturer;
   }
 
-  public void setDeviceModel(@NotNull String deviceModel) {
+  public void setDeviceModel(final @NotNull String deviceModel) {
     this.deviceModel = deviceModel;
   }
 
-  public void setDeviceOsBuildNumber(@NotNull String deviceOsBuildNumber) {
+  public void setDeviceOsBuildNumber(final @NotNull String deviceOsBuildNumber) {
     this.deviceOsBuildNumber = deviceOsBuildNumber;
   }
 
-  public void setDeviceOsVersion(@NotNull String deviceOsVersion) {
+  public void setDeviceOsVersion(final @NotNull String deviceOsVersion) {
     this.deviceOsVersion = deviceOsVersion;
   }
 
-  public void setDeviceIsEmulator(boolean deviceIsEmulator) {
+  public void setDeviceIsEmulator(final boolean deviceIsEmulator) {
     this.deviceIsEmulator = deviceIsEmulator;
   }
 
-  public void setDeviceCpuFrequencies(@NotNull List<Integer> deviceCpuFrequencies) {
+  public void setDeviceCpuFrequencies(final @NotNull List<Integer> deviceCpuFrequencies) {
     this.deviceCpuFrequencies = deviceCpuFrequencies;
   }
 
-  public void setDevicePhysicalMemoryBytes(@NotNull String devicePhysicalMemoryBytes) {
+  public void setDevicePhysicalMemoryBytes(final @NotNull String devicePhysicalMemoryBytes) {
     this.devicePhysicalMemoryBytes = devicePhysicalMemoryBytes;
   }
 
-  public void setBuildId(@NotNull String buildId) {
+  public void setTruncationReason(final @NotNull String truncationReason) {
+    this.truncationReason = truncationReason;
+  }
+
+  public void setTransactions(final @NotNull List<ProfilingTransactionData> transactions) {
+    this.transactions = transactions;
+  }
+
+  public void setBuildId(final @NotNull String buildId) {
     this.buildId = buildId;
   }
 
-  public void setTransactionName(@NotNull String transactionName) {
+  public void setTransactionName(final @NotNull String transactionName) {
     this.transactionName = transactionName;
   }
 
-  public void setDurationNs(@NotNull String durationNs) {
+  public void setDurationNs(final @NotNull String durationNs) {
     this.durationNs = durationNs;
   }
 
-  public void setVersionName(@NotNull String versionName) {
-    this.versionName = versionName;
+  public void setRelease(@NotNull String release) {
+    this.release = release;
   }
 
-  public void setVersionCode(@NotNull String versionCode) {
-    this.versionCode = versionCode;
-  }
-
-  public void setTransactionId(@NotNull String transactionId) {
+  public void setTransactionId(final @NotNull String transactionId) {
     this.transactionId = transactionId;
   }
 
-  public void setTraceId(@NotNull String traceId) {
+  public void setTraceId(final @NotNull String traceId) {
     this.traceId = traceId;
   }
 
-  public void setProfileId(@NotNull String profileId) {
+  public void setProfileId(final @NotNull String profileId) {
     this.profileId = profileId;
   }
 
-  public void setEnvironment(@NotNull String environment) {
+  public void setEnvironment(final @NotNull String environment) {
     this.environment = environment;
   }
 
-  public void setSampledProfile(@Nullable String sampledProfile) {
+  public void setSampledProfile(final @Nullable String sampledProfile) {
     this.sampledProfile = sampledProfile;
   }
 
   public void readDeviceCpuFrequencies() {
     try {
-      if (deviceCpuFrequenciesReader != null) {
-        this.deviceCpuFrequencies = deviceCpuFrequenciesReader.call();
-      }
+      this.deviceCpuFrequencies = deviceCpuFrequenciesReader.call();
     } catch (Throwable ignored) {
       // should never happen
     }
@@ -310,23 +365,27 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     public static final String DEVICE_OS_NAME = "device_os_name";
     public static final String DEVICE_OS_VERSION = "device_os_version";
     public static final String DEVICE_IS_EMULATOR = "device_is_emulator";
+    public static final String ARCHITECTURE = "architecture";
     public static final String DEVICE_CPU_FREQUENCIES = "device_cpu_frequencies";
     public static final String DEVICE_PHYSICAL_MEMORY_BYTES = "device_physical_memory_bytes";
     public static final String PLATFORM = "platform";
     public static final String BUILD_ID = "build_id";
     public static final String TRANSACTION_NAME = "transaction_name";
     public static final String DURATION_NS = "duration_ns";
-    public static final String VERSION_NAME = "version_name";
+    public static final String RELEASE = "version_name";
     public static final String VERSION_CODE = "version_code";
+    public static final String TRANSACTION_LIST = "transactions";
     public static final String TRANSACTION_ID = "transaction_id";
     public static final String TRACE_ID = "trace_id";
     public static final String PROFILE_ID = "profile_id";
     public static final String ENVIRONMENT = "environment";
     public static final String SAMPLED_PROFILE = "sampled_profile";
+    public static final String TRUNCATION_REASON = "truncation_reason";
+    public static final String MEASUREMENTS = "measurements";
   }
 
   @Override
-  public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
+  public void serialize(final @NotNull JsonObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.ANDROID_API_LEVEL).value(logger, androidApiLevel);
@@ -337,6 +396,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.DEVICE_OS_NAME).value(deviceOsName);
     writer.name(JsonKeys.DEVICE_OS_VERSION).value(deviceOsVersion);
     writer.name(JsonKeys.DEVICE_IS_EMULATOR).value(deviceIsEmulator);
+    writer.name(JsonKeys.ARCHITECTURE).value(logger, cpuArchitecture);
     // Backend expects the list of frequencies, even if empty
     writer.name(JsonKeys.DEVICE_CPU_FREQUENCIES).value(logger, deviceCpuFrequencies);
     writer.name(JsonKeys.DEVICE_PHYSICAL_MEMORY_BYTES).value(devicePhysicalMemoryBytes);
@@ -344,15 +404,20 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.BUILD_ID).value(buildId);
     writer.name(JsonKeys.TRANSACTION_NAME).value(transactionName);
     writer.name(JsonKeys.DURATION_NS).value(durationNs);
-    writer.name(JsonKeys.VERSION_NAME).value(versionName);
+    writer.name(JsonKeys.RELEASE).value(release);
     writer.name(JsonKeys.VERSION_CODE).value(versionCode);
+    if (!transactions.isEmpty()) {
+      writer.name(JsonKeys.TRANSACTION_LIST).value(logger, transactions);
+    }
     writer.name(JsonKeys.TRANSACTION_ID).value(transactionId);
     writer.name(JsonKeys.TRACE_ID).value(traceId);
     writer.name(JsonKeys.PROFILE_ID).value(profileId);
     writer.name(JsonKeys.ENVIRONMENT).value(environment);
+    writer.name(JsonKeys.TRUNCATION_REASON).value(truncationReason);
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(sampledProfile);
     }
+    writer.name(JsonKeys.MEASUREMENTS).value(logger, measurementsMap);
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -370,7 +435,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {
+  public void setUnknown(final @Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
   }
 
@@ -379,7 +444,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull ProfilingTraceData deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       ProfilingTraceData data = new ProfilingTraceData();
       Map<String, Object> unknown = null;
@@ -435,6 +500,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
               data.deviceIsEmulator = deviceIsEmulator;
             }
             break;
+          case JsonKeys.ARCHITECTURE:
+            String cpuArchitecture = reader.nextStringOrNull();
+            if (cpuArchitecture != null) {
+              data.cpuArchitecture = cpuArchitecture;
+            }
+            break;
           case JsonKeys.DEVICE_CPU_FREQUENCIES:
             List<Integer> deviceCpuFrequencies = (List<Integer>) reader.nextObjectOrNull();
             if (deviceCpuFrequencies != null) {
@@ -471,16 +542,23 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
               data.durationNs = durationNs;
             }
             break;
-          case JsonKeys.VERSION_NAME:
-            String versionName = reader.nextStringOrNull();
-            if (versionName != null) {
-              data.versionName = versionName;
-            }
-            break;
           case JsonKeys.VERSION_CODE:
             String versionCode = reader.nextStringOrNull();
             if (versionCode != null) {
               data.versionCode = versionCode;
+            }
+            break;
+          case JsonKeys.RELEASE:
+            String versionName = reader.nextStringOrNull();
+            if (versionName != null) {
+              data.release = versionName;
+            }
+            break;
+          case JsonKeys.TRANSACTION_LIST:
+            List<ProfilingTransactionData> transactions =
+                reader.nextList(logger, new ProfilingTransactionData.Deserializer());
+            if (transactions != null) {
+              data.transactions.addAll(transactions);
             }
             break;
           case JsonKeys.TRANSACTION_ID:
@@ -505,6 +583,19 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
             String environment = reader.nextStringOrNull();
             if (environment != null) {
               data.environment = environment;
+            }
+            break;
+          case JsonKeys.TRUNCATION_REASON:
+            String truncationReason = reader.nextStringOrNull();
+            if (truncationReason != null) {
+              data.truncationReason = truncationReason;
+            }
+            break;
+          case JsonKeys.MEASUREMENTS:
+            Map<String, ProfileMeasurement> measurements =
+                reader.nextMapOrNull(logger, new ProfileMeasurement.Deserializer());
+            if (measurements != null) {
+              data.measurementsMap.putAll(measurements);
             }
             break;
           case JsonKeys.SAMPLED_PROFILE:

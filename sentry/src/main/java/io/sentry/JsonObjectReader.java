@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -97,6 +98,27 @@ public final class JsonObjectReader extends JsonReader {
     } while (peek() == JsonToken.BEGIN_OBJECT);
     endArray();
     return list;
+  }
+
+  public <T> @Nullable Map<String, T> nextMapOrNull(
+      @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException {
+    if (peek() == JsonToken.NULL) {
+      nextNull();
+      return null;
+    }
+    beginObject();
+    Map<String, T> map = new HashMap<>();
+    do {
+      try {
+        String key = nextName();
+        map.put(key, deserializer.deserialize(this, logger));
+      } catch (Exception e) {
+        logger.log(SentryLevel.ERROR, "Failed to deserialize object in map.", e);
+      }
+    } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
+
+    endObject();
+    return map;
   }
 
   public <T> @Nullable T nextOrNull(

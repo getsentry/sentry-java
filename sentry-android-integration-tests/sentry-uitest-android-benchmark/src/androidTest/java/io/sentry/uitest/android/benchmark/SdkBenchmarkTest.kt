@@ -16,7 +16,6 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
 
     @Test
     fun benchmarkSdkInit() {
-
         // We compare starting an activity with and without the sdk init, to measure its impact on startup time.
         val opNoSdk = getOperation()
         val opSimpleSdk = getOperation {
@@ -28,7 +27,7 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
         val opPerfProfilingSdk = getOperation {
             SentryAndroid.init(context) {
                 it.dsn = "https://key@host/proj"
-                it.isProfilingEnabled = true
+                it.profilesSampleRate = 1.0
                 it.tracesSampleRate = 1.0
             }
         }

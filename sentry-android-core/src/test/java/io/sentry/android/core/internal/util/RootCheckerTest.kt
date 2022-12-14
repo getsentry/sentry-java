@@ -3,13 +3,13 @@ package io.sentry.android.core.internal.util
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.sentry.ILogger
 import io.sentry.android.core.BuildInfoProvider
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
@@ -86,7 +86,8 @@ class RootCheckerTest {
         val rootPackages = arrayOf("com.devadvance.rootcloak")
         val packageInfo = mock<PackageInfo>()
 
-        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any())).thenReturn(packageInfo)
+        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any<Int>())).thenReturn(packageInfo)
+        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any<PackageManager.PackageInfoFlags>())).thenReturn(packageInfo)
 
         assertTrue(fixture.getSut(rootPackages = rootPackages).isDeviceRooted)
     }
@@ -95,7 +96,8 @@ class RootCheckerTest {
     fun `When root packages do not exist, device is not rooted`() {
         val rootPackages = arrayOf("com.devadvance.rootcloak")
 
-        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any())).thenThrow(PackageManager.NameNotFoundException())
+        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any<Int>())).thenThrow(PackageManager.NameNotFoundException())
+        whenever(fixture.packageManager.getPackageInfo(eq("com.devadvance.rootcloak"), any<PackageManager.PackageInfoFlags>())).thenThrow(PackageManager.NameNotFoundException())
 
         assertFalse(fixture.getSut(rootPackages = rootPackages).isDeviceRooted)
     }

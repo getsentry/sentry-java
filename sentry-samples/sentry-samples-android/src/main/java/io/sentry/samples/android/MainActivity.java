@@ -5,8 +5,8 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.ISpan;
+import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
-import io.sentry.SpanStatus;
 import io.sentry.UserFeedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -27,6 +27,7 @@ import timber.log.Timber;
 public class MainActivity extends AppCompatActivity {
 
   private int crashCount = 0;
+  private int screenLoadCount = 0;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -189,15 +190,22 @@ public class MainActivity extends AppCompatActivity {
           startActivity(new Intent(this, ComposeActivity.class));
         });
 
+    binding.openProfilingActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, ProfilingActivity.class));
+        });
+
     setContentView(binding.getRoot());
   }
 
   @Override
   protected void onResume() {
     super.onResume();
+    screenLoadCount++;
     final ISpan span = Sentry.getSpan();
     if (span != null) {
-      span.finish(SpanStatus.OK);
+      span.setMeasurement("screen_load_count", screenLoadCount, new MeasurementUnit.Custom("test"));
+      // span.finish(SpanStatus.OK);
     }
   }
 }

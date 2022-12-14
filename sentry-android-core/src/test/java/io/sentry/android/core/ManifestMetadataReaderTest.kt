@@ -4,14 +4,14 @@ import android.content.Context
 import android.os.Bundle
 import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.never
-import com.nhaarman.mockitokotlin2.verify
 import io.sentry.ILogger
 import io.sentry.SentryLevel
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,6 +26,7 @@ class ManifestMetadataReaderTest {
         val options = SentryAndroidOptions().apply {
             setLogger(logger)
         }
+        val buildInfoProvider = mock<BuildInfoProvider>()
 
         fun getContext(metaData: Bundle = Bundle()): Context {
             return ContextUtilsTest.mockMetaData(metaData = metaData)
@@ -56,7 +57,7 @@ class ManifestMetadataReaderTest {
         fixture.options.setDebug(true)
         val context = fixture.getContext()
 
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
     }
@@ -70,7 +71,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(expectedSampleRate.toDouble(), fixture.options.sampleRate)
@@ -85,7 +86,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(expectedSampleRate.toDouble(), fixture.options.sampleRate)
@@ -97,7 +98,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertNull(fixture.options.sampleRate)
@@ -110,7 +111,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableAutoSessionTracking)
@@ -122,7 +123,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableAutoSessionTracking)
@@ -135,7 +136,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableAutoSessionTracking)
@@ -148,7 +149,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals("env", fixture.options.environment)
@@ -160,7 +161,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertNull(fixture.options.environment)
@@ -174,7 +175,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals("release", fixture.options.release)
@@ -186,7 +187,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertNull(fixture.options.release)
@@ -200,7 +201,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(1000.toLong(), fixture.options.sessionTrackingIntervalMillis)
@@ -212,7 +213,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(30000.toLong(), fixture.options.sessionTrackingIntervalMillis)
@@ -225,7 +226,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(1000.toLong(), fixture.options.anrTimeoutIntervalMillis)
@@ -237,7 +238,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(5000.toLong(), fixture.options.anrTimeoutIntervalMillis)
@@ -250,7 +251,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableActivityLifecycleBreadcrumbs)
@@ -262,7 +263,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableActivityLifecycleBreadcrumbs)
@@ -275,7 +276,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableAppLifecycleBreadcrumbs)
@@ -287,7 +288,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableAppLifecycleBreadcrumbs)
@@ -300,7 +301,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableSystemEventBreadcrumbs)
@@ -312,7 +313,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableSystemEventBreadcrumbs)
@@ -325,7 +326,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableAppComponentBreadcrumbs)
@@ -337,7 +338,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableAppComponentBreadcrumbs)
@@ -350,7 +351,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableUncaughtExceptionHandler)
@@ -362,7 +363,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableUncaughtExceptionHandler)
@@ -375,7 +376,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isAttachThreads)
@@ -387,7 +388,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isAttachThreads)
@@ -400,7 +401,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isDebug)
@@ -412,7 +413,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isDebug)
@@ -428,7 +429,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(SentryLevel.INFO, fixture.options.diagnosticLevel)
@@ -441,7 +442,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(SentryLevel.DEBUG, fixture.options.diagnosticLevel)
@@ -454,7 +455,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isAnrEnabled)
@@ -466,7 +467,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isAnrEnabled)
@@ -479,7 +480,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isAnrReportInDebug)
@@ -491,7 +492,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isAnrReportInDebug)
@@ -504,7 +505,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals("dsn", fixture.options.dsn)
@@ -517,7 +518,7 @@ class ManifestMetadataReaderTest {
         fixture.options.dsn = "myOwnDsn"
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals("myOwnDsn", fixture.options.dsn)
@@ -530,7 +531,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableNdk)
@@ -542,7 +543,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableNdk)
@@ -557,7 +558,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(expectedValue, fixture.options.sdkVersion?.name)
@@ -572,7 +573,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(expectedValue, fixture.options.sdkVersion?.version)
@@ -585,7 +586,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableScopeSync)
@@ -597,7 +598,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableScopeSync)
@@ -611,7 +612,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(expectedSampleRate.toDouble(), fixture.options.tracesSampleRate)
@@ -626,7 +627,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(expectedSampleRate.toDouble(), fixture.options.tracesSampleRate)
@@ -638,7 +639,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertNull(fixture.options.tracesSampleRate)
@@ -651,7 +652,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableAutoActivityLifecycleTracing)
@@ -663,7 +664,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableAutoActivityLifecycleTracing)
@@ -676,7 +677,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableActivityLifecycleTracingAutoFinish)
@@ -688,7 +689,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableActivityLifecycleTracingAutoFinish)
@@ -697,14 +698,14 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads traceSampling to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to true)
+        val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.isTraceSampling)
+        assertFalse(fixture.options.isTraceSampling)
     }
 
     @Test
@@ -713,10 +714,10 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertFalse(fixture.options.isTraceSampling)
+        assertTrue(fixture.options.isTraceSampling)
     }
 
     @Test
@@ -726,7 +727,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isProfilingEnabled)
@@ -738,35 +739,151 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isProfilingEnabled)
     }
 
     @Test
-    fun `applyMetadata reads tracingOrigins to options`() {
+    fun `applyMetadata reads profilesSampleRate from metadata`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """localhost,^(http|https)://api\..*$""")
+        val expectedSampleRate = 0.99f
+        val bundle = bundleOf(ManifestMetadataReader.PROFILES_SAMPLE_RATE to expectedSampleRate)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracingOrigins)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profilesSampleRate)
     }
 
     @Test
-    fun `applyMetadata reads tracingOrigins to options and keeps default`() {
+    fun `applyMetadata does not override profilesSampleRate from options`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        fixture.options.profilesSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.PROFILES_SAMPLE_RATE to 0.1f)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profilesSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying profilesSampleRate, stays null`() {
         // Arrange
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.tracingOrigins.isEmpty())
+        assertNull(fixture.options.profilesSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata reads tracePropagationTargets to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to """localhost,^(http|https)://api\..*$""")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracePropagationTargets)
+    }
+
+    @Test
+    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present`() {
+        // Arrange
+        val bundle = bundleOf(
+            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to """localhost,^(http|https)://api\..*$""",
+            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracePropagationTargets)
+    }
+
+    @Test
+    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present even if null`() {
+        // Arrange
+        val bundle = bundleOf(
+            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to null,
+            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
+    }
+
+    @Test
+    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present even if empty string`() {
+        // Arrange
+        val bundle = bundleOf(
+            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to "",
+            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
+    }
+
+    @Test
+    fun `applyMetadata uses tracingOrigins if tracePropagationTargets is not present`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """otherhost""")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(listOf("otherhost"), fixture.options.tracePropagationTargets)
+    }
+
+    @Test
+    fun `applyMetadata reads null tracePropagationTargets and sets empty list`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to null)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
+    }
+
+    @Test
+    fun `applyMetadata reads tracePropagationTargets to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.tracePropagationTargets.size == 1)
+        assertTrue(fixture.options.tracePropagationTargets.first() == ".*")
     }
 
     @Test
@@ -776,7 +893,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals("proguard-id", fixture.options.proguardUuid)
@@ -788,7 +905,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertNull(fixture.options.proguardUuid)
@@ -801,7 +918,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableUserInteractionBreadcrumbs)
@@ -813,7 +930,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableUserInteractionBreadcrumbs)
@@ -826,7 +943,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isAttachScreenshot)
@@ -838,7 +955,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isAttachScreenshot)
@@ -851,7 +968,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isSendClientReports)
@@ -863,7 +980,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isSendClientReports)
@@ -876,7 +993,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isEnableUserInteractionTracing)
@@ -888,7 +1005,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isEnableUserInteractionTracing)
@@ -902,7 +1019,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(expectedIdleTimeout.toLong(), fixture.options.idleTimeout)
@@ -914,7 +1031,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertEquals(3000L, fixture.options.idleTimeout)
@@ -927,7 +1044,7 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext(metaData = bundle)
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertFalse(fixture.options.isCollectAdditionalContext)
@@ -939,9 +1056,72 @@ class ManifestMetadataReaderTest {
         val context = fixture.getContext()
 
         // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options)
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
         assertTrue(fixture.options.isCollectAdditionalContext)
+    }
+
+    @Test
+    fun `applyMetadata reads send default pii and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isSendDefaultPii)
+    }
+
+    @Test
+    fun `applyMetadata reads send default pii to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.SEND_DEFAULT_PII to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isSendDefaultPii)
+    }
+
+    @Test
+    fun `applyMetadata reads frames tracking flag and keeps default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableFramesTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads frames tracking and sets it to enabled if true`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PERFORM_FRAMES_TRACKING to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isEnableFramesTracking)
+    }
+
+    @Test
+    fun `applyMetadata reads frames tracking and sets it to disabled if false`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PERFORM_FRAMES_TRACKING to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isEnableFramesTracking)
     }
 }
