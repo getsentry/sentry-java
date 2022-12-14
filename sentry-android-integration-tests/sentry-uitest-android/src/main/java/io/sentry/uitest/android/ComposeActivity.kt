@@ -41,7 +41,7 @@ class ComposeActivity : AppCompatActivity() {
                                 modifier = Modifier
                                     .background(Color.Gray)
                                     .fillParentMaxWidth()
-                                    .height(100.dp)
+                                    .fillParentMaxHeight()
                                     .clickable {
                                         // no-op
                                     }

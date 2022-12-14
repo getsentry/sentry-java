@@ -1,5 +1,6 @@
 package io.sentry.uitest.android
 
+import android.util.DisplayMetrics
 import android.view.InputDevice
 import android.view.MotionEvent
 import androidx.lifecycle.Lifecycle
@@ -29,10 +30,19 @@ class UserInteractionTests : BaseUiTest() {
 
         val activity = launchActivity<ComposeActivity>()
         activity.moveToState(Lifecycle.State.RESUMED)
+
+        // some sane defaults
+        var height = 500
+        var width = 500
+        activity.onActivity {
+            height = it.resources.displayMetrics.heightPixels
+            width = it.resources.displayMetrics.widthPixels
+        }
+
         Espresso.onView(ViewMatchers.withId(android.R.id.content)).perform(
             GeneralClickAction(
                 Tap.SINGLE,
-                { floatArrayOf(100f, 100f) },
+                { floatArrayOf(width / 2f, height / 2f) },
                 Press.FINGER,
                 InputDevice.SOURCE_UNKNOWN,
                 MotionEvent.BUTTON_PRIMARY
