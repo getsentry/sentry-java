@@ -162,7 +162,6 @@ tasks.withType<LibraryAarJarsTask> {
     mainScopeClassFiles.setFrom(embedComposeHelperConfig)
 }
 
-
 // we embed the sentry-compose-helper classes to the same .jar above
 // so we need to exclude the dependency from the .pom publication and .module metadata
 configure<PublishingExtension> {
