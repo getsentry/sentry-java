@@ -15,11 +15,21 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V
 	public fun onActivityPostResumed (Landroid/app/Activity;)V
+	public fun onActivityPrePaused (Landroid/app/Activity;)V
 	public fun onActivityResumed (Landroid/app/Activity;)V
 	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onActivityStopped (Landroid/app/Activity;)V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun isEnabled (Lio/sentry/SentryLevel;)Z
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
@@ -70,6 +80,13 @@ public final class io/sentry/android/core/BuildInfoProvider {
 	public fun getSdkInfoVersion ()I
 	public fun getVersionRelease ()Ljava/lang/String;
 	public fun isEmulator ()Ljava/lang/Boolean;
+}
+
+public class io/sentry/android/core/CurrentActivityHolder {
+	public fun clearActivity ()V
+	public fun getActivity ()Landroid/app/Activity;
+	public static fun getInstance ()Lio/sentry/android/core/CurrentActivityHolder;
+	public fun setActivity (Landroid/app/Activity;)V
 }
 
 public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : io/sentry/Integration, java/io/Closeable {
@@ -143,8 +160,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableFramesTracking ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
-	public fun isEnableUserInteractionBreadcrumbs ()Z
-	public fun isEnableUserInteractionTracing ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
@@ -158,8 +173,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableFramesTracking (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
-	public fun setEnableUserInteractionBreadcrumbs (Z)V
-	public fun setEnableUserInteractionTracing (Z)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProfilingTracesIntervalMillis (I)V
 }

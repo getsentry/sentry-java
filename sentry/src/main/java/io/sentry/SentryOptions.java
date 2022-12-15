@@ -5,9 +5,11 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -116,6 +118,12 @@ public class SentryOptions {
    * object or nothing to skip reporting the event
    */
   private @Nullable BeforeSendCallback beforeSend;
+
+  /**
+   * This function is called with an SDK specific transaction object and can return a modified
+   * transaction object or nothing to skip reporting the transaction
+   */
+  private @Nullable BeforeSendTransactionCallback beforeSendTransaction;
 
   /**
    * This function is called with an SDK specific breadcrumb object before the breadcrumb is added
@@ -362,6 +370,18 @@ public class SentryOptions {
 
   /** Modules (dependencies, packages) that will be send along with each event. */
   private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
+
+  /** Enables the Auto instrumentation for user interaction tracing. */
+  private boolean enableUserInteractionTracing = false;
+
+  /** Enable or disable automatic breadcrumbs for User interactions */
+  private boolean enableUserInteractionBreadcrumbs = true;
+
+  /** Which framework is responsible for instrumenting. */
+  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
+
+  /** Contains a list of GestureTargetLocator instances used for user interaction tracking * */
+  private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
@@ -614,6 +634,25 @@ public class SentryOptions {
    */
   public void setBeforeSend(@Nullable BeforeSendCallback beforeSend) {
     this.beforeSend = beforeSend;
+  }
+
+  /**
+   * Returns the BeforeSendTransaction callback
+   *
+   * @return the beforeSendTransaction callback or null if not set
+   */
+  public @Nullable BeforeSendTransactionCallback getBeforeSendTransaction() {
+    return beforeSendTransaction;
+  }
+
+  /**
+   * Sets the beforeSendTransaction callback
+   *
+   * @param beforeSendTransaction the beforeSendTransaction callback
+   */
+  public void setBeforeSendTransaction(
+      @Nullable BeforeSendTransactionCallback beforeSendTransaction) {
+    this.beforeSendTransaction = beforeSendTransaction;
   }
 
   /**
@@ -1745,6 +1784,44 @@ public class SentryOptions {
     }
   }
 
+  public boolean isEnableUserInteractionTracing() {
+    return enableUserInteractionTracing;
+  }
+
+  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
+    this.enableUserInteractionTracing = enableUserInteractionTracing;
+  }
+
+  public boolean isEnableUserInteractionBreadcrumbs() {
+    return enableUserInteractionBreadcrumbs;
+  }
+
+  public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
+    this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
+  }
+
+  /**
+   * Sets the instrumenter used for performance instrumentation.
+   *
+   * <p>If you set this to something other than {{@link Instrumenter#SENTRY}} Sentry will not create
+   * any transactions automatically nor will it create transactions if you call
+   * startTransaction(...), nor will it create child spans if you call startChild(...)
+   *
+   * @param instrumenter - the instrumenter to use
+   */
+  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    this.instrumenter = instrumenter;
+  }
+
+  /**
+   * Returns the instrumenter used for performance instrumentation
+   *
+   * @return the configured instrumenter
+   */
+  public @NotNull Instrumenter getInstrumenter() {
+    return instrumenter;
+  }
+
   /**
    * Returns a ClientReportRecorder or a NoOp if sending of client reports has been disabled.
    *
@@ -1770,6 +1847,27 @@ public class SentryOptions {
     this.modulesLoader = modulesLoader != null ? modulesLoader : NoOpModulesLoader.getInstance();
   }
 
+  /**
+   * Returns a list of all {@link GestureTargetLocator} instances used to determine which {@link
+   * io.sentry.internal.gestures.UiElement} was part of an user interaction.
+   *
+   * @return a list of {@link GestureTargetLocator}
+   */
+  public List<GestureTargetLocator> getGestureTargetLocators() {
+    return gestureTargetLocators;
+  }
+
+  /**
+   * Sets the list of {@link GestureTargetLocator} being used to determine relevant {@link
+   * io.sentry.internal.gestures.UiElement} for user interactions.
+   *
+   * @param locators a list of {@link GestureTargetLocator}
+   */
+  public void setGestureTargetLocators(@NotNull final List<GestureTargetLocator> locators) {
+    gestureTargetLocators.clear();
+    gestureTargetLocators.addAll(locators);
+  }
+
   public @NotNull IMainThreadChecker getMainThreadChecker() {
     return mainThreadChecker;
   }
@@ -1790,6 +1888,21 @@ public class SentryOptions {
      */
     @Nullable
     SentryEvent execute(@NotNull SentryEvent event, @NotNull Hint hint);
+  }
+
+  /** The BeforeSendTransaction callback */
+  public interface BeforeSendTransactionCallback {
+
+    /**
+     * Mutates or drop a transaction before being sent
+     *
+     * @param transaction the transaction
+     * @param hint the hints
+     * @return the original transaction or the mutated transaction or null if transaction was
+     *     dropped
+     */
+    @Nullable
+    SentryTransaction execute(@NotNull SentryTransaction transaction, @NotNull Hint hint);
   }
 
   /** The BeforeBreadcrumb callback */

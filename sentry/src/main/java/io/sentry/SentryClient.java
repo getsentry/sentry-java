@@ -178,6 +178,7 @@ public final class SentryClient implements ISentryClient {
       final SentryEnvelope envelope =
           buildEnvelope(event, attachments, session, traceContext, null);
 
+      hint.clear();
       if (envelope != null) {
         transport.send(envelope, hint);
       }
@@ -483,6 +484,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
+      hint.clear();
       transport.send(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
@@ -571,11 +573,24 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
+    transaction = executeBeforeSendTransaction(transaction, hint);
+
+    if (transaction == null) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Transaction was dropped by beforeSendTransaction.");
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Transaction);
+      return SentryId.EMPTY_ID;
+    }
+
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
               transaction, filterForTransaction(getAttachments(hint)), null, traceContext, null);
 
+      hint.clear();
       if (envelope != null) {
         transport.send(envelope, hint);
       } else {
@@ -709,6 +724,35 @@ public final class SentryClient implements ISentryClient {
       }
     }
     return event;
+  }
+
+  private @Nullable SentryTransaction executeBeforeSendTransaction(
+      @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
+    final SentryOptions.BeforeSendTransactionCallback beforeSendTransaction =
+        options.getBeforeSendTransaction();
+    if (beforeSendTransaction != null) {
+      try {
+        transaction = beforeSendTransaction.execute(transaction, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The BeforeSendTransaction callback threw an exception. It will be added as breadcrumb and continue.",
+                e);
+
+        final Breadcrumb breadcrumb = new Breadcrumb();
+        breadcrumb.setMessage("BeforeSendTransaction callback failed.");
+        breadcrumb.setCategory("SentryClient");
+        breadcrumb.setLevel(SentryLevel.ERROR);
+        if (e.getMessage() != null) {
+          breadcrumb.setData("sentry:message", e.getMessage());
+        }
+
+        transaction.addBreadcrumb(breadcrumb);
+      }
+    }
+    return transaction;
   }
 
   @Override

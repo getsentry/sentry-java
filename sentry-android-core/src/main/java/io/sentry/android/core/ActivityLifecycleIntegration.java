@@ -3,18 +3,25 @@ package io.sentry.android.core;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Application;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Process;
+import android.view.View;
+import androidx.annotation.NonNull;
 import io.sentry.Breadcrumb;
+import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
+import io.sentry.Instrumenter;
 import io.sentry.Integration;
 import io.sentry.Scope;
 import io.sentry.SentryLevel;
@@ -22,6 +29,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
+import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -42,8 +50,10 @@ public final class ActivityLifecycleIntegration
   static final String UI_LOAD_OP = "ui.load";
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
+  static final String TTID_OP = "ui.load.initial_display";
 
   private final @NotNull Application application;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
   private @Nullable IHub hub;
   private @Nullable SentryAndroidOptions options;
 
@@ -56,6 +66,9 @@ public final class ActivityLifecycleIntegration
   private boolean foregroundImportance = false;
 
   private @Nullable ISpan appStartSpan;
+  private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
+  private @NotNull Date lastPausedTime = DateUtils.getCurrentDateTime();
+  private final @NotNull Handler mainHandler = new Handler(Looper.getMainLooper());
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
   // main-thread
@@ -69,7 +82,8 @@ public final class ActivityLifecycleIntegration
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
     this.application = Objects.requireNonNull(application, "Application is required");
-    Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+    this.buildInfoProvider =
+        Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.activityFramesTracker =
         Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
 
@@ -145,7 +159,8 @@ public final class ActivityLifecycleIntegration
     for (final Map.Entry<Activity, ITransaction> entry :
         activitiesWithOngoingTransactions.entrySet()) {
       final ITransaction transaction = entry.getValue();
-      finishTransaction(transaction);
+      final ISpan ttidSpan = ttidSpanMap.get(entry.getKey());
+      finishTransaction(transaction, ttidSpan);
     }
   }
 
@@ -197,7 +212,22 @@ public final class ActivityLifecycleIntegration
         // start specific span for app start
         appStartSpan =
             transaction.startChild(
-                getAppStartOp(coldStart), getAppStartDesc(coldStart), appStartTime);
+                getAppStartOp(coldStart),
+                getAppStartDesc(coldStart),
+                appStartTime,
+                Instrumenter.SENTRY);
+        // The first activity ttidSpan should start at the same time as the app start time
+        ttidSpanMap.put(
+            activity,
+            transaction.startChild(
+                TTID_OP, getTtidDesc(activityName), appStartTime, Instrumenter.SENTRY));
+      } else {
+        // Other activities (or in case appStartTime is not available) the ttid span should
+        // start when the previous activity called its onPause method.
+        ttidSpanMap.put(
+            activity,
+            transaction.startChild(
+                TTID_OP, getTtidDesc(activityName), lastPausedTime, Instrumenter.SENTRY));
       }
 
       // lets bind to the scope so other integrations can pick it up
@@ -246,17 +276,21 @@ public final class ActivityLifecycleIntegration
   private void stopTracing(final @NotNull Activity activity, final boolean shouldFinishTracing) {
     if (performanceEnabled && shouldFinishTracing) {
       final ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
-      finishTransaction(transaction);
+      finishTransaction(transaction, null);
     }
   }
 
-  private void finishTransaction(final @Nullable ITransaction transaction) {
+  private void finishTransaction(
+      final @Nullable ITransaction transaction, final @Nullable ISpan ttidSpan) {
     if (transaction != null) {
       // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
       // finished manually when this method is called.
       if (transaction.isFinished()) {
         return;
       }
+
+      // in case the ttidSpan isn't completed yet, we finish it as cancelled to avoid memory leak
+      finishSpan(ttidSpan, SpanStatus.CANCELLED);
 
       SpanStatus status = transaction.getStatus();
       // status might be set by other integrations, let's not overwrite it
@@ -297,6 +331,7 @@ public final class ActivityLifecycleIntegration
     addBreadcrumb(activity, "started");
   }
 
+  @SuppressLint("NewApi")
   @Override
   public synchronized void onActivityResumed(final @NotNull Activity activity) {
     if (!firstActivityResumed) {
@@ -322,6 +357,17 @@ public final class ActivityLifecycleIntegration
       firstActivityResumed = true;
     }
 
+    final ISpan ttidSpan = ttidSpanMap.get(activity);
+    final View rootView = activity.findViewById(android.R.id.content);
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN
+        && rootView != null) {
+      FirstDrawDoneListener.registerForNextDraw(
+          rootView, () -> finishSpan(ttidSpan), buildInfoProvider);
+    } else {
+      // Posting a task to the main thread's handler will make it executed after it finished
+      // its current job. That is, right after the activity draws the layout.
+      mainHandler.post(() -> finishSpan(ttidSpan));
+    }
     addBreadcrumb(activity, "resumed");
 
     // fallback call for API < 29 compatibility, otherwise it happens on onActivityPostResumed
@@ -341,7 +387,19 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
+  public void onActivityPrePaused(@NonNull Activity activity) {
+    // only executed if API >= 29 otherwise it happens on onActivityPaused
+    if (isAllActivityCallbacksAvailable) {
+      lastPausedTime = DateUtils.getCurrentDateTime();
+    }
+  }
+
+  @Override
   public synchronized void onActivityPaused(final @NotNull Activity activity) {
+    // only executed if API < 29 otherwise it happens on onActivityPrePaused
+    if (!isAllActivityCallbacksAvailable) {
+      lastPausedTime = DateUtils.getCurrentDateTime();
+    }
     addBreadcrumb(activity, "paused");
   }
 
@@ -362,9 +420,11 @@ public final class ActivityLifecycleIntegration
 
     // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
     // memory leak
-    if (appStartSpan != null && !appStartSpan.isFinished()) {
-      appStartSpan.finish(SpanStatus.CANCELLED);
-    }
+    finishSpan(appStartSpan, SpanStatus.CANCELLED);
+
+    // we finish the ttidSpan as cancelled in case it isn't completed yet
+    final ISpan ttidSpan = ttidSpanMap.get(activity);
+    finishSpan(ttidSpan, SpanStatus.CANCELLED);
 
     // in case people opt-out enableActivityLifecycleTracingAutoFinish and forgot to finish it,
     // we make sure to finish it when the activity gets destroyed.
@@ -372,12 +432,25 @@ public final class ActivityLifecycleIntegration
 
     // set it to null in case its been just finished as cancelled
     appStartSpan = null;
+    ttidSpanMap.remove(activity);
 
     // clear it up, so we don't start again for the same activity if the activity is in the activity
     // stack still.
     // if the activity is opened again and not in memory, transactions will be created normally.
     if (performanceEnabled) {
       activitiesWithOngoingTransactions.remove(activity);
+    }
+  }
+
+  private void finishSpan(@Nullable ISpan span) {
+    if (span != null && !span.isFinished()) {
+      span.finish();
+    }
+  }
+
+  private void finishSpan(@Nullable ISpan span, @NotNull SpanStatus status) {
+    if (span != null && !span.isFinished()) {
+      span.finish(status);
     }
   }
 
@@ -399,12 +472,22 @@ public final class ActivityLifecycleIntegration
     return appStartSpan;
   }
 
+  @TestOnly
+  @NotNull
+  WeakHashMap<Activity, ISpan> getTtidSpanMap() {
+    return ttidSpanMap;
+  }
+
   private void setColdStart(final @Nullable Bundle savedInstanceState) {
     if (!firstActivityCreated) {
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
       AppStartState.getInstance().setColdStart(savedInstanceState == null);
     }
+  }
+
+  private @NotNull String getTtidDesc(final @NotNull String activityName) {
+    return activityName + " initial display";
   }
 
   private @NotNull String getAppStartDesc(final boolean coldStart) {

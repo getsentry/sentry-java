@@ -30,7 +30,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   @Override
   public void onBeforeAnyExecute(final @NotNull StatementInformation statementInformation) {
     final ISpan parent = hub.getSpan();
-    if (parent != null) {
+    if (parent != null && !parent.isNoOp()) {
       final ISpan span = parent.startChild("db.query", statementInformation.getSql());
       CURRENT_SPAN.set(span);
     }

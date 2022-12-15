@@ -131,7 +131,9 @@ public class SentryTracingFilter extends OncePerRequestFilter {
                 TransactionNameSource.URL,
                 "http.server",
                 new SentryTraceHeader(sentryTraceHeader),
-                baggage);
+                baggage,
+                null
+            );
 
         final TransactionOptions transactionOptions = new TransactionOptions();
         transactionOptions.setCustomSamplingContext(customSamplingContext);

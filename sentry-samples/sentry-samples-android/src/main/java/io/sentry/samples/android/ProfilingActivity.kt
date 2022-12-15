@@ -140,11 +140,6 @@ class ProfilingActivity : AppCompatActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        Sentry.getSpan()?.finish()
-    }
-
     override fun onBackPressed() {
         if (profileFinished) {
             super.onBackPressed()

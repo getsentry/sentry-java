@@ -117,12 +117,14 @@ public final class Span implements ISpan {
   public @NotNull ISpan startChild(
       final @NotNull String operation,
       final @Nullable String description,
-      final @Nullable Date timestamp) {
+      final @Nullable Date timestamp,
+      final @NotNull Instrumenter instrumenter) {
     if (finished.get()) {
       return NoOpSpan.getInstance();
     }
 
-    return transaction.startChild(context.getSpanId(), operation, description, timestamp);
+    return transaction.startChild(
+        context.getSpanId(), operation, description, timestamp, instrumenter);
   }
 
   @Override
@@ -158,6 +160,16 @@ public final class Span implements ISpan {
   @Override
   public void finish(@Nullable SpanStatus status) {
     finish(status, DateUtils.dateToSeconds(DateUtils.getCurrentDateTime()), null);
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public void finish(@Nullable SpanStatus status, @Nullable Date timestamp) {
+    if (timestamp == null) {
+      finish(status);
+    } else {
+      finish(status, DateUtils.dateToSeconds(timestamp), null);
+    }
   }
 
   /**
@@ -327,6 +339,11 @@ public final class Span implements ISpan {
   @Nullable
   Long getEndNanos() {
     return endNanos;
+  }
+
+  @Override
+  public boolean isNoOp() {
+    return false;
   }
 
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {

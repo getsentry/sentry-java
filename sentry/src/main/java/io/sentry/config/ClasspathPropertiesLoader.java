@@ -16,9 +16,14 @@ final class ClasspathPropertiesLoader implements PropertiesLoader {
   private final @NotNull ILogger logger;
 
   public ClasspathPropertiesLoader(
-      @NotNull String fileName, @NotNull ClassLoader classLoader, @NotNull ILogger logger) {
+      @NotNull String fileName, @Nullable ClassLoader classLoader, @NotNull ILogger logger) {
     this.fileName = fileName;
-    this.classLoader = classLoader;
+    // bootstrap classloader is represented as null, so using system classloader instead
+    if (classLoader == null) {
+      this.classLoader = ClassLoader.getSystemClassLoader();
+    } else {
+      this.classLoader = classLoader;
+    }
     this.logger = logger;
   }
 

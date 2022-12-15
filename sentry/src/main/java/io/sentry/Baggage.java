@@ -35,7 +35,7 @@ public final class Baggage {
   final @NotNull ILogger logger;
 
   @NotNull
-  public static Baggage fromHeader(final String headerValue) {
+  public static Baggage fromHeader(final @Nullable String headerValue) {
     return Baggage.fromHeader(
         headerValue, false, HubAdapter.getInstance().getOptions().getLogger());
   }

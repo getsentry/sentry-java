@@ -1,15 +1,11 @@
 package io.sentry.android.core;
 
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
+import static io.sentry.android.core.internal.util.ScreenshotUtils.takeScreenshot;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.sentry.Attachment;
@@ -17,11 +13,10 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,7 +30,6 @@ public final class ScreenshotEventProcessor
 
   private final @NotNull Application application;
   private final @NotNull SentryAndroidOptions options;
-  private @Nullable WeakReference<Activity> currentActivity;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean lifecycleCallbackInstalled = true;
 
@@ -54,7 +48,7 @@ public final class ScreenshotEventProcessor
   @SuppressWarnings("NullAway")
   @Override
   public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hint hint) {
-    if (!lifecycleCallbackInstalled) {
+    if (!lifecycleCallbackInstalled || !event.isErrored()) {
       return event;
     }
     if (!options.isAttachScreenshot()) {
@@ -69,60 +63,24 @@ public final class ScreenshotEventProcessor
 
       return event;
     }
-
-    if (event.isErrored() && currentActivity != null) {
-      final Activity activity = currentActivity.get();
-      if (isActivityValid(activity)
-          && activity.getWindow() != null
-          && activity.getWindow().getDecorView() != null
-          && activity.getWindow().getDecorView().getRootView() != null) {
-        final View view = activity.getWindow().getDecorView().getRootView();
-
-        if (view.getWidth() > 0 && view.getHeight() > 0) {
-          try {
-            // ARGB_8888 -> This configuration is very flexible and offers the best quality
-            final Bitmap bitmap =
-                Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
-
-            final Canvas canvas = new Canvas(bitmap);
-            view.draw(canvas);
-
-            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-            // 0 meaning compress for small size, 100 meaning compress for max quality.
-            // Some formats, like PNG which is lossless, will ignore the quality setting.
-            bitmap.compress(Bitmap.CompressFormat.PNG, 0, byteArrayOutputStream);
-
-            if (byteArrayOutputStream.size() > 0) {
-              // screenshot png is around ~100-150 kb
-              hint.setScreenshot(Attachment.fromScreenshot(byteArrayOutputStream.toByteArray()));
-              hint.set(ANDROID_ACTIVITY, activity);
-            } else {
-              this.options
-                  .getLogger()
-                  .log(SentryLevel.DEBUG, "Screenshot is 0 bytes, not attaching the image.");
-            }
-          } catch (Throwable e) {
-            this.options.getLogger().log(SentryLevel.ERROR, "Taking screenshot failed.", e);
-          }
-        } else {
-          this.options
-              .getLogger()
-              .log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
-        }
-      } else {
-        this.options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
-      }
+    final Activity activity = CurrentActivityHolder.getInstance().getActivity();
+    if (activity == null || HintUtils.isFromHybridSdk(hint)) {
+      return event;
     }
 
+    final byte[] screenshot = takeScreenshot(activity, options.getLogger(), buildInfoProvider);
+    if (screenshot == null) {
+      return event;
+    }
+
+    hint.setScreenshot(Attachment.fromScreenshot(screenshot));
+    hint.set(ANDROID_ACTIVITY, activity);
     return event;
   }
 
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    setCurrentActivity(activity);
+    CurrentActivityHolder.getInstance().setActivity(activity);
   }
 
   @Override
@@ -157,32 +115,17 @@ public final class ScreenshotEventProcessor
   public void close() throws IOException {
     if (options.isAttachScreenshot()) {
       application.unregisterActivityLifecycleCallbacks(this);
-      currentActivity = null;
+      CurrentActivityHolder.getInstance().clearActivity();
     }
   }
 
   private void cleanCurrentActivity(@NonNull Activity activity) {
-    if (currentActivity != null && currentActivity.get() == activity) {
-      currentActivity = null;
+    if (CurrentActivityHolder.getInstance().getActivity() == activity) {
+      CurrentActivityHolder.getInstance().clearActivity();
     }
   }
 
   private void setCurrentActivity(@NonNull Activity activity) {
-    if (currentActivity != null && currentActivity.get() == activity) {
-      return;
-    }
-    currentActivity = new WeakReference<>(activity);
-  }
-
-  @SuppressLint("NewApi")
-  private boolean isActivityValid(@Nullable Activity activity) {
-    if (activity == null) {
-      return false;
-    }
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      return !activity.isFinishing() && !activity.isDestroyed();
-    } else {
-      return !activity.isFinishing();
-    }
+    CurrentActivityHolder.getInstance().setActivity(activity);
   }
 }

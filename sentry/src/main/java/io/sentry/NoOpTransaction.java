@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.Collections;
@@ -43,7 +44,10 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
-      @NotNull String operation, @Nullable String description, @Nullable Date timestamp) {
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable Date timestamp,
+      @NotNull Instrumenter instrumenter) {
     return NoOpSpan.getInstance();
   }
 
@@ -92,8 +96,8 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @NotNull BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    return new BaggageHeader("");
+  public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
+    return null;
   }
 
   @Override
@@ -101,6 +105,10 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public void finish(@Nullable SpanStatus status) {}
+
+  @Override
+  @ApiStatus.Internal
+  public void finish(@Nullable SpanStatus status, @Nullable Date timestamp) {}
 
   @Override
   public void setOperation(@NotNull String operation) {}
@@ -171,4 +179,19 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public void setMeasurement(
       @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {}
+
+  @ApiStatus.Internal
+  @Override
+  public void setContext(@NotNull String key, @NotNull Object context) {}
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull Contexts getContexts() {
+    return new Contexts();
+  }
+
+  @Override
+  public boolean isNoOp() {
+    return true;
+  }
 }

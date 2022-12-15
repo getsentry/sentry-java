@@ -12,6 +12,7 @@ import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.assertEnvelopeItem
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
@@ -34,7 +35,7 @@ class EnvelopeTests : BaseUiTest() {
         Sentry.captureMessage("Message captured during test")
 
         relay.assert {
-            assertEnvelope {
+            assertFirstEnvelope {
                 val event: SentryEvent = it.assertItem()
                 it.assertNoOtherItems()
                 assertTrue(event.message?.formatted == "Message captured during test")
@@ -53,7 +54,7 @@ class EnvelopeTests : BaseUiTest() {
 
         relayIdlingResource.increment()
         IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
-        val transaction = Sentry.startTransaction("e2etests", "test1")
+        val transaction = Sentry.startTransaction("profiledTransaction", "test1")
         val sampleScenario = launchActivity<ProfilingSampleActivity>()
         swipeList(1)
         sampleScenario.moveToState(Lifecycle.State.DESTROYED)
@@ -63,21 +64,29 @@ class EnvelopeTests : BaseUiTest() {
 
         transaction.finish()
         relay.assert {
-            assertEnvelope {
+            findEnvelope {
+                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "ProfilingSampleActivity"
+            }.assert {
                 val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals("ProfilingSampleActivity", transactionItem.transaction)
             }
-            assertEnvelope {
+
+            findEnvelope {
+                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "profiledTransaction"
+            }.assert {
                 val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
-                assertEquals("e2etests", transactionItem.transaction)
+                assertEquals("profiledTransaction", transactionItem.transaction)
             }
-            assertEnvelope {
+
+            findEnvelope {
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()).transactionName == "profiledTransaction"
+            }.assert {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals(profilingTraceData.transactionId, transaction.eventId.toString())
-                assertEquals("e2etests", profilingTraceData.transactionName)
+                assertEquals("profiledTransaction", profilingTraceData.transactionName)
                 assertTrue(profilingTraceData.environment.isNotEmpty())
                 assertTrue(profilingTraceData.cpuArchitecture.isNotEmpty())
                 assertTrue(profilingTraceData.transactions.isNotEmpty())
@@ -127,24 +136,31 @@ class EnvelopeTests : BaseUiTest() {
         transaction3.finish()
 
         relay.assert {
-            assertEnvelope {
+            findEnvelope {
+                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "e2etests"
+            }.assert {
                 val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals(transaction.eventId.toString(), transactionItem.eventId.toString())
             }
-            assertEnvelope {
+            findEnvelope {
+                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "e2etests1"
+            }.assert {
                 val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals(transaction2.eventId.toString(), transactionItem.eventId.toString())
             }
-            // The profile is sent only in the last transaction envelope
-            assertEnvelope {
+            findEnvelope {
+                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "e2etests2"
+            }.assert {
                 val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
             }
-            // The profile is sent only in the last transaction envelope
-            assertEnvelope {
+            // The profile is sent in its own envelope
+            findEnvelope {
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()).transactionName == "e2etests2"
+            }.assert {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
                 assertEquals("e2etests2", profilingTraceData.transactionName)
@@ -191,7 +207,7 @@ class EnvelopeTests : BaseUiTest() {
         relayIdlingResource.increment()
         relayIdlingResource.increment()
         val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
-        val transaction = Sentry.startTransaction("e2etests", "test empty")
+        val transaction = Sentry.startTransaction("emptyProfileTransaction", "test empty")
 
         var finished = false
         Thread {
@@ -209,13 +225,15 @@ class EnvelopeTests : BaseUiTest() {
         }
 
         relay.assert {
-            assertEnvelope {
+            findEnvelope {
+                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "emptyProfileTransaction"
+            }.assert {
                 val transactionItem: SentryTransaction = it.assertItem()
                 it.assertNoOtherItems()
-                assertEquals("e2etests", transactionItem.transaction)
+                assertEquals("emptyProfileTransaction", transactionItem.transaction)
             }
             // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
-            assertFailsWith<IllegalArgumentException> { assertEnvelope {} }
+            assertFailsWith<IllegalArgumentException> { assertFirstEnvelope {} }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
@@ -230,14 +248,16 @@ class EnvelopeTests : BaseUiTest() {
             options.profilesSampleRate = 1.0
         }
         relayIdlingResource.increment()
-        Sentry.startTransaction("e2etests", "testTimeout")
+        Sentry.startTransaction("timedOutProfile", "testTimeout")
         // We don't call transaction.finish() and let the timeout do its job
 
         relay.assert {
-            assertEnvelope {
+            findEnvelope {
+                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()).transactionName == "timedOutProfile"
+            }.assert {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
-                assertEquals("e2etests", profilingTraceData.transactionName)
+                assertEquals("timedOutProfile", profilingTraceData.transactionName)
                 assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, profilingTraceData.truncationReason)
             }
             assertNoOtherEnvelopes()
