@@ -1,14 +1,18 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryStackFrame;
+import io.sentry.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** class responsible for converting Java StackTraceElements to SentryStackFrames */
-final class SentryStackTraceFactory {
+@ApiStatus.Internal
+public final class SentryStackTraceFactory {
 
   /** list of inApp excludes */
   private final @Nullable List<String> inAppExcludes;
@@ -29,7 +33,7 @@ final class SentryStackTraceFactory {
    * @return list of SentryStackFrames or null if none
    */
   @Nullable
-  List<SentryStackFrame> getStackFrames(@Nullable final StackTraceElement[] elements) {
+  public List<SentryStackFrame> getStackFrames(@Nullable final StackTraceElement[] elements) {
     List<SentryStackFrame> sentryStackFrames = null;
 
     if (elements != null && elements.length > 0) {
@@ -93,5 +97,51 @@ final class SentryStackTraceFactory {
       }
     }
     return false;
+  }
+
+  /**
+   * Returns the call stack leading to the exception, including in-app frames and excluding sentry
+   * and system frames.
+   *
+   * @param exception an exception to get the call stack to
+   * @return a list of sentry stack frames leading to the exception
+   */
+  @NotNull
+  List<SentryStackFrame> getInAppCallStack(final @NotNull Throwable exception) {
+    final StackTraceElement[] stacktrace = exception.getStackTrace();
+    final List<SentryStackFrame> frames = getStackFrames(stacktrace);
+    if (frames == null) {
+      return Collections.emptyList();
+    }
+
+    final List<SentryStackFrame> inAppFrames =
+        CollectionUtils.filterListEntries(frames, (frame) -> Boolean.TRUE.equals(frame.isInApp()));
+
+    if (!inAppFrames.isEmpty()) {
+      return inAppFrames;
+    }
+
+    // if inAppFrames is empty, most likely we're operating over an obfuscated app, just trying to
+    // fallback to all the frames that are not system frames
+    return CollectionUtils.filterListEntries(
+        frames,
+        (frame) -> {
+          final String module = frame.getModule();
+          boolean isSystemFrame = false;
+          if (module != null) {
+            isSystemFrame =
+                module.startsWith("sun.")
+                    || module.startsWith("java.")
+                    || module.startsWith("android.")
+                    || module.startsWith("com.android.");
+          }
+          return !isSystemFrame;
+        });
+  }
+
+  @ApiStatus.Internal
+  @NotNull
+  public List<SentryStackFrame> getInAppCallStack() {
+    return getInAppCallStack(new Exception());
   }
 }

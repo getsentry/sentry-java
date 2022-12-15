@@ -5,6 +5,8 @@ import io.sentry.cache.IEnvelopeCache
 import io.sentry.internal.modules.IModulesLoader
 import io.sentry.internal.modules.ResourcesModulesLoader
 import io.sentry.protocol.SentryId
+import io.sentry.util.thread.IMainThreadChecker
+import io.sentry.util.thread.MainThreadChecker
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
@@ -321,6 +323,35 @@ class SentryTest {
         }
 
         assertTrue { sentryOptions!!.modulesLoader is CustomModulesLoader }
+    }
+
+    @Test
+    fun `overrides main thread checker if it's not set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.mainThreadChecker is MainThreadChecker }
+    }
+
+    @Test
+    fun `does not override main thread checker if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.mainThreadChecker = CustomMainThreadChecker()
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.mainThreadChecker is CustomMainThreadChecker }
+    }
+
+    private class CustomMainThreadChecker : IMainThreadChecker {
+        override fun isMainThread(threadId: Long): Boolean = false
     }
 
     private class CustomModulesLoader : IModulesLoader {

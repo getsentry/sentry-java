@@ -8,6 +8,7 @@ import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
 import io.sentry.UserFeedback;
+import io.sentry.instrumentation.file.SentryFileOutputStream;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.compose.ComposeActivity;
@@ -78,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         view -> {
           String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
           File file = getApplication().getFileStreamPath(fileName);
-          try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+          try (final FileOutputStream fileOutputStream = new SentryFileOutputStream(file);
               final OutputStreamWriter outputStreamWriter =
                   new OutputStreamWriter(fileOutputStream);
               final Writer writer = new BufferedWriter(outputStreamWriter)) {
