@@ -17,6 +17,8 @@ import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
+import io.sentry.util.thread.IMainThreadChecker;
+import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -380,6 +382,8 @@ public class SentryOptions {
 
   /** Contains a list of GestureTargetLocator instances used for user interaction tracking * */
   private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
+
+  private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
   /**
    * Adds an event processor
@@ -1862,6 +1866,14 @@ public class SentryOptions {
   public void setGestureTargetLocators(@NotNull final List<GestureTargetLocator> locators) {
     gestureTargetLocators.clear();
     gestureTargetLocators.addAll(locators);
+  }
+
+  public @NotNull IMainThreadChecker getMainThreadChecker() {
+    return mainThreadChecker;
+  }
+
+  public void setMainThreadChecker(final @NotNull IMainThreadChecker mainThreadChecker) {
+    this.mainThreadChecker = mainThreadChecker;
   }
 
   /** The BeforeSend callback */

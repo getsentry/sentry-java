@@ -1,30 +1,29 @@
-package io.sentry.android.core.internal.util
+package io.sentry.util.thread
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.protocol.SentryThread
-import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@RunWith(AndroidJUnit4::class)
 class MainThreadCheckerTest {
+
+    private val mainThreadChecker = MainThreadChecker.getInstance()
 
     @Test
     fun `When calling isMainThread from the same thread, it should return true`() {
-        assertTrue(MainThreadChecker.isMainThread())
+        assertTrue(mainThreadChecker.isMainThread)
     }
 
     @Test
     fun `When calling isMainThread with the current thread, it should return true`() {
         val thread = Thread.currentThread()
-        assertTrue(MainThreadChecker.isMainThread(thread))
+        assertTrue(mainThreadChecker.isMainThread(thread))
     }
 
     @Test
     fun `When calling isMainThread from a different thread, it should return false`() {
         val thread = Thread()
-        assertFalse(MainThreadChecker.isMainThread(thread))
+        assertFalse(mainThreadChecker.isMainThread(thread))
     }
 
     @Test
@@ -33,7 +32,7 @@ class MainThreadCheckerTest {
         val sentryThread = SentryThread().apply {
             id = thread.id
         }
-        assertTrue(MainThreadChecker.isMainThread(sentryThread))
+        assertTrue(mainThreadChecker.isMainThread(sentryThread))
     }
 
     @Test
@@ -42,6 +41,6 @@ class MainThreadCheckerTest {
         val sentryThread = SentryThread().apply {
             id = thread.id
         }
-        assertFalse(MainThreadChecker.isMainThread(sentryThread))
+        assertFalse(mainThreadChecker.isMainThread(sentryThread))
     }
 }
