@@ -10,6 +10,7 @@ public final class io/sentry/android/core/ActivityFramesTracker {
 
 public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;)V
+	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;Lio/sentry/android/core/internal/util/FullyDrawnReporter;)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
@@ -139,6 +140,7 @@ public final class io/sentry/android/core/SentryAndroid {
 	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;)V
 	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/Sentry$OptionsConfiguration;)V
 	public static fun init (Landroid/content/Context;Lio/sentry/Sentry$OptionsConfiguration;)V
+	public static fun reportFullyDrawn (Landroid/app/Activity;)V
 }
 
 public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/SentryOptions {

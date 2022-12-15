@@ -8,6 +8,7 @@ import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
 import io.sentry.UserFeedback;
+import io.sentry.android.core.SentryAndroid;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.compose.ComposeActivity;
@@ -196,7 +197,19 @@ public class MainActivity extends AppCompatActivity {
         });
 
     setContentView(binding.getRoot());
-    Sentry.reportFullyDrawn(this);
+
+    // Let's say the activity is fully drawn after 1 second
+    new Thread(
+            () -> {
+              try {
+                Thread.sleep(1000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              }
+              SentryAndroid.reportFullyDrawn(this);
+              reportFullyDrawn();
+            })
+        .start();
   }
 
   @Override

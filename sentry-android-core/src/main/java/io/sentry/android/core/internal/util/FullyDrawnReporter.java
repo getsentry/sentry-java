@@ -1,19 +1,18 @@
 package io.sentry.android.core.internal.util;
 
 import android.app.Activity;
-
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class FullyDrawnReporter {
 
   private static final @NotNull FullyDrawnReporter instance = new FullyDrawnReporter();
-  private final @NotNull Map<String, FullyDrawnReporterListener> listeners = new ConcurrentHashMap<>();
+  private final @NotNull Map<String, FullyDrawnReporterListener> listeners =
+      new ConcurrentHashMap<>();
 
   private FullyDrawnReporter() {}
 

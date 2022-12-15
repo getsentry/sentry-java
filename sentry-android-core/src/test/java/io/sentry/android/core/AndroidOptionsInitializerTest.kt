@@ -9,6 +9,7 @@ import io.sentry.MainEventProcessor
 import io.sentry.SentryOptions
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
+import io.sentry.android.core.internal.util.FullyDrawnReporter
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import org.junit.runner.RunWith
@@ -31,6 +32,7 @@ class AndroidOptionsInitializerTest {
         val sentryOptions = SentryAndroidOptions()
         lateinit var mockContext: Context
         val logger = mock<ILogger>()
+        val mockFullyDrawnReporter = mock<FullyDrawnReporter>()
 
         fun initSut(
             metadata: Bundle? = null,
@@ -90,7 +92,8 @@ class AndroidOptionsInitializerTest {
                 buildInfo,
                 createClassMock(classToLoad),
                 isFragmentAvailable,
-                isTimberAvailable
+                isTimberAvailable,
+                mockFullyDrawnReporter
             )
         }
 

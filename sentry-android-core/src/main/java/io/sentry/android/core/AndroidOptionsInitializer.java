@@ -13,6 +13,7 @@ import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
+import io.sentry.android.core.internal.util.FullyDrawnReporter;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
@@ -92,7 +93,8 @@ final class AndroidOptionsInitializer {
         new BuildInfoProvider(new AndroidLogger()),
         new LoadClass(),
         false,
-        false);
+        false,
+        FullyDrawnReporter.getInstance());
   }
 
   static void initializeIntegrationsAndProcessors(
@@ -101,7 +103,8 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull LoadClass loadClass,
       final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
+      final boolean isTimberAvailable,
+      final @NotNull FullyDrawnReporter fullyDrawnReporter) {
 
     if (options.getCacheDirPath() != null
         && options.getEnvelopeDiskCache() instanceof NoOpEnvelopeCache) {
@@ -118,7 +121,8 @@ final class AndroidOptionsInitializer {
         loadClass,
         activityFramesTracker,
         isFragmentAvailable,
-        isTimberAvailable);
+        isTimberAvailable,
+        fullyDrawnReporter);
 
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
@@ -139,7 +143,8 @@ final class AndroidOptionsInitializer {
       final @NotNull LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
+      final boolean isTimberAvailable,
+      final @NotNull FullyDrawnReporter fullyDrawnReporter) {
 
     // read the startup crash marker here to avoid doing double-IO for the SendCachedEnvelope
     // integrations below
@@ -177,7 +182,7 @@ final class AndroidOptionsInitializer {
     if (context instanceof Application) {
       options.addIntegration(
           new ActivityLifecycleIntegration(
-              (Application) context, buildInfoProvider, activityFramesTracker));
+              (Application) context, buildInfoProvider, activityFramesTracker, fullyDrawnReporter));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));

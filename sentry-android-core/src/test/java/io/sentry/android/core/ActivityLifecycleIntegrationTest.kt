@@ -16,6 +16,7 @@ import io.sentry.TraceContext
 import io.sentry.TransactionContext
 import io.sentry.TransactionFinishedCallback
 import io.sentry.TransactionOptions
+import io.sentry.android.core.internal.util.FullyDrawnReporter
 import io.sentry.protocol.TransactionNameSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -30,6 +31,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -47,6 +49,7 @@ class ActivityLifecycleIntegrationTest {
         val bundle = mock<Bundle>()
         val context = TransactionContext("name", "op")
         val activityFramesTracker = mock<ActivityFramesTracker>()
+        val fullyDrawnReporter = FullyDrawnReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
         lateinit var transaction: SentryTracer
         val buildInfo = mock<BuildInfoProvider>()
@@ -66,7 +69,7 @@ class ActivityLifecycleIntegrationTest {
 
             whenever(am.runningAppProcesses).thenReturn(processes)
 
-            return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker)
+            return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker, fullyDrawnReporter)
         }
     }
 
@@ -363,7 +366,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When tracing auto finish is enabled and ttid span is finished, it stops the transaction on onActivityPostResumed`() {
+    fun `When tracing auto finish is enabled and ttid and ttfd spans are finished, it stops the transaction on onActivityPostResumed`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -371,6 +374,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
         sut.ttidSpanMap.values.first().finish()
+        sut.ttfdSpanMap.values.first().finish()
         sut.onActivityPostResumed(activity)
 
         verify(fixture.hub).captureTransaction(
@@ -564,7 +568,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
-        val span = fixture.transaction.children.first { it.operation == "ttfd" }
+        val span = fixture.transaction.children.first { it.operation == ActivityLifecycleIntegration.TTFD_OP }
         assertEquals(SpanStatus.CANCELLED, span.status)
         assertTrue(span.isFinished)
     }
@@ -625,7 +629,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `stop transaction on resumed if API 29 less than 29 and ttid is finished`() {
+    fun `stop transaction on resumed if API 29 less than 29 and ttid and ttfd are finished`() {
         val sut = fixture.getSut(14)
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -633,9 +637,24 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
         sut.ttidSpanMap.values.first().finish()
+        sut.ttfdSpanMap.values.first().finish()
         sut.onActivityResumed(activity)
 
         verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull())
+    }
+
+    @Test
+    fun `reportFullyDrawn finishes the ttfd`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+        sut.ttidSpanMap.values.first().finish()
+        fixture.fullyDrawnReporter.reportFullyDrawn(activity)
+        assertTrue(sut.ttfdSpanMap.values.first().isFinished)
+        assertNotEquals(SpanStatus.CANCELLED, sut.ttfdSpanMap.values.first().status)
     }
 
     @Test

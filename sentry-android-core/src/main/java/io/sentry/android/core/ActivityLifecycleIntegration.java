@@ -52,6 +52,7 @@ public final class ActivityLifecycleIntegration
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
   static final String TTID_OP = "ui.load.initial_display";
+  static final String TTFD_OP = "ui.load.full_display";
 
   private final @NotNull Application application;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -66,6 +67,7 @@ public final class ActivityLifecycleIntegration
   private boolean firstActivityResumed = false;
   private boolean foregroundImportance = false;
 
+  private final @NotNull FullyDrawnReporter fullyDrawnReporter;
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private @NotNull Date lastPausedTime = DateUtils.getCurrentDateTime();
@@ -83,11 +85,21 @@ public final class ActivityLifecycleIntegration
       final @NotNull Application application,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
+    this(application, buildInfoProvider, activityFramesTracker, FullyDrawnReporter.getInstance());
+  }
+
+  public ActivityLifecycleIntegration(
+      final @NotNull Application application,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final @NotNull FullyDrawnReporter fullyDrawnReporter) {
     this.application = Objects.requireNonNull(application, "Application is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.activityFramesTracker =
         Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
+    this.fullyDrawnReporter =
+        Objects.requireNonNull(fullyDrawnReporter, "FullyDrawnReporter is required");
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
@@ -233,9 +245,9 @@ public final class ActivityLifecycleIntegration
                 TTID_OP, getTtidDesc(activityName), lastPausedTime, Instrumenter.SENTRY));
       }
       ttfdSpanMap.put(
-        activity,
-        transaction.startChild(
-          "TTFD", activityName + ".ttfd", lastPausedTime, Instrumenter.SENTRY));
+          activity,
+          transaction.startChild(
+              TTFD_OP, getTtfdDesc(activityName), lastPausedTime, Instrumenter.SENTRY));
 
       // lets bind to the scope so other integrations can pick it up
       hub.configureScope(
@@ -288,7 +300,9 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishTransaction(
-      final @Nullable ITransaction transaction, final @Nullable ISpan ttidSpan, final @Nullable ISpan ttfdSpan) {
+      final @Nullable ITransaction transaction,
+      final @Nullable ISpan ttidSpan,
+      final @Nullable ISpan ttfdSpan) {
     if (transaction != null) {
       // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
       // finished manually when this method is called.
@@ -327,18 +341,21 @@ public final class ActivityLifecycleIntegration
     firstActivityCreated = true;
 
     ISpan ttfdSpan = ttfdSpanMap.get(activity);
-    FullyDrawnReporter.getInstance().registerFullyDrawnListener(new FullyDrawnReporter.FullyDrawnReporterListener() {
-      @Override
-      public boolean onFullyDrawn(@NotNull final Activity reportedActivity) {
-        ISpan reportedTtfdSpan = ttfdSpanMap.get(reportedActivity);
-        // finishes ttfdSpan span
-        if (ttfdSpan == reportedTtfdSpan && reportedTtfdSpan != null && !ttfdSpan.isFinished()) {
-          ttfdSpan.finish();
-          return true;
-        }
-        return false;
-      }
-    });
+    fullyDrawnReporter.registerFullyDrawnListener(
+        new FullyDrawnReporter.FullyDrawnReporterListener() {
+          @Override
+          public boolean onFullyDrawn(@NotNull final Activity reportedActivity) {
+            ISpan reportedTtfdSpan = ttfdSpanMap.get(reportedActivity);
+            // finishes ttfdSpan span
+            if (ttfdSpan == reportedTtfdSpan
+                && reportedTtfdSpan != null
+                && !ttfdSpan.isFinished()) {
+              ttfdSpan.finish();
+              return true;
+            }
+            return false;
+          }
+        });
   }
 
   @Override
@@ -448,7 +465,7 @@ public final class ActivityLifecycleIntegration
     final ISpan ttidSpan = ttidSpanMap.get(activity);
     finishSpan(ttidSpan, SpanStatus.CANCELLED);
 
-  // we finish the ttfdSpan as cancelled in case it isn't completed yet
+    // we finish the ttfdSpan as cancelled in case it isn't completed yet
     final ISpan ttfdSpan = ttfdSpanMap.get(activity);
     finishSpan(ttfdSpan, SpanStatus.CANCELLED);
 
@@ -521,6 +538,10 @@ public final class ActivityLifecycleIntegration
 
   private @NotNull String getTtidDesc(final @NotNull String activityName) {
     return activityName + " initial display";
+  }
+
+  private @NotNull String getTtfdDesc(final @NotNull String activityName) {
+    return activityName + " full display";
   }
 
   private @NotNull String getAppStartDesc(final boolean coldStart) {
