@@ -5,6 +5,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.util.thread.MainThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -29,7 +30,11 @@ class SentryFileOutputStreamTest {
             activeTransaction: Boolean = true,
             append: Boolean = false
         ): SentryFileOutputStream {
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    mainThreadChecker = MainThreadChecker.getInstance()
+                }
+            )
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
