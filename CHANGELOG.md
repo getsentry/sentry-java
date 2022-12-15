@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix compose-helper module is exposed and gets published ([#2430](https://github.com/getsentry/sentry-java/pull/2430))
+
 ### Features
 
 - Add time-to-initial-display span to Activity transactions ([#2369](https://github.com/getsentry/sentry-java/pull/2369))
