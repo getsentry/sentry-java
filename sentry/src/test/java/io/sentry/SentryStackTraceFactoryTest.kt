@@ -211,7 +211,24 @@ class SentryStackTraceFactoryTest {
     }
 
     @Test
-    fun `excludes system frames from the call stack`() {
+    fun `includes only in-app frames to the call stack`() {
+        val exception = Exception()
+        exception.stackTrace = arrayOf(
+            generateStackTrace("io.sentry.instrumentation.file.FileIOSpanManager"),
+            generateStackTrace("io.sentry.instrumentation.file.SentryFileOutputStream"),
+            generateStackTrace("com.example.myapp.MainActivity"),
+            generateStackTrace("com.thirdparty.Adapter")
+        )
+        val sut = SentryStackTraceFactory(listOf(), listOf("com.example"))
+
+        val callStack = sut.getInAppCallStack(exception)
+
+        assertEquals(1, callStack.size)
+        assertEquals("com.example.myapp.MainActivity", callStack[0].module)
+    }
+
+    @Test
+    fun `when inAppIncludes are not provided, excludes at least system frames`() {
         val exception = Exception()
         exception.stackTrace = arrayOf(
             generateStackTrace("io.sentry.instrumentation.file.FileIOSpanManager"),
@@ -221,7 +238,7 @@ class SentryStackTraceFactoryTest {
             generateStackTrace("sun.misc.unsafe.park.Object"),
             generateStackTrace("java.lang.Object")
         )
-        val sut = SentryStackTraceFactory(listOf(), listOf("com.example"))
+        val sut = SentryStackTraceFactory(listOf(), listOf())
 
         val callStack = sut.getInAppCallStack(exception)
 

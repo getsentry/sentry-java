@@ -35,22 +35,11 @@ final class FileIOSpanManager {
       final @Nullable ISpan currentSpan,
       final @Nullable File file,
       final @NotNull SentryOptions options) {
-    this(
-        currentSpan,
-        file,
-        options,
-        new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppExcludes()));
-  }
-
-  FileIOSpanManager(
-      final @Nullable ISpan currentSpan,
-      final @Nullable File file,
-      final @NotNull SentryOptions options,
-      final @NotNull SentryStackTraceFactory stackTraceFactory) {
     this.currentSpan = currentSpan;
     this.file = file;
     this.options = options;
-    this.stackTraceFactory = stackTraceFactory;
+    this.stackTraceFactory =
+        new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
   }
 
   /**

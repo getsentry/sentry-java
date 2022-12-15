@@ -114,6 +114,15 @@ public final class SentryStackTraceFactory {
       return Collections.emptyList();
     }
 
+    final List<SentryStackFrame> inAppFrames =
+        CollectionUtils.filterListEntries(frames, (frame) -> Boolean.TRUE.equals(frame.isInApp()));
+
+    if (!inAppFrames.isEmpty()) {
+      return inAppFrames;
+    }
+
+    // if inAppFrames is empty, most likely we're operating over an obfuscated app, just trying to
+    // fallback to all the frames that are not system frames
     return CollectionUtils.filterListEntries(
         frames,
         (frame) -> {
@@ -126,7 +135,7 @@ public final class SentryStackTraceFactory {
                     || module.startsWith("android.")
                     || module.startsWith("com.android.");
           }
-          return Boolean.TRUE.equals(frame.isInApp()) || !isSystemFrame;
+          return !isSystemFrame;
         });
   }
 

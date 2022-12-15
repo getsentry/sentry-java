@@ -6,6 +6,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.SpanStatus.INTERNAL_ERROR
 import io.sentry.TransactionContext
+import io.sentry.protocol.SentryStackFrame
 import io.sentry.util.thread.MainThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Rule
@@ -21,8 +22,8 @@ import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SentryFileInputStreamTest {
 
@@ -42,6 +43,7 @@ class SentryFileInputStreamTest {
                 options.apply {
                     isSendDefaultPii = sendDefaultPii
                     mainThreadChecker = MainThreadChecker.getInstance()
+                    addInAppInclude("org.junit")
                 }
             )
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
@@ -216,7 +218,12 @@ class SentryFileInputStreamTest {
 
         val fileIOSpan = fixture.sentryTracer.children.first()
         assertEquals(true, fileIOSpan.data["blocked_main_thread"])
-        assertNotNull(fileIOSpan.data["call_stack"])
+        // assuming our "in-app" is org.junit, we check that only org.junit frames are in the call stack
+        assertTrue {
+            (fileIOSpan.data["call_stack"] as List<SentryStackFrame>).all {
+                it.module?.startsWith("org.junit") == true
+            }
+        }
     }
 
     @Test
