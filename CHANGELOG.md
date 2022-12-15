@@ -5,6 +5,7 @@
 ### Features
 
 - Add logging for OpenTelemetry integration ([#2425](https://github.com/getsentry/sentry-java/pull/2425))
+- Auto add `OpenTelemetryLinkErrorEventProcessor` for Spring Boot ([#2429](https://github.com/getsentry/sentry-java/pull/2429))
 
 ### Dependencies
 
