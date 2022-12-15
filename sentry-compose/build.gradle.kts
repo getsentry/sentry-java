@@ -184,3 +184,7 @@ configure<PublishingExtension> {
         }
     }
 }
+
+tasks.withType<GenerateModuleMetadata> {
+    enabled = false
+}
