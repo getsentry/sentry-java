@@ -6,6 +6,8 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.SpanStatus.INTERNAL_ERROR
 import io.sentry.TransactionContext
+import io.sentry.util.thread.MainThreadChecker
+import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
@@ -14,9 +16,13 @@ import java.io.File
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class SentryFileInputStreamTest {
 
@@ -33,7 +39,10 @@ class SentryFileInputStreamTest {
         ): SentryFileInputStream {
             tmpFile?.writeText("Text")
             whenever(hub.options).thenReturn(
-                options.apply { isSendDefaultPii = sendDefaultPii }
+                options.apply {
+                    isSendDefaultPii = sendDefaultPii
+                    mainThreadChecker = MainThreadChecker.getInstance()
+                }
             )
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
@@ -198,6 +207,32 @@ class SentryFileInputStreamTest {
         fixture.getSut(file, sendDefaultPii = true).use { it.readAllBytes() }
         val fileIOSpan = fixture.sentryTracer.children.first()
         assertEquals(fileIOSpan.data["file.path"], file.absolutePath)
+    }
+
+    @Test
+    fun `when run on main thread, attaches call_stack with blocked_main_thread=true`() {
+        val fis = fixture.getSut(tmpFile)
+        fis.close()
+
+        val fileIOSpan = fixture.sentryTracer.children.first()
+        assertEquals(true, fileIOSpan.data["blocked_main_thread"])
+        assertNotNull(fileIOSpan.data["call_stack"])
+    }
+
+    @Test
+    fun `when run on a background thread, does not attach call_stack with blocked_main_thread=false`() {
+        val finished = AtomicBoolean(false)
+        thread {
+            val fis = fixture.getSut(tmpFile)
+            fis.close()
+            finished.set(true)
+        }
+
+        await.untilTrue(finished)
+
+        val fileIOSpan = fixture.sentryTracer.children.first()
+        assertEquals(false, fileIOSpan.data["blocked_main_thread"])
+        assertNull(fileIOSpan.data["call_stack"])
     }
 }
 

@@ -1,16 +1,10 @@
 package io.sentry.instrumentation.file;
 
-import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanStatus;
-import io.sentry.exception.ExceptionMechanismException;
-import io.sentry.protocol.Mechanism;
-import io.sentry.protocol.SentryStackFrame;
-import io.sentry.util.CollectionUtils;
 import io.sentry.util.Platform;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -18,7 +12,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,6 +24,8 @@ final class FileIOSpanManager {
   private @NotNull SpanStatus spanStatus = SpanStatus.OK;
   private long byteCount;
 
+  private final @NotNull SentryStackTraceFactory stackTraceFactory;
+
   static @Nullable ISpan startSpan(final @NotNull IHub hub, final @NotNull String op) {
     final ISpan parent = hub.getSpan();
     return parent != null ? parent.startChild(op) : null;
@@ -40,9 +35,22 @@ final class FileIOSpanManager {
       final @Nullable ISpan currentSpan,
       final @Nullable File file,
       final @NotNull SentryOptions options) {
+    this(
+        currentSpan,
+        file,
+        options,
+        new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppExcludes()));
+  }
+
+  FileIOSpanManager(
+      final @Nullable ISpan currentSpan,
+      final @Nullable File file,
+      final @NotNull SentryOptions options,
+      final @NotNull SentryStackTraceFactory stackTraceFactory) {
     this.currentSpan = currentSpan;
     this.file = file;
     this.options = options;
+    this.stackTraceFactory = stackTraceFactory;
   }
 
   /**
@@ -106,34 +114,9 @@ final class FileIOSpanManager {
       final boolean isMainThread = options.getMainThreadChecker().isMainThread();
       currentSpan.setData("blocked_main_thread", isMainThread);
       if (isMainThread) {
-        attachStacktrace();
+        currentSpan.setData("call_stack", stackTraceFactory.getInAppCallStack());
       }
       currentSpan.finish(spanStatus);
-    }
-  }
-
-  private void attachStacktrace() {
-    final SentryStackTraceFactory sentryStackTraceFactory =
-        new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
-    final StackTraceElement[] stacktrace = new Exception().getStackTrace();
-    final List<SentryStackFrame> frames = sentryStackTraceFactory.getStackFrames(stacktrace);
-    if (currentSpan != null && frames != null) {
-      final List<SentryStackFrame> relevantFrames =
-          CollectionUtils.filterListEntries(
-              frames,
-              (frame) -> {
-                final String module = frame.getModule();
-                boolean isSystemFrame = false;
-                if (module != null) {
-                  isSystemFrame =
-                      module.startsWith("sun.")
-                          || module.startsWith("java.")
-                          || module.startsWith("android.")
-                          || module.startsWith("com.android.");
-                }
-                return Boolean.TRUE.equals(frame.isInApp()) || !isSystemFrame;
-              });
-      currentSpan.setData("call_stack", relevantFrames);
     }
   }
 

@@ -1106,6 +1106,7 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun addBreadcrumb (Ljava/lang/String;)V
 	public fun getBreadcrumbs ()Ljava/util/List;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getDist ()Ljava/lang/String;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
@@ -1122,6 +1123,7 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setBreadcrumbs (Ljava/util/List;)V
+	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setEventId (Lio/sentry/protocol/SentryId;)V
@@ -1146,6 +1148,7 @@ public final class io/sentry/SentryBaseEvent$Deserializer {
 public final class io/sentry/SentryBaseEvent$JsonKeys {
 	public static final field BREADCRUMBS Ljava/lang/String;
 	public static final field CONTEXTS Ljava/lang/String;
+	public static final field DEBUG_META Ljava/lang/String;
 	public static final field DIST Ljava/lang/String;
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field EVENT_ID Ljava/lang/String;
@@ -1266,7 +1269,6 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Throwable;)V
 	public fun <init> (Ljava/util/Date;)V
-	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getExceptions ()Ljava/util/List;
 	public fun getFingerprints ()Ljava/util/List;
 	public fun getLevel ()Lio/sentry/SentryLevel;
@@ -1281,7 +1283,6 @@ public final class io/sentry/SentryEvent : io/sentry/SentryBaseEvent, io/sentry/
 	public fun isErrored ()Z
 	public fun removeModule (Ljava/lang/String;)V
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
-	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
 	public fun setExceptions (Ljava/util/List;)V
 	public fun setFingerprints (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -1301,7 +1302,6 @@ public final class io/sentry/SentryEvent$Deserializer : io/sentry/JsonDeserializ
 }
 
 public final class io/sentry/SentryEvent$JsonKeys {
-	public static final field DEBUG_META Ljava/lang/String;
 	public static final field EXCEPTION Ljava/lang/String;
 	public static final field FINGERPRINT Ljava/lang/String;
 	public static final field LEVEL Ljava/lang/String;
@@ -1536,6 +1536,7 @@ public abstract interface class io/sentry/SentryOptions$TracesSamplerCallback {
 
 public final class io/sentry/SentryStackTraceFactory {
 	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public fun getInAppCallStack ()Ljava/util/List;
 	public fun getStackFrames ([Ljava/lang/StackTraceElement;)Ljava/util/List;
 }
 

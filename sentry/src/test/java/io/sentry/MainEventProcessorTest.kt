@@ -516,6 +516,22 @@ class MainEventProcessorTest {
         assertEquals("2.0.0", event.modules!!["group1:artifact1"])
     }
 
+    @Test
+    fun `sets debugMeta for transactions`() {
+        val sut = fixture.getSut(proguardUuid = "id1")
+
+        var transaction = SentryTransaction(fixture.sentryTracer)
+        transaction.debugMeta = DebugMeta()
+        transaction = sut.process(transaction, Hint())
+
+        assertNotNull(transaction.debugMeta) {
+            assertNotNull(it.images) { images ->
+                assertEquals("id1", images[0].uuid)
+                assertEquals("proguard", images[0].type)
+            }
+        }
+    }
+
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) =
         SentryEvent().apply {
             val mockThrowable = mock<Throwable>()
