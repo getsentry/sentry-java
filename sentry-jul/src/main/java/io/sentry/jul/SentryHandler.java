@@ -277,6 +277,7 @@ public class SentryHandler extends Handler {
 
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
     sdkVersion.addPackage("maven:io.sentry:sentry-jul", version);
+    sdkVersion.addIntegration("jul");
 
     return sdkVersion;
   }

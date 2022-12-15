@@ -56,7 +56,7 @@ public final class AppComponentsBreadcrumbsIntegration
             .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
         final SdkVersion sdkVersion = this.options.getSdkVersion();
         if (sdkVersion != null) {
-          sdkVersion.addIntegration("AppComponents");
+          sdkVersion.addIntegration("AppComponentsBreadcrumbs");
         }
       } catch (Throwable e) {
         this.options.setEnableAppComponentBreadcrumbs(false);

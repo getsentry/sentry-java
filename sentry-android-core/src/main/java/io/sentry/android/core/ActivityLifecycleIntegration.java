@@ -120,7 +120,7 @@ public final class ActivityLifecycleIntegration
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
       final SdkVersion sdkVersion = this.options.getSdkVersion();
       if (sdkVersion != null) {
-        sdkVersion.addIntegration("Activity");
+        sdkVersion.addIntegration("ActivityLifecycle");
       }
     }
   }

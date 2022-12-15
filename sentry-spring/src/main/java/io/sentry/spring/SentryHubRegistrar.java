@@ -86,6 +86,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
     sdkVersion.addPackage("maven:io.sentry:sentry-spring", version);
+    sdkVersion.addIntegration("Spring");
 
     return sdkVersion;
   }

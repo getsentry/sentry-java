@@ -262,6 +262,7 @@ public class SentryAppender extends AbstractAppender {
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
     sdkVersion.addPackage("maven:io.sentry:sentry-log4j2", version);
+    sdkVersion.addIntegration("logback");
 
     return sdkVersion;
   }

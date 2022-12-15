@@ -308,6 +308,7 @@ public class SentryAutoConfiguration {
       sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
       sdkVersion.addPackage("maven:io.sentry:sentry-spring-boot-starter", version);
+      sdkVersion.addIntegration("SpringBoot");
 
       return sdkVersion;
     }

@@ -204,6 +204,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
     sdkVersion.addPackage("maven:io.sentry:sentry-logback", version);
+    sdkVersion.addIntegration("Logback");
 
     return sdkVersion;
   }

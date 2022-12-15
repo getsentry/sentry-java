@@ -20,5 +20,6 @@ final class SentryNdkUtil {
       return;
     }
     sdkVersion.addPackage("maven:io.sentry:sentry-android-ndk", BuildConfig.VERSION_NAME);
+    sdkVersion.addIntegration("NDK");
   }
 }
