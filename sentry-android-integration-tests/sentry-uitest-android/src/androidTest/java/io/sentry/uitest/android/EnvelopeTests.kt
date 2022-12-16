@@ -52,13 +52,13 @@ class EnvelopeTests : BaseUiTest() {
             options.profilesSampleRate = 1.0
         }
 
-        relayIdlingResource.increment()
         IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
         val transaction = Sentry.startTransaction("profiledTransaction", "test1")
         val sampleScenario = launchActivity<ProfilingSampleActivity>()
         swipeList(1)
         sampleScenario.moveToState(Lifecycle.State.DESTROYED)
         IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
+        relayIdlingResource.increment()
         relayIdlingResource.increment()
         relayIdlingResource.increment()
 
