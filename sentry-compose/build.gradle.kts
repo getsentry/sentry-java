@@ -21,7 +21,7 @@ kotlin {
     android {
         publishLibraryVariants("release")
     }
-    jvm() {
+    jvm("desktop") {
         compilations.all {
             kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
         }
@@ -42,21 +42,12 @@ kotlin {
                 api(compose.ui)
 
                 implementation(Config.Libs.kotlinStdLib)
-            }
-        }
-
-        val jvmMain by getting {
-            dependencies {
-                api(projects.sentry)
-                implementation(Config.Libs.kotlinStdLib)
                 api(projects.sentryComposeHelper)
             }
         }
-
         val androidMain by getting {
-            dependsOn(jvmMain)
-
             dependencies {
+                api(projects.sentry)
                 api(projects.sentryAndroidNavigation)
 
                 api(Config.Libs.composeNavigation)
