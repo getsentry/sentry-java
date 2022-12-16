@@ -14,7 +14,7 @@ targets:
     mavenRepoUrl: https://oss.sonatype.org/service/local/staging/deploy/maven2/
     android:
       distDirRegex: /^(sentry-android-|.*-android).*$/
-      fileReplaceeRegex: /\d\.\d\.\d(-\w+(\.\d)?)?(-SNAPSHOT)?/
+      fileReplaceeRegex: /\d+\.\d+\.\d+(-\w+(\.\d+)?)?(-SNAPSHOT)?/
       fileReplacerStr: release.aar
   - name: github
     excludeNames: /^libsentry.*\.so$/
