@@ -10,6 +10,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.core.internal.util.FullyDrawnReporter
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import org.junit.runner.RunWith
@@ -449,5 +450,12 @@ class AndroidOptionsInitializerTest {
         fixture.initSut()
 
         assertTrue { fixture.sentryOptions.modulesLoader is AssetsModulesLoader }
+    }
+
+    @Test
+    fun `AndroidMainThreadChecker is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.mainThreadChecker is AndroidMainThreadChecker }
     }
 }
