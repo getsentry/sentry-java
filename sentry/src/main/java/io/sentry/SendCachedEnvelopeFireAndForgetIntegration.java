@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.File;
 import org.jetbrains.annotations.NotNull;
@@ -87,6 +88,10 @@ public final class SendCachedEnvelopeFireAndForgetIntegration implements Integra
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
+      final SdkVersion sdkVersion = options.getSdkVersion();
+      if (sdkVersion != null) {
+        sdkVersion.addIntegration("SendCachedEventFireAndForget");
+      }
     } catch (Throwable e) {
       options
           .getLogger()
