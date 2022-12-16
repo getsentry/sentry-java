@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add time-to-full-display span to Activity transactions ([#2432](https://github.com/getsentry/sentry-java/pull/2432))
 - Add time-to-initial-display span to Activity transactions ([#2369](https://github.com/getsentry/sentry-java/pull/2369))
 - Start a session after init if AutoSessionTracking is enabled ([#2356](https://github.com/getsentry/sentry-java/pull/2356))
 - Provide automatic breadcrumbs and transactions for click/scroll events for Compose ([#2390](https://github.com/getsentry/sentry-java/pull/2390))
