@@ -132,25 +132,12 @@ public final class NoOpHub implements IHub {
     return instance;
   }
 
-  /**
-   * @deprecated please use {{@link Hub#captureTransaction(SentryTransaction, TraceContext, Hint)}}
-   *     and {{@link Hub#captureEnvelope(SentryEnvelope)}} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
+  @Override
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceContext traceContext,
       final @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
-    return SentryId.EMPTY_ID;
-  }
-
-  @Override
-  public @NotNull SentryId captureTransaction(
-      final @NotNull SentryTransaction transaction,
-      final @Nullable TraceContext traceContext,
-      final @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 
