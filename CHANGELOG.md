@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Disable Android concurrent profiling ([#2434](https://github.com/getsentry/sentry-java/pull/2434))
+
+
 ## 6.10.0
 
 ### Features
