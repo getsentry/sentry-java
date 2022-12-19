@@ -39,9 +39,6 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
-  /** Enable or disable automatic breadcrumbs for User interactions Using Window.Callback */
-  private boolean enableUserInteractionBreadcrumbs = true;
-
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
@@ -92,9 +89,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    * https://stackoverflow.com/questions/45470758/what-is-lockstep-sampling
    */
   private int profilingTracesHz = 101;
-
-  /** Enables the Auto instrumentation for user interaction tracing. */
-  private boolean enableUserInteractionTracing = false;
 
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
@@ -241,14 +235,6 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAppComponentBreadcrumbs = enableAppComponentBreadcrumbs;
   }
 
-  public boolean isEnableUserInteractionBreadcrumbs() {
-    return enableUserInteractionBreadcrumbs;
-  }
-
-  public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
-    this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
-  }
-
   /**
    * Enable or disable all the automatic breadcrumbs
    *
@@ -259,7 +245,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableAppComponentBreadcrumbs = enable;
     enableSystemEventBreadcrumbs = enable;
     enableAppLifecycleBreadcrumbs = enable;
-    enableUserInteractionBreadcrumbs = enable;
+    setEnableUserInteractionBreadcrumbs(enable);
   }
 
   /**
@@ -341,14 +327,6 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setAttachScreenshot(boolean attachScreenshot) {
     this.attachScreenshot = attachScreenshot;
-  }
-
-  public boolean isEnableUserInteractionTracing() {
-    return enableUserInteractionTracing;
-  }
-
-  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
-    this.enableUserInteractionTracing = enableUserInteractionTracing;
   }
 
   public boolean isCollectAdditionalContext() {

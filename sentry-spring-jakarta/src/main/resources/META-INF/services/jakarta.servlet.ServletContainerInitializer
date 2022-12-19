@@ -1,1 +1,1 @@
-io.sentry.spring.SentrySpringServletContainerInitializer
+io.sentry.spring.jakarta.SentrySpringServletContainerInitializer

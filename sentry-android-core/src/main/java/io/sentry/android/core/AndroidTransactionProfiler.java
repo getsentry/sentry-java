@@ -198,6 +198,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                   @NotNull FrameMetrics frameMetrics, float refreshRate) {
                 long frameTimestampRelativeNanos =
                     SystemClock.elapsedRealtimeNanos() - transactionStartNanos;
+
+                // We don't allow negative relative timestamps.
+                // So we add a check, even if this should never happen.
+                if (frameTimestampRelativeNanos < 0) {
+                  return;
+                }
                 long durationNanos = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION);
                 // Most frames take just a few nanoseconds longer than the optimal calculated
                 // duration.

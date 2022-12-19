@@ -12,10 +12,14 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
+import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.compose.gestures.ComposeGestureTargetLocator;
+import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -23,6 +27,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -130,6 +136,26 @@ final class AndroidOptionsInitializer {
     options.setTransactionProfiler(
         new AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector));
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+
+    final boolean isAndroidXScrollViewAvailable =
+        loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
+
+    if (options.getGestureTargetLocators().isEmpty()) {
+      final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
+      gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
+      try {
+        gestureTargetLocators.add(new ComposeGestureTargetLocator());
+      } catch (NoClassDefFoundError error) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "ComposeGestureTargetLocator not available, consider adding the `sentry-compose` library.",
+                error);
+      }
+      options.setGestureTargetLocators(gestureTargetLocators);
+    }
+    options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
   }
 
   private static void installDefaultIntegrations(

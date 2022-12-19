@@ -21,8 +21,8 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     compileOnly(projects.sentry)
 
-    compileOnly("io.opentelemetry:opentelemetry-sdk:${Config.Libs.otelVersion}")
-    compileOnly("io.opentelemetry:opentelemetry-semconv:${Config.Libs.otelAlphaVersion}")
+    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(Config.Libs.OpenTelemetry.otelSemconv)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -37,8 +37,8 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.awaitility)
 
-    testImplementation("io.opentelemetry:opentelemetry-sdk:${Config.Libs.otelVersion}")
-    testImplementation("io.opentelemetry:opentelemetry-semconv:${Config.Libs.otelAlphaVersion}")
+    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
+    testImplementation(Config.Libs.OpenTelemetry.otelSemconv)
 }
 
 configure<SourceSetContainer> {

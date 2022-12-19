@@ -38,6 +38,13 @@ Sentry.init(
 Using the `otel` instrumenter will ensure `Sentry` instrumentation will be done via OpenTelemetry
 and integrations as well as direct interactions with transactions and spans have no effect.
 
+## Controlling auto initialization of Sentry
+
+By default if you pass either `SENTRY_DSN` or `SENTRY_PROPERTIES_FILE` as environment variable,
+Sentry will automatically be initialized by this agent. To disable this behaviour, you can set
+`SENTRY_AUTO_INIT=false` as environment variable. You will then have to initialize Sentry inside
+the target application.
+
 ## Debugging
 
 To enable debug logging for Sentry, please provide `SENTRY_DEBUG=true` as environment variable or
