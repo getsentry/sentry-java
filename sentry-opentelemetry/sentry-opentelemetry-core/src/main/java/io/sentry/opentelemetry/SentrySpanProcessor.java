@@ -151,7 +151,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
           .getLogger()
           .log(
               SentryLevel.DEBUG,
-              "Unable to find Sentry span for OpenTelemetry span %s (trace %s).",
+              "Unable to find Sentry span for OpenTelemetry span %s (trace %s). This may simply mean it is a Sentry request.",
               traceData.getSpanId(),
               traceData.getTraceId());
       return;
