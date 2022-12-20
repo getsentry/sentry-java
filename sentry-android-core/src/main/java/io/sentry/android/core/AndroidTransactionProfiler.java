@@ -66,7 +66,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private int transactionsCounter = 0;
   private @Nullable String frameMetricsCollectorId;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
-  private @Nullable ProfilingTransactionData currentTransaction;
+  private @Nullable ProfilingTransactionData currentProfilingTransactionData;
   private final @NotNull ArrayDeque<ProfileMeasurementValue> screenFrameRateMeasurements =
       new ArrayDeque<>();
   private final @NotNull ArrayDeque<ProfileMeasurementValue> slowFrameRenderMeasurements =
@@ -239,7 +239,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     transactionStartNanos = SystemClock.elapsedRealtimeNanos();
     profileStartCpuMillis = Process.getElapsedCpuTime();
 
-    currentTransaction =
+    currentProfilingTransactionData =
         new ProfilingTransactionData(transaction, transactionStartNanos, profileStartCpuMillis);
 
     Debug.startMethodTracingSampling(traceFile.getPath(), BUFFER_SIZE_BYTES, intervalUs);
@@ -272,8 +272,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     final ProfilingTraceData profilingData = timedOutProfilingData;
 
     // Transaction finished, but it's not in the current profile
-    if (currentTransaction == null
-        || !currentTransaction.getId().equals(transaction.getEventId().toString())) {
+    if (currentProfilingTransactionData == null
+        || !currentProfilingTransactionData.getId().equals(transaction.getEventId().toString())) {
       // We check if we cached a profiling data due to a timeout with this profile in it
       // If so, we return it back, otherwise we would simply lose it
       if (profilingData != null) {
@@ -317,8 +317,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
     if (transactionsCounter != 0 && !isTimeout) {
       // We notify the data referring to this transaction that it finished
-      if (currentTransaction != null) {
-        currentTransaction.notifyFinish(
+      if (currentProfilingTransactionData != null) {
+        currentProfilingTransactionData.notifyFinish(
             SystemClock.elapsedRealtimeNanos(),
             transactionStartNanos,
             Process.getElapsedCpuTime(),
@@ -335,8 +335,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     long transactionDurationNanos = transactionEndNanos - transactionStartNanos;
 
     List<ProfilingTransactionData> transactionList = new ArrayList<>(1);
-    transactionList.add(currentTransaction);
-    currentTransaction = null;
+    transactionList.add(currentProfilingTransactionData);
+    currentProfilingTransactionData = null;
     // We clear the counter in case of a timeout
     transactionsCounter = 0;
 
