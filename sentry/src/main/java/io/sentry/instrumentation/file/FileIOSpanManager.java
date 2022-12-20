@@ -2,6 +2,8 @@ package io.sentry.instrumentation.file;
 
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SentryOptions;
+import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanStatus;
 import io.sentry.util.Platform;
 import io.sentry.util.StringUtils;
@@ -17,10 +19,12 @@ final class FileIOSpanManager {
 
   private final @Nullable ISpan currentSpan;
   private final @Nullable File file;
-  private final boolean isSendDefaultPii;
+  private final @NotNull SentryOptions options;
 
   private @NotNull SpanStatus spanStatus = SpanStatus.OK;
   private long byteCount;
+
+  private final @NotNull SentryStackTraceFactory stackTraceFactory;
 
   static @Nullable ISpan startSpan(final @NotNull IHub hub, final @NotNull String op) {
     final ISpan parent = hub.getSpan();
@@ -30,10 +34,12 @@ final class FileIOSpanManager {
   FileIOSpanManager(
       final @Nullable ISpan currentSpan,
       final @Nullable File file,
-      final boolean isSendDefaultPii) {
+      final @NotNull SentryOptions options) {
     this.currentSpan = currentSpan;
     this.file = file;
-    this.isSendDefaultPii = isSendDefaultPii;
+    this.options = options;
+    this.stackTraceFactory =
+        new SentryStackTraceFactory(options.getInAppExcludes(), options.getInAppIncludes());
   }
 
   /**
@@ -87,13 +93,18 @@ final class FileIOSpanManager {
       if (file != null) {
         final String description = file.getName() + " " + "(" + byteCountToString + ")";
         currentSpan.setDescription(description);
-        if (Platform.isAndroid() || isSendDefaultPii) {
+        if (Platform.isAndroid() || options.isSendDefaultPii()) {
           currentSpan.setData("file.path", file.getAbsolutePath());
         }
       } else {
         currentSpan.setDescription(byteCountToString);
       }
       currentSpan.setData("file.size", byteCount);
+      final boolean isMainThread = options.getMainThreadChecker().isMainThread();
+      currentSpan.setData("blocked_main_thread", isMainThread);
+      if (isMainThread) {
+        currentSpan.setData("call_stack", stackTraceFactory.getInAppCallStack());
+      }
       currentSpan.finish(spanStatus);
     }
   }

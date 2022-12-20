@@ -5,6 +5,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
+import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.protocol.SdkVersion;
@@ -16,6 +17,8 @@ import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
+import io.sentry.util.thread.IMainThreadChecker;
+import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -368,8 +371,19 @@ public class SentryOptions {
   /** Modules (dependencies, packages) that will be send along with each event. */
   private @NotNull IModulesLoader modulesLoader = NoOpModulesLoader.getInstance();
 
+  /** Enables the Auto instrumentation for user interaction tracing. */
+  private boolean enableUserInteractionTracing = false;
+
+  /** Enable or disable automatic breadcrumbs for User interactions */
+  private boolean enableUserInteractionBreadcrumbs = true;
+
   /** Which framework is responsible for instrumenting. */
   private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
+
+  /** Contains a list of GestureTargetLocator instances used for user interaction tracking * */
+  private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
+
+  private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
   /**
    * Adds an event processor
@@ -1770,6 +1784,22 @@ public class SentryOptions {
     }
   }
 
+  public boolean isEnableUserInteractionTracing() {
+    return enableUserInteractionTracing;
+  }
+
+  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
+    this.enableUserInteractionTracing = enableUserInteractionTracing;
+  }
+
+  public boolean isEnableUserInteractionBreadcrumbs() {
+    return enableUserInteractionBreadcrumbs;
+  }
+
+  public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
+    this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
+  }
+
   /**
    * Sets the instrumenter used for performance instrumentation.
    *
@@ -1815,6 +1845,35 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setModulesLoader(final @Nullable IModulesLoader modulesLoader) {
     this.modulesLoader = modulesLoader != null ? modulesLoader : NoOpModulesLoader.getInstance();
+  }
+
+  /**
+   * Returns a list of all {@link GestureTargetLocator} instances used to determine which {@link
+   * io.sentry.internal.gestures.UiElement} was part of an user interaction.
+   *
+   * @return a list of {@link GestureTargetLocator}
+   */
+  public List<GestureTargetLocator> getGestureTargetLocators() {
+    return gestureTargetLocators;
+  }
+
+  /**
+   * Sets the list of {@link GestureTargetLocator} being used to determine relevant {@link
+   * io.sentry.internal.gestures.UiElement} for user interactions.
+   *
+   * @param locators a list of {@link GestureTargetLocator}
+   */
+  public void setGestureTargetLocators(@NotNull final List<GestureTargetLocator> locators) {
+    gestureTargetLocators.clear();
+    gestureTargetLocators.addAll(locators);
+  }
+
+  public @NotNull IMainThreadChecker getMainThreadChecker() {
+    return mainThreadChecker;
+  }
+
+  public void setMainThreadChecker(final @NotNull IMainThreadChecker mainThreadChecker) {
+    this.mainThreadChecker = mainThreadChecker;
   }
 
   /** The BeforeSend callback */

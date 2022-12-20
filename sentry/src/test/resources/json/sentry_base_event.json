@@ -192,6 +192,30 @@
       "level": "debug"
     }
   ],
+  "debug_meta":
+  {
+    "sdk_info":
+    {
+      "sdk_name": "182c4407-c1e1-4427-9b5a-ad2e22b1046a",
+      "version_major": 2045114005,
+      "version_minor": 1436566288,
+      "version_patchlevel": 1637914973
+    },
+    "images":
+    [
+      {
+        "uuid": "8994027e-1cd9-4be8-b611-88ce08cf16e6",
+        "type": "fd6e053b-a7fe-4754-916e-bfb3ab77177d",
+        "debug_id": "8c653f5a-3418-4823-ba91-29a84c9c1235",
+        "debug_file": "55cc15dd-51f3-4cad-803c-6fd90eac21f6",
+        "code_id": "01230ece-f729-4af4-8b48-df74700aa4bf",
+        "code_file": "415c8995-1cb4-4bed-ba5c-5b3d6ba1ad47",
+        "image_addr": "8a258c81-641d-4e54-b06e-a0f56b1ee2ef",
+        "image_size": -7905338721846826571,
+        "arch": "d00d5bea-fb5c-43c9-85f0-dc1350d957a4"
+      }
+    ]
+  },
   "extra":
   {
     "34a7d067-fad2-49d9-97b9-71eff243127b": "fe3dc1cf-4a99-4213-85bb-e0957b8349b8"

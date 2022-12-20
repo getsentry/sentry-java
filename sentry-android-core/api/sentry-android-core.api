@@ -15,6 +15,7 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V
 	public fun onActivityPostResumed (Landroid/app/Activity;)V
+	public fun onActivityPrePaused (Landroid/app/Activity;)V
 	public fun onActivityResumed (Landroid/app/Activity;)V
 	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityStarted (Landroid/app/Activity;)V
@@ -159,8 +160,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableFramesTracking ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
-	public fun isEnableUserInteractionBreadcrumbs ()Z
-	public fun isEnableUserInteractionTracing ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
@@ -174,8 +173,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableFramesTracking (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
-	public fun setEnableUserInteractionBreadcrumbs (Z)V
-	public fun setEnableUserInteractionTracing (Z)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProfilingTracesIntervalMillis (I)V
 }
