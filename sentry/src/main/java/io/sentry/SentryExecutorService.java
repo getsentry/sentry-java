@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,6 +24,11 @@ final class SentryExecutorService implements ISentryExecutorService {
   @Override
   public @NotNull Future<?> submit(final @NotNull Runnable runnable) {
     return executorService.submit(runnable);
+  }
+
+  @Override
+  public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable) {
+    return executorService.submit(callable);
   }
 
   @Override

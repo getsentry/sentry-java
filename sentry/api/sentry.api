@@ -480,6 +480,7 @@ public abstract interface class io/sentry/ISentryExecutorService {
 	public abstract fun close (J)V
 	public abstract fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
+	public abstract fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
 }
 
 public abstract interface class io/sentry/ISerializer {

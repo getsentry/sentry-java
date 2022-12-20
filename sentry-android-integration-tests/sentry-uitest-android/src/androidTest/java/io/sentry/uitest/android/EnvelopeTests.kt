@@ -116,7 +116,6 @@ class EnvelopeTests : BaseUiTest() {
             options.profilesSampleRate = 1.0
         }
         relayIdlingResource.increment()
-        // relayIdlingResource.increment()
         val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
         val transaction = Sentry.startTransaction("emptyProfileTransaction", "test empty")
 
@@ -135,7 +134,6 @@ class EnvelopeTests : BaseUiTest() {
             finished = true
         }
 
-        Thread.sleep(5000)
         relay.assert {
             findEnvelope {
                 assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "emptyProfileTransaction"
@@ -144,8 +142,6 @@ class EnvelopeTests : BaseUiTest() {
                 it.assertNoOtherItems()
                 assertEquals("emptyProfileTransaction", transactionItem.transaction)
             }
-            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
-            // assertFailsWith<IllegalArgumentException> { assertFirstEnvelope {} }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
