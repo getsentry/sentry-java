@@ -12,6 +12,9 @@
 
     <activity android:name=".EmptyActivity" />
     <activity android:name=".ProfilingSampleActivity" />
+    <activity
+      android:theme="@style/Theme.AppCompat.NoActionBar"
+      android:name=".ComposeActivity" />
 
     <provider
       android:name="io.sentry.android.core.SentryInitProvider"

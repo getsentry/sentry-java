@@ -1,5 +1,6 @@
 package io.sentry.android.core.internal.gestures
 
+import android.content.Context
 import android.content.res.Resources
 import android.view.MotionEvent
 import android.view.View
@@ -17,9 +18,10 @@ internal inline fun <reified T : View> Window.mockDecorView(
     touchWithinBounds: Boolean = true,
     clickable: Boolean = false,
     visible: Boolean = true,
+    context: Context? = null,
     finalize: (T) -> Unit = {}
 ): T {
-    val view = mockView(id, event, touchWithinBounds, clickable, visible, finalize)
+    val view = mockView(id, event, touchWithinBounds, clickable, visible, context, finalize)
     whenever(decorView).doReturn(view)
     return view
 }
@@ -30,6 +32,7 @@ internal inline fun <reified T : View> mockView(
     touchWithinBounds: Boolean = true,
     clickable: Boolean = false,
     visible: Boolean = true,
+    context: Context? = null,
     finalize: (T) -> Unit = {}
 ): T {
     val coordinates = IntArray(2)
@@ -42,6 +45,7 @@ internal inline fun <reified T : View> mockView(
     }
     val mockView: T = mock {
         whenever(it.id).thenReturn(id)
+        whenever(it.context).thenReturn(context)
         whenever(it.isClickable).thenReturn(clickable)
         whenever(it.visibility).thenReturn(if (visible) View.VISIBLE else View.GONE)
 

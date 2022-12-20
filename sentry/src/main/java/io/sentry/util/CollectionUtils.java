@@ -113,11 +113,28 @@ public final class CollectionUtils {
    */
   public static @NotNull <T, R> List<R> map(
       final @NotNull List<T> list, final @NotNull Mapper<T, R> f) {
-    List<R> mappedList = new ArrayList<>();
+    List<R> mappedList = new ArrayList<>(list.size());
     for (T t : list) {
       mappedList.add(f.map(t));
     }
     return mappedList;
+  }
+
+  /**
+   * Returns a new list which entries match a predicate specified by a parameter.
+   *
+   * @param predicate - the predicate
+   * @return a new list
+   */
+  public static @NotNull <T> List<T> filterListEntries(
+      final @NotNull List<T> list, final @NotNull Predicate<T> predicate) {
+    final List<T> filteredList = new ArrayList<>(list.size());
+    for (final T entry : list) {
+      if (predicate.test(entry)) {
+        filteredList.add(entry);
+      }
+    }
+    return filteredList;
   }
 
   /**
