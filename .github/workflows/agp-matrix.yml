@@ -1,0 +1,36 @@
+name: AGP Matrix Sample Release
+
+on:
+  push:
+    branches:
+      - main
+      - release/**
+  pull_request:
+
+jobs:
+  agp-matrix-sample-release:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        agp: ['7.3.0','7.4.0-rc01','8.0.0-alpha09']
+
+    name: AGP Matrix Sample Release - AGP ${{ matrix.agp }}
+    env:
+      VERSION_AGP: ${{ matrix.agp }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+
+      - name: Setup Java Version
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build the Release variant
+        uses: gradle/gradle-build-action@v2
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          arguments: sentry-samples:sentry-samples-android:assembleRelease
