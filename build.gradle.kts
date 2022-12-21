@@ -32,7 +32,7 @@ buildscript {
         classpath(Config.NativePlugins.nativeBundlePlugin)
 
         // add classpath of sentry android gradle plugin
-        // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
+        classpath("io.sentry:sentry-android-gradle-plugin:3.3.0")
 
         classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
         classpath(Config.BuildPlugins.composeGradlePlugin)

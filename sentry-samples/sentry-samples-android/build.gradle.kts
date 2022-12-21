@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     kotlin("android")
+    id("io.sentry.android.gradle")
 }
 
 android {
@@ -133,4 +134,8 @@ dependencies {
     implementation(Config.Libs.composeMaterial)
 
     debugImplementation(Config.Libs.leakCanary)
+}
+
+sentry {
+    autoInstallation.enabled.set(false)
 }
