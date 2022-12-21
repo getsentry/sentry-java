@@ -254,9 +254,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           .submit(() -> onTransactionFinish(transaction, false))
           .get();
     } catch (ExecutionException e) {
-      e.printStackTrace();
+      options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
     }
     return null;
   }
