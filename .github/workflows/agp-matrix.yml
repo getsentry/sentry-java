@@ -30,7 +30,7 @@ jobs:
           java-version: '17'
 
       - name: Build the Release variant
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@3fbe033aaae657f011f88f29be9e65ed26bd29ef # pin@v2
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
           arguments: sentry-samples:sentry-samples-android:assembleRelease
