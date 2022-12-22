@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.test.agp"
-        minSdk = Config.Android.minSdkVersionNdk
+        minSdk = Config.Android.minSdkVersionOkHttp
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 1
         versionName = "1.0"
