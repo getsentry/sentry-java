@@ -12,6 +12,9 @@ import retrofit2.Response
 class ThirdFragment : Fragment(R.layout.third_fragment) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.findViewById<View>(R.id.third_button).setOnClickListener {
+            throw RuntimeException("Test")
+        }
         val span = Sentry.getSpan()
         val child = span?.startChild("calc")
 

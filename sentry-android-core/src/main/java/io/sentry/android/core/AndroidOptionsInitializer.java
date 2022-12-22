@@ -14,6 +14,7 @@ import io.sentry.SentryLevel;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
@@ -154,6 +155,7 @@ final class AndroidOptionsInitializer {
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }
+    options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
   }
 
   private static void installDefaultIntegrations(
