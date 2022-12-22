@@ -28,6 +28,7 @@ public final class Hint {
   private final @NotNull Map<String, Object> internalStorage = new HashMap<String, Object>();
   private final @NotNull List<Attachment> attachments = new ArrayList<>();
   private @Nullable Attachment screenshot = null;
+  private @Nullable Attachment viewHierarchy = null;
 
   public static @NotNull Hint withAttachment(@Nullable Attachment attachment) {
     @NotNull final Hint hint = new Hint();
@@ -115,6 +116,14 @@ public final class Hint {
 
   public @Nullable Attachment getScreenshot() {
     return screenshot;
+  }
+
+  public void setViewHierarchy(@Nullable Attachment viewHierarchy) {
+    this.viewHierarchy = viewHierarchy;
+  }
+
+  public @Nullable Attachment getViewHierarchy() {
+    return viewHierarchy;
   }
 
   private boolean isCastablePrimitive(@Nullable Object hintValue, @NotNull Class<?> clazz) {

@@ -1,6 +1,12 @@
 package io.sentry;
 
+import io.sentry.protocol.ViewHierarchy;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,6 +24,7 @@ public final class Attachment {
 
   /** A standard attachment without special meaning */
   private static final String DEFAULT_ATTACHMENT_TYPE = "event.attachment";
+  // private static final String VIEW_HIERARCHY_ATTACHMENT_TYPE = "event.view_hierarchy";
 
   /**
    * Initializes an Attachment with bytes and a filename. Sets addToTransaction to <code>false
@@ -59,9 +66,29 @@ public final class Attachment {
       final @NotNull String filename,
       final @Nullable String contentType,
       final boolean addToTransactions) {
+    this(bytes, filename, contentType, DEFAULT_ATTACHMENT_TYPE, addToTransactions);
+  }
+
+  /**
+   * Initializes an Attachment with bytes, a filename, a content type, and addToTransactions.
+   *
+   * @param bytes The bytes of file.
+   * @param filename The name of the attachment to display in Sentry.
+   * @param contentType The content type of the attachment.
+   * @param attachmentType the attachment type.
+   * @param addToTransactions <code>true</code> if the SDK should add this attachment to every
+   *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
+   */
+  public Attachment(
+      final @NotNull byte[] bytes,
+      final @NotNull String filename,
+      final @Nullable String contentType,
+      final @Nullable String attachmentType,
+      final boolean addToTransactions) {
     this.bytes = bytes;
     this.filename = filename;
     this.contentType = contentType;
+    this.attachmentType = attachmentType;
     this.addToTransactions = addToTransactions;
   }
 
@@ -110,7 +137,34 @@ public final class Attachment {
       final @NotNull String pathname,
       final @NotNull String filename,
       final @Nullable String contentType) {
-    this(pathname, filename, contentType, false);
+    this(pathname, filename, contentType, DEFAULT_ATTACHMENT_TYPE, false);
+  }
+
+  /**
+   * Initializes an Attachment with a path, a filename, a content type, and addToTransactions.
+   *
+   * <p>The file located at the pathname is read lazily when the SDK captures an event or
+   * transaction not when the attachment is initialized. The pathname string is converted into an
+   * abstract pathname before reading the file.
+   *
+   * @param pathname The pathname string of the file to upload as an attachment.
+   * @param filename The name of the attachment to display in Sentry.
+   * @param contentType The content type of the attachment.
+   * @param attachmentType The attachment type.
+   * @param addToTransactions <code>true</code> if the SDK should add this attachment to every
+   *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
+   */
+  public Attachment(
+      final @NotNull String pathname,
+      final @NotNull String filename,
+      final @Nullable String contentType,
+      final @Nullable String attachmentType,
+      final boolean addToTransactions) {
+    this.pathname = pathname;
+    this.filename = filename;
+    this.contentType = contentType;
+    this.attachmentType = attachmentType;
+    this.addToTransactions = addToTransactions;
   }
 
   /**
@@ -229,5 +283,32 @@ public final class Attachment {
    */
   public static @NotNull Attachment fromScreenshot(final byte[] screenshotBytes) {
     return new Attachment(screenshotBytes, "screenshot.png", "image/png", false);
+  }
+
+  /**
+   * Creates a new View Hierarchy Attachment
+   *
+   * @param viewHierarchy the View Hierarchy
+   * @return the Attachment
+   */
+  public static @Nullable Attachment fromViewHierarchy(final ViewHierarchy viewHierarchy) {
+    final Charset UTF_8 = Charset.forName("UTF-8");
+    try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+      final ISerializer serializer = Sentry.getCurrentHub().getOptions().getSerializer();
+      serializer.serialize(viewHierarchy, writer);
+      return new Attachment(
+          stream.toByteArray(),
+          "view-hierarchy.json",
+          "'application/json",
+          DEFAULT_ATTACHMENT_TYPE, // TODO replace with VIEW_HIERARCHY_ATTACHMENT_TYPE,
+          false);
+    } catch (Exception e) {
+      Sentry.getCurrentHub()
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Could not serialize the ViewHierarchy", e);
+    }
+    return null;
   }
 }

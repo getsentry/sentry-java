@@ -7,12 +7,15 @@ public final class io/sentry/Attachment {
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;)V
+	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Z)V
 	public static fun fromScreenshot ([B)Lio/sentry/Attachment;
+	public static fun fromViewHierarchy (Lio/sentry/protocol/ViewHierarchy;)Lio/sentry/Attachment;
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getBytes ()[B
 	public fun getContentType ()Ljava/lang/String;
@@ -262,10 +265,12 @@ public final class io/sentry/Hint {
 	public fun getAs (Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
 	public fun getAttachments ()Ljava/util/List;
 	public fun getScreenshot ()Lio/sentry/Attachment;
+	public fun getViewHierarchy ()Lio/sentry/Attachment;
 	public fun remove (Ljava/lang/String;)V
 	public fun replaceAttachments (Ljava/util/List;)V
 	public fun set (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setScreenshot (Lio/sentry/Attachment;)V
+	public fun setViewHierarchy (Lio/sentry/Attachment;)V
 	public static fun withAttachment (Lio/sentry/Attachment;)Lio/sentry/Hint;
 	public static fun withAttachments (Ljava/util/List;)Lio/sentry/Hint;
 }
@@ -3336,6 +3341,64 @@ public final class io/sentry/protocol/User$JsonKeys {
 	public static final field OTHER Ljava/lang/String;
 	public static final field SEGMENT Ljava/lang/String;
 	public static final field USERNAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/ViewHierarchy : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/ViewHierarchy$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/ViewHierarchy$JsonKeys {
+	public static final field RENDERING_SYSTEM Ljava/lang/String;
+	public static final field WINDOWS Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/ViewHierarchyNode : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> ()V
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
+	public fun setAlpha (Ljava/lang/Double;)V
+	public fun setChildren (Ljava/util/List;)V
+	public fun setHeight (Ljava/lang/Double;)V
+	public fun setIdentifier (Ljava/lang/String;)V
+	public fun setRenderingSystem (Ljava/lang/String;)V
+	public fun setTag (Ljava/lang/String;)V
+	public fun setType (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+	public fun setVisible (Ljava/lang/Boolean;)V
+	public fun setWidth (Ljava/lang/Double;)V
+	public fun setX (Ljava/lang/Double;)V
+	public fun setY (Ljava/lang/Double;)V
+}
+
+public final class io/sentry/protocol/ViewHierarchyNode$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchyNode;
+	public synthetic fun deserialize (Lio/sentry/JsonObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/ViewHierarchyNode$JsonKeys {
+	public static final field ALPHA Ljava/lang/String;
+	public static final field CHILDREN Ljava/lang/String;
+	public static final field HEIGHT Ljava/lang/String;
+	public static final field IDENTIFIER Ljava/lang/String;
+	public static final field RENDERING_SYSTEM Ljava/lang/String;
+	public static final field TAG Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public static final field VISIBLE Ljava/lang/String;
+	public static final field WIDTH Ljava/lang/String;
+	public static final field X Ljava/lang/String;
+	public static final field Y Ljava/lang/String;
 	public fun <init> ()V
 }
 

@@ -217,6 +217,8 @@ final class AndroidOptionsInitializer {
               SentryLevel.WARNING,
               "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
     }
+    options.addEventProcessor(new ViewHierarchyEventProcessor(options));
+
     if (isTimberAvailable) {
       options.addIntegration(new SentryTimberIntegration());
     }

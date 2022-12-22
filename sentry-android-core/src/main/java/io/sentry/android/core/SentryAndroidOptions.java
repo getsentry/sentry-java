@@ -96,6 +96,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enables or disables the attach screenshot feature when an error happened. */
   private boolean attachScreenshot;
 
+  /** Enables or disables the attach view hierarchy feature when an error happened. */
+  private boolean attachViewHierarchy;
+
   /**
    * Enables or disables collecting of device information which requires Inter-Process Communication
    * (IPC)
@@ -327,6 +330,14 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setAttachScreenshot(boolean attachScreenshot) {
     this.attachScreenshot = attachScreenshot;
+  }
+
+  public boolean isAttachViewHierarchy() {
+    return attachViewHierarchy;
+  }
+
+  public void setAttachViewHierarchy(boolean attachViewHierarchy) {
+    this.attachViewHierarchy = attachViewHierarchy;
   }
 
   public boolean isCollectAdditionalContext() {

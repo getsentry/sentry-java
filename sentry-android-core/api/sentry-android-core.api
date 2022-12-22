@@ -152,6 +152,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
 	public fun isAttachScreenshot ()Z
+	public fun isAttachViewHierarchy ()Z
 	public fun isCollectAdditionalContext ()Z
 	public fun isEnableActivityLifecycleBreadcrumbs ()Z
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
@@ -164,6 +165,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
 	public fun setAttachScreenshot (Z)V
+	public fun setAttachViewHierarchy (Z)V
 	public fun setCollectAdditionalContext (Z)V
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
@@ -233,6 +235,11 @@ public final class io/sentry/android/core/UserInteractionIntegration : android/a
 	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onActivityStopped (Landroid/app/Activity;)V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentry/EventProcessor {
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
