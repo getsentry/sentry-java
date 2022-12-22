@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -16,6 +17,15 @@ public interface ISentryExecutorService {
    */
   @NotNull
   Future<?> submit(final @NotNull Runnable runnable);
+
+  /**
+   * Submits a Callable to the ThreadExecutor
+   *
+   * @param callable the Callable
+   * @return a Future of the Callable
+   */
+  @NotNull
+  <T> Future<T> submit(final @NotNull Callable<T> callable);
 
   @NotNull
   Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis);
