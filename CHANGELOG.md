@@ -11,6 +11,12 @@
 - Add logging for OpenTelemetry integration ([#2425](https://github.com/getsentry/sentry-java/pull/2425))
 - Auto add `OpenTelemetryLinkErrorEventProcessor` for Spring Boot ([#2429](https://github.com/getsentry/sentry-java/pull/2429))
 
+### Dependencies
+
+- Bump Gradle from v7.5.1 to v7.6.0 ([#2438](https://github.com/getsentry/sentry-java/pull/2438))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v760)
+  - [diff](https://github.com/gradle/gradle/compare/v7.5.1...v7.6.0)
+
 ## 6.10.0
 
 ### Features
