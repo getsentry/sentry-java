@@ -14,6 +14,4 @@ public class MainActivity extends Activity {
   public void helloWorld() {
     System.out.println("¯\\_(ツ)_/¯");
   }
-
 }
-
