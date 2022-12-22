@@ -91,6 +91,7 @@ class SentryTracingFilterTest {
                 assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -106,6 +107,7 @@ class SentryTracingFilterTest {
                 assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -121,6 +123,7 @@ class SentryTracingFilterTest {
                 assertThat(it.contexts.trace!!.status).isNull()
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -136,6 +139,7 @@ class SentryTracingFilterTest {
                 assertThat(it.contexts.trace!!.parentSpanId).isNull()
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -152,6 +156,7 @@ class SentryTracingFilterTest {
                 assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -184,6 +189,7 @@ class SentryTracingFilterTest {
                 assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }

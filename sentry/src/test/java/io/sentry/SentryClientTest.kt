@@ -30,7 +30,6 @@ import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.never
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -1135,23 +1134,6 @@ class SentryClientTest {
         val envelope = SentryEnvelope.from(options.serializer, fixture.profilingTraceData, options.maxTraceFileSize, options.sdkVersion)
         client.captureEnvelope(envelope)
         verifyProfilingTraceInEnvelope(SentryId(fixture.profilingTraceData.profileId))
-    }
-
-    @Test
-    fun `captureTransaction with profile calls captureEnvelope and captureTransaction`() {
-        val transaction = SentryTransaction(fixture.sentryTracer)
-        val client = spy(fixture.getSut())
-        client.captureTransaction(transaction, null, null, null, fixture.profilingTraceData)
-        verify(client).captureTransaction(transaction, null, null, null)
-        verify(client).captureEnvelope(
-            check {
-                assertEquals(1, it.items.count())
-                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()) { _, item ->
-                    assertEquals(item.profileId, fixture.profilingTraceData.profileId)
-                }
-            },
-            anyOrNull()
-        )
     }
 
     @Test
