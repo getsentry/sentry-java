@@ -42,7 +42,7 @@ import org.jetbrains.annotations.TestOnly;
 final class AndroidOptionsInitializer {
 
   static final String SENTRY_COMPOSE_INTEGRATION_CLASS_NAME =
-    "io.sentry.compose.gestures.ComposeGestureTargetLocator";
+      "io.sentry.compose.gestures.ComposeGestureTargetLocator";
 
   static final String COMPOSE_CLASS_NAME = "androidx.compose.ui.node.Owner";
 
@@ -150,10 +150,10 @@ final class AndroidOptionsInitializer {
       gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
 
       final boolean isComposeUpstreamAvailable =
-        loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
+          loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
       final boolean isComposeAvailable =
-        (isComposeUpstreamAvailable
-          && loadClass.isClassAvailable(SENTRY_COMPOSE_INTEGRATION_CLASS_NAME, options));
+          (isComposeUpstreamAvailable
+              && loadClass.isClassAvailable(SENTRY_COMPOSE_INTEGRATION_CLASS_NAME, options));
 
       if (isComposeAvailable) {
         gestureTargetLocators.add(new ComposeGestureTargetLocator());
