@@ -19,8 +19,7 @@ android {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "benchmark-proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt")
             )
             ndk {
                 abiFilters.clear()
@@ -59,6 +58,7 @@ dependencies {
     implementation(projects.sentryAndroidTimber)
 
     implementation(Config.Libs.fragment)
+    implementation(Config.Libs.timber)
 
     implementation(Config.Libs.retrofit2)
 }
