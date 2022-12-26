@@ -16,7 +16,6 @@
 # https://developer.android.com/studio/build/shrink-code#decode-stack-trace
 -keepattributes LineNumberTable,SourceFile
 
-
 # For native methods, see http://proguard.sourceforge.net/manual/examples.html#native
 -keepclasseswithmembernames,includedescriptorclasses class * {
     native <methods>;

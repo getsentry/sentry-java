@@ -1,6 +1,6 @@
 package io.sentry.clientreport;
 
-import java.util.Objects;
+import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
