@@ -108,6 +108,8 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryAndroidFragment)
     testImplementation(projects.sentryAndroidTimber)
+    testImplementation(projects.sentryComposeHelper)
+    testImplementation(projects.sentryAndroidNdk)
     testRuntimeOnly(Config.Libs.timber)
     testRuntimeOnly(Config.Libs.fragment)
 }

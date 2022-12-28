@@ -41,6 +41,11 @@ import org.jetbrains.annotations.TestOnly;
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
 
+  static final String SENTRY_COMPOSE_INTEGRATION_CLASS_NAME =
+      "io.sentry.compose.gestures.ComposeGestureTargetLocator";
+
+  static final String COMPOSE_CLASS_NAME = "androidx.compose.ui.node.Owner";
+
   /** private ctor */
   private AndroidOptionsInitializer() {}
 
@@ -143,15 +148,15 @@ final class AndroidOptionsInitializer {
     if (options.getGestureTargetLocators().isEmpty()) {
       final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
       gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
-      try {
+
+      final boolean isComposeUpstreamAvailable =
+          loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
+      final boolean isComposeAvailable =
+          (isComposeUpstreamAvailable
+              && loadClass.isClassAvailable(SENTRY_COMPOSE_INTEGRATION_CLASS_NAME, options));
+
+      if (isComposeAvailable) {
         gestureTargetLocators.add(new ComposeGestureTargetLocator());
-      } catch (NoClassDefFoundError error) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "ComposeGestureTargetLocator not available, consider adding the `sentry-compose` library.",
-                error);
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }
