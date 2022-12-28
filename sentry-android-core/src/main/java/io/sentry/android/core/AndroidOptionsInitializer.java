@@ -23,10 +23,13 @@ import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -224,6 +227,8 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
     options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
     options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
+
+
   }
 
   /**
@@ -289,6 +294,33 @@ final class AndroidOptionsInitializer {
     }
 
     return null;
+  }
+
+  private static void addGradlePluginIntegrationList(
+    final @NotNull Context context, final @NotNull SentryAndroidOptions options, final @NotNull ILogger logger) {
+    final AssetManager assets = context.getAssets();
+    // one may have thousands of asset files and looking up this list might slow down the SDK init.
+    // quite a bit, for this reason, we try to open the file directly and take care of errors
+    // like FileNotFoundException
+
+    if(options.getSdkVersion() == null) {
+      return;
+    }
+
+    try (final BufferedReader reader =
+           new BufferedReader(new InputStreamReader(assets.open("sentry-gradle-plugin-integrations.txt"), Charset.forName("UTF-8")))) {
+      String integration = reader.readLine();
+      while (integration != null) {
+        options.getSdkVersion().addIntegration(integration);
+        integration = reader.readLine();
+      }
+    } catch (FileNotFoundException e) {
+      logger.log(SentryLevel.INFO, "sentry-debug-meta.properties file was not found.");
+    } catch (IOException e) {
+      logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
+    } catch (RuntimeException e) {
+      logger.log(SentryLevel.ERROR, "sentry-debug-meta.properties file is malformed.", e);
+    }
   }
 
   /**
