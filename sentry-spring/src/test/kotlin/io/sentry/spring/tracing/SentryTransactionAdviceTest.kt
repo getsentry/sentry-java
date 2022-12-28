@@ -66,6 +66,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.status).isEqualTo(SpanStatus.OK)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -78,6 +79,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -91,6 +93,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.contexts.trace!!.operation).isEqualTo("op")
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -114,6 +117,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.contexts.trace!!.operation).isEqualTo("op")
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -127,6 +131,7 @@ class SentryTransactionAdviceTest {
                 assertThat(it.contexts.trace!!.operation).isEqualTo("my-op")
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }

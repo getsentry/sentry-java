@@ -20,7 +20,10 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     compileOnly(projects.sentry)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    implementation(projects.sentryOpentelemetry.sentryOpentelemetryCore) {
+        exclude(group = "io.opentelemetry")
+        exclude(group = "io.opentelemetry.javaagent")
+    }
 
     compileOnly(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)

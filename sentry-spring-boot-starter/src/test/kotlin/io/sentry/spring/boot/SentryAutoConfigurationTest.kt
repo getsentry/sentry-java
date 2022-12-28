@@ -15,6 +15,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.spring.ContextTagsEventProcessor
@@ -680,6 +681,47 @@ class SentryAutoConfigurationTest {
                 assertThat(it).doesNotHaveBean(ContextTagsEventProcessor::class.java)
                 val options = it.getBean(SentryOptions::class.java)
                 assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == ContextTagsEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath and auto init off, creates OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
+            .run {
+                assertThat(it).hasSingleBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).anyMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init on, does not create OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=true")
+            .run {
+                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init default, does not create OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is not on the classpath, does not create OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
+            .withClassLoader(FilteredClassLoader(OpenTelemetryLinkErrorEventProcessor::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
             }
     }
 

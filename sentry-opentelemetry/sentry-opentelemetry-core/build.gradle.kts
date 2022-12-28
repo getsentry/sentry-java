@@ -21,7 +21,7 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     compileOnly(projects.sentry)
 
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    implementation(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(Config.Libs.OpenTelemetry.otelSemconv)
 
     compileOnly(Config.CompileOnly.nopen)

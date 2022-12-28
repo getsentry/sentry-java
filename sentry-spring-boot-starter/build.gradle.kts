@@ -43,6 +43,7 @@ dependencies {
     compileOnly(Config.Libs.springBootStarterAop)
     compileOnly(Config.Libs.springBootStarterSecurity)
     compileOnly(Config.Libs.reactorCore)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
@@ -67,6 +68,7 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterWebflux)
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 }
 
 configure<SourceSetContainer> {
