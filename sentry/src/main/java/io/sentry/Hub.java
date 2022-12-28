@@ -605,7 +605,8 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceContext traceContext,
-      final @Nullable Hint hint) {
+      final @Nullable Hint hint,
+      final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -640,7 +641,8 @@ public final class Hub implements IHub {
             item = stack.peek();
             sentryId =
                 item.getClient()
-                    .captureTransaction(transaction, traceContext, item.getScope(), hint);
+                    .captureTransaction(
+                        transaction, traceContext, item.getScope(), hint, profilingTraceData);
           } catch (Throwable e) {
             options
                 .getLogger()

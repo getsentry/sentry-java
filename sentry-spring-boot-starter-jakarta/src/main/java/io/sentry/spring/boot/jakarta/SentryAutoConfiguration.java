@@ -8,6 +8,7 @@ import io.sentry.ITransportFactory;
 import io.sentry.Integration;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
+import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.jakarta.ContextTagsEventProcessor;
 import io.sentry.spring.jakarta.SentryExceptionResolver;
@@ -135,6 +136,19 @@ public class SentryAutoConfiguration {
       public @NotNull ContextTagsEventProcessor contextTagsEventProcessor(
           final @NotNull SentryOptions sentryOptions) {
         return new ContextTagsEventProcessor(sentryOptions);
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
+    @ConditionalOnClass(OpenTelemetryLinkErrorEventProcessor.class)
+    @Open
+    static class OpenTelemetryLinkErrorEventProcessorConfiguration {
+
+      @Bean
+      @ConditionalOnMissingBean
+      public @NotNull OpenTelemetryLinkErrorEventProcessor openTelemetryLinkErrorEventProcessor() {
+        return new OpenTelemetryLinkErrorEventProcessor();
       }
     }
 
