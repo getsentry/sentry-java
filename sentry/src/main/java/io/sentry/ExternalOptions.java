@@ -40,6 +40,7 @@ public final class ExternalOptions {
       new CopyOnWriteArraySet<>();
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
+  private @Nullable String optionsCustomizer;
 
   @SuppressWarnings("unchecked")
   public static @NotNull ExternalOptions from(
@@ -130,6 +131,9 @@ public final class ExternalOptions {
             ignoredExceptionType);
       }
     }
+
+    options.setOptionsCustomizer(propertiesProvider.getProperty("options-customizer"));
+
     return options;
   }
 
@@ -324,5 +328,13 @@ public final class ExternalOptions {
 
   public void setSendClientReports(final @Nullable Boolean sendClientReports) {
     this.sendClientReports = sendClientReports;
+  }
+
+  public @Nullable String getOptionsCustomizer() {
+    return optionsCustomizer;
+  }
+
+  public void setOptionsCustomizer(final @Nullable String optionsCustomizer) {
+    this.optionsCustomizer = optionsCustomizer;
   }
 }

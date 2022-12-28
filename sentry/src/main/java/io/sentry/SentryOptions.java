@@ -386,6 +386,13 @@ public class SentryOptions {
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
   /**
+   * Fully qualified name of a class (including package name) that implements {{@link
+   * Sentry.OptionsConfiguration}}. The specified class has to have a zero argument constructor and
+   * will be instantiated by the Sentry SDK. It can be used to customize {{@link SentryOptions}}
+   */
+  private @Nullable String optionsCustomizer = null;
+
+  /**
    * Adds an event processor
    *
    * @param eventProcessor the event processor
@@ -1876,6 +1883,22 @@ public class SentryOptions {
     this.mainThreadChecker = mainThreadChecker;
   }
 
+  /**
+   * Sets a fully qualified class name that can be used to customize {{@link SentryOptions}}.
+   *
+   * @param optionsCustomizer Fully qualified name of a class (including package name) that
+   *     implements {{@link Sentry.OptionsConfiguration}}. The specified class has to have a zero
+   *     argument constructor and will be instantiated by the Sentry SDK. It can be used to
+   *     customize {{@link SentryOptions}}
+   */
+  public void setOptionsCustomizer(final @Nullable String optionsCustomizer) {
+    this.optionsCustomizer = optionsCustomizer;
+  }
+
+  public @Nullable String getOptionsCustomizer() {
+    return optionsCustomizer;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2068,6 +2091,9 @@ public class SentryOptions {
     }
     if (options.getIdleTimeout() != null) {
       setIdleTimeout(options.getIdleTimeout());
+    }
+    if (options.getOptionsCustomizer() != null) {
+      setOptionsCustomizer(options.getOptionsCustomizer());
     }
   }
 

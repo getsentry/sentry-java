@@ -222,6 +222,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
+	public fun getOptionsCustomizer ()Ljava/lang/String;
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProguardUuid ()Ljava/lang/String;
@@ -241,6 +242,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
+	public fun setOptionsCustomizer (Ljava/lang/String;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
@@ -824,6 +826,17 @@ public final class io/sentry/NoOpTransportFactory : io/sentry/ITransportFactory 
 public final class io/sentry/OptionsContainer {
 	public static fun create (Ljava/lang/Class;)Lio/sentry/OptionsContainer;
 	public fun createInstance ()Ljava/lang/Object;
+}
+
+public final class io/sentry/OptionsCustomizer : io/sentry/Sentry$OptionsConfiguration {
+	public fun <init> ()V
+	public fun configure (Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/OptionsCustomizerApplier {
+	public fun <init> (Ljava/lang/Class;)V
+	public fun <init> (Ljava/lang/Class;Ljava/lang/ClassLoader;)V
+	public fun apply (Lio/sentry/SentryOptions;)V
 }
 
 public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
@@ -1412,6 +1425,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
+	public fun getOptionsCustomizer ()Ljava/lang/String;
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
@@ -1499,6 +1513,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
+	public fun setOptionsCustomizer (Ljava/lang/String;)V
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
@@ -1570,6 +1585,9 @@ public final class io/sentry/SentryOptions$RequestSize : java/lang/Enum {
 
 public abstract interface class io/sentry/SentryOptions$TracesSamplerCallback {
 	public abstract fun sample (Lio/sentry/SamplingContext;)Ljava/lang/Double;
+}
+
+public abstract interface class io/sentry/SentryOptionsCustomizer : io/sentry/Sentry$OptionsConfiguration {
 }
 
 public final class io/sentry/SentrySpanStorage {

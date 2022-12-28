@@ -214,6 +214,8 @@ public final class Sentry {
       options.merge(ExternalOptions.from(PropertiesProviderFactory.create(), options.getLogger()));
     }
 
+    new OptionsCustomizerApplier<>(SentryOptionsCustomizer.class).apply(options);
+
     final String dsn = options.getDsn();
     if (dsn == null) {
       throw new IllegalArgumentException("DSN is required. Use empty string to disable SDK.");

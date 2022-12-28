@@ -82,6 +82,8 @@ final class ManifestMetadataReader {
 
   static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
 
+  static final String OPTIONS_CUSTOMIZER = "io.sentry.options-customizer";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -306,6 +308,9 @@ final class ManifestMetadataReader {
 
         options.setSendDefaultPii(
             readBool(metadata, logger, SEND_DEFAULT_PII, options.isSendDefaultPii()));
+
+        options.setOptionsCustomizer(
+            readString(metadata, logger, OPTIONS_CUSTOMIZER, options.getOptionsCustomizer()));
       }
 
       options

@@ -47,6 +47,7 @@ public class SentryAppender extends AbstractAppender {
   private final @Nullable Boolean debug;
   private final @NotNull IHub hub;
   private final @Nullable List<String> contextTags;
+  private final @Nullable String optionsCustomizer;
 
   public SentryAppender(
       final @NotNull String name,
@@ -57,7 +58,8 @@ public class SentryAppender extends AbstractAppender {
       final @Nullable Boolean debug,
       final @Nullable ITransportFactory transportFactory,
       final @NotNull IHub hub,
-      final @Nullable String[] contextTags) {
+      final @Nullable String[] contextTags,
+      final @Nullable String optionsCustomizer) {
     super(name, filter, null, true, null);
     this.dsn = dsn;
     if (minimumBreadcrumbLevel != null) {
@@ -70,6 +72,7 @@ public class SentryAppender extends AbstractAppender {
     this.transportFactory = transportFactory;
     this.hub = hub;
     this.contextTags = contextTags != null ? Arrays.asList(contextTags) : null;
+    this.optionsCustomizer = optionsCustomizer;
   }
 
   /**
@@ -91,7 +94,8 @@ public class SentryAppender extends AbstractAppender {
       @Nullable @PluginAttribute("dsn") final String dsn,
       @Nullable @PluginAttribute("debug") final Boolean debug,
       @Nullable @PluginElement("filter") final Filter filter,
-      @Nullable @PluginAttribute("contextTags") final String contextTags) {
+      @Nullable @PluginAttribute("contextTags") final String contextTags,
+      @Nullable @PluginAttribute("optionsCustomizer") final String optionsCustomizer) {
 
     if (name == null) {
       LOGGER.error("No name provided for SentryAppender");
@@ -106,7 +110,8 @@ public class SentryAppender extends AbstractAppender {
         debug,
         null,
         HubAdapter.getInstance(),
-        contextTags != null ? contextTags.split(",") : null);
+        contextTags != null ? contextTags.split(",") : null,
+        optionsCustomizer);
   }
 
   @Override
@@ -127,6 +132,7 @@ public class SentryAppender extends AbstractAppender {
                   options.addContextTag(contextTag);
                 }
               }
+              options.setOptionsCustomizer(optionsCustomizer);
               Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
             });
       } catch (IllegalArgumentException e) {

@@ -7,6 +7,7 @@ import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
+import io.sentry.OptionsCustomizerApplier;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -107,6 +108,8 @@ public final class SentryAndroid {
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 options, context, logger, buildInfoProvider);
+
+            new OptionsCustomizerApplier<>(SentryAndroidOptionsCustomizer.class).apply(options);
 
             configuration.configure(options);
 

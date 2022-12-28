@@ -177,6 +177,9 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setProfilingTracesIntervalMillis (I)V
 }
 
+public abstract interface class io/sentry/android/core/SentryAndroidOptionsCustomizer : io/sentry/Sentry$OptionsConfiguration {
+}
+
 public final class io/sentry/android/core/SentryInitProvider : android/content/ContentProvider {
 	public fun <init> ()V
 	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
