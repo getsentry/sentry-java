@@ -1883,6 +1883,7 @@ public class SentryOptions {
    *
    * @return the memory collector.
    */
+  @ApiStatus.Internal
   public @NotNull IMemoryCollector getMemoryCollector() {
     return memoryCollector;
   }
@@ -1892,6 +1893,7 @@ public class SentryOptions {
    *
    * @param memoryCollector - the memory collector. If null, a no op collector will be set.
    */
+  @ApiStatus.Internal
   public void setMemoryCollector(final @Nullable IMemoryCollector memoryCollector) {
     this.memoryCollector =
         memoryCollector != null ? memoryCollector : NoOpMemoryCollector.getInstance();
