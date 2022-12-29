@@ -5,6 +5,7 @@
 ### Features
 
 - Disable Android concurrent profiling ([#2434](https://github.com/getsentry/sentry-java/pull/2434))
+- Add Android View Hierarchy support ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
 
 ### Fixes
 
