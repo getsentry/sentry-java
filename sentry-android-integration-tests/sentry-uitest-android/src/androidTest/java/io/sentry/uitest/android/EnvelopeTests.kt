@@ -20,8 +20,6 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -60,7 +58,6 @@ class EnvelopeTests : BaseUiTest() {
         sampleScenario.moveToState(Lifecycle.State.DESTROYED)
         IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
         relayIdlingResource.increment()
-        relayIdlingResource.increment()
 
         transaction.finish()
         relay.assert {
@@ -76,15 +73,10 @@ class EnvelopeTests : BaseUiTest() {
                 assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "profiledTransaction"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals("profiledTransaction", transactionItem.transaction)
-            }
-
-            findEnvelope {
-                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()).transactionName == "profiledTransaction"
-            }.assert {
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
+
+                assertEquals("profiledTransaction", transactionItem.transaction)
                 assertEquals(profilingTraceData.transactionId, transaction.eventId.toString())
                 assertEquals("profiledTransaction", profilingTraceData.transactionName)
                 assertTrue(profilingTraceData.environment.isNotEmpty())
@@ -118,93 +110,11 @@ class EnvelopeTests : BaseUiTest() {
     }
 
     @Test
-    fun checkEnvelopeConcurrentTransactions() {
-        initSentry(true) { options: SentryAndroidOptions ->
-            options.tracesSampleRate = 1.0
-            options.profilesSampleRate = 1.0
-        }
-        relayIdlingResource.increment()
-        relayIdlingResource.increment()
-        relayIdlingResource.increment()
-        relayIdlingResource.increment()
-
-        val transaction = Sentry.startTransaction("e2etests", "test1")
-        val transaction2 = Sentry.startTransaction("e2etests1", "test2")
-        val transaction3 = Sentry.startTransaction("e2etests2", "test3")
-        transaction.finish()
-        transaction2.finish()
-        transaction3.finish()
-
-        relay.assert {
-            findEnvelope {
-                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "e2etests"
-            }.assert {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals(transaction.eventId.toString(), transactionItem.eventId.toString())
-            }
-            findEnvelope {
-                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "e2etests1"
-            }.assert {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals(transaction2.eventId.toString(), transactionItem.eventId.toString())
-            }
-            findEnvelope {
-                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "e2etests2"
-            }.assert {
-                val transactionItem: SentryTransaction = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals(transaction3.eventId.toString(), transactionItem.eventId.toString())
-            }
-            // The profile is sent in its own envelope
-            findEnvelope {
-                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()).transactionName == "e2etests2"
-            }.assert {
-                val profilingTraceData: ProfilingTraceData = it.assertItem()
-                it.assertNoOtherItems()
-                assertEquals("e2etests2", profilingTraceData.transactionName)
-                assertEquals("normal", profilingTraceData.truncationReason)
-
-                // The transaction list is not ordered, since it's stored using a map to be able to quickly check the
-                // existence of a certain id. So we order the list to make more meaningful checks on timestamps.
-                val transactions = profilingTraceData.transactions.sortedBy { it.relativeStartNs }
-                assertEquals(transactions.last().id, transaction3.eventId.toString())
-                val startTimes = transactions.map { t -> t.relativeStartNs }
-                val endTimes = transactions.mapNotNull { t -> t.relativeEndNs }
-                val startCpuTimes = transactions.map { t -> t.relativeStartCpuMs }
-                val endCpuTimes = transactions.mapNotNull { t -> t.relativeEndCpuMs }
-
-                // Transaction timestamps should be all different from each other
-                assertTrue(startTimes[0] < startTimes[1])
-                assertTrue(startTimes[1] < startTimes[2])
-                assertTrue(endTimes[0] < endTimes[1])
-                assertTrue(endTimes[1] < endTimes[2])
-
-                // The cpu timestamps use milliseconds precision, so few of them could have the same timestamps
-                // However, it's basically impossible that all of them have the same timestamps
-                assertFalse(startCpuTimes[0] == startCpuTimes[1] && startCpuTimes[1] == startCpuTimes[2])
-                assertTrue(startCpuTimes[0] <= startCpuTimes[1])
-                assertTrue(startCpuTimes[1] <= startCpuTimes[2])
-                assertFalse(endCpuTimes[0] == endCpuTimes[1] && endCpuTimes[1] == endCpuTimes[2])
-                assertTrue(endCpuTimes[0] <= endCpuTimes[1])
-                assertTrue(endCpuTimes[1] <= endCpuTimes[2])
-
-                // The first and last transactions should be aligned to the start/stop of profile
-                assertEquals(endTimes.last() - startTimes.first(), profilingTraceData.durationNs.toLong())
-            }
-            assertNoOtherEnvelopes()
-            assertNoOtherRequests()
-        }
-    }
-
-    @Test
     fun checkProfileNotSentIfEmpty() {
         initSentry(true) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
         }
-        relayIdlingResource.increment()
         relayIdlingResource.increment()
         val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
         val transaction = Sentry.startTransaction("emptyProfileTransaction", "test empty")
@@ -232,8 +142,6 @@ class EnvelopeTests : BaseUiTest() {
                 it.assertNoOtherItems()
                 assertEquals("emptyProfileTransaction", transactionItem.transaction)
             }
-            // The profile failed to be sent. Trying to read the envelope from the data transmitted throws an exception
-            assertFailsWith<IllegalArgumentException> { assertFirstEnvelope {} }
             assertNoOtherEnvelopes()
             assertNoOtherRequests()
         }
@@ -248,16 +156,24 @@ class EnvelopeTests : BaseUiTest() {
             options.profilesSampleRate = 1.0
         }
         relayIdlingResource.increment()
-        Sentry.startTransaction("timedOutProfile", "testTimeout")
-        // We don't call transaction.finish() and let the timeout do its job
+        val transaction = Sentry.startTransaction("timedOutProfile", "testTimeout")
+        Thread {
+            Thread.sleep(35_000)
+            transaction.finish()
+        }.start()
+        // We call transaction.finish() after 35 seconds, and check profile times out after 30 seconds
 
         relay.assert {
             findEnvelope {
-                assertEnvelopeItem<ProfilingTraceData>(it.items.toList()).transactionName == "timedOutProfile"
+                assertEnvelopeItem<SentryTransaction>(it.items.toList()).transaction == "timedOutProfile"
             }.assert {
+                val transactionItem: SentryTransaction = it.assertItem()
                 val profilingTraceData: ProfilingTraceData = it.assertItem()
                 it.assertNoOtherItems()
+                assertEquals("timedOutProfile", transactionItem.transaction)
                 assertEquals("timedOutProfile", profilingTraceData.transactionName)
+                // The profile should timeout after 30 seconds
+                assertTrue(profilingTraceData.durationNs.toLong() < TimeUnit.SECONDS.toNanos(31))
                 assertEquals(ProfilingTraceData.TRUNCATION_REASON_TIMEOUT, profilingTraceData.truncationReason)
             }
             assertNoOtherEnvelopes()

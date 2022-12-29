@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +16,11 @@ final class NoOpSentryExecutorService implements ISentryExecutorService {
 
   @Override
   public @NotNull Future<?> submit(final @NotNull Runnable runnable) {
+    return new FutureTask<>(() -> null);
+  }
+
+  @Override
+  public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable) {
     return new FutureTask<>(() -> null);
   }
 

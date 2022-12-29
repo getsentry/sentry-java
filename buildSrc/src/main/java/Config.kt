@@ -1,6 +1,7 @@
 import java.math.BigDecimal
 
 object Config {
+    val AGP = System.getenv("VERSION_AGP") ?: "7.3.0"
     val kotlinVersion = "1.6.10"
     val kotlinStdLib = "stdlib-jdk8"
 
@@ -11,7 +12,7 @@ object Config {
     val composeVersion = "1.1.1"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.3.0"
+        val androidGradle = "com.android.tools.build:gradle:$AGP"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -130,6 +131,7 @@ object Config {
         val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
         val composeActivity = "androidx.activity:activity-compose:1.4.0"
         val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
+        val composeUi = "androidx.compose.ui:ui:$composeVersion"
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
 
