@@ -31,6 +31,16 @@ public final class ViewHierarchy implements JsonUnknown, JsonSerializable {
     this.windows = windows;
   }
 
+  @Nullable
+  public String getRenderingSystem() {
+    return renderingSystem;
+  }
+
+  @Nullable
+  public List<ViewHierarchyNode> getWindows() {
+    return windows;
+  }
+
   @Override
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {

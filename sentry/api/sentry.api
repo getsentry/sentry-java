@@ -15,7 +15,7 @@ public final class io/sentry/Attachment {
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Z)V
 	public static fun fromScreenshot ([B)Lio/sentry/Attachment;
-	public static fun fromViewHierarchy (Lio/sentry/protocol/ViewHierarchy;)Lio/sentry/Attachment;
+	public static fun fromViewHierarchy ([B)Lio/sentry/Attachment;
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getBytes ()[B
 	public fun getContentType ()Ljava/lang/String;
@@ -3346,7 +3346,9 @@ public final class io/sentry/protocol/User$JsonKeys {
 
 public final class io/sentry/protocol/ViewHierarchy : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public fun getRenderingSystem ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
+	public fun getWindows ()Ljava/util/List;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -3365,7 +3367,18 @@ public final class io/sentry/protocol/ViewHierarchy$JsonKeys {
 
 public final class io/sentry/protocol/ViewHierarchyNode : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
+	public fun getAlpha ()Ljava/lang/Double;
+	public fun getChildren ()Ljava/util/List;
+	public fun getHeight ()Ljava/lang/Double;
+	public fun getIdentifier ()Ljava/lang/String;
+	public fun getRenderingSystem ()Ljava/lang/String;
+	public fun getTag ()Ljava/lang/String;
+	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
+	public fun getVisible ()Ljava/lang/Boolean;
+	public fun getWidth ()Ljava/lang/Double;
+	public fun getX ()Ljava/lang/Double;
+	public fun getY ()Ljava/lang/Double;
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAlpha (Ljava/lang/Double;)V
 	public fun setChildren (Ljava/util/List;)V

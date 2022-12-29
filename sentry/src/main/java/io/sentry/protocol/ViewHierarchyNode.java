@@ -89,6 +89,61 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
     this.children = children;
   }
 
+  @Nullable
+  public String getRenderingSystem() {
+    return renderingSystem;
+  }
+
+  @Nullable
+  public String getType() {
+    return type;
+  }
+
+  @Nullable
+  public String getIdentifier() {
+    return identifier;
+  }
+
+  @Nullable
+  public String getTag() {
+    return tag;
+  }
+
+  @Nullable
+  public Double getWidth() {
+    return width;
+  }
+
+  @Nullable
+  public Double getHeight() {
+    return height;
+  }
+
+  @Nullable
+  public Double getX() {
+    return x;
+  }
+
+  @Nullable
+  public Double getY() {
+    return y;
+  }
+
+  @Nullable
+  public Boolean getVisible() {
+    return visible;
+  }
+
+  @Nullable
+  public Double getAlpha() {
+    return alpha;
+  }
+
+  @Nullable
+  public List<ViewHierarchyNode> getChildren() {
+    return children;
+  }
+
   @Override
   public void serialize(@NotNull JsonObjectWriter writer, @NotNull ILogger logger)
       throws IOException {

@@ -1,12 +1,6 @@
 package io.sentry;
 
-import io.sentry.protocol.ViewHierarchy;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.Charset;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -288,27 +282,15 @@ public final class Attachment {
   /**
    * Creates a new View Hierarchy Attachment
    *
-   * @param viewHierarchy the View Hierarchy
+   * @param viewHierarchyBytes the serialized View Hierarchy
    * @return the Attachment
    */
-  public static @Nullable Attachment fromViewHierarchy(final ViewHierarchy viewHierarchy) {
-    final Charset UTF_8 = Charset.forName("UTF-8");
-    try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-      final ISerializer serializer = Sentry.getCurrentHub().getOptions().getSerializer();
-      serializer.serialize(viewHierarchy, writer);
-      return new Attachment(
-          stream.toByteArray(),
-          "view-hierarchy.json",
-          "'application/json",
-          DEFAULT_ATTACHMENT_TYPE, // TODO replace with VIEW_HIERARCHY_ATTACHMENT_TYPE,
-          false);
-    } catch (Exception e) {
-      Sentry.getCurrentHub()
-          .getOptions()
-          .getLogger()
-          .log(SentryLevel.ERROR, "Could not serialize the ViewHierarchy", e);
-    }
-    return null;
+  public static @NotNull Attachment fromViewHierarchy(final byte[] viewHierarchyBytes) {
+    return new Attachment(
+        viewHierarchyBytes,
+        "view-hierarchy.json",
+        "'application/json",
+        DEFAULT_ATTACHMENT_TYPE, // TODO replace with VIEW_HIERARCHY_ATTACHMENT_TYPE,
+        false);
   }
 }

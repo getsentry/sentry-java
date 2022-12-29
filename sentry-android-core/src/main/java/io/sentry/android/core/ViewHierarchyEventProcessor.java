@@ -6,13 +6,17 @@ import android.view.ViewGroup;
 import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
-import io.sentry.ILogger;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.Objects;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -40,21 +44,33 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
       return event;
     }
 
-    final Activity activity = CurrentActivityHolder.getInstance().getActivity();
+    final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     if (activity == null) {
       return event;
     }
 
-    final ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity, options.getLogger());
-    if (viewHierarchy != null) {
-      hint.setViewHierarchy(Attachment.fromViewHierarchy(viewHierarchy));
+    try {
+      final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity);
+      @SuppressWarnings("CharsetObjectCanBeUsed")
+      final Charset UTF8 = Charset.forName("UTF-8");
+
+      try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+          final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF8))) {
+
+        options.getSerializer().serialize(viewHierarchy, writer);
+
+        final Attachment attachment = Attachment.fromViewHierarchy(stream.toByteArray());
+        hint.setViewHierarchy(attachment);
+      }
+    } catch (Throwable t) {
+      options.getLogger().log(SentryLevel.ERROR, "Could not snapshot ViewHierarchy", t);
     }
 
     return event;
   }
 
-  @Nullable
-  private static ViewHierarchy snapshotViewHierarchy(Activity activity, ILogger logger) {
+  @NotNull
+  public static ViewHierarchy snapshotViewHierarchy(Activity activity) {
     final List<ViewHierarchyNode> windows = new ArrayList<>();
     final ViewHierarchy viewHierarchy = new ViewHierarchy("android_view_system", windows);
 
@@ -70,7 +86,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     return viewHierarchy;
   }
 
-  private static void addChildren(View view, ViewHierarchyNode viewNode) {
+  private static void addChildren(@NotNull View view, @NotNull ViewHierarchyNode parentNode) {
     if (!(view instanceof ViewGroup)) {
       return;
     }
@@ -90,7 +106,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
         addChildren(child, childNode);
       }
     }
-    viewNode.setChildren(childNodes);
+    parentNode.setChildren(childNodes);
   }
 
   @NotNull
