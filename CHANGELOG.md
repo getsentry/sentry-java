@@ -9,6 +9,7 @@
 
 ### Features
 
+- Send transaction memory stats in profile payload ([#2447](https://github.com/getsentry/sentry-java/pull/2447))
 - Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
 - Disable Android concurrent profiling ([#2434](https://github.com/getsentry/sentry-java/pull/2434))
 - Add logging for OpenTelemetry integration ([#2425](https://github.com/getsentry/sentry-java/pull/2425))
