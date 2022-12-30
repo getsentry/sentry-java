@@ -209,12 +209,12 @@ final class AndroidOptionsInitializer {
       options.addIntegration(
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
+      options.addIntegration(new CurrentActivityIntegration((Application) context));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
-      options.addEventProcessor(
-          new ScreenshotEventProcessor((Application) context, options, buildInfoProvider));
+      options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     } else {
       options
           .getLogger()
