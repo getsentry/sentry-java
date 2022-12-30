@@ -24,10 +24,13 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
   public static final String ID_FROZEN_FRAME_RENDERS = "frozen_frame_renders";
   public static final String ID_SLOW_FRAME_RENDERS = "slow_frame_renders";
   public static final String ID_SCREEN_FRAME_RATES = "screen_frame_rates";
+  public static final String ID_MEMORY_FOOTPRINT = "memory-footprint";
+  public static final String ID_MEMORY_NATIVE_FOOTPRINT = "memory-native-footprint";
   public static final String ID_UNKNOWN = "unknown";
 
   public static final String UNIT_HZ = "hz";
   public static final String UNIT_NANOSECONDS = "nanosecond";
+  public static final String UNIT_BYTES = "bytes";
   public static final String UNIT_UNKNOWN = "unknown";
 
   private @Nullable Map<String, Object> unknown;

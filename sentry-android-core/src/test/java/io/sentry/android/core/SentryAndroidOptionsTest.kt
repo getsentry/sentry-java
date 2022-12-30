@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import io.sentry.ITransaction
 import io.sentry.ITransactionProfiler
+import io.sentry.MemoryCollectionData
 import io.sentry.NoOpTransactionProfiler
 import io.sentry.ProfilingTraceData
 import io.sentry.protocol.DebugImage
@@ -110,6 +111,9 @@ class SentryAndroidOptionsTest {
 
     private class CustomTransactionProfiler : ITransactionProfiler {
         override fun onTransactionStart(transaction: ITransaction) {}
-        override fun onTransactionFinish(transaction: ITransaction): ProfilingTraceData? = null
+        override fun onTransactionFinish(
+            transaction: ITransaction,
+            memoryCollectionData: MutableList<MemoryCollectionData>?
+        ): ProfilingTraceData? = null
     }
 }
