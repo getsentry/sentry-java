@@ -6,12 +6,16 @@ import android.view.ViewGroup
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryEvent
 import io.sentry.protocol.SentryException
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.lang.IllegalStateException
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -100,7 +104,7 @@ class ViewHierarchyEventProcessorTest {
     }
 
     @Test
-    fun `when there's no current activity the viewhierarchy is null`() {
+    fun `when there's no current activity the view hierarchy is null`() {
         CurrentActivityHolder.getInstance().clearActivity()
 
         val (event, hint) = fixture.process(
@@ -115,7 +119,37 @@ class ViewHierarchyEventProcessorTest {
     }
 
     @Test
-    fun `when retrieving the viewHierarchy crashes no view hierarchy is collected`() {
+    fun `when there's no current window the view hierarchy is null`() {
+        whenever(fixture.activity.window).thenReturn(null)
+
+        val (event, hint) = fixture.process(
+            true,
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
+        )
+
+        assertNotNull(event)
+        assertNull(hint.viewHierarchy)
+    }
+
+    @Test
+    fun `when there's no current decor view the view hierarchy is null`() {
+        whenever(fixture.window.peekDecorView()).thenReturn(null)
+
+        val (event, hint) = fixture.process(
+            true,
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
+        )
+
+        assertNotNull(event)
+        assertNull(hint.viewHierarchy)
+    }
+
+    @Test
+    fun `when retrieving the view hierarchy crashes no view hierarchy is collected`() {
         whenever(fixture.view.width).thenThrow(IllegalStateException("invalid ui state"))
         val (event, hint) = fixture.process(
             true,
@@ -143,13 +177,7 @@ class ViewHierarchyEventProcessorTest {
             )
         )
 
-        val activity = mock<Activity>()
-        val window = mock<Window>()
-        whenever(window.decorView).thenReturn(content)
-        whenever(window.peekDecorView()).thenReturn(content)
-        whenever(activity.window).thenReturn(window)
-
-        val viewHierarchy = ViewHierarchyEventProcessor.snapshotViewHierarchy(activity)
+        val viewHierarchy = ViewHierarchyEventProcessor.snapshotViewHierarchy(content)
         assertEquals("android_view_system", viewHierarchy.renderingSystem)
         assertEquals(1, viewHierarchy.windows!!.size)
 
@@ -178,6 +206,43 @@ class ViewHierarchyEventProcessorTest {
             assertEquals(false, visible)
             assertEquals(null, children)
         }
+    }
+
+    @Test
+    fun `if serialization of view hierarchy takes too long, it does not get attached`() {
+        fixture.options.executorService = object : ISentryExecutorService {
+            val service = Executors.newSingleThreadScheduledExecutor()
+            override fun submit(runnable: Runnable): Future<*> {
+                service.submit {
+                    Thread.sleep(2000L)
+                }
+                return service.submit(runnable)
+            }
+
+            override fun <T : Any?> submit(callable: Callable<T>): Future<T> {
+                service.submit {
+                    Thread.sleep(2000L)
+                }
+                return service.submit(callable)
+            }
+
+            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
+                return service.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS)
+            }
+
+            override fun close(timeoutMillis: Long) {
+                service.shutdown()
+            }
+        }
+        val (event, hint) = fixture.process(
+            true,
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
+        )
+
+        assertNotNull(event)
+        assertNull(hint.viewHierarchy)
     }
 
     private fun mockedView(

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import androidx.annotation.NonNull;
 import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -20,6 +21,8 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +33,8 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final @NotNull Charset UTF_8 = Charset.forName("UTF-8");
+
+  private static final long TIMEOUT_PROCESSING_MILLIS = 1000;
 
   private final @NotNull SentryAndroidOptions options;
 
@@ -44,7 +49,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     }
 
     if (!options.isAttachViewHierarchy()) {
-      this.options.getLogger().log(SentryLevel.DEBUG, "attachViewHierarchy is disabled.");
+      options.getLogger().log(SentryLevel.DEBUG, "attachViewHierarchy is disabled.");
       return event;
     }
 
@@ -53,8 +58,40 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
       return event;
     }
 
+    final @Nullable Window window = activity.getWindow();
+    if (window == null) {
+      return event;
+    }
+
+    final @Nullable View decorView = window.peekDecorView();
+    if (decorView == null) {
+      return event;
+    }
+
     try {
-      final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity);
+      final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(decorView);
+      final @NotNull Future<?> future =
+          options
+              .getExecutorService()
+              .submit(
+                  () -> {
+                    try {
+                      serializeViewHierarchy(viewHierarchy, hint);
+                    } catch (Throwable e) {
+                      options
+                          .getLogger()
+                          .log(SentryLevel.ERROR, "Failed trying to serialize view hierarchy.", e);
+                    }
+                  });
+      future.get(TIMEOUT_PROCESSING_MILLIS, TimeUnit.MILLISECONDS);
+    } catch (Throwable t) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
+    }
+    return event;
+  }
+
+  private void serializeViewHierarchy(@NonNull ViewHierarchy viewHierarchy, @NonNull Hint hint) {
+    try {
       try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
           final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
 
@@ -66,28 +103,16 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     } catch (Throwable t) {
       options.getLogger().log(SentryLevel.ERROR, "Could not snapshot ViewHierarchy", t);
     }
-
-    return event;
   }
 
   @NotNull
-  public static ViewHierarchy snapshotViewHierarchy(@NotNull final Activity activity) {
+  public static ViewHierarchy snapshotViewHierarchy(@NotNull final View view) {
     final List<ViewHierarchyNode> windows = new ArrayList<>();
     final ViewHierarchy viewHierarchy = new ViewHierarchy("android_view_system", windows);
 
-    final @Nullable Window window = activity.getWindow();
-    if (window == null) {
-      return viewHierarchy;
-    }
-
-    final @Nullable View decorView = window.peekDecorView();
-    if (decorView == null) {
-      return viewHierarchy;
-    }
-
-    final @NotNull ViewHierarchyNode decorNode = viewToNode(decorView);
+    final @NotNull ViewHierarchyNode decorNode = viewToNode(view);
     windows.add(decorNode);
-    addChildren(decorView, decorNode);
+    addChildren(view, decorNode);
 
     return viewHierarchy;
   }
