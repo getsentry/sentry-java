@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add Android View Hierarchy support ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
+
 ## 6.11.0
 
 ### Features
@@ -7,7 +13,6 @@
 - Disable Android concurrent profiling ([#2434](https://github.com/getsentry/sentry-java/pull/2434))
 - Add logging for OpenTelemetry integration ([#2425](https://github.com/getsentry/sentry-java/pull/2425))
 - Auto add `OpenTelemetryLinkErrorEventProcessor` for Spring Boot ([#2429](https://github.com/getsentry/sentry-java/pull/2429))
-- Add Android View Hierarchy support ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
 
 ### Fixes
 
