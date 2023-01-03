@@ -10,6 +10,7 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -167,13 +168,21 @@ public final class SentryTracer implements ITransaction {
     return children;
   }
 
-  //  public @NotNull Date getStartTimestamp() {
-  //    return this.root.getStartTimestamp();
-  //  }
-  //
-  //  public @Nullable Double getTimestamp() {
-  //    return this.root.getTimestamp();
-  //  }
+  /**
+   * @deprecated use {@link getStartDate()} instead as it offers better precision
+   */
+  @Deprecated
+  public @NotNull Date getStartTimestamp() {
+    return this.root.getStartTimestamp();
+  }
+
+  /**
+   * @deprecated use {@link getFinishDate()} instead as it offers better precision
+   */
+  @Deprecated
+  public @Nullable Double getTimestamp() {
+    return this.root.getTimestamp();
+  }
 
   public @NotNull SentryDate getStartDate() {
     return this.root.getStartDate();

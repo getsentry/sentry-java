@@ -385,6 +385,7 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
+  /** Date provider to retrieve the current date from. */
   private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
 
   /**
@@ -1878,10 +1879,17 @@ public class SentryOptions {
     this.mainThreadChecker = mainThreadChecker;
   }
 
+  /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   public @NotNull SentryDateProvider getDateProvider() {
     return dateProvider;
   }
 
+  /**
+   * Sets the {@link SentryDateProvider} which is used to retrieve the current date.
+   *
+   * <p>Different providers offer different precision. By default Sentry tries to offer the highest
+   * precision available for the system.
+   */
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
     this.dateProvider = dateProvider;
   }

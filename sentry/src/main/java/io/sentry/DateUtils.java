@@ -135,6 +135,10 @@ public final class DateUtils {
     if (sentryDate == null) {
       return null;
     }
+    return toUtilDateNotNull(sentryDate);
+  }
+
+  public static @NotNull Date toUtilDateNotNull(final @NotNull SentryDate sentryDate) {
     return nanosToDate(sentryDate.nanoTimestamp());
   }
 

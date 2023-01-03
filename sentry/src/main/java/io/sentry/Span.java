@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.util.Objects;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,13 +87,25 @@ public final class Span implements ISpan {
     }
   }
 
-  //  public @NotNull Date getStartTimestamp() {
-  //    return startTimestamp;
-  //  }
-  //
-  //  public @Nullable Double getTimestamp() {
-  //    return timestamp;
-  //  }
+  /**
+   * @deprecated use {@link getStartDate()} instead as it offers better precision
+   */
+  @Deprecated
+  public @NotNull Date getStartTimestamp() {
+    return DateUtils.toUtilDateNotNull(startTimestamp);
+  }
+
+  /**
+   * @deprecated use {@link getStartDate()} instead as it offers better precision
+   */
+  @Deprecated
+  public @Nullable Double getTimestamp() {
+    if (timestamp == null) {
+      return null;
+    } else {
+      return DateUtils.nanosToSeconds(timestamp.nanoTimestamp());
+    }
+  }
 
   public @NotNull SentryDate getStartDate() {
     return startTimestamp;
