@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Don't override sdk name with Timber ([#2450](https://github.com/getsentry/sentry-java/pull/2450))
+
 ## 6.11.0
 
 ### Features
