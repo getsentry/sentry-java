@@ -289,7 +289,7 @@ public final class Attachment {
     return new Attachment(
         viewHierarchyBytes,
         "view-hierarchy.json",
-        "'application/json",
+        "application/json",
         DEFAULT_ATTACHMENT_TYPE, // TODO replace with VIEW_HIERARCHY_ATTACHMENT_TYPE,
         false);
   }
