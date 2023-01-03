@@ -8,6 +8,7 @@ import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
+import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.BreadcrumbFactory;
@@ -15,7 +16,6 @@ import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 public final class SentryAndroid {
 
   // static to rely on Class load init.
-  private static final @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
+  private static final @NotNull SentryDate appStartTime = DateUtils.getCurrentSentryDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static final long appStart = SystemClock.uptimeMillis();
 
@@ -104,6 +104,9 @@ public final class SentryAndroid {
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
             final LoadClass loadClass = new LoadClass();
+
+            // TODO where should this go?
+            options.setDateProvider(new SentryAndroidDateProvider());
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 options, context, logger, buildInfoProvider);

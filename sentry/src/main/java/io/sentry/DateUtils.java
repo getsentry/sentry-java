@@ -11,6 +11,7 @@ import java.util.Calendar;
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Utilities to deal with dates */
 @ApiStatus.Internal
@@ -27,6 +28,18 @@ public final class DateUtils {
   public static @NotNull Date getCurrentDateTime() {
     final Calendar calendar = Calendar.getInstance(TIMEZONE_UTC);
     return calendar.getTime();
+  }
+
+  /**
+   * Get the current SentryDate (UTC).
+   *
+   * <p>NOTE: options.getDatProvider() should be preferred. This is only a fallback for static
+   * invocations.
+   *
+   * @return the UTC SentryDate
+   */
+  public static @NotNull SentryDate getCurrentSentryDateTime() {
+    return new SentryNanotimeDate();
   }
 
   /**
@@ -93,6 +106,10 @@ public final class DateUtils {
     return millis / 1000;
   }
 
+  public static long millisToNanos(final long millis) {
+    return millis * 1000000L;
+  }
+
   /**
    * Converts nanoseconds to milliseconds
    *
@@ -104,14 +121,31 @@ public final class DateUtils {
   }
 
   /**
-   * Converts nanoseconds to {{@link java.util.Date}} rounded down to milliseconds
+   * Converts nanoseconds to {@link java.util.Date} rounded down to milliseconds
    *
    * @param nanos - nanoseconds
    * @return date rounded down to milliseconds
    */
   public static Date nanosToDate(final long nanos) {
-    Double millis = nanosToMillis(Double.valueOf(nanos));
+    final Double millis = nanosToMillis(Double.valueOf(nanos));
     return getDateTime(millis.longValue());
+  }
+
+  public static @Nullable Date toUtilDate(final @Nullable SentryDate sentryDate) {
+    if (sentryDate == null) {
+      return null;
+    }
+    return nanosToDate(sentryDate.nanoTimestamp());
+  }
+
+  /**
+   * Converts nanoseconds to seconds
+   *
+   * @param nanos - nanoseconds
+   * @return seconds
+   */
+  public static double nanosToSeconds(final long nanos) {
+    return nanos / (1000l * 1000l * 1000l);
   }
 
   /**
@@ -123,5 +157,20 @@ public final class DateUtils {
   @SuppressWarnings("JavaUtilDate")
   public static double dateToSeconds(final @NotNull Date date) {
     return millisToSeconds(date.getTime());
+  }
+
+  /**
+   * Convert {@link Date} to nanoseconds represented as {@link Long}.
+   *
+   * @param date - date
+   * @return nanoseconds
+   */
+  @SuppressWarnings("JavaUtilDate")
+  public static long dateToNanos(final @NotNull Date date) {
+    return millisToNanos(date.getTime());
+  }
+
+  public static long secondsToNanos(final @NotNull long seconds) {
+    return seconds * (1000L * 1000L * 1000L);
   }
 }

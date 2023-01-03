@@ -1,5 +1,7 @@
 package io.sentry.android.core
 
+import io.sentry.SentryInstantDate
+import io.sentry.SentryNanotimeDate
 import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -19,7 +21,7 @@ class AppStartStateTest {
     fun `appStartInterval returns null if end time is not set`() {
         val sut = AppStartState.getInstance()
 
-        sut.setAppStartTime(0, Date(0))
+        sut.setAppStartTime(0, SentryNanotimeDate(Date(0), 0))
         sut.setColdStart(true)
 
         assertNull(sut.appStartInterval)
@@ -39,7 +41,7 @@ class AppStartStateTest {
     fun `appStartInterval returns null if coldStart is not set`() {
         val sut = AppStartState.getInstance()
 
-        sut.setAppStartTime(0, Date(0))
+        sut.setAppStartTime(0, SentryNanotimeDate(Date(0), 0))
         sut.setAppStartEnd()
 
         assertNull(sut.appStartInterval)
@@ -49,9 +51,9 @@ class AppStartStateTest {
     fun `do not overwrite app start values if already set`() {
         val sut = AppStartState.getInstance()
 
-        val date = Date()
+        val date = SentryNanotimeDate()
         sut.setAppStartTime(0, date)
-        sut.setAppStartTime(1, Date())
+        sut.setAppStartTime(1, SentryInstantDate())
 
         assertSame(date, sut.appStartTime)
     }
@@ -70,7 +72,7 @@ class AppStartStateTest {
     fun `getAppStartInterval returns right calculation`() {
         val sut = AppStartState.getInstance()
 
-        val date = Date()
+        val date = SentryNanotimeDate()
         sut.setAppStartTime(100, date)
         sut.setAppStartEnd(500)
         sut.setColdStart(true)
@@ -82,7 +84,7 @@ class AppStartStateTest {
     fun `getAppStartInterval returns null if more than 60s`() {
         val sut = AppStartState.getInstance()
 
-        val date = Date()
+        val date = SentryNanotimeDate()
         sut.setAppStartTime(100, date)
         sut.setAppStartEnd(60100)
         sut.setColdStart(true)

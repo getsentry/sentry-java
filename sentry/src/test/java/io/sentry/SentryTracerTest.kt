@@ -37,7 +37,7 @@ class SentryTracerTest {
 
         fun getSut(
             optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {},
-            startTimestamp: Date? = null,
+            startTimestamp: SentryDate? = null,
             waitForChildren: Boolean = false,
             idleTimeout: Long? = null,
             trimEnd: Boolean = false,
@@ -79,13 +79,13 @@ class SentryTracerTest {
     @Test
     fun `when transaction is created, startTimestamp is set`() {
         val tracer = fixture.getSut()
-        assertNotNull(tracer.startTimestamp)
+        assertNotNull(tracer.startDate)
     }
 
     @Test
     fun `when transaction is created, timestamp is not set`() {
         val tracer = fixture.getSut()
-        assertNull(tracer.timestamp)
+        assertNull(tracer.finishDate)
     }
 
     @Test
@@ -110,23 +110,23 @@ class SentryTracerTest {
     fun `when transaction is finished, timestamp is set`() {
         val tracer = fixture.getSut()
         tracer.finish()
-        assertNotNull(tracer.timestamp)
+        assertNotNull(tracer.finishDate)
     }
 
     @Test
     fun `when transaction is finished with status, timestamp and status are set`() {
         val tracer = fixture.getSut()
         tracer.finish(SpanStatus.ABORTED)
-        assertNotNull(tracer.timestamp)
+        assertNotNull(tracer.finishDate)
         assertEquals(SpanStatus.ABORTED, tracer.status)
     }
 
     @Test
     fun `when transaction is finished with status and timestamp, timestamp and status are set`() {
         val tracer = fixture.getSut()
-        val date = Date.from(LocalDateTime.of(2022, 12, 24, 23, 59, 58, 0).toInstant(ZoneOffset.UTC))
+        val date = SentryUtilDate(Date.from(LocalDateTime.of(2022, 12, 24, 23, 59, 58, 0).toInstant(ZoneOffset.UTC)))
         tracer.finish(SpanStatus.ABORTED, date)
-        assertEquals(tracer.timestamp, DateUtils.dateToSeconds(date))
+        assertEquals(tracer.finishDate!!.nanoTimestamp(), date.nanoTimestamp())
         assertEquals(SpanStatus.ABORTED, tracer.status)
     }
 
@@ -260,7 +260,7 @@ class SentryTracerTest {
         val span = tracer.startChild("op") as Span
         assertNotNull(span)
         assertNotNull(span.spanId)
-        assertNotNull(span.startTimestamp)
+        assertNotNull(span.startDate)
     }
 
     @Test
@@ -291,7 +291,7 @@ class SentryTracerTest {
         val span = tracer.startChild("op", "description") as Span
         assertNotNull(span)
         assertNotNull(span.spanId)
-        assertNotNull(span.startTimestamp)
+        assertNotNull(span.startDate)
         assertEquals("op", span.operation)
         assertEquals("description", span.description)
     }
@@ -362,7 +362,7 @@ class SentryTracerTest {
         transaction.throwable = ex
 
         transaction.finish(SpanStatus.OK)
-        val timestamp = transaction.timestamp
+        val timestamp = transaction.finishDate
 
         transaction.finish(SpanStatus.UNKNOWN_ERROR)
 
@@ -380,7 +380,7 @@ class SentryTracerTest {
         )
 
         assertEquals(SpanStatus.OK, transaction.status)
-        assertEquals(timestamp, transaction.timestamp)
+        assertEquals(timestamp, transaction.finishDate)
     }
 
     @Test
@@ -435,17 +435,17 @@ class SentryTracerTest {
 
     @Test
     fun `when startTimestamp is given, use it as startTimestamp`() {
-        val date = Date(0)
+        val date = SentryUtilDate(Date(0))
         val transaction = fixture.getSut(startTimestamp = date)
 
-        assertSame(date, transaction.startTimestamp)
+        assertSame(date, transaction.startDate)
     }
 
     @Test
     fun `when startTimestamp is nullable, set it automatically`() {
         val transaction = fixture.getSut(startTimestamp = null)
 
-        assertNotNull(transaction.startTimestamp)
+        assertNotNull(transaction.startDate)
     }
 
     @Test
@@ -513,7 +513,7 @@ class SentryTracerTest {
         verify(fixture.hub, times(1)).captureTransaction(
             check {
                 assertEquals(2, it.spans.size)
-                assertEquals(transaction.root.endNanos, span.endNanos)
+                assertEquals(transaction.root.finishDate, span.finishDate)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[0].status)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
             },
@@ -817,7 +817,7 @@ class SentryTracerTest {
         verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(2, it.spans.size)
-                assertEquals(transaction.root.endNanos, span2.endNanos)
+                assertEquals(transaction.root.finishDate, span2.finishDate)
             },
             anyOrNull(),
             anyOrNull(),

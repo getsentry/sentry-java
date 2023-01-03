@@ -24,6 +24,7 @@ import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
 import io.sentry.Integration;
 import io.sentry.Scope;
+import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
@@ -35,7 +36,6 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -67,7 +67,7 @@ public final class ActivityLifecycleIntegration
 
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
-  private @NotNull Date lastPausedTime = DateUtils.getCurrentDateTime();
+  private @NotNull SentryDate lastPausedTime = DateUtils.getCurrentSentryDateTime();
   private final @NotNull Handler mainHandler = new Handler(Looper.getMainLooper());
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
@@ -172,7 +172,7 @@ public final class ActivityLifecycleIntegration
 
       final String activityName = getActivityName(activity);
 
-      final Date appStartTime =
+      final SentryDate appStartTime =
           foregroundImportance ? AppStartState.getInstance().getAppStartTime() : null;
       final Boolean coldStart = AppStartState.getInstance().isColdStart();
 
@@ -390,7 +390,11 @@ public final class ActivityLifecycleIntegration
   public void onActivityPrePaused(@NonNull Activity activity) {
     // only executed if API >= 29 otherwise it happens on onActivityPaused
     if (isAllActivityCallbacksAvailable) {
-      lastPausedTime = DateUtils.getCurrentDateTime();
+      if (hub == null) {
+        lastPausedTime = DateUtils.getCurrentSentryDateTime();
+      } else {
+        lastPausedTime = hub.getOptions().getDateProvider().now();
+      }
     }
   }
 
@@ -398,7 +402,11 @@ public final class ActivityLifecycleIntegration
   public synchronized void onActivityPaused(final @NotNull Activity activity) {
     // only executed if API < 29 otherwise it happens on onActivityPrePaused
     if (!isAllActivityCallbacksAvailable) {
-      lastPausedTime = DateUtils.getCurrentDateTime();
+      if (hub == null) {
+        lastPausedTime = DateUtils.getCurrentSentryDateTime();
+      } else {
+        lastPausedTime = hub.getOptions().getDateProvider().now();
+      }
     }
     addBreadcrumb(activity, "paused");
   }

@@ -385,6 +385,8 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
+  private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
+
   /**
    * Adds an event processor
    *
@@ -1803,7 +1805,7 @@ public class SentryOptions {
   /**
    * Sets the instrumenter used for performance instrumentation.
    *
-   * <p>If you set this to something other than {{@link Instrumenter#SENTRY}} Sentry will not create
+   * <p>If you set this to something other than {@link Instrumenter#SENTRY} Sentry will not create
    * any transactions automatically nor will it create transactions if you call
    * startTransaction(...), nor will it create child spans if you call startChild(...)
    *
@@ -1874,6 +1876,14 @@ public class SentryOptions {
 
   public void setMainThreadChecker(final @NotNull IMainThreadChecker mainThreadChecker) {
     this.mainThreadChecker = mainThreadChecker;
+  }
+
+  public @NotNull SentryDateProvider getDateProvider() {
+    return dateProvider;
+  }
+
+  public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
+    this.dateProvider = dateProvider;
   }
 
   /** The BeforeSend callback */
