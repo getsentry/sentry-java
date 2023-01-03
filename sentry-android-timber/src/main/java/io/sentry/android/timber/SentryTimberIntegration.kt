@@ -5,9 +5,7 @@ import io.sentry.ILogger
 import io.sentry.Integration
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.android.timber.BuildConfig.SENTRY_TIMBER_SDK_NAME
 import io.sentry.android.timber.BuildConfig.VERSION_NAME
-import io.sentry.protocol.SdkVersion
 import timber.log.Timber
 import java.io.Closeable
 
