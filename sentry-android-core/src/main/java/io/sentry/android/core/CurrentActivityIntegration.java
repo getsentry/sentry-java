@@ -4,14 +4,15 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import io.sentry.IHub;
 import io.sentry.Integration;
 import io.sentry.SentryOptions;
+import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class CurrentActivityIntegration
@@ -19,8 +20,8 @@ public final class CurrentActivityIntegration
 
   private final @NotNull Application application;
 
-  public CurrentActivityIntegration(@NotNull Application application) {
-    this.application = application;
+  public CurrentActivityIntegration(final @NotNull Application application) {
+    this.application = Objects.requireNonNull(application, "Application is required");
   }
 
   @Override
@@ -67,13 +68,13 @@ public final class CurrentActivityIntegration
     CurrentActivityHolder.getInstance().clearActivity();
   }
 
-  private void cleanCurrentActivity(@NonNull Activity activity) {
+  private void cleanCurrentActivity(final @NotNull Activity activity) {
     if (CurrentActivityHolder.getInstance().getActivity() == activity) {
       CurrentActivityHolder.getInstance().clearActivity();
     }
   }
 
-  private void setCurrentActivity(@NonNull Activity activity) {
+  private void setCurrentActivity(final @NotNull Activity activity) {
     CurrentActivityHolder.getInstance().setActivity(activity);
   }
 }

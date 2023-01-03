@@ -14,6 +14,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class ViewUtils {
 
   /**
@@ -86,7 +87,6 @@ public final class ViewUtils {
    * @return human-readable view id
    * @throws Resources.NotFoundException in case the view id was not found
    */
-  @ApiStatus.Internal
   public static String getResourceId(final @NotNull View view) throws Resources.NotFoundException {
     final int viewId = view.getId();
     final Resources resources = view.getContext().getResources();

@@ -13,6 +13,7 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * ScreenshotEventProcessor responsible for taking a screenshot of the screen when an error is
@@ -32,9 +33,8 @@ public final class ScreenshotEventProcessor implements EventProcessor {
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
   }
 
-  @SuppressWarnings("NullAway")
   @Override
-  public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hint hint) {
+  public @NotNull SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
     if (!event.isErrored()) {
       return event;
     }
@@ -43,7 +43,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
 
       return event;
     }
-    final Activity activity = CurrentActivityHolder.getInstance().getActivity();
+    final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     if (activity == null || HintUtils.isFromHybridSdk(hint)) {
       return event;
     }

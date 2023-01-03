@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -27,6 +28,9 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class ViewHierarchyEventProcessor implements EventProcessor {
 
+  @SuppressWarnings("CharsetObjectCanBeUsed")
+  private static final @NotNull Charset UTF_8 = Charset.forName("UTF-8");
+
   private final @NotNull SentryAndroidOptions options;
 
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
@@ -34,7 +38,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @NotNull SentryEvent process(final @NotNull SentryEvent event, @NotNull Hint hint) {
+  public @NotNull SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
     if (!event.isErrored()) {
       return event;
     }
@@ -51,11 +55,8 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
 
     try {
       final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity);
-      @SuppressWarnings("CharsetObjectCanBeUsed")
-      final Charset UTF8 = Charset.forName("UTF-8");
-
       try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-          final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF8))) {
+          final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
 
         options.getSerializer().serialize(viewHierarchy, writer);
 
@@ -70,11 +71,16 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   }
 
   @NotNull
-  public static ViewHierarchy snapshotViewHierarchy(Activity activity) {
+  public static ViewHierarchy snapshotViewHierarchy(@NotNull final Activity activity) {
     final List<ViewHierarchyNode> windows = new ArrayList<>();
     final ViewHierarchy viewHierarchy = new ViewHierarchy("android_view_system", windows);
 
-    final @Nullable View decorView = activity.getWindow().peekDecorView();
+    final @Nullable Window window = activity.getWindow();
+    if (window == null) {
+      return viewHierarchy;
+    }
+
+    final @Nullable View decorView = window.peekDecorView();
     if (decorView == null) {
       return viewHierarchy;
     }
@@ -86,7 +92,8 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     return viewHierarchy;
   }
 
-  private static void addChildren(@NotNull View view, @NotNull ViewHierarchyNode parentNode) {
+  private static void addChildren(
+      @NotNull final View view, @NotNull final ViewHierarchyNode parentNode) {
     if (!(view instanceof ViewGroup)) {
       return;
     }
@@ -110,7 +117,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   }
 
   @NotNull
-  private static ViewHierarchyNode viewToNode(final View view) {
+  private static ViewHierarchyNode viewToNode(@NotNull final View view) {
     @NotNull final ViewHierarchyNode node = new ViewHierarchyNode();
 
     @Nullable String className = view.getClass().getCanonicalName();
@@ -122,7 +129,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     try {
       final String identifier = ViewUtils.getResourceId(view);
       node.setIdentifier(identifier);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       // ignored
     }
     node.setX((double) view.getX());
