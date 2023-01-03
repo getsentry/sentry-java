@@ -120,9 +120,9 @@ class TransactionPerformanceCollectorTest {
         // There are no more transactions running: the time should stop now
         verify(fixture.mockTimer).cancel()
 
-        // The data returned by the collector is
-        assertFalse(data1.isEmpty())
-        assertFalse(data2.isEmpty())
+        // The data returned by the collector is not empty
+        assertFalse(data1!!.isEmpty())
+        assertFalse(data2!!.isEmpty())
     }
 
     @Test
@@ -139,6 +139,6 @@ class TransactionPerformanceCollectorTest {
 
         // Data is returned even after the collector times out
         val data1 = collector.stop(fixture.transaction1)
-        assertFalse(data1.isEmpty())
+        assertFalse(data1!!.isEmpty())
     }
 }

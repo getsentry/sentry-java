@@ -10,13 +10,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 @ApiStatus.Internal
 public final class TransactionPerformanceCollector {
   private static final long TRANSACTION_COLLECTION_INTERVAL_MILLIS = 100;
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
-  private @NotNull Timer timer = new Timer();
+  private final @NotNull Object timerLock = new Object();
+  private volatile @NotNull Timer timer = new Timer();
   private final @NotNull Map<String, ArrayList<MemoryCollectionData>> memoryMap =
       new ConcurrentHashMap<>();
   private final @NotNull IMemoryCollector memoryCollector;
@@ -46,37 +48,41 @@ public final class TransactionPerformanceCollector {
               () -> {
                 ArrayList<MemoryCollectionData> memoryCollectionData =
                     (ArrayList<MemoryCollectionData>) stop(transaction);
-                memoryMap.put(transaction.getEventId().toString(), memoryCollectionData);
+                if (memoryCollectionData != null) {
+                  memoryMap.put(transaction.getEventId().toString(), memoryCollectionData);
+                }
               },
               TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
     }
     if (!isStarted.getAndSet(true)) {
-      timer.scheduleAtFixedRate(
-          new TimerTask() {
-            @Override
-            public void run() {
-              MemoryCollectionData memoryData = memoryCollector.collect();
-              if (memoryData != null) {
-                synchronized (memoryMap) {
-                  for (ArrayList<MemoryCollectionData> list : memoryMap.values()) {
-                    list.add(memoryData);
+      synchronized (timerLock) {
+        timer.scheduleAtFixedRate(
+            new TimerTask() {
+              @Override
+              public void run() {
+                MemoryCollectionData memoryData = memoryCollector.collect();
+                if (memoryData != null) {
+                  synchronized (timerLock) {
+                    for (ArrayList<MemoryCollectionData> list : memoryMap.values()) {
+                      list.add(memoryData);
+                    }
                   }
                 }
               }
-            }
-          },
-          0,
-          TRANSACTION_COLLECTION_INTERVAL_MILLIS);
+            },
+            0,
+            TRANSACTION_COLLECTION_INTERVAL_MILLIS);
+      }
     }
   }
 
-  public @Unmodifiable List<MemoryCollectionData> stop(final @NotNull ITransaction transaction) {
-    synchronized (memoryMap) {
+  public @Unmodifiable @Nullable List<MemoryCollectionData> stop(
+      final @NotNull ITransaction transaction) {
+    synchronized (timerLock) {
       List<MemoryCollectionData> memoryData = memoryMap.remove(transaction.getEventId().toString());
-      if (memoryMap.isEmpty() && isStarted.get()) {
+      if (memoryMap.isEmpty() && isStarted.getAndSet(false)) {
         timer.cancel();
         timer = new Timer();
-        isStarted.set(false);
       }
       return memoryData;
     }
