@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
+
 ## 6.11.0
 
 ### Features
