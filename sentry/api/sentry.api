@@ -1365,6 +1365,8 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static final field ClientReport Lio/sentry/SentryItemType;
 	public static final field Event Lio/sentry/SentryItemType;
 	public static final field Profile Lio/sentry/SentryItemType;
+	public static final field ReplayEvent Lio/sentry/SentryItemType;
+	public static final field ReplayRecording Lio/sentry/SentryItemType;
 	public static final field Session Lio/sentry/SentryItemType;
 	public static final field Transaction Lio/sentry/SentryItemType;
 	public static final field Unknown Lio/sentry/SentryItemType;
