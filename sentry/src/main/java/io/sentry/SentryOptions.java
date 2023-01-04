@@ -385,6 +385,8 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
+  private @NotNull IMemoryCollector memoryCollector = NoOpMemoryCollector.getInstance();
+
   /** Date provider to retrieve the current date from. */
   private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
 
@@ -1877,6 +1879,27 @@ public class SentryOptions {
 
   public void setMainThreadChecker(final @NotNull IMainThreadChecker mainThreadChecker) {
     this.mainThreadChecker = mainThreadChecker;
+  }
+
+  /**
+   * Gets the memory collector used to collect memory usage during while transaction runs.
+   *
+   * @return the memory collector.
+   */
+  @ApiStatus.Internal
+  public @NotNull IMemoryCollector getMemoryCollector() {
+    return memoryCollector;
+  }
+
+  /**
+   * Sets the memory collector to collect memory usage during while transaction runs.
+   *
+   * @param memoryCollector - the memory collector. If null, a no op collector will be set.
+   */
+  @ApiStatus.Internal
+  public void setMemoryCollector(final @Nullable IMemoryCollector memoryCollector) {
+    this.memoryCollector =
+        memoryCollector != null ? memoryCollector : NoOpMemoryCollector.getInstance();
   }
 
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */

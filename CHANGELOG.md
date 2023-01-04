@@ -4,16 +4,24 @@
 
 ### Features
 
+- Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
+
+### Fixes
+
+- Don't override sdk name with Timber ([#2450](https://github.com/getsentry/sentry-java/pull/2450))
+
+## 6.11.0
+
+### Features
+
 - Disable Android concurrent profiling ([#2434](https://github.com/getsentry/sentry-java/pull/2434))
+- Add logging for OpenTelemetry integration ([#2425](https://github.com/getsentry/sentry-java/pull/2425))
+- Auto add `OpenTelemetryLinkErrorEventProcessor` for Spring Boot ([#2429](https://github.com/getsentry/sentry-java/pull/2429))
 
 ### Fixes
 
 - Use minSdk compatible `Objects` class ([#2436](https://github.com/getsentry/sentry-java/pull/2436))
-
-### Features
-
-- Add logging for OpenTelemetry integration ([#2425](https://github.com/getsentry/sentry-java/pull/2425))
-- Auto add `OpenTelemetryLinkErrorEventProcessor` for Spring Boot ([#2429](https://github.com/getsentry/sentry-java/pull/2429))
+- Prevent R8 from warning on missing classes, as we check for their presence at runtime ([#2439](https://github.com/getsentry/sentry-java/pull/2439))
 
 ### Dependencies
 

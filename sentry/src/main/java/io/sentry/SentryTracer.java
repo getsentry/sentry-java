@@ -80,9 +80,10 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Map<String, MeasurementValue> measurements;
   private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
+  private final @Nullable TransactionPerformanceCollector transactionPerformanceCollector;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IHub hub) {
-    this(context, hub, null);
+    this(context, hub, null, false, null, false, null);
   }
 
   public SentryTracer(
@@ -96,8 +97,20 @@ public final class SentryTracer implements ITransaction {
   SentryTracer(
       final @NotNull TransactionContext context,
       final @NotNull IHub hub,
-      final @Nullable SentryDate startTimestamp) {
-    this(context, hub, startTimestamp, false, null, false, null);
+      final @Nullable SentryDate startTimestamp,
+      final boolean waitForChildren,
+      final @Nullable Long idleTimeout,
+      final boolean trimEnd,
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
+    this(
+        context,
+        hub,
+        startTimestamp,
+        waitForChildren,
+        idleTimeout,
+        trimEnd,
+        transactionFinishedCallback,
+        null);
   }
 
   SentryTracer(
@@ -107,7 +120,8 @@ public final class SentryTracer implements ITransaction {
       final boolean waitForChildren,
       final @Nullable Long idleTimeout,
       final boolean trimEnd,
-      final @Nullable TransactionFinishedCallback transactionFinishedCallback) {
+      final @Nullable TransactionFinishedCallback transactionFinishedCallback,
+      final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.measurements = new ConcurrentHashMap<>();
@@ -119,12 +133,17 @@ public final class SentryTracer implements ITransaction {
     this.idleTimeout = idleTimeout;
     this.trimEnd = trimEnd;
     this.transactionFinishedCallback = transactionFinishedCallback;
+    this.transactionPerformanceCollector = transactionPerformanceCollector;
     this.transactionNameSource = context.getTransactionNameSource();
 
     if (context.getBaggage() != null) {
       this.baggage = context.getBaggage();
     } else {
       this.baggage = new Baggage(hub.getOptions().getLogger());
+    }
+
+    if (transactionPerformanceCollector != null) {
+      transactionPerformanceCollector.start(this);
     }
 
     if (idleTimeout != null) {
@@ -343,6 +362,10 @@ public final class SentryTracer implements ITransaction {
   public void finish(@Nullable SpanStatus status, @Nullable SentryDate finishDate) {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
+      if (transactionPerformanceCollector != null) {
+        transactionPerformanceCollector.stop(this);
+      }
+
       ProfilingTraceData profilingTraceData = null;
       if (Boolean.TRUE.equals(isSampled()) && Boolean.TRUE.equals(isProfileSampled())) {
         profilingTraceData = hub.getOptions().getTransactionProfiler().onTransactionFinish(this);
