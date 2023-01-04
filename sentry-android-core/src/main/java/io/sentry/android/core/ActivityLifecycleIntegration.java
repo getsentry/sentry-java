@@ -16,7 +16,6 @@ import android.os.Process;
 import android.view.View;
 import androidx.annotation.NonNull;
 import io.sentry.Breadcrumb;
-import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IHub;
 import io.sentry.ISpan;
@@ -67,7 +66,7 @@ public final class ActivityLifecycleIntegration
 
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
-  private @NotNull SentryDate lastPausedTime = DateUtils.getCurrentSentryDateTime();
+  private @NotNull SentryDate lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
   private final @NotNull Handler mainHandler = new Handler(Looper.getMainLooper());
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
@@ -391,7 +390,7 @@ public final class ActivityLifecycleIntegration
     // only executed if API >= 29 otherwise it happens on onActivityPaused
     if (isAllActivityCallbacksAvailable) {
       if (hub == null) {
-        lastPausedTime = DateUtils.getCurrentSentryDateTime();
+        lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
       } else {
         lastPausedTime = hub.getOptions().getDateProvider().now();
       }
@@ -403,7 +402,7 @@ public final class ActivityLifecycleIntegration
     // only executed if API < 29 otherwise it happens on onActivityPrePaused
     if (!isAllActivityCallbacksAvailable) {
       if (hub == null) {
-        lastPausedTime = DateUtils.getCurrentSentryDateTime();
+        lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
       } else {
         lastPausedTime = hub.getOptions().getDateProvider().now();
       }

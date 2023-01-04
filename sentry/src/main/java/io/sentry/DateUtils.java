@@ -31,18 +31,6 @@ public final class DateUtils {
   }
 
   /**
-   * Get the current SentryDate (UTC).
-   *
-   * <p>NOTE: options.getDatProvider() should be preferred. This is only a fallback for static
-   * invocations.
-   *
-   * @return the UTC SentryDate
-   */
-  public static @NotNull SentryDate getCurrentSentryDateTime() {
-    return new SentryNanotimeDate();
-  }
-
-  /**
    * Get the Date from UTC/ISO 8601 timestamp
    *
    * @param timestamp UTC/ISO 8601 format eg 2000-12-31T23:59:58Z or 2000-12-31T23:59:58.123Z

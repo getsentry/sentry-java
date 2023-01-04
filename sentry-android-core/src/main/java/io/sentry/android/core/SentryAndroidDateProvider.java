@@ -1,7 +1,9 @@
 package io.sentry.android.core;
 
+import android.os.Build;
 import io.sentry.SentryDate;
 import io.sentry.SentryDateProvider;
+import io.sentry.SentryInstantDateProvider;
 import io.sentry.SentryNanotimeDateProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,13 +16,11 @@ public final class SentryAndroidDateProvider implements SentryDateProvider {
   private final @NotNull SentryDateProvider dateProvider;
 
   public SentryAndroidDateProvider() {
-    // TODO can only allow Instant if ActivityLifecycleIntegration /
-    // DateUtils.getCurrentSentryDateTime also provides the same date
-    //    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-    //      dateProvider = new SentryInstantDateProvider();
-    //    } else {
-    dateProvider = new SentryNanotimeDateProvider();
-    //    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      dateProvider = new SentryInstantDateProvider();
+    } else {
+      dateProvider = new SentryNanotimeDateProvider();
+    }
   }
 
   @Override

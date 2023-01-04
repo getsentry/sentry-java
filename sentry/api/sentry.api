@@ -158,7 +158,6 @@ public final class io/sentry/DateUtils {
 	public static fun dateToNanos (Ljava/util/Date;)J
 	public static fun dateToSeconds (Ljava/util/Date;)D
 	public static fun getCurrentDateTime ()Ljava/util/Date;
-	public static fun getCurrentSentryDateTime ()Lio/sentry/SentryDate;
 	public static fun getDateTime (J)Ljava/util/Date;
 	public static fun getDateTime (Ljava/lang/String;)Ljava/util/Date;
 	public static fun getDateTimeWithMillisPrecision (Ljava/lang/String;)Ljava/util/Date;

@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import android.content.Context;
 import android.os.SystemClock;
-import io.sentry.DateUtils;
 import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.Integration;
@@ -23,7 +22,8 @@ import org.jetbrains.annotations.NotNull;
 public final class SentryAndroid {
 
   // static to rely on Class load init.
-  private static final @NotNull SentryDate appStartTime = DateUtils.getCurrentSentryDateTime();
+  private static final @NotNull SentryDate appStartTime =
+      AndroidDateUtils.getCurrentSentryDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static final long appStart = SystemClock.uptimeMillis();
 
