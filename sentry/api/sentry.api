@@ -1699,11 +1699,9 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
 	public fun getStartDate ()Lio/sentry/SentryDate;
-	public fun getStartTimestamp ()Ljava/util/Date;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
-	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun isFinished ()Z
 	public fun isNoOp ()Z
@@ -1817,12 +1815,10 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getStartDate ()Lio/sentry/SentryDate;
-	public fun getStartTimestamp ()Ljava/util/Date;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
 	public fun getThrowable ()Ljava/lang/Throwable;
-	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun isFinished ()Z
 	public fun isNoOp ()Z
@@ -3601,6 +3597,7 @@ public final class io/sentry/util/Pair {
 public final class io/sentry/util/Platform {
 	public fun <init> ()V
 	public static fun isAndroid ()Z
+	public static fun isJavaNinePlus ()Z
 	public static fun isJvm ()Z
 }
 

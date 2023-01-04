@@ -106,7 +106,7 @@ public final class SentryAndroid {
             final LoadClass loadClass = new LoadClass();
 
             // TODO where should this go?
-            options.setDateProvider(new SentryAndroidDateProvider());
+            options.setDateProvider(new SentryAndroidDateProvider(buildInfoProvider));
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 options, context, logger, buildInfoProvider);

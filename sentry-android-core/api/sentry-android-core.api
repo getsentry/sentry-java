@@ -152,7 +152,7 @@ public final class io/sentry/android/core/SentryAndroid {
 }
 
 public final class io/sentry/android/core/SentryAndroidDateProvider : io/sentry/SentryDateProvider {
-	public fun <init> ()V
+	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun now ()Lio/sentry/SentryDate;
 }
 

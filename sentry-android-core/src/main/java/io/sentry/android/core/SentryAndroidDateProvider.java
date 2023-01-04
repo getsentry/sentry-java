@@ -15,8 +15,8 @@ public final class SentryAndroidDateProvider implements SentryDateProvider {
 
   private final @NotNull SentryDateProvider dateProvider;
 
-  public SentryAndroidDateProvider() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+  public SentryAndroidDateProvider(final @NotNull BuildInfoProvider buildInfoProvider) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.O) {
       dateProvider = new SentryInstantDateProvider();
     } else {
       dateProvider = new SentryNanotimeDateProvider();

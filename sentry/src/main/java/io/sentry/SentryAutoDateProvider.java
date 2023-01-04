@@ -1,7 +1,7 @@
 package io.sentry;
 
+import io.sentry.util.Platform;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public final class SentryAutoDateProvider implements SentryDateProvider {
 
@@ -27,29 +27,6 @@ public final class SentryAutoDateProvider implements SentryDateProvider {
    * @return true if Instant offers high precision and this is not Android
    */
   private static boolean checkInstantAvailabilityAndPrecision() {
-    return !isAndroid() && isJavaNinePlus();
-  }
-
-  private static boolean isAndroid() {
-    try {
-      final @Nullable String javaVendor = System.getProperty("java.vendor");
-      return javaVendor != null && "The Android Project".equals(javaVendor);
-    } catch (Exception e) {
-      return false;
-    }
-  }
-
-  private static boolean isJavaNinePlus() {
-    try {
-      final @Nullable String javaStringVersion = System.getProperty("java.specification.version");
-      if (javaStringVersion != null) {
-        final @NotNull double javaVersion = Double.valueOf(javaStringVersion);
-        return javaVersion >= 9.0;
-      } else {
-        return false;
-      }
-    } catch (Exception e) {
-      return false;
-    }
+    return Platform.isJvm() && Platform.isJavaNinePlus();
   }
 }
