@@ -349,20 +349,16 @@ public final class SentryTracer implements ITransaction {
       }
 
       // try to get the high precision timestamp from the root span
-      //      Long endTime = System.nanoTime();
-      //      Double finishTimestamp = root.getHighPrecisionTimestamp(endTime);
       SentryDate finishTimestamp = root.getFinishDate();
 
       // if a finishDate was passed in, use that instead
       if (finishDate != null) {
         finishTimestamp = finishDate;
-        //        endTime = null;
       }
 
       // if it's not set -> fallback to the current time
       if (finishTimestamp == null) {
         finishTimestamp = hub.getOptions().getDateProvider().now();
-        //        endTime = null;
       }
       // finish unfinished children
       for (final Span child : children) {
@@ -380,7 +376,6 @@ public final class SentryTracer implements ITransaction {
         final @Nullable SentryDate oldestChildTimestamp = oldestChild.getFinishDate();
         if (oldestChildTimestamp != null && finishTimestamp.compareTo(oldestChildTimestamp) > 0) {
           finishTimestamp = oldestChildTimestamp;
-          //          endTime = oldestChild.getEndNanos();
         }
       }
       root.finish(finishStatus.spanStatus, finishTimestamp);

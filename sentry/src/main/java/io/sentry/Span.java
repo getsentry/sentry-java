@@ -330,11 +330,6 @@ public final class Span implements ISpan {
     this.transaction.setMeasurement(name, value, unit);
   }
 
-  //  @Nullable
-  //  Long getEndNanos() {
-  //    return endNanos;
-  //  }
-
   @Override
   public boolean isNoOp() {
     return false;
@@ -343,39 +338,4 @@ public final class Span implements ISpan {
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {
     this.spanFinishedCallback = callback;
   }
-
-  //  public @Nullable Double getHighPrecisionTimestamp() {
-  //    return getHighPrecisionTimestamp(endNanos);
-  //  }
-  //
-  //  /**
-  //   * Returns high precision span finish time represented as {@link Double}.
-  //   *
-  //   * @return high precision span finish time
-  //   */
-  //  @SuppressWarnings("JavaUtilDate")
-  //  @Nullable
-  //  Double getHighPrecisionTimestamp(final @Nullable Long endNanos) {
-  //    final Double duration = getDurationInMillis(endNanos);
-  //    if (duration != null) {
-  //      return DateUtils.millisToSeconds(startTimestamp.getTime() + duration);
-  //    } else if (timestamp != null) {
-  //      return timestamp;
-  //    } else {
-  //      return null;
-  //    }
-  //  }
-
-  /**
-   * Returns span duration in milliseconds or {@code null} when {@link #startNanos} is not set.
-   *
-   * @return span duration in milliseconds
-   */
-  //  private @Nullable Double getDurationInMillis(final @Nullable Long endNanos) {
-  //    if (startNanos != null && endNanos != null) {
-  //      return DateUtils.nanosToMillis(endNanos - startNanos);
-  //    } else {
-  //      return null;
-  //    }
-  //  }
 }
