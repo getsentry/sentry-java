@@ -1,8 +1,10 @@
 package io.sentry;
 
 import io.sentry.util.Platform;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class SentryAutoDateProvider implements SentryDateProvider {
 
   private final @NotNull SentryDateProvider dateProvider;

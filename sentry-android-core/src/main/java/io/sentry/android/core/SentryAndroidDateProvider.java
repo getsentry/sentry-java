@@ -5,12 +5,14 @@ import io.sentry.SentryDate;
 import io.sentry.SentryDateProvider;
 import io.sentry.SentryInstantDateProvider;
 import io.sentry.SentryNanotimeDateProvider;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * This {@link SentryDateProvider} will use {@link java.time.Instant} for Android API 26+ or a
  * combination of {@link java.util.Date} and System.nanoTime() on lower versions.
  */
+@ApiStatus.Internal
 public final class SentryAndroidDateProvider implements SentryDateProvider {
 
   private final @NotNull SentryDateProvider dateProvider;

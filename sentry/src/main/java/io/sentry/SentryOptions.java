@@ -388,6 +388,7 @@ public class SentryOptions {
   private @NotNull IMemoryCollector memoryCollector = NoOpMemoryCollector.getInstance();
 
   /** Date provider to retrieve the current date from. */
+  @ApiStatus.Internal
   private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
 
   /**
@@ -1903,6 +1904,7 @@ public class SentryOptions {
   }
 
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
+  @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
     return dateProvider;
   }
@@ -1913,6 +1915,7 @@ public class SentryOptions {
    * <p>Different providers offer different precision. By default Sentry tries to offer the highest
    * precision available for the system.
    */
+  @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
     this.dateProvider = dateProvider;
   }
