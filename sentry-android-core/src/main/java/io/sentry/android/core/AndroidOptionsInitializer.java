@@ -134,7 +134,7 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
-
+    options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     final SentryFrameMetricsCollector frameMetricsCollector =
         new SentryFrameMetricsCollector(context, options, buildInfoProvider);
@@ -223,7 +223,6 @@ final class AndroidOptionsInitializer {
               SentryLevel.WARNING,
               "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
     }
-    options.addEventProcessor(new ViewHierarchyEventProcessor(options));
 
     if (isTimberAvailable) {
       options.addIntegration(new SentryTimberIntegration());

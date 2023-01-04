@@ -167,6 +167,14 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `ViewHierarchyEventProcessor added to processors list`() {
+        fixture.initSut()
+        val actual =
+            fixture.sentryOptions.eventProcessors.any { it is ViewHierarchyEventProcessor }
+        assertNotNull(actual)
+    }
+
+    @Test
     fun `envelopesDir should be set at initialization`() {
         fixture.initSut()
 

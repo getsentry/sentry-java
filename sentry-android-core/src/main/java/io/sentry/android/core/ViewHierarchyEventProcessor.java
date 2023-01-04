@@ -55,15 +55,18 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
 
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     if (activity == null) {
+      options.getLogger().log(SentryLevel.INFO, "Missing activity for view hierarchy snapshot.");
       return event;
     }
 
     final @Nullable Window window = activity.getWindow();
     if (window == null) {
+      options.getLogger().log(SentryLevel.INFO, "Missing window for view hierarchy snapshot.");
       return event;
     }
 
     final @Nullable View decorView = window.peekDecorView();
+    options.getLogger().log(SentryLevel.INFO, "Missing decor view for view hierarchy snapshot.");
     if (decorView == null) {
       return event;
     }
@@ -107,12 +110,12 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
 
   @NotNull
   public static ViewHierarchy snapshotViewHierarchy(@NotNull final View view) {
-    final List<ViewHierarchyNode> windows = new ArrayList<>();
+    final List<ViewHierarchyNode> windows = new ArrayList<>(1);
     final ViewHierarchy viewHierarchy = new ViewHierarchy("android_view_system", windows);
 
-    final @NotNull ViewHierarchyNode decorNode = viewToNode(view);
-    windows.add(decorNode);
-    addChildren(view, decorNode);
+    final @NotNull ViewHierarchyNode node = viewToNode(view);
+    windows.add(node);
+    addChildren(view, node);
 
     return viewHierarchy;
   }
