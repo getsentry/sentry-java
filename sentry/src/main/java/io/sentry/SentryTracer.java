@@ -644,10 +644,6 @@ public final class SentryTracer implements ITransaction {
     return eventId;
   }
 
-  //  public @Nullable Double getHighPrecisionTimestamp() {
-  //    return root.getHighPrecisionTimestamp();
-  //  }
-
   @NotNull
   Span getRoot() {
     return root;
