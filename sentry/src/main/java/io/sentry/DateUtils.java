@@ -149,7 +149,7 @@ public final class DateUtils {
    * @return seconds
    */
   public static double nanosToSeconds(final long nanos) {
-    return nanos / (1000l * 1000l * 1000l);
+    return Double.valueOf(nanos) / (1000.0 * 1000.0 * 1000.0);
   }
 
   /**
