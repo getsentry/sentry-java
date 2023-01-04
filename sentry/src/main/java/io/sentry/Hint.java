@@ -118,7 +118,7 @@ public final class Hint {
     return screenshot;
   }
 
-  public void setViewHierarchy(@Nullable Attachment viewHierarchy) {
+  public void setViewHierarchy(final @Nullable Attachment viewHierarchy) {
     this.viewHierarchy = viewHierarchy;
   }
 
