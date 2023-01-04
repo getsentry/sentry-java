@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add Android View Hierarchy support ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
+- Attach View Hierarchy to the errored/crashed events ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
 
 ## 6.11.0
 
