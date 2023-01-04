@@ -26,7 +26,7 @@ public final class ViewHierarchy implements JsonUnknown, JsonSerializable {
   private @Nullable Map<String, Object> unknown;
 
   public ViewHierarchy(
-      @Nullable String renderingSystem, @Nullable List<ViewHierarchyNode> windows) {
+      final @Nullable String renderingSystem, final @Nullable List<ViewHierarchyNode> windows) {
     this.renderingSystem = renderingSystem;
     this.windows = windows;
   }
