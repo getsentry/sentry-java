@@ -32,6 +32,11 @@ public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public class io/sentry/android/core/AndroidMemoryCollector : io/sentry/IMemoryCollector {
+	public fun <init> ()V
+	public fun collect ()Lio/sentry/MemoryCollectionData;
+}
+
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V

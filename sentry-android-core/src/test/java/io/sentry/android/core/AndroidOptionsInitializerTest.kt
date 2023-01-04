@@ -493,4 +493,11 @@ class AndroidOptionsInitializerTest {
         assertTrue { fixture.sentryOptions.gestureTargetLocators[0] is AndroidViewGestureTargetLocator }
         assertTrue { fixture.sentryOptions.gestureTargetLocators[1] is ComposeGestureTargetLocator }
     }
+
+    @Test
+    fun `AndroidMemoryCollector is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.memoryCollector is AndroidMemoryCollector }
+    }
 }

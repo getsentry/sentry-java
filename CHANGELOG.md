@@ -5,6 +5,11 @@
 ### Features
 
 - Attach View Hierarchy to the errored/crashed events ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
+- Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
+
+### Fixes
+
+- Don't override sdk name with Timber ([#2450](https://github.com/getsentry/sentry-java/pull/2450))
 
 ## 6.11.0
 

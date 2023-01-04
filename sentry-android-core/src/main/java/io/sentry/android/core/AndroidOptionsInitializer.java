@@ -161,6 +161,7 @@ final class AndroidOptionsInitializer {
       options.setGestureTargetLocators(gestureTargetLocators);
     }
     options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
+    options.setMemoryCollector(new AndroidMemoryCollector());
   }
 
   private static void installDefaultIntegrations(
