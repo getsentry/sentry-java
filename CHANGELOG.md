@@ -5,6 +5,7 @@
 ### Features
 
 - Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
+- Add `traceOptionsRequests` option to disable tracing of OPTIONS requests ([#2453](https://github.com/getsentry/sentry-java/pull/2453))
 
 ### Fixes
 
