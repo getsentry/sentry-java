@@ -21,8 +21,6 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -73,39 +71,30 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
 
     try {
       final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(decorView);
-      final @NotNull Future<?> future =
-          options
-              .getExecutorService()
-              .submit(
-                  () -> {
-                    try {
-                      serializeViewHierarchy(viewHierarchy, hint);
-                    } catch (Throwable e) {
-                      options
-                          .getLogger()
-                          .log(SentryLevel.ERROR, "Failed trying to serialize view hierarchy.", e);
-                    }
-                  });
-      future.get(TIMEOUT_PROCESSING_MILLIS, TimeUnit.MILLISECONDS);
+      attachViewHierarchy(viewHierarchy, hint);
     } catch (Throwable t) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
     }
     return event;
   }
 
-  private void serializeViewHierarchy(@NonNull ViewHierarchy viewHierarchy, @NonNull Hint hint) {
-    try {
-      try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-          final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+  private void attachViewHierarchy(@NonNull ViewHierarchy viewHierarchy, @NonNull Hint hint) {
+    hint.setViewHierarchy(
+        Attachment.fromViewHierarchy(
+            () -> {
+              try {
+                try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    final Writer writer =
+                        new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
 
-        options.getSerializer().serialize(viewHierarchy, writer);
-
-        final Attachment attachment = Attachment.fromViewHierarchy(stream.toByteArray());
-        hint.setViewHierarchy(attachment);
-      }
-    } catch (Throwable t) {
-      options.getLogger().log(SentryLevel.ERROR, "Could not snapshot ViewHierarchy", t);
-    }
+                  options.getSerializer().serialize(viewHierarchy, writer);
+                  return stream.toByteArray();
+                }
+              } catch (Throwable t) {
+                options.getLogger().log(SentryLevel.ERROR, "Could not serialize ViewHierarchy", t);
+                throw t;
+              }
+            }));
   }
 
   @NotNull

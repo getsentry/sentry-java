@@ -171,25 +171,20 @@ public final class SentryEnvelopeItem {
         new CachedItem(
             () -> {
               if (attachment.getBytes() != null) {
-                if (attachment.getBytes().length > maxAttachmentSize) {
-                  throw new SentryEnvelopeException(
-                      String.format(
-                          "Dropping attachment with filename '%s', because the "
-                              + "size of the passed bytes with %d bytes is bigger "
-                              + "than the maximum allowed attachment size of "
-                              + "%d bytes.",
-                          attachment.getFilename(),
-                          attachment.getBytes().length,
-                          maxAttachmentSize));
-                }
+                ensureAttachmentSizeLimit(
+                    attachment.getBytes().length, maxAttachmentSize, attachment.getFilename());
                 return attachment.getBytes();
+              } else if (attachment.getBytesFactory() != null) {
+                final byte[] data = attachment.getBytesFactory().call();
+                ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
+                return data;
               } else if (attachment.getPathname() != null) {
                 return readBytesFromFile(attachment.getPathname(), maxAttachmentSize);
               }
               throw new SentryEnvelopeException(
                   String.format(
                       "Couldn't attach the attachment %s.\n"
-                          + "Please check that either bytes or a path is set.",
+                          + "Please check that either bytes, bytesFactory or a path is set.",
                       attachment.getFilename()));
             });
 
@@ -203,6 +198,20 @@ public final class SentryEnvelopeItem {
 
     // Don't use method reference. This can cause issues on Android
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  private static void ensureAttachmentSizeLimit(
+      final long size, final long maxAttachmentSize, final @NotNull String filename)
+      throws SentryEnvelopeException {
+    if (size > maxAttachmentSize) {
+      throw new SentryEnvelopeException(
+          String.format(
+              "Dropping attachment with filename '%s', because the "
+                  + "size of the passed bytes with %d bytes is bigger "
+                  + "than the maximum allowed attachment size of "
+                  + "%d bytes.",
+              filename, size, maxAttachmentSize));
+    }
   }
 
   public static @NotNull SentryEnvelopeItem fromProfilingTrace(

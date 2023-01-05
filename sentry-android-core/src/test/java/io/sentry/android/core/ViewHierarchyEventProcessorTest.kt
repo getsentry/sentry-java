@@ -6,16 +6,11 @@ import android.view.ViewGroup
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
-import io.sentry.ISentryExecutorService
 import io.sentry.SentryEvent
 import io.sentry.protocol.SentryException
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -206,43 +201,6 @@ class ViewHierarchyEventProcessorTest {
             assertEquals(false, visible)
             assertEquals(null, children)
         }
-    }
-
-    @Test
-    fun `if serialization of view hierarchy takes too long, it does not get attached`() {
-        fixture.options.executorService = object : ISentryExecutorService {
-            val service = Executors.newSingleThreadScheduledExecutor()
-            override fun submit(runnable: Runnable): Future<*> {
-                service.submit {
-                    Thread.sleep(2000L)
-                }
-                return service.submit(runnable)
-            }
-
-            override fun <T : Any?> submit(callable: Callable<T>): Future<T> {
-                service.submit {
-                    Thread.sleep(2000L)
-                }
-                return service.submit(callable)
-            }
-
-            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
-                return service.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS)
-            }
-
-            override fun close(timeoutMillis: Long) {
-                service.shutdown()
-            }
-        }
-        val (event, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
-
-        assertNotNull(event)
-        assertNull(hint.viewHierarchy)
     }
 
     private fun mockedView(

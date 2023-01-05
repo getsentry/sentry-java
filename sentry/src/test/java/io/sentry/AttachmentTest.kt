@@ -115,14 +115,15 @@ class AttachmentTest {
 
     @Test
     fun `creates attachment from view hierarchy`() {
-        val bytes = byteArrayOf()
-        val attachment = Attachment.fromViewHierarchy(bytes)
+        val bytes = byteArrayOf(1, 2, 3)
+        val attachment = Attachment.fromViewHierarchy { bytes }
 
         assertEquals("view-hierarchy.json", attachment.filename)
         assertEquals("application/json", attachment.contentType)
         assertEquals(false, attachment.isAddToTransactions)
         // TODO replace with event.view_hierarchy
         assertEquals("event.attachment", attachment.attachmentType)
-        assertEquals(bytes, attachment.bytes)
+        assertNull(attachment.bytes)
+        assertEquals(bytes, attachment.bytesFactory!!.call())
     }
 }

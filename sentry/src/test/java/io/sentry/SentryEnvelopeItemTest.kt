@@ -59,6 +59,15 @@ class SentryEnvelopeItemTest {
     }
 
     @Test
+    fun `fromAttachment with bytes factory`() {
+        val attachment = Attachment({ fixture.bytesAllowed }, fixture.filename, "text/plain", null, false)
+
+        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+
+        assertAttachment(attachment, fixture.bytesAllowed, item)
+    }
+
+    @Test
     fun `fromAttachment with attachmentType`() {
         val attachment = Attachment(fixture.pathname, fixture.filename, "", true, "event.minidump")
 
@@ -178,6 +187,22 @@ class SentryEnvelopeItemTest {
     @Test
     fun `fromAttachment with bytes too big`() {
         val attachment = Attachment(fixture.bytesTooBig, fixture.filename)
+        val exception = assertFailsWith<SentryEnvelopeException> {
+            SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize).data
+        }
+
+        assertEquals(
+            "Dropping attachment with filename '${fixture.filename}', because the " +
+                "size of the passed bytes with ${fixture.bytesTooBig.size} bytes is bigger " +
+                "than the maximum allowed attachment size of " +
+                "${fixture.maxAttachmentSize} bytes.",
+            exception.message
+        )
+    }
+
+    @Test
+    fun `fromAttachment with bytes factory too big`() {
+        val attachment = Attachment({ fixture.bytesTooBig }, fixture.filename, "text/plain", null, false)
         val exception = assertFailsWith<SentryEnvelopeException> {
             SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize).data
         }

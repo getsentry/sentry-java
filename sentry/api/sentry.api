@@ -10,14 +10,16 @@ public final class io/sentry/Attachment {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
+	public fun <init> (Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> ([BLjava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Z)V
 	public static fun fromScreenshot ([B)Lio/sentry/Attachment;
-	public static fun fromViewHierarchy ([B)Lio/sentry/Attachment;
+	public static fun fromViewHierarchy (Ljava/util/concurrent/Callable;)Lio/sentry/Attachment;
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getBytes ()[B
+	public fun getBytesFactory ()Ljava/util/concurrent/Callable;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFilename ()Ljava/lang/String;
 	public fun getPathname ()Ljava/lang/String;

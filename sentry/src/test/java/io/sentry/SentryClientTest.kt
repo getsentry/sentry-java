@@ -1423,7 +1423,7 @@ class SentryClientTest {
     @Test
     fun `view hierarchy is added to the envelope from the hint`() {
         val sut = fixture.getSut()
-        val attachment = Attachment.fromViewHierarchy(byteArrayOf())
+        val attachment = Attachment.fromViewHierarchy { byteArrayOf() }
         val hint = Hint().also { it.viewHierarchy = attachment }
 
         sut.captureEvent(SentryEvent(), hint)
@@ -1443,7 +1443,7 @@ class SentryClientTest {
     fun `view hierarchy is dropped from hint via before send`() {
         fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
         val sut = fixture.getSut()
-        val attachment = Attachment.fromViewHierarchy(byteArrayOf())
+        val attachment = Attachment.fromViewHierarchy { byteArrayOf() }
         val hint = Hint().also { it.viewHierarchy = attachment }
 
         sut.captureEvent(SentryEvent(), hint)
