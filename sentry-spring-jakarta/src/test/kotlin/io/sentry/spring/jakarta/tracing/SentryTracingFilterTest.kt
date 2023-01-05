@@ -229,4 +229,24 @@ class SentryTracingFilterTest {
             anyOrNull()
         )
     }
+
+    @Test
+    fun `tracks POST request with traceOptionsRequests=false`() {
+        val filter = fixture.getSut()
+        fixture.request.method = HttpMethod.POST.name()
+        fixture.options.isTraceOptionsRequests = false
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertThat(it.contexts.trace!!.parentSpanId).isNull()
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
 }
