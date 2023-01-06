@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
+import io.sentry.Sentry;
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -130,6 +131,14 @@ public final class SentryPerformanceProvider extends ContentProvider
         application.unregisterActivityLifecycleCallbacks(this);
       }
       firstActivityCreated = true;
+
+      // When sentry initialization is manually initialized after the Activity is displayed,
+      // reset the appStartTime & appStartMillis
+      if (!Sentry.isEnabled()) {
+        AppStartState.getInstance().reset();
+        AppStartState.getInstance()
+          .setFirstActivityCreatedMillis(SystemClock.uptimeMillis() - appStartMillis);
+      }
     }
   }
 

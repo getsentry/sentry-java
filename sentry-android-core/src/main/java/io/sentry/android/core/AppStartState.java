@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import android.os.SystemClock;
+import io.sentry.DateUtils;
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +26,11 @@ public final class AppStartState {
 
   /** appStart as a Date used in the App's Context */
   private @Nullable Date appStartTime;
+
+  /**
+   * first activity create time
+   */
+  private Long firstActivityCreatedMillis;
 
   private AppStartState() {}
 
@@ -94,8 +100,13 @@ public final class AppStartState {
     if (this.appStartTime != null && this.appStartMillis != null) {
       return;
     }
-    this.appStartTime = appStartTime;
-    this.appStartMillis = appStartMillis;
+    // When sentry initialization is manually initialized after the Activity is displayed,
+    // reset the appStartTime & appStartMillis
+    Long firstActivityCreatedMillis = this.firstActivityCreatedMillis;
+    this.appStartTime = firstActivityCreatedMillis != null ?
+      DateUtils.getDateTime(appStartTime.getTime() - firstActivityCreatedMillis) : appStartTime;
+    this.appStartMillis = firstActivityCreatedMillis != null ?
+      appStartMillis - firstActivityCreatedMillis : appStartMillis;
   }
 
   @TestOnly
@@ -103,10 +114,13 @@ public final class AppStartState {
     this.appStartMillis = appStartMillis;
   }
 
-  @TestOnly
   public synchronized void reset() {
     appStartTime = null;
     appStartMillis = null;
     appStartEndMillis = null;
+  }
+
+  synchronized void setFirstActivityCreatedMillis(Long firstActivityCreatedMillis) {
+    this.firstActivityCreatedMillis = firstActivityCreatedMillis;
   }
 }

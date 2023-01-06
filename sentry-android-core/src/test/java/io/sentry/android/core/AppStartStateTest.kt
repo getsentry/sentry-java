@@ -89,4 +89,23 @@ class AppStartStateTest {
 
         assertNull(sut.appStartInterval)
     }
+
+    @Test
+    fun `setFirstActivityCreatedMillis can make getAppStartInterval returns right interval even if more than 60s`() {
+        val sut = AppStartState.getInstance()
+
+        // performance provider init
+        val date = Date()
+        sut.setAppStartTime(100, date)
+        // first activity displayed cost 100ms
+        sut.setColdStart(true)
+        sut.reset()
+        sut.setFirstActivityCreatedMillis(100)
+        // sentry init after 60000ms
+        sut.setAppStartTime(60100, Date())
+        // next activity displayed cost 200ms
+        sut.setAppStartEnd(60300)
+
+        assertEquals(300, sut.appStartInterval)
+    }
 }
