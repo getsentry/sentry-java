@@ -18,6 +18,7 @@ public final class SentryAutoDateProvider implements SentryDateProvider {
   }
 
   @Override
+  @NotNull
   public SentryDate now() {
     return dateProvider.now();
   }
