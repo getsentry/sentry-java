@@ -288,6 +288,10 @@ public final class Sentry {
       options.setMainThreadChecker(MainThreadChecker.getInstance());
     }
 
+    if (options.getMemoryCollector() instanceof NoOpMemoryCollector) {
+      options.setMemoryCollector(new JavaMemoryCollector());
+    }
+
     return true;
   }
 
