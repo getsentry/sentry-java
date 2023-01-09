@@ -24,7 +24,7 @@ class SentryAndroidDateProviderTest {
     }
 
     @Test
-    fun `provides SentryInstantDate on older Android API levels`() {
+    fun `provides SentryInstantDate on newer Android API levels`() {
         whenever(fixture.buildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
         val date = SentryAndroidDateProvider(fixture.buildInfoProvider).now()
         assertTrue(date is SentryInstantDate)

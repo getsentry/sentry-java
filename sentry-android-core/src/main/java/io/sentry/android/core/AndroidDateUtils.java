@@ -15,7 +15,7 @@ public final class AndroidDateUtils {
   /**
    * Get the current SentryDate (UTC).
    *
-   * <p>NOTE: options.getDatProvider() should be preferred. This is only a fallback for static
+   * <p>NOTE: options.getDateProvider() should be preferred. This is only a fallback for static
    * invocations.
    *
    * @return the UTC SentryDate

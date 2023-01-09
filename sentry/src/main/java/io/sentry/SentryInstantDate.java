@@ -22,6 +22,7 @@ public final class SentryInstantDate extends SentryDate {
 
   @Override
   public long nanoTimestamp() {
+    // Note: No long overflow until year 2262
     return DateUtils.secondsToNanos(date.getEpochSecond()) + date.getNano();
   }
 }
