@@ -1,5 +1,6 @@
 package io.sentry.uitest.android.benchmark
 
+import android.os.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -52,7 +53,9 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
             runner.runOnMainSync {
                 init?.invoke()
             }
-            val benchmarkScenario = launchActivity<BenchmarkActivity>()
+            val benchmarkScenario = launchActivity<BenchmarkActivity>(
+                activityOptions = Bundle().apply { putBoolean(BenchmarkActivity.EXTRA_SUSTAINED_PERFORMANCE_MODE, false) }
+            )
             benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
         },
         after = {

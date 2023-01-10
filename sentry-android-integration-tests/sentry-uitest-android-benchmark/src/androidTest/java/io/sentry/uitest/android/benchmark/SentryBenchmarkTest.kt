@@ -1,5 +1,6 @@
 package io.sentry.uitest.android.benchmark
 
+import android.os.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso
@@ -99,7 +100,9 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
     private fun getOperation(runner: AndroidJUnitRunner, transactionBuilder: () -> ITransaction? = { null }): () -> Unit = {
         var transaction: ITransaction? = null
         // Launch the sentry-uitest-android-benchmark activity
-        val benchmarkScenario = launchActivity<BenchmarkActivity>()
+        val benchmarkScenario = launchActivity<BenchmarkActivity>(
+            activityOptions = Bundle().apply { putBoolean(BenchmarkActivity.EXTRA_SUSTAINED_PERFORMANCE_MODE, true) }
+        )
         // Starts a transaction (it can be null, but we still runOnMainSync to make operations as similar as possible)
         runner.runOnMainSync {
             transaction = transactionBuilder()

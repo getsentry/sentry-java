@@ -2,7 +2,10 @@ package io.sentry.uitest.android.benchmark.util
 
 import android.os.Process
 import android.os.SystemClock
+import android.system.Os
+import android.system.OsConstants
 import android.view.Choreographer
+import java.io.File
 import java.util.LinkedList
 import java.util.concurrent.TimeUnit
 
@@ -99,7 +102,7 @@ internal class BenchmarkOperation(
         frameCallback.setup(refreshRate)
 
         val startRealtimeNs = SystemClock.elapsedRealtimeNanos()
-        val startCpuTimeMs = Process.getElapsedCpuTime()
+        val startCpuTimeMs = readProcessorTimeNanos()
         lastFrameTimeNanos = startRealtimeNs
 
         choreographer.postFrameCallback(frameCallback)
@@ -107,7 +110,7 @@ internal class BenchmarkOperation(
         choreographer.removeFrameCallback(frameCallback)
 
         val durationNanos = SystemClock.elapsedRealtimeNanos() - startRealtimeNs
-        cpuDurationMillisList.add(Process.getElapsedCpuTime() - startCpuTimeMs)
+        cpuDurationMillisList.add(TimeUnit.NANOSECONDS.toMillis(readProcessorTimeNanos() - startCpuTimeMs))
         durationNanosList.add(durationNanos)
         droppedFramesList.add(frameCallback.droppedFrames)
         // fps = counted frames per seconds converted into frames per nanoseconds, divided by duration in nanoseconds
@@ -116,6 +119,22 @@ internal class BenchmarkOperation(
 
         after?.invoke()
         isolate()
+    }
+
+    private fun readProcessorTimeNanos(): Long {
+        val clockSpeedHz = Os.sysconf(OsConstants._SC_CLK_TCK)
+//        val numCores = Os.sysconf(OsConstants._SC_NPROCESSORS_CONF)
+        val nanosecondsPerClockTick = 1_000_000_000 / clockSpeedHz.toDouble()
+        val selfStat = File("/proc/self/stat")
+        val stats = selfStat.readText().trim().split("[\n\t\r ]".toRegex())
+        if (stats.isNotEmpty()) {
+            val uTime = stats[13].toLong()
+            val sTime = stats[14].toLong()
+            val cuTime = stats[15].toLong()
+            val csTime = stats[16].toLong()
+            return ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick).toLong()
+        }
+        return 0
     }
 
     /** Return the [BenchmarkOperationComparable] for the operation. */
