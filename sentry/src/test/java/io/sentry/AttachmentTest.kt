@@ -121,8 +121,7 @@ class AttachmentTest {
         assertEquals("view-hierarchy.json", attachment.filename)
         assertEquals("application/json", attachment.contentType)
         assertEquals(false, attachment.isAddToTransactions)
-        // TODO replace with event.view_hierarchy
-        assertEquals("event.attachment", attachment.attachmentType)
+        assertEquals("event.view_hierarchy", attachment.attachmentType)
         assertNull(attachment.bytes)
         assertEquals(bytes, attachment.bytesFactory!!.call())
     }

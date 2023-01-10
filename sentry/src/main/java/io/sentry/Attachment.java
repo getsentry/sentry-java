@@ -20,7 +20,8 @@ public final class Attachment {
 
   /** A standard attachment without special meaning */
   private static final String DEFAULT_ATTACHMENT_TYPE = "event.attachment";
-  // private static final String VIEW_HIERARCHY_ATTACHMENT_TYPE = "event.view_hierarchy";
+
+  private static final String VIEW_HIERARCHY_ATTACHMENT_TYPE = "event.view_hierarchy";
 
   /**
    * Initializes an Attachment with bytes and a filename. Sets addToTransaction to <code>false
@@ -330,7 +331,7 @@ public final class Attachment {
         bytesFactory,
         "view-hierarchy.json",
         "application/json",
-        DEFAULT_ATTACHMENT_TYPE, // TODO replace with VIEW_HIERARCHY_ATTACHMENT_TYPE,
+        VIEW_HIERARCHY_ATTACHMENT_TYPE,
         false);
   }
 }
