@@ -171,9 +171,9 @@ public final class SentryEnvelopeItem {
         new CachedItem(
             () -> {
               if (attachment.getBytes() != null) {
-                ensureAttachmentSizeLimit(
-                    attachment.getBytes().length, maxAttachmentSize, attachment.getFilename());
-                return attachment.getBytes();
+                final byte[] data = attachment.getBytes();
+                ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
+                return data;
               } else if (attachment.getBytesFactory() != null) {
                 final byte[] data = attachment.getBytesFactory().call();
                 ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
