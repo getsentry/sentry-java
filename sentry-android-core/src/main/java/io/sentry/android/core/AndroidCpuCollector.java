@@ -19,7 +19,8 @@ import org.jetbrains.annotations.Nullable;
 
 // The approach to get the cpu usage info was taken from
 // https://eng.lyft.com/monitoring-cpu-performance-of-lyfts-android-applications-4e36fafffe12
-// The content of the /proc/self/stat file is specified in https://man7.org/linux/man-pages/man5/proc.5.html
+// The content of the /proc/self/stat file is specified in
+// https://man7.org/linux/man-pages/man5/proc.5.html
 @ApiStatus.Internal
 public final class AndroidCpuCollector implements ICpuCollector {
 
