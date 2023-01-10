@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import androidx.annotation.NonNull;
 import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -14,10 +13,6 @@ import io.sentry.android.core.internal.gestures.ViewUtils;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.Objects;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,37 +57,18 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     }
 
     final @Nullable View decorView = window.peekDecorView();
-    options.getLogger().log(SentryLevel.INFO, "Missing decor view for view hierarchy snapshot.");
     if (decorView == null) {
+      options.getLogger().log(SentryLevel.INFO, "Missing decor view for view hierarchy snapshot.");
       return event;
     }
 
     try {
       final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(decorView);
-      attachViewHierarchy(viewHierarchy, hint);
+      hint.setViewHierarchy(Attachment.fromViewHierarchy(viewHierarchy));
     } catch (Throwable t) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
     }
     return event;
-  }
-
-  private void attachViewHierarchy(@NonNull ViewHierarchy viewHierarchy, @NonNull Hint hint) {
-    hint.setViewHierarchy(
-        Attachment.fromViewHierarchy(
-            () -> {
-              try {
-                try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                    final Writer writer =
-                        new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-
-                  options.getSerializer().serialize(viewHierarchy, writer);
-                  return stream.toByteArray();
-                }
-              } catch (Throwable t) {
-                options.getLogger().log(SentryLevel.ERROR, "Could not serialize ViewHierarchy", t);
-                throw t;
-              }
-            }));
   }
 
   @NotNull

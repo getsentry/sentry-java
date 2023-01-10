@@ -165,7 +165,10 @@ public final class SentryEnvelopeItem {
   }
 
   public static SentryEnvelopeItem fromAttachment(
-      final @NotNull Attachment attachment, final long maxAttachmentSize) {
+      final @NotNull ISerializer serializer,
+      final @NotNull ILogger logger,
+      final @NotNull Attachment attachment,
+      final long maxAttachmentSize) {
 
     final CachedItem cachedItem =
         new CachedItem(
@@ -174,10 +177,24 @@ public final class SentryEnvelopeItem {
                 final byte[] data = attachment.getBytes();
                 ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
                 return data;
-              } else if (attachment.getBytesFactory() != null) {
-                final byte[] data = attachment.getBytesFactory().call();
-                ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
-                return data;
+              } else if (attachment.getSerializable() != null) {
+                final JsonSerializable serializable = attachment.getSerializable();
+                try {
+                  try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                      final Writer writer =
+                          new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+
+                    serializer.serialize(serializable, writer);
+
+                    final byte[] data = stream.toByteArray();
+                    ensureAttachmentSizeLimit(
+                        data.length, maxAttachmentSize, attachment.getFilename());
+                    return data;
+                  }
+                } catch (Throwable t) {
+                  logger.log(SentryLevel.ERROR, "Could not serialize attachment serializable", t);
+                  throw t;
+                }
               } else if (attachment.getPathname() != null) {
                 return readBytesFromFile(attachment.getPathname(), maxAttachmentSize);
               }

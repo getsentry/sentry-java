@@ -1,7 +1,7 @@
 package io.sentry;
 
+import io.sentry.protocol.ViewHierarchy;
 import java.io.File;
-import java.util.concurrent.Callable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Attachment {
 
   private @Nullable byte[] bytes;
-  private final @Nullable Callable<byte[]> bytesFactory;
+  private final @Nullable JsonSerializable serializable;
   private @Nullable String pathname;
   private final @NotNull String filename;
   private final @Nullable String contentType;
@@ -83,7 +83,7 @@ public final class Attachment {
       final @Nullable String attachmentType,
       final boolean addToTransactions) {
     this.bytes = bytes;
-    this.bytesFactory = null;
+    this.serializable = null;
     this.filename = filename;
     this.contentType = contentType;
     this.attachmentType = attachmentType;
@@ -94,7 +94,7 @@ public final class Attachment {
    * Initializes an Attachment with bytes factory, a filename, a content type, and
    * addToTransactions.
    *
-   * @param bytesFactory The bytes factory providing the data when being called
+   * @param serializable A json serializable holding the attachment payload
    * @param filename The name of the attachment to display in Sentry.
    * @param contentType The content type of the attachment.
    * @param attachmentType the attachment type.
@@ -102,13 +102,13 @@ public final class Attachment {
    *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
    */
   public Attachment(
-      final @NotNull Callable<byte[]> bytesFactory,
+      final @NotNull JsonSerializable serializable,
       final @NotNull String filename,
       final @Nullable String contentType,
       final @Nullable String attachmentType,
       final boolean addToTransactions) {
     this.bytes = null;
-    this.bytesFactory = bytesFactory;
+    this.serializable = serializable;
     this.filename = filename;
     this.contentType = contentType;
     this.attachmentType = attachmentType;
@@ -185,7 +185,7 @@ public final class Attachment {
       final boolean addToTransactions) {
     this.pathname = pathname;
     this.filename = filename;
-    this.bytesFactory = null;
+    this.serializable = null;
     this.contentType = contentType;
     this.attachmentType = attachmentType;
     this.addToTransactions = addToTransactions;
@@ -211,7 +211,7 @@ public final class Attachment {
       final boolean addToTransactions) {
     this.pathname = pathname;
     this.filename = filename;
-    this.bytesFactory = null;
+    this.serializable = null;
     this.contentType = contentType;
     this.addToTransactions = addToTransactions;
   }
@@ -239,7 +239,7 @@ public final class Attachment {
       final @Nullable String attachmentType) {
     this.pathname = pathname;
     this.filename = filename;
-    this.bytesFactory = null;
+    this.serializable = null;
     this.contentType = contentType;
     this.addToTransactions = addToTransactions;
     this.attachmentType = attachmentType;
@@ -259,8 +259,8 @@ public final class Attachment {
    *
    * @return the bytes factory responsible for providing the bytes.
    */
-  public @Nullable Callable<byte[]> getBytesFactory() {
-    return bytesFactory;
+  public @Nullable JsonSerializable getSerializable() {
+    return serializable;
   }
 
   /**
@@ -323,12 +323,12 @@ public final class Attachment {
   /**
    * Creates a new View Hierarchy Attachment
    *
-   * @param bytesFactory the serialized View Hierarchy
+   * @param viewHierarchy the View Hierarchy
    * @return the Attachment
    */
-  public static @NotNull Attachment fromViewHierarchy(final Callable<byte[]> bytesFactory) {
+  public static @NotNull Attachment fromViewHierarchy(final ViewHierarchy viewHierarchy) {
     return new Attachment(
-        bytesFactory,
+        viewHierarchy,
         "view-hierarchy.json",
         "application/json",
         VIEW_HIERARCHY_ATTACHMENT_TYPE,

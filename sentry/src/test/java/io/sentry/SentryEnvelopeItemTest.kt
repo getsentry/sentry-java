@@ -2,13 +2,18 @@ package io.sentry
 
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.User
+import io.sentry.protocol.ViewHierarchy
 import io.sentry.test.injectForField
 import io.sentry.vendor.Base64
 import org.junit.Assert.assertArrayEquals
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.io.BufferedWriter
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.OutputStreamWriter
+import java.nio.charset.Charset
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,7 +25,8 @@ import kotlin.test.assertNull
 class SentryEnvelopeItemTest {
 
     private class Fixture {
-        val serializer = JsonSerializer(SentryOptions())
+        val options = SentryOptions()
+        val serializer = JsonSerializer(options)
         val pathname = "hello.txt"
         val filename = pathname
         val bytes = "hello".toByteArray()
@@ -53,25 +59,28 @@ class SentryEnvelopeItemTest {
     fun `fromAttachment with bytes`() {
         val attachment = Attachment(fixture.bytesAllowed, fixture.filename)
 
-        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+        val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
         assertAttachment(attachment, fixture.bytesAllowed, item)
     }
 
     @Test
-    fun `fromAttachment with bytes factory`() {
-        val attachment = Attachment({ fixture.bytesAllowed }, fixture.filename, "text/plain", null, false)
+    fun `fromAttachment with Serializable`() {
+        val viewHierarchy = ViewHierarchy("android", emptyList())
+        val viewHierarchySerialized = serialize(viewHierarchy)
 
-        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+        val attachment = Attachment(viewHierarchy, fixture.filename, "text/plain", null, false)
 
-        assertAttachment(attachment, fixture.bytesAllowed, item)
+        val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
+
+        assertAttachment(attachment, viewHierarchySerialized, item)
     }
 
     @Test
     fun `fromAttachment with attachmentType`() {
         val attachment = Attachment(fixture.pathname, fixture.filename, "", true, "event.minidump")
 
-        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+        val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
         assertEquals("event.minidump", item.header.attachmentType)
     }
@@ -82,7 +91,7 @@ class SentryEnvelopeItemTest {
         file.writeBytes(fixture.bytesAllowed)
         val attachment = Attachment(file.path)
 
-        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+        val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
         assertAttachment(attachment, fixture.bytesAllowed, item)
     }
@@ -94,7 +103,7 @@ class SentryEnvelopeItemTest {
         file.writeBytes(twoMB)
         val attachment = Attachment(file.absolutePath)
 
-        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+        val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
         assertAttachment(attachment, twoMB, item)
     }
@@ -103,7 +112,7 @@ class SentryEnvelopeItemTest {
     fun `fromAttachment with non existent file`() {
         val attachment = Attachment("I don't exist", "file.txt")
 
-        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+        val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
         assertFailsWith<SentryEnvelopeException>(
             "Reading the attachment ${attachment.pathname} failed, because the file located at " +
@@ -123,7 +132,7 @@ class SentryEnvelopeItemTest {
         if (changedFileReadPermission) {
             val attachment = Attachment(file.path, "file.txt")
 
-            val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+            val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
             assertFailsWith<SentryEnvelopeException>(
                 "Reading the attachment ${attachment.pathname} failed, " +
@@ -146,7 +155,7 @@ class SentryEnvelopeItemTest {
         val securityManager = DenyReadFileSecurityManager(fixture.pathname)
         System.setSecurityManager(securityManager)
 
-        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+        val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
         assertFailsWith<SentryEnvelopeException>("Reading the attachment ${attachment.pathname} failed.") {
             item.data
@@ -165,7 +174,7 @@ class SentryEnvelopeItemTest {
         // reflection instead.
         attachment.injectForField("pathname", null)
 
-        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+        val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
 
         assertFailsWith<SentryEnvelopeException>(
             "Couldn't attach the attachment ${attachment.filename}.\n" +
@@ -180,7 +189,7 @@ class SentryEnvelopeItemTest {
         val image = this::class.java.classLoader.getResource("Tongariro.jpg")!!
         val attachment = Attachment(image.path)
 
-        val item = SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize)
+        val item = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
         assertAttachment(attachment, image.readBytes(), item)
     }
 
@@ -188,7 +197,7 @@ class SentryEnvelopeItemTest {
     fun `fromAttachment with bytes too big`() {
         val attachment = Attachment(fixture.bytesTooBig, fixture.filename)
         val exception = assertFailsWith<SentryEnvelopeException> {
-            SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize).data
+            SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize).data
         }
 
         assertEquals(
@@ -201,15 +210,22 @@ class SentryEnvelopeItemTest {
     }
 
     @Test
-    fun `fromAttachment with bytes factory too big`() {
-        val attachment = Attachment({ fixture.bytesTooBig }, fixture.filename, "text/plain", null, false)
+    fun `fromAttachment with serializable too big`() {
+        val serializable = JsonSerializable { writer, _ ->
+            writer.beginObject()
+            writer.name("payload").value(String(fixture.bytesTooBig))
+            writer.endObject()
+        }
+        val serializedBytes = serialize(serializable)
+
+        val attachment = Attachment(serializable, fixture.filename, "text/plain", null, false)
         val exception = assertFailsWith<SentryEnvelopeException> {
-            SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize).data
+            SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize).data
         }
 
         assertEquals(
             "Dropping attachment with filename '${fixture.filename}', because the " +
-                "size of the passed bytes with ${fixture.bytesTooBig.size} bytes is bigger " +
+                "size of the passed bytes with ${serializedBytes.size} bytes is bigger " +
                 "than the maximum allowed attachment size of " +
                 "${fixture.maxAttachmentSize} bytes.",
             exception.message
@@ -223,7 +239,7 @@ class SentryEnvelopeItemTest {
         val attachment = Attachment(file.path)
 
         val exception = assertFailsWith<SentryEnvelopeException> {
-            SentryEnvelopeItem.fromAttachment(attachment, fixture.maxAttachmentSize).data
+            SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, fixture.maxAttachmentSize).data
         }
 
         assertEquals(
@@ -311,5 +327,14 @@ class SentryEnvelopeItemTest {
         assertEquals(attachment.contentType, actualItem.header.contentType)
         assertEquals(attachment.filename, actualItem.header.fileName)
         assertArrayEquals(expectedBytes, actualItem.data)
+    }
+
+    private fun serialize(serializable: JsonSerializable): ByteArray {
+        ByteArrayOutputStream().use { stream ->
+            BufferedWriter(OutputStreamWriter(stream, Charset.forName("UTF-8"))).use { writer ->
+                fixture.serializer.serialize<JsonSerializable>(serializable, writer)
+                return stream.toByteArray()
+            }
+        }
     }
 }
