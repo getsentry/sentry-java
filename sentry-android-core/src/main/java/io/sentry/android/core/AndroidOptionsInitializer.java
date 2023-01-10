@@ -134,6 +134,7 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
+    options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     final SentryFrameMetricsCollector frameMetricsCollector =
@@ -215,7 +216,6 @@ final class AndroidOptionsInitializer {
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
-      options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     } else {
       options
           .getLogger()
