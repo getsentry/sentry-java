@@ -29,6 +29,7 @@ public final class AndroidCpuCollector implements ICpuCollector {
 
   /** Number of clock ticks per second. */
   private long clockSpeedHz = 1;
+
   private long numCores = 1;
   private final long NANOSECOND_PER_SECOND = 1_000_000_000;
 
@@ -37,6 +38,7 @@ public final class AndroidCpuCollector implements ICpuCollector {
 
   /** File containing stats about this process. */
   private final @NotNull File selfStat = new File("/proc/self/stat");
+
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean isEnabled = false;
@@ -86,7 +88,8 @@ public final class AndroidCpuCollector implements ICpuCollector {
     try {
       stat = FileUtils.readText(selfStat);
     } catch (IOException e) {
-      // If an error occurs when reading the file, we avoid reading it again until the setup method is called again
+      // If an error occurs when reading the file, we avoid reading it again until the setup method
+      // is called again
       isEnabled = false;
       logger.log(
           SentryLevel.ERROR, "Unable to read /proc/self/stat file. Disabling cpu collection.", e);
