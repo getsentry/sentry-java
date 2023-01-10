@@ -167,7 +167,7 @@ class ViewHierarchyEventProcessorTest {
             1f,
             View.VISIBLE,
             listOf(
-                mockedView(10.0f, 11.0f, 100, 101, 0.5f, View.VISIBLE),
+                mockedView(10.0f, 11.0f, 100, 101, 0.5f, View.GONE),
                 mockedView(20.0f, 21.0f, 200, 201, 1f, View.INVISIBLE)
             )
         )
@@ -181,7 +181,7 @@ class ViewHierarchyEventProcessorTest {
         assertEquals(400.0, contentNode.height)
         assertEquals(0.0, contentNode.x)
         assertEquals(1.0, contentNode.y)
-        assertEquals(true, contentNode.visible)
+        assertEquals("visible", contentNode.visibility)
         assertEquals(2, contentNode.children!!.size)
 
         contentNode.children!![0].apply {
@@ -189,7 +189,7 @@ class ViewHierarchyEventProcessorTest {
             assertEquals(101.0, height)
             assertEquals(10.0, x)
             assertEquals(11.0, y)
-            assertEquals(true, visible)
+            assertEquals("gone", visibility)
             assertEquals(null, children)
         }
 
@@ -198,7 +198,7 @@ class ViewHierarchyEventProcessorTest {
             assertEquals(201.0, height)
             assertEquals(20.0, x)
             assertEquals(21.0, y)
-            assertEquals(false, visible)
+            assertEquals("invisible", visibility)
             assertEquals(null, children)
         }
     }

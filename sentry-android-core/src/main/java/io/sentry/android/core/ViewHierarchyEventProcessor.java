@@ -32,8 +32,6 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final @NotNull Charset UTF_8 = Charset.forName("UTF-8");
 
-  private static final long TIMEOUT_PROCESSING_MILLIS = 1000;
-
   private final @NotNull SentryAndroidOptions options;
 
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
@@ -154,7 +152,21 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     node.setWidth((double) view.getWidth());
     node.setHeight((double) view.getHeight());
     node.setAlpha((double) view.getAlpha());
-    node.setVisible(view.getVisibility() == View.VISIBLE);
+
+    switch (view.getVisibility()) {
+      case View.VISIBLE:
+        node.setVisibility("visible");
+        break;
+      case View.INVISIBLE:
+        node.setVisibility("invisible");
+        break;
+      case View.GONE:
+        node.setVisibility("gone");
+        break;
+      default:
+        // ignored
+        break;
+    }
 
     return node;
   }

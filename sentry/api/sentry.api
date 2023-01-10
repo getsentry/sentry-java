@@ -3409,7 +3409,7 @@ public final class io/sentry/protocol/ViewHierarchyNode : io/sentry/JsonSerializ
 	public fun getTag ()Ljava/lang/String;
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
-	public fun getVisible ()Ljava/lang/Boolean;
+	public fun getVisibility ()Ljava/lang/String;
 	public fun getWidth ()Ljava/lang/Double;
 	public fun getX ()Ljava/lang/Double;
 	public fun getY ()Ljava/lang/Double;
@@ -3422,7 +3422,7 @@ public final class io/sentry/protocol/ViewHierarchyNode : io/sentry/JsonSerializ
 	public fun setTag (Ljava/lang/String;)V
 	public fun setType (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
-	public fun setVisible (Ljava/lang/Boolean;)V
+	public fun setVisibility (Ljava/lang/String;)V
 	public fun setWidth (Ljava/lang/Double;)V
 	public fun setX (Ljava/lang/Double;)V
 	public fun setY (Ljava/lang/Double;)V
@@ -3442,7 +3442,7 @@ public final class io/sentry/protocol/ViewHierarchyNode$JsonKeys {
 	public static final field RENDERING_SYSTEM Ljava/lang/String;
 	public static final field TAG Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
-	public static final field VISIBLE Ljava/lang/String;
+	public static final field VISIBILITY Ljava/lang/String;
 	public static final field WIDTH Ljava/lang/String;
 	public static final field X Ljava/lang/String;
 	public static final field Y Ljava/lang/String;

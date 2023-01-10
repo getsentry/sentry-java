@@ -25,7 +25,7 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
     public static final String HEIGHT = "height";
     public static final String X = "x";
     public static final String Y = "y";
-    public static final String VISIBLE = "visible";
+    public static final String VISIBILITY = "visibility";
     public static final String ALPHA = "alpha";
     public static final String CHILDREN = "children";
   }
@@ -38,7 +38,7 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
   private @Nullable Double height;
   private @Nullable Double x;
   private @Nullable Double y;
-  private @Nullable Boolean visible;
+  private @Nullable String visibility;
   private @Nullable Double alpha;
   private @Nullable List<ViewHierarchyNode> children;
   private @Nullable Map<String, Object> unknown;
@@ -77,8 +77,8 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
     this.y = y;
   }
 
-  public void setVisible(final @Nullable Boolean visible) {
-    this.visible = visible;
+  public void setVisibility(final @Nullable String visibility) {
+    this.visibility = visibility;
   }
 
   public void setAlpha(final @Nullable Double alpha) {
@@ -130,8 +130,8 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
   }
 
   @Nullable
-  public Boolean getVisible() {
-    return visible;
+  public String getVisibility() {
+    return visibility;
   }
 
   @Nullable
@@ -172,8 +172,8 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
     if (y != null) {
       writer.name(JsonKeys.Y).value(y);
     }
-    if (visible != null) {
-      writer.name(JsonKeys.VISIBLE).value(visible);
+    if (visibility != null) {
+      writer.name(JsonKeys.VISIBILITY).value(visibility);
     }
     if (alpha != null) {
       writer.name(JsonKeys.ALPHA).value(alpha);
@@ -237,8 +237,8 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
           case JsonKeys.Y:
             node.y = reader.nextDoubleOrNull();
             break;
-          case JsonKeys.VISIBLE:
-            node.visible = reader.nextBooleanOrNull();
+          case JsonKeys.VISIBILITY:
+            node.visibility = reader.nextStringOrNull();
             break;
           case JsonKeys.ALPHA:
             node.alpha = reader.nextDoubleOrNull();

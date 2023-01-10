@@ -17,22 +17,20 @@ class ViewHierarchyNodeSerializationTest {
         val logger = mock<ILogger>()
 
         fun getSut() = ViewHierarchyNode().apply {
-            setType("com.example.ui.FancyButton")
-            setIdentifier("button_logout")
-            setChildren(
-                listOf(
-                    ViewHierarchyNode().apply {
-                        setRenderingSystem("compose")
-                        setType("Clickable")
-                    }
-                )
+            type = "com.example.ui.FancyButton"
+            identifier = "button_logout"
+            children = listOf(
+                ViewHierarchyNode().apply {
+                    renderingSystem = "compose"
+                    type = "Clickable"
+                }
             )
-            setWidth(100.0)
-            setHeight(200.0)
-            setX(0.0)
-            setY(2.0)
-            setVisible(true)
-            setAlpha(1.0)
+            width = 100.0
+            height = 200.0
+            x = 0.0
+            y = 2.0
+            visibility = "visible"
+            alpha = 1.0
             unknown = mapOf(
                 "extra_property" to 42
             )
