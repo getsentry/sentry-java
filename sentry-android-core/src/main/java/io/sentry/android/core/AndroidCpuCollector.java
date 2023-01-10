@@ -26,10 +26,16 @@ public final class AndroidCpuCollector implements ICpuCollector {
 
   private long lastRealtimeNanos = 0;
   private long lastCpuNanos = 0;
+
+  /** Number of clock ticks per second. */
   private long clockSpeedHz = 1;
   private long numCores = 1;
   private final long NANOSECOND_PER_SECOND = 1_000_000_000;
+
+  /** Number of nanoseconds per clock tick. */
   private double nanosecondsPerClockTick = NANOSECOND_PER_SECOND / (double) clockSpeedHz;
+
+  /** File containing stats about this process. */
   private final @NotNull File selfStat = new File("/proc/self/stat");
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -74,11 +80,13 @@ public final class AndroidCpuCollector implements ICpuCollector {
         (cpuNanosDiff / (double) realTimeNanosDiff) / (double) numCores);
   }
 
+  /** Read the /proc/self/stat file and parses the result. */
   private long readTotalCpuNanos() {
     String stat = null;
     try {
       stat = FileUtils.readText(selfStat);
     } catch (IOException e) {
+      // If an error occurs when reading the file, we avoid reading it again until the setup method is called again
       isEnabled = false;
       logger.log(
           SentryLevel.ERROR, "Unable to read /proc/self/stat file. Disabling cpu collection.", e);
@@ -86,9 +94,13 @@ public final class AndroidCpuCollector implements ICpuCollector {
     if (stat != null) {
       stat = stat.trim();
       String[] stats = stat.split("[\n\t\r ]");
+      // Amount of clock ticks this process has been scheduled in user mode
       long uTime = Long.parseLong(stats[13]);
+      // Amount of clock ticks this process has been scheduled in kernel mode
       long sTime = Long.parseLong(stats[14]);
+      // Amount of clock ticks this process' waited-for children has been scheduled in user mode
       long cuTime = Long.parseLong(stats[15]);
+      // Amount of clock ticks this process' waited-for children has been scheduled in kernel mode
       long csTime = Long.parseLong(stats[16]);
       return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
     }
