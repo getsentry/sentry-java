@@ -14,8 +14,12 @@ fun relocatePackages(shadowJar: ShadowJar) {
     // rewrite dependencies calling Logger.getLogger
     shadowJar.relocate("java.util.logging.Logger", "io.opentelemetry.javaagent.bootstrap.PatchLogger")
 
-    // rewrite library instrumentation dependencies
-    shadowJar.relocate("io.opentelemetry.instrumentation", "io.opentelemetry.javaagent.shaded.instrumentation")
+    // prevents conflict with library instrumentation, since these classes live in the bootstrap class loader
+    shadowJar.relocate("io.opentelemetry.instrumentation", "io.opentelemetry.javaagent.shaded.instrumentation") {
+        // Exclude resource providers since they live in the agent class loader
+        exclude("io.opentelemetry.instrumentation.resources.*")
+        exclude("io.opentelemetry.instrumentation.spring.resources.*")
+    }
 
     // relocate OpenTelemetry API usage
     shadowJar.relocate("io.opentelemetry.api", "io.opentelemetry.javaagent.shaded.io.opentelemetry.api")
@@ -50,7 +54,7 @@ val upstreamAgent = configurations.create("upstreamAgent") {
 dependencies {
     bootstrapLibs(projects.sentry)
     javaagentLibs(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
-    upstreamAgent("io.opentelemetry.javaagent:opentelemetry-javaagent:${Config.Libs.otelJavaagentVersion}")
+    upstreamAgent(Config.Libs.OpenTelemetry.otelJavaAgent)
 }
 
 fun isolateClasses(jars: Iterable<File>): CopySpec {
@@ -146,11 +150,11 @@ tasks {
             attributes.put("Can-Redefine-Classes", "true")
             attributes.put("Can-Retransform-Classes", "true")
             attributes.put("Implementation-Vendor", "Sentry")
-            attributes.put("Implementation-Version", "sentry-${project.version}-otel-${Config.Libs.otelJavaagentVersion}")
+            attributes.put("Implementation-Version", "sentry-${project.version}-otel-${Config.Libs.OpenTelemetry.otelJavaagentVersion}")
             attributes.put("Sentry-Version-Name", project.version)
             attributes.put("Sentry-Opentelemetry-SDK-Name", Config.Sentry.SENTRY_OPENTELEMETRY_AGENT_SDK_NAME)
-            attributes.put("Sentry-Opentelemetry-Version-Name", Config.Libs.otelVersion)
-            attributes.put("Sentry-Opentelemetry-Javaagent-Version-Name", Config.Libs.otelJavaagentVersion)
+            attributes.put("Sentry-Opentelemetry-Version-Name", Config.Libs.OpenTelemetry.otelVersion)
+            attributes.put("Sentry-Opentelemetry-Javaagent-Version-Name", Config.Libs.OpenTelemetry.otelJavaagentVersion)
         }
     }
 

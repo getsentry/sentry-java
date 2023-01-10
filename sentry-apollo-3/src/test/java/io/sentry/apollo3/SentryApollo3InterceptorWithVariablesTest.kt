@@ -85,6 +85,7 @@ class SentryApollo3InterceptorWithVariablesTest {
                 assertEquals(SpanStatus.OK, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -99,6 +100,7 @@ class SentryApollo3InterceptorWithVariablesTest {
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -113,6 +115,7 @@ class SentryApollo3InterceptorWithVariablesTest {
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }

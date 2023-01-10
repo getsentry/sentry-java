@@ -6,10 +6,10 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -19,16 +19,16 @@ import org.jetbrains.annotations.Nullable;
 public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializable {
 
   private @Nullable Map<String, Object> unknown;
-  private @NotNull Long relativeStartNs; // timestamp in nanoseconds this frame was started
-  private @NotNull String value; // frame duration in nanoseconds
+  private @NotNull String relativeStartNs; // timestamp in nanoseconds this frame was started
+  private double value; // frame duration in nanoseconds
 
   public ProfileMeasurementValue() {
     this(0L, 0);
   }
 
   public ProfileMeasurementValue(final @NotNull Long relativeStartNs, final @NotNull Number value) {
-    this.relativeStartNs = relativeStartNs;
-    this.value = value.toString();
+    this.relativeStartNs = relativeStartNs.toString();
+    this.value = value.doubleValue();
   }
 
   @Override
@@ -38,7 +38,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     ProfileMeasurementValue that = (ProfileMeasurementValue) o;
     return Objects.equals(unknown, that.unknown)
         && relativeStartNs.equals(that.relativeStartNs)
-        && value.equals(that.value);
+        && value == that.value;
   }
 
   @Override
@@ -93,13 +93,13 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.VALUE:
-            String value = reader.nextStringOrNull();
+            Double value = reader.nextDoubleOrNull();
             if (value != null) {
               data.value = value;
             }
             break;
           case JsonKeys.START_NS:
-            Long startNs = reader.nextLongOrNull();
+            String startNs = reader.nextStringOrNull();
             if (startNs != null) {
               data.relativeStartNs = startNs;
             }

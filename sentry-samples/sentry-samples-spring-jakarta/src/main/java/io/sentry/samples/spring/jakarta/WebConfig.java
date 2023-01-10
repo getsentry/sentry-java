@@ -12,7 +12,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
 @EnableAspectJAutoProxy(proxyTargetClass = true)
-@ComponentScan("io.sentry.samples.spring.web")
+@ComponentScan("io.sentry.samples.spring.jakarta")
 @EnableWebMvc
 public class WebConfig {
 

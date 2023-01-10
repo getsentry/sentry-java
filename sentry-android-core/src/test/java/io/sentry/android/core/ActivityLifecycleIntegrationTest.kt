@@ -363,7 +363,28 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `When tracing auto finish is enabled, it stops the transaction on onActivityPostResumed`() {
+    fun `When tracing auto finish is enabled and ttid span is finished, it stops the transaction on onActivityPostResumed`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.ttidSpanMap.values.first().finish()
+        sut.onActivityPostResumed(activity)
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(SpanStatus.OK, it.status)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `When tracing auto finish is enabled, it doesn't stop the transaction on onActivityPostResumed`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -372,11 +393,12 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.hub, never()).captureTransaction(
             check {
                 assertEquals(SpanStatus.OK, it.status)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -393,12 +415,14 @@ class ActivityLifecycleIntegrationTest {
         fixture.transaction.status = SpanStatus.UNKNOWN_ERROR
 
         sut.onActivityPostResumed(activity)
+        sut.onActivityDestroyed(activity)
 
         verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(SpanStatus.UNKNOWN_ERROR, it.status)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -414,7 +438,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -425,7 +449,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         sut.onActivityPostResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -438,7 +462,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -499,6 +523,39 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `When Activity is destroyed, sets ttidSpan status to cancelled and finish it`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityDestroyed(activity)
+
+        val span = fixture.transaction.children.first { it.operation == ActivityLifecycleIntegration.TTID_OP }
+        assertEquals(SpanStatus.CANCELLED, span.status)
+        assertTrue(span.isFinished)
+    }
+
+    @Test
+    fun `When Activity is destroyed, sets ttidSpan to null`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        sut.register(fixture.hub, fixture.options)
+
+        setAppStartTime()
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, fixture.bundle)
+        assertNotNull(sut.ttidSpanMap[activity])
+
+        sut.onActivityDestroyed(activity)
+        assertNull(sut.ttidSpanMap[activity])
+    }
+
+    @Test
     fun `When new Activity and transaction is created, finish previous ones`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
@@ -507,7 +564,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(mock(), mock())
 
         sut.onActivityCreated(mock(), fixture.bundle)
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -520,7 +577,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -538,16 +595,17 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `stop transaction on resumed if API 29 less than 29`() {
+    fun `stop transaction on resumed if API 29 less than 29 and ttid is finished`() {
         val sut = fixture.getSut(14)
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, mock())
+        sut.ttidSpanMap.values.first().finish()
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test

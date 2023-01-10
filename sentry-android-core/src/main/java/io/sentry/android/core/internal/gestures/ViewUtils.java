@@ -4,16 +4,17 @@ import android.content.res.Resources;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
-import android.widget.ScrollView;
-import androidx.core.view.ScrollingView;
+import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.internal.gestures.GestureTargetLocator;
+import io.sentry.internal.gestures.UiElement;
 import io.sentry.util.Objects;
-import java.util.ArrayDeque;
+import java.util.LinkedList;
 import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class ViewUtils {
+
   /**
    * Finds a target view, that has been selected/clicked by the given coordinates x and y and the
    * given {@code viewTargetSelector}.
@@ -21,77 +22,43 @@ final class ViewUtils {
    * @param decorView - the root view of this window
    * @param x - the x coordinate of a {@link MotionEvent}
    * @param y - the y coordinate of {@link MotionEvent}
-   * @param viewTargetSelector - the selector, which defines whether the given view is suitable as a
-   *     target or not.
+   * @param targetType - the type of target to find
    * @return the {@link View} that contains the touch coordinates and complements the {@code
    *     viewTargetSelector}
    */
-  static @Nullable View findTarget(
+  static @Nullable UiElement findTarget(
+      final @NotNull SentryAndroidOptions options,
       final @NotNull View decorView,
       final float x,
       final float y,
-      final @NotNull ViewTargetSelector viewTargetSelector) {
-    Queue<View> queue = new ArrayDeque<>();
+      final UiElement.Type targetType) {
+
+    final Queue<View> queue = new LinkedList<>();
     queue.add(decorView);
 
-    @Nullable View target = null;
-    // the coordinates variable can be method-local, but we allocate it here, to avoid allocation
-    // in the while- and for-loops
-    int[] coordinates = new int[2];
-
+    @Nullable UiElement target = null;
     while (queue.size() > 0) {
       final View view = Objects.requireNonNull(queue.poll(), "view is required");
-
-      if (viewTargetSelector.select(view)) {
-        target = view;
-        if (viewTargetSelector.skipChildren()) {
-          return target;
-        }
-      }
 
       if (view instanceof ViewGroup) {
         final ViewGroup viewGroup = (ViewGroup) view;
         for (int i = 0; i < viewGroup.getChildCount(); i++) {
-          final View child = viewGroup.getChildAt(i);
-          if (touchWithinBounds(child, x, y, coordinates)) {
-            queue.add(child);
+          queue.add(viewGroup.getChildAt(i));
+        }
+      }
+
+      for (GestureTargetLocator locator : options.getGestureTargetLocators()) {
+        final @Nullable UiElement newTarget = locator.locate(view, x, y, targetType);
+        if (newTarget != null) {
+          if (targetType == UiElement.Type.CLICKABLE) {
+            target = newTarget;
+          } else {
+            return newTarget;
           }
         }
       }
     }
-
     return target;
-  }
-
-  private static boolean touchWithinBounds(
-      final @NotNull View view, final float x, final float y, final int[] coords) {
-    view.getLocationOnScreen(coords);
-    int vx = coords[0];
-    int vy = coords[1];
-
-    int w = view.getWidth();
-    int h = view.getHeight();
-
-    return !(x < vx || x > vx + w || y < vy || y > vy + h);
-  }
-
-  static boolean isViewTappable(final @NotNull View view) {
-    return view.isClickable() && view.getVisibility() == View.VISIBLE;
-  }
-
-  static boolean isViewScrollable(final @NotNull View view, final boolean isAndroidXAvailable) {
-    return (isJetpackScrollingView(view, isAndroidXAvailable)
-            || AbsListView.class.isAssignableFrom(view.getClass())
-            || ScrollView.class.isAssignableFrom(view.getClass()))
-        && view.getVisibility() == View.VISIBLE;
-  }
-
-  private static boolean isJetpackScrollingView(
-      final @NotNull View view, final boolean isAndroidXAvailable) {
-    if (!isAndroidXAvailable) {
-      return false;
-    }
-    return ScrollingView.class.isAssignableFrom(view.getClass());
   }
 
   /**

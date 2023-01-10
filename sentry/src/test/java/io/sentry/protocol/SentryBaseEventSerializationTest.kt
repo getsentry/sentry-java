@@ -69,6 +69,7 @@ class SentryBaseEventSerializationTest {
                 breadcrumbs = listOf(
                     BreadcrumbSerializationTest.Fixture().getSut()
                 )
+                debugMeta = DebugMetaSerializationTest.Fixture().getSut()
                 setExtra("34a7d067-fad2-49d9-97b9-71eff243127b", "fe3dc1cf-4a99-4213-85bb-e0957b8349b8")
             }
         }

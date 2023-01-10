@@ -30,6 +30,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -184,6 +185,26 @@ class SentryAndroidTest {
         val expectedCacheDir = "$cacheDirPath/$dsnHash"
         assertEquals(expectedCacheDir, options!!.cacheDirPath)
         assertEquals(expectedCacheDir, (options!!.envelopeDiskCache as AndroidEnvelopeCache).directory.absolutePath)
+    }
+
+    @Test
+    fun `init starts a session if auto session tracking is enabled`() {
+        fixture.initSut { options ->
+            options.isEnableAutoSessionTracking = true
+        }
+        Sentry.getCurrentHub().withScope { scope ->
+            assertNotNull(scope.session)
+        }
+    }
+
+    @Test
+    fun `init does not start a session by if auto session tracking is disabled`() {
+        fixture.initSut { options ->
+            options.isEnableAutoSessionTracking = false
+        }
+        Sentry.getCurrentHub().withScope { scope ->
+            assertNull(scope.session)
+        }
     }
 
     private class CustomEnvelopCache : IEnvelopeCache {

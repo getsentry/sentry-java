@@ -5,6 +5,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus.OK
 import io.sentry.TransactionContext
+import io.sentry.util.thread.MainThreadChecker
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
@@ -23,7 +24,11 @@ class SentryFileReaderTest {
             activeTransaction: Boolean = true
         ): SentryFileReader {
             tmpFile.writeText("TEXT")
-            whenever(hub.options).thenReturn(SentryOptions())
+            whenever(hub.options).thenReturn(
+                SentryOptions().apply {
+                    mainThreadChecker = MainThreadChecker.getInstance()
+                }
+            )
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             if (activeTransaction) {
                 whenever(hub.span).thenReturn(sentryTracer)
@@ -52,6 +57,7 @@ class SentryFileReaderTest {
         assertEquals(fileIOSpan.data["file.size"], 4L)
         assertEquals(fileIOSpan.throwable, null)
         assertEquals(fileIOSpan.isFinished, true)
+        assertEquals(fileIOSpan.data["blocked_main_thread"], true)
         assertEquals(fileIOSpan.status, OK)
     }
 }

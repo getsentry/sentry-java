@@ -1,6 +1,7 @@
 import java.math.BigDecimal
 
 object Config {
+    val AGP = System.getenv("VERSION_AGP") ?: "7.3.0"
     val kotlinVersion = "1.6.10"
     val kotlinStdLib = "stdlib-jdk8"
 
@@ -11,7 +12,7 @@ object Config {
     val composeVersion = "1.1.1"
 
     object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:7.3.0"
+        val androidGradle = "com.android.tools.build:gradle:$AGP"
         val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "3.0.3"
@@ -59,6 +60,7 @@ object Config {
         val androidxRecylerView = "androidx.recyclerview:recyclerview:1.2.1"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
+        val slf4jApi2 = "org.slf4j:slf4j-api:2.0.5"
         val slf4jJdk14 = "org.slf4j:slf4j-jdk14:1.7.30"
         val logbackVersion = "1.2.9"
         val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
@@ -66,6 +68,8 @@ object Config {
         val log4j2Version = "2.17.0"
         val log4j2Api = "org.apache.logging.log4j:log4j-api:$log4j2Version"
         val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
+
+        val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind"
 
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
         val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
@@ -127,15 +131,25 @@ object Config {
         val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
         val composeActivity = "androidx.activity:activity-compose:1.4.0"
         val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
+        val composeUi = "androidx.compose.ui:ui:$composeVersion"
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.3.0"
 
-        val otelVersion = "1.19.0"
-        val otelAlphaVersion = "1.19.0-alpha"
-        val otelJavaagentVersion = "1.19.2"
-        val otelJavaagentAlphaVersion = "1.19.2-alpha"
+        object OpenTelemetry {
+            val otelVersion = "1.20.1"
+            val otelAlphaVersion = "1.20.1-alpha"
+            val otelJavaagentVersion = "1.20.2"
+            val otelJavaagentAlphaVersion = "1.20.2-alpha"
+
+            val otelSdk = "io.opentelemetry:opentelemetry-sdk:$otelVersion"
+            val otelSemconv = "io.opentelemetry:opentelemetry-semconv:$otelAlphaVersion"
+            val otelJavaAgent = "io.opentelemetry.javaagent:opentelemetry-javaagent:$otelJavaagentVersion"
+            val otelJavaAgentExtensionApi = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api:$otelJavaagentAlphaVersion"
+            val otelJavaAgentTooling = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling:$otelJavaagentAlphaVersion"
+            val otelExtensionAutoconfigureSpi = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:$otelVersion"
+        }
     }
 
     object AnnotationProcessors {
@@ -155,7 +169,7 @@ object Config {
         val androidxTestRules = "androidx.test:rules:$androidxTestVersion"
         val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
         val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
-        val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.1"
+        val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.2"
         val androidxJunit = "androidx.test.ext:junit:1.1.3"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val robolectric = "org.robolectric:robolectric:4.7.3"
