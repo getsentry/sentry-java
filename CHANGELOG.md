@@ -11,6 +11,7 @@
 ### Fixes
 
 - Don't override sdk name with Timber ([#2450](https://github.com/getsentry/sentry-java/pull/2450))
+- Set transactionNameSource to CUSTOM when setting transaction name ([#2405](https://github.com/getsentry/sentry-java/pull/2405))
 
 ## 6.11.0
 
