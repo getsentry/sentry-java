@@ -7,6 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -252,6 +253,11 @@ class SentryOptionsTest {
         assertEquals(0.2, options.profilesSampleRate)
         options.isProfilingEnabled = false
         assertEquals(0.2, options.profilesSampleRate)
+    }
+
+    @Test
+    fun `when options is initialized, transactionPerformanceCollector is set`() {
+        assertIs<TransactionPerformanceCollector>(SentryOptions().transactionPerformanceCollector)
     }
 
     @Test
