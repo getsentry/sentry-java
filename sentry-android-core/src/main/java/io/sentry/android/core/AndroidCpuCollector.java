@@ -76,10 +76,13 @@ public final class AndroidCpuCollector implements ICpuCollector {
     long cpuNanos = readTotalCpuNanos();
     long cpuNanosDiff = cpuNanos - lastCpuNanos;
     lastCpuNanos = cpuNanos;
+    // Later we need to divide the percentage by the number of cores, otherwise we could
+    // get a percentage value higher than 1. We also want to send the percentage as a
+    // number from 0 to 100, so we are going to multiply it by 100
+    double cpuUsagePercentage = cpuNanosDiff / (double) realTimeNanosDiff;
 
     return new CpuCollectionData(
-        System.currentTimeMillis(),
-        (cpuNanosDiff / (double) realTimeNanosDiff) / (double) numCores);
+        System.currentTimeMillis(), (cpuUsagePercentage / (double) numCores) * 100.0);
   }
 
   /** Read the /proc/self/stat file and parses the result. */
