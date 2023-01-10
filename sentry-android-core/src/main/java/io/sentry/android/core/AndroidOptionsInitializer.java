@@ -162,6 +162,7 @@ final class AndroidOptionsInitializer {
     }
     options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
     options.setMemoryCollector(new AndroidMemoryCollector());
+    options.setCpuCollector(new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
   }
 
   private static void installDefaultIntegrations(

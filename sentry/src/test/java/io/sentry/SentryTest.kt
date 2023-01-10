@@ -375,12 +375,30 @@ class SentryTest {
         assertTrue { sentryOptions!!.memoryCollector is CustomMemoryCollector }
     }
 
+    @Test
+    fun `does not override cpu collector if it's already set`() {
+        var sentryOptions: SentryOptions? = null
+
+        Sentry.init {
+            it.dsn = dsn
+            it.setCpuCollector(CustomCpuCollector())
+            sentryOptions = it
+        }
+
+        assertTrue { sentryOptions!!.cpuCollector is CustomCpuCollector }
+    }
+
     private class CustomMainThreadChecker : IMainThreadChecker {
         override fun isMainThread(threadId: Long): Boolean = false
     }
 
     private class CustomMemoryCollector : IMemoryCollector {
         override fun collect(): MemoryCollectionData? = null
+    }
+
+    private class CustomCpuCollector : ICpuCollector {
+        override fun setup() {}
+        override fun collect(): CpuCollectionData? = null
     }
 
     private class CustomModulesLoader : IModulesLoader {

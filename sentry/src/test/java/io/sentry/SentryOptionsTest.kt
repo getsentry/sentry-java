@@ -272,6 +272,18 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options is initialized, cpuCollector is noop`() {
+        assert(SentryOptions().cpuCollector == NoOpCpuCollector.getInstance())
+    }
+
+    @Test
+    fun `when a null cpuCollector is set, cpuCollector is noop`() {
+        val options = SentryOptions()
+        options.setCpuCollector(null)
+        assert(SentryOptions().cpuCollector == NoOpCpuCollector.getInstance())
+    }
+
+    @Test
     fun `when adds scope observer, observer list has it`() {
         val observer = mock<IScopeObserver>()
         val options = SentryOptions().apply {

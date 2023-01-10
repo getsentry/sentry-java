@@ -491,4 +491,11 @@ class AndroidOptionsInitializerTest {
 
         assertTrue { fixture.sentryOptions.memoryCollector is AndroidMemoryCollector }
     }
+
+    @Test
+    fun `AndroidCpuCollector is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.cpuCollector is AndroidCpuCollector }
+    }
 }
