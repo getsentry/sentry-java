@@ -13,7 +13,6 @@ import io.sentry.android.core.internal.gestures.ViewUtils;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.Objects;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -23,9 +22,6 @@ import org.jetbrains.annotations.Nullable;
 /** ViewHierarchyEventProcessor responsible for taking a snapshot of the current view hierarchy. */
 @ApiStatus.Internal
 public final class ViewHierarchyEventProcessor implements EventProcessor {
-
-  @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final @NotNull Charset UTF_8 = Charset.forName("UTF-8");
 
   private final @NotNull SentryAndroidOptions options;
 
