@@ -6,6 +6,13 @@
 
 - Send transaction memory stats in profile payload ([#2447](https://github.com/getsentry/sentry-java/pull/2447))
 - Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
+- Add `traceOptionsRequests` option to disable tracing of OPTIONS requests ([#2453](https://github.com/getsentry/sentry-java/pull/2453))
+- Extend list of HTTP headers considered sensitive ([#2455](https://github.com/getsentry/sentry-java/pull/2455))
+
+### Fixes
+
+- Don't override sdk name with Timber ([#2450](https://github.com/getsentry/sentry-java/pull/2450))
+- Set transactionNameSource to CUSTOM when setting transaction name ([#2405](https://github.com/getsentry/sentry-java/pull/2405))
 
 ## 6.11.0
 

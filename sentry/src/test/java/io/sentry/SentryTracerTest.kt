@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
@@ -897,5 +898,15 @@ class SentryTracerTest {
         val transaction = fixture.getSut()
         transaction.finish()
         verify(fixture.transactionPerformanceCollector).stop(check { assertEquals(transaction, it) })
+    }
+
+    @Test
+    fun `changing transaction name without source sets source to custom`() {
+        val transaction = fixture.getSut()
+        transaction.setName("new-name-1", TransactionNameSource.TASK)
+        transaction.setName("new-name-2")
+
+        assertEquals("new-name-2", transaction.name)
+        assertEquals(TransactionNameSource.CUSTOM, transaction.transactionNameSource)
     }
 }

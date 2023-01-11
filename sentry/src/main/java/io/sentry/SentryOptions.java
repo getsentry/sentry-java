@@ -387,6 +387,10 @@ public class SentryOptions {
 
   private @NotNull IMemoryCollector memoryCollector = NoOpMemoryCollector.getInstance();
 
+  // TODO this should default to false on the next major
+  /** Whether OPTIONS requests should be traced. */
+  private boolean traceOptionsRequests = true;
+
   /**
    * Adds an event processor
    *
@@ -1897,6 +1901,24 @@ public class SentryOptions {
   public void setMemoryCollector(final @Nullable IMemoryCollector memoryCollector) {
     this.memoryCollector =
         memoryCollector != null ? memoryCollector : NoOpMemoryCollector.getInstance();
+  }
+
+  /**
+   * Whether OPTIONS requests should be traced.
+   *
+   * @return true if OPTIONS requests should be traced
+   */
+  public boolean isTraceOptionsRequests() {
+    return traceOptionsRequests;
+  }
+
+  /**
+   * Whether OPTIONS requests should be traced.
+   *
+   * @param traceOptionsRequests true if OPTIONS requests should be traced
+   */
+  public void setTraceOptionsRequests(boolean traceOptionsRequests) {
+    this.traceOptionsRequests = traceOptionsRequests;
   }
 
   /** The BeforeSend callback */

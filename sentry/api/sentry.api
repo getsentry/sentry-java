@@ -1479,6 +1479,7 @@ public class io/sentry/SentryOptions {
 	public fun isProfilingEnabled ()Z
 	public fun isSendClientReports ()Z
 	public fun isSendDefaultPii ()Z
+	public fun isTraceOptionsRequests ()Z
 	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
 	public fun merge (Lio/sentry/ExternalOptions;)V
@@ -1545,6 +1546,7 @@ public class io/sentry/SentryOptions {
 	public fun setShutdownTimeoutMillis (J)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTraceOptionsRequests (Z)V
 	public fun setTracePropagationTargets (Ljava/util/List;)V
 	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
