@@ -41,7 +41,7 @@ suites:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Huawei_P30_Pro_real_us # Huawei P30 Pro - api 29 (10)
+      - id: Google_Pixel_3a_XL_real # Google Pixel 3a XL - api 29 (10)
       - id: Nokia_7_1_real_us # Nokia 7.1 - api 29 (10)
 
 # At the time of writing (July, 4, 2022), the market share per android version is:
