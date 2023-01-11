@@ -89,11 +89,13 @@ public final class ViewUtils {
    */
   public static String getResourceId(final @NotNull View view) throws Resources.NotFoundException {
     final int viewId = view.getId();
-    final Resources resources = view.getContext().getResources();
-    String resourceId = "";
-    if (resources != null) {
-      resourceId = resources.getResourceEntryName(viewId);
+    if (viewId == View.NO_ID) {
+      throw new Resources.NotFoundException();
     }
-    return resourceId;
+    final Resources resources = view.getContext().getResources();
+    if (resources != null) {
+      return resources.getResourceEntryName(viewId);
+    }
+    return "";
   }
 }

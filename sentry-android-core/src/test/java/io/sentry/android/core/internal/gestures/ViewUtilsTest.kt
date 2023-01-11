@@ -7,6 +7,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -42,6 +44,21 @@ class ViewUtilsTest {
         }
 
         assertFailsWith<Resources.NotFoundException> { ViewUtils.getResourceId(view) }
+    }
+
+    @Test
+    fun `when view has no id set, resource name is not looked up `() {
+        val context = mock<Context>()
+        val resources = mock<Resources>()
+        whenever(context.resources).thenReturn(resources)
+
+        val view = mock<View> {
+            whenever(it.id).doReturn(View.NO_ID)
+            whenever(it.context).thenReturn(context)
+        }
+
+        assertFailsWith<Resources.NotFoundException> { ViewUtils.getResourceId(view) }
+        verify(context, never()).resources
     }
 
     @Test
