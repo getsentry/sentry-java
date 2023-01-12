@@ -90,7 +90,7 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         comparisonResult.printResults()
 
         // Currently we just want to assert the cpu overhead
-        assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5.5F)
+        assertTrue(comparisonResult.cpuTimeIncreasePercentage in 0F..5F)
     }
 
     /**

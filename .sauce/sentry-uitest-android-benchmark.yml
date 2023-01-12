@@ -25,7 +25,7 @@ suites:
       useTestOrchestrator: true
     devices:
       - id: Google_Pixel_6_Pro_real_us # Google Pixel 6 Pro - api 31 (12) - high end
-      - id: Google_Pixel_6a_real_us # Google Pixel 6a - api 31 (12) - low end
+      - id: Google_Pixel_5_12_real_us # Google Pixel 5 - api 31 (12) - low end
 
   - name: "Android 11 (api 30)"
     testOptions:
