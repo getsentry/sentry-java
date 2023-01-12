@@ -395,6 +395,8 @@ public class SentryOptions {
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
+  private @NotNull ICpuCollector cpuCollector = NoOpCpuCollector.getInstance();
+
   /**
    * Adds an event processor
    *
@@ -1933,6 +1935,26 @@ public class SentryOptions {
    */
   public void setTraceOptionsRequests(boolean traceOptionsRequests) {
     this.traceOptionsRequests = traceOptionsRequests;
+  }
+
+  /**
+   * Gets the cpu collector used to collect cpu usage during while transaction runs.
+   *
+   * @return the cpu collector.
+   */
+  @ApiStatus.Internal
+  public @NotNull ICpuCollector getCpuCollector() {
+    return cpuCollector;
+  }
+
+  /**
+   * Sets the cpu collector to collect cpu usage during while transaction runs.
+   *
+   * @param cpuCollector - the cpu collector. If null, a no op collector will be set.
+   */
+  @ApiStatus.Internal
+  public void setCpuCollector(final @Nullable ICpuCollector cpuCollector) {
+    this.cpuCollector = cpuCollector != null ? cpuCollector : NoOpCpuCollector.getInstance();
   }
 
   /** The BeforeSend callback */

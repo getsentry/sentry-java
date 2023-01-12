@@ -132,6 +132,12 @@ public final class io/sentry/BuildConfig {
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
+public final class io/sentry/CpuCollectionData {
+	public fun <init> (JD)V
+	public fun getCpuUsagePercentage ()D
+	public fun getTimestampMillis ()J
+}
+
 public final class io/sentry/CustomSamplingContext {
 	public fun <init> ()V
 	public fun get (Ljava/lang/String;)Ljava/lang/Object;
@@ -363,6 +369,11 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withScope (Lio/sentry/ScopeCallback;)V
+}
+
+public abstract interface class io/sentry/ICpuCollector {
+	public abstract fun collect ()Lio/sentry/CpuCollectionData;
+	public abstract fun setup ()V
 }
 
 public abstract interface class io/sentry/IEnvelopeReader {
@@ -693,9 +704,15 @@ public final class io/sentry/MeasurementUnit$Information : java/lang/Enum, io/se
 public final class io/sentry/MemoryCollectionData {
 	public fun <init> (JJ)V
 	public fun <init> (JJJ)V
-	public fun getTimestamp ()J
+	public fun getTimestampMillis ()J
 	public fun getUsedHeapMemory ()J
 	public fun getUsedNativeMemory ()J
+}
+
+public final class io/sentry/NoOpCpuCollector : io/sentry/ICpuCollector {
+	public fun collect ()Lio/sentry/CpuCollectionData;
+	public static fun getInstance ()Lio/sentry/NoOpCpuCollector;
+	public fun setup ()V
 }
 
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
@@ -853,6 +870,13 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 	public fun <init> (Lio/sentry/IHub;Lio/sentry/IEnvelopeReader;Lio/sentry/ISerializer;Lio/sentry/ILogger;J)V
 	public synthetic fun processDirectory (Ljava/io/File;)V
 	public fun processEnvelopeFile (Ljava/lang/String;Lio/sentry/Hint;)V
+}
+
+public final class io/sentry/PerformanceCollectionData {
+	public fun <init> ()V
+	public fun addData (Lio/sentry/MemoryCollectionData;Lio/sentry/CpuCollectionData;)V
+	public fun getCpuData ()Ljava/util/List;
+	public fun getMemoryData ()Ljava/util/List;
 }
 
 public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -1407,6 +1431,7 @@ public class io/sentry/SentryOptions {
 	public fun getClientReportRecorder ()Lio/sentry/clientreport/IClientReportRecorder;
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
+	public fun getCpuCollector ()Lio/sentry/ICpuCollector;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
 	public fun getDist ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
@@ -1492,6 +1517,7 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setConnectionTimeoutMillis (I)V
+	public fun setCpuCollector (Lio/sentry/ICpuCollector;)V
 	public fun setDebug (Z)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
 	public fun setDist (Ljava/lang/String;)V
@@ -1976,7 +2002,7 @@ public final class io/sentry/TransactionOptions {
 public final class io/sentry/TransactionPerformanceCollector {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun start (Lio/sentry/ITransaction;)V
-	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
+	public fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
 }
 
 public final class io/sentry/TypeCheckHint {

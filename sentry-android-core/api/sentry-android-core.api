@@ -23,6 +23,12 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/ICpuCollector {
+	public fun <init> (Lio/sentry/ILogger;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun collect ()Lio/sentry/CpuCollectionData;
+	public fun setup ()V
+}
+
 public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V

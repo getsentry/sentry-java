@@ -21,6 +21,6 @@ class JavaMemoryCollectorTest {
         assertNotNull(data)
         assertEquals(-1, data.usedNativeMemory)
         assertEquals(usedMemory, data.usedHeapMemory)
-        assertNotEquals(0, data.timestamp)
+        assertNotEquals(0, data.timestampMillis)
     }
 }
