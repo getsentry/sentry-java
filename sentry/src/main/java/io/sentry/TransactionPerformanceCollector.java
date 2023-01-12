@@ -1,8 +1,6 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
-
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,17 +42,17 @@ public final class TransactionPerformanceCollector {
 
     if (isMemoryCollectorNoOp) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.INFO,
-          "Memory collector is a NoOpCollector. Memory stats will not be captured during transactions.");
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "Memory collector is a NoOpCollector. Memory stats will not be captured during transactions.");
     }
     if (isCpuCollectorNoOp) {
       options
-        .getLogger()
-        .log(
-          SentryLevel.INFO,
-          "Cpu collector is a NoOpCollector. Cpu stats will not be captured during transactions.");
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "Cpu collector is a NoOpCollector. Cpu stats will not be captured during transactions.");
     }
     if (isMemoryCollectorNoOp && isCpuCollectorNoOp) {
       return;
@@ -80,19 +78,15 @@ public final class TransactionPerformanceCollector {
             new TimerTask() {
               @Override
               public void run() {
-                if (memoryCollector != null) {
-                  MemoryCollectionData memoryData = memoryCollector.collect();
-                  if (memoryData != null) {
-                    synchronized (timerLock) {
-                      for (ArrayList<MemoryCollectionData> list : memoryMap.values()) {
-                        list.add(memoryData);
-                      }
-                    }
-                  }
-                }!!!
-                MemoryCollectionData memoryData = memoryCollector.collect();
-                CpuCollectionData cpuData = cpuCollector.collect();
                 synchronized (timerLock) {
+                  MemoryCollectionData memoryData = null;
+                  CpuCollectionData cpuData = null;
+                  if (memoryCollector != null) {
+                    memoryData = memoryCollector.collect();
+                  }
+                  if (cpuCollector != null) {
+                    cpuData = cpuCollector.collect();
+                  }
                   for (PerformanceCollectionData data : performanceDataMap.values()) {
                     data.addData(memoryData, cpuData);
                   }

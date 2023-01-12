@@ -168,4 +168,12 @@ class TransactionPerformanceCollectorTest {
         collector.start(fixture.transaction1)
         assertNotNull(collector.getProperty<IMemoryCollector>("memoryCollector"))
     }
+
+    @Test
+    fun `collector reads CpuCollector on start`() {
+        val collector = fixture.getSut()
+        assertNull(collector.getProperty<ICpuCollector?>("cpuCollector"))
+        collector.start(fixture.transaction1)
+        assertNotNull(collector.getProperty<ICpuCollector>("cpuCollector"))
+    }
 }
