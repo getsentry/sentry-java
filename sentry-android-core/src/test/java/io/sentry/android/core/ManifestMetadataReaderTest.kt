@@ -950,6 +950,19 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads attach viewhierarchy to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ATTACH_VIEW_HIERARCHY to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isAttachViewHierarchy)
+    }
+
+    @Test
     fun `applyMetadata reads attach screenshots and keep default value if not found`() {
         // Arrange
         val context = fixture.getContext()

@@ -1,7 +1,6 @@
 package io.sentry.android.core
 
 import android.app.Activity
-import android.app.Application
 import android.view.View
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -11,10 +10,7 @@ import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -27,7 +23,6 @@ import kotlin.test.assertTrue
 class ScreenshotEventProcessorTest {
 
     private class Fixture {
-        val application = mock<Application>()
         val buildInfo = mock<BuildInfoProvider>()
         val activity = mock<Activity>()
         val window = mock<Window>()
@@ -49,7 +44,7 @@ class ScreenshotEventProcessorTest {
         fun getSut(attachScreenshot: Boolean = false): ScreenshotEventProcessor {
             options.isAttachScreenshot = attachScreenshot
 
-            return ScreenshotEventProcessor(application, options, buildInfo)
+            return ScreenshotEventProcessor(options, buildInfo)
         }
     }
 
@@ -61,47 +56,11 @@ class ScreenshotEventProcessorTest {
     }
 
     @Test
-    fun `when adding screenshot event processor, registerActivityLifecycleCallbacks`() {
-        fixture.getSut()
-
-        verify(fixture.application).registerActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `when close is called and attach screenshot is enabled, unregisterActivityLifecycleCallbacks`() {
-        val sut = fixture.getSut(true)
-
-        sut.close()
-
-        verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `when close is called and  attach screenshot is disabled, does not unregisterActivityLifecycleCallbacks`() {
-        val sut = fixture.getSut()
-
-        sut.close()
-
-        verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
-    }
-
-    @Test
-    fun `when process is called and attachScreenshot is disabled, unregisterActivityLifecycleCallbacks`() {
-        val sut = fixture.getSut()
-        val hint = Hint()
-
-        val event = fixture.mainProcessor.process(getEvent(), hint)
-        sut.process(event, hint)
-
-        verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
-    }
-
-    @Test
     fun `when process is called and attachScreenshot is disabled, does nothing`() {
         val sut = fixture.getSut()
         val hint = Hint()
 
-        sut.onActivityCreated(fixture.activity, null)
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
@@ -114,7 +73,7 @@ class ScreenshotEventProcessorTest {
         val sut = fixture.getSut(true)
         val hint = Hint()
 
-        sut.onActivityCreated(fixture.activity, null)
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
         val event = fixture.mainProcessor.process(SentryEvent(), hint)
         sut.process(event, hint)
@@ -139,7 +98,7 @@ class ScreenshotEventProcessorTest {
         val hint = Hint()
 
         whenever(fixture.activity.isFinishing).thenReturn(true)
-        sut.onActivityCreated(fixture.activity, null)
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
@@ -154,7 +113,7 @@ class ScreenshotEventProcessorTest {
 
         whenever(fixture.rootView.width).thenReturn(0)
         whenever(fixture.rootView.height).thenReturn(0)
-        sut.onActivityCreated(fixture.activity, null)
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
@@ -167,7 +126,7 @@ class ScreenshotEventProcessorTest {
         val sut = fixture.getSut(true)
         val hint = Hint()
 
-        sut.onActivityCreated(fixture.activity, null)
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
@@ -185,8 +144,8 @@ class ScreenshotEventProcessorTest {
         val sut = fixture.getSut(true)
         val hint = Hint()
 
-        sut.onActivityCreated(fixture.activity, null)
-        sut.onActivityDestroyed(fixture.activity)
+        CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+        CurrentActivityHolder.getInstance().clearActivity()
 
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
