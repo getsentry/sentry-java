@@ -669,14 +669,14 @@ class JsonSerializerTest {
                                         {"value":"100","elapsed_since_start_ns":"2"}
                                     ]
                                 },
-                                "memory-footprint": {
-                                    "unit":"bytes",
+                                "memory_footprint": {
+                                    "unit":"byte",
                                     "values":[
                                         {"value":"1000","elapsed_since_start_ns":"3"}
                                     ]
                                 },
-                                "memory-native-footprint": {
-                                    "unit":"bytes",
+                                "memory_native_footprint": {
+                                    "unit":"byte",
                                     "values":[
                                         {"value":"1100","elapsed_since_start_ns":"4"}
                                     ]

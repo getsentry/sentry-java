@@ -16,6 +16,7 @@ import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionProfiler;
 import io.sentry.MemoryCollectionData;
+import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfilingTraceData;
 import io.sentry.ProfilingTransactionData;
 import io.sentry.SentryLevel;
@@ -249,11 +250,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   @Override
   public @Nullable synchronized ProfilingTraceData onTransactionFinish(
       final @NotNull ITransaction transaction,
-      final @Nullable List<MemoryCollectionData> memoryCollectionData) {
+      final @Nullable PerformanceCollectionData performanceCollectionData) {
     try {
       return options
           .getExecutorService()
-          .submit(() -> onTransactionFinish(transaction, false, memoryCollectionData))
+          .submit(() -> onTransactionFinish(transaction, false, performanceCollectionData))
           .get();
     } catch (ExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
@@ -267,7 +268,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private @Nullable ProfilingTraceData onTransactionFinish(
       final @NotNull ITransaction transaction,
       final boolean isTimeout,
-      final @Nullable List<MemoryCollectionData> memoryCollectionData) {
+      final @Nullable PerformanceCollectionData memoryCollectionData) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
@@ -387,7 +388,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           ProfileMeasurement.ID_SCREEN_FRAME_RATES,
           new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
     }
-    putMemoryCollectionDataInMeasurements(memoryCollectionData);
+    putPerformanceCollectionDataInMeasurements(memoryCollectionData);
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
     // done in the background when the trace file is read
@@ -413,9 +414,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         measurementsMap);
   }
 
-  private void putMemoryCollectionDataInMeasurements(
-      final @Nullable List<MemoryCollectionData> memoryCollectionData) {
-    if (memoryCollectionData != null && !memoryCollectionData.isEmpty()) {
+  private void putPerformanceCollectionDataInMeasurements(
+      final @Nullable PerformanceCollectionData performanceCollectionData) {
+    if (performanceCollectionData != null) {
+      List<MemoryCollectionData> memoryCollectionData = performanceCollectionData.getMemoryData();
       final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
           new ArrayDeque<>();
       final @NotNull ArrayDeque<ProfileMeasurementValue> nativeMemoryUsageMeasurements =
@@ -424,13 +426,15 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         if (memoryData.getUsedHeapMemory() > -1) {
           memoryUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestamp()) - transactionStartNanos,
+                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis())
+                      - transactionStartNanos,
                   memoryData.getUsedHeapMemory()));
         }
         if (memoryData.getUsedNativeMemory() > -1) {
           nativeMemoryUsageMeasurements.add(
               new ProfileMeasurementValue(
-                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestamp()) - transactionStartNanos,
+                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis())
+                      - transactionStartNanos,
                   memoryData.getUsedNativeMemory()));
         }
       }

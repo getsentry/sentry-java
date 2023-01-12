@@ -1,6 +1,5 @@
 package io.sentry;
 
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,8 +18,7 @@ public final class NoOpTransactionProfiler implements ITransactionProfiler {
 
   @Override
   public @Nullable ProfilingTraceData onTransactionFinish(
-      @NotNull ITransaction transaction,
-      @Nullable List<MemoryCollectionData> memoryCollectionData) {
+      @NotNull ITransaction transaction, @Nullable PerformanceCollectionData memoryCollectionData) {
     return null;
   }
 }
