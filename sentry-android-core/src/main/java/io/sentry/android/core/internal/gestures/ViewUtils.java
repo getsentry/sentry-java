@@ -89,7 +89,7 @@ public final class ViewUtils {
    */
   public static String getResourceId(final @NotNull View view) throws Resources.NotFoundException {
     final int viewId = view.getId();
-    if (viewId == View.NO_ID) {
+    if (viewId == View.NO_ID || isViewIdGenerated(viewId)) {
       throw new Resources.NotFoundException();
     }
     final Resources resources = view.getContext().getResources();
@@ -97,5 +97,9 @@ public final class ViewUtils {
       return resources.getResourceEntryName(viewId);
     }
     return "";
+  }
+
+  private static boolean isViewIdGenerated(int id) {
+    return (id & 0xFF000000) == 0 && (id & 0x00FFFFFF) != 0;
   }
 }

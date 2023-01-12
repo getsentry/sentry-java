@@ -62,6 +62,22 @@ class ViewUtilsTest {
     }
 
     @Test
+    fun `when view id is generated, resource name is not looked up `() {
+        val context = mock<Context>()
+        val resources = mock<Resources>()
+        whenever(context.resources).thenReturn(resources)
+
+        val view = mock<View> {
+            // View.generateViewId() starts with 1
+            whenever(it.id).doReturn(1)
+            whenever(it.context).thenReturn(context)
+        }
+
+        assertFailsWith<Resources.NotFoundException> { ViewUtils.getResourceId(view) }
+        verify(context, never()).resources
+    }
+
+    @Test
     fun `getResourceIdWithFallback falls back to hexadecimal id when resource not found`() {
         val view = mock<View> {
             whenever(it.id).doReturn(1234)
