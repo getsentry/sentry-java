@@ -1,6 +1,8 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -18,35 +20,41 @@ public final class TransactionPerformanceCollector {
   private volatile @NotNull Timer timer = new Timer();
   private final @NotNull Map<String, PerformanceCollectionData> performanceDataMap =
       new ConcurrentHashMap<>();
-  private final @NotNull IMemoryCollector memoryCollector;
-  private final @NotNull ICpuCollector cpuCollector;
+  private @Nullable IMemoryCollector memoryCollector = null;
+  private @Nullable ICpuCollector cpuCollector = null;
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
 
   public TransactionPerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
-    this.memoryCollector = options.getMemoryCollector();
-    this.cpuCollector = options.getCpuCollector();
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull ITransaction transaction) {
+    // We are putting the TransactionPerformanceCollector in the options, so we want to wait until
+    // the options are customized before reading the collectors
+    if (memoryCollector == null) {
+      this.memoryCollector = options.getMemoryCollector();
+    }
+    if (cpuCollector == null) {
+      this.cpuCollector = options.getCpuCollector();
+    }
     boolean isMemoryCollectorNoOp = memoryCollector instanceof NoOpMemoryCollector;
     boolean isCpuCollectorNoOp = cpuCollector instanceof NoOpCpuCollector;
 
     if (isMemoryCollectorNoOp) {
       options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "Memory collector is a NoOpCollector. Memory stats will not be captured during transactions.");
+        .getLogger()
+        .log(
+          SentryLevel.INFO,
+          "Memory collector is a NoOpCollector. Memory stats will not be captured during transactions.");
     }
     if (isCpuCollectorNoOp) {
       options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "Cpu collector is a NoOpCollector. Cpu stats will not be captured during transactions.");
+        .getLogger()
+        .log(
+          SentryLevel.INFO,
+          "Cpu collector is a NoOpCollector. Cpu stats will not be captured during transactions.");
     }
     if (isMemoryCollectorNoOp && isCpuCollectorNoOp) {
       return;
@@ -72,6 +80,16 @@ public final class TransactionPerformanceCollector {
             new TimerTask() {
               @Override
               public void run() {
+                if (memoryCollector != null) {
+                  MemoryCollectionData memoryData = memoryCollector.collect();
+                  if (memoryData != null) {
+                    synchronized (timerLock) {
+                      for (ArrayList<MemoryCollectionData> list : memoryMap.values()) {
+                        list.add(memoryData);
+                      }
+                    }
+                  }
+                }!!!
                 MemoryCollectionData memoryData = memoryCollector.collect();
                 CpuCollectionData cpuData = cpuCollector.collect();
                 synchronized (timerLock) {

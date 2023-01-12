@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.ViewHierarchy;
 import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -8,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Attachment {
 
   private @Nullable byte[] bytes;
+  private final @Nullable JsonSerializable serializable;
   private @Nullable String pathname;
   private final @NotNull String filename;
   private final @Nullable String contentType;
@@ -18,6 +20,8 @@ public final class Attachment {
 
   /** A standard attachment without special meaning */
   private static final String DEFAULT_ATTACHMENT_TYPE = "event.attachment";
+
+  private static final String VIEW_HIERARCHY_ATTACHMENT_TYPE = "event.view_hierarchy";
 
   /**
    * Initializes an Attachment with bytes and a filename. Sets addToTransaction to <code>false
@@ -59,9 +63,55 @@ public final class Attachment {
       final @NotNull String filename,
       final @Nullable String contentType,
       final boolean addToTransactions) {
+    this(bytes, filename, contentType, DEFAULT_ATTACHMENT_TYPE, addToTransactions);
+  }
+
+  /**
+   * Initializes an Attachment with bytes, a filename, a content type, and addToTransactions.
+   *
+   * @param bytes The bytes of file.
+   * @param filename The name of the attachment to display in Sentry.
+   * @param contentType The content type of the attachment.
+   * @param attachmentType the attachment type.
+   * @param addToTransactions <code>true</code> if the SDK should add this attachment to every
+   *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
+   */
+  public Attachment(
+      final @NotNull byte[] bytes,
+      final @NotNull String filename,
+      final @Nullable String contentType,
+      final @Nullable String attachmentType,
+      final boolean addToTransactions) {
     this.bytes = bytes;
+    this.serializable = null;
     this.filename = filename;
     this.contentType = contentType;
+    this.attachmentType = attachmentType;
+    this.addToTransactions = addToTransactions;
+  }
+
+  /**
+   * Initializes an Attachment with bytes factory, a filename, a content type, and
+   * addToTransactions.
+   *
+   * @param serializable A json serializable holding the attachment payload
+   * @param filename The name of the attachment to display in Sentry.
+   * @param contentType The content type of the attachment.
+   * @param attachmentType the attachment type.
+   * @param addToTransactions <code>true</code> if the SDK should add this attachment to every
+   *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
+   */
+  public Attachment(
+      final @NotNull JsonSerializable serializable,
+      final @NotNull String filename,
+      final @Nullable String contentType,
+      final @Nullable String attachmentType,
+      final boolean addToTransactions) {
+    this.bytes = null;
+    this.serializable = serializable;
+    this.filename = filename;
+    this.contentType = contentType;
+    this.attachmentType = attachmentType;
     this.addToTransactions = addToTransactions;
   }
 
@@ -110,7 +160,35 @@ public final class Attachment {
       final @NotNull String pathname,
       final @NotNull String filename,
       final @Nullable String contentType) {
-    this(pathname, filename, contentType, false);
+    this(pathname, filename, contentType, DEFAULT_ATTACHMENT_TYPE, false);
+  }
+
+  /**
+   * Initializes an Attachment with a path, a filename, a content type, and addToTransactions.
+   *
+   * <p>The file located at the pathname is read lazily when the SDK captures an event or
+   * transaction not when the attachment is initialized. The pathname string is converted into an
+   * abstract pathname before reading the file.
+   *
+   * @param pathname The pathname string of the file to upload as an attachment.
+   * @param filename The name of the attachment to display in Sentry.
+   * @param contentType The content type of the attachment.
+   * @param attachmentType The attachment type.
+   * @param addToTransactions <code>true</code> if the SDK should add this attachment to every
+   *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
+   */
+  public Attachment(
+      final @NotNull String pathname,
+      final @NotNull String filename,
+      final @Nullable String contentType,
+      final @Nullable String attachmentType,
+      final boolean addToTransactions) {
+    this.pathname = pathname;
+    this.filename = filename;
+    this.serializable = null;
+    this.contentType = contentType;
+    this.attachmentType = attachmentType;
+    this.addToTransactions = addToTransactions;
   }
 
   /**
@@ -133,6 +211,7 @@ public final class Attachment {
       final boolean addToTransactions) {
     this.pathname = pathname;
     this.filename = filename;
+    this.serializable = null;
     this.contentType = contentType;
     this.addToTransactions = addToTransactions;
   }
@@ -160,6 +239,7 @@ public final class Attachment {
       final @Nullable String attachmentType) {
     this.pathname = pathname;
     this.filename = filename;
+    this.serializable = null;
     this.contentType = contentType;
     this.addToTransactions = addToTransactions;
     this.attachmentType = attachmentType;
@@ -172,6 +252,15 @@ public final class Attachment {
    */
   public @Nullable byte[] getBytes() {
     return bytes;
+  }
+
+  /**
+   * Provides the bytes of the attachment.
+   *
+   * @return the bytes factory responsible for providing the bytes.
+   */
+  public @Nullable JsonSerializable getSerializable() {
+    return serializable;
   }
 
   /**
@@ -229,5 +318,20 @@ public final class Attachment {
    */
   public static @NotNull Attachment fromScreenshot(final byte[] screenshotBytes) {
     return new Attachment(screenshotBytes, "screenshot.png", "image/png", false);
+  }
+
+  /**
+   * Creates a new View Hierarchy Attachment
+   *
+   * @param viewHierarchy the View Hierarchy
+   * @return the Attachment
+   */
+  public static @NotNull Attachment fromViewHierarchy(final ViewHierarchy viewHierarchy) {
+    return new Attachment(
+        viewHierarchy,
+        "view-hierarchy.json",
+        "application/json",
+        VIEW_HIERARCHY_ATTACHMENT_TYPE,
+        false);
   }
 }

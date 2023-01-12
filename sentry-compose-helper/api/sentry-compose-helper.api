@@ -1,0 +1,5 @@
+public final class io/sentry/compose/gestures/ComposeGestureTargetLocator : io/sentry/internal/gestures/GestureTargetLocator {
+	public fun <init> ()V
+	public fun locate (Ljava/lang/Object;FFLio/sentry/internal/gestures/UiElement$Type;)Lio/sentry/internal/gestures/UiElement;
+}
+

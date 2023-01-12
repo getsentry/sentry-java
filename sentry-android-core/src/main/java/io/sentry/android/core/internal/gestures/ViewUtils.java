@@ -10,10 +10,12 @@ import io.sentry.internal.gestures.UiElement;
 import io.sentry.util.Objects;
 import java.util.LinkedList;
 import java.util.Queue;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class ViewUtils {
+@ApiStatus.Internal
+public final class ViewUtils {
 
   /**
    * Finds a target view, that has been selected/clicked by the given coordinates x and y and the
@@ -85,13 +87,19 @@ final class ViewUtils {
    * @return human-readable view id
    * @throws Resources.NotFoundException in case the view id was not found
    */
-  static String getResourceId(final @NotNull View view) throws Resources.NotFoundException {
+  public static String getResourceId(final @NotNull View view) throws Resources.NotFoundException {
     final int viewId = view.getId();
-    final Resources resources = view.getContext().getResources();
-    String resourceId = "";
-    if (resources != null) {
-      resourceId = resources.getResourceEntryName(viewId);
+    if (viewId == View.NO_ID || isViewIdGenerated(viewId)) {
+      throw new Resources.NotFoundException();
     }
-    return resourceId;
+    final Resources resources = view.getContext().getResources();
+    if (resources != null) {
+      return resources.getResourceEntryName(viewId);
+    }
+    return "";
+  }
+
+  private static boolean isViewIdGenerated(int id) {
+    return (id & 0xFF000000) == 0 && (id & 0x00FFFFFF) != 0;
   }
 }
