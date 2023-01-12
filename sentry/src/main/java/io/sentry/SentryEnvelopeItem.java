@@ -201,7 +201,7 @@ public final class SentryEnvelopeItem {
               throw new SentryEnvelopeException(
                   String.format(
                       "Couldn't attach the attachment %s.\n"
-                          + "Please check that either bytes, bytesFactory or a path is set.",
+                          + "Please check that either bytes, serializable or a path is set.",
                       attachment.getFilename()));
             });
 
