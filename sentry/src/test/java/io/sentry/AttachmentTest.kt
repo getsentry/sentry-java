@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.protocol.ViewHierarchy
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -111,5 +112,18 @@ class AttachmentTest {
         assertEquals("image/png", attachment.contentType)
         assertEquals(false, attachment.isAddToTransactions)
         assertEquals(bytes, attachment.bytes)
+    }
+
+    @Test
+    fun `creates attachment from view hierarchy`() {
+        val hierarchy = ViewHierarchy("android", emptyList())
+        val attachment = Attachment.fromViewHierarchy(hierarchy)
+
+        assertEquals("view-hierarchy.json", attachment.filename)
+        assertEquals("application/json", attachment.contentType)
+        assertEquals(false, attachment.isAddToTransactions)
+        assertEquals("event.view_hierarchy", attachment.attachmentType)
+        assertNull(attachment.bytes)
+        assertEquals(hierarchy, attachment.serializable)
     }
 }
