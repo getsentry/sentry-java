@@ -4,6 +4,7 @@
 
 ### Features
 
+- Send cpu usage percentage in profile payload ([#2469](https://github.com/getsentry/sentry-java/pull/2469))
 - Send transaction memory stats in profile payload ([#2447](https://github.com/getsentry/sentry-java/pull/2447))
 - Add cpu usage collection ([#2462](https://github.com/getsentry/sentry-java/pull/2462))
 - Attach View Hierarchy to the errored/crashed events ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
