@@ -232,6 +232,11 @@ public final class SentryClient implements ISentryClient {
       attachments.add(screenshot);
     }
 
+    @Nullable final Attachment viewHierarchy = hint.getViewHierarchy();
+    if (viewHierarchy != null) {
+      attachments.add(viewHierarchy);
+    }
+
     return attachments;
   }
 
@@ -273,7 +278,11 @@ public final class SentryClient implements ISentryClient {
     if (attachments != null) {
       for (final Attachment attachment : attachments) {
         final SentryEnvelopeItem attachmentItem =
-            SentryEnvelopeItem.fromAttachment(attachment, options.getMaxAttachmentSize());
+            SentryEnvelopeItem.fromAttachment(
+                options.getSerializer(),
+                options.getLogger(),
+                attachment,
+                options.getMaxAttachmentSize());
         envelopeItems.add(attachmentItem);
       }
     }

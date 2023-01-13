@@ -18,19 +18,25 @@ public final class TransactionPerformanceCollector {
   private volatile @NotNull Timer timer = new Timer();
   private final @NotNull Map<String, PerformanceCollectionData> performanceDataMap =
       new ConcurrentHashMap<>();
-  private final @NotNull IMemoryCollector memoryCollector;
-  private final @NotNull ICpuCollector cpuCollector;
+  private @Nullable IMemoryCollector memoryCollector = null;
+  private @Nullable ICpuCollector cpuCollector = null;
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
 
   public TransactionPerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
-    this.memoryCollector = options.getMemoryCollector();
-    this.cpuCollector = options.getCpuCollector();
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull ITransaction transaction) {
+    // We are putting the TransactionPerformanceCollector in the options, so we want to wait until
+    // the options are customized before reading the memory collector
+    if (memoryCollector == null) {
+      this.memoryCollector = options.getMemoryCollector();
+    }
+    if (cpuCollector == null) {
+      this.cpuCollector = options.getCpuCollector();
+    }
     boolean isMemoryCollectorNoOp = memoryCollector instanceof NoOpMemoryCollector;
     boolean isCpuCollectorNoOp = cpuCollector instanceof NoOpCpuCollector;
 
@@ -72,8 +78,14 @@ public final class TransactionPerformanceCollector {
             new TimerTask() {
               @Override
               public void run() {
-                MemoryCollectionData memoryData = memoryCollector.collect();
-                CpuCollectionData cpuData = cpuCollector.collect();
+                MemoryCollectionData memoryData = null;
+                if (memoryCollector != null) {
+                  memoryData = memoryCollector.collect();
+                }
+                CpuCollectionData cpuData = null;
+                if (cpuCollector != null) {
+                  cpuData = cpuCollector.collect();
+                }
                 synchronized (timerLock) {
                   for (PerformanceCollectionData data : performanceDataMap.values()) {
                     data.addData(memoryData, cpuData);

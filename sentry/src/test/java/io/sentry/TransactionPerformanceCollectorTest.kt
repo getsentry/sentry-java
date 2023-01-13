@@ -18,6 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class TransactionPerformanceCollectorTest {
@@ -158,5 +159,13 @@ class TransactionPerformanceCollectorTest {
         val data1 = collector.stop(fixture.transaction1)
         assertFalse(data1!!.memoryData.isEmpty())
         assertFalse(data1.cpuData.isEmpty())
+    }
+
+    @Test
+    fun `collector reads MemoryCollector on start`() {
+        val collector = fixture.getSut()
+        assertNull(collector.getProperty<IMemoryCollector?>("memoryCollector"))
+        collector.start(fixture.transaction1)
+        assertNotNull(collector.getProperty<IMemoryCollector>("memoryCollector"))
     }
 }

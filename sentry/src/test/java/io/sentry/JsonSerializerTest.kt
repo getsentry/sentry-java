@@ -45,14 +45,15 @@ class JsonSerializerTest {
         val serializer: ISerializer
         val hub = mock<IHub>()
         val traceFile = Files.createTempFile("test", "here").toFile()
+        val options = SentryOptions()
 
         init {
-            val options = SentryOptions()
             options.dsn = "https://key@sentry.io/proj"
             options.setLogger(logger)
-            options.setDebug(true)
+            options.isDebug = true
             whenever(hub.options).thenReturn(options)
             serializer = JsonSerializer(options)
+            options.setSerializer(serializer)
             options.setEnvelopeReader(EnvelopeReader(serializer))
         }
     }
@@ -996,9 +997,9 @@ class JsonSerializerTest {
 
         val message = "hello"
         val attachment = Attachment(message.toByteArray(), "bytes.txt")
-        val validAttachmentItem = SentryEnvelopeItem.fromAttachment(attachment, 5)
+        val validAttachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, 5)
 
-        val invalidAttachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("no"), 5)
+        val invalidAttachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, Attachment("no"), 5)
         val envelope = SentryEnvelope(header, listOf(invalidAttachmentItem, validAttachmentItem))
 
         val actualJson = serializeToString(envelope)
