@@ -11,17 +11,19 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class PrivilegeEscalationViaContentProviderCheckerTest {
+class ContentProviderSecurityCheckerTest {
 
     private class Fixture {
         val buildInfoProvider = mock<BuildInfoProvider>()
 
         fun getSut(
             sdkVersion: Int = Build.VERSION_CODES.O
-        ): PrivilegeEscalationViaContentProviderChecker {
+        ): ContentProviderSecurityChecker {
             whenever(buildInfoProvider.sdkInfoVersion).thenReturn(sdkVersion)
 
-            return PrivilegeEscalationViaContentProviderChecker(buildInfoProvider)
+            return ContentProviderSecurityChecker(
+                buildInfoProvider
+            )
         }
     }
 
@@ -31,7 +33,7 @@ class PrivilegeEscalationViaContentProviderCheckerTest {
     fun `When sdk version is less than vulnerable versions, security check is not performed`() {
         val contentProvider = mock<ContentProvider>()
 
-        fixture.getSut(Build.VERSION_CODES.N_MR1).securityCheck(contentProvider)
+        fixture.getSut(Build.VERSION_CODES.N_MR1).checkPrivilegeEscalation(contentProvider)
 
         verifyNoInteractions(contentProvider)
     }
@@ -40,7 +42,7 @@ class PrivilegeEscalationViaContentProviderCheckerTest {
     fun `When sdk version is greater than vulnerable versions, security check is not performed`() {
         val contentProvider = mock<ContentProvider>()
 
-        fixture.getSut(Build.VERSION_CODES.Q).securityCheck(contentProvider)
+        fixture.getSut(Build.VERSION_CODES.Q).checkPrivilegeEscalation(contentProvider)
 
         verifyNoInteractions(contentProvider)
     }
@@ -53,7 +55,7 @@ class PrivilegeEscalationViaContentProviderCheckerTest {
 
         var securityException: SecurityException? = null
         try {
-            fixture.getSut().securityCheck(contentProvider)
+            fixture.getSut().checkPrivilegeEscalation(contentProvider)
         } catch (se: SecurityException) {
             securityException = se
         }
@@ -69,7 +71,7 @@ class PrivilegeEscalationViaContentProviderCheckerTest {
 
         var securityException: SecurityException? = null
         try {
-            fixture.getSut().securityCheck(contentProvider)
+            fixture.getSut().checkPrivilegeEscalation(contentProvider)
         } catch (se: SecurityException) {
             securityException = se
         }
@@ -85,7 +87,7 @@ class PrivilegeEscalationViaContentProviderCheckerTest {
 
         var securityException: SecurityException? = null
         try {
-            fixture.getSut().securityCheck(contentProvider)
+            fixture.getSut().checkPrivilegeEscalation(contentProvider)
         } catch (se: SecurityException) {
             securityException = se
         }

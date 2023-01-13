@@ -11,29 +11,26 @@ import org.jetbrains.annotations.NotNull;
 import io.sentry.NoOpLogger;
 import io.sentry.android.core.BuildInfoProvider;
 
-/**
- * Protects against "Privilege Escalation via Content Provider" (CVE-2018-9492).
- * <p>
- * See https://www.cvedetails.com/cve/CVE-2018-9492/
- * and https://github.com/getsentry/sentry-java/issues/2460
- */
 @ApiStatus.Internal
-public final class PrivilegeEscalationViaContentProviderChecker {
+public final class ContentProviderSecurityChecker {
 
   private final @NotNull BuildInfoProvider buildInfoProvider;
 
-  public PrivilegeEscalationViaContentProviderChecker() {
+  public ContentProviderSecurityChecker() {
     this(new BuildInfoProvider(NoOpLogger.getInstance()));
   }
 
-  public PrivilegeEscalationViaContentProviderChecker(
-    final @NotNull BuildInfoProvider buildInfoProvider
-  ) {
+  public ContentProviderSecurityChecker(final @NotNull BuildInfoProvider buildInfoProvider) {
     this.buildInfoProvider = buildInfoProvider;
   }
 
   /**
+   * Protects against "Privilege Escalation via Content Provider" (CVE-2018-9492).
+   * <p>
    * Throws a SecurityException if the security check is breached.
+   * <p>
+   * See https://www.cvedetails.com/cve/CVE-2018-9492/
+   * and https://github.com/getsentry/sentry-java/issues/2460
    * <p>
    * Call this function in the
    * {@link ContentProvider#query(Uri, String[], String, String[], String)} function.
@@ -48,7 +45,7 @@ public final class PrivilegeEscalationViaContentProviderChecker {
    * Therefore, this security check is limited to those versions to mitigate risk of regression.
    */
   @TargetApi(Build.VERSION_CODES.KITKAT) // Required for ContentProvider#getCallingPackage()
-  public void securityCheck(ContentProvider contentProvider) {
+  public void checkPrivilegeEscalation(ContentProvider contentProvider) {
     final int sdkVersion = buildInfoProvider.getSdkInfoVersion();
     if (sdkVersion >= Build.VERSION_CODES.O && sdkVersion <= Build.VERSION_CODES.P) {
 
