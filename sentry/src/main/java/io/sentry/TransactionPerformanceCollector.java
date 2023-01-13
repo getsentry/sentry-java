@@ -30,7 +30,7 @@ public final class TransactionPerformanceCollector {
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull ITransaction transaction) {
     // We are putting the TransactionPerformanceCollector in the options, so we want to wait until
-    // the options are customized before reading the memory collector
+    // the options are customized before reading the collectors
     if (memoryCollector == null) {
       this.memoryCollector = options.getMemoryCollector();
     }
