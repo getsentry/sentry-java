@@ -2375,6 +2375,7 @@ public final class io/sentry/internal/modules/ResourcesModulesLoader : io/sentry
 }
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field ID_CPU_USAGE Ljava/lang/String;
 	public static final field ID_FROZEN_FRAME_RENDERS Ljava/lang/String;
 	public static final field ID_MEMORY_FOOTPRINT Ljava/lang/String;
 	public static final field ID_MEMORY_NATIVE_FOOTPRINT Ljava/lang/String;
@@ -2384,6 +2385,7 @@ public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/
 	public static final field UNIT_BYTES Ljava/lang/String;
 	public static final field UNIT_HZ Ljava/lang/String;
 	public static final field UNIT_NANOSECONDS Ljava/lang/String;
+	public static final field UNIT_PERCENT Ljava/lang/String;
 	public static final field UNIT_UNKNOWN Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;Ljava/util/Collection;)V

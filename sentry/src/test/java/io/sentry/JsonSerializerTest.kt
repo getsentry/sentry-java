@@ -532,6 +532,11 @@ class JsonSerializerTest {
                     ProfileMeasurement(
                         ProfileMeasurement.UNIT_BYTES,
                         listOf(ProfileMeasurementValue(3, 104.52))
+                    ),
+                ProfileMeasurement.ID_CPU_USAGE to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_PERCENT,
+                        listOf(ProfileMeasurementValue(5, 10.52))
                     )
             )
         )
@@ -609,6 +614,16 @@ class JsonSerializerTest {
                                 "elapsed_since_start_ns" to "3"
                             )
                         )
+                    ),
+                ProfileMeasurement.ID_CPU_USAGE to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_PERCENT,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 10.52,
+                                "elapsed_since_start_ns" to "5"
+                            )
+                        )
                     )
             ),
             element["measurements"]
@@ -681,6 +696,12 @@ class JsonSerializerTest {
                                     "values":[
                                         {"value":"1100","elapsed_since_start_ns":"4"}
                                     ]
+                                },
+                                "cpu_usage": {
+                                    "unit":"percent",
+                                    "values":[
+                                        {"value":"17.04","elapsed_since_start_ns":"5"}
+                                    ]
                                 }
                             },
                             "transaction_name":"transactionName",
@@ -742,6 +763,10 @@ class JsonSerializerTest {
             ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to ProfileMeasurement(
                 ProfileMeasurement.UNIT_BYTES,
                 listOf(ProfileMeasurementValue(4, 1100))
+            ),
+            ProfileMeasurement.ID_CPU_USAGE to ProfileMeasurement(
+                ProfileMeasurement.UNIT_PERCENT,
+                listOf(ProfileMeasurementValue(5, 17.04))
             )
         )
         assertEquals(expectedMeasurements, profilingTraceData.measurementsMap)

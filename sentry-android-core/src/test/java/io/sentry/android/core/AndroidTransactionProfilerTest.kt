@@ -4,10 +4,12 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.CpuCollectionData
 import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.ISentryExecutorService
 import io.sentry.MemoryCollectionData
+import io.sentry.PerformanceCollectionData
 import io.sentry.ProfilingTraceData
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
@@ -368,17 +370,24 @@ class AndroidTransactionProfilerTest {
         val data = profiler.onTransactionFinish(fixture.transaction1, null)
         assertFalse(data!!.measurementsMap.containsKey(ProfileMeasurement.ID_MEMORY_FOOTPRINT))
         assertFalse(data.measurementsMap.containsKey(ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT))
+        assertFalse(data.measurementsMap.containsKey(ProfileMeasurement.ID_CPU_USAGE))
     }
 
     @Test
-    fun `profiler includes memory measurements when passed on transaction finish`() {
+    fun `profiler includes performance measurements when passed on transaction finish`() {
         val profiler = fixture.getSut(context)
-        val memoryCollectionData = listOf(MemoryCollectionData(1, 2, 3), MemoryCollectionData(2, 3, 4))
+        val performanceCollectionData = PerformanceCollectionData()
+        performanceCollectionData.addData(MemoryCollectionData(1, 2, 3), CpuCollectionData(1, 1.4))
+        performanceCollectionData.addData(MemoryCollectionData(2, 3, 4), null)
         profiler.onTransactionStart(fixture.transaction1)
-        val data = profiler.onTransactionFinish(fixture.transaction1, memoryCollectionData)
+        val data = profiler.onTransactionFinish(fixture.transaction1, performanceCollectionData)
+        assertContentEquals(
+            listOf(1.4),
+            data!!.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!.values.map { it.value }
+        )
         assertContentEquals(
             listOf(2.0, 3.0),
-            data!!.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!.values.map { it.value }
+            data.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!.values.map { it.value }
         )
         assertContentEquals(
             listOf(3.0, 4.0),
