@@ -1,6 +1,5 @@
 package io.sentry.uitest.android.benchmark.util
 
-import android.os.Process
 import android.os.SystemClock
 import android.system.Os
 import android.system.OsConstants

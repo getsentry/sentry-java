@@ -37,7 +37,8 @@ class BenchmarkActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-            savedInstanceState?.getBoolean(EXTRA_SUSTAINED_PERFORMANCE_MODE) == true) {
+            savedInstanceState?.getBoolean(EXTRA_SUSTAINED_PERFORMANCE_MODE) == true
+        ) {
             window.setSustainedPerformanceMode(true)
         }
 

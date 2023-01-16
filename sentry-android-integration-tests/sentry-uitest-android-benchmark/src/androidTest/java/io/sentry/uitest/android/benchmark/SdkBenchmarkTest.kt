@@ -8,7 +8,6 @@ import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
 import io.sentry.uitest.android.benchmark.util.BenchmarkOperation
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
