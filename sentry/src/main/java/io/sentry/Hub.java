@@ -45,7 +45,7 @@ public final class Hub implements IHub {
     this.tracesSampler = new TracesSampler(options);
     this.stack = stack;
     this.lastEventId = SentryId.EMPTY_ID;
-    this.transactionPerformanceCollector = new TransactionPerformanceCollector(options);
+    this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
 
     // Integrations will use this Hub instance once registered.
     // Make sure Hub ready to be used then.
