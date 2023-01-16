@@ -3,7 +3,6 @@ package io.sentry.android.core
 import android.content.Context
 import io.sentry.Hint
 import io.sentry.IHub
-import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.android.core.AnrIntegration.AnrHint
 import io.sentry.exception.ExceptionMechanismException
@@ -69,12 +68,15 @@ class AnrIntegrationTest {
 
         sut.reportANR(fixture.hub, fixture.options, getApplicationNotResponding())
 
-        verify(fixture.hub).captureEvent(check {
-            assertEquals(SentryLevel.ERROR, it.level)
-        }, check<Hint> {
-            val hint = HintUtils.getSentrySdkHint(it) as AnrHint
-            assertEquals("anr_foreground", hint.mechanism())
-        })
+        verify(fixture.hub).captureEvent(
+            check {
+                assertEquals(SentryLevel.ERROR, it.level)
+            },
+            check<Hint> {
+                val hint = HintUtils.getSentrySdkHint(it) as AnrHint
+                assertEquals("anr_foreground", hint.mechanism())
+            }
+        )
     }
 
     @Test
@@ -113,13 +115,16 @@ class AnrIntegrationTest {
 
         sut.reportANR(fixture.hub, fixture.options, getApplicationNotResponding())
 
-        verify(fixture.hub).captureEvent(check {
-            val message = it.throwable?.message
-            assertTrue(message?.startsWith("Background") == true)
-        }, check<Hint> {
-            val hint = HintUtils.getSentrySdkHint(it) as AnrHint
-            assertEquals("anr_background", hint.mechanism())
-        })
+        verify(fixture.hub).captureEvent(
+            check {
+                val message = it.throwable?.message
+                assertTrue(message?.startsWith("Background") == true)
+            },
+            check<Hint> {
+                val hint = HintUtils.getSentrySdkHint(it) as AnrHint
+                assertEquals("anr_background", hint.mechanism())
+            }
+        )
     }
 
     private fun getApplicationNotResponding(): ApplicationNotResponding {

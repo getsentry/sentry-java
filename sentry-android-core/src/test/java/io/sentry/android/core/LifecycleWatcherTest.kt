@@ -230,20 +230,20 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT(
             enableAppLifecycleBreadcrumbs = false,
             session = Session(
-              State.Ok,
-              DateUtils.getCurrentDateTime(),
-              DateUtils.getCurrentDateTime(),
-              0,
-              "abc",
-              UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
-              true,
-              0,
-              10.0,
-              null,
-              null,
-              null,
-              "release",
-              null
+                State.Ok,
+                DateUtils.getCurrentDateTime(),
+                DateUtils.getCurrentDateTime(),
+                0,
+                "abc",
+                UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+                true,
+                0,
+                10.0,
+                null,
+                null,
+                null,
+                "release",
+                null
             )
         )
 
@@ -256,20 +256,20 @@ class LifecycleWatcherTest {
         val watcher = fixture.getSUT(
             enableAppLifecycleBreadcrumbs = false,
             session = Session(
-              State.Ok,
-              DateUtils.getDateTime(-1),
-              DateUtils.getDateTime(-1),
-              0,
-              "abc",
-              UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
-              true,
-              0,
-              10.0,
-              null,
-              null,
-              null,
-              "release",
-              null
+                State.Ok,
+                DateUtils.getDateTime(-1),
+                DateUtils.getDateTime(-1),
+                0,
+                "abc",
+                UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+                true,
+                0,
+                10.0,
+                null,
+                null,
+                null,
+                "release",
+                null
             )
         )
 

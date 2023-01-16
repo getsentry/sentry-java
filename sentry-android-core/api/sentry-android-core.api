@@ -68,6 +68,11 @@ public final class io/sentry/android/core/AppStartState {
 	public fun setAppStartMillis (J)V
 }
 
+public final class io/sentry/android/core/AppState {
+	public static fun getInstance ()Lio/sentry/android/core/AppState;
+	public fun isInBackground ()Ljava/lang/Boolean;
+}
+
 public final class io/sentry/android/core/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z

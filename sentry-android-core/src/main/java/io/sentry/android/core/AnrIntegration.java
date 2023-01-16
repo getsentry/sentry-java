@@ -88,8 +88,8 @@ public final class AnrIntegration implements Integration, Closeable {
     // if LifecycleWatcher isn't available, we always assume the ANR is foreground
     final boolean isAppInBackground = Boolean.TRUE.equals(AppState.getInstance().isInBackground());
 
-    @SuppressWarnings("ThrowableNotThrown") final Throwable anrThrowable =
-      buildAnrThrowable(isAppInBackground, options, error);
+    @SuppressWarnings("ThrowableNotThrown")
+    final Throwable anrThrowable = buildAnrThrowable(isAppInBackground, options, error);
 
     final SentryEvent event = new SentryEvent(anrThrowable);
     event.setLevel(SentryLevel.ERROR);
@@ -101,17 +101,16 @@ public final class AnrIntegration implements Integration, Closeable {
   }
 
   private @NotNull Throwable buildAnrThrowable(
-    final boolean isAppInBackground,
-    final @NotNull SentryAndroidOptions options,
-    final @NotNull ApplicationNotResponding anr) {
+      final boolean isAppInBackground,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull ApplicationNotResponding anr) {
 
     String message = "ANR for at least " + options.getAnrTimeoutIntervalMillis() + " ms.";
     if (isAppInBackground) {
       message = "Background " + message;
     }
 
-    final ApplicationNotResponding error =
-      new ApplicationNotResponding(message, anr.getThread());
+    final ApplicationNotResponding error = new ApplicationNotResponding(message, anr.getThread());
     final Mechanism mechanism = new Mechanism();
     mechanism.setType("ANR");
 
@@ -138,7 +137,8 @@ public final class AnrIntegration implements Integration, Closeable {
   }
 
   /**
-   * ANR is an abnormal session exit, according to <a href="https://develop.sentry.dev/sdk/sessions/#crashed-abnormal-vs-errored">Develop Docs</a>
+   * ANR is an abnormal session exit, according to <a
+   * href="https://develop.sentry.dev/sdk/sessions/#crashed-abnormal-vs-errored">Develop Docs</a>
    * because we don't know whether the app has recovered after it or not.
    */
   static final class AnrHint implements AbnormalExit {
@@ -149,7 +149,8 @@ public final class AnrIntegration implements Integration, Closeable {
       this.isBackgroundAnr = isBackgroundAnr;
     }
 
-    @Override public String mechanism() {
+    @Override
+    public String mechanism() {
       return isBackgroundAnr ? "anr_background" : "anr_foreground";
     }
   }

@@ -238,7 +238,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
   }
 
   public boolean update(
-    final @Nullable State status, final @Nullable String userAgent, final boolean addErrorsCount) {
+      final @Nullable State status,
+      final @Nullable String userAgent,
+      final boolean addErrorsCount) {
     return update(status, userAgent, addErrorsCount, null);
   }
 
@@ -252,7 +254,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
    * @return if the session has been updated
    */
   public boolean update(
-      final @Nullable State status, final @Nullable String userAgent, final boolean addErrorsCount,
+      final @Nullable State status,
+      final @Nullable String userAgent,
+      final boolean addErrorsCount,
       final @Nullable String abnormalMechanism) {
     synchronized (sessionLock) {
       boolean sessionHasBeenUpdated = false;

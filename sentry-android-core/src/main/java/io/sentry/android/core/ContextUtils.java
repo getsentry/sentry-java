@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
@@ -13,8 +15,6 @@ import io.sentry.SentryLevel;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 
 final class ContextUtils {
 
@@ -130,7 +130,7 @@ final class ContextUtils {
       if (service instanceof ActivityManager) {
         final ActivityManager activityManager = (ActivityManager) service;
         final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
-          activityManager.getRunningAppProcesses();
+            activityManager.getRunningAppProcesses();
 
         if (runningAppProcesses != null) {
           final int myPid = Process.myPid();

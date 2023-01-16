@@ -42,20 +42,20 @@ class SessionAdapterTest {
     @Test
     fun `null timestamp does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          null,
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
-          "anr_foreground"
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            null,
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
 
         val actual = getActual(expected)!!
@@ -66,19 +66,19 @@ class SessionAdapterTest {
     @Test
     fun `null distinctId does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          null,
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            null,
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
             "anr_foreground"
         )
 
@@ -90,19 +90,19 @@ class SessionAdapterTest {
     @Test
     fun `null init does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          null,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            null,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
             "anr_foreground"
         )
 
@@ -114,19 +114,19 @@ class SessionAdapterTest {
     @Test
     fun `null sequence does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          null,
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            null,
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
             "anr_foreground"
         )
 
@@ -138,19 +138,19 @@ class SessionAdapterTest {
     @Test
     fun `null duration does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          null,
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            null,
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
             "anr_foreground"
         )
 
@@ -162,19 +162,19 @@ class SessionAdapterTest {
     @Test
     fun `null IP does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          null,
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            null,
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
             "anr_foreground"
         )
 
@@ -186,19 +186,19 @@ class SessionAdapterTest {
     @Test
     fun `null user agent does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          null,
-          "debug",
-          "io.sentry@1.0+123",
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            null,
+            "debug",
+            "io.sentry@1.0+123",
             "anr_foreground"
         )
 
@@ -210,19 +210,19 @@ class SessionAdapterTest {
     @Test
     fun `null env does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          null,
-          "io.sentry@1.0+123",
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            null,
+            "io.sentry@1.0+123",
             "anr_foreground"
         )
 
@@ -234,20 +234,20 @@ class SessionAdapterTest {
     @Test
     fun `null started does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
-          "anr_foreground"
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
         expected.injectForField("started", null)
         val actual = getActual(expected)
@@ -258,20 +258,20 @@ class SessionAdapterTest {
     @Test
     fun `null release does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
-          "anr_foreground"
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
         expected.injectForField("release", null)
         val actual = getActual(expected)
@@ -282,20 +282,20 @@ class SessionAdapterTest {
     @Test
     fun `null status does not serialize `() {
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
-          "anr_foreground"
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
         expected.injectForField("status", null)
         assertFailsWith<Exception> { getActual(expected) }
@@ -325,20 +325,20 @@ class SessionAdapterTest {
         val actual = serializer.deserialize(StringReader(json), Session::class.java)!!
 
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
-          "anr_foreground"
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
 
         assertSessionData(expected, actual)
@@ -368,20 +368,20 @@ class SessionAdapterTest {
         val actual = serializer.deserialize(StringReader(json), Session::class.java)!!
 
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
-          "anr_foreground"
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
 
         assertSessionData(expected, actual)
@@ -507,20 +507,20 @@ class SessionAdapterTest {
         val actual = serializer.deserialize(StringReader(json), Session::class.java)!!
 
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          null,
-          2,
-          "123",
-          UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
-          "anr_foreground"
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            null,
+            2,
+            "123",
+            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
 
         assertSessionData(expected, actual)
@@ -549,20 +549,20 @@ class SessionAdapterTest {
         val actual = serializer.deserialize(StringReader(json), Session::class.java)!!
 
         val expected = Session(
-          Session.State.Ok,
-          DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
-          null,
-          2,
-          "123",
-          null,
-          true,
-          123456.toLong(),
-          6000.toDouble(),
-          "127.0.0.1",
-          "jamesBond",
-          "debug",
-          "io.sentry@1.0+123",
-          "anr_foreground"
+            Session.State.Ok,
+            DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
+            null,
+            2,
+            "123",
+            null,
+            true,
+            123456.toLong(),
+            6000.toDouble(),
+            "127.0.0.1",
+            "jamesBond",
+            "debug",
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
 
         assertSessionData(expected, actual)
