@@ -167,6 +167,14 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `ViewHierarchyEventProcessor added to processors list`() {
+        fixture.initSut()
+        val actual =
+            fixture.sentryOptions.eventProcessors.any { it is ViewHierarchyEventProcessor }
+        assertNotNull(actual)
+    }
+
+    @Test
     fun `envelopesDir should be set at initialization`() {
         fixture.initSut()
 
@@ -406,6 +414,15 @@ class AndroidOptionsInitializerTest {
         fixture.initSut()
 
         assertTrue { fixture.sentryOptions.envelopeDiskCache is AndroidEnvelopeCache }
+    }
+
+    @Test
+    fun `CurrentActivityIntegration is added by default`() {
+        fixture.initSut(useRealContext = true)
+
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is CurrentActivityIntegration }
+        assertNotNull(actual)
     }
 
     @Test

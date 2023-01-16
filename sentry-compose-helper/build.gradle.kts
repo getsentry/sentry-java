@@ -1,11 +1,28 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    `java-library`
-    jacoco
+    kotlin("multiplatform")
     id("org.jetbrains.compose")
+    `java-library`
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
+}
+
+kotlin {
+    jvm {
+        withJava()
+    }
+
+    sourceSets {
+        val jvmMain by getting {
+            dependencies {
+                implementation(projects.sentry)
+
+                compileOnly(compose.runtime)
+                compileOnly(compose.ui)
+            }
+        }
+    }
 }
 
 configure<JavaPluginExtension> {
@@ -17,23 +34,11 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
-dependencies {
-    implementation(projects.sentry)
-    implementation(compose.runtime)
-    implementation(compose.ui)
-}
-
-configure<SourceSetContainer> {
-    test {
-        java.srcDir("src/test/java")
-    }
-}
-
 val embeddedJar by configurations.creating {
     isCanBeConsumed = true
     isCanBeResolved = false
 }
 
 artifacts {
-    add("embeddedJar", File("$buildDir/libs/sentry-compose-helper-$version.jar"))
+    add("embeddedJar", File("$buildDir/libs/sentry-compose-helper-jvm-$version.jar"))
 }

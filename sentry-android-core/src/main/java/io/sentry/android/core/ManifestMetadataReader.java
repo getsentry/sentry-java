@@ -75,6 +75,7 @@ final class ManifestMetadataReader {
   static final String IDLE_TIMEOUT = "io.sentry.traces.idle-timeout";
 
   static final String ATTACH_SCREENSHOT = "io.sentry.attach-screenshot";
+  static final String ATTACH_VIEW_HIERARCHY = "io.sentry.attach-view-hierarchy";
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
   static final String COLLECT_ADDITIONAL_CONTEXT = "io.sentry.additional-context";
 
@@ -219,6 +220,9 @@ final class ManifestMetadataReader {
 
         options.setAttachScreenshot(
             readBool(metadata, logger, ATTACH_SCREENSHOT, options.isAttachScreenshot()));
+
+        options.setAttachViewHierarchy(
+            readBool(metadata, logger, ATTACH_VIEW_HIERARCHY, options.isAttachViewHierarchy()));
 
         options.setSendClientReports(
             readBool(metadata, logger, CLIENT_REPORTS_ENABLE, options.isSendClientReports()));

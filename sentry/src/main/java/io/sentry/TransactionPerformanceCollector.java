@@ -21,17 +21,21 @@ public final class TransactionPerformanceCollector {
   private volatile @NotNull Timer timer = new Timer();
   private final @NotNull Map<String, ArrayList<MemoryCollectionData>> memoryMap =
       new ConcurrentHashMap<>();
-  private final @NotNull IMemoryCollector memoryCollector;
+  private @Nullable IMemoryCollector memoryCollector = null;
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
 
   public TransactionPerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
-    this.memoryCollector = options.getMemoryCollector();
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull ITransaction transaction) {
+    // We are putting the TransactionPerformanceCollector in the options, so we want to wait until
+    // the options are customized before reading the memory collector
+    if (memoryCollector == null) {
+      this.memoryCollector = options.getMemoryCollector();
+    }
     if (memoryCollector instanceof NoOpMemoryCollector) {
       options
           .getLogger()
@@ -60,11 +64,13 @@ public final class TransactionPerformanceCollector {
             new TimerTask() {
               @Override
               public void run() {
-                MemoryCollectionData memoryData = memoryCollector.collect();
-                if (memoryData != null) {
-                  synchronized (timerLock) {
-                    for (ArrayList<MemoryCollectionData> list : memoryMap.values()) {
-                      list.add(memoryData);
+                if (memoryCollector != null) {
+                  MemoryCollectionData memoryData = memoryCollector.collect();
+                  if (memoryData != null) {
+                    synchronized (timerLock) {
+                      for (ArrayList<MemoryCollectionData> list : memoryMap.values()) {
+                        list.add(memoryData);
+                      }
                     }
                   }
                 }
