@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.internal.util.ContentProviderSecurityChecker;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,6 +52,7 @@ public final class SentryInitProvider extends ContentProvider {
       @Nullable String s,
       @Nullable String[] strings1,
       @Nullable String s1) {
+    new ContentProviderSecurityChecker().checkPrivilegeEscalation(this);
     return null;
   }
 
