@@ -8,6 +8,7 @@ import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.ISentryExecutorService
 import io.sentry.MemoryCollectionData
+import io.sentry.PerformanceCollectionData
 import io.sentry.ProfilingTraceData
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
@@ -373,7 +374,9 @@ class AndroidTransactionProfilerTest {
     @Test
     fun `profiler includes memory measurements when passed on transaction finish`() {
         val profiler = fixture.getSut(context)
-        val memoryCollectionData = listOf(MemoryCollectionData(1, 2, 3), MemoryCollectionData(2, 3, 4))
+        val memoryCollectionData = PerformanceCollectionData()
+        memoryCollectionData.addData(MemoryCollectionData(1, 2, 3), null)
+        memoryCollectionData.addData(MemoryCollectionData(2, 3, 4), null)
         profiler.onTransactionStart(fixture.transaction1)
         val data = profiler.onTransactionFinish(fixture.transaction1, memoryCollectionData)
         assertContentEquals(
