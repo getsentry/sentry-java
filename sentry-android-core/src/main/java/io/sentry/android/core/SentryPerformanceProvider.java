@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
 import io.sentry.android.core.internal.util.ContentProviderSecurityChecker;
-
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;

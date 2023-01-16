@@ -9,7 +9,6 @@ import android.net.Uri;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.ContentProviderSecurityChecker;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
