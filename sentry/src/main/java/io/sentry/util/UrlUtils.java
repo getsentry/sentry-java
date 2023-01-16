@@ -1,6 +1,9 @@
 package io.sentry.util;
 
-import io.sentry.SentryOptions;
+import io.sentry.ISpan;
+import io.sentry.protocol.Request;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
@@ -8,76 +11,114 @@ import org.jetbrains.annotations.Nullable;
 
 public final class UrlUtils {
 
-  private static final @NotNull Pattern USER_INFO_REGEX = Pattern.compile("(.+://)(.*@)(.*)");
+  private static final @NotNull Pattern AUTH_REGEX = Pattern.compile("(.+://)(.*@)(.*)");
 
-  public static @Nullable String maybeStripSensitiveDataFromUrlNullable(
-      final @Nullable String url, final @NotNull SentryOptions options) {
+  public static @Nullable UrlDetails convertUrlNullable(final @Nullable String url) {
     if (url == null) {
       return null;
     }
 
-    return maybeStripSensitiveDataFromUrl(url, options);
+    return convertUrl(url);
   }
 
-  public static @NotNull String maybeStripSensitiveDataFromUrl(
-      final @NotNull String url, final @NotNull SentryOptions options) {
-    if (options.isSendDefaultPii()) {
+  public static @NotNull UrlDetails convertUrl(final @NotNull String url) {
+    final @NotNull String filteredUrl = urlWithAuthRemoved(url);
+    try {
+      final @NotNull URL urlObj = new URL(url);
+      final @NotNull String baseUrl = baseUrlOnly(filteredUrl);
+      if (baseUrl.contains("#")) {
+        // url considered malformed because it has fragment
+        return new UrlDetails(null, null, null);
+      } else {
+        final @Nullable String query = urlObj.getQuery();
+        final @Nullable String fragment = urlObj.getRef();
+        return new UrlDetails(baseUrl, query, fragment);
+      }
+    } catch (MalformedURLException e) {
+      return new UrlDetails(null, null, null);
+    }
+  }
+
+  private static @NotNull String urlWithAuthRemoved(final @NotNull String url) {
+    final @NotNull Matcher userInfoMatcher = AUTH_REGEX.matcher(url);
+    if (userInfoMatcher.matches() && userInfoMatcher.groupCount() == 3) {
+      final @NotNull String userInfoString = userInfoMatcher.group(2);
+      final @NotNull String replacementString =
+          userInfoString.contains(":") ? "[Filtered]:[Filtered]@" : "[Filtered]@";
+      return userInfoMatcher.group(1) + replacementString + userInfoMatcher.group(3);
+    } else {
+      return url;
+    }
+  }
+
+  private static @NotNull String baseUrlOnly(final @NotNull String url) {
+    final int queryParamSeparatorIndex = url.indexOf("?");
+
+    if (queryParamSeparatorIndex >= 0) {
+      return url.substring(0, queryParamSeparatorIndex).trim();
+    } else {
+      final int fragmentSeparatorIndex = url.indexOf("#");
+      if (fragmentSeparatorIndex >= 0) {
+        return url.substring(0, fragmentSeparatorIndex).trim();
+      } else {
+        return url;
+      }
+    }
+  }
+
+  public static final class UrlDetails {
+    private final @Nullable String url;
+    private final @Nullable String query;
+    private final @Nullable String fragment;
+
+    public UrlDetails(
+        final @Nullable String url, final @Nullable String query, final @Nullable String fragment) {
+      this.url = url;
+      this.query = query;
+      this.fragment = fragment;
+    }
+
+    public @Nullable String getUrl() {
       return url;
     }
 
-    @NotNull String modifiedUrl = url;
-
-    final @NotNull Matcher userInfoMatcher = USER_INFO_REGEX.matcher(modifiedUrl);
-    if (userInfoMatcher.matches() && userInfoMatcher.groupCount() == 3) {
-      final @NotNull String userInfoString = userInfoMatcher.group(2);
-      final @NotNull String replacementString = userInfoString.contains(":") ? "%s:%s@" : "%s@";
-      modifiedUrl = userInfoMatcher.group(1) + replacementString + userInfoMatcher.group(3);
+    public @NotNull String getUrlOrFallback() {
+      if (url == null) {
+        return "unknown";
+      } else {
+        return url;
+      }
     }
 
-    final int queryParamSeparatorIndex = modifiedUrl.indexOf("?");
-    if (queryParamSeparatorIndex >= 0) {
-      final @NotNull String urlWithoutQuery =
-          modifiedUrl.substring(0, queryParamSeparatorIndex).trim();
-      final @NotNull String query = modifiedUrl.substring(queryParamSeparatorIndex).trim();
-
-      modifiedUrl = urlWithoutQuery + maybeStripSensitiveDataFromQuery(query, options);
-    }
-
-    return modifiedUrl;
-  }
-
-  public static @NotNull String maybeStripSensitiveDataFromQuery(
-      @NotNull String query, final @NotNull SentryOptions options) {
-    if (options.isSendDefaultPii()) {
+    public @Nullable String getQuery() {
       return query;
     }
 
-    final @NotNull StringBuilder queryBuilder = new StringBuilder();
-    @NotNull String modifiedQuery = query;
-    @NotNull String anchorPart = "";
-
-    final int anchorInQueryIndex = modifiedQuery.indexOf("#");
-    if (anchorInQueryIndex >= 0) {
-      anchorPart = query.substring(anchorInQueryIndex);
-      modifiedQuery = query.substring(0, anchorInQueryIndex);
+    public @Nullable String getFragment() {
+      return fragment;
     }
 
-    final @NotNull String[] queryParams = modifiedQuery.split("&", -1);
-    @NotNull String separator = "";
-    for (final @NotNull String queryParam : queryParams) {
-      final @NotNull String[] queryParamParts = queryParam.split("=", -1);
-      queryBuilder.append(separator);
-      if (queryParamParts.length == 2) {
-        queryBuilder.append(queryParamParts[0]);
-        queryBuilder.append("=%s");
-      } else {
-        queryBuilder.append(queryParam);
+    public void applyToRequest(final @Nullable Request request) {
+      if (request == null) {
+        return;
       }
-      separator = "&";
+
+      request.setUrl(url);
+      request.setQueryString(query);
+      request.setFragment(fragment);
     }
 
-    queryBuilder.append(anchorPart);
+    public void applyToSpan(final @Nullable ISpan span) {
+      if (span == null) {
+        return;
+      }
 
-    return queryBuilder.toString();
+      if (query != null) {
+        span.setData("http.query", query);
+      }
+      if (fragment != null) {
+        span.setData("http.fragment", fragment);
+      }
+    }
   }
 }

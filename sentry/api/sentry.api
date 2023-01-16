@@ -3381,9 +3381,18 @@ public final class io/sentry/util/StringUtils {
 
 public final class io/sentry/util/UrlUtils {
 	public fun <init> ()V
-	public static fun maybeStripSensitiveDataFromQuery (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
-	public static fun maybeStripSensitiveDataFromUrl (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
-	public static fun maybeStripSensitiveDataFromUrlNullable (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
+	public static fun convertUrl (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
+	public static fun convertUrlNullable (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
+}
+
+public final class io/sentry/util/UrlUtils$UrlDetails {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun applyToRequest (Lio/sentry/protocol/Request;)V
+	public fun applyToSpan (Lio/sentry/ISpan;)V
+	public fun getFragment ()Ljava/lang/String;
+	public fun getQuery ()Ljava/lang/String;
+	public fun getUrl ()Ljava/lang/String;
+	public fun getUrlOrFallback ()Ljava/lang/String;
 }
 
 public class io/sentry/vendor/Base64 {

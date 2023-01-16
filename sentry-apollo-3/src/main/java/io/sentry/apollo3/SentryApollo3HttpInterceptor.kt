@@ -81,7 +81,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
     }
 
     private fun startChild(request: HttpRequest, activeSpan: ISpan): ISpan {
-        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url, hub.options)
+        val urlDetails = UrlUtils.convertUrl(request.url)
         val method = request.method
 
         val operationName = operationNameFromHeaders(request)
@@ -89,9 +89,11 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         val operationType = request.valueForHeader(SENTRY_APOLLO_3_OPERATION_TYPE) ?: method
         val operationId = request.valueForHeader("X-APOLLO-OPERATION-ID")
         val variables = request.valueForHeader(SENTRY_APOLLO_3_VARIABLES)
-        val description = "$operationType ${operationName ?: url}"
+        val description = "$operationType ${operationName ?: urlDetails.urlOrFallback}"
 
         return activeSpan.startChild(operation, description).apply {
+            urlDetails.applyToSpan(this)
+
             operationId?.let {
                 setData("operationId", it)
             }
@@ -122,9 +124,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         }
         span.finish()
 
-        val url = UrlUtils.maybeStripSensitiveDataFromUrl(request.url, hub.options)
-        val breadcrumb =
-            Breadcrumb.http(url, request.method.name, statusCode)
+        val breadcrumb = Breadcrumb.http(request.url, request.method.name, statusCode)
 
         request.body?.contentLength.ifHasValidLength { contentLength ->
             breadcrumb.setData("request_body_size", contentLength)

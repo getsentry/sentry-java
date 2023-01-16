@@ -51,13 +51,14 @@ public final class SentryFeignClient implements Client {
       }
 
       ISpan span = activeSpan.startChild("http.client");
-      final @NotNull String url =
-          UrlUtils.maybeStripSensitiveDataFromUrl(request.url(), hub.getOptions());
-      span.setDescription(request.httpMethod().name() + " " + url);
+      final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.convertUrl(request.url());
+      span.setDescription(request.httpMethod().name() + " " + urlDetails.getUrlOrFallback());
+      urlDetails.applyToSpan(span);
 
       final RequestWrapper requestWrapper = new RequestWrapper(request);
 
-      if (PropagationTargetsUtils.contain(hub.getOptions().getTracePropagationTargets(), url)) {
+      if (PropagationTargetsUtils.contain(
+          hub.getOptions().getTracePropagationTargets(), request.url())) {
         final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
         final @Nullable Collection<String> requestBaggageHeader =
             request.headers().get(BaggageHeader.BAGGAGE_HEADER);
@@ -101,11 +102,11 @@ public final class SentryFeignClient implements Client {
   }
 
   private void addBreadcrumb(final @NotNull Request request, final @Nullable Response response) {
-    final @NotNull String url =
-        UrlUtils.maybeStripSensitiveDataFromUrl(request.url(), hub.getOptions());
     final Breadcrumb breadcrumb =
         Breadcrumb.http(
-            url, request.httpMethod().name(), response != null ? response.status() : null);
+            request.url(),
+            request.httpMethod().name(),
+            response != null ? response.status() : null);
     breadcrumb.setData("request_body_size", request.body() != null ? request.body().length : 0);
     if (response != null && response.body() != null && response.body().length() != null) {
       breadcrumb.setData("response_body_size", response.body().length());

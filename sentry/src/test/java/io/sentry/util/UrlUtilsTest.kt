@@ -1,6 +1,5 @@
 package io.sentry.util
 
-import io.sentry.SentryOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -9,71 +8,126 @@ class UrlUtilsTest {
 
     @Test
     fun `returns null for null`() {
-        assertNull(UrlUtils.maybeStripSensitiveDataFromUrlNullable(null, SentryOptions().also { it.isSendDefaultPii = false }))
+        assertNull(UrlUtils.convertUrlNullable(null))
     }
 
     @Test
-    fun `keeps sensitive data if sendDefaultPii is true`() {
-        assertEquals("https://user:password@sentry.io?q=1&s=2&token=secret#top", UrlUtils.maybeStripSensitiveDataFromUrl("https://user:password@sentry.io?q=1&s=2&token=secret#top", SentryOptions().also { it.isSendDefaultPii = true }))
-    }
-
-    @Test
-    fun `strips user info with user and password`() {
-        assertEquals("http://%s:%s@sentry.io", UrlUtils.maybeStripSensitiveDataFromUrl("http://user:password@sentry.io", SentryOptions().also { it.isSendDefaultPii = false }))
+    fun `strips user info with user and password from http`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "http://user:password@sentry.io?q=1&s=2&token=secret#top"
+        )
+        assertEquals("http://[Filtered]:[Filtered]@sentry.io", urlDetails.url)
+        assertEquals("q=1&s=2&token=secret", urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
     }
 
     @Test
     fun `strips user info with user and password from https`() {
-        assertEquals("https://%s:%s@sentry.io", UrlUtils.maybeStripSensitiveDataFromUrl("https://user:password@sentry.io", SentryOptions().also { it.isSendDefaultPii = false }))
+        val urlDetails = UrlUtils.convertUrl(
+            "https://user:password@sentry.io?q=1&s=2&token=secret#top"
+        )
+        assertEquals("https://[Filtered]:[Filtered]@sentry.io", urlDetails.url)
+        assertEquals("q=1&s=2&token=secret", urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
+    }
+
+    @Test
+    fun `splits url`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "https://sentry.io?q=1&s=2&token=secret#top"
+        )
+        assertEquals("https://sentry.io", urlDetails.url)
+        assertEquals("q=1&s=2&token=secret", urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
+    }
+
+    @Test
+    fun `strips user info with user and password without query`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "https://user:password@sentry.io#top"
+        )
+        assertEquals("https://[Filtered]:[Filtered]@sentry.io", urlDetails.url)
+        assertNull(urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
+    }
+
+    @Test
+    fun `splits without query`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "https://sentry.io#top"
+        )
+        assertEquals("https://sentry.io", urlDetails.url)
+        assertNull(urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
+    }
+
+    @Test
+    fun `strips user info with user and password without fragment`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "https://user:password@sentry.io?q=1&s=2&token=secret"
+        )
+        assertEquals("https://[Filtered]:[Filtered]@sentry.io", urlDetails.url)
+        assertEquals("q=1&s=2&token=secret", urlDetails.query)
+        assertNull(urlDetails.fragment)
+    }
+
+    @Test
+    fun `strips user info with user and password without query or fragment`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "https://user:password@sentry.io"
+        )
+        assertEquals("https://[Filtered]:[Filtered]@sentry.io", urlDetails.url)
+        assertNull(urlDetails.query)
+        assertNull(urlDetails.fragment)
+    }
+
+    @Test
+    fun `splits url without query or fragment and no authority`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "https://sentry.io"
+        )
+        assertEquals("https://sentry.io", urlDetails.url)
+        assertNull(urlDetails.query)
+        assertNull(urlDetails.fragment)
     }
 
     @Test
     fun `strips user info with user only`() {
-        assertEquals("http://%s@sentry.io", UrlUtils.maybeStripSensitiveDataFromUrl("http://user@sentry.io", SentryOptions().also { it.isSendDefaultPii = false }))
+        val urlDetails = UrlUtils.convertUrl(
+            "https://user@sentry.io?q=1&s=2&token=secret#top"
+        )
+        assertEquals("https://[Filtered]@sentry.io", urlDetails.url)
+        assertEquals("q=1&s=2&token=secret", urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
     }
 
     @Test
-    fun `strips user info with user only from https`() {
-        assertEquals("https://%s@sentry.io", UrlUtils.maybeStripSensitiveDataFromUrl("https://user@sentry.io", SentryOptions().also { it.isSendDefaultPii = false }))
+    fun `no details extracted with query after fragment`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "https://user:password@sentry.io#fragment?q=1&s=2&token=secret"
+        )
+        assertNull(urlDetails.url)
+        assertNull(urlDetails.query)
+        assertNull(urlDetails.fragment)
     }
 
     @Test
-    fun `strips token from query params as first param`() {
-        assertEquals("https://sentry.io?token=%s", UrlUtils.maybeStripSensitiveDataFromUrl("https://sentry.io?token=secret", SentryOptions().also { it.isSendDefaultPii = false }))
+    fun `no details extracted with query after fragment without authority`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "https://sentry.io#fragment?q=1&s=2&token=secret"
+        )
+        assertNull(urlDetails.url)
+        assertNull(urlDetails.query)
+        assertNull(urlDetails.fragment)
     }
 
     @Test
-    fun `strips token from query params as later param`() {
-        assertEquals("https://sentry.io?q=%s&s=%s&token=%s", UrlUtils.maybeStripSensitiveDataFromUrl("https://sentry.io?q=1&s=2&token=secret", SentryOptions().also { it.isSendDefaultPii = false }))
-    }
-
-    @Test
-    fun `strips token from query params as first param and keeps anchor`() {
-        assertEquals("https://sentry.io?token=%s#top", UrlUtils.maybeStripSensitiveDataFromUrl("https://sentry.io?token=secret#top", SentryOptions().also { it.isSendDefaultPii = false }))
-    }
-
-    @Test
-    fun `strips token from query params as later param and keeps anchor`() {
-        assertEquals("https://sentry.io?q=%s&s=%s&token=%s#top", UrlUtils.maybeStripSensitiveDataFromUrl("https://sentry.io?q=1&s=2&token=secret#top", SentryOptions().also { it.isSendDefaultPii = false }))
-    }
-
-    @Test
-    fun `strips token from query params after anchor`() {
-        assertEquals("https://api.github.com/users/getsentry/repos/#fragment?token=%s", UrlUtils.maybeStripSensitiveDataFromUrl("https://api.github.com/users/getsentry/repos/#fragment?token=query", SentryOptions().also { it.isSendDefaultPii = false }))
-    }
-
-    @Test
-    fun `strips token from query params after anchor with &`() {
-        assertEquals("https://api.github.com/users/getsentry/repos/#fragment?q=%s&token=%s", UrlUtils.maybeStripSensitiveDataFromUrl("https://api.github.com/users/getsentry/repos/#fragment?q=1&token=query", SentryOptions().also { it.isSendDefaultPii = false }))
-    }
-
-    @Test
-    fun `strips query params`() {
-        assertEquals("?q=%s&token=%s", UrlUtils.maybeStripSensitiveDataFromQuery("?q=%s&token=query", SentryOptions().also { it.isSendDefaultPii = false }))
-    }
-
-    @Test
-    fun `strips query params without ?`() {
-        assertEquals("q=%s&token=%s", UrlUtils.maybeStripSensitiveDataFromQuery("q=%s&token=query", SentryOptions().also { it.isSendDefaultPii = false }))
+    fun `no details extracted from malformed url`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "htps://user@sentry.io#fragment?q=1&s=2&token=secret"
+        )
+        assertNull(urlDetails.url)
+        assertNull(urlDetails.query)
+        assertNull(urlDetails.fragment)
     }
 }

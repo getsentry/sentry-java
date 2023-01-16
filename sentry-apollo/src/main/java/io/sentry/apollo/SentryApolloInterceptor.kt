@@ -21,7 +21,6 @@ import io.sentry.SentryLevel
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
-import io.sentry.util.UrlUtils
 import java.util.concurrent.Executor
 
 class SentryApolloInterceptor(
@@ -115,8 +114,7 @@ class SentryApolloInterceptor(
                 val httpResponse = it.httpResponse.get()
                 val httpRequest = httpResponse.request()
 
-                val url = UrlUtils.maybeStripSensitiveDataFromUrl(httpRequest.url().toString(), hub.options)
-                val breadcrumb = Breadcrumb.http(url, httpRequest.method(), httpResponse.code())
+                val breadcrumb = Breadcrumb.http(httpRequest.url().toString(), httpRequest.method(), httpResponse.code())
 
                 httpRequest.body()?.contentLength().ifHasValidLength { contentLength ->
                     breadcrumb.setData("request_body_size", contentLength)
