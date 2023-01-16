@@ -70,7 +70,7 @@ internal data class BenchmarkComparisonResult(
             println(
                 "$prefix CPU time overhead, over $cores cores: %.2f%% (%d ms)".format(
                     cpuTimeIncreasePercentages[index],
-                    cpuTimeIncreases[index]
+                    TimeUnit.NANOSECONDS.toMillis(cpuTimeIncreases[index])
                 )
             )
 
@@ -114,7 +114,7 @@ internal data class BenchmarkSummaryResult(
      * Increase of cpu time in milliseconds.
      * It has no direct impact on performance of the app, but it has on battery usage, as the cpu is 'awaken' longer.
      */
-    val cpuTimeIncreaseMillis: Long,
+    val cpuTimeIncreaseNanos: Long,
     /** Increase of cpu time in percentage. */
     val cpuTimeIncreasePercentage: Double,
     /**
@@ -146,7 +146,7 @@ internal data class BenchmarkSummaryResult(
                 TimeUnit.NANOSECONDS.toMillis(durationIncreaseNanos)
             )
         )
-        println("CPU time overhead: %.2f%% (%d ms)".format(cpuTimeIncreasePercentage, cpuTimeIncreaseMillis))
+        println("CPU time overhead: %.2f%% (%d ms)".format(cpuTimeIncreasePercentage, cpuTimeIncreaseNanos))
         println("FPS decrease: %.2f%% (%d fps)".format(fpsDecreasePercentage, fpsDecrease))
         println("Frame drop increase: %.2f%% (%.2f)".format(droppedFramesIncreasePercentage, droppedFramesIncrease))
     }

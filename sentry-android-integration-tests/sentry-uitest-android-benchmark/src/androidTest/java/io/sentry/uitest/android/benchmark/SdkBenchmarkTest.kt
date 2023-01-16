@@ -8,6 +8,7 @@ import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
 import io.sentry.uitest.android.benchmark.util.BenchmarkOperation
 import org.junit.runner.RunWith
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -39,8 +40,8 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
         val perfProfilingSdkResult = perfProfilingSdkResults.getSummaryResult()
         perfProfilingSdkResult.printResults()
 
-        assertTrue(simpleSdkResult.cpuTimeIncreaseMillis in 0..100)
-        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseMillis in 0..100)
+        assertTrue(simpleSdkResult.cpuTimeIncreaseNanos in 0..TimeUnit.MILLISECONDS.toNanos(100))
+        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseNanos in 0..TimeUnit.MILLISECONDS.toNanos(100))
     }
 
     private fun getOperation(init: (() -> Unit)? = null) = BenchmarkOperation(

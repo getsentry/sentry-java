@@ -81,7 +81,7 @@ internal class BenchmarkOperation(
     }
 
     private var lastFrameTimeNanos: Long = 0
-    private val cpuDurationMillisList: MutableList<Long> = LinkedList()
+    private val cpuDurationNanosList: MutableList<Long> = LinkedList()
     private val droppedFramesList: MutableList<Double> = LinkedList()
     private val durationNanosList: MutableList<Long> = LinkedList()
     private val fpsList: MutableList<Int> = LinkedList()
@@ -109,7 +109,7 @@ internal class BenchmarkOperation(
         choreographer.removeFrameCallback(frameCallback)
 
         val durationNanos = SystemClock.elapsedRealtimeNanos() - startRealtimeNs
-        cpuDurationMillisList.add(TimeUnit.NANOSECONDS.toMillis(readProcessorTimeNanos() - startCpuTimeMs))
+        cpuDurationNanosList.add(readProcessorTimeNanos() - startCpuTimeMs)
         durationNanosList.add(durationNanos)
         droppedFramesList.add(frameCallback.droppedFrames)
         // fps = counted frames per seconds converted into frames per nanoseconds, divided by duration in nanoseconds
@@ -139,7 +139,7 @@ internal class BenchmarkOperation(
     /** Return the [BenchmarkOperationComparable] for the operation. */
     private fun getResult(operationName: String): BenchmarkOperationComparable {
         return BenchmarkOperationComparable(
-            cpuDurationMillisList,
+            cpuDurationNanosList,
             droppedFramesList,
             durationNanosList,
             fpsList,
