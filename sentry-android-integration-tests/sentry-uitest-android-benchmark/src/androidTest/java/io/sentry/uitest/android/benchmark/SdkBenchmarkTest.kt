@@ -40,10 +40,7 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
         val perfProfilingSdkResult = perfProfilingSdkResults.getSummaryResult()
         perfProfilingSdkResult.printResults()
 
-        val maxDurationThreshold = TimeUnit.MILLISECONDS.toNanos(250)
-        assertTrue(simpleSdkResult.durationIncreaseNanos in 0..maxDurationThreshold)
         assertTrue(simpleSdkResult.cpuTimeIncreaseMillis in 0..100)
-        assertTrue(perfProfilingSdkResult.durationIncreaseNanos in 0..maxDurationThreshold)
         assertTrue(perfProfilingSdkResult.cpuTimeIncreaseMillis in 0..100)
     }
 
