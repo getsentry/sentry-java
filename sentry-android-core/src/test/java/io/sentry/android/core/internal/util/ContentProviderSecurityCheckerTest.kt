@@ -8,8 +8,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import kotlin.test.assertFailsWith
 
 class ContentProviderSecurityCheckerTest {
 
@@ -53,14 +52,9 @@ class ContentProviderSecurityCheckerTest {
 
         contentProvider.mockPackages(null)
 
-        var securityException: SecurityException? = null
-        try {
+        assertFailsWith<SecurityException> {
             fixture.getSut().checkPrivilegeEscalation(contentProvider)
-        } catch (se: SecurityException) {
-            securityException = se
         }
-
-        assertNotNull(securityException)
     }
 
     @Test
@@ -69,14 +63,9 @@ class ContentProviderSecurityCheckerTest {
 
         contentProvider.mockPackages("{$APP_PACKAGE}.attacker")
 
-        var securityException: SecurityException? = null
-        try {
+        assertFailsWith<SecurityException> {
             fixture.getSut().checkPrivilegeEscalation(contentProvider)
-        } catch (se: SecurityException) {
-            securityException = se
         }
-
-        assertNotNull(securityException)
     }
 
     @Test
@@ -85,14 +74,9 @@ class ContentProviderSecurityCheckerTest {
 
         contentProvider.mockPackages(APP_PACKAGE)
 
-        var securityException: SecurityException? = null
-        try {
-            fixture.getSut().checkPrivilegeEscalation(contentProvider)
-        } catch (se: SecurityException) {
-            securityException = se
-        }
+        fixture.getSut().checkPrivilegeEscalation(contentProvider)
 
-        assertNull(securityException)
+        // No exception!
     }
 }
 
