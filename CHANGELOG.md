@@ -1,11 +1,15 @@
 # Changelog
 
-## 6.12.0
+## Unreleased
 
 ### Features
 
 - Send transaction memory stats in profile payload ([#2447](https://github.com/getsentry/sentry-java/pull/2447))
-- Add cpu usage collection ([#2462](https://github.com/getsentry/sentry-java/pull/2462))
+
+## 6.12.0
+
+### Features
+
 - Attach View Hierarchy to the errored/crashed events ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
 - Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
 - Add `traceOptionsRequests` option to disable tracing of OPTIONS requests ([#2453](https://github.com/getsentry/sentry-java/pull/2453))
