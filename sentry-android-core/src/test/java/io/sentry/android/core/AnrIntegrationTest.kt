@@ -109,7 +109,7 @@ class AnrIntegrationTest {
     }
 
     @Test
-    fun `When App is in background, it should capture prepend the message with 'background' and change abnormal mechanism`() {
+    fun `When App is in background, it should prepend the message with 'background' and change abnormal mechanism`() {
         val sut = fixture.getSut()
         AppState.getInstance().setInBackground(true)
 
