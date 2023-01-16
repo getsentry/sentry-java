@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
@@ -251,6 +252,17 @@ class MainEventProcessorTest {
     }
 
     @Test
+    fun `when attach threads is disabled, but the hint is Abnormal, still sets threads`() {
+        val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
+
+        var event = SentryEvent(RuntimeException("error"))
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalHint())
+        event = sut.process(event, hint)
+
+        assertNotNull(event.threads)
+    }
+
+    @Test
     fun `sets sdkVersion in the event`() {
         val sut = fixture.getSut()
         val event = SentryEvent()
@@ -487,7 +499,7 @@ class MainEventProcessorTest {
 
         sut.close()
         assertNotNull(sut.hostnameCache) {
-            assertTrue(it.isClosed())
+            assertTrue(it.isClosed)
         }
     }
 
@@ -541,4 +553,8 @@ class MainEventProcessorTest {
             )
             throwable = actualThrowable
         }
+
+    private class AbnormalHint : AbnormalExit {
+        override fun mechanism(): String? = null
+    }
 }

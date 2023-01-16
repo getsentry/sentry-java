@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Cached;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
@@ -252,7 +253,9 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
         }
       }
 
-      if (options.isAttachThreads()) {
+      // typically Abnormal exits can be tackled by looking at the thread dump (e.g. ANRs), hence
+      // we force attach threads regardless of the config
+      if (options.isAttachThreads() || HintUtils.hasType(hint, AbnormalExit.class)) {
         event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
       } else if (options.isAttachStacktrace()
           && (eventExceptions == null || eventExceptions.isEmpty())
