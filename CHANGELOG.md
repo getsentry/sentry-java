@@ -5,7 +5,7 @@
 ### Features
 
 - Improve ANR implementation: ([#2475](https://github.com/getsentry/sentry-java/pull/2475))
-  - Add abnormal_mechanism to sessions for ANR rate calculation
+  - Add `abnormal_mechanism` to sessions for ANR rate calculation
   - Always attach thread dump to ANR events
   - Distinguish between foreground and background ANRs
 
