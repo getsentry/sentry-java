@@ -111,7 +111,7 @@ internal data class BenchmarkComparisonResult(
 /** Result of the [BenchmarkOperation] comparison. */
 internal data class BenchmarkSummaryResult(
     /**
-     * Increase of cpu time in milliseconds.
+     * Increase of cpu time in nanoseconds.
      * It has no direct impact on performance of the app, but it has on battery usage, as the cpu is 'awaken' longer.
      */
     val cpuTimeIncreaseNanos: Long,
