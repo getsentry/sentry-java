@@ -186,7 +186,7 @@ class RateLimiterTest {
             }
         )
         val sessionItem = SentryEnvelopeItem.fromSession(fixture.serializer, Session("123", User(), "env", "release"))
-        val attachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
+        val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
 
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem))
 
@@ -218,7 +218,7 @@ class RateLimiterTest {
             }
         )
         val sessionItem = SentryEnvelopeItem.fromSession(fixture.serializer, Session("123", User(), "env", "release"))
-        val attachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
+        val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
 
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem))
 

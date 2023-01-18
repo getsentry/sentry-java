@@ -18,20 +18,24 @@ public final class TransactionPerformanceCollector {
   private static final long TRANSACTION_COLLECTION_INTERVAL_MILLIS = 100;
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
   private final @NotNull Object timerLock = new Object();
-  private volatile @NotNull Timer timer = new Timer();
+  private volatile @Nullable Timer timer = null;
   private final @NotNull Map<String, ArrayList<MemoryCollectionData>> memoryMap =
       new ConcurrentHashMap<>();
-  private final @NotNull IMemoryCollector memoryCollector;
+  private @Nullable IMemoryCollector memoryCollector = null;
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
 
   public TransactionPerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
-    this.memoryCollector = options.getMemoryCollector();
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull ITransaction transaction) {
+    // We are putting the TransactionPerformanceCollector in the options, so we want to wait until
+    // the options are customized before reading the memory collector
+    if (memoryCollector == null) {
+      this.memoryCollector = options.getMemoryCollector();
+    }
     if (memoryCollector instanceof NoOpMemoryCollector) {
       options
           .getLogger()
@@ -56,15 +60,20 @@ public final class TransactionPerformanceCollector {
     }
     if (!isStarted.getAndSet(true)) {
       synchronized (timerLock) {
+        if (timer == null) {
+          timer = new Timer(true);
+        }
         timer.scheduleAtFixedRate(
             new TimerTask() {
               @Override
               public void run() {
-                MemoryCollectionData memoryData = memoryCollector.collect();
-                if (memoryData != null) {
-                  synchronized (timerLock) {
-                    for (ArrayList<MemoryCollectionData> list : memoryMap.values()) {
-                      list.add(memoryData);
+                if (memoryCollector != null) {
+                  MemoryCollectionData memoryData = memoryCollector.collect();
+                  if (memoryData != null) {
+                    synchronized (timerLock) {
+                      for (ArrayList<MemoryCollectionData> list : memoryMap.values()) {
+                        list.add(memoryData);
+                      }
                     }
                   }
                 }
@@ -81,8 +90,10 @@ public final class TransactionPerformanceCollector {
     synchronized (timerLock) {
       List<MemoryCollectionData> memoryData = memoryMap.remove(transaction.getEventId().toString());
       if (memoryMap.isEmpty() && isStarted.getAndSet(false)) {
-        timer.cancel();
-        timer = new Timer();
+        if (timer != null) {
+          timer.cancel();
+          timer = null;
+        }
       }
       return memoryData;
     }

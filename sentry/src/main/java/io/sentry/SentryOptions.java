@@ -387,6 +387,10 @@ public class SentryOptions {
 
   private @NotNull IMemoryCollector memoryCollector = NoOpMemoryCollector.getInstance();
 
+  /** Performance collector that collect performance stats while transactions run. */
+  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
+      new TransactionPerformanceCollector(this);
+
   // TODO this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
@@ -1887,7 +1891,17 @@ public class SentryOptions {
   }
 
   /**
-   * Gets the memory collector used to collect memory usage during while transaction runs.
+   * Gets the performance collector used to collect performance stats while transactions run.
+   *
+   * @return the performance collector.
+   */
+  @ApiStatus.Internal
+  public @NotNull TransactionPerformanceCollector getTransactionPerformanceCollector() {
+    return transactionPerformanceCollector;
+  }
+
+  /**
+   * Gets the memory collector used to collect memory usage while transactions run.
    *
    * @return the memory collector.
    */

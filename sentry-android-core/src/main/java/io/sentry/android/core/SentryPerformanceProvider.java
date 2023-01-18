@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import io.sentry.SentryDate;
+import io.sentry.android.core.internal.util.ContentProviderSecurityChecker;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,6 +78,7 @@ public final class SentryPerformanceProvider extends ContentProvider
       @Nullable String selection,
       @Nullable String[] selectionArgs,
       @Nullable String sortOrder) {
+    new ContentProviderSecurityChecker().checkPrivilegeEscalation(this);
     return null;
   }
 
