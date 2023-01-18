@@ -11,9 +11,9 @@ public final class SentryAutoDateProvider implements SentryDateProvider {
 
   public SentryAutoDateProvider() {
     if (checkInstantAvailabilityAndPrecision()) {
-      dateProvider = new SentryNanotimeDateProvider();
-    } else {
       dateProvider = new SentryInstantDateProvider();
+    } else {
+      dateProvider = new SentryNanotimeDateProvider();
     }
   }
 

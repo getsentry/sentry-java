@@ -1737,12 +1737,6 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
 
-public final class io/sentry/SentryUtilDate : io/sentry/SentryDate {
-	public fun <init> ()V
-	public fun <init> (Ljava/util/Date;)V
-	public fun nanoTimestamp ()J
-}
-
 public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/Session$State;Ljava/util/Date;Ljava/util/Date;ILjava/lang/String;Ljava/util/UUID;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/User;Ljava/lang/String;Ljava/lang/String;)V

@@ -127,7 +127,7 @@ class SentryTracerTest {
     @Test
     fun `when transaction is finished with status and timestamp, timestamp and status are set`() {
         val tracer = fixture.getSut()
-        val date = SentryUtilDate(Date.from(LocalDateTime.of(2022, 12, 24, 23, 59, 58, 0).toInstant(ZoneOffset.UTC)))
+        val date = SentryNanotimeDate(Date.from(LocalDateTime.of(2022, 12, 24, 23, 59, 58, 0).toInstant(ZoneOffset.UTC)), 0)
         tracer.finish(SpanStatus.ABORTED, date)
         assertEquals(tracer.finishDate!!.nanoTimestamp(), date.nanoTimestamp())
         assertEquals(SpanStatus.ABORTED, tracer.status)
@@ -438,7 +438,7 @@ class SentryTracerTest {
 
     @Test
     fun `when startTimestamp is given, use it as startTimestamp`() {
-        val date = SentryUtilDate(Date(0))
+        val date = SentryNanotimeDate(Date(0), 0)
         val transaction = fixture.getSut(startTimestamp = date)
 
         assertSame(date, transaction.startDate)

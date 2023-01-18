@@ -21,28 +21,6 @@ class SentryNanotimeDateTest {
     }
 
     /**
-     * Only one of the two dates has a System.nanoTime() snapshot, so precise diff cannot be computed.
-     */
-    @Test
-    fun `laterDateNanosByDiff with SentryUtilDate gives ms precision`() {
-        val startDate = SentryNanotimeDate(Date(1672742031123), 456789)
-        val finishDate = SentryUtilDate(Date(1672742031123))
-        val dateInSeconds = startDate.laterDateNanosTimestampByDiff(finishDate)
-        assertEquals(1672742031123000000L, dateInSeconds)
-    }
-
-    /**
-     * Only one of the two dates has a System.nanoTime() snapshot, so precise diff cannot be computed.
-     */
-    @Test
-    fun `laterDateNanosByDiff with SentryUtilDate reverse gives ms precision`() {
-        val startDate = SentryUtilDate(Date(1672742031123))
-        val finishDate = SentryNanotimeDate(Date(1672742031123), 456789)
-        val dateInSeconds = startDate.laterDateNanosTimestampByDiff(finishDate)
-        assertEquals(1672742031123000000L, dateInSeconds)
-    }
-
-    /**
      * Despite {@link SentryLongDate} being able to provide high precision, there's no way
      * to calculate a precise diff with {@link SentryNanotimeDate} as System.nanoTime() can
      * only be used to measure elapsed time - it is not a wall-clock time.
