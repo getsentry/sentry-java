@@ -10,15 +10,27 @@ import org.jetbrains.annotations.Nullable;
 public final class PerformanceCollectionData {
   private final @NotNull List<MemoryCollectionData> memoryData = new ArrayList<>();
   private final @NotNull List<CpuCollectionData> cpuData = new ArrayList<>();
+  private @Nullable MemoryCollectionData uncommittedMemoryData = null;
+  private @Nullable CpuCollectionData uncommittedCpuData = null;
 
-  public void addData(
-      final @Nullable MemoryCollectionData memoryCollectionData,
-      final @Nullable CpuCollectionData cpuCollectionData) {
+  public void addMemoryData(final @Nullable MemoryCollectionData memoryCollectionData) {
     if (memoryCollectionData != null) {
-      memoryData.add(memoryCollectionData);
+      uncommittedMemoryData = memoryCollectionData;
     }
+  }
+
+  public void addCpuData(final @Nullable CpuCollectionData cpuCollectionData) {
     if (cpuCollectionData != null) {
-      cpuData.add(cpuCollectionData);
+      uncommittedCpuData = cpuCollectionData;
+    }
+  }
+
+  public void commitData() {
+    if (uncommittedMemoryData != null) {
+      memoryData.add(uncommittedMemoryData);
+    }
+    if (uncommittedCpuData != null) {
+      cpuData.add(uncommittedCpuData);
     }
   }
 

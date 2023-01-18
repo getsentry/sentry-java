@@ -23,9 +23,9 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/ICpuCollector {
+public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/ICollector {
 	public fun <init> (Lio/sentry/ILogger;Lio/sentry/android/core/BuildInfoProvider;)V
-	public fun collect ()Lio/sentry/CpuCollectionData;
+	public fun collect (Ljava/lang/Iterable;)V
 	public fun setup ()V
 }
 
@@ -38,9 +38,10 @@ public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
-public class io/sentry/android/core/AndroidMemoryCollector : io/sentry/IMemoryCollector {
+public class io/sentry/android/core/AndroidMemoryCollector : io/sentry/ICollector {
 	public fun <init> ()V
-	public fun collect ()Lio/sentry/MemoryCollectionData;
+	public fun collect (Ljava/lang/Iterable;)V
+	public fun setup ()V
 }
 
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {

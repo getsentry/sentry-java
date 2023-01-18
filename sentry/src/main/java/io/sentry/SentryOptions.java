@@ -385,17 +385,15 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
-  private @NotNull IMemoryCollector memoryCollector = NoOpMemoryCollector.getInstance();
-
-  /** Performance collector that collect performance stats while transactions run. */
-  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
-      new TransactionPerformanceCollector(this);
-
   // TODO this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
-  private @NotNull ICpuCollector cpuCollector = NoOpCpuCollector.getInstance();
+  private final @NotNull List<ICollector> collectors = new ArrayList<>();
+
+  /** Performance collector that collect performance stats while transactions run. */
+  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
+      new TransactionPerformanceCollector(this);
 
   /**
    * Adds an event processor
@@ -1899,27 +1897,6 @@ public class SentryOptions {
   }
 
   /**
-   * Gets the memory collector used to collect memory usage while transactions run.
-   *
-   * @return the memory collector.
-   */
-  @ApiStatus.Internal
-  public @NotNull IMemoryCollector getMemoryCollector() {
-    return memoryCollector;
-  }
-
-  /**
-   * Sets the memory collector to collect memory usage during while transaction runs.
-   *
-   * @param memoryCollector - the memory collector. If null, a no op collector will be set.
-   */
-  @ApiStatus.Internal
-  public void setMemoryCollector(final @Nullable IMemoryCollector memoryCollector) {
-    this.memoryCollector =
-        memoryCollector != null ? memoryCollector : NoOpMemoryCollector.getInstance();
-  }
-
-  /**
    * Whether OPTIONS requests should be traced.
    *
    * @return true if OPTIONS requests should be traced
@@ -1938,23 +1915,23 @@ public class SentryOptions {
   }
 
   /**
-   * Gets the cpu collector used to collect cpu usage during while transaction runs.
+   * Adds a ICollector.
    *
-   * @return the cpu collector.
+   * @param collector the ICollector.
    */
   @ApiStatus.Internal
-  public @NotNull ICpuCollector getCpuCollector() {
-    return cpuCollector;
+  public void addCollector(final @NotNull ICollector collector) {
+    collectors.add(collector);
   }
 
   /**
-   * Sets the cpu collector to collect cpu usage during while transaction runs.
+   * Returns the list of ICollectors.
    *
-   * @param cpuCollector - the cpu collector. If null, a no op collector will be set.
+   * @return the ICollector list.
    */
   @ApiStatus.Internal
-  public void setCpuCollector(final @Nullable ICpuCollector cpuCollector) {
-    this.cpuCollector = cpuCollector != null ? cpuCollector : NoOpCpuCollector.getInstance();
+  public @NotNull List<ICollector> getCollectors() {
+    return collectors;
   }
 
   /** The BeforeSend callback */
