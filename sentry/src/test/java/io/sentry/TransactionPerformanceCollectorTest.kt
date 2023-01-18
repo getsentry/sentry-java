@@ -136,7 +136,7 @@ class TransactionPerformanceCollectorTest {
         collector.start(fixture.transaction1)
         collector.start(fixture.transaction2)
         // Let's sleep to make the collector get values
-        Thread.sleep(200)
+        Thread.sleep(300)
 
         val data1 = collector.stop(fixture.transaction1)
         // There is still a transaction running: the timer shouldn't stop now
@@ -158,7 +158,7 @@ class TransactionPerformanceCollectorTest {
         val collector = fixture.getSut()
         collector.start(fixture.transaction1)
         // Let's sleep to make the collector get values
-        Thread.sleep(200)
+        Thread.sleep(300)
         verify(fixture.mockTimer, never())!!.cancel()
 
         // Let the timeout job stop the collector
@@ -187,7 +187,7 @@ class TransactionPerformanceCollectorTest {
 
         collector.start(fixture.transaction1)
         // Let's sleep to make the collector get values
-        Thread.sleep(200)
+        Thread.sleep(300)
         val data1 = collector.stop(fixture.transaction1)
 
         // The data returned by the collector is not empty
