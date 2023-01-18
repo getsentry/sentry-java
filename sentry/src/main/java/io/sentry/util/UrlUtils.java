@@ -22,8 +22,70 @@ public final class UrlUtils {
   }
 
   public static @NotNull UrlDetails convertUrl(final @NotNull String url) {
-    final @NotNull String filteredUrl = urlWithAuthRemoved(url);
+    if (isAbsoluteUrl(url)) {
+      return splitAbsoluteUrl(url);
+    } else {
+      return splitRelativeUrl(url);
+    }
+  }
+
+  private static boolean isAbsoluteUrl(@NotNull String url) {
+    return url.contains("://");
+  }
+
+  private static @NotNull UrlDetails splitRelativeUrl(final @NotNull String url) {
+    final int queryParamSeparatorIndex = url.indexOf("?");
+    final int fragmentSeparatorIndex = url.indexOf("#");
+
+    final @Nullable String baseUrl =
+        extractBaseUrl(url, queryParamSeparatorIndex, fragmentSeparatorIndex);
+    final @Nullable String query =
+        extractQuery(url, queryParamSeparatorIndex, fragmentSeparatorIndex);
+    final @Nullable String fragment = extractFragment(url, fragmentSeparatorIndex);
+
+    return new UrlDetails(baseUrl, query, fragment);
+  }
+
+  private static @Nullable String extractBaseUrl(
+      final @NotNull String url,
+      final int queryParamSeparatorIndex,
+      final int fragmentSeparatorIndex) {
+    if (queryParamSeparatorIndex >= 0) {
+      return url.substring(0, queryParamSeparatorIndex).trim();
+    } else if (fragmentSeparatorIndex >= 0) {
+      return url.substring(0, fragmentSeparatorIndex).trim();
+    } else {
+      return url;
+    }
+  }
+
+  private static @Nullable String extractQuery(
+      final @NotNull String url,
+      final int queryParamSeparatorIndex,
+      final int fragmentSeparatorIndex) {
+    if (queryParamSeparatorIndex > 0) {
+      if (fragmentSeparatorIndex > 0 && fragmentSeparatorIndex > queryParamSeparatorIndex) {
+        return url.substring(queryParamSeparatorIndex + 1, fragmentSeparatorIndex).trim();
+      } else {
+        return url.substring(queryParamSeparatorIndex + 1).trim();
+      }
+    } else {
+      return null;
+    }
+  }
+
+  private static @Nullable String extractFragment(
+      final @NotNull String url, final int fragmentSeparatorIndex) {
+    if (fragmentSeparatorIndex > 0) {
+      return url.substring(fragmentSeparatorIndex + 1).trim();
+    } else {
+      return null;
+    }
+  }
+
+  private static @NotNull UrlDetails splitAbsoluteUrl(final @NotNull String url) {
     try {
+      final @NotNull String filteredUrl = urlWithAuthRemoved(url);
       final @NotNull URL urlObj = new URL(url);
       final @NotNull String baseUrl = baseUrlOnly(filteredUrl);
       if (baseUrl.contains("#")) {

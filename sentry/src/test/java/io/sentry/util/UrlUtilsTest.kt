@@ -42,6 +42,56 @@ class UrlUtilsTest {
     }
 
     @Test
+    fun `splits relative url`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "/users/1?q=1&s=2&token=secret#top"
+        )
+        assertEquals("/users/1", urlDetails.url)
+        assertEquals("q=1&s=2&token=secret", urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
+    }
+
+    @Test
+    fun `splits relative root url`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "/?q=1&s=2&token=secret#top"
+        )
+        assertEquals("/", urlDetails.url)
+        assertEquals("q=1&s=2&token=secret", urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
+    }
+
+    @Test
+    fun `splits url with just query and fragment`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "/?q=1&s=2&token=secret#top"
+        )
+        assertEquals("/", urlDetails.url)
+        assertEquals("q=1&s=2&token=secret", urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
+    }
+
+    @Test
+    fun `splits relative url with query only`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "/users/1?q=1&s=2&token=secret"
+        )
+        assertEquals("/users/1", urlDetails.url)
+        assertEquals("q=1&s=2&token=secret", urlDetails.query)
+        assertNull(urlDetails.fragment)
+    }
+
+    @Test
+    fun `splits relative url with fragment only`() {
+        val urlDetails = UrlUtils.convertUrl(
+            "/users/1#top"
+        )
+        assertEquals("/users/1", urlDetails.url)
+        assertNull(urlDetails.query)
+        assertEquals("top", urlDetails.fragment)
+    }
+
+    @Test
     fun `strips user info with user and password without query`() {
         val urlDetails = UrlUtils.convertUrl(
             "https://user:password@sentry.io#top"
