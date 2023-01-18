@@ -32,7 +32,7 @@ class TransactionPerformanceCollectorTest {
         lateinit var transaction2: ITransaction
         val hub: IHub = mock()
         val options = SentryOptions()
-        lateinit var mockTimer: Timer
+        var mockTimer: Timer? = null
         var lastScheduledRunnable: Runnable? = null
 
         val mockExecutorService = object : ISentryExecutorService {
@@ -62,7 +62,7 @@ class TransactionPerformanceCollectorTest {
             transaction1 = SentryTracer(TransactionContext("", ""), hub)
             transaction2 = SentryTracer(TransactionContext("", ""), hub)
             val collector = TransactionPerformanceCollector(options)
-            val timer: Timer = collector.getProperty("timer")
+            val timer: Timer? = collector.getProperty("timer") ?: Timer(true)
             mockTimer = spy(timer)
             collector.injectForField("timer", mockTimer)
             return collector
@@ -84,7 +84,7 @@ class TransactionPerformanceCollectorTest {
         assertIs<NoOpMemoryCollector>(fixture.options.memoryCollector)
         assertIs<NoOpCpuCollector>(fixture.options.cpuCollector)
         collector.start(fixture.transaction1)
-        verify(fixture.mockTimer, never()).scheduleAtFixedRate(any(), any<Long>(), any())
+        verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), any())
     }
 
     @Test
@@ -99,7 +99,7 @@ class TransactionPerformanceCollectorTest {
     fun `when start, timer is scheduled every 100 milliseconds`() {
         val collector = fixture.getSut()
         collector.start(fixture.transaction1)
-        verify(fixture.mockTimer).scheduleAtFixedRate(any(), any<Long>(), eq(100))
+        verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
     }
 
     @Test
@@ -107,16 +107,16 @@ class TransactionPerformanceCollectorTest {
         val collector = fixture.getSut()
         collector.start(fixture.transaction1)
         collector.stop(fixture.transaction1)
-        verify(fixture.mockTimer).scheduleAtFixedRate(any(), any<Long>(), eq(100))
-        verify(fixture.mockTimer).cancel()
+        verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+        verify(fixture.mockTimer)!!.cancel()
     }
 
     @Test
     fun `stopping a not collected transaction return null`() {
         val collector = fixture.getSut()
         val data = collector.stop(fixture.transaction1)
-        verify(fixture.mockTimer, never()).scheduleAtFixedRate(any(), any<Long>(), eq(100))
-        verify(fixture.mockTimer, never()).cancel()
+        verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+        verify(fixture.mockTimer, never())!!.cancel()
         assertNull(data)
     }
 
@@ -130,11 +130,11 @@ class TransactionPerformanceCollectorTest {
 
         val data1 = collector.stop(fixture.transaction1)
         // There is still a transaction running: the timer shouldn't stop now
-        verify(fixture.mockTimer, never()).cancel()
+        verify(fixture.mockTimer, never())!!.cancel()
 
         val data2 = collector.stop(fixture.transaction2)
         // There are no more transactions running: the time should stop now
-        verify(fixture.mockTimer).cancel()
+        verify(fixture.mockTimer)!!.cancel()
 
         // The data returned by the collector is not empty
         assertFalse(data1!!.memoryData.isEmpty())
@@ -149,11 +149,11 @@ class TransactionPerformanceCollectorTest {
         collector.start(fixture.transaction1)
         // Let's sleep to make the collector get values
         Thread.sleep(200)
-        verify(fixture.mockTimer, never()).cancel()
+        verify(fixture.mockTimer, never())!!.cancel()
 
         // Let the timeout job stop the collector
         fixture.lastScheduledRunnable?.run()
-        verify(fixture.mockTimer).cancel()
+        verify(fixture.mockTimer)!!.cancel()
 
         // Data is returned even after the collector times out
         val data1 = collector.stop(fixture.transaction1)

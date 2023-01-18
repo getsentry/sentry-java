@@ -15,7 +15,7 @@ public final class TransactionPerformanceCollector {
   private static final long TRANSACTION_COLLECTION_INTERVAL_MILLIS = 100;
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
   private final @NotNull Object timerLock = new Object();
-  private volatile @NotNull Timer timer = new Timer();
+  private volatile @Nullable Timer timer = null;
   private final @NotNull Map<String, PerformanceCollectionData> performanceDataMap =
       new ConcurrentHashMap<>();
   private @Nullable IMemoryCollector memoryCollector = null;
@@ -73,6 +73,9 @@ public final class TransactionPerformanceCollector {
     }
     if (!isStarted.getAndSet(true)) {
       synchronized (timerLock) {
+        if (timer == null) {
+          timer = new Timer(true);
+        }
         cpuCollector.setup();
         timer.scheduleAtFixedRate(
             new TimerTask() {
@@ -104,8 +107,10 @@ public final class TransactionPerformanceCollector {
       PerformanceCollectionData memoryData =
           performanceDataMap.remove(transaction.getEventId().toString());
       if (performanceDataMap.isEmpty() && isStarted.getAndSet(false)) {
-        timer.cancel();
-        timer = new Timer();
+        if (timer != null) {
+          timer.cancel();
+          timer = null;
+        }
       }
       return memoryData;
     }

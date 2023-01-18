@@ -6,6 +6,12 @@
 
 - Add cpu usage collection ([#2462](https://github.com/getsentry/sentry-java/pull/2462))
 
+## 6.12.1
+
+### Fixes
+
+- Create timer in `TransactionPerformanceCollector` lazily ([#2478](https://github.com/getsentry/sentry-java/pull/2478))
+
 ## 6.12.0
 
 ### Features
