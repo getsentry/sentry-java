@@ -274,8 +274,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
         sessionHasBeenUpdated = true;
       }
 
-      // if the session has experienced an Abnormal exit at least once, it should count towards the
-      // Abnormal exit rate, therefore we do not want to overwrite it with `null`, even if it has
+      // if the session has experienced an Abnormal status at least once, it should count towards the
+      // Abnormal rate, therefore we do not want to overwrite it with `null`, even if it has
       // recovered
       if (abnormalMechanism != null) {
         this.abnormalMechanism = abnormalMechanism;
