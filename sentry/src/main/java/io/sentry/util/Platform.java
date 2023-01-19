@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class Platform {
   private static boolean isAndroid;
-  private static boolean isJavaNinePlus;
+  static boolean isJavaNinePlus;
 
   static {
     // System#getProperty can throw an exception if there is a security manager is configured and
