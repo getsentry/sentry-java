@@ -5,6 +5,16 @@
 ### Features
 
 - Send transaction memory stats in profile payload ([#2447](https://github.com/getsentry/sentry-java/pull/2447))
+- Improve ANR implementation: ([#2475](https://github.com/getsentry/sentry-java/pull/2475))
+  - Add `abnormal_mechanism` to sessions for ANR rate calculation
+  - Always attach thread dump to ANR events
+  - Distinguish between foreground and background ANRs
+
+## 6.12.1
+
+### Fixes
+
+- Create timer in `TransactionPerformanceCollector` lazily ([#2478](https://github.com/getsentry/sentry-java/pull/2478))
 
 ## 6.12.0
 

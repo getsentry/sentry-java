@@ -174,8 +174,9 @@ public abstract class SentryBaseEvent {
    *
    * @return the Throwable or null
    */
+  @ApiStatus.Internal
   @Nullable
-  Throwable getThrowableMechanism() {
+  public Throwable getThrowableMechanism() {
     return throwable;
   }
 

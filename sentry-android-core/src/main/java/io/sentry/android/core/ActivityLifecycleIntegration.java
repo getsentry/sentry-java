@@ -1,18 +1,14 @@
 package io.sentry.android.core;
 
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.Application;
-import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Process;
 import android.view.View;
 import androidx.annotation.NonNull;
 import io.sentry.Breadcrumb;
@@ -36,7 +32,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -93,7 +88,7 @@ public final class ActivityLifecycleIntegration
 
     // we only track app start for processes that will show an Activity (full launch).
     // Here we check the process importance which will tell us that.
-    foregroundImportance = isForegroundImportance(this.application);
+    foregroundImportance = ContextUtils.isForegroundImportance(this.application);
   }
 
   @Override
@@ -504,39 +499,5 @@ public final class ActivityLifecycleIntegration
     } else {
       return APP_START_WARM;
     }
-  }
-
-  /**
-   * Check if the Started process has IMPORTANCE_FOREGROUND importance which means that the process
-   * will start an Activity.
-   *
-   * @return true if IMPORTANCE_FOREGROUND and false otherwise
-   */
-  private boolean isForegroundImportance(final @NotNull Context context) {
-    try {
-      final Object service = context.getSystemService(Context.ACTIVITY_SERVICE);
-      if (service instanceof ActivityManager) {
-        final ActivityManager activityManager = (ActivityManager) service;
-        final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
-            activityManager.getRunningAppProcesses();
-
-        if (runningAppProcesses != null) {
-          final int myPid = Process.myPid();
-          for (final ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
-            if (processInfo.pid == myPid) {
-              if (processInfo.importance == IMPORTANCE_FOREGROUND) {
-                return true;
-              }
-              break;
-            }
-          }
-        }
-      }
-    } catch (SecurityException ignored) {
-      // happens for isolated processes
-    } catch (Throwable ignored) {
-      // should never happen
-    }
-    return false;
   }
 }

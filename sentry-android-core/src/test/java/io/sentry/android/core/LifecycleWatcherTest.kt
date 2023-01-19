@@ -20,10 +20,13 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.*
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class LifecycleWatcherTest {
 
@@ -56,6 +59,11 @@ class LifecycleWatcherTest {
     }
 
     private val fixture = Fixture()
+
+    @BeforeTest
+    fun `set up`() {
+        AppState.getInstance().resetInstance()
+    }
 
     @Test
     fun `if last started session is 0, start new session`() {
@@ -234,7 +242,8 @@ class LifecycleWatcherTest {
                 null,
                 null,
                 null,
-                "release"
+                "release",
+                null
             )
         )
 
@@ -259,11 +268,26 @@ class LifecycleWatcherTest {
                 null,
                 null,
                 null,
-                "release"
+                "release",
+                null
             )
         )
 
         watcher.onStart(fixture.ownerMock)
         verify(fixture.hub).startSession()
+    }
+
+    @Test
+    fun `When app goes into foreground, sets isBackground to false for AppState`() {
+        val watcher = fixture.getSUT()
+        watcher.onStart(fixture.ownerMock)
+        assertFalse(AppState.getInstance().isInBackground!!)
+    }
+
+    @Test
+    fun `When app goes into background, sets isBackground to true for AppState`() {
+        val watcher = fixture.getSUT()
+        watcher.onStop(fixture.ownerMock)
+        assertTrue(AppState.getInstance().isInBackground!!)
     }
 }
