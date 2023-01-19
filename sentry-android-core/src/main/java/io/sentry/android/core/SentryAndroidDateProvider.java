@@ -1,10 +1,13 @@
 package io.sentry.android.core;
 
-import android.os.Build;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+
+import android.annotation.SuppressLint;
 import io.sentry.SentryDate;
 import io.sentry.SentryDateProvider;
 import io.sentry.SentryInstantDateProvider;
 import io.sentry.SentryNanotimeDateProvider;
+import java.time.Instant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,12 +18,15 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class SentryAndroidDateProvider implements SentryDateProvider {
 
-  private final @NotNull SentryDateProvider dateProvider;
+  private @NotNull SentryDateProvider dateProvider;
 
+  @SuppressLint("NewApi")
   public SentryAndroidDateProvider(final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.O) {
+    try {
+      Instant instant = Instant.now();
+      instant.get(NANO_OF_SECOND);
       dateProvider = new SentryInstantDateProvider();
-    } else {
+    } catch (Throwable t) {
       dateProvider = new SentryNanotimeDateProvider();
     }
   }
