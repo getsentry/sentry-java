@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Improve possible date precision to 10 μs ([#2451](https://github.com/getsentry/sentry-java/pull/2451))
+
 ## 6.12.1
 
 ### Fixes
@@ -14,7 +20,6 @@
 - Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
 - Add `traceOptionsRequests` option to disable tracing of OPTIONS requests ([#2453](https://github.com/getsentry/sentry-java/pull/2453))
 - Extend list of HTTP headers considered sensitive ([#2455](https://github.com/getsentry/sentry-java/pull/2455))
-- Improve date precision to 10 μs ([#2451](https://github.com/getsentry/sentry-java/pull/2451))
 
 ### Fixes
 
