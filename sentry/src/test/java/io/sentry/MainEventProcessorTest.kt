@@ -260,6 +260,19 @@ class MainEventProcessorTest {
         event = sut.process(event, hint)
 
         assertNotNull(event.threads)
+        assertEquals(1, event.threads!!.count { it.isCrashed == true })
+    }
+
+    @Test
+    fun `when the hint is Abnormal with ignoreCurrentThread, does not mark thread as crashed`() {
+        val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
+
+        var event = SentryEvent(RuntimeException("error"))
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalHint(ignoreCurrentThread = true))
+        event = sut.process(event, hint)
+
+        assertNotNull(event.threads)
+        assertEquals(0, event.threads!!.count { it.isCrashed == true })
     }
 
     @Test
@@ -554,7 +567,9 @@ class MainEventProcessorTest {
             throwable = actualThrowable
         }
 
-    private class AbnormalHint : AbnormalExit {
+    private class AbnormalHint(private val ignoreCurrentThread: Boolean = false) : AbnormalExit {
         override fun mechanism(): String? = null
+
+        override fun ignoreCurrentThread(): Boolean = ignoreCurrentThread
     }
 }

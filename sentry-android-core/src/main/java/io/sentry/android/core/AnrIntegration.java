@@ -153,5 +153,12 @@ public final class AnrIntegration implements Integration, Closeable {
     public String mechanism() {
       return isBackgroundAnr ? "anr_background" : "anr_foreground";
     }
+
+    // We don't want the current thread (watchdog) to be marked as crashed, otherwise the Sentry
+    // Console prioritizes it over the main thread in the thread's list.
+    @Override
+    public boolean ignoreCurrentThread() {
+      return true;
+    }
   }
 }

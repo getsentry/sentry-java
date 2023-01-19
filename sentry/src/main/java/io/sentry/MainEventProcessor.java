@@ -256,7 +256,13 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
       // typically Abnormal exits can be tackled by looking at the thread dump (e.g. ANRs), hence
       // we force attach threads regardless of the config
       if (options.isAttachThreads() || HintUtils.hasType(hint, AbnormalExit.class)) {
-        event.setThreads(sentryThreadFactory.getCurrentThreads(mechanismThreadIds));
+        final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+        boolean ignoreCurrentThread = false;
+        if (sentrySdkHint instanceof AbnormalExit) {
+          ignoreCurrentThread = ((AbnormalExit) sentrySdkHint).ignoreCurrentThread();
+        }
+        event.setThreads(
+            sentryThreadFactory.getCurrentThreads(mechanismThreadIds, ignoreCurrentThread));
       } else if (options.isAttachStacktrace()
           && (eventExceptions == null || eventExceptions.isEmpty())
           && !isCachedHint(hint)) {

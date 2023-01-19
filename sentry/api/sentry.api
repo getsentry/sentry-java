@@ -2214,6 +2214,7 @@ public final class io/sentry/exception/SentryHttpClientException : java/lang/Exc
 }
 
 public abstract interface class io/sentry/hints/AbnormalExit {
+	public fun ignoreCurrentThread ()Z
 	public abstract fun mechanism ()Ljava/lang/String;
 }
 
