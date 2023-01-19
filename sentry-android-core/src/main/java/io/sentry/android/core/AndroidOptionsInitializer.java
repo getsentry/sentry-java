@@ -88,7 +88,7 @@ final class AndroidOptionsInitializer {
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
 
-    options.setDateProvider(new SentryAndroidDateProvider(buildInfoProvider));
+    options.setDateProvider(new SentryAndroidDateProvider());
 
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
