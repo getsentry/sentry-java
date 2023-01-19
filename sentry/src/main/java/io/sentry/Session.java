@@ -21,7 +21,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
     Ok,
     Exited,
     Crashed,
-    Abnormal // not currently used in this SDK.
+    Abnormal
   }
 
   /** started timestamp */
@@ -63,6 +63,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
   /** the App's release */
   private final @NotNull String release;
 
+  /** the Abnormal mechanism, e.g. what was the reason for session to become abnormal (ANR) */
+  private @Nullable String abnormalMechanism;
+
   /** The session lock, ops should be atomic */
   private final @NotNull Object sessionLock = new Object();
 
@@ -82,7 +85,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
       final @Nullable String ipAddress,
       final @Nullable String userAgent,
       final @Nullable String environment,
-      final @NotNull String release) {
+      final @NotNull String release,
+      final @Nullable String abnormalMechanism) {
     this.status = status;
     this.started = started;
     this.timestamp = timestamp;
@@ -96,6 +100,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
     this.userAgent = userAgent;
     this.environment = environment;
     this.release = release;
+    this.abnormalMechanism = abnormalMechanism;
   }
 
   public Session(
@@ -116,7 +121,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
         (user != null ? user.getIpAddress() : null),
         null,
         environment,
-        release);
+        release,
+        null);
   }
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
@@ -177,6 +183,10 @@ public final class Session implements JsonUnknown, JsonSerializable {
     return duration;
   }
 
+  public @Nullable String getAbnormalMechanism() {
+    return abnormalMechanism;
+  }
+
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getTimestamp() {
     final Date timestampRef = timestamp;
@@ -227,16 +237,27 @@ public final class Session implements JsonUnknown, JsonSerializable {
     return (double) diff / 1000; // duration in seconds
   }
 
+  public boolean update(
+      final @Nullable State status,
+      final @Nullable String userAgent,
+      final boolean addErrorsCount) {
+    return update(status, userAgent, addErrorsCount, null);
+  }
+
   /**
    * Updates the current session and set its values
    *
    * @param status the status
    * @param userAgent the userAgent
    * @param addErrorsCount true if should increase error count or not
+   * @param abnormalMechanism the mechanism which caused the session to be abnormal
    * @return if the session has been updated
    */
   public boolean update(
-      final @Nullable State status, final @Nullable String userAgent, boolean addErrorsCount) {
+      final @Nullable State status,
+      final @Nullable String userAgent,
+      final boolean addErrorsCount,
+      final @Nullable String abnormalMechanism) {
     synchronized (sessionLock) {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
@@ -250,6 +271,15 @@ public final class Session implements JsonUnknown, JsonSerializable {
       }
       if (addErrorsCount) {
         errorCount.addAndGet(1);
+        sessionHasBeenUpdated = true;
+      }
+
+      // if the session has experienced an Abnormal status at least once, it should count towards
+      // the
+      // Abnormal rate, therefore we do not want to overwrite it with `null`, even if it has
+      // recovered
+      if (abnormalMechanism != null) {
+        this.abnormalMechanism = abnormalMechanism;
         sessionHasBeenUpdated = true;
       }
 
@@ -301,7 +331,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
         ipAddress,
         userAgent,
         environment,
-        release);
+        release,
+        abnormalMechanism);
   }
 
   // JsonSerializable
@@ -322,6 +353,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
     public static final String ENVIRONMENT = "environment";
     public static final String IP_ADDRESS = "ip_address";
     public static final String USER_AGENT = "user_agent";
+    public static final String ABNORMAL_MECHANISM = "abnormal_mechanism";
   }
 
   @Override
@@ -348,6 +380,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
     }
     if (timestamp != null) {
       writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+    }
+    if (abnormalMechanism != null) {
+      writer.name(JsonKeys.ABNORMAL_MECHANISM).value(logger, abnormalMechanism);
     }
     writer.name(JsonKeys.ATTRS);
     writer.beginObject();
@@ -404,6 +439,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
       String userAgent = null;
       String environment = null;
       String release = null; // @NotNull
+      String abnormalMechanism = null;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -444,6 +480,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.TIMESTAMP:
             timestamp = reader.nextDateOrNull(logger);
+            break;
+          case JsonKeys.ABNORMAL_MECHANISM:
+            abnormalMechanism = reader.nextStringOrNull();
             break;
           case JsonKeys.ATTRS:
             reader.beginObject();
@@ -502,7 +541,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
               ipAddress,
               userAgent,
               environment,
-              release);
+              release,
+              abnormalMechanism);
       session.setUnknown(unknown);
       reader.endObject();
       return session;

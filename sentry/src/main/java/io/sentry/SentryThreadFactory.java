@@ -47,7 +47,7 @@ final class SentryThreadFactory {
     final Thread currentThread = Thread.currentThread();
     threads.put(currentThread, currentThread.getStackTrace());
 
-    return getCurrentThreads(threads, null);
+    return getCurrentThreads(threads, null, false);
   }
 
   /**
@@ -55,11 +55,19 @@ final class SentryThreadFactory {
    * the crashed thread.
    *
    * @param mechanismThreadIds list of threadIds that came from exception mechanism
+   * @param ignoreCurrentThread if the current thread should be ignored when marking threads as
+   *     crashed. This is the case for e.g. watchdog threads which are not the one erroring.
    * @return a list of SentryThread
    */
   @Nullable
+  List<SentryThread> getCurrentThreads(
+      final @Nullable List<Long> mechanismThreadIds, final boolean ignoreCurrentThread) {
+    return getCurrentThreads(Thread.getAllStackTraces(), mechanismThreadIds, ignoreCurrentThread);
+  }
+
+  @Nullable
   List<SentryThread> getCurrentThreads(final @Nullable List<Long> mechanismThreadIds) {
-    return getCurrentThreads(Thread.getAllStackTraces(), mechanismThreadIds);
+    return getCurrentThreads(Thread.getAllStackTraces(), mechanismThreadIds, false);
   }
 
   /**
@@ -68,13 +76,16 @@ final class SentryThreadFactory {
    *
    * @param threads a map with all the current threads and stacktraces
    * @param mechanismThreadIds list of threadIds that came from exception mechanism
+   * @param ignoreCurrentThread if the current thread should be ignored when marking threads as
+   *     crashed. This is the case for e.g. watchdog threads which are not the one erroring.
    * @return a list of SentryThread or null if none
    */
   @TestOnly
   @Nullable
   List<SentryThread> getCurrentThreads(
       final @NotNull Map<Thread, StackTraceElement[]> threads,
-      final @Nullable List<Long> mechanismThreadIds) {
+      final @Nullable List<Long> mechanismThreadIds,
+      final boolean ignoreCurrentThread) {
     List<SentryThread> result = null;
 
     final Thread currentThread = Thread.currentThread();
@@ -91,7 +102,7 @@ final class SentryThreadFactory {
 
         final Thread thread = item.getKey();
         final boolean crashed =
-            (thread == currentThread)
+            (thread == currentThread && !ignoreCurrentThread)
                 || (mechanismThreadIds != null && mechanismThreadIds.contains(thread.getId()));
 
         result.add(getSentryThread(crashed, item.getValue(), item.getKey()));

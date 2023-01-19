@@ -1173,6 +1173,7 @@ public abstract class io/sentry/SentryBaseEvent {
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
 	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun getThrowableMechanism ()Ljava/lang/Throwable;
 	public fun getUser ()Lio/sentry/protocol/User;
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
@@ -1682,13 +1683,14 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 }
 
 public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/Session$State;Ljava/util/Date;Ljava/util/Date;ILjava/lang/String;Ljava/util/UUID;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Lio/sentry/Session$State;Ljava/util/Date;Ljava/util/Date;ILjava/lang/String;Ljava/util/UUID;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/User;Ljava/lang/String;Ljava/lang/String;)V
 	public fun clone ()Lio/sentry/Session;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun end ()V
 	public fun end (Ljava/util/Date;)V
 	public fun errorCount ()I
+	public fun getAbnormalMechanism ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
 	public fun getDuration ()Ljava/lang/Double;
 	public fun getEnvironment ()Ljava/lang/String;
@@ -1706,6 +1708,7 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun setInitAsTrue ()V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;Z)Z
+	public fun update (Lio/sentry/Session$State;Ljava/lang/String;ZLjava/lang/String;)Z
 }
 
 public final class io/sentry/Session$Deserializer : io/sentry/JsonDeserializer {
@@ -1715,6 +1718,7 @@ public final class io/sentry/Session$Deserializer : io/sentry/JsonDeserializer {
 }
 
 public final class io/sentry/Session$JsonKeys {
+	public static final field ABNORMAL_MECHANISM Ljava/lang/String;
 	public static final field ATTRS Ljava/lang/String;
 	public static final field DID Ljava/lang/String;
 	public static final field DURATION Ljava/lang/String;
@@ -2207,6 +2211,11 @@ public final class io/sentry/exception/SentryEnvelopeException : java/lang/Excep
 
 public final class io/sentry/exception/SentryHttpClientException : java/lang/Exception {
 	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class io/sentry/hints/AbnormalExit {
+	public fun ignoreCurrentThread ()Z
+	public abstract fun mechanism ()Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/hints/ApplyScopeData {
