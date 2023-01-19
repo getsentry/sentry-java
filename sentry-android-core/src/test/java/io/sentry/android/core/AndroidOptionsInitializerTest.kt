@@ -313,6 +313,16 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `AnrIntegration is added after AppLifecycleIntegration`() {
+        fixture.initSut()
+
+        val appLifecycleIndex =
+            fixture.sentryOptions.integrations.indexOfFirst { it is AppLifecycleIntegration }
+        val anrIndex = fixture.sentryOptions.integrations.indexOfFirst { it is AnrIntegration }
+        assertTrue { appLifecycleIndex < anrIndex }
+    }
+
+    @Test
     fun `EnvelopeFileObserverIntegration added to integration list`() {
         fixture.initSut()
 
