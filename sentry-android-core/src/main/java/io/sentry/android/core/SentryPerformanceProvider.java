@@ -10,9 +10,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
-import io.sentry.DateUtils;
+import io.sentry.SentryDate;
 import io.sentry.android.core.internal.util.ContentProviderSecurityChecker;
-import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +28,7 @@ public final class SentryPerformanceProvider extends ContentProvider
     implements Application.ActivityLifecycleCallbacks {
 
   // static to rely on Class load
-  private static @NotNull Date appStartTime = DateUtils.getCurrentDateTime();
+  private static @NotNull SentryDate appStartTime = AndroidDateUtils.getCurrentSentryDateTime();
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static long appStartMillis = SystemClock.uptimeMillis();
 
@@ -111,7 +110,8 @@ public final class SentryPerformanceProvider extends ContentProvider
   }
 
   @TestOnly
-  static void setAppStartTime(final long appStartMillisLong, final @NotNull Date appStartTimeDate) {
+  static void setAppStartTime(
+      final long appStartMillisLong, final @NotNull SentryDate appStartTimeDate) {
     appStartMillis = appStartMillisLong;
     appStartTime = appStartTimeDate;
   }

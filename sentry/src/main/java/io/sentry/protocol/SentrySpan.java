@@ -56,8 +56,12 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     this.status = span.getStatus();
     final Map<String, String> tagsCopy = CollectionUtils.newConcurrentHashMap(span.getTags());
     this.tags = tagsCopy != null ? tagsCopy : new ConcurrentHashMap<>();
-    this.timestamp = span.getHighPrecisionTimestamp();
-    this.startTimestamp = DateUtils.dateToSeconds(span.getStartTimestamp());
+    // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
+    this.timestamp =
+        DateUtils.nanosToSeconds(
+            span.getStartDate().laterDateNanosTimestampByDiff(span.getFinishDate()));
+    // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
+    this.startTimestamp = DateUtils.nanosToSeconds(span.getStartDate().nanoTimestamp());
     this.data = data;
   }
 

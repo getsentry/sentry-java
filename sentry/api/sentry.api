@@ -160,15 +160,21 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 }
 
 public final class io/sentry/DateUtils {
+	public static fun dateToNanos (Ljava/util/Date;)J
 	public static fun dateToSeconds (Ljava/util/Date;)D
 	public static fun getCurrentDateTime ()Ljava/util/Date;
 	public static fun getDateTime (J)Ljava/util/Date;
 	public static fun getDateTime (Ljava/lang/String;)Ljava/util/Date;
 	public static fun getDateTimeWithMillisPrecision (Ljava/lang/String;)Ljava/util/Date;
 	public static fun getTimestamp (Ljava/util/Date;)Ljava/lang/String;
+	public static fun millisToNanos (J)J
 	public static fun millisToSeconds (D)D
 	public static fun nanosToDate (J)Ljava/util/Date;
 	public static fun nanosToMillis (D)D
+	public static fun nanosToSeconds (J)D
+	public static fun secondsToNanos (J)J
+	public static fun toUtilDate (Lio/sentry/SentryDate;)Ljava/util/Date;
+	public static fun toUtilDateNotNull (Lio/sentry/SentryDate;)Ljava/util/Date;
 }
 
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
@@ -505,7 +511,7 @@ public abstract interface class io/sentry/ISerializer {
 public abstract interface class io/sentry/ISpan {
 	public abstract fun finish ()V
 	public abstract fun finish (Lio/sentry/SpanStatus;)V
-	public abstract fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
+	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
 	public abstract fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public abstract fun getDescription ()Ljava/lang/String;
 	public abstract fun getOperation ()Ljava/lang/String;
@@ -525,7 +531,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun setThrowable (Ljava/lang/Throwable;)V
 	public abstract fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public abstract fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public abstract fun traceContext ()Lio/sentry/TraceContext;
@@ -770,7 +776,7 @@ public final class io/sentry/NoOpMemoryCollector : io/sentry/IMemoryCollector {
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
-	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
+	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/NoOpSpan;
@@ -791,7 +797,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -800,7 +806,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
-	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
+	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
@@ -834,7 +840,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -1151,6 +1157,11 @@ public abstract interface class io/sentry/Sentry$OptionsConfiguration {
 	public abstract fun configure (Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/SentryAutoDateProvider : io/sentry/SentryDateProvider {
+	public fun <init> ()V
+	public fun now ()Lio/sentry/SentryDate;
+}
+
 public abstract class io/sentry/SentryBaseEvent {
 	public static final field DEFAULT_PLATFORM Ljava/lang/String;
 	protected field throwable Ljava/lang/Throwable;
@@ -1239,6 +1250,19 @@ public final class io/sentry/SentryCrashLastRunState {
 	public fun isCrashedLastRun (Ljava/lang/String;Z)Ljava/lang/Boolean;
 	public fun reset ()V
 	public fun setCrashedLastRun (Z)V
+}
+
+public abstract class io/sentry/SentryDate : java/lang/Comparable {
+	public fun <init> ()V
+	public fun compareTo (Lio/sentry/SentryDate;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun diff (Lio/sentry/SentryDate;)J
+	public fun laterDateNanosTimestampByDiff (Lio/sentry/SentryDate;)J
+	public abstract fun nanoTimestamp ()J
+}
+
+public abstract interface class io/sentry/SentryDateProvider {
+	public abstract fun now ()Lio/sentry/SentryDate;
 }
 
 public final class io/sentry/SentryEnvelope {
@@ -1368,6 +1392,17 @@ public final class io/sentry/SentryEvent$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/SentryInstantDate : io/sentry/SentryDate {
+	public fun <init> ()V
+	public fun <init> (Ljava/time/Instant;)V
+	public fun nanoTimestamp ()J
+}
+
+public final class io/sentry/SentryInstantDateProvider : io/sentry/SentryDateProvider {
+	public fun <init> ()V
+	public fun now ()Lio/sentry/SentryDate;
+}
+
 public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSerializable {
 	public static final field Attachment Lio/sentry/SentryItemType;
 	public static final field ClientReport Lio/sentry/SentryItemType;
@@ -1398,6 +1433,26 @@ public final class io/sentry/SentryLevel : java/lang/Enum, io/sentry/JsonSeriali
 	public static fun values ()[Lio/sentry/SentryLevel;
 }
 
+public final class io/sentry/SentryLongDate : io/sentry/SentryDate {
+	public fun <init> (J)V
+	public fun nanoTimestamp ()J
+}
+
+public final class io/sentry/SentryNanotimeDate : io/sentry/SentryDate {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Date;J)V
+	public fun compareTo (Lio/sentry/SentryDate;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun diff (Lio/sentry/SentryDate;)J
+	public fun laterDateNanosTimestampByDiff (Lio/sentry/SentryDate;)J
+	public fun nanoTimestamp ()J
+}
+
+public final class io/sentry/SentryNanotimeDateProvider : io/sentry/SentryDateProvider {
+	public fun <init> ()V
+	public fun now ()Lio/sentry/SentryDate;
+}
+
 public class io/sentry/SentryOptions {
 	public fun <init> ()V
 	public fun addContextTag (Ljava/lang/String;)V
@@ -1415,6 +1470,7 @@ public class io/sentry/SentryOptions {
 	public fun getClientReportRecorder ()Lio/sentry/clientreport/IClientReportRecorder;
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
+	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
 	public fun getDist ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
@@ -1500,6 +1556,7 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setConnectionTimeoutMillis (I)V
+	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDebug (Z)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
 	public fun setDist (Ljava/lang/String;)V
@@ -1638,25 +1695,24 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IHub;ZLio/sentry/TransactionFinishedCallback;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
-	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
+	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
 	public fun getChildren ()Ljava/util/List;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
-	public fun getHighPrecisionTimestamp ()Ljava/lang/Double;
+	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getLatestActiveSpan ()Lio/sentry/Span;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpans ()Ljava/util/List;
-	public fun getStartTimestamp ()Ljava/util/Date;
+	public fun getStartDate ()Lio/sentry/SentryDate;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getThrowable ()Ljava/lang/Throwable;
-	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun isFinished ()Z
 	public fun isNoOp ()Z
@@ -1676,7 +1732,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -1753,25 +1809,24 @@ public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, ja
 }
 
 public final class io/sentry/Span : io/sentry/ISpan {
-	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IHub;Ljava/util/Date;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IHub;Lio/sentry/SentryDate;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
-	public fun finish (Lio/sentry/SpanStatus;Ljava/util/Date;)V
+	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
-	public fun getHighPrecisionTimestamp ()Ljava/lang/Double;
+	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getSpanId ()Lio/sentry/SpanId;
-	public fun getStartTimestamp ()Ljava/util/Date;
+	public fun getStartDate ()Lio/sentry/SentryDate;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
 	public fun getThrowable ()Ljava/lang/Throwable;
-	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun isFinished ()Z
 	public fun isNoOp ()Z
@@ -1787,7 +1842,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun setThrowable (Ljava/lang/Throwable;)V
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
@@ -1970,7 +2025,7 @@ public final class io/sentry/TransactionOptions {
 	public fun <init> ()V
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
 	public fun getIdleTimeout ()Ljava/lang/Long;
-	public fun getStartTimestamp ()Ljava/util/Date;
+	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun getTransactionFinishedCallback ()Lio/sentry/TransactionFinishedCallback;
 	public fun isBindToScope ()Z
 	public fun isTrimEnd ()Z
@@ -1978,7 +2033,7 @@ public final class io/sentry/TransactionOptions {
 	public fun setBindToScope (Z)V
 	public fun setCustomSamplingContext (Lio/sentry/CustomSamplingContext;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
-	public fun setStartTimestamp (Ljava/util/Date;)V
+	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V
 	public fun setTrimEnd (Z)V
 	public fun setWaitForChildren (Z)V
@@ -3626,6 +3681,7 @@ public final class io/sentry/util/Pair {
 public final class io/sentry/util/Platform {
 	public fun <init> ()V
 	public static fun isAndroid ()Z
+	public static fun isJavaNinePlus ()Z
 	public static fun isJvm ()Z
 }
 

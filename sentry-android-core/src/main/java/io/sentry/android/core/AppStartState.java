@@ -1,7 +1,7 @@
 package io.sentry.android.core;
 
 import android.os.SystemClock;
-import java.util.Date;
+import io.sentry.SentryDate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +24,7 @@ public final class AppStartState {
   private @Nullable Boolean coldStart = null;
 
   /** appStart as a Date used in the App's Context */
-  private @Nullable Date appStartTime;
+  private @Nullable SentryDate appStartTime;
 
   private AppStartState() {}
 
@@ -80,7 +80,7 @@ public final class AppStartState {
   }
 
   @Nullable
-  public Date getAppStartTime() {
+  public SentryDate getAppStartTime() {
     return appStartTime;
   }
 
@@ -89,7 +89,8 @@ public final class AppStartState {
     return appStartMillis;
   }
 
-  synchronized void setAppStartTime(final long appStartMillis, final @NotNull Date appStartTime) {
+  synchronized void setAppStartTime(
+      final long appStartMillis, final @NotNull SentryDate appStartTime) {
     // method is synchronized because the SDK may by init. on a background thread.
     if (this.appStartTime != null && this.appStartMillis != null) {
       return;

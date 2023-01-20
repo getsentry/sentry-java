@@ -14,7 +14,6 @@ import io.sentry.util.Pair;
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -688,7 +687,7 @@ public final class Hub implements IHub {
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope,
-      final @Nullable Date startTimestamp,
+      final @Nullable SentryDate startTimestamp,
       final boolean waitForChildren,
       final @Nullable Long idleTimeout,
       final boolean trimEnd,

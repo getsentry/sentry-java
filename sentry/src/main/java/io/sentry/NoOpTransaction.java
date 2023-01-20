@@ -4,7 +4,6 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +45,7 @@ public final class NoOpTransaction implements ITransaction {
   public @NotNull ISpan startChild(
       @NotNull String operation,
       @Nullable String description,
-      @Nullable Date timestamp,
+      @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter) {
     return NoOpSpan.getInstance();
   }
@@ -107,8 +106,7 @@ public final class NoOpTransaction implements ITransaction {
   public void finish(@Nullable SpanStatus status) {}
 
   @Override
-  @ApiStatus.Internal
-  public void finish(@Nullable SpanStatus status, @Nullable Date timestamp) {}
+  public void finish(@Nullable SpanStatus status, @Nullable SentryDate timestamp) {}
 
   @Override
   public void setOperation(@NotNull String operation) {}
