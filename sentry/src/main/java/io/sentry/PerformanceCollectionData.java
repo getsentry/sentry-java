@@ -37,9 +37,11 @@ public final class PerformanceCollectionData {
   public void commitData() {
     if (uncommittedMemoryData != null) {
       memoryData.add(uncommittedMemoryData);
+      uncommittedMemoryData = null;
     }
     if (uncommittedCpuData != null) {
       cpuData.add(uncommittedCpuData);
+      uncommittedCpuData = null;
     }
   }
 

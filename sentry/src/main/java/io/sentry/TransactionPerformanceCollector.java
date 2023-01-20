@@ -84,7 +84,7 @@ public final class TransactionPerformanceCollector {
 
   public @Nullable PerformanceCollectionData stop(final @NotNull ITransaction transaction) {
     synchronized (timerLock) {
-      PerformanceCollectionData memoryData =
+      PerformanceCollectionData data =
           performanceDataMap.remove(transaction.getEventId().toString());
       if (performanceDataMap.isEmpty() && isStarted.getAndSet(false)) {
         if (timer != null) {
@@ -92,7 +92,7 @@ public final class TransactionPerformanceCollector {
           timer = null;
         }
       }
-      return memoryData;
+      return data;
     }
   }
 }

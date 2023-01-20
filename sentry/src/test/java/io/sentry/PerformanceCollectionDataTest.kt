@@ -72,4 +72,17 @@ class PerformanceCollectionDataTest {
         val savedCpuData = data.cpuData.first()
         assertEquals(cpuData1, savedCpuData)
     }
+
+    @Test
+    fun `committing multiple times does not duplicate values`() {
+        val data = fixture.getSut()
+        data.addCpuData(mock())
+        data.addMemoryData(mock())
+        data.commitData()
+        assertEquals(1, data.cpuData.size)
+        assertEquals(1, data.memoryData.size)
+        data.commitData()
+        assertEquals(1, data.cpuData.size)
+        assertEquals(1, data.memoryData.size)
+    }
 }
