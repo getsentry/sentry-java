@@ -19,6 +19,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.http.HttpMethod
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.web.servlet.HandlerMapping
@@ -37,13 +38,12 @@ class SentryTracingFilterTest {
         val response = MockHttpServletResponse()
         val chain = mock<FilterChain>()
         val transactionNameProvider = mock<TransactionNameProvider>()
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+        }
 
         init {
-            whenever(hub.options).thenReturn(
-                SentryOptions().apply {
-                    dsn = "https://key@sentry.io/proj"
-                }
-            )
+            whenever(hub.options).thenReturn(options)
         }
 
         fun getSut(isEnabled: Boolean = true, status: Int = 200, sentryTraceHeader: String? = null): SentryTracingFilter {
@@ -187,6 +187,62 @@ class SentryTracingFilterTest {
         verify(fixture.hub).captureTransaction(
             check {
                 assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `does not track OPTIONS request with traceOptionsRequests=false`() {
+        val filter = fixture.getSut()
+        fixture.request.method = HttpMethod.OPTIONS.name
+        fixture.options.isTraceOptionsRequests = false
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+
+        verify(fixture.hub).isEnabled
+        verify(fixture.hub).options
+        verifyNoMoreInteractions(fixture.hub)
+        verify(fixture.transactionNameProvider, never()).provideTransactionName(any())
+    }
+
+    @Test
+    fun `tracks OPTIONS request with traceOptionsRequests=true`() {
+        val filter = fixture.getSut()
+        fixture.request.method = HttpMethod.OPTIONS.name
+        fixture.options.isTraceOptionsRequests = true
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertThat(it.contexts.trace!!.parentSpanId).isNull()
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `tracks POST request with traceOptionsRequests=false`() {
+        val filter = fixture.getSut()
+        fixture.request.method = HttpMethod.POST.name
+        fixture.options.isTraceOptionsRequests = false
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertThat(it.contexts.trace!!.parentSpanId).isNull()
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

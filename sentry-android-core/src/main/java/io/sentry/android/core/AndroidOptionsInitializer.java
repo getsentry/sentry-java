@@ -44,6 +44,11 @@ import org.jetbrains.annotations.TestOnly;
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
 
+  static final String SENTRY_COMPOSE_INTEGRATION_CLASS_NAME =
+      "io.sentry.compose.gestures.ComposeGestureTargetLocator";
+
+  static final String COMPOSE_CLASS_NAME = "androidx.compose.ui.node.Owner";
+
   /** private ctor */
   private AndroidOptionsInitializer() {}
 
@@ -85,6 +90,8 @@ final class AndroidOptionsInitializer {
 
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
+
+    options.setDateProvider(new SentryAndroidDateProvider());
 
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
@@ -132,7 +139,8 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
-
+    options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
+    options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     final SentryFrameMetricsCollector frameMetricsCollector =
         new SentryFrameMetricsCollector(context, options, buildInfoProvider);
@@ -146,19 +154,20 @@ final class AndroidOptionsInitializer {
     if (options.getGestureTargetLocators().isEmpty()) {
       final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
       gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
-      try {
+
+      final boolean isComposeUpstreamAvailable =
+          loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
+      final boolean isComposeAvailable =
+          (isComposeUpstreamAvailable
+              && loadClass.isClassAvailable(SENTRY_COMPOSE_INTEGRATION_CLASS_NAME, options));
+
+      if (isComposeAvailable) {
         gestureTargetLocators.add(new ComposeGestureTargetLocator());
-      } catch (NoClassDefFoundError error) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "ComposeGestureTargetLocator not available, consider adding the `sentry-compose` library.",
-                error);
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }
     options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
+    options.setMemoryCollector(new AndroidMemoryCollector());
   }
 
   private static void installDefaultIntegrations(
@@ -199,20 +208,21 @@ final class AndroidOptionsInitializer {
             new SendFireAndForgetOutboxSender(() -> options.getOutboxPath()),
             hasStartupCrashMarker));
 
-    options.addIntegration(new AnrIntegration(context));
+    // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
+    // relies on AppState set by it
     options.addIntegration(new AppLifecycleIntegration());
+    options.addIntegration(new AnrIntegration(context));
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {
       options.addIntegration(
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
+      options.addIntegration(new CurrentActivityIntegration((Application) context));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
-      options.addEventProcessor(
-          new ScreenshotEventProcessor((Application) context, options, buildInfoProvider));
     } else {
       options
           .getLogger()
@@ -220,6 +230,7 @@ final class AndroidOptionsInitializer {
               SentryLevel.WARNING,
               "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
     }
+
     if (isTimberAvailable) {
       options.addIntegration(new SentryTimberIntegration());
     }

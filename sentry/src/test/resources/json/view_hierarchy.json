@@ -1,0 +1,6 @@
+{
+  "rendering_system": "android_view_system",
+  "windows": [{
+    "type": "com.example.ui.FancyButton"
+  }]
+}

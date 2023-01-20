@@ -14,7 +14,6 @@ import io.sentry.util.Pair;
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -30,6 +29,7 @@ public final class Hub implements IHub {
   private final @NotNull TracesSampler tracesSampler;
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
+  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
@@ -44,6 +44,7 @@ public final class Hub implements IHub {
     this.tracesSampler = new TracesSampler(options);
     this.stack = stack;
     this.lastEventId = SentryId.EMPTY_ID;
+    this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
 
     // Integrations will use this Hub instance once registered.
     // Make sure Hub ready to be used then.
@@ -686,7 +687,7 @@ public final class Hub implements IHub {
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope,
-      final @Nullable Date startTimestamp,
+      final @Nullable SentryDate startTimestamp,
       final boolean waitForChildren,
       final @Nullable Long idleTimeout,
       final boolean trimEnd,
@@ -730,7 +731,8 @@ public final class Hub implements IHub {
               waitForChildren,
               idleTimeout,
               trimEnd,
-              transactionFinishedCallback);
+              transactionFinishedCallback,
+              transactionPerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it

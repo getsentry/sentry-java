@@ -208,6 +208,7 @@ class HintTest {
         hint.set(userAttribute, "test label")
         hint.addAttachment(newAttachment("test attachment"))
         hint.screenshot = newAttachment("2")
+        hint.viewHierarchy = newAttachment("3")
 
         hint.clear()
 
@@ -215,6 +216,25 @@ class HintTest {
         assertNull(hint.get(userAttribute))
         assertEquals(1, hint.attachments.size)
         assertNotNull(hint.screenshot)
+        assertNotNull(hint.viewHierarchy)
+    }
+
+    @Test
+    fun `can create hint with a screenshot`() {
+        val hint = Hint()
+        val attachment = newAttachment("test1")
+        hint.screenshot = attachment
+
+        assertNotNull(hint.screenshot)
+    }
+
+    @Test
+    fun `can create hint with a view hierarchy`() {
+        val hint = Hint()
+        val attachment = newAttachment("test1")
+        hint.viewHierarchy = attachment
+
+        assertNotNull(hint.viewHierarchy)
     }
 
     companion object {

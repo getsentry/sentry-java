@@ -2,13 +2,16 @@ package io.sentry.android.core;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import io.sentry.Hint;
 import io.sentry.IHub;
-import io.sentry.ILogger;
 import io.sentry.Integration;
+import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.hints.AbnormalExit;
 import io.sentry.protocol.Mechanism;
+import io.sentry.util.HintUtils;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -65,7 +68,7 @@ public final class AnrIntegration implements Integration, Closeable {
               new ANRWatchDog(
                   options.getAnrTimeoutIntervalMillis(),
                   options.isAnrReportInDebug(),
-                  error -> reportANR(hub, options.getLogger(), error),
+                  error -> reportANR(hub, options, error),
                   options.getLogger(),
                   context);
           anrWatchDog.start();
@@ -83,16 +86,40 @@ public final class AnrIntegration implements Integration, Closeable {
   @TestOnly
   void reportANR(
       final @NotNull IHub hub,
-      final @NotNull ILogger logger,
+      final @NotNull SentryAndroidOptions options,
       final @NotNull ApplicationNotResponding error) {
-    logger.log(SentryLevel.INFO, "ANR triggered with message: %s", error.getMessage());
+    options.getLogger().log(SentryLevel.INFO, "ANR triggered with message: %s", error.getMessage());
 
+    // if LifecycleWatcher isn't available, we always assume the ANR is foreground
+    final boolean isAppInBackground = Boolean.TRUE.equals(AppState.getInstance().isInBackground());
+
+    @SuppressWarnings("ThrowableNotThrown")
+    final Throwable anrThrowable = buildAnrThrowable(isAppInBackground, options, error);
+
+    final SentryEvent event = new SentryEvent(anrThrowable);
+    event.setLevel(SentryLevel.ERROR);
+
+    final AnrHint anrHint = new AnrHint(isAppInBackground);
+    final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
+
+    hub.captureEvent(event, hint);
+  }
+
+  private @NotNull Throwable buildAnrThrowable(
+      final boolean isAppInBackground,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull ApplicationNotResponding anr) {
+
+    String message = "ANR for at least " + options.getAnrTimeoutIntervalMillis() + " ms.";
+    if (isAppInBackground) {
+      message = "Background " + message;
+    }
+
+    final ApplicationNotResponding error = new ApplicationNotResponding(message, anr.getThread());
     final Mechanism mechanism = new Mechanism();
     mechanism.setType("ANR");
-    final ExceptionMechanismException throwable =
-        new ExceptionMechanismException(mechanism, error, error.getThread(), true);
 
-    hub.captureException(throwable);
+    return new ExceptionMechanismException(mechanism, error, error.getThread(), true);
   }
 
   @TestOnly
@@ -111,6 +138,32 @@ public final class AnrIntegration implements Integration, Closeable {
           options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration removed.");
         }
       }
+    }
+  }
+
+  /**
+   * ANR is an abnormal session exit, according to <a
+   * href="https://develop.sentry.dev/sdk/sessions/#crashed-abnormal-vs-errored">Develop Docs</a>
+   * because we don't know whether the app has recovered after it or not.
+   */
+  static final class AnrHint implements AbnormalExit {
+
+    private final boolean isBackgroundAnr;
+
+    AnrHint(final boolean isBackgroundAnr) {
+      this.isBackgroundAnr = isBackgroundAnr;
+    }
+
+    @Override
+    public String mechanism() {
+      return isBackgroundAnr ? "anr_background" : "anr_foreground";
+    }
+
+    // We don't want the current thread (watchdog) to be marked as crashed, otherwise the Sentry
+    // Console prioritizes it over the main thread in the thread's list.
+    @Override
+    public boolean ignoreCurrentThread() {
+      return true;
     }
   }
 }

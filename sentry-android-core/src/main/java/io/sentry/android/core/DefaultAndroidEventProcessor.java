@@ -243,7 +243,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private void setAppExtras(final @NotNull App app) {
     app.setAppName(getApplicationName());
-    app.setAppStartTime(AppStartState.getInstance().getAppStartTime());
+    app.setAppStartTime(DateUtils.toUtilDate(AppStartState.getInstance().getAppStartTime()));
   }
 
   @SuppressWarnings("deprecation")

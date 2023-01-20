@@ -12,14 +12,15 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import io.sentry.Baggage;
-import io.sentry.DateUtils;
 import io.sentry.DsnUtil;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
+import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
+import io.sentry.SentryLongDate;
 import io.sentry.SentrySpanStorage;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
@@ -29,7 +30,6 @@ import io.sentry.TransactionOptions;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,8 +83,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
               traceData.getSpanId(),
               traceData.getTraceId(),
               traceData.getParentSpanId());
-      final @NotNull Date startDate =
-          DateUtils.nanosToDate(otelSpan.toSpanData().getStartEpochNanos());
+      final @NotNull SentryDate startDate =
+          new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
       final @NotNull ISpan sentryChildSpan =
           sentryParentSpan.startChild(
               otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL);
@@ -125,7 +125,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
       TransactionOptions transactionOptions = new TransactionOptions();
       transactionOptions.setStartTimestamp(
-          DateUtils.nanosToDate(otelSpan.toSpanData().getStartEpochNanos()));
+          new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos()));
 
       ISpan sentryTransaction = hub.startTransaction(transactionContext, transactionOptions);
       spanStorage.store(traceData.getSpanId(), sentryTransaction);
@@ -192,8 +192,8 @@ public final class SentrySpanProcessor implements SpanProcessor {
     }
 
     final @NotNull SpanStatus sentryStatus = mapOtelStatus(otelSpan);
-    final @NotNull Date endTimestamp =
-        DateUtils.nanosToDate(otelSpan.toSpanData().getEndEpochNanos());
+    final @NotNull SentryDate endTimestamp =
+        new SentryLongDate(otelSpan.toSpanData().getEndEpochNanos());
     sentrySpan.finish(sentryStatus, endTimestamp);
   }
 

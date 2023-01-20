@@ -58,8 +58,14 @@ public final class SentryTransaction extends SentryBaseEvent
   public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
     super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
-    this.startTimestamp = DateUtils.dateToSeconds(sentryTracer.getStartTimestamp());
-    this.timestamp = sentryTracer.getHighPrecisionTimestamp();
+    // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
+    this.startTimestamp = DateUtils.nanosToSeconds(sentryTracer.getStartDate().nanoTimestamp());
+    // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
+    this.timestamp =
+        DateUtils.nanosToSeconds(
+            sentryTracer
+                .getStartDate()
+                .laterDateNanosTimestampByDiff(sentryTracer.getFinishDate()));
     this.transaction = sentryTracer.getName();
     for (final Span span : sentryTracer.getChildren()) {
       if (Boolean.TRUE.equals(span.isSampled())) {
