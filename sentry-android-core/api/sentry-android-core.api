@@ -23,6 +23,11 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/core/AndroidDateUtils {
+	public fun <init> ()V
+	public static fun getCurrentSentryDateTime ()Lio/sentry/SentryDate;
+}
+
 public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V
@@ -61,11 +66,16 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 public final class io/sentry/android/core/AppStartState {
 	public fun getAppStartInterval ()Ljava/lang/Long;
 	public fun getAppStartMillis ()Ljava/lang/Long;
-	public fun getAppStartTime ()Ljava/util/Date;
+	public fun getAppStartTime ()Lio/sentry/SentryDate;
 	public static fun getInstance ()Lio/sentry/android/core/AppStartState;
 	public fun isColdStart ()Ljava/lang/Boolean;
 	public fun reset ()V
 	public fun setAppStartMillis (J)V
+}
+
+public final class io/sentry/android/core/AppState {
+	public static fun getInstance ()Lio/sentry/android/core/AppState;
+	public fun isInBackground ()Ljava/lang/Boolean;
 }
 
 public final class io/sentry/android/core/BuildConfig {
@@ -149,6 +159,11 @@ public final class io/sentry/android/core/SentryAndroid {
 	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;)V
 	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/Sentry$OptionsConfiguration;)V
 	public static fun init (Landroid/content/Context;Lio/sentry/Sentry$OptionsConfiguration;)V
+}
+
+public final class io/sentry/android/core/SentryAndroidDateProvider : io/sentry/SentryDateProvider {
+	public fun <init> ()V
+	public fun now ()Lio/sentry/SentryDate;
 }
 
 public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/SentryOptions {

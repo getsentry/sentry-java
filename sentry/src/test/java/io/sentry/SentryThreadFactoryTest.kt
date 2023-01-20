@@ -36,6 +36,12 @@ class SentryThreadFactoryTest {
     }
 
     @Test
+    fun `when currentThreads is called with ignoreCurrentThread, current thread is not marked crashed`() {
+        val sut = fixture.getSut()
+        assertEquals(0, sut.getCurrentThreads(null, true)!!.filter { it.isCrashed == true }.count())
+    }
+
+    @Test
     fun `when currentThreads is called, thread state is captured`() {
         val sut = fixture.getSut()
         assertTrue(sut.getCurrentThreads(null)!!.all { it.state != null })
@@ -66,7 +72,7 @@ class SentryThreadFactoryTest {
         val currentThread = Thread.currentThread()
         stackTraces.remove(currentThread)
 
-        val threads = sut.getCurrentThreads(stackTraces, null)
+        val threads = sut.getCurrentThreads(stackTraces, null, false)
 
         assertNotNull(threads!!.firstOrNull { it.id == currentThread.id })
     }
@@ -74,7 +80,7 @@ class SentryThreadFactoryTest {
     @Test
     fun `When passing empty param to getCurrentThreads, returns null`() {
         val sut = fixture.getSut()
-        val threads = sut.getCurrentThreads(mapOf(), null)
+        val threads = sut.getCurrentThreads(mapOf(), null, false)
 
         assertNull(threads)
     }
@@ -87,7 +93,7 @@ class SentryThreadFactoryTest {
         val stacktraces = emptyArray<StackTraceElement>()
         val threadList = mutableMapOf(thread to stacktraces)
 
-        val threads = sut.getCurrentThreads(threadList, threadIds)
+        val threads = sut.getCurrentThreads(threadList, threadIds, false)
 
         assertNotNull(threads!!.firstOrNull { it.isCrashed == true })
     }

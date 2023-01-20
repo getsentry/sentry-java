@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
+import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
@@ -439,7 +440,14 @@ public final class SentryClient implements ISentryClient {
                       }
                     }
 
-                    if (session.update(status, userAgent, crashedOrErrored)) {
+                    final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+                    @Nullable String abnormalMechanism = null;
+                    if (sentrySdkHint instanceof AbnormalExit) {
+                      abnormalMechanism = ((AbnormalExit) sentrySdkHint).mechanism();
+                      status = Session.State.Abnormal;
+                    }
+
+                    if (session.update(status, userAgent, crashedOrErrored, abnormalMechanism)) {
                       // if hint is DiskFlushNotification, it means we have an uncaughtException
                       // and we can end the session.
                       if (HintUtils.hasType(hint, DiskFlushNotification.class)) {

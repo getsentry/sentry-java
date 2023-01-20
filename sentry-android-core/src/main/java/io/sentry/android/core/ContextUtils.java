@@ -1,13 +1,18 @@
 package io.sentry.android.core;
 
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Process;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -111,5 +116,39 @@ final class ContextUtils {
   @SuppressWarnings("deprecation")
   private static @NotNull String getVersionCodeDep(final @NotNull PackageInfo packageInfo) {
     return Integer.toString(packageInfo.versionCode);
+  }
+
+  /**
+   * Check if the Started process has IMPORTANCE_FOREGROUND importance which means that the process
+   * will start an Activity.
+   *
+   * @return true if IMPORTANCE_FOREGROUND and false otherwise
+   */
+  static boolean isForegroundImportance(final @NotNull Context context) {
+    try {
+      final Object service = context.getSystemService(Context.ACTIVITY_SERVICE);
+      if (service instanceof ActivityManager) {
+        final ActivityManager activityManager = (ActivityManager) service;
+        final List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
+            activityManager.getRunningAppProcesses();
+
+        if (runningAppProcesses != null) {
+          final int myPid = Process.myPid();
+          for (final ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
+            if (processInfo.pid == myPid) {
+              if (processInfo.importance == IMPORTANCE_FOREGROUND) {
+                return true;
+              }
+              break;
+            }
+          }
+        }
+      }
+    } catch (SecurityException ignored) {
+      // happens for isolated processes
+    } catch (Throwable ignored) {
+      // should never happen
+    }
+    return false;
   }
 }

@@ -67,6 +67,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   public void onStart(final @NotNull LifecycleOwner owner) {
     startSession();
     addAppBreadcrumb("foreground");
+    AppState.getInstance().setInBackground(false);
   }
 
   private void startSession() {
@@ -106,6 +107,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       scheduleEndSession();
     }
 
+    AppState.getInstance().setInBackground(true);
     addAppBreadcrumb("background");
   }
 

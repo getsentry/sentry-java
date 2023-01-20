@@ -88,6 +88,8 @@ final class AndroidOptionsInitializer {
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
 
+    options.setDateProvider(new SentryAndroidDateProvider());
+
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
 
@@ -203,8 +205,10 @@ final class AndroidOptionsInitializer {
             new SendFireAndForgetOutboxSender(() -> options.getOutboxPath()),
             hasStartupCrashMarker));
 
-    options.addIntegration(new AnrIntegration(context));
+    // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
+    // relies on AppState set by it
     options.addIntegration(new AppLifecycleIntegration());
+    options.addIntegration(new AnrIntegration(context));
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {

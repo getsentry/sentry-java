@@ -1109,7 +1109,8 @@ class JsonSerializerTest {
             "127.0.0.1",
             "jamesBond",
             "debug",
-            "io.sentry@1.0+123"
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
 
     private val userFeedback: UserFeedback get() {
