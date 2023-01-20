@@ -3,6 +3,7 @@ package io.sentry.android.core
 import io.sentry.ITransaction
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
+import io.sentry.ProfilingTraceData
 import io.sentry.protocol.DebugImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -109,6 +110,6 @@ class SentryAndroidOptionsTest {
 
     private class CustomTransactionProfiler : ITransactionProfiler {
         override fun onTransactionStart(transaction: ITransaction) {}
-        override fun onTransactionFinish(transaction: ITransaction) {}
+        override fun onTransactionFinish(transaction: ITransaction): ProfilingTraceData? = null
     }
 }

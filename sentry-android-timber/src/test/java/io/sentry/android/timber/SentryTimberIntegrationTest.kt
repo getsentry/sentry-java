@@ -97,20 +97,9 @@ class SentryTimberIntegrationTest {
 
         assertTrue(
             fixture.options.sdkVersion!!.packages!!.any {
-                it.name == "maven:io.sentry:sentry-android-timber"
-                it.version == BuildConfig.VERSION_NAME
+                it.name == "maven:io.sentry:sentry-android-timber" &&
+                    it.version == BuildConfig.VERSION_NAME
             }
         )
-    }
-
-    @Test
-    fun `Integration sets SDK name and version to options`() {
-        val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
-
-        val sdkVersion = fixture.options.sdkVersion!!
-
-        assertEquals(sdkVersion.name, "sentry.java.android.timber")
-        assertEquals(sdkVersion.version, BuildConfig.VERSION_NAME)
     }
 }

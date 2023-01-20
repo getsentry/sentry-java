@@ -2,11 +2,138 @@
 
 ## Unreleased
 
+### Features
+
+- Improve ANR implementation: ([#2475](https://github.com/getsentry/sentry-java/pull/2475))
+  - Add `abnormal_mechanism` to sessions for ANR rate calculation
+  - Always attach thread dump to ANR events
+  - Distinguish between foreground and background ANRs
+- Improve possible date precision to 10 μs ([#2451](https://github.com/getsentry/sentry-java/pull/2451))
+
+### Fixes
+
+- Remove sensitive data from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
+
+## 6.12.1
+
+### Fixes
+
+- Create timer in `TransactionPerformanceCollector` lazily ([#2478](https://github.com/getsentry/sentry-java/pull/2478))
+
+## 6.12.0
+
+### Features
+
+- Attach View Hierarchy to the errored/crashed events ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
+- Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
+- Add `traceOptionsRequests` option to disable tracing of OPTIONS requests ([#2453](https://github.com/getsentry/sentry-java/pull/2453))
+- Extend list of HTTP headers considered sensitive ([#2455](https://github.com/getsentry/sentry-java/pull/2455))
+
+### Fixes
+
+- Use a single TransactionPerfomanceCollector ([#2464](https://github.com/getsentry/sentry-java/pull/2464))
+- Don't override sdk name with Timber ([#2450](https://github.com/getsentry/sentry-java/pull/2450))
+- Set transactionNameSource to CUSTOM when setting transaction name ([#2405](https://github.com/getsentry/sentry-java/pull/2405))
+- Guard against CVE-2018-9492 "Privilege Escalation via Content Provider" ([#2466](https://github.com/getsentry/sentry-java/pull/2466))
+
+## 6.11.0
+
+### Features
+
+- Disable Android concurrent profiling ([#2434](https://github.com/getsentry/sentry-java/pull/2434))
+- Add logging for OpenTelemetry integration ([#2425](https://github.com/getsentry/sentry-java/pull/2425))
+- Auto add `OpenTelemetryLinkErrorEventProcessor` for Spring Boot ([#2429](https://github.com/getsentry/sentry-java/pull/2429))
+
+### Fixes
+
+- Use minSdk compatible `Objects` class ([#2436](https://github.com/getsentry/sentry-java/pull/2436))
+- Prevent R8 from warning on missing classes, as we check for their presence at runtime ([#2439](https://github.com/getsentry/sentry-java/pull/2439))
+
+### Dependencies
+
+- Bump Gradle from v7.5.1 to v7.6.0 ([#2438](https://github.com/getsentry/sentry-java/pull/2438))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v760)
+  - [diff](https://github.com/gradle/gradle/compare/v7.5.1...v7.6.0)
+
+## 6.10.0
+
+### Features
+
+- Add time-to-initial-display span to Activity transactions ([#2369](https://github.com/getsentry/sentry-java/pull/2369))
+- Start a session after init if AutoSessionTracking is enabled ([#2356](https://github.com/getsentry/sentry-java/pull/2356))
+- Provide automatic breadcrumbs and transactions for click/scroll events for Compose ([#2390](https://github.com/getsentry/sentry-java/pull/2390))
+- Add `blocked_main_thread` and `call_stack` to File I/O spans to detect performance issues ([#2382](https://github.com/getsentry/sentry-java/pull/2382))
+
+### Dependencies
+
+- Bump Native SDK from v0.5.2 to v0.5.3 ([#2423](https://github.com/getsentry/sentry-java/pull/2423))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#053)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.2...0.5.3)
+
+## 6.9.2
+
+### Fixes
+
+- Updated ProfileMeasurementValue types ([#2412](https://github.com/getsentry/sentry-java/pull/2412))
+- Clear window reference only on activity stop in profileMeasurements collector ([#2407](https://github.com/getsentry/sentry-java/pull/2407))
+- No longer disable OpenTelemetry exporters in default Java Agent config ([#2408](https://github.com/getsentry/sentry-java/pull/2408))
+- Fix `ClassNotFoundException` for `io.sentry.spring.SentrySpringServletContainerInitializer` in `sentry-spring-jakarta` ([#2411](https://github.com/getsentry/sentry-java/issues/2411))
+- Fix `sentry-samples-spring-jakarta` ([#2411](https://github.com/getsentry/sentry-java/issues/2411))
+
+### Features
+
+- Add SENTRY_AUTO_INIT environment variable to control OpenTelemetry Agent init ([#2410](https://github.com/getsentry/sentry-java/pull/2410))
+- Add OpenTelemetryLinkErrorEventProcessor for linking errors to traces created via OpenTelemetry ([#2418](https://github.com/getsentry/sentry-java/pull/2418))
+
+### Dependencies
+
+- Bump OpenTelemetry to 1.20.1 and OpenTelemetry Java Agent to 1.20.2 ([#2420](https://github.com/getsentry/sentry-java/pull/2420))
+
+## 6.9.1
+
+### Fixes
+
+- OpenTelemetry modules were missing in `6.9.0` so we released the same code again as `6.9.1` including OpenTelemetry modules
+
+## 6.9.0
+
+### Fixes
+
+- Use `canonicalName` in Fragment Integration for better de-obfuscation ([#2379](https://github.com/getsentry/sentry-java/pull/2379))
+- Fix Timber and Fragment integrations auto-installation for obfuscated builds ([#2379](https://github.com/getsentry/sentry-java/pull/2379))
+- Don't attach screenshots to events from Hybrid SDKs ([#2360](https://github.com/getsentry/sentry-java/pull/2360))
+- Ensure Hints do not cause memory leaks ([#2387](https://github.com/getsentry/sentry-java/pull/2387))
+- Do not attach empty `sentry-trace` and `baggage` headers ([#2385](https://github.com/getsentry/sentry-java/pull/2385))
+
+### Features
+
+- Add beforeSendTransaction which allows users to filter and change transactions ([#2388](https://github.com/getsentry/sentry-java/pull/2388))
+- Add experimental support for OpenTelemetry ([README](sentry-opentelemetry/README.md))([#2344](https://github.com/getsentry/sentry-java/pull/2344))
+
+### Dependencies
+
+- Update Spring Boot Jakarta to Spring Boot 3.0.0 ([#2389](https://github.com/getsentry/sentry-java/pull/2389))
+- Bump Spring Boot to 2.7.5 ([#2383](https://github.com/getsentry/sentry-java/pull/2383))
+
+## 6.8.0
+
+### Features
+
+- Add FrameMetrics to Android profiling data ([#2342](https://github.com/getsentry/sentry-java/pull/2342))
+
+### Fixes
+
+- Remove profiler main thread io ([#2348](https://github.com/getsentry/sentry-java/pull/2348))
+- Fix ensure all options are processed before integrations are loaded ([#2377](https://github.com/getsentry/sentry-java/pull/2377))
+
+## 6.7.1
+
 ### Fixes
 
 - Fix `Gpu.vendorId` should be a String ([#2343](https://github.com/getsentry/sentry-java/pull/2343))
 - Don't set device name on Android if `sendDefaultPii` is disabled ([#2354](https://github.com/getsentry/sentry-java/pull/2354))
-- Remove sensitive data from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
+- Fix corrupted UUID on Motorola devices ([#2363](https://github.com/getsentry/sentry-java/pull/2363))
+- Fix ANR on dropped uncaught exception events ([#2368](https://github.com/getsentry/sentry-java/pull/2368))
 
 ### Features
 

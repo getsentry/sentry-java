@@ -35,7 +35,7 @@ jobs:
         run: make stop
 
       - name: Run Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@9f8b2c03deea98eb6db7b75bffb1595f2da535db # pin@v1
+        uses: saucelabs/saucectl-run-action@a76db27b924cf05a47c402eb2f3316980612341d # pin@v2
         with:
           sauce-username: ${{ secrets.SAUCE_USERNAME }}
           sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}

@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
@@ -251,6 +252,30 @@ class MainEventProcessorTest {
     }
 
     @Test
+    fun `when attach threads is disabled, but the hint is Abnormal, still sets threads`() {
+        val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
+
+        var event = SentryEvent(RuntimeException("error"))
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalHint())
+        event = sut.process(event, hint)
+
+        assertNotNull(event.threads)
+        assertEquals(1, event.threads!!.count { it.isCrashed == true })
+    }
+
+    @Test
+    fun `when the hint is Abnormal with ignoreCurrentThread, does not mark thread as crashed`() {
+        val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
+
+        var event = SentryEvent(RuntimeException("error"))
+        val hint = HintUtils.createWithTypeCheckHint(AbnormalHint(ignoreCurrentThread = true))
+        event = sut.process(event, hint)
+
+        assertNotNull(event.threads)
+        assertEquals(0, event.threads!!.count { it.isCrashed == true })
+    }
+
+    @Test
     fun `sets sdkVersion in the event`() {
         val sut = fixture.getSut()
         val event = SentryEvent()
@@ -487,7 +512,7 @@ class MainEventProcessorTest {
 
         sut.close()
         assertNotNull(sut.hostnameCache) {
-            assertTrue(it.isClosed())
+            assertTrue(it.isClosed)
         }
     }
 
@@ -516,6 +541,22 @@ class MainEventProcessorTest {
         assertEquals("2.0.0", event.modules!!["group1:artifact1"])
     }
 
+    @Test
+    fun `sets debugMeta for transactions`() {
+        val sut = fixture.getSut(proguardUuid = "id1")
+
+        var transaction = SentryTransaction(fixture.sentryTracer)
+        transaction.debugMeta = DebugMeta()
+        transaction = sut.process(transaction, Hint())
+
+        assertNotNull(transaction.debugMeta) {
+            assertNotNull(it.images) { images ->
+                assertEquals("id1", images[0].uuid)
+                assertEquals("proguard", images[0].type)
+            }
+        }
+    }
+
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) =
         SentryEvent().apply {
             val mockThrowable = mock<Throwable>()
@@ -525,4 +566,10 @@ class MainEventProcessorTest {
             )
             throwable = actualThrowable
         }
+
+    private class AbnormalHint(private val ignoreCurrentThread: Boolean = false) : AbnormalExit {
+        override fun mechanism(): String? = null
+
+        override fun ignoreCurrentThread(): Boolean = ignoreCurrentThread
+    }
 }

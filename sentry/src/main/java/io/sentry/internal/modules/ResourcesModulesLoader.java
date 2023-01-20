@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class ResourcesModulesLoader extends ModulesLoader {
@@ -17,9 +18,14 @@ public final class ResourcesModulesLoader extends ModulesLoader {
     this(logger, ResourcesModulesLoader.class.getClassLoader());
   }
 
-  ResourcesModulesLoader(final @NotNull ILogger logger, final @NotNull ClassLoader classLoader) {
+  ResourcesModulesLoader(final @NotNull ILogger logger, final @Nullable ClassLoader classLoader) {
     super(logger);
-    this.classLoader = classLoader;
+    // bootstrap classloader is represented as null, so using system classloader instead
+    if (classLoader == null) {
+      this.classLoader = ClassLoader.getSystemClassLoader();
+    } else {
+      this.classLoader = classLoader;
+    }
   }
 
   @Override

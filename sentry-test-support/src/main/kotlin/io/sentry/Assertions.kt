@@ -32,7 +32,10 @@ fun checkTransaction(predicate: (SentryTransaction) -> Unit): SentryEnvelope {
 /**
  * Asserts an envelope item of [T] exists in [items] and returns the first one. Otherwise it throws an [AssertionError].
  */
-inline fun <reified T> assertEnvelopeItem(items: List<SentryEnvelopeItem>, predicate: (index: Int, item: T) -> Unit): T {
+inline fun <reified T> assertEnvelopeItem(
+    items: List<SentryEnvelopeItem>,
+    predicate: (index: Int, item: T) -> Unit = { _, _ -> }
+): T {
     val item = items.mapIndexedNotNull { index, it ->
         val deserialized = JsonSerializer(SentryOptions()).deserialize(it.data.inputStream().reader(), T::class.java)
         deserialized?.let { Pair(index, it) }

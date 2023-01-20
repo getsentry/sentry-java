@@ -12,7 +12,6 @@ import java.util.concurrent.Executors
 
 /** A simple activity with a list of bitmaps. */
 class BenchmarkActivity : AppCompatActivity() {
-
     companion object {
 
         /** The activity will set this when scrolling. */
@@ -20,6 +19,8 @@ class BenchmarkActivity : AppCompatActivity() {
 
         /** The refresh rate of the device, set on activity create. */
         var refreshRate: Float? = null
+
+        internal const val EXTRA_SUSTAINED_PERFORMANCE_MODE = "EXTRA_SUSTAINED_PERFORMANCE_MODE"
     }
 
     /**
@@ -34,6 +35,12 @@ class BenchmarkActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+            savedInstanceState?.getBoolean(EXTRA_SUSTAINED_PERFORMANCE_MODE) == true
+        ) {
+            window.setSustainedPerformanceMode(true)
+        }
 
         refreshRate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             display?.refreshRate

@@ -133,6 +133,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
           if (event == null) {
             logEnvelopeItemNull(item, currentItem);
           } else {
+            if (event.getSdk() != null) {
+              HintUtils.setIsFromHybridSdk(hint, event.getSdk().getName());
+            }
             if (envelope.getHeader().getEventId() != null
                 && !envelope.getHeader().getEventId().equals(event.getEventId())) {
               logUnexpectedEventId(envelope, event.getEventId(), currentItem);

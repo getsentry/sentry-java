@@ -143,7 +143,7 @@ class SentryFragmentLifecycleCallbacks(
     }
 
     private fun getFragmentName(fragment: Fragment): String {
-        return fragment.javaClass.simpleName
+        return fragment.javaClass.canonicalName ?: fragment.javaClass.simpleName
     }
 
     private fun isRunningSpan(fragment: Fragment): Boolean =

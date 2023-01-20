@@ -9,7 +9,19 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class HttpUtils {
   private static final List<String> SENSITIVE_HEADERS =
-      Arrays.asList("X-FORWARDED-FOR", "AUTHORIZATION", "COOKIE");
+      Arrays.asList(
+          "X-FORWARDED-FOR",
+          "AUTHORIZATION",
+          "COOKIE",
+          "SET-COOKIE",
+          "X-API-KEY",
+          "X-REAL-IP",
+          "REMOTE-ADDR",
+          "FORWARDED",
+          "PROXY-AUTHORIZATION",
+          "X-CSRF-TOKEN",
+          "X-CSRFTOKEN",
+          "X-XSRF-TOKEN");
 
   public static boolean containsSensitiveHeader(final @NotNull String header) {
     return SENSITIVE_HEADERS.contains(header.toUpperCase(Locale.ROOT));

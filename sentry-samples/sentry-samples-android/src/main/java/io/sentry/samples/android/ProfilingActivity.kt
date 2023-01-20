@@ -59,14 +59,20 @@ class ProfilingActivity : AppCompatActivity() {
                 executors.submit { runMathOperations() }
             }
             executors.submit { swipeList() }
-            binding.profilingStart.postDelayed({ finishTransactionAndPrintResults(t) }, (seconds * 1000).toLong())
+
+            Thread {
+                Thread.sleep((seconds * 1000).toLong())
+                finishTransactionAndPrintResults(t)
+                binding.root.post {
+                    binding.profilingProgressBar.visibility = View.GONE
+                }
+            }.start()
         }
         setContentView(binding.root)
     }
 
     private fun finishTransactionAndPrintResults(t: ITransaction) {
         t.finish()
-        binding.profilingProgressBar.visibility = View.GONE
         profileFinished = true
         val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
         if (profilesDirPath == null) {
@@ -82,25 +88,31 @@ class ProfilingActivity : AppCompatActivity() {
             Thread.sleep((timeout - duration).coerceAtLeast(0))
         }
 
-        // Get the last trace file, which is the current profile
-        val origProfileFile = File(profilesDirPath).listFiles()?.maxByOrNull { f -> f.lastModified() }
-        // Create a new profile file and copy the content of the original file into it
-        val profile = File(cacheDir, UUID.randomUUID().toString())
-        origProfileFile?.copyTo(profile)
+        try {
+            // Get the last trace file, which is the current profile
+            val origProfileFile = File(profilesDirPath).listFiles()?.maxByOrNull { f -> f.lastModified() }
+            // Create a new profile file and copy the content of the original file into it
+            val profile = File(cacheDir, UUID.randomUUID().toString())
+            origProfileFile?.copyTo(profile)
 
-        val profileLength = profile.length()
-        val traceData = ProfilingTraceData(profile, t)
-        // Create envelope item from copied profile
-        val item =
-            SentryEnvelopeItem.fromProfilingTrace(traceData, Long.MAX_VALUE, Sentry.getCurrentHub().options.serializer)
-        val itemData = item.data
+            val profileLength = profile.length()
+            val traceData = ProfilingTraceData(profile, t)
+            // Create envelope item from copied profile
+            val item =
+                SentryEnvelopeItem.fromProfilingTrace(traceData, Long.MAX_VALUE, Sentry.getCurrentHub().options.serializer)
+            val itemData = item.data
 
-        // Compress the envelope item using Gzip
-        val bos = ByteArrayOutputStream()
-        GZIPOutputStream(bos).bufferedWriter().use { it.write(String(itemData)) }
+            // Compress the envelope item using Gzip
+            val bos = ByteArrayOutputStream()
+            GZIPOutputStream(bos).bufferedWriter().use { it.write(String(itemData)) }
 
-        binding.profilingResult.text =
-            getString(R.string.profiling_result, profileLength, itemData.size, bos.toByteArray().size)
+            binding.root.post {
+                binding.profilingResult.text =
+                    getString(R.string.profiling_result, profileLength, itemData.size, bos.toByteArray().size)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun swipeList() {
@@ -126,11 +138,6 @@ class ProfilingActivity : AppCompatActivity() {
             n <= 1 -> 1
             else -> fibonacci(n - 1) + fibonacci(n - 2)
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Sentry.getSpan()?.finish()
     }
 
     override fun onBackPressed() {

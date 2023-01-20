@@ -67,7 +67,7 @@ class SentryOkHttpInterceptor(
         var code: Int? = null
         try {
             val requestBuilder = request.newBuilder()
-            if (span != null &&
+            if (span != null && !span.isNoOp &&
                 PropagationTargetsUtils.contain(hub.options.tracePropagationTargets, request.url.toString())
             ) {
                 span.toSentryTrace().let {

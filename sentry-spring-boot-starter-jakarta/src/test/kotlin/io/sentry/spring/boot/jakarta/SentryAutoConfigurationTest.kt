@@ -15,6 +15,8 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
+import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.spring.jakarta.ContextTagsEventProcessor
 import io.sentry.spring.jakarta.HttpServletRequestSentryUserProvider
@@ -272,6 +274,15 @@ class SentryAutoConfigurationTest {
             .withUserConfiguration(CustomBeforeSendCallbackConfiguration::class.java)
             .run {
                 assertThat(it.getBean(SentryOptions::class.java).beforeSend).isInstanceOf(CustomBeforeSendCallback::class.java)
+            }
+    }
+
+    @Test
+    fun `registers beforeSendTransactionCallback on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(CustomBeforeSendTransactionCallbackConfiguration::class.java)
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).beforeSendTransaction).isInstanceOf(CustomBeforeSendTransactionCallback::class.java)
             }
     }
 
@@ -673,6 +684,47 @@ class SentryAutoConfigurationTest {
             }
     }
 
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath and auto init off, creates OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
+            .run {
+                assertThat(it).hasSingleBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).anyMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init on, does not create OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=true")
+            .run {
+                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init default, does not create OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
+    @Test
+    fun `when OpenTelemetryLinkErrorEventProcessor is not on the classpath, does not create OpenTelemetryLinkErrorEventProcessor`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
+            .withClassLoader(FilteredClassLoader(OpenTelemetryLinkErrorEventProcessor::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
+                val options = it.getBean(SentryOptions::class.java)
+                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+            }
+    }
+
     @Configuration(proxyBeanMethods = false)
     open class CustomOptionsConfigurationConfiguration {
 
@@ -718,6 +770,17 @@ class SentryAutoConfigurationTest {
 
     class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
         override fun execute(event: SentryEvent, hint: Hint): SentryEvent? = null
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    open class CustomBeforeSendTransactionCallbackConfiguration {
+
+        @Bean
+        open fun beforeSendTransactionCallback() = CustomBeforeSendTransactionCallback()
+    }
+
+    class CustomBeforeSendTransactionCallback : SentryOptions.BeforeSendTransactionCallback {
+        override fun execute(event: SentryTransaction, hint: Hint): SentryTransaction? = null
     }
 
     @Configuration(proxyBeanMethods = false)

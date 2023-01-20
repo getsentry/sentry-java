@@ -72,6 +72,10 @@ abstract class BaseUiTest {
         }
         SentryAndroid.init(context) {
             it.dsn = mockDsn
+            // We don't use test orchestrator, due to problems with Saucelabs.
+            // So the app data is not deleted between tests. Thus, We don't know when sessions will actually be sent.
+            // To avoid any interference between tests we can just disable them by default.
+            it.isEnableAutoSessionTracking = false
             optionsConfiguration?.invoke(it)
         }
     }

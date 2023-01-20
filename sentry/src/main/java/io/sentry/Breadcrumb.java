@@ -247,6 +247,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    * @param subCategory - the category, for example "click"
    * @param viewId - the human-readable view id, for example "button_load"
    * @param viewClass - the fully qualified class name, for example "android.widget.Button"
+   * @param viewTag - the custom tag of the view, for example "button_launch_rocket"
    * @param additionalData - additional properties to be put into the data bag
    * @return the breadcrumb
    */
@@ -254,6 +255,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
       final @NotNull String subCategory,
       final @Nullable String viewId,
       final @Nullable String viewClass,
+      final @Nullable String viewTag,
       final @NotNull Map<String, Object> additionalData) {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setType("user");
@@ -264,11 +266,34 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     if (viewClass != null) {
       breadcrumb.setData("view.class", viewClass);
     }
+    if (viewTag != null) {
+      breadcrumb.setData("view.tag", viewTag);
+    }
     for (final Map.Entry<String, Object> entry : additionalData.entrySet()) {
       breadcrumb.getData().put(entry.getKey(), entry.getValue());
     }
     breadcrumb.setLevel(SentryLevel.INFO);
     return breadcrumb;
+  }
+
+  /**
+   * Creates user breadcrumb - a user interaction with your app's UI. The breadcrumb can contain
+   * additional data like {@code viewId} or {@code viewClass}. By default, the breadcrumb is
+   * captured with {@link SentryLevel} INFO level.
+   *
+   * @param subCategory - the category, for example "click"
+   * @param viewId - the human-readable view id, for example "button_load"
+   * @param viewClass - the fully qualified class name, for example "android.widget.Button"
+   * @param additionalData - additional properties to be put into the data bag
+   * @return the breadcrumb
+   */
+  public static @NotNull Breadcrumb userInteraction(
+      final @NotNull String subCategory,
+      final @Nullable String viewId,
+      final @Nullable String viewClass,
+      final @NotNull Map<String, Object> additionalData) {
+
+    return userInteraction(subCategory, viewId, viewClass, null, additionalData);
   }
 
   /** Breadcrumb ctor */

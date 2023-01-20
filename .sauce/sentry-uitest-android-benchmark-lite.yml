@@ -19,8 +19,11 @@ espresso:
 suites:
 
   - name: "Android 11 (api 30)"
+    testOptions:
+      clearPackageData: true
+      useTestOrchestrator: true
     devices:
-      - id: OnePlus_Nord_N200_5G_real_us # OnePlus Nord N200 5G - api 30 (11)
+      - id: Google_Pixel_3a_real # Google Pixel 3a - api 30 (11)
 
 artifacts:
   download:

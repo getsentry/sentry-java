@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
@@ -10,6 +11,8 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,18 +27,20 @@ class SentryTracerTest {
     private class Fixture {
         val options = SentryOptions()
         val hub: Hub
+        val transactionPerformanceCollector: TransactionPerformanceCollector
 
         init {
             options.dsn = "https://key@sentry.io/proj"
             options.environment = "environment"
             options.release = "release@3.0.0"
             hub = spy(Hub(options))
+            transactionPerformanceCollector = spy(TransactionPerformanceCollector(options))
             hub.bindClient(mock())
         }
 
         fun getSut(
             optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> = Sentry.OptionsConfiguration {},
-            startTimestamp: Date? = null,
+            startTimestamp: SentryDate? = null,
             waitForChildren: Boolean = false,
             idleTimeout: Long? = null,
             trimEnd: Boolean = false,
@@ -43,7 +48,7 @@ class SentryTracerTest {
             samplingDecision: TracesSamplingDecision? = null
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback)
+            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback, transactionPerformanceCollector)
         }
     }
 
@@ -77,13 +82,13 @@ class SentryTracerTest {
     @Test
     fun `when transaction is created, startTimestamp is set`() {
         val tracer = fixture.getSut()
-        assertNotNull(tracer.startTimestamp)
+        assertNotNull(tracer.startDate)
     }
 
     @Test
     fun `when transaction is created, timestamp is not set`() {
         val tracer = fixture.getSut()
-        assertNull(tracer.timestamp)
+        assertNull(tracer.finishDate)
     }
 
     @Test
@@ -108,14 +113,23 @@ class SentryTracerTest {
     fun `when transaction is finished, timestamp is set`() {
         val tracer = fixture.getSut()
         tracer.finish()
-        assertNotNull(tracer.timestamp)
+        assertNotNull(tracer.finishDate)
     }
 
     @Test
     fun `when transaction is finished with status, timestamp and status are set`() {
         val tracer = fixture.getSut()
         tracer.finish(SpanStatus.ABORTED)
-        assertNotNull(tracer.timestamp)
+        assertNotNull(tracer.finishDate)
+        assertEquals(SpanStatus.ABORTED, tracer.status)
+    }
+
+    @Test
+    fun `when transaction is finished with status and timestamp, timestamp and status are set`() {
+        val tracer = fixture.getSut()
+        val date = SentryNanotimeDate(Date.from(LocalDateTime.of(2022, 12, 24, 23, 59, 58, 0).toInstant(ZoneOffset.UTC)), 0)
+        tracer.finish(SpanStatus.ABORTED, date)
+        assertEquals(tracer.finishDate!!.nanoTimestamp(), date.nanoTimestamp())
         assertEquals(SpanStatus.ABORTED, tracer.status)
     }
 
@@ -128,6 +142,7 @@ class SentryTracerTest {
                 assertEquals(it.transaction, tracer.name)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -186,6 +201,7 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -203,6 +219,33 @@ class SentryTracerTest {
                 assertEquals("op1", it.spans.first().op)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when transaction is finished, context is set`() {
+        val tracer = fixture.getSut()
+        val otelContext = mapOf(
+            "attributes" to mapOf(
+                "db.connection_string" to "hsqldb:mem:",
+                "db.statement" to "CREATE TABLE person ( id INTEGER IDENTITY PRIMARY KEY, firstName VARCHAR(?) NOT NULL, lastName VARCHAR(?) NOT NULL )"
+            ),
+            "resource" to mapOf(
+                "process.runtime.version" to "17.0.4.1+1",
+                "telemetry.auto.version" to "sentry-6.7.0-otel-1.19.2"
+            )
+        )
+        tracer.setContext("otel", otelContext)
+        tracer.finish()
+
+        verify(fixture.hub).captureTransaction(
+            check {
+                assertEquals(otelContext, it.contexts["otel"])
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -220,7 +263,7 @@ class SentryTracerTest {
         val span = tracer.startChild("op") as Span
         assertNotNull(span)
         assertNotNull(span.spanId)
-        assertNotNull(span.startTimestamp)
+        assertNotNull(span.startDate)
     }
 
     @Test
@@ -251,7 +294,7 @@ class SentryTracerTest {
         val span = tracer.startChild("op", "description") as Span
         assertNotNull(span)
         assertNotNull(span.spanId)
-        assertNotNull(span.startTimestamp)
+        assertNotNull(span.startDate)
         assertEquals("op", span.operation)
         assertEquals("description", span.description)
     }
@@ -322,7 +365,7 @@ class SentryTracerTest {
         transaction.throwable = ex
 
         transaction.finish(SpanStatus.OK)
-        val timestamp = transaction.timestamp
+        val timestamp = transaction.finishDate
 
         transaction.finish(SpanStatus.UNKNOWN_ERROR)
 
@@ -335,11 +378,12 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
 
         assertEquals(SpanStatus.OK, transaction.status)
-        assertEquals(timestamp, transaction.timestamp)
+        assertEquals(timestamp, transaction.finishDate)
     }
 
     @Test
@@ -394,17 +438,17 @@ class SentryTracerTest {
 
     @Test
     fun `when startTimestamp is given, use it as startTimestamp`() {
-        val date = Date(0)
+        val date = SentryNanotimeDate(Date(0), 0)
         val transaction = fixture.getSut(startTimestamp = date)
 
-        assertSame(date, transaction.startTimestamp)
+        assertSame(date, transaction.startDate)
     }
 
     @Test
     fun `when startTimestamp is nullable, set it automatically`() {
         val transaction = fixture.getSut(startTimestamp = null)
 
-        assertNotNull(transaction.startTimestamp)
+        assertNotNull(transaction.startDate)
     }
 
     @Test
@@ -412,7 +456,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         transaction.startChild("op")
         transaction.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -421,7 +465,7 @@ class SentryTracerTest {
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
-        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull())
+        verify(fixture.hub).captureTransaction(any(), anyOrNull<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -442,7 +486,7 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         child.finish()
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -450,13 +494,14 @@ class SentryTracerTest {
         val transaction = fixture.getSut(waitForChildren = true)
         val child = transaction.startChild("op")
         transaction.finish(SpanStatus.INVALID_ARGUMENT)
-        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull())
+        verify(fixture.hub, never()).captureTransaction(any(), any<TraceContext>(), anyOrNull(), anyOrNull())
         child.finish()
         verify(fixture.hub, times(1)).captureTransaction(
             check {
                 assertEquals(SpanStatus.INVALID_ARGUMENT, it.status)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -471,11 +516,12 @@ class SentryTracerTest {
         verify(fixture.hub, times(1)).captureTransaction(
             check {
                 assertEquals(2, it.spans.size)
-                assertEquals(transaction.root.endNanos, span.endNanos)
+                assertEquals(transaction.root.finishDate, span.finishDate)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[0].status)
                 assertEquals(SpanStatus.DEADLINE_EXCEEDED, it.spans[1].status)
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -651,6 +697,7 @@ class SentryTracerTest {
                 assertEquals("val", it.getExtra("key"))
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -669,6 +716,7 @@ class SentryTracerTest {
                 }
             },
             anyOrNull<TraceContext>(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -696,6 +744,7 @@ class SentryTracerTest {
         verify(fixture.hub, never()).captureTransaction(
             anyOrNull(),
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -710,6 +759,7 @@ class SentryTracerTest {
         await.untilFalse(transaction.isFinishTimerRunning)
 
         verify(fixture.hub).captureTransaction(
+            anyOrNull(),
             anyOrNull(),
             anyOrNull(),
             anyOrNull()
@@ -770,8 +820,9 @@ class SentryTracerTest {
         verify(fixture.hub).captureTransaction(
             check {
                 assertEquals(2, it.spans.size)
-                assertEquals(transaction.root.endNanos, span2.endNanos)
+                assertEquals(transaction.root.finishDate, span2.finishDate)
             },
+            anyOrNull(),
             anyOrNull(),
             anyOrNull()
         )
@@ -813,6 +864,7 @@ class SentryTracerTest {
                 assertEquals("day", it.measurements["days"]!!.unit)
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
     }
@@ -830,7 +882,31 @@ class SentryTracerTest {
                 assertEquals("day", it.measurements["metric1"]!!.unit)
             },
             anyOrNull(),
+            anyOrNull(),
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `when transaction is created, transactionPerformanceCollector is started`() {
+        val transaction = fixture.getSut()
+        verify(fixture.transactionPerformanceCollector).start(check { assertEquals(transaction, it) })
+    }
+
+    @Test
+    fun `when transaction is created, transactionPerformanceCollector is stopped`() {
+        val transaction = fixture.getSut()
+        transaction.finish()
+        verify(fixture.transactionPerformanceCollector).stop(check { assertEquals(transaction, it) })
+    }
+
+    @Test
+    fun `changing transaction name without source sets source to custom`() {
+        val transaction = fixture.getSut()
+        transaction.setName("new-name-1", TransactionNameSource.TASK)
+        transaction.setName("new-name-2")
+
+        assertEquals("new-name-2", transaction.name)
+        assertEquals(TransactionNameSource.CUSTOM, transaction.transactionNameSource)
     }
 }

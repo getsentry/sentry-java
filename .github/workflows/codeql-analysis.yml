@@ -40,7 +40,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@c3b6fce4ee2ca25bc1066aa3bf73962fda0e8898 # pin@v2
+        uses: github/codeql-action/init@515828d97454b8354517688ddc5b48402b723750 # pin@v2
         with:
           languages: ${{ matrix.language }}
 
@@ -48,4 +48,4 @@ jobs:
           ./gradlew assemble
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@c3b6fce4ee2ca25bc1066aa3bf73962fda0e8898 # pin@v2
+        uses: github/codeql-action/analyze@515828d97454b8354517688ddc5b48402b723750 # pin@v2

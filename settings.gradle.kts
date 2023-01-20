@@ -2,7 +2,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
     repositories {
-        maven { url = uri("https://repo.spring.io/milestone") }
         mavenCentral()
         gradlePluginPortal()
     }
@@ -22,6 +21,7 @@ include(
     "sentry-android-fragment",
     "sentry-android-navigation",
     "sentry-compose",
+    "sentry-compose-helper",
     "sentry-apollo",
     "sentry-apollo-3",
     "sentry-test-support",
@@ -39,6 +39,9 @@ include(
     "sentry-openfeign",
     "sentry-graphql",
     "sentry-jdbc",
+    "sentry-opentelemetry:sentry-opentelemetry-core",
+    "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
+    "sentry-opentelemetry:sentry-opentelemetry-agent",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-jul",
@@ -55,7 +58,8 @@ include(
     "sentry-android-integration-tests:sentry-uitest-android-benchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
     "sentry-android-integration-tests:test-app-plain",
-    "sentry-android-integration-tests:test-app-sentry"
+    "sentry-android-integration-tests:test-app-sentry",
+    "sentry-android-integration-tests:sentry-test-agp"
 )
 
 gradle.beforeProject {

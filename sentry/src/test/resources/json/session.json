@@ -8,6 +8,7 @@
     "errors": 9001,
     "duration": 5.5,
     "timestamp": "1970-04-21T09:32:21.000Z",
+    "abnormal_mechanism": "anr_foreground",
     "attrs":
     {
         "release": "b2d0224b-4b1f-49db-94c9-fd4a439b3ef5",

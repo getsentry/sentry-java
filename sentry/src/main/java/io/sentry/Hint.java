@@ -2,8 +2,10 @@ package io.sentry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,6 +28,7 @@ public final class Hint {
   private final @NotNull Map<String, Object> internalStorage = new HashMap<String, Object>();
   private final @NotNull List<Attachment> attachments = new ArrayList<>();
   private @Nullable Attachment screenshot = null;
+  private @Nullable Attachment viewHierarchy = null;
 
   public static @NotNull Hint withAttachment(@Nullable Attachment attachment) {
     @NotNull final Hint hint = new Hint();
@@ -39,16 +42,17 @@ public final class Hint {
     return hint;
   }
 
-  public void set(@NotNull String name, @Nullable Object hint) {
+  public synchronized void set(@NotNull String name, @Nullable Object hint) {
     internalStorage.put(name, hint);
   }
 
-  public @Nullable Object get(@NotNull String name) {
+  public synchronized @Nullable Object get(@NotNull String name) {
     return internalStorage.get(name);
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends Object> @Nullable T getAs(@NotNull String name, @NotNull Class<T> clazz) {
+  public synchronized <T extends Object> @Nullable T getAs(
+      @NotNull String name, @NotNull Class<T> clazz) {
     Object hintValue = internalStorage.get(name);
 
     if (clazz.isInstance(hintValue)) {
@@ -60,7 +64,7 @@ public final class Hint {
     }
   }
 
-  public void remove(@NotNull String name) {
+  public synchronized void remove(@NotNull String name) {
     internalStorage.remove(name);
   }
 
@@ -89,12 +93,37 @@ public final class Hint {
     attachments.clear();
   }
 
+  /**
+   * Clears all attributes added via {@link #set(String, Object)} Note: SDK internal attributes are
+   * being kept. This is useful to avoid leaking any objects (e.g. Android activities) being
+   * referenced.
+   */
+  @ApiStatus.Internal
+  public synchronized void clear() {
+    final Iterator<Map.Entry<String, Object>> iterator = internalStorage.entrySet().iterator();
+
+    while (iterator.hasNext()) {
+      final Map.Entry<String, Object> entry = iterator.next();
+      if (entry.getKey() == null || !entry.getKey().startsWith("sentry:")) {
+        iterator.remove();
+      }
+    }
+  }
+
   public void setScreenshot(@Nullable Attachment screenshot) {
     this.screenshot = screenshot;
   }
 
   public @Nullable Attachment getScreenshot() {
     return screenshot;
+  }
+
+  public void setViewHierarchy(final @Nullable Attachment viewHierarchy) {
+    this.viewHierarchy = viewHierarchy;
+  }
+
+  public @Nullable Attachment getViewHierarchy() {
+    return viewHierarchy;
   }
 
   private boolean isCastablePrimitive(@Nullable Object hintValue, @NotNull Class<?> clazz) {

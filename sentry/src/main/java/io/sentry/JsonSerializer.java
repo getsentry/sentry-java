@@ -1,6 +1,8 @@
 package io.sentry;
 
 import io.sentry.clientreport.ClientReport;
+import io.sentry.profilemeasurements.ProfileMeasurement;
+import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Browser;
 import io.sentry.protocol.Contexts;
@@ -24,6 +26,8 @@ import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.protocol.ViewHierarchy;
+import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.Objects;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -77,6 +81,11 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(Message.class, new Message.Deserializer());
     deserializersByClass.put(OperatingSystem.class, new OperatingSystem.Deserializer());
     deserializersByClass.put(ProfilingTraceData.class, new ProfilingTraceData.Deserializer());
+    deserializersByClass.put(
+        ProfilingTransactionData.class, new ProfilingTransactionData.Deserializer());
+    deserializersByClass.put(ProfileMeasurement.class, new ProfileMeasurement.Deserializer());
+    deserializersByClass.put(
+        ProfileMeasurementValue.class, new ProfileMeasurementValue.Deserializer());
     deserializersByClass.put(Request.class, new Request.Deserializer());
     deserializersByClass.put(SdkInfo.class, new SdkInfo.Deserializer());
     deserializersByClass.put(SdkVersion.class, new SdkVersion.Deserializer());
@@ -101,6 +110,8 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(User.class, new User.Deserializer());
     deserializersByClass.put(UserFeedback.class, new UserFeedback.Deserializer());
     deserializersByClass.put(ClientReport.class, new ClientReport.Deserializer());
+    deserializersByClass.put(ViewHierarchyNode.class, new ViewHierarchyNode.Deserializer());
+    deserializersByClass.put(ViewHierarchy.class, new ViewHierarchy.Deserializer());
   }
 
   // Deserialize
