@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DateUtilsTest {
@@ -110,9 +111,24 @@ class DateUtilsTest {
         assertEquals(0, date.time)
     }
 
+    @Test
+    fun `nanos can be converted to seconds`() {
+        val seconds = DateUtils.nanosToSeconds(123456)
+        assertClose(0.000123456, seconds)
+    }
+
     private fun convertDate(date: Date): LocalDateTime {
         return Instant.ofEpochMilli(date.time)
             .atZone(utcTimeZone)
             .toLocalDateTime()
+    }
+
+    private fun assertClose(expected: Double, actual: Double?) {
+        assertNotNull(actual)
+        val diff = Math.abs(expected - actual)
+        val threshold = 0.000001
+        if (diff > threshold) {
+            throw RuntimeException("Expected $actual to be within $threshold of $expected but was $diff off")
+        }
     }
 }

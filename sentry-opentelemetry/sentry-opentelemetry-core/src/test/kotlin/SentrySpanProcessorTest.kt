@@ -25,6 +25,7 @@ import io.sentry.IHub
 import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.Instrumenter
+import io.sentry.SentryDate
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -43,7 +44,6 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.net.http.HttpHeaders
-import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -91,7 +91,7 @@ class SentrySpanProcessorTest {
             whenever(span.toBaggageHeader(any())).thenReturn(baggageHeader)
             whenever(transaction.toBaggageHeader(any())).thenReturn(baggageHeader)
 
-            whenever(transaction.startChild(any<String>(), anyOrNull<String>(), anyOrNull<Date>(), eq(Instrumenter.OTEL))).thenReturn(span)
+            whenever(transaction.startChild(any<String>(), anyOrNull<String>(), anyOrNull<SentryDate>(), eq(Instrumenter.OTEL))).thenReturn(span)
 
             val sdkTracerProvider = SdkTracerProvider.builder()
                 .addSpanProcessor(SentrySpanProcessor(hub))
@@ -461,18 +461,18 @@ class SentrySpanProcessorTest {
         verify(fixture.transaction).startChild(
             eq("childspan"),
             eq("childspan"),
-            any<Date>(),
+            any<SentryDate>(),
             eq(Instrumenter.OTEL)
         )
     }
 
     private fun thenChildSpanIsFinished(status: SpanStatus = SpanStatus.OK) {
-        verify(fixture.span).finish(eq(status), any<Date>())
+        verify(fixture.span).finish(eq(status), any<SentryDate>())
     }
 
     private fun thenTransactionIsFinished() {
         verify(fixture.transaction).setContext(eq("otel"), any())
-        verify(fixture.transaction).finish(eq(SpanStatus.OK), any<Date>())
+        verify(fixture.transaction).finish(eq(SpanStatus.OK), any<SentryDate>())
     }
 
     private fun thenNoTraceContextHasBeenAddedToEvent(event: SentryEvent?) {

@@ -389,6 +389,10 @@ public class SentryOptions {
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
+  /** Date provider to retrieve the current date from. */
+  @ApiStatus.Internal
+  private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
+
   private final @NotNull List<ICollector> collectors = new ArrayList<>();
 
   /** Performance collector that collect performance stats while transactions run. */
@@ -1813,7 +1817,7 @@ public class SentryOptions {
   /**
    * Sets the instrumenter used for performance instrumentation.
    *
-   * <p>If you set this to something other than {{@link Instrumenter#SENTRY}} Sentry will not create
+   * <p>If you set this to something other than {@link Instrumenter#SENTRY} Sentry will not create
    * any transactions automatically nor will it create transactions if you call
    * startTransaction(...), nor will it create child spans if you call startChild(...)
    *
@@ -1912,6 +1916,23 @@ public class SentryOptions {
    */
   public void setTraceOptionsRequests(boolean traceOptionsRequests) {
     this.traceOptionsRequests = traceOptionsRequests;
+  }
+
+  /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
+  @ApiStatus.Internal
+  public @NotNull SentryDateProvider getDateProvider() {
+    return dateProvider;
+  }
+
+  /**
+   * Sets the {@link SentryDateProvider} which is used to retrieve the current date.
+   *
+   * <p>Different providers offer different precision. By default Sentry tries to offer the highest
+   * precision available for the system.
+   */
+  @ApiStatus.Internal
+  public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
+    this.dateProvider = dateProvider;
   }
 
   /**

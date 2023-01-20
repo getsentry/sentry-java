@@ -9,6 +9,7 @@
   - Add `abnormal_mechanism` to sessions for ANR rate calculation
   - Always attach thread dump to ANR events
   - Distinguish between foreground and background ANRs
+- Improve possible date precision to 10 μs ([#2451](https://github.com/getsentry/sentry-java/pull/2451))
 
 ## 6.12.1
 

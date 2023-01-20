@@ -8,7 +8,9 @@ import android.os.Bundle
 import io.sentry.Breadcrumb
 import io.sentry.Hub
 import io.sentry.Scope
+import io.sentry.SentryDate
 import io.sentry.SentryLevel
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
@@ -684,7 +686,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        val date = Date(0)
+        val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime(date)
 
         val activity = mock<Activity>()
@@ -700,7 +702,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        val date = Date(0)
+        val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime(date)
 
         val activity = mock<Activity>()
@@ -716,7 +718,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        val date = Date(0)
+        val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime(date)
 
         val activity = mock<Activity>()
@@ -724,7 +726,7 @@ class ActivityLifecycleIntegrationTest {
 
         val span = fixture.transaction.children.first()
         assertEquals(span.operation, "app.start.warm")
-        assertSame(span.startTimestamp, date)
+        assertSame(span.startDate, date)
     }
 
     @Test
@@ -733,7 +735,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        val date = Date(0)
+        val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime(date)
 
         val activity = mock<Activity>()
@@ -741,7 +743,7 @@ class ActivityLifecycleIntegrationTest {
 
         val span = fixture.transaction.children.first()
         assertEquals(span.operation, "app.start.cold")
-        assertSame(span.startTimestamp, date)
+        assertSame(span.startDate, date)
     }
 
     @Test
@@ -750,7 +752,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        val date = Date(0)
+        val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime(date)
 
         val activity = mock<Activity>()
@@ -758,7 +760,7 @@ class ActivityLifecycleIntegrationTest {
 
         val span = fixture.transaction.children.first()
         assertEquals(span.description, "Warm Start")
-        assertSame(span.startTimestamp, date)
+        assertSame(span.startDate, date)
     }
 
     @Test
@@ -767,7 +769,7 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        val date = Date(0)
+        val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime(date)
 
         val activity = mock<Activity>()
@@ -775,7 +777,7 @@ class ActivityLifecycleIntegrationTest {
 
         val span = fixture.transaction.children.first()
         assertEquals(span.description, "Cold Start")
-        assertSame(span.startTimestamp, date)
+        assertSame(span.startDate, date)
     }
 
     @Test
@@ -784,13 +786,18 @@ class ActivityLifecycleIntegrationTest {
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
 
-        val date = Date(0)
+        val date = SentryNanotimeDate(Date(0), 0)
         setAppStartTime()
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).startTransaction(any(), check<TransactionOptions> { assertEquals(date, it.startTimestamp) })
+        verify(fixture.hub).startTransaction(
+            any(),
+            check<TransactionOptions> {
+                assertEquals(date.nanoTimestamp(), it.startTimestamp!!.nanoTimestamp())
+            }
+        )
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityPostResumed(activity)
 
@@ -823,7 +830,7 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityDestroyed(activity)
     }
 
-    private fun setAppStartTime(date: Date = Date(0)) {
+    private fun setAppStartTime(date: SentryDate = SentryNanotimeDate(Date(0), 0)) {
         // set by SentryPerformanceProvider so forcing it here
         AppStartState.getInstance().setAppStartTime(0, date)
     }
