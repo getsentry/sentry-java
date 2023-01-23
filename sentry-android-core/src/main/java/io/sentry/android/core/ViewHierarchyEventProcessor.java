@@ -7,6 +7,7 @@ import android.view.Window;
 import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
+import io.sentry.ILogger;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
@@ -41,30 +42,43 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     }
 
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
+    final @Nullable ViewHierarchy viewHierarchy =
+        snapshotViewHierarchy(activity, options.getLogger());
+
+    if (viewHierarchy != null) {
+      hint.setViewHierarchy(Attachment.fromViewHierarchy(viewHierarchy));
+    }
+
+    return event;
+  }
+
+  @Nullable
+  public static ViewHierarchy snapshotViewHierarchy(
+      @Nullable Activity activity, @NotNull ILogger logger) {
     if (activity == null) {
-      options.getLogger().log(SentryLevel.INFO, "Missing activity for view hierarchy snapshot.");
-      return event;
+      logger.log(SentryLevel.INFO, "Missing activity for view hierarchy snapshot.");
+      return null;
     }
 
     final @Nullable Window window = activity.getWindow();
     if (window == null) {
-      options.getLogger().log(SentryLevel.INFO, "Missing window for view hierarchy snapshot.");
-      return event;
+      logger.log(SentryLevel.INFO, "Missing window for view hierarchy snapshot.");
+      return null;
     }
 
     final @Nullable View decorView = window.peekDecorView();
     if (decorView == null) {
-      options.getLogger().log(SentryLevel.INFO, "Missing decor view for view hierarchy snapshot.");
-      return event;
+      logger.log(SentryLevel.INFO, "Missing decor view for view hierarchy snapshot.");
+      return null;
     }
 
     try {
       final @NotNull ViewHierarchy viewHierarchy = snapshotViewHierarchy(decorView);
-      hint.setViewHierarchy(Attachment.fromViewHierarchy(viewHierarchy));
+      return viewHierarchy;
     } catch (Throwable t) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
+      logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
+      return null;
     }
-    return event;
   }
 
   @NotNull
