@@ -12,7 +12,7 @@
 
 ### Fixes
 
-- Remove sensitive data from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
+- Remove authority from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
 
 ## 6.12.1
 
