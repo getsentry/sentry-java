@@ -11,6 +11,10 @@
   - Distinguish between foreground and background ANRs
 - Improve possible date precision to 10 μs ([#2451](https://github.com/getsentry/sentry-java/pull/2451))
 
+### Fixes
+
+- Expand guard against CVE-2018-9492 "Privilege Escalation via Content Provider" ([#2482](https://github.com/getsentry/sentry-java/pull/2482))
+
 ## 6.12.1
 
 ### Fixes
