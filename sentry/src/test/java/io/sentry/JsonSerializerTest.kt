@@ -795,6 +795,7 @@ class JsonSerializerTest {
         val profileMeasurementValue = fixture.serializer.deserialize(StringReader(json), ProfileMeasurementValue::class.java)
         val expected = ProfileMeasurementValue(1, 60.1)
         assertEquals(expected, profileMeasurementValue)
+        assertEquals(60.1, profileMeasurementValue?.value)
     }
 
     @Test
