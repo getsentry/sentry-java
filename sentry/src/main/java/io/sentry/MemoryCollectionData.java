@@ -4,23 +4,23 @@ import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
 public final class MemoryCollectionData {
-  final long timestamp;
+  final long timestampMillis;
   final long usedHeapMemory;
   final long usedNativeMemory;
 
   public MemoryCollectionData(
-      final long timestamp, final long usedHeapMemory, final long usedNativeMemory) {
-    this.timestamp = timestamp;
+      final long timestampMillis, final long usedHeapMemory, final long usedNativeMemory) {
+    this.timestampMillis = timestampMillis;
     this.usedHeapMemory = usedHeapMemory;
     this.usedNativeMemory = usedNativeMemory;
   }
 
-  public MemoryCollectionData(final long timestamp, final long usedHeapMemory) {
-    this(timestamp, usedHeapMemory, -1);
+  public MemoryCollectionData(final long timestampMillis, final long usedHeapMemory) {
+    this(timestampMillis, usedHeapMemory, -1);
   }
 
-  public long getTimestamp() {
-    return timestamp;
+  public long getTimestampMillis() {
+    return timestampMillis;
   }
 
   public long getUsedHeapMemory() {
