@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.os.Debug
+import io.sentry.PerformanceCollectionData
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -17,13 +18,17 @@ class AndroidMemoryCollectorTest {
 
     @Test
     fun `when collect, both native and heap memory are collected`() {
+        val performanceCollectionData = PerformanceCollectionData()
+        val data = listOf(performanceCollectionData)
         val usedNativeMemory = Debug.getNativeHeapSize() - Debug.getNativeHeapFreeSize()
         val usedMemory = fixture.runtime.totalMemory() - fixture.runtime.freeMemory()
-        val data = fixture.collector.collect()
-        assertNotNull(data)
-        assertNotEquals(-1, data.usedNativeMemory)
-        assertEquals(usedNativeMemory, data.usedNativeMemory)
-        assertEquals(usedMemory, data.usedHeapMemory)
-        assertNotEquals(0, data.timestampMillis)
+        fixture.collector.collect(data)
+        performanceCollectionData.commitData()
+        val memoryData = performanceCollectionData.memoryData.firstOrNull()
+        assertNotNull(memoryData)
+        assertNotEquals(-1, memoryData.usedNativeMemory)
+        assertEquals(usedNativeMemory, memoryData.usedNativeMemory)
+        assertEquals(usedMemory, memoryData.usedHeapMemory)
+        assertNotEquals(0, memoryData.timestampMillis)
     }
 }

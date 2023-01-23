@@ -10,15 +10,38 @@ import org.jetbrains.annotations.Nullable;
 public final class PerformanceCollectionData {
   private final @NotNull List<MemoryCollectionData> memoryData = new ArrayList<>();
   private final @NotNull List<CpuCollectionData> cpuData = new ArrayList<>();
+  private @Nullable MemoryCollectionData uncommittedMemoryData = null;
+  private @Nullable CpuCollectionData uncommittedCpuData = null;
 
-  public void addData(
-      final @Nullable MemoryCollectionData memoryCollectionData,
-      final @Nullable CpuCollectionData cpuCollectionData) {
+  /**
+   * Add a {@link io.sentry.MemoryCollectionData} to internal uncommitted data. To save the data
+   * call {@code commitData}. Only the last uncommitted memory data will be retained.
+   */
+  public void addMemoryData(final @Nullable MemoryCollectionData memoryCollectionData) {
     if (memoryCollectionData != null) {
-      memoryData.add(memoryCollectionData);
+      uncommittedMemoryData = memoryCollectionData;
     }
+  }
+
+  /**
+   * Add a {@link io.sentry.CpuCollectionData} to internal uncommitted data. To save the data call
+   * {@code commitData()}. Only the last uncommitted cpu data will be retained.
+   */
+  public void addCpuData(final @Nullable CpuCollectionData cpuCollectionData) {
     if (cpuCollectionData != null) {
-      cpuData.add(cpuCollectionData);
+      uncommittedCpuData = cpuCollectionData;
+    }
+  }
+
+  /** Save any uncommitted data. */
+  public void commitData() {
+    if (uncommittedMemoryData != null) {
+      memoryData.add(uncommittedMemoryData);
+      uncommittedMemoryData = null;
+    }
+    if (uncommittedCpuData != null) {
+      cpuData.add(uncommittedCpuData);
+      uncommittedCpuData = null;
     }
   }
 

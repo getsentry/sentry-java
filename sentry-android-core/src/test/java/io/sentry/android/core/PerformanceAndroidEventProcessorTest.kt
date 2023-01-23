@@ -3,6 +3,7 @@ package io.sentry.android.core
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.MeasurementUnit
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTracer
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
@@ -12,7 +13,6 @@ import io.sentry.protocol.SentryTransaction
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -166,7 +166,7 @@ class PerformanceAndroidEventProcessorTest {
 
     private fun setAppStart(coldStart: Boolean = true) {
         AppStartState.getInstance().setColdStart(coldStart)
-        AppStartState.getInstance().setAppStartTime(0, Date())
+        AppStartState.getInstance().setAppStartTime(0, SentryNanotimeDate())
         AppStartState.getInstance().setAppStartEnd()
     }
 

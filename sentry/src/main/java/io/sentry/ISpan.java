@@ -1,6 +1,5 @@
 package io.sentry;
 
-import java.util.Date;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +21,7 @@ public interface ISpan {
   ISpan startChild(
       @NotNull String operation,
       @Nullable String description,
-      @Nullable Date timestamp,
+      @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter);
 
   /**
@@ -77,8 +76,7 @@ public interface ISpan {
    * @param status - the status
    * @param timestamp - the end timestamp
    */
-  @ApiStatus.Internal
-  void finish(@Nullable SpanStatus status, @Nullable Date timestamp);
+  void finish(@Nullable SpanStatus status, @Nullable SentryDate timestamp);
 
   /**
    * Sets span operation.

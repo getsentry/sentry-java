@@ -385,17 +385,19 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
-  private @NotNull IMemoryCollector memoryCollector = NoOpMemoryCollector.getInstance();
-
-  /** Performance collector that collect performance stats while transactions run. */
-  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
-      new TransactionPerformanceCollector(this);
-
   // TODO this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
-  private @NotNull ICpuCollector cpuCollector = NoOpCpuCollector.getInstance();
+  /** Date provider to retrieve the current date from. */
+  @ApiStatus.Internal
+  private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
+
+  private final @NotNull List<ICollector> collectors = new ArrayList<>();
+
+  /** Performance collector that collect performance stats while transactions run. */
+  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
+      new TransactionPerformanceCollector(this);
 
   /**
    * Adds an event processor
@@ -1815,7 +1817,7 @@ public class SentryOptions {
   /**
    * Sets the instrumenter used for performance instrumentation.
    *
-   * <p>If you set this to something other than {{@link Instrumenter#SENTRY}} Sentry will not create
+   * <p>If you set this to something other than {@link Instrumenter#SENTRY} Sentry will not create
    * any transactions automatically nor will it create transactions if you call
    * startTransaction(...), nor will it create child spans if you call startChild(...)
    *
@@ -1899,27 +1901,6 @@ public class SentryOptions {
   }
 
   /**
-   * Gets the memory collector used to collect memory usage while transactions run.
-   *
-   * @return the memory collector.
-   */
-  @ApiStatus.Internal
-  public @NotNull IMemoryCollector getMemoryCollector() {
-    return memoryCollector;
-  }
-
-  /**
-   * Sets the memory collector to collect memory usage during while transaction runs.
-   *
-   * @param memoryCollector - the memory collector. If null, a no op collector will be set.
-   */
-  @ApiStatus.Internal
-  public void setMemoryCollector(final @Nullable IMemoryCollector memoryCollector) {
-    this.memoryCollector =
-        memoryCollector != null ? memoryCollector : NoOpMemoryCollector.getInstance();
-  }
-
-  /**
    * Whether OPTIONS requests should be traced.
    *
    * @return true if OPTIONS requests should be traced
@@ -1937,24 +1918,41 @@ public class SentryOptions {
     this.traceOptionsRequests = traceOptionsRequests;
   }
 
-  /**
-   * Gets the cpu collector used to collect cpu usage during while transaction runs.
-   *
-   * @return the cpu collector.
-   */
+  /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
-  public @NotNull ICpuCollector getCpuCollector() {
-    return cpuCollector;
+  public @NotNull SentryDateProvider getDateProvider() {
+    return dateProvider;
   }
 
   /**
-   * Sets the cpu collector to collect cpu usage during while transaction runs.
+   * Sets the {@link SentryDateProvider} which is used to retrieve the current date.
    *
-   * @param cpuCollector - the cpu collector. If null, a no op collector will be set.
+   * <p>Different providers offer different precision. By default Sentry tries to offer the highest
+   * precision available for the system.
    */
   @ApiStatus.Internal
-  public void setCpuCollector(final @Nullable ICpuCollector cpuCollector) {
-    this.cpuCollector = cpuCollector != null ? cpuCollector : NoOpCpuCollector.getInstance();
+  public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
+    this.dateProvider = dateProvider;
+  }
+
+  /**
+   * Adds a ICollector.
+   *
+   * @param collector the ICollector.
+   */
+  @ApiStatus.Internal
+  public void addCollector(final @NotNull ICollector collector) {
+    collectors.add(collector);
+  }
+
+  /**
+   * Returns the list of ICollectors.
+   *
+   * @return the ICollector list.
+   */
+  @ApiStatus.Internal
+  public @NotNull List<ICollector> getCollectors() {
+    return collectors;
   }
 
   /** The BeforeSend callback */

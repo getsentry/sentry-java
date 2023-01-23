@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -18,43 +19,23 @@ public final class TransactionPerformanceCollector {
   private volatile @Nullable Timer timer = null;
   private final @NotNull Map<String, PerformanceCollectionData> performanceDataMap =
       new ConcurrentHashMap<>();
-  private @Nullable IMemoryCollector memoryCollector = null;
-  private @Nullable ICpuCollector cpuCollector = null;
+  private final @NotNull List<ICollector> collectors;
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
 
   public TransactionPerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
+    this.collectors = options.getCollectors();
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull ITransaction transaction) {
-    // We are putting the TransactionPerformanceCollector in the options, so we want to wait until
-    // the options are customized before reading the collectors
-    if (memoryCollector == null) {
-      this.memoryCollector = options.getMemoryCollector();
-    }
-    if (cpuCollector == null) {
-      this.cpuCollector = options.getCpuCollector();
-    }
-    boolean isMemoryCollectorNoOp = memoryCollector instanceof NoOpMemoryCollector;
-    boolean isCpuCollectorNoOp = cpuCollector instanceof NoOpCpuCollector;
-
-    if (isMemoryCollectorNoOp) {
+    if (collectors.isEmpty()) {
       options
           .getLogger()
           .log(
               SentryLevel.INFO,
-              "Memory collector is a NoOpCollector. Memory stats will not be captured during transactions.");
-    }
-    if (isCpuCollectorNoOp) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "Cpu collector is a NoOpCollector. Cpu stats will not be captured during transactions.");
-    }
-    if (isMemoryCollectorNoOp && isCpuCollectorNoOp) {
+              "No collector found. Performance stats will not be captured during transactions.");
       return;
     }
 
@@ -73,7 +54,9 @@ public final class TransactionPerformanceCollector {
     }
     if (!isStarted.getAndSet(true)) {
       synchronized (timerLock) {
-        cpuCollector.setup();
+        for (ICollector collector : collectors) {
+          collector.setup();
+        }
         if (timer == null) {
           timer = new Timer(true);
         }
@@ -81,17 +64,14 @@ public final class TransactionPerformanceCollector {
             new TimerTask() {
               @Override
               public void run() {
-                MemoryCollectionData memoryData = null;
-                if (memoryCollector != null) {
-                  memoryData = memoryCollector.collect();
-                }
-                CpuCollectionData cpuData = null;
-                if (cpuCollector != null) {
-                  cpuData = cpuCollector.collect();
-                }
                 synchronized (timerLock) {
+                  for (ICollector collector : collectors) {
+                    collector.collect(performanceDataMap.values());
+                  }
+                  // We commit data after calling all collectors.
+                  // This way we avoid issues caused by having multiple cpu or memory collectors.
                   for (PerformanceCollectionData data : performanceDataMap.values()) {
-                    data.addData(memoryData, cpuData);
+                    data.commitData();
                   }
                 }
               }
@@ -104,7 +84,7 @@ public final class TransactionPerformanceCollector {
 
   public @Nullable PerformanceCollectionData stop(final @NotNull ITransaction transaction) {
     synchronized (timerLock) {
-      PerformanceCollectionData memoryData =
+      PerformanceCollectionData data =
           performanceDataMap.remove(transaction.getEventId().toString());
       if (performanceDataMap.isEmpty() && isStarted.getAndSet(false)) {
         if (timer != null) {
@@ -112,7 +92,7 @@ public final class TransactionPerformanceCollector {
           timer = null;
         }
       }
-      return memoryData;
+      return data;
     }
   }
 }
