@@ -106,15 +106,20 @@ public final class AndroidCpuCollector implements ICollector {
     if (stat != null) {
       stat = stat.trim();
       String[] stats = stat.split("[\n\t\r ]");
-      // Amount of clock ticks this process has been scheduled in user mode
-      long uTime = Long.parseLong(stats[13]);
-      // Amount of clock ticks this process has been scheduled in kernel mode
-      long sTime = Long.parseLong(stats[14]);
-      // Amount of clock ticks this process' waited-for children has been scheduled in user mode
-      long cuTime = Long.parseLong(stats[15]);
-      // Amount of clock ticks this process' waited-for children has been scheduled in kernel mode
-      long csTime = Long.parseLong(stats[16]);
-      return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
+      try {
+        // Amount of clock ticks this process has been scheduled in user mode
+        long uTime = Long.parseLong(stats[13]);
+        // Amount of clock ticks this process has been scheduled in kernel mode
+        long sTime = Long.parseLong(stats[14]);
+        // Amount of clock ticks this process' waited-for children has been scheduled in user mode
+        long cuTime = Long.parseLong(stats[15]);
+        // Amount of clock ticks this process' waited-for children has been scheduled in kernel mode
+        long csTime = Long.parseLong(stats[16]);
+        return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
+      } catch (NumberFormatException e) {
+        logger.log(SentryLevel.ERROR, "Error parsing /proc/self/stat file.", e);
+        return 0;
+      }
     }
     return 0;
   }
