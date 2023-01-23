@@ -565,7 +565,7 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 }
 
 public abstract interface class io/sentry/ITransactionProfiler {
-	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;)Lio/sentry/ProfilingTraceData;
+	public abstract fun onTransactionFinish (Lio/sentry/ITransaction;Lio/sentry/PerformanceCollectionData;)Lio/sentry/ProfilingTraceData;
 	public abstract fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
 
@@ -855,7 +855,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 
 public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionProfiler {
 	public static fun getInstance ()Lio/sentry/NoOpTransactionProfiler;
-	public fun onTransactionFinish (Lio/sentry/ITransaction;)Lio/sentry/ProfilingTraceData;
+	public fun onTransactionFinish (Lio/sentry/ITransaction;Lio/sentry/PerformanceCollectionData;)Lio/sentry/ProfilingTraceData;
 	public fun onTransactionStart (Lio/sentry/ITransaction;)V
 }
 
@@ -2430,9 +2430,12 @@ public final class io/sentry/internal/modules/ResourcesModulesLoader : io/sentry
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field ID_FROZEN_FRAME_RENDERS Ljava/lang/String;
+	public static final field ID_MEMORY_FOOTPRINT Ljava/lang/String;
+	public static final field ID_MEMORY_NATIVE_FOOTPRINT Ljava/lang/String;
 	public static final field ID_SCREEN_FRAME_RATES Ljava/lang/String;
 	public static final field ID_SLOW_FRAME_RENDERS Ljava/lang/String;
 	public static final field ID_UNKNOWN Ljava/lang/String;
+	public static final field UNIT_BYTES Ljava/lang/String;
 	public static final field UNIT_HZ Ljava/lang/String;
 	public static final field UNIT_NANOSECONDS Ljava/lang/String;
 	public static final field UNIT_UNKNOWN Ljava/lang/String;
@@ -2466,6 +2469,7 @@ public final class io/sentry/profilemeasurements/ProfileMeasurementValue : io/se
 	public fun <init> (Ljava/lang/Long;Ljava/lang/Number;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getUnknown ()Ljava/util/Map;
+	public fun getValue ()D
 	public fun hashCode ()I
 	public fun serialize (Lio/sentry/JsonObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V

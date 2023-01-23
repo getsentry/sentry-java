@@ -268,7 +268,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private @Nullable ProfilingTraceData onTransactionFinish(
       final @NotNull ITransaction transaction,
       final boolean isTimeout,
-      final @Nullable PerformanceCollectionData memoryCollectionData) {
+      final @Nullable PerformanceCollectionData performanceCollectionData) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
@@ -388,7 +388,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           ProfileMeasurement.ID_SCREEN_FRAME_RATES,
           new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
     }
-    putPerformanceCollectionDataInMeasurements(memoryCollectionData);
+    putPerformanceCollectionDataInMeasurements(performanceCollectionData);
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
     // done in the background when the trace file is read

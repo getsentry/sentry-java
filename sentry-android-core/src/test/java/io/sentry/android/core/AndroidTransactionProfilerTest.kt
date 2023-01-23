@@ -375,8 +375,10 @@ class AndroidTransactionProfilerTest {
     fun `profiler includes memory measurements when passed on transaction finish`() {
         val profiler = fixture.getSut(context)
         val memoryCollectionData = PerformanceCollectionData()
-        memoryCollectionData.addData(MemoryCollectionData(1, 2, 3), null)
-        memoryCollectionData.addData(MemoryCollectionData(2, 3, 4), null)
+        memoryCollectionData.addMemoryData(MemoryCollectionData(1, 2, 3))
+        memoryCollectionData.commitData()
+        memoryCollectionData.addMemoryData(MemoryCollectionData(2, 3, 4))
+        memoryCollectionData.commitData()
         profiler.onTransactionStart(fixture.transaction1)
         val data = profiler.onTransactionFinish(fixture.transaction1, memoryCollectionData)
         assertContentEquals(
