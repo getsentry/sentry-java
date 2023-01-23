@@ -6,6 +6,7 @@ import io.sentry.SentryEvent;
 import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.UrlUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -30,8 +31,10 @@ final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
   public @NotNull SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
     final Request sentryRequest = new Request();
     sentryRequest.setMethod(httpRequest.getMethod());
+    final @NotNull UrlUtils.UrlDetails urlDetails =
+        UrlUtils.convertUrl(httpRequest.getRequestURL().toString());
+    urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setQueryString(httpRequest.getQueryString());
-    sentryRequest.setUrl(httpRequest.getRequestURL().toString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));
 
     event.setRequest(sentryRequest);
