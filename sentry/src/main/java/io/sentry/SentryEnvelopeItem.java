@@ -6,6 +6,7 @@ import static io.sentry.vendor.Base64.NO_WRAP;
 import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.Base64;
 import java.io.BufferedInputStream;
@@ -179,21 +180,15 @@ public final class SentryEnvelopeItem {
                 return data;
               } else if (attachment.getSerializable() != null) {
                 final JsonSerializable serializable = attachment.getSerializable();
-                try {
-                  try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                      final Writer writer =
-                          new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                final @Nullable byte[] data = JsonSerializationUtils.bytesFrom(
+                  serializer,
+                  logger,
+                  serializable);
 
-                    serializer.serialize(serializable, writer);
-
-                    final byte[] data = stream.toByteArray();
-                    ensureAttachmentSizeLimit(
-                        data.length, maxAttachmentSize, attachment.getFilename());
-                    return data;
-                  }
-                } catch (Throwable t) {
-                  logger.log(SentryLevel.ERROR, "Could not serialize attachment serializable", t);
-                  throw t;
+                if (data != null) {
+                  ensureAttachmentSizeLimit(
+                    data.length, maxAttachmentSize, attachment.getFilename());
+                  return data;
                 }
               } else if (attachment.getPathname() != null) {
                 return readBytesFromFile(attachment.getPathname(), maxAttachmentSize);

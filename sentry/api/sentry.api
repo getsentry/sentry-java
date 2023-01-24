@@ -3658,6 +3658,7 @@ public final class io/sentry/util/HttpUtils {
 public final class io/sentry/util/JsonSerializationUtils {
 	public fun <init> ()V
 	public static fun atomicIntegerArrayToList (Ljava/util/concurrent/atomic/AtomicIntegerArray;)Ljava/util/List;
+	public static fun bytesFrom (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/JsonSerializable;)[B
 	public static fun calendarToMap (Ljava/util/Calendar;)Ljava/util/Map;
 }
 
