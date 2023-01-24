@@ -180,14 +180,12 @@ public final class SentryEnvelopeItem {
                 return data;
               } else if (attachment.getSerializable() != null) {
                 final JsonSerializable serializable = attachment.getSerializable();
-                final @Nullable byte[] data = JsonSerializationUtils.bytesFrom(
-                  serializer,
-                  logger,
-                  serializable);
+                final @Nullable byte[] data =
+                    JsonSerializationUtils.bytesFrom(serializer, logger, serializable);
 
                 if (data != null) {
                   ensureAttachmentSizeLimit(
-                    data.length, maxAttachmentSize, attachment.getFilename());
+                      data.length, maxAttachmentSize, attachment.getFilename());
                   return data;
                 }
               } else if (attachment.getPathname() != null) {

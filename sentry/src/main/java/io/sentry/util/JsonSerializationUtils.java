@@ -1,5 +1,9 @@
 package io.sentry.util;
 
+import io.sentry.ILogger;
+import io.sentry.ISerializer;
+import io.sentry.JsonSerializable;
+import io.sentry.SentryLevel;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
@@ -14,11 +18,6 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import io.sentry.ILogger;
-import io.sentry.ISerializer;
-import io.sentry.JsonSerializable;
-import io.sentry.SentryLevel;
 
 @ApiStatus.Internal
 public final class JsonSerializationUtils {
@@ -50,13 +49,12 @@ public final class JsonSerializationUtils {
   }
 
   public static @Nullable byte[] bytesFrom(
-    final @NotNull ISerializer serializer,
-    final @NotNull ILogger logger,
-    final @NotNull JsonSerializable serializable) {
+      final @NotNull ISerializer serializer,
+      final @NotNull ILogger logger,
+      final @NotNull JsonSerializable serializable) {
     try {
       try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-           final Writer writer =
-             new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+          final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
 
         serializer.serialize(serializable, writer);
 
@@ -67,5 +65,4 @@ public final class JsonSerializationUtils {
       return null;
     }
   }
-
 }
