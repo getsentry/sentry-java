@@ -2,17 +2,22 @@ package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class JavaMemoryCollector implements IMemoryCollector {
+public final class JavaMemoryCollector implements ICollector {
 
   private final @NotNull Runtime runtime = Runtime.getRuntime();
 
   @Override
-  public @Nullable MemoryCollectionData collect() {
+  public void setup() {}
+
+  @Override
+  public void collect(@NotNull Iterable<PerformanceCollectionData> performanceCollectionData) {
     final long now = System.currentTimeMillis();
     final long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-    return new MemoryCollectionData(now, usedMemory);
+    MemoryCollectionData memoryData = new MemoryCollectionData(now, usedMemory);
+    for (PerformanceCollectionData data : performanceCollectionData) {
+      data.addMemoryData(memoryData);
+    }
   }
 }
