@@ -6,8 +6,9 @@ import android.os.SystemClock;
 import android.system.Os;
 import android.system.OsConstants;
 import io.sentry.CpuCollectionData;
-import io.sentry.ICpuCollector;
+import io.sentry.ICollector;
 import io.sentry.ILogger;
+import io.sentry.PerformanceCollectionData;
 import io.sentry.SentryLevel;
 import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
@@ -15,14 +16,13 @@ import java.io.File;
 import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 // The approach to get the cpu usage info was taken from
 // https://eng.lyft.com/monitoring-cpu-performance-of-lyfts-android-applications-4e36fafffe12
 // The content of the /proc/self/stat file is specified in
 // https://man7.org/linux/man-pages/man5/proc.5.html
 @ApiStatus.Internal
-public final class AndroidCpuCollector implements ICpuCollector {
+public final class AndroidCpuCollector implements ICollector {
 
   private long lastRealtimeNanos = 0;
   private long lastCpuNanos = 0;
@@ -66,23 +66,29 @@ public final class AndroidCpuCollector implements ICpuCollector {
 
   @SuppressLint("NewApi")
   @Override
-  public @Nullable CpuCollectionData collect() {
+  public void collect(
+      @NotNull final Iterable<PerformanceCollectionData> performanceCollectionData) {
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP || !isEnabled) {
-      return null;
+      return;
     }
-    long nowNanos = SystemClock.elapsedRealtimeNanos();
-    long realTimeNanosDiff = nowNanos - lastRealtimeNanos;
+    final long nowNanos = SystemClock.elapsedRealtimeNanos();
+    final long realTimeNanosDiff = nowNanos - lastRealtimeNanos;
     lastRealtimeNanos = nowNanos;
-    long cpuNanos = readTotalCpuNanos();
-    long cpuNanosDiff = cpuNanos - lastCpuNanos;
+    final long cpuNanos = readTotalCpuNanos();
+    final long cpuNanosDiff = cpuNanos - lastCpuNanos;
     lastCpuNanos = cpuNanos;
     // Later we need to divide the percentage by the number of cores, otherwise we could
     // get a percentage value higher than 1. We also want to send the percentage as a
     // number from 0 to 100, so we are going to multiply it by 100
-    double cpuUsagePercentage = cpuNanosDiff / (double) realTimeNanosDiff;
+    final double cpuUsagePercentage = cpuNanosDiff / (double) realTimeNanosDiff;
 
-    return new CpuCollectionData(
-        System.currentTimeMillis(), (cpuUsagePercentage / (double) numCores) * 100.0);
+    CpuCollectionData cpuData =
+        new CpuCollectionData(
+            System.currentTimeMillis(), (cpuUsagePercentage / (double) numCores) * 100.0);
+
+    for (PerformanceCollectionData data : performanceCollectionData) {
+      data.addCpuData(cpuData);
+    }
   }
 
   /** Read the /proc/self/stat file and parses the result. */
@@ -95,20 +101,25 @@ public final class AndroidCpuCollector implements ICpuCollector {
       // is called again
       isEnabled = false;
       logger.log(
-          SentryLevel.ERROR, "Unable to read /proc/self/stat file. Disabling cpu collection.", e);
+          SentryLevel.WARNING, "Unable to read /proc/self/stat file. Disabling cpu collection.", e);
     }
     if (stat != null) {
       stat = stat.trim();
       String[] stats = stat.split("[\n\t\r ]");
-      // Amount of clock ticks this process has been scheduled in user mode
-      long uTime = Long.parseLong(stats[13]);
-      // Amount of clock ticks this process has been scheduled in kernel mode
-      long sTime = Long.parseLong(stats[14]);
-      // Amount of clock ticks this process' waited-for children has been scheduled in user mode
-      long cuTime = Long.parseLong(stats[15]);
-      // Amount of clock ticks this process' waited-for children has been scheduled in kernel mode
-      long csTime = Long.parseLong(stats[16]);
-      return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
+      try {
+        // Amount of clock ticks this process has been scheduled in user mode
+        long uTime = Long.parseLong(stats[13]);
+        // Amount of clock ticks this process has been scheduled in kernel mode
+        long sTime = Long.parseLong(stats[14]);
+        // Amount of clock ticks this process' waited-for children has been scheduled in user mode
+        long cuTime = Long.parseLong(stats[15]);
+        // Amount of clock ticks this process' waited-for children has been scheduled in kernel mode
+        long csTime = Long.parseLong(stats[16]);
+        return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
+      } catch (NumberFormatException e) {
+        logger.log(SentryLevel.ERROR, "Error parsing /proc/self/stat file.", e);
+        return 0;
+      }
     }
     return 0;
   }

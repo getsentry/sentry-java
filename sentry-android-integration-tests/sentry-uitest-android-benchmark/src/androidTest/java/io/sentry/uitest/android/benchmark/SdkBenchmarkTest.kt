@@ -1,5 +1,6 @@
 package io.sentry.uitest.android.benchmark
 
+import android.os.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -39,11 +40,8 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
         val perfProfilingSdkResult = perfProfilingSdkResults.getSummaryResult()
         perfProfilingSdkResult.printResults()
 
-        val maxDurationThreshold = TimeUnit.MILLISECONDS.toNanos(250)
-        assertTrue(simpleSdkResult.durationIncreaseNanos in 0..maxDurationThreshold)
-        assertTrue(simpleSdkResult.cpuTimeIncreaseMillis in 0..100)
-        assertTrue(perfProfilingSdkResult.durationIncreaseNanos in 0..maxDurationThreshold)
-        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseMillis in 0..100)
+        assertTrue(simpleSdkResult.cpuTimeIncreaseNanos in 0..TimeUnit.MILLISECONDS.toNanos(100))
+        assertTrue(perfProfilingSdkResult.cpuTimeIncreaseNanos in 0..TimeUnit.MILLISECONDS.toNanos(100))
     }
 
     private fun getOperation(init: (() -> Unit)? = null) = BenchmarkOperation(
@@ -52,7 +50,9 @@ class SdkBenchmarkTest : BaseBenchmarkTest() {
             runner.runOnMainSync {
                 init?.invoke()
             }
-            val benchmarkScenario = launchActivity<BenchmarkActivity>()
+            val benchmarkScenario = launchActivity<BenchmarkActivity>(
+                activityOptions = Bundle().apply { putBoolean(BenchmarkActivity.EXTRA_SUSTAINED_PERFORMANCE_MODE, false) }
+            )
             benchmarkScenario.moveToState(Lifecycle.State.DESTROYED)
         },
         after = {

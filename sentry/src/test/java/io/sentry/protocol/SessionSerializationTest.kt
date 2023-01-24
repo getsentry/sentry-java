@@ -32,7 +32,8 @@ class SessionSerializationTest {
             "5a174e69-a297-4ba4-b6e1-2244a8299ec8",
             "790da4ae-50ca-48a2-98f6-9b7f4e05a8c3",
             "d732be55-b57e-48ec-afe6-b0040c7f93de",
-            "b2d0224b-4b1f-49db-94c9-fd4a439b3ef5"
+            "b2d0224b-4b1f-49db-94c9-fd4a439b3ef5",
+            "anr_foreground"
         )
     }
     private val fixture = Fixture()

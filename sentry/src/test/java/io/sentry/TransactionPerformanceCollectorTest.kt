@@ -15,11 +15,12 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Future
 import java.util.concurrent.FutureTask
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
-import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class TransactionPerformanceCollectorTest {
 
@@ -32,7 +33,7 @@ class TransactionPerformanceCollectorTest {
         lateinit var transaction2: ITransaction
         val hub: IHub = mock()
         val options = SentryOptions()
-        lateinit var mockTimer: Timer
+        var mockTimer: Timer? = null
         var lastScheduledRunnable: Runnable? = null
 
         val mockExecutorService = object : ISentryExecutorService {
@@ -45,24 +46,32 @@ class TransactionPerformanceCollectorTest {
             override fun close(timeoutMillis: Long) {}
         }
 
+        val mockCpuCollector: ICollector = object : ICollector {
+            override fun setup() {}
+            override fun collect(performanceCollectionData: Iterable<PerformanceCollectionData>) {
+                performanceCollectionData.forEach {
+                    it.addCpuData(mock())
+                }
+            }
+        }
+
         init {
             whenever(hub.options).thenReturn(options)
         }
 
-        fun getSut(memoryCollector: IMemoryCollector? = null, cpuCollector: ICpuCollector? = null): TransactionPerformanceCollector {
+        fun getSut(memoryCollector: ICollector? = JavaMemoryCollector(), cpuCollector: ICollector? = mockCpuCollector): TransactionPerformanceCollector {
             options.dsn = "https://key@sentry.io/proj"
             options.executorService = mockExecutorService
-            options.setMemoryCollector(memoryCollector ?: JavaMemoryCollector())
-            options.setCpuCollector(
-                cpuCollector ?: object : ICpuCollector {
-                    override fun setup() {}
-                    override fun collect(): CpuCollectionData = mock()
-                }
-            )
+            if (cpuCollector != null) {
+                options.addCollector(cpuCollector)
+            }
+            if (memoryCollector != null) {
+                options.addCollector(memoryCollector)
+            }
             transaction1 = SentryTracer(TransactionContext("", ""), hub)
             transaction2 = SentryTracer(TransactionContext("", ""), hub)
             val collector = TransactionPerformanceCollector(options)
-            val timer: Timer = collector.getProperty("timer")
+            val timer: Timer? = collector.getProperty("timer") ?: Timer(true)
             mockTimer = spy(timer)
             collector.injectForField("timer", mockTimer)
             return collector
@@ -79,19 +88,20 @@ class TransactionPerformanceCollectorTest {
     }
 
     @Test
-    fun `when NoOp memoryCollector and cpuCollector are set in options, collect is ignored`() {
-        val collector = fixture.getSut(NoOpMemoryCollector.getInstance(), NoOpCpuCollector.getInstance())
-        assertIs<NoOpMemoryCollector>(fixture.options.memoryCollector)
-        assertIs<NoOpCpuCollector>(fixture.options.cpuCollector)
+    fun `when no collectors are set in options, collect is ignored`() {
+        val collector = fixture.getSut(null, null)
+        assertTrue(fixture.options.collectors.isEmpty())
         collector.start(fixture.transaction1)
-        verify(fixture.mockTimer, never()).scheduleAtFixedRate(any(), any<Long>(), any())
+        verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), any())
     }
 
     @Test
-    fun `collect calls cpuCollector setup`() {
-        val cpuCollector = mock<ICpuCollector>()
-        val collector = fixture.getSut(NoOpMemoryCollector.getInstance(), cpuCollector)
+    fun `collect calls collectors setup`() {
+        val memoryCollector = mock<ICollector>()
+        val cpuCollector = mock<ICollector>()
+        val collector = fixture.getSut(memoryCollector, cpuCollector)
         collector.start(fixture.transaction1)
+        verify(memoryCollector).setup()
         verify(cpuCollector).setup()
     }
 
@@ -99,7 +109,7 @@ class TransactionPerformanceCollectorTest {
     fun `when start, timer is scheduled every 100 milliseconds`() {
         val collector = fixture.getSut()
         collector.start(fixture.transaction1)
-        verify(fixture.mockTimer).scheduleAtFixedRate(any(), any<Long>(), eq(100))
+        verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
     }
 
     @Test
@@ -107,16 +117,16 @@ class TransactionPerformanceCollectorTest {
         val collector = fixture.getSut()
         collector.start(fixture.transaction1)
         collector.stop(fixture.transaction1)
-        verify(fixture.mockTimer).scheduleAtFixedRate(any(), any<Long>(), eq(100))
-        verify(fixture.mockTimer).cancel()
+        verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+        verify(fixture.mockTimer)!!.cancel()
     }
 
     @Test
     fun `stopping a not collected transaction return null`() {
         val collector = fixture.getSut()
         val data = collector.stop(fixture.transaction1)
-        verify(fixture.mockTimer, never()).scheduleAtFixedRate(any(), any<Long>(), eq(100))
-        verify(fixture.mockTimer, never()).cancel()
+        verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+        verify(fixture.mockTimer, never())!!.cancel()
         assertNull(data)
     }
 
@@ -126,15 +136,15 @@ class TransactionPerformanceCollectorTest {
         collector.start(fixture.transaction1)
         collector.start(fixture.transaction2)
         // Let's sleep to make the collector get values
-        Thread.sleep(200)
+        Thread.sleep(300)
 
         val data1 = collector.stop(fixture.transaction1)
         // There is still a transaction running: the timer shouldn't stop now
-        verify(fixture.mockTimer, never()).cancel()
+        verify(fixture.mockTimer, never())!!.cancel()
 
         val data2 = collector.stop(fixture.transaction2)
         // There are no more transactions running: the time should stop now
-        verify(fixture.mockTimer).cancel()
+        verify(fixture.mockTimer)!!.cancel()
 
         // The data returned by the collector is not empty
         assertFalse(data1!!.memoryData.isEmpty())
@@ -148,12 +158,12 @@ class TransactionPerformanceCollectorTest {
         val collector = fixture.getSut()
         collector.start(fixture.transaction1)
         // Let's sleep to make the collector get values
-        Thread.sleep(200)
-        verify(fixture.mockTimer, never()).cancel()
+        Thread.sleep(300)
+        verify(fixture.mockTimer, never())!!.cancel()
 
         // Let the timeout job stop the collector
         fixture.lastScheduledRunnable?.run()
-        verify(fixture.mockTimer).cancel()
+        verify(fixture.mockTimer)!!.cancel()
 
         // Data is returned even after the collector times out
         val data1 = collector.stop(fixture.transaction1)
@@ -162,18 +172,29 @@ class TransactionPerformanceCollectorTest {
     }
 
     @Test
-    fun `collector reads MemoryCollector on start`() {
-        val collector = fixture.getSut()
-        assertNull(collector.getProperty<IMemoryCollector?>("memoryCollector"))
-        collector.start(fixture.transaction1)
-        assertNotNull(collector.getProperty<IMemoryCollector>("memoryCollector"))
+    fun `collector has no ICollector by default`() {
+        val collector = fixture.getSut(null, null)
+        assertNotNull(collector.getProperty<List<ICollector>>("collectors"))
+        assertTrue(collector.getProperty<List<ICollector>>("collectors").isEmpty())
     }
 
     @Test
-    fun `collector reads CpuCollector on start`() {
+    fun `only one of multiple same collectors are collected`() {
+        fixture.options.addCollector(JavaMemoryCollector())
         val collector = fixture.getSut()
-        assertNull(collector.getProperty<ICpuCollector?>("cpuCollector"))
+        // We have 2 memory collectors and 1 cpu collector
+        assertEquals(3, fixture.options.collectors.size)
+
         collector.start(fixture.transaction1)
-        assertNotNull(collector.getProperty<ICpuCollector>("cpuCollector"))
+        // Let's sleep to make the collector get values
+        Thread.sleep(300)
+        val data1 = collector.stop(fixture.transaction1)
+
+        // The data returned by the collector is not empty
+        assertFalse(data1!!.memoryData.isEmpty())
+        assertFalse(data1.cpuData.isEmpty())
+
+        // We have the same number of memory and cpu data, even if we have 2 memory collectors and 1 cpu collector
+        assertEquals(data1.memoryData.size, data1.cpuData.size)
     }
 }

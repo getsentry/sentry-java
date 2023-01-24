@@ -2,14 +2,16 @@ package io.sentry.android.core
 
 import android.os.Build
 import io.sentry.ILogger
+import io.sentry.PerformanceCollectionData
 import io.sentry.test.getCtor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AndroidCpuCollectorTest {
 
@@ -40,27 +42,35 @@ class AndroidCpuCollectorTest {
 
     @Test
     fun `collect works only after setup`() {
-        val data = fixture.getSut().collect()
-        assertNull(data)
+        val data = PerformanceCollectionData()
+        fixture.getSut().collect(listOf(data))
+        data.commitData()
+        assertTrue(data.cpuData.isEmpty())
     }
 
     @Test
-    fun `when collect, both native and heap memory are collected`() {
+    fun `when collect cpu is collected`() {
+        val data = PerformanceCollectionData()
         val collector = fixture.getSut()
         collector.setup()
-        val data = collector.collect()
-        assertNotNull(data)
-        assertNotEquals(0.0, data.cpuUsagePercentage)
-        assertNotEquals(0, data.timestampMillis)
+        collector.collect(listOf(data))
+        data.commitData()
+        val cpuData = data.cpuData
+        assertNotNull(data.cpuData)
+        assertFalse(data.cpuData.isEmpty())
+        assertNotEquals(0.0, cpuData[0].cpuUsagePercentage)
+        assertNotEquals(0, cpuData[0].timestampMillis)
     }
 
     @Test
     fun `collector works only on api 21+`() {
+        val data = PerformanceCollectionData()
         val mockBuildInfoProvider = mock<BuildInfoProvider>()
         whenever(mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
         val collector = fixture.getSut(mockBuildInfoProvider)
         collector.setup()
-        val data = collector.collect()
-        assertNull(data)
+        collector.collect(listOf(data))
+        data.commitData()
+        assertTrue(data.cpuData.isEmpty())
     }
 }

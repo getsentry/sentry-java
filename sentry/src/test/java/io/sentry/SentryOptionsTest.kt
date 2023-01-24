@@ -266,27 +266,8 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, memoryCollector is noop`() {
-        assert(SentryOptions().memoryCollector == NoOpMemoryCollector.getInstance())
-    }
-
-    @Test
-    fun `when a null memoryCollector is set, memoryCollector is noop`() {
-        val options = SentryOptions()
-        options.setMemoryCollector(null)
-        assert(SentryOptions().memoryCollector == NoOpMemoryCollector.getInstance())
-    }
-
-    @Test
-    fun `when options is initialized, cpuCollector is noop`() {
-        assert(SentryOptions().cpuCollector == NoOpCpuCollector.getInstance())
-    }
-
-    @Test
-    fun `when a null cpuCollector is set, cpuCollector is noop`() {
-        val options = SentryOptions()
-        options.setCpuCollector(null)
-        assert(SentryOptions().cpuCollector == NoOpCpuCollector.getInstance())
+    fun `when options is initialized, collector is empty list`() {
+        assertTrue(SentryOptions().collectors.isEmpty())
     }
 
     @Test

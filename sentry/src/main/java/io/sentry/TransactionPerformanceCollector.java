@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -15,46 +16,26 @@ public final class TransactionPerformanceCollector {
   private static final long TRANSACTION_COLLECTION_INTERVAL_MILLIS = 100;
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
   private final @NotNull Object timerLock = new Object();
-  private volatile @NotNull Timer timer = new Timer();
+  private volatile @Nullable Timer timer = null;
   private final @NotNull Map<String, PerformanceCollectionData> performanceDataMap =
       new ConcurrentHashMap<>();
-  private @Nullable IMemoryCollector memoryCollector = null;
-  private @Nullable ICpuCollector cpuCollector = null;
+  private final @NotNull List<ICollector> collectors;
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
 
   public TransactionPerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
+    this.collectors = options.getCollectors();
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull ITransaction transaction) {
-    // We are putting the TransactionPerformanceCollector in the options, so we want to wait until
-    // the options are customized before reading the collectors
-    if (memoryCollector == null) {
-      this.memoryCollector = options.getMemoryCollector();
-    }
-    if (cpuCollector == null) {
-      this.cpuCollector = options.getCpuCollector();
-    }
-    boolean isMemoryCollectorNoOp = memoryCollector instanceof NoOpMemoryCollector;
-    boolean isCpuCollectorNoOp = cpuCollector instanceof NoOpCpuCollector;
-
-    if (isMemoryCollectorNoOp) {
+    if (collectors.isEmpty()) {
       options
           .getLogger()
           .log(
               SentryLevel.INFO,
-              "Memory collector is a NoOpCollector. Memory stats will not be captured during transactions.");
-    }
-    if (isCpuCollectorNoOp) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "Cpu collector is a NoOpCollector. Cpu stats will not be captured during transactions.");
-    }
-    if (isMemoryCollectorNoOp && isCpuCollectorNoOp) {
+              "No collector found. Performance stats will not be captured during transactions.");
       return;
     }
 
@@ -73,22 +54,28 @@ public final class TransactionPerformanceCollector {
     }
     if (!isStarted.getAndSet(true)) {
       synchronized (timerLock) {
-        cpuCollector.setup();
+        for (ICollector collector : collectors) {
+          collector.setup();
+        }
+        if (timer == null) {
+          timer = new Timer(true);
+        }
+        // We schedule the timer to start after a delay, so we let some time pass between setup()
+        // and collect() calls.
+        // This way ICollectors that collect average stats based on time intervals, like
+        // AndroidCpuCollector, can have an actual time interval to evaluate.
         timer.scheduleAtFixedRate(
             new TimerTask() {
               @Override
               public void run() {
-                MemoryCollectionData memoryData = null;
-                if (memoryCollector != null) {
-                  memoryData = memoryCollector.collect();
-                }
-                CpuCollectionData cpuData = null;
-                if (cpuCollector != null) {
-                  cpuData = cpuCollector.collect();
-                }
                 synchronized (timerLock) {
+                  for (ICollector collector : collectors) {
+                    collector.collect(performanceDataMap.values());
+                  }
+                  // We commit data after calling all collectors.
+                  // This way we avoid issues caused by having multiple cpu or memory collectors.
                   for (PerformanceCollectionData data : performanceDataMap.values()) {
-                    data.addData(memoryData, cpuData);
+                    data.commitData();
                   }
                 }
               }
@@ -101,13 +88,15 @@ public final class TransactionPerformanceCollector {
 
   public @Nullable PerformanceCollectionData stop(final @NotNull ITransaction transaction) {
     synchronized (timerLock) {
-      PerformanceCollectionData memoryData =
+      PerformanceCollectionData data =
           performanceDataMap.remove(transaction.getEventId().toString());
       if (performanceDataMap.isEmpty() && isStarted.getAndSet(false)) {
-        timer.cancel();
-        timer = new Timer();
+        if (timer != null) {
+          timer.cancel();
+          timer = null;
+        }
       }
-      return memoryData;
+      return data;
     }
   }
 }

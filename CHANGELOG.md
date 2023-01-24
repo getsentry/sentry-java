@@ -7,6 +7,26 @@
 - Send cpu usage percentage in profile payload ([#2469](https://github.com/getsentry/sentry-java/pull/2469))
 - Send transaction memory stats in profile payload ([#2447](https://github.com/getsentry/sentry-java/pull/2447))
 - Add cpu usage collection ([#2462](https://github.com/getsentry/sentry-java/pull/2462))
+- Improve ANR implementation: ([#2475](https://github.com/getsentry/sentry-java/pull/2475))
+  - Add `abnormal_mechanism` to sessions for ANR rate calculation
+  - Always attach thread dump to ANR events
+  - Distinguish between foreground and background ANRs
+- Improve possible date precision to 10 μs ([#2451](https://github.com/getsentry/sentry-java/pull/2451))
+
+### Fixes
+
+- Expand guard against CVE-2018-9492 "Privilege Escalation via Content Provider" ([#2482](https://github.com/getsentry/sentry-java/pull/2482))
+
+## 6.12.1
+
+### Fixes
+
+- Create timer in `TransactionPerformanceCollector` lazily ([#2478](https://github.com/getsentry/sentry-java/pull/2478))
+
+## 6.12.0
+
+### Features
+
 - Attach View Hierarchy to the errored/crashed events ([#2440](https://github.com/getsentry/sentry-java/pull/2440))
 - Collect memory usage in transactions ([#2445](https://github.com/getsentry/sentry-java/pull/2445))
 - Add `traceOptionsRequests` option to disable tracing of OPTIONS requests ([#2453](https://github.com/getsentry/sentry-java/pull/2453))
@@ -17,6 +37,7 @@
 - Use a single TransactionPerfomanceCollector ([#2464](https://github.com/getsentry/sentry-java/pull/2464))
 - Don't override sdk name with Timber ([#2450](https://github.com/getsentry/sentry-java/pull/2450))
 - Set transactionNameSource to CUSTOM when setting transaction name ([#2405](https://github.com/getsentry/sentry-java/pull/2405))
+- Guard against CVE-2018-9492 "Privilege Escalation via Content Provider" ([#2466](https://github.com/getsentry/sentry-java/pull/2466))
 
 ## 6.11.0
 
