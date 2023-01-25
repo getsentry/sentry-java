@@ -378,7 +378,7 @@ class AndroidTransactionProfilerTest {
         val profiler = fixture.getSut(context)
         val memoryCollectionData = PerformanceCollectionData()
         memoryCollectionData.addMemoryData(MemoryCollectionData(1, 2, 3))
-        memoryCollectionData.addCpuData(CpuCollectionData(1, 4))
+        memoryCollectionData.addCpuData(CpuCollectionData(1, 1.4))
         memoryCollectionData.commitData()
         memoryCollectionData.addMemoryData(MemoryCollectionData(2, 3, 4))
         memoryCollectionData.commitData()

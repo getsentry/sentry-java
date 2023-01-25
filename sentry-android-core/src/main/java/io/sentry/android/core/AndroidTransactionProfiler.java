@@ -418,7 +418,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private void putPerformanceCollectionDataInMeasurements(
       final @Nullable PerformanceCollectionData performanceCollectionData) {
     if (performanceCollectionData != null) {
-      List<MemoryCollectionData> memoryCollectionData = performanceCollectionData.getMemoryData();
       final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
           new ArrayDeque<>();
       final @NotNull ArrayDeque<ProfileMeasurementValue> nativeMemoryUsageMeasurements =
