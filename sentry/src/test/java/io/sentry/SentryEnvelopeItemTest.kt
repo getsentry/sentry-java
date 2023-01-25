@@ -6,6 +6,7 @@ import io.sentry.protocol.ViewHierarchy
 import io.sentry.test.injectForField
 import io.sentry.vendor.Base64
 import org.junit.Assert.assertArrayEquals
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -27,6 +28,11 @@ class SentryEnvelopeItemTest {
     private class Fixture {
         val options = SentryOptions()
         val serializer = JsonSerializer(options)
+        val errorSerializer: JsonSerializer = mock {
+            on(it.serialize(any<JsonSerializable>(), any())).then {
+                throw Exception("Mocked exception.")
+            }
+        }
         val pathname = "hello.txt"
         val filename = pathname
         val bytes = "hello".toByteArray()
@@ -248,6 +254,20 @@ class SentryEnvelopeItemTest {
                 "allowed size of ${fixture.maxAttachmentSize} bytes.",
             exception.message
         )
+    }
+
+    @Test
+    fun `fromAttachment with bytesFrom serializable are null`() {
+        val attachment = Attachment(mock<JsonSerializable>(), "mock-file-name", null, null, false)
+
+        val item = SentryEnvelopeItem.fromAttachment(fixture.errorSerializer, fixture.options.logger, attachment, fixture.maxAttachmentSize)
+
+        assertFailsWith<SentryEnvelopeException>(
+            "Couldn't attach the attachment ${attachment.filename}.\n" +
+                "Please check that either bytes or a path is set."
+        ) {
+            item.data
+        }
     }
 
     @Test
