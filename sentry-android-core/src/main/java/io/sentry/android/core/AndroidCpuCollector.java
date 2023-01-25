@@ -71,16 +71,16 @@ public final class AndroidCpuCollector implements ICollector {
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP || !isEnabled) {
       return;
     }
-    long nowNanos = SystemClock.elapsedRealtimeNanos();
-    long realTimeNanosDiff = nowNanos - lastRealtimeNanos;
+    final long nowNanos = SystemClock.elapsedRealtimeNanos();
+    final long realTimeNanosDiff = nowNanos - lastRealtimeNanos;
     lastRealtimeNanos = nowNanos;
-    long cpuNanos = readTotalCpuNanos();
-    long cpuNanosDiff = cpuNanos - lastCpuNanos;
+    final long cpuNanos = readTotalCpuNanos();
+    final long cpuNanosDiff = cpuNanos - lastCpuNanos;
     lastCpuNanos = cpuNanos;
     // Later we need to divide the percentage by the number of cores, otherwise we could
     // get a percentage value higher than 1. We also want to send the percentage as a
     // number from 0 to 100, so we are going to multiply it by 100
-    double cpuUsagePercentage = cpuNanosDiff / (double) realTimeNanosDiff;
+    final double cpuUsagePercentage = cpuNanosDiff / (double) realTimeNanosDiff;
 
     CpuCollectionData cpuData =
         new CpuCollectionData(
@@ -106,15 +106,20 @@ public final class AndroidCpuCollector implements ICollector {
     if (stat != null) {
       stat = stat.trim();
       String[] stats = stat.split("[\n\t\r ]");
-      // Amount of clock ticks this process has been scheduled in user mode
-      long uTime = Long.parseLong(stats[13]);
-      // Amount of clock ticks this process has been scheduled in kernel mode
-      long sTime = Long.parseLong(stats[14]);
-      // Amount of clock ticks this process' waited-for children has been scheduled in user mode
-      long cuTime = Long.parseLong(stats[15]);
-      // Amount of clock ticks this process' waited-for children has been scheduled in kernel mode
-      long csTime = Long.parseLong(stats[16]);
-      return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
+      try {
+        // Amount of clock ticks this process has been scheduled in user mode
+        long uTime = Long.parseLong(stats[13]);
+        // Amount of clock ticks this process has been scheduled in kernel mode
+        long sTime = Long.parseLong(stats[14]);
+        // Amount of clock ticks this process' waited-for children has been scheduled in user mode
+        long cuTime = Long.parseLong(stats[15]);
+        // Amount of clock ticks this process' waited-for children has been scheduled in kernel mode
+        long csTime = Long.parseLong(stats[16]);
+        return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
+      } catch (NumberFormatException e) {
+        logger.log(SentryLevel.ERROR, "Error parsing /proc/self/stat file.", e);
+        return 0;
+      }
     }
     return 0;
   }

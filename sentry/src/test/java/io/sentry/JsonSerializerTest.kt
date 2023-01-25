@@ -522,6 +522,16 @@ class JsonSerializerTest {
                     ProfileMeasurement(
                         ProfileMeasurement.UNIT_HZ,
                         listOf(ProfileMeasurementValue(1, 60.1))
+                    ),
+                ProfileMeasurement.ID_MEMORY_FOOTPRINT to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_BYTES,
+                        listOf(ProfileMeasurementValue(2, 100.52))
+                    ),
+                ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_BYTES,
+                        listOf(ProfileMeasurementValue(3, 104.52))
                     )
             )
         )
@@ -577,6 +587,26 @@ class JsonSerializerTest {
                             mapOf(
                                 "value" to 60.1,
                                 "elapsed_since_start_ns" to "1"
+                            )
+                        )
+                    ),
+                ProfileMeasurement.ID_MEMORY_FOOTPRINT to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_BYTES,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 100.52,
+                                "elapsed_since_start_ns" to "2"
+                            )
+                        )
+                    ),
+                ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_BYTES,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 104.52,
+                                "elapsed_since_start_ns" to "3"
                             )
                         )
                     )
@@ -639,6 +669,18 @@ class JsonSerializerTest {
                                     "values":[
                                         {"value":"100","elapsed_since_start_ns":"2"}
                                     ]
+                                },
+                                "memory_footprint": {
+                                    "unit":"byte",
+                                    "values":[
+                                        {"value":"1000","elapsed_since_start_ns":"3"}
+                                    ]
+                                },
+                                "memory_native_footprint": {
+                                    "unit":"byte",
+                                    "values":[
+                                        {"value":"1100","elapsed_since_start_ns":"4"}
+                                    ]
                                 }
                             },
                             "transaction_name":"transactionName",
@@ -692,6 +734,14 @@ class JsonSerializerTest {
             ProfileMeasurement.ID_FROZEN_FRAME_RENDERS to ProfileMeasurement(
                 ProfileMeasurement.UNIT_NANOSECONDS,
                 listOf(ProfileMeasurementValue(2, 100))
+            ),
+            ProfileMeasurement.ID_MEMORY_FOOTPRINT to ProfileMeasurement(
+                ProfileMeasurement.UNIT_BYTES,
+                listOf(ProfileMeasurementValue(3, 1000))
+            ),
+            ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to ProfileMeasurement(
+                ProfileMeasurement.UNIT_BYTES,
+                listOf(ProfileMeasurementValue(4, 1100))
             )
         )
         assertEquals(expectedMeasurements, profilingTraceData.measurementsMap)
@@ -745,6 +795,7 @@ class JsonSerializerTest {
         val profileMeasurementValue = fixture.serializer.deserialize(StringReader(json), ProfileMeasurementValue::class.java)
         val expected = ProfileMeasurementValue(1, 60.1)
         assertEquals(expected, profileMeasurementValue)
+        assertEquals(60.1, profileMeasurementValue?.value)
     }
 
     @Test

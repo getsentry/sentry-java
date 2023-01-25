@@ -60,6 +60,10 @@ public final class TransactionPerformanceCollector {
         if (timer == null) {
           timer = new Timer(true);
         }
+        // We schedule the timer to start after a delay, so we let some time pass between setup()
+        // and collect() calls.
+        // This way ICollectors that collect average stats based on time intervals, like
+        // AndroidCpuCollector, can have an actual time interval to evaluate.
         timer.scheduleAtFixedRate(
             new TimerTask() {
               @Override
