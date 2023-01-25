@@ -4,6 +4,7 @@
 
 ### Features
 
+- Send cpu usage percentage in profile payload ([#2469](https://github.com/getsentry/sentry-java/pull/2469))
 - Send transaction memory stats in profile payload ([#2447](https://github.com/getsentry/sentry-java/pull/2447))
 - Add cpu usage collection ([#2462](https://github.com/getsentry/sentry-java/pull/2462))
 - Improve ANR implementation: ([#2475](https://github.com/getsentry/sentry-java/pull/2475))

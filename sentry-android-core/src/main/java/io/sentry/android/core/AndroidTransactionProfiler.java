@@ -11,6 +11,7 @@ import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
 import android.view.FrameMetrics;
+import io.sentry.CpuCollectionData;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
@@ -417,12 +418,18 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private void putPerformanceCollectionDataInMeasurements(
       final @Nullable PerformanceCollectionData performanceCollectionData) {
     if (performanceCollectionData != null) {
-      List<MemoryCollectionData> memoryCollectionData = performanceCollectionData.getMemoryData();
       final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
           new ArrayDeque<>();
       final @NotNull ArrayDeque<ProfileMeasurementValue> nativeMemoryUsageMeasurements =
           new ArrayDeque<>();
-      for (MemoryCollectionData memoryData : memoryCollectionData) {
+      final @NotNull ArrayDeque<ProfileMeasurementValue> cpuUsageMeasurements = new ArrayDeque<>();
+      for (CpuCollectionData cpuData : performanceCollectionData.getCpuData()) {
+        cpuUsageMeasurements.add(
+            new ProfileMeasurementValue(
+                TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) - transactionStartNanos,
+                cpuData.getCpuUsagePercentage()));
+      }
+      for (MemoryCollectionData memoryData : performanceCollectionData.getMemoryData()) {
         if (memoryData.getUsedHeapMemory() > -1) {
           memoryUsageMeasurements.add(
               new ProfileMeasurementValue(
@@ -437,6 +444,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
                       - transactionStartNanos,
                   memoryData.getUsedNativeMemory()));
         }
+      }
+      if (!cpuUsageMeasurements.isEmpty()) {
+        measurementsMap.put(
+            ProfileMeasurement.ID_CPU_USAGE,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_PERCENT, cpuUsageMeasurements));
       }
       if (!memoryUsageMeasurements.isEmpty()) {
         measurementsMap.put(
