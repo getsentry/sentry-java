@@ -34,7 +34,7 @@ class SentryTracerTest {
             options.environment = "environment"
             options.release = "release@3.0.0"
             hub = spy(Hub(options))
-            transactionPerformanceCollector = spy(TransactionPerformanceCollector(options))
+            transactionPerformanceCollector = spy(DefaultTransactionPerformanceCollector(options))
             hub.bindClient(mock())
         }
 

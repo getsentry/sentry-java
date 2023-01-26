@@ -26,7 +26,7 @@ import kotlin.test.assertTrue
 
 class TransactionPerformanceCollectorTest {
 
-    private val className = "io.sentry.TransactionPerformanceCollector"
+    private val className = "io.sentry.DefaultTransactionPerformanceCollector"
     private val ctorTypes: Array<Class<*>> = arrayOf(SentryOptions::class.java)
     private val fixture = Fixture()
     private val mainThreadChecker = MainThreadChecker.getInstance()
@@ -73,7 +73,7 @@ class TransactionPerformanceCollectorTest {
             }
             transaction1 = SentryTracer(TransactionContext("", ""), hub)
             transaction2 = SentryTracer(TransactionContext("", ""), hub)
-            val collector = TransactionPerformanceCollector(options)
+            val collector = DefaultTransactionPerformanceCollector(options)
             val timer: Timer = collector.getProperty("timer") ?: Timer(true)
             mockTimer = spy(timer)
             collector.injectForField("timer", mockTimer)
