@@ -61,15 +61,15 @@ public final class DefaultTransactionPerformanceCollector
         }
         // We schedule the timer to call setup() on collectors immediately in the background.
         timer.schedule(
-          new TimerTask() {
-            @Override
-            public void run() {
-              for (ICollector collector : collectors) {
-                collector.setup();
+            new TimerTask() {
+              @Override
+              public void run() {
+                for (ICollector collector : collectors) {
+                  collector.setup();
+                }
               }
-            }
-          },
-          0L);
+            },
+            0L);
         // We schedule the timer to start after a delay, so we let some time pass between setup()
         // and collect() calls.
         // This way ICollectors that collect average stats based on time intervals, like
