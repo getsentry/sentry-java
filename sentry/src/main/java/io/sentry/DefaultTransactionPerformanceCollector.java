@@ -98,16 +98,16 @@ public final class DefaultTransactionPerformanceCollector
 
   @Override
   public @Nullable PerformanceCollectionData stop(final @NotNull ITransaction transaction) {
-    synchronized (timerLock) {
-      PerformanceCollectionData data =
-          performanceDataMap.remove(transaction.getEventId().toString());
-      if (performanceDataMap.isEmpty() && isStarted.getAndSet(false)) {
+    PerformanceCollectionData data =
+      performanceDataMap.remove(transaction.getEventId().toString());
+    if (performanceDataMap.isEmpty() && isStarted.getAndSet(false)) {
+      synchronized (timerLock) {
         if (timer != null) {
           timer.cancel();
           timer = null;
         }
       }
-      return data;
     }
+    return data;
   }
 }
