@@ -375,6 +375,8 @@ class SentryAppenderTest {
                                 BuildConfig.VERSION_NAME == pkg.version
                         }
                     )
+                    assertNotNull(it.integrations)
+                    assertTrue(it.integrations!!.contains("Logback"))
                 }
             },
             anyOrNull()

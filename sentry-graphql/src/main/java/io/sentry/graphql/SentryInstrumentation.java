@@ -14,13 +14,15 @@ import graphql.schema.GraphQLOutputType;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.IntegrationName;
 import io.sentry.SpanStatus;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class SentryInstrumentation extends SimpleInstrumentation {
+public final class SentryInstrumentation extends SimpleInstrumentation implements IntegrationName {
   private final @NotNull IHub hub;
   private final @Nullable BeforeSpanCallback beforeSpan;
 
@@ -28,6 +30,11 @@ public final class SentryInstrumentation extends SimpleInstrumentation {
       final @NotNull IHub hub, final @Nullable BeforeSpanCallback beforeSpan) {
     this.hub = Objects.requireNonNull(hub, "hub is required");
     this.beforeSpan = beforeSpan;
+    SdkVersion sdkVersion = hub.getOptions().getSdkVersion();
+    if (sdkVersion != null) {
+      addIntegrationToSdkVersion(sdkVersion);
+      sdkVersion.addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
+    }
   }
 
   public SentryInstrumentation(final @Nullable BeforeSpanCallback beforeSpan) {

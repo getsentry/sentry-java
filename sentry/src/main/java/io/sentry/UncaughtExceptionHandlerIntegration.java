@@ -83,9 +83,7 @@ public final class UncaughtExceptionHandlerIntegration
           .getLogger()
           .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
       final SdkVersion sdkVersion = this.options.getSdkVersion();
-      if (sdkVersion != null) {
-        sdkVersion.addIntegration("UncaughtException");
-      }
+      addIntegrationToSdkVersion(sdkVersion);
     }
   }
 

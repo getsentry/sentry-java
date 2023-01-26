@@ -121,9 +121,7 @@ public final class UserInteractionIntegration
         application.registerActivityLifecycleCallbacks(this);
         this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
         final SdkVersion sdkVersion = this.options.getSdkVersion();
-        if (sdkVersion != null) {
-          sdkVersion.addIntegration("UserInteraction");
-        }
+        addIntegrationToSdkVersion(sdkVersion);
       } else {
         options
             .getLogger()

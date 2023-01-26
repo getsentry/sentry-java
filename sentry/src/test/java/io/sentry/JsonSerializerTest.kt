@@ -381,7 +381,7 @@ class JsonSerializerTest {
         assertEquals("1.2.3", sdkInfo.version)
 
         assertNotNull(sdkInfo.integrations)
-        assertTrue(sdkInfo.integrations!!.any { it == "NdkIntegration" })
+        assertTrue(sdkInfo.integrations!!.contains("Ndk"))
 
         assertNotNull(sdkInfo.packages)
 

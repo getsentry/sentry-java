@@ -9,6 +9,7 @@ import io.sentry.Hint
 import io.sentry.HubAdapter
 import io.sentry.IHub
 import io.sentry.ITransaction
+import io.sentry.IntegrationName
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
@@ -32,7 +33,7 @@ class SentryNavigationListener @JvmOverloads constructor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val enableNavigationBreadcrumbs: Boolean = true,
     private val enableNavigationTracing: Boolean = true
-) : NavController.OnDestinationChangedListener {
+) : NavController.OnDestinationChangedListener, IntegrationName {
 
     private var previousDestinationRef: WeakReference<NavDestination>? = null
     private var previousArgs: Bundle? = null
@@ -42,7 +43,10 @@ class SentryNavigationListener @JvmOverloads constructor(
     private var activeTransaction: ITransaction? = null
 
     init {
-        hub.options.sdkVersion?.addIntegration("Navigation")
+        hub.options.sdkVersion?.let { sdkVersion ->
+            addIntegrationToSdkVersion(sdkVersion)
+            sdkVersion.addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
+        }
     }
 
     override fun onDestinationChanged(

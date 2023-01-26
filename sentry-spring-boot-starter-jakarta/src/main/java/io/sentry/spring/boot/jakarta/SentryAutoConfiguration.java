@@ -6,6 +6,7 @@ import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransportFactory;
 import io.sentry.Integration;
+import io.sentry.IntegrationName;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
@@ -59,7 +60,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sentry.dsn")
 @Open
-public class SentryAutoConfiguration {
+public class SentryAutoConfiguration implements IntegrationName {
 
   /** Registers general purpose Sentry related beans. */
   @Configuration(proxyBeanMethods = false)

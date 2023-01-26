@@ -3,12 +3,13 @@ public final class io/sentry/log4j2/BuildConfig {
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
-public class io/sentry/log4j2/SentryAppender : org/apache/logging/log4j/core/appender/AbstractAppender {
+public class io/sentry/log4j2/SentryAppender : org/apache/logging/log4j/core/appender/AbstractAppender, io/sentry/IntegrationName {
 	public fun <init> (Ljava/lang/String;Lorg/apache/logging/log4j/core/Filter;Ljava/lang/String;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;Ljava/lang/Boolean;Lio/sentry/ITransportFactory;Lio/sentry/IHub;[Ljava/lang/String;)V
 	public fun append (Lorg/apache/logging/log4j/core/LogEvent;)V
 	public static fun createAppender (Ljava/lang/String;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;Ljava/lang/String;Ljava/lang/Boolean;Lorg/apache/logging/log4j/core/Filter;Ljava/lang/String;)Lio/sentry/log4j2/SentryAppender;
 	protected fun createBreadcrumb (Lorg/apache/logging/log4j/core/LogEvent;)Lio/sentry/Breadcrumb;
 	protected fun createEvent (Lorg/apache/logging/log4j/core/LogEvent;)Lio/sentry/SentryEvent;
+	public fun getIntegrationName ()Ljava/lang/String;
 	public fun start ()V
 }
 

@@ -18,6 +18,7 @@ import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
 import io.sentry.Integration;
+import io.sentry.IntegrationName;
 import io.sentry.Scope;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
@@ -40,7 +41,7 @@ import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.annotations.VisibleForTesting;
 
 public final class ActivityLifecycleIntegration
-    implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
+    implements Integration, IntegrationName, Closeable, Application.ActivityLifecycleCallbacks {
 
   static final String UI_LOAD_OP = "ui.load";
   static final String APP_START_WARM = "app.start.warm";
@@ -113,9 +114,7 @@ public final class ActivityLifecycleIntegration
       application.registerActivityLifecycleCallbacks(this);
       this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
       final SdkVersion sdkVersion = this.options.getSdkVersion();
-      if (sdkVersion != null) {
-        sdkVersion.addIntegration("ActivityLifecycle");
-      }
+      addIntegrationToSdkVersion(sdkVersion);
     }
   }
 

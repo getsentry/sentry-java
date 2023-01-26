@@ -55,9 +55,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
 
           options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
           final SdkVersion sdkVersion = this.options.getSdkVersion();
-          if (sdkVersion != null) {
-            sdkVersion.addIntegration("PhoneState");
-          }
+          addIntegrationToSdkVersion(sdkVersion);
         } catch (Throwable e) {
           this.options
               .getLogger()

@@ -12,6 +12,7 @@ import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 class EnableSentryTest {
     private val contextRunner = ApplicationContextRunner()
@@ -49,6 +50,8 @@ class EnableSentryTest {
             assertThat(options.sdkVersion!!.version).isEqualTo(BuildConfig.VERSION_NAME)
             assertThat(options.sdkVersion!!.packages).isNotNull
             assertThat(options.sdkVersion!!.packages!!.map { pkg -> pkg.name }).contains("maven:io.sentry:sentry-spring")
+            assertThat(options.sdkVersion!!.integrations).isNotNull
+            assertThat(options.sdkVersion!!.integrations).contains("Spring")
         }
     }
 

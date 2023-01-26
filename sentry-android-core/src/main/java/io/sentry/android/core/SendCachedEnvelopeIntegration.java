@@ -73,7 +73,6 @@ final class SendCachedEnvelopeIntegration implements Integration {
               .log(SentryLevel.DEBUG, "Synchronous send timed out, continuing in the background.");
         }
       }
-
       androidOptions.getLogger().log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");
     } catch (Throwable e) {
       androidOptions

@@ -14,6 +14,7 @@ import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.HubAdapter;
 import io.sentry.ITransportFactory;
+import io.sentry.IntegrationName;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -35,7 +36,8 @@ import org.jetbrains.annotations.Nullable;
 
 /** Appender for logback in charge of sending the logged events to a Sentry server. */
 @Open
-public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent>
+    implements IntegrationName {
   // WARNING: Do not use these options in here, they are only to be used for startup
   private @NotNull SentryOptions options = new SentryOptions();
   private @Nullable ITransportFactory transportFactory;
@@ -196,6 +198,11 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
   }
 
+  @Override
+  public String getIntegrationName() {
+    return "Logback";
+  }
+
   private @NotNull SdkVersion createSdkVersion(@NotNull SentryOptions sentryOptions) {
     SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
@@ -204,7 +211,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
     sdkVersion.addPackage("maven:io.sentry:sentry-logback", version);
-    sdkVersion.addIntegration("Logback");
+    addIntegrationToSdkVersion(sdkVersion);
 
     return sdkVersion;
   }

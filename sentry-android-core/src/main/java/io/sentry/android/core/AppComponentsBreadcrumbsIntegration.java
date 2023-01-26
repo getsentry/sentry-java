@@ -55,9 +55,7 @@ public final class AppComponentsBreadcrumbsIntegration
             .getLogger()
             .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
         final SdkVersion sdkVersion = this.options.getSdkVersion();
-        if (sdkVersion != null) {
-          sdkVersion.addIntegration("AppComponentsBreadcrumbs");
-        }
+        addIntegrationToSdkVersion(sdkVersion);
       } catch (Throwable e) {
         this.options.setEnableAppComponentBreadcrumbs(false);
         options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");

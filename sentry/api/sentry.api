@@ -569,8 +569,13 @@ public final class io/sentry/Instrumenter : java/lang/Enum {
 	public static fun values ()[Lio/sentry/Instrumenter;
 }
 
-public abstract interface class io/sentry/Integration {
+public abstract interface class io/sentry/Integration : io/sentry/IntegrationName {
 	public abstract fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+}
+
+public abstract interface class io/sentry/IntegrationName {
+	public fun addIntegrationToSdkVersion (Lio/sentry/protocol/SdkVersion;)V
+	public fun getIntegrationName ()Ljava/lang/String;
 }
 
 public final class io/sentry/IpAddressUtils {
@@ -3033,9 +3038,10 @@ public final class io/sentry/protocol/SdkInfo$JsonKeys {
 
 public final class io/sentry/protocol/SdkVersion : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun addIntegration (Lio/sentry/Integration;)V
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
-	public fun getIntegrations ()Ljava/util/List;
+	public fun getIntegrations ()Ljava/util/Set;
 	public fun getName ()Ljava/lang/String;
 	public fun getPackages ()Ljava/util/List;
 	public fun getUnknown ()Ljava/util/Map;

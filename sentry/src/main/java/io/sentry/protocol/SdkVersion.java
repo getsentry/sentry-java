@@ -1,6 +1,7 @@
 package io.sentry.protocol;
 
 import io.sentry.ILogger;
+import io.sentry.Integration;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
@@ -105,6 +106,10 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
       integrations = new CopyOnWriteArraySet<>();
     }
     integrations.add(integration);
+  }
+
+  public void addIntegration(final @NotNull Integration integration) {
+    integration.getIntegrationName();
   }
 
   public @Nullable List<SentryPackage> getPackages() {

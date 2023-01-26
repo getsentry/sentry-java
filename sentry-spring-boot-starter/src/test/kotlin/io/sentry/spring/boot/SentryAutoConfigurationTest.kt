@@ -59,6 +59,7 @@ import javax.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryAutoConfigurationTest {
@@ -262,6 +263,8 @@ class SentryAutoConfigurationTest {
                         assertThat(sdk.packages).anyMatch { pkg ->
                             pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
                         }
+                        assertNotNull(sdk.integrations)
+                        assertTrue(sdk.integrations!!.contains("SpringBoot"))
                     },
                     anyOrNull()
                 )

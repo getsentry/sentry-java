@@ -102,4 +102,14 @@ class SentryTimberIntegrationTest {
             }
         )
     }
+
+    @Test
+    fun `Integrations adds itself to the integration list`() {
+        val sut = fixture.getSut()
+        sut.register(fixture.hub, fixture.options)
+
+        assertTrue(
+            fixture.options.sdkVersion!!.integrations!!.contains("Timber")
+        )
+    }
 }

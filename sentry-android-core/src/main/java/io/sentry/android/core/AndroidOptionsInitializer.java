@@ -238,8 +238,6 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
     options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
     options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
-
-
   }
 
   /**
@@ -308,18 +306,22 @@ final class AndroidOptionsInitializer {
   }
 
   private static void addGradlePluginIntegrationList(
-    final @NotNull Context context, final @NotNull SentryAndroidOptions options, final @NotNull ILogger logger) {
+      final @NotNull Context context,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull ILogger logger) {
     final AssetManager assets = context.getAssets();
     // one may have thousands of asset files and looking up this list might slow down the SDK init.
     // quite a bit, for this reason, we try to open the file directly and take care of errors
     // like FileNotFoundException
 
-    if(options.getSdkVersion() == null) {
+    if (options.getSdkVersion() == null) {
       return;
     }
 
     try (final BufferedReader reader =
-           new BufferedReader(new InputStreamReader(assets.open("sentry-gradle-plugin-integrations.txt"), Charset.forName("UTF-8")))) {
+        new BufferedReader(
+            new InputStreamReader(
+                assets.open("sentry-gradle-plugin-integrations.txt"), Charset.forName("UTF-8")))) {
       String integration = reader.readLine();
       while (integration != null) {
         options.getSdkVersion().addIntegration(integration);

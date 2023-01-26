@@ -55,9 +55,7 @@ public final class NdkIntegration implements Integration, Closeable {
 
         this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
         final SdkVersion sdkVersion = this.options.getSdkVersion();
-        if (sdkVersion != null) {
-          sdkVersion.addIntegration("Ndk");
-        }
+        addIntegrationToSdkVersion(sdkVersion);
       } catch (NoSuchMethodException e) {
         disableNdkIntegration(this.options);
         this.options

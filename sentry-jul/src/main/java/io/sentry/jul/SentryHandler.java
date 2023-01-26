@@ -7,6 +7,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.HubAdapter;
+import io.sentry.IntegrationName;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -32,7 +33,7 @@ import org.slf4j.MDC;
 
 /** Logging handler in charge of sending the java.util.logging records to a Sentry server. */
 @Open
-public class SentryHandler extends Handler {
+public class SentryHandler extends Handler implements IntegrationName {
   /** Name of the {@link SentryEvent} extra property containing the Thread id. */
   public static final String THREAD_ID = "thread_id";
   /**
@@ -277,9 +278,14 @@ public class SentryHandler extends Handler {
 
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
     sdkVersion.addPackage("maven:io.sentry:sentry-jul", version);
-    sdkVersion.addIntegration("jul");
+    addIntegrationToSdkVersion(sdkVersion);
 
     return sdkVersion;
+  }
+
+  @Override
+  public String getIntegrationName() {
+    return "Jul";
   }
 
   public void setPrintfStyle(final boolean printfStyle) {

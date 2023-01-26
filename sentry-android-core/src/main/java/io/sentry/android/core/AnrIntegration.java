@@ -11,8 +11,8 @@ import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.protocol.Mechanism;
-import io.sentry.util.HintUtils;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -75,9 +75,7 @@ public final class AnrIntegration implements Integration, Closeable {
 
           options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
           final SdkVersion sdkVersion = options.getSdkVersion();
-          if (sdkVersion != null) {
-            sdkVersion.addIntegration("Anr");
-          }
+          addIntegrationToSdkVersion(sdkVersion);
         }
       }
     }

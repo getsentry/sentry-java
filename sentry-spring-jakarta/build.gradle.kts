@@ -125,7 +125,7 @@ task("jakartaTestTransformation", JavaExec::class) {
 buildConfig {
     useJavaOutput()
     packageName("io.sentry.spring.jakarta")
-    buildConfigField("String", "SENTRY_SPRING_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_SDK_NAME}\"")
+    buildConfigField("String", "SENTRY_SPRING_JAKARTA_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_JAKARTA_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 

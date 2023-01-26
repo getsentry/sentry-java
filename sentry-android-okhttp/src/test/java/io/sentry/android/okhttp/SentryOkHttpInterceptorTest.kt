@@ -263,6 +263,7 @@ class SentryOkHttpInterceptorTest {
     @SuppressWarnings("SwallowedException")
     @Test
     fun `adds breadcrumb when http calls results in exception`() {
+        whenever(fixture.hub.options).thenReturn(SentryOptions())
         val interceptor = SentryOkHttpInterceptor(fixture.hub)
         val chain = mock<Interceptor.Chain>()
         whenever(chain.proceed(any())).thenThrow(IOException())
@@ -489,6 +490,7 @@ class SentryOkHttpInterceptorTest {
     @SuppressWarnings("SwallowedException")
     @Test
     fun `does not capture an error even if it throws`() {
+        whenever(fixture.hub.options).thenReturn(SentryOptions())
         val interceptor = SentryOkHttpInterceptor(
             fixture.hub,
             captureFailedRequests = true
