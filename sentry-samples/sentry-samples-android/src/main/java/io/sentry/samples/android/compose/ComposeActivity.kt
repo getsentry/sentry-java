@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalComposeUiApi::class)
+
 package io.sentry.samples.android.compose
 
 import android.os.Bundle
@@ -18,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.TextFieldValue
@@ -29,6 +32,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.sentry.Sentry
+import io.sentry.compose.sentryTraced
 import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.GithubAPI
 import kotlinx.coroutines.launch
@@ -58,14 +62,16 @@ fun Landing(
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .sentryTraced("landing")
+            .fillMaxSize()
     ) {
         Button(
             onClick = {
                 navigateGithub()
             },
             modifier = Modifier
-                .testTag("button_nav_github")
+                .sentryTraced("button_nav_github")
                 .padding(top = 32.dp)
         ) {
             Text("Navigate to Github Page")
@@ -73,7 +79,7 @@ fun Landing(
         Button(
             onClick = { navigateGithubWithArgs() },
             modifier = Modifier
-                .testTag("button_nav_github_args")
+                .sentryTraced("button_nav_github_args")
                 .padding(top = 32.dp)
         ) {
             Text("Navigate to Github Page With Args")
@@ -81,7 +87,7 @@ fun Landing(
         Button(
             onClick = { throw RuntimeException("Crash from Compose") },
             modifier = Modifier
-                .testTag("button_crash")
+                .sentryTraced("button_crash")
                 .padding(top = 32.dp)
         ) {
             Text("Crash from Compose")
@@ -105,7 +111,9 @@ fun Github(
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .sentryTraced("github-$user")
+            .fillMaxSize()
     ) {
         TextField(
             value = user,
@@ -133,7 +141,8 @@ fun Github(
 fun SampleNavigation(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Destination.Landing.route
+        startDestination = Destination.Landing.route,
+       // modifier = Modifier.sentryTraced("app")
     ) {
         composable(Destination.Landing.route) {
             Landing(
