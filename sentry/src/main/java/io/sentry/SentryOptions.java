@@ -397,7 +397,7 @@ public class SentryOptions {
 
   /** Performance collector that collect performance stats while transactions run. */
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
-      new TransactionPerformanceCollector(this);
+      NoOpTransactionPerformanceCollector.getInstance();
 
   /**
    * Adds an event processor
