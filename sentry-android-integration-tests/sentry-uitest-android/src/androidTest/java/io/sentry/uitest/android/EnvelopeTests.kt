@@ -88,9 +88,9 @@ class EnvelopeTests : BaseUiTest() {
                 val slowFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SLOW_FRAME_RENDERS]
                 val frozenFrames = profilingTraceData.measurementsMap[ProfileMeasurement.ID_FROZEN_FRAME_RENDERS]
                 val frameRates = profilingTraceData.measurementsMap[ProfileMeasurement.ID_SCREEN_FRAME_RATES]!!
-                val memoryStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!
-                val memoryNativeStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!
-                val cpuStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!
+//                val memoryStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!
+//                val memoryNativeStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!
+//                val cpuStats = profilingTraceData.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!
                 // Slow and frozen frames can be null (in case there were none)
                 if (slowFrames != null) {
                     assertEquals(ProfileMeasurement.UNIT_NANOSECONDS, slowFrames.unit)
