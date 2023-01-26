@@ -385,12 +385,6 @@ public class SentryOptions {
 
   private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
 
-  private @NotNull IMemoryCollector memoryCollector = NoOpMemoryCollector.getInstance();
-
-  /** Performance collector that collect performance stats while transactions run. */
-  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
-      new TransactionPerformanceCollector(this);
-
   // TODO this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
@@ -398,6 +392,12 @@ public class SentryOptions {
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
   private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
+
+  private final @NotNull List<ICollector> collectors = new ArrayList<>();
+
+  /** Performance collector that collect performance stats while transactions run. */
+  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
+      new TransactionPerformanceCollector(this);
 
   /**
    * Adds an event processor
@@ -1901,27 +1901,6 @@ public class SentryOptions {
   }
 
   /**
-   * Gets the memory collector used to collect memory usage while transactions run.
-   *
-   * @return the memory collector.
-   */
-  @ApiStatus.Internal
-  public @NotNull IMemoryCollector getMemoryCollector() {
-    return memoryCollector;
-  }
-
-  /**
-   * Sets the memory collector to collect memory usage during while transaction runs.
-   *
-   * @param memoryCollector - the memory collector. If null, a no op collector will be set.
-   */
-  @ApiStatus.Internal
-  public void setMemoryCollector(final @Nullable IMemoryCollector memoryCollector) {
-    this.memoryCollector =
-        memoryCollector != null ? memoryCollector : NoOpMemoryCollector.getInstance();
-  }
-
-  /**
    * Whether OPTIONS requests should be traced.
    *
    * @return true if OPTIONS requests should be traced
@@ -1954,6 +1933,26 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
     this.dateProvider = dateProvider;
+  }
+
+  /**
+   * Adds a ICollector.
+   *
+   * @param collector the ICollector.
+   */
+  @ApiStatus.Internal
+  public void addCollector(final @NotNull ICollector collector) {
+    collectors.add(collector);
+  }
+
+  /**
+   * Returns the list of ICollectors.
+   *
+   * @return the ICollector list.
+   */
+  @ApiStatus.Internal
+  public @NotNull List<ICollector> getCollectors() {
+    return collectors;
   }
 
   /** The BeforeSend callback */

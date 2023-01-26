@@ -10,5 +10,6 @@ public interface ITransactionProfiler {
   void onTransactionStart(@NotNull ITransaction transaction);
 
   @Nullable
-  ProfilingTraceData onTransactionFinish(@NotNull ITransaction transaction);
+  ProfilingTraceData onTransactionFinish(
+      @NotNull ITransaction transaction, @Nullable PerformanceCollectionData memoryCollectionData);
 }

@@ -11,10 +11,13 @@ import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
 import android.view.FrameMetrics;
+import io.sentry.CpuCollectionData;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ITransaction;
 import io.sentry.ITransactionProfiler;
+import io.sentry.MemoryCollectionData;
+import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfilingTraceData;
 import io.sentry.ProfilingTransactionData;
 import io.sentry.SentryLevel;
@@ -233,7 +236,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         options
             .getExecutorService()
             .schedule(
-                () -> timedOutProfilingData = onTransactionFinish(transaction, true),
+                () -> timedOutProfilingData = onTransactionFinish(transaction, true, null),
                 PROFILING_TIMEOUT_MILLIS);
 
     transactionStartNanos = SystemClock.elapsedRealtimeNanos();
@@ -247,11 +250,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @Override
   public @Nullable synchronized ProfilingTraceData onTransactionFinish(
-      final @NotNull ITransaction transaction) {
+      final @NotNull ITransaction transaction,
+      final @Nullable PerformanceCollectionData performanceCollectionData) {
     try {
       return options
           .getExecutorService()
-          .submit(() -> onTransactionFinish(transaction, false))
+          .submit(() -> onTransactionFinish(transaction, false, performanceCollectionData))
           .get();
     } catch (ExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, "Error finishing profiling: ", e);
@@ -263,7 +267,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @SuppressLint("NewApi")
   private @Nullable ProfilingTraceData onTransactionFinish(
-      final @NotNull ITransaction transaction, final boolean isTimeout) {
+      final @NotNull ITransaction transaction,
+      final boolean isTimeout,
+      final @Nullable PerformanceCollectionData performanceCollectionData) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
@@ -383,6 +389,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           ProfileMeasurement.ID_SCREEN_FRAME_RATES,
           new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
     }
+    putPerformanceCollectionDataInMeasurements(performanceCollectionData);
 
     // cpu max frequencies are read with a lambda because reading files is involved, so it will be
     // done in the background when the trace file is read
@@ -406,6 +413,54 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
             ? ProfilingTraceData.TRUNCATION_REASON_TIMEOUT
             : ProfilingTraceData.TRUNCATION_REASON_NORMAL,
         measurementsMap);
+  }
+
+  private void putPerformanceCollectionDataInMeasurements(
+      final @Nullable PerformanceCollectionData performanceCollectionData) {
+    if (performanceCollectionData != null) {
+      final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
+          new ArrayDeque<>();
+      final @NotNull ArrayDeque<ProfileMeasurementValue> nativeMemoryUsageMeasurements =
+          new ArrayDeque<>();
+      final @NotNull ArrayDeque<ProfileMeasurementValue> cpuUsageMeasurements = new ArrayDeque<>();
+      for (CpuCollectionData cpuData : performanceCollectionData.getCpuData()) {
+        cpuUsageMeasurements.add(
+            new ProfileMeasurementValue(
+                TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) - transactionStartNanos,
+                cpuData.getCpuUsagePercentage()));
+      }
+      for (MemoryCollectionData memoryData : performanceCollectionData.getMemoryData()) {
+        if (memoryData.getUsedHeapMemory() > -1) {
+          memoryUsageMeasurements.add(
+              new ProfileMeasurementValue(
+                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis())
+                      - transactionStartNanos,
+                  memoryData.getUsedHeapMemory()));
+        }
+        if (memoryData.getUsedNativeMemory() > -1) {
+          nativeMemoryUsageMeasurements.add(
+              new ProfileMeasurementValue(
+                  TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis())
+                      - transactionStartNanos,
+                  memoryData.getUsedNativeMemory()));
+        }
+      }
+      if (!cpuUsageMeasurements.isEmpty()) {
+        measurementsMap.put(
+            ProfileMeasurement.ID_CPU_USAGE,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_PERCENT, cpuUsageMeasurements));
+      }
+      if (!memoryUsageMeasurements.isEmpty()) {
+        measurementsMap.put(
+            ProfileMeasurement.ID_MEMORY_FOOTPRINT,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_BYTES, memoryUsageMeasurements));
+      }
+      if (!nativeMemoryUsageMeasurements.isEmpty()) {
+        measurementsMap.put(
+            ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_BYTES, nativeMemoryUsageMeasurements));
+      }
+    }
   }
 
   /**

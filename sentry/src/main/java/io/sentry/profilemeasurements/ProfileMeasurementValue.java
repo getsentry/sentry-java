@@ -31,6 +31,10 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     this.value = value.doubleValue();
   }
 
+  public double getValue() {
+    return value;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
