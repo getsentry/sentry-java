@@ -3,7 +3,9 @@ package io.sentry
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.test.injectForField
+import io.sentry.util.thread.MainThreadChecker
 import org.mockito.kotlin.any
+import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -27,6 +29,7 @@ class TransactionPerformanceCollectorTest {
     private val className = "io.sentry.DefaultTransactionPerformanceCollector"
     private val ctorTypes: Array<Class<*>> = arrayOf(SentryOptions::class.java)
     private val fixture = Fixture()
+    private val mainThreadChecker = MainThreadChecker.getInstance()
 
     private class Fixture {
         lateinit var transaction1: ITransaction
@@ -71,7 +74,7 @@ class TransactionPerformanceCollectorTest {
             transaction1 = SentryTracer(TransactionContext("", ""), hub)
             transaction2 = SentryTracer(TransactionContext("", ""), hub)
             val collector = DefaultTransactionPerformanceCollector(options)
-            val timer: Timer? = collector.getProperty("timer") ?: Timer(true)
+            val timer: Timer = collector.getProperty("timer") ?: Timer(true)
             mockTimer = spy(timer)
             collector.injectForField("timer", mockTimer)
             return collector
@@ -101,6 +104,7 @@ class TransactionPerformanceCollectorTest {
         val cpuCollector = mock<ICollector>()
         val collector = fixture.getSut(memoryCollector, cpuCollector)
         collector.start(fixture.transaction1)
+        Thread.sleep(300)
         verify(memoryCollector).setup()
         verify(cpuCollector).setup()
     }
@@ -196,5 +200,36 @@ class TransactionPerformanceCollectorTest {
 
         // We have the same number of memory and cpu data, even if we have 2 memory collectors and 1 cpu collector
         assertEquals(data1.memoryData.size, data1.cpuData.size)
+    }
+
+    @Test
+    fun `setup and collect happen on background thread`() {
+        val threadCheckerCollector = spy(ThreadCheckerCollector())
+        fixture.options.addCollector(threadCheckerCollector)
+        val collector = fixture.getSut()
+        // We have the ThreadCheckerCollector in the collectors
+        assertTrue(fixture.options.collectors.any { it is ThreadCheckerCollector })
+
+        collector.start(fixture.transaction1)
+        // Let's sleep to make the collector get values
+        Thread.sleep(300)
+        collector.stop(fixture.transaction1)
+
+        verify(threadCheckerCollector).setup()
+        verify(threadCheckerCollector, atLeast(1)).collect(any())
+    }
+
+    inner class ThreadCheckerCollector : ICollector {
+        override fun setup() {
+            if (mainThreadChecker.isMainThread) {
+                throw AssertionError("setup() was called in the main thread")
+            }
+        }
+
+        override fun collect(performanceCollectionData: MutableIterable<PerformanceCollectionData>) {
+            if (mainThreadChecker.isMainThread) {
+                throw AssertionError("collect() was called in the main thread")
+            }
+        }
     }
 }

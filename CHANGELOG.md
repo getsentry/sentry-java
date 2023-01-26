@@ -15,6 +15,7 @@
 
 ### Fixes
 
+- Fix performance collector setup called in main thread ([#2499](https://github.com/getsentry/sentry-java/pull/2499))
 - Expand guard against CVE-2018-9492 "Privilege Escalation via Content Provider" ([#2482](https://github.com/getsentry/sentry-java/pull/2482))
 - Prevent OOM by disabling TransactionPerformanceCollector for now ([#2498](https://github.com/getsentry/sentry-java/pull/2498))
 
