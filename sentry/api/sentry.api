@@ -183,6 +183,12 @@ public final class io/sentry/DateUtils {
 	public static fun toUtilDateNotNull (Lio/sentry/SentryDate;)Ljava/util/Date;
 }
 
+public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun start (Lio/sentry/ITransaction;)V
+	public fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
+}
+
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ILogger;)V
 	public fun getLogger ()Lio/sentry/ILogger;
@@ -856,6 +862,12 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
+}
+
+public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
+	public static fun getInstance ()Lio/sentry/NoOpTransactionPerformanceCollector;
+	public fun start (Lio/sentry/ITransaction;)V
+	public fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
 }
 
 public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionProfiler {
@@ -2060,10 +2072,9 @@ public final class io/sentry/TransactionOptions {
 	public fun setWaitForChildren (Z)V
 }
 
-public final class io/sentry/TransactionPerformanceCollector {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun start (Lio/sentry/ITransaction;)V
-	public fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
+public abstract interface class io/sentry/TransactionPerformanceCollector {
+	public abstract fun start (Lio/sentry/ITransaction;)V
+	public abstract fun stop (Lio/sentry/ITransaction;)Lio/sentry/PerformanceCollectionData;
 }
 
 public final class io/sentry/TypeCheckHint {
