@@ -34,7 +34,7 @@ class SentryTracerTest {
             options.environment = "environment"
             options.release = "release@3.0.0"
             hub = spy(Hub(options))
-            transactionPerformanceCollector = spy(TransactionPerformanceCollector(options))
+            transactionPerformanceCollector = spy(DefaultTransactionPerformanceCollector(options))
             hub.bindClient(mock())
         }
 
@@ -155,7 +155,7 @@ class SentryTracerTest {
             it.setTransactionProfiler(transactionProfiler)
         })
         tracer.finish()
-        verify(transactionProfiler, never()).onTransactionFinish(any())
+        verify(transactionProfiler, never()).onTransactionFinish(any(), anyOrNull())
     }
 
     @Test
@@ -166,7 +166,7 @@ class SentryTracerTest {
             it.setTransactionProfiler(transactionProfiler)
         }, samplingDecision = TracesSamplingDecision(true, null, true, null))
         tracer.finish()
-        verify(transactionProfiler).onTransactionFinish(any())
+        verify(transactionProfiler).onTransactionFinish(any(), anyOrNull())
     }
 
     @Test
