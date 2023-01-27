@@ -18,32 +18,17 @@ repositories {
 }
 
 dependencies {
-    implementation(Config.Libs.springBootStarterSecurity) {
-        exclude("org.springframework.boot", "spring-boot-starter-logging")
-    }
-    implementation(Config.Libs.springBootStarterWeb) {
-        exclude("org.springframework.boot", "spring-boot-starter-logging")
-    }
-    implementation(Config.Libs.springBootStarterWebflux) {
-        exclude("org.springframework.boot", "spring-boot-starter-logging")
-    }
-    implementation(Config.Libs.springBootStarterAop) {
-        exclude("org.springframework.boot", "spring-boot-starter-logging")
-    }
+    implementation(Config.Libs.springBootStarterSecurity)
+    implementation(Config.Libs.springBootStarterWeb)
+    implementation(Config.Libs.springBootStarterWebflux)
+    implementation(Config.Libs.springBootStarterAop)
     implementation(Config.Libs.aspectj)
-    implementation(Config.Libs.springBootStarter) {
-        exclude("org.springframework.boot", "spring-boot-starter-logging")
-    }
+    implementation(Config.Libs.springBootStarter)
     implementation(Config.Libs.kotlinReflect)
-    implementation(Config.Libs.springBootStarterJdbc) {
-        exclude("org.springframework.boot", "spring-boot-starter-logging")
-    }
+    implementation(Config.Libs.springBootStarterJdbc)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-    implementation(projects.sentrySpringBootStarter) {
-        exclude("org.springframework.boot", "spring-boot-starter-logging")
-    }
-    implementation(projects.sentryLog4j2)
-    implementation("org.springframework.boot:spring-boot-starter-log4j2")
+    implementation(projects.sentrySpringBootStarter)
+    implementation(projects.sentryLogback)
 
     // database query tracing
     implementation(projects.sentryJdbc)
