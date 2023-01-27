@@ -259,9 +259,9 @@ class SentryAutoConfigurationTest {
                         assertThat(event.sdk).isNotNull()
                         val sdk = event.sdk!!
                         assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
-                        assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME)
+                        assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME)
                         assertThat(sdk.packages).anyMatch { pkg ->
-                            pkg.name == "maven:io.sentry:sentry-spring-boot-starter" && pkg.version == BuildConfig.VERSION_NAME
+                            pkg.name == "maven:io.sentry:sentry-spring-boot-starter-jakarta" && pkg.version == BuildConfig.VERSION_NAME
                         }
                         assertNotNull(sdk.integrations)
                         assertTrue(sdk.integrations!!.contains("SpringBoot3"))

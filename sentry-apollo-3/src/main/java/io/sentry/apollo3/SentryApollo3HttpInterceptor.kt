@@ -83,6 +83,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
         }
     }
 
+    override fun getIntegrationName(): String {
+        return super.getIntegrationName().replace("Http", "")
+    }
+
     private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> {
         return headers.filterNot { it.name == SENTRY_APOLLO_3_VARIABLES || it.name == SENTRY_APOLLO_3_OPERATION_NAME || it.name == SENTRY_APOLLO_3_OPERATION_TYPE }
     }

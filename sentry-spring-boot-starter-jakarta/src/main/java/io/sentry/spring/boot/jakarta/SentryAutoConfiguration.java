@@ -114,7 +114,7 @@ public class SentryAutoConfiguration implements IntegrationName {
             }
           });
 
-      options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME);
+      options.setSentryClientName(BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME);
       options.setSdkVersion(createSdkVersion(options));
       if (options.getTracesSampleRate() == null) {
         options.setTracesSampleRate(0.0);
@@ -317,11 +317,11 @@ public class SentryAutoConfiguration implements IntegrationName {
         final @NotNull SentryOptions sentryOptions) {
       SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
-      final String name = BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME;
+      final String name = BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME;
       final String version = BuildConfig.VERSION_NAME;
       sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-      sdkVersion.addPackage("maven:io.sentry:sentry-spring-boot-starter", version);
+      sdkVersion.addPackage("maven:io.sentry:sentry-spring-boot-starter-jakarta", version);
       sdkVersion.addIntegration("SpringBoot3");
 
       return sdkVersion;

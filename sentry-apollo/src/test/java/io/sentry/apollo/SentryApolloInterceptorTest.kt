@@ -13,6 +13,7 @@ import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -33,7 +34,14 @@ class SentryApolloInterceptorTest {
 
     class Fixture {
         val server = MockWebServer()
-        val hub = mock<IHub>()
+        val hub = mock<IHub>().apply {
+            whenever(options).thenReturn(
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                    sdkVersion = SdkVersion("test", "version")
+                }
+            )
+        }
         private var interceptor = SentryApolloInterceptor(hub)
 
         @SuppressWarnings("LongParameterList")
@@ -56,12 +64,6 @@ class SentryApolloInterceptorTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             beforeSpan: SentryApolloInterceptor.BeforeSpanCallback? = null
         ): ApolloClient {
-            whenever(hub.options).thenReturn(
-                SentryOptions().apply {
-                    dsn = "http://key@localhost/proj"
-                }
-            )
-
             server.enqueue(
                 MockResponse()
                     .setBody(responseBody)
@@ -189,6 +191,17 @@ class SentryApolloInterceptorTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `sets SDKVersion Info`() {
+        assertNotNull(fixture.hub.options.sdkVersion!!.integrations)
+        assert(fixture.hub.options.sdkVersion!!.integrations!!.contains("Apollo"))
+        println(fixture.hub.options.sdkVersion!!.version)
+        assertNotNull(fixture.hub.options.sdkVersion!!.packages)
+        val packageInfo = fixture.hub.options.sdkVersion!!.packages!!.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo" }
+        assertNotNull(packageInfo)
+        assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
 
     private fun assertTransactionDetails(it: SentryTransaction) {

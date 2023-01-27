@@ -43,7 +43,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     }
     builder.addPropertyValue("dsn", annotationAttributes.getString("dsn"));
     builder.addPropertyValue("enableExternalConfiguration", true);
-    builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_SDK_NAME);
+    builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_JAKARTA_SDK_NAME);
     builder.addPropertyValue("sdkVersion", createSdkVersion());
     if (annotationAttributes.containsKey("sendDefaultPii")) {
       builder.addPropertyValue("sendDefaultPii", annotationAttributes.getBoolean("sendDefaultPii"));
@@ -81,11 +81,11 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     final SentryOptions defaultOptions = new SentryOptions();
     SdkVersion sdkVersion = defaultOptions.getSdkVersion();
 
-    final String name = BuildConfig.SENTRY_SPRING_SDK_NAME;
+    final String name = BuildConfig.SENTRY_SPRING_JAKARTA_SDK_NAME;
     final String version = BuildConfig.VERSION_NAME;
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 
-    sdkVersion.addPackage("maven:io.sentry:sentry-spring", version);
+    sdkVersion.addPackage("maven:io.sentry:sentry-spring-jakarta", version);
     sdkVersion.addIntegration("Spring6");
 
     return sdkVersion;

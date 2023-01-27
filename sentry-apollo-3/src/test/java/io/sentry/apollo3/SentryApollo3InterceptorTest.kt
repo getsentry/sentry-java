@@ -14,6 +14,7 @@ import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.BeforeSpanCallback
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -35,7 +36,15 @@ class SentryApollo3InterceptorTest {
 
     class Fixture {
         val server = MockWebServer()
-        val hub = mock<IHub>()
+        val hub = mock<IHub>().apply {
+            whenever(options).thenReturn(
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                    isTraceSampling = true
+                    sdkVersion = SdkVersion("test", "version")
+                }
+            )
+        }
         private var httpInterceptor = SentryApollo3HttpInterceptor(hub)
 
         @SuppressWarnings("LongParameterList")
@@ -59,13 +68,6 @@ class SentryApollo3InterceptorTest {
             addThirdPartyBaggageHeader: Boolean = false,
             beforeSpan: BeforeSpanCallback? = null
         ): ApolloClient {
-            whenever(hub.options).thenReturn(
-                SentryOptions().apply {
-                    dsn = "https://key@sentry.io/proj"
-                    isTraceSampling = true
-                }
-            )
-
             server.enqueue(
                 MockResponse()
                     .setBody(responseBody)
@@ -242,6 +244,17 @@ class SentryApollo3InterceptorTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `sets SDKVersion Info`() {
+        assertNotNull(fixture.hub.options.sdkVersion!!.integrations)
+        assert(fixture.hub.options.sdkVersion!!.integrations!!.contains("Apollo3"))
+        println(fixture.hub.options.sdkVersion!!.version)
+        assertNotNull(fixture.hub.options.sdkVersion!!.packages)
+        val packageInfo = fixture.hub.options.sdkVersion!!.packages!!.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo-3" }
+        assertNotNull(packageInfo)
+        assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
 
     private fun assertTransactionDetails(it: SentryTransaction) {
