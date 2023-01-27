@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DateUtilsTest {
@@ -88,9 +89,46 @@ class DateUtilsTest {
         assertEquals("2020-06-07T12:38:12.631Z", timestamp)
     }
 
+    @Test
+    fun `nanos can be converted to Date losing nano precision`() {
+        val millis = 1591533492L * 1000L + 631L
+        val nanos = (millis * 1000L * 1000L) + (427L * 1000L)
+        val date = DateUtils.nanosToDate(nanos)
+        assertEquals(millis, date.time)
+    }
+
+    @Test
+    fun `nanos can be converted to Date but rounds down to next ms`() {
+        val millis = 1591533492L * 1000L + 631L
+        val nanos = (millis * 1000L * 1000L) + (999L * 1000L)
+        val date = DateUtils.nanosToDate(nanos)
+        assertEquals(millis, date.time)
+    }
+
+    @Test
+    fun `nanos can be 0`() {
+        val date = DateUtils.nanosToDate(0)
+        assertEquals(0, date.time)
+    }
+
+    @Test
+    fun `nanos can be converted to seconds`() {
+        val seconds = DateUtils.nanosToSeconds(123456)
+        assertClose(0.000123456, seconds)
+    }
+
     private fun convertDate(date: Date): LocalDateTime {
         return Instant.ofEpochMilli(date.time)
             .atZone(utcTimeZone)
             .toLocalDateTime()
+    }
+
+    private fun assertClose(expected: Double, actual: Double?) {
+        assertNotNull(actual)
+        val diff = Math.abs(expected - actual)
+        val threshold = 0.000001
+        if (diff > threshold) {
+            throw RuntimeException("Expected $actual to be within $threshold of $expected but was $diff off")
+        }
     }
 }

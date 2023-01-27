@@ -10,6 +10,9 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.FileUtils;
+import io.sentry.util.thread.IMainThreadChecker;
+import io.sentry.util.thread.MainThreadChecker;
+import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -277,6 +280,16 @@ public final class Sentry {
     // only override the ModulesLoader if it's not already set by Android
     if (modulesLoader instanceof NoOpModulesLoader) {
       options.setModulesLoader(new ResourcesModulesLoader(options.getLogger()));
+    }
+
+    final IMainThreadChecker mainThreadChecker = options.getMainThreadChecker();
+    // only override the MainThreadChecker if it's not already set by Android
+    if (mainThreadChecker instanceof NoOpMainThreadChecker) {
+      options.setMainThreadChecker(MainThreadChecker.getInstance());
+    }
+
+    if (options.getCollectors().isEmpty()) {
+      options.addCollector(new JavaMemoryCollector());
     }
 
     return true;

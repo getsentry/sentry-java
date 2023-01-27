@@ -39,9 +39,6 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
-  /** Enable or disable automatic breadcrumbs for User interactions Using Window.Callback */
-  private boolean enableUserInteractionBreadcrumbs = true;
-
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
@@ -93,14 +90,14 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private int profilingTracesHz = 101;
 
-  /** Enables the Auto instrumentation for user interaction tracing. */
-  private boolean enableUserInteractionTracing = false;
-
   /** Interface that loads the debug images list */
   private @NotNull IDebugImagesLoader debugImagesLoader = NoOpDebugImagesLoader.getInstance();
 
   /** Enables or disables the attach screenshot feature when an error happened. */
   private boolean attachScreenshot;
+
+  /** Enables or disables the attach view hierarchy feature when an error happened. */
+  private boolean attachViewHierarchy;
 
   /**
    * Enables or disables collecting of device information which requires Inter-Process Communication
@@ -241,14 +238,6 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAppComponentBreadcrumbs = enableAppComponentBreadcrumbs;
   }
 
-  public boolean isEnableUserInteractionBreadcrumbs() {
-    return enableUserInteractionBreadcrumbs;
-  }
-
-  public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
-    this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
-  }
-
   /**
    * Enable or disable all the automatic breadcrumbs
    *
@@ -259,7 +248,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableAppComponentBreadcrumbs = enable;
     enableSystemEventBreadcrumbs = enable;
     enableAppLifecycleBreadcrumbs = enable;
-    enableUserInteractionBreadcrumbs = enable;
+    setEnableUserInteractionBreadcrumbs(enable);
   }
 
   /**
@@ -343,12 +332,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachScreenshot = attachScreenshot;
   }
 
-  public boolean isEnableUserInteractionTracing() {
-    return enableUserInteractionTracing;
+  public boolean isAttachViewHierarchy() {
+    return attachViewHierarchy;
   }
 
-  public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
-    this.enableUserInteractionTracing = enableUserInteractionTracing;
+  public void setAttachViewHierarchy(boolean attachViewHierarchy) {
+    this.attachViewHierarchy = attachViewHierarchy;
   }
 
   public boolean isCollectAdditionalContext() {

@@ -135,7 +135,8 @@
         <!--    how to enable the attach screenshot feature-->
         <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
 
-        <meta-data android:name="io.sentry.attach-threads" android:value="true" />
+        <!--    how to enable the attach view hierarchy feature-->
+        <meta-data android:name="io.sentry.attach-view-hierarchy" android:value="true" />
 
         <!--    how to enable the send default pii-->
         <meta-data android:name="io.sentry.send-default-pii" android:value="true" />

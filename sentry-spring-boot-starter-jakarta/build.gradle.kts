@@ -16,7 +16,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://repo.spring.io/milestone") }
 }
 
 the<DependencyManagementExtension>().apply {
@@ -54,6 +53,7 @@ dependencies {
     compileOnly(Config.Libs.springBoot3StarterAop)
     compileOnly(Config.Libs.springBoot3StarterSecurity)
     compileOnly(Config.Libs.reactorCore)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
@@ -78,6 +78,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterWebflux)
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
 }
 
 configure<SourceSetContainer> {

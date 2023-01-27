@@ -12,10 +12,14 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
+import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.compose.gestures.ComposeGestureTargetLocator;
+import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -23,6 +27,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +40,11 @@ import org.jetbrains.annotations.TestOnly;
  */
 @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
 final class AndroidOptionsInitializer {
+
+  static final String SENTRY_COMPOSE_INTEGRATION_CLASS_NAME =
+      "io.sentry.compose.gestures.ComposeGestureTargetLocator";
+
+  static final String COMPOSE_CLASS_NAME = "androidx.compose.ui.node.Owner";
 
   /** private ctor */
   private AndroidOptionsInitializer() {}
@@ -76,6 +87,8 @@ final class AndroidOptionsInitializer {
 
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
+
+    options.setDateProvider(new SentryAndroidDateProvider());
 
     ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
     initializeCacheDirs(context, options);
@@ -123,13 +136,38 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
-
+    options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
+    options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.setTransportGate(new AndroidTransportGate(context, options.getLogger()));
     final SentryFrameMetricsCollector frameMetricsCollector =
         new SentryFrameMetricsCollector(context, options, buildInfoProvider);
     options.setTransactionProfiler(
         new AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector));
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+
+    final boolean isAndroidXScrollViewAvailable =
+        loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
+
+    if (options.getGestureTargetLocators().isEmpty()) {
+      final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
+      gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
+
+      final boolean isComposeUpstreamAvailable =
+          loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
+      final boolean isComposeAvailable =
+          (isComposeUpstreamAvailable
+              && loadClass.isClassAvailable(SENTRY_COMPOSE_INTEGRATION_CLASS_NAME, options));
+
+      if (isComposeAvailable) {
+        gestureTargetLocators.add(new ComposeGestureTargetLocator());
+      }
+      options.setGestureTargetLocators(gestureTargetLocators);
+    }
+    options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
+    if (options.getCollectors().isEmpty()) {
+      options.addCollector(new AndroidMemoryCollector());
+      options.addCollector(new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+    }
   }
 
   private static void installDefaultIntegrations(
@@ -170,20 +208,21 @@ final class AndroidOptionsInitializer {
             new SendFireAndForgetOutboxSender(() -> options.getOutboxPath()),
             hasStartupCrashMarker));
 
-    options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
+    // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
+    // relies on AppState set by it
     options.addIntegration(new AppLifecycleIntegration());
+    options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {
       options.addIntegration(
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
+      options.addIntegration(new CurrentActivityIntegration((Application) context));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
-      options.addEventProcessor(
-          new ScreenshotEventProcessor((Application) context, options, buildInfoProvider));
     } else {
       options
           .getLogger()
@@ -191,6 +230,7 @@ final class AndroidOptionsInitializer {
               SentryLevel.WARNING,
               "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
     }
+
     if (isTimberAvailable) {
       options.addIntegration(new SentryTimberIntegration());
     }

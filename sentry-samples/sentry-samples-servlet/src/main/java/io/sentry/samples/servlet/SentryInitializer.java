@@ -35,6 +35,17 @@ public final class SentryInitializer implements ServletContextListener {
                 return event;
               });
 
+          // Modifications to transaction before it goes out. Could replace the transaction
+          // altogether
+          options.setBeforeSendTransaction(
+              (transaction, hint) -> {
+                // Drop a transaction altogether:
+                if (transaction.getTag("SomeTag") != null) {
+                  return null;
+                }
+                return transaction;
+              });
+
           // Allows inspecting and modifying, returning a new or simply rejecting (returning null)
           options.setBeforeBreadcrumb(
               (breadcrumb, hint) -> {

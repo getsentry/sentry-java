@@ -33,7 +33,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
 
             var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
 
-            if (PropagationTargetsUtils.contain(hub.options.tracePropagationTargets, request.url)) {
+            if (!span.isNoOp && PropagationTargetsUtils.contain(hub.options.tracePropagationTargets, request.url)) {
                 val sentryTraceHeader = span.toSentryTrace()
                 val baggageHeader = span.toBaggageHeader(request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value })
                 cleanedHeaders.add(HttpHeader(sentryTraceHeader.name, sentryTraceHeader.value))

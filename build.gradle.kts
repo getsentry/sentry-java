@@ -104,7 +104,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support" && this.name != "sentry-compose-helper") {
         apply<DistributionPlugin>()
 
         val sep = File.separator

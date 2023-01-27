@@ -5,7 +5,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -44,31 +43,7 @@ class SpanTest {
         val span = fixture.getSut()
         span.finish()
 
-        assertNotNull(span.timestamp)
-        assertNotNull(span.highPrecisionTimestamp)
-    }
-
-    @Test
-    fun `when span is created without a start timestamp, high precision timestamp is more precise than timestamp`() {
-        val span = fixture.getSut().startChild("op", "desc") as Span
-        span.finish()
-
-        assertNotNull(span.highPrecisionTimestamp) { highPrecisionTimestamp ->
-            assertNotNull(span.timestamp) { timestamp ->
-                assertTrue(highPrecisionTimestamp >= timestamp - 0.001)
-                assertTrue(highPrecisionTimestamp <= timestamp + 0.001)
-            }
-        }
-    }
-
-    @Test
-    fun `when span is created with a start timestamp, finish timestamp is equals to high precision timestamp`() {
-        val span = fixture.getSut().startChild("op", "desc", Date()) as Span
-        span.finish()
-
-        assertNotNull(span.timestamp)
-        assertNotNull(span.highPrecisionTimestamp)
-        assertEquals(span.timestamp, span.highPrecisionTimestamp)
+        assertNotNull(span.finishDate)
     }
 
     @Test
@@ -76,7 +51,7 @@ class SpanTest {
         val span = fixture.getSut()
         span.finish(SpanStatus.CANCELLED)
 
-        assertNotNull(span.timestamp)
+        assertNotNull(span.finishDate)
         assertEquals(SpanStatus.CANCELLED, span.status)
     }
 
@@ -141,6 +116,24 @@ class SpanTest {
     }
 
     @Test
+    fun `starting a child with different instrumenter no-ops`() {
+        val transaction = getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
+        val span = transaction.startChild("operation", "description")
+
+        span.startChild("op")
+        assertEquals(0, transaction.spans.size)
+    }
+
+    @Test
+    fun `starting a child with same instrumenter adds span to transaction`() {
+        val transaction = getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
+        val span = transaction.startChild("operation", "description", null, Instrumenter.OTEL)
+
+        span.startChild("op", "desc", null, Instrumenter.OTEL)
+        assertEquals(2, transaction.spans.size)
+    }
+
+    @Test
     fun `when span was not finished, isFinished returns false`() {
         val span = startChildFromSpan()
 
@@ -176,16 +169,14 @@ class SpanTest {
         span.throwable = ex
 
         span.finish(SpanStatus.OK)
-        val timestamp = span.timestamp
-        val highPrecisionTimestamp = span.highPrecisionTimestamp
+        val timestamp = span.finishDate
 
         span.finish(SpanStatus.UNKNOWN_ERROR)
 
         // call only once
         verify(fixture.hub).setSpanContext(any(), any(), any())
         assertEquals(SpanStatus.OK, span.status)
-        assertEquals(timestamp, span.timestamp)
-        assertEquals(highPrecisionTimestamp, span.highPrecisionTimestamp)
+        assertEquals(timestamp, span.finishDate)
     }
 
     @Test
@@ -200,7 +191,7 @@ class SpanTest {
         span.finish(SpanStatus.OK)
         assertTrue(span.isFinished)
 
-        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null))
+        assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc", null, Instrumenter.SENTRY))
         assertEquals(NoOpSpan.getInstance(), span.startChild("op", "desc"))
 
         span.finish(SpanStatus.UNKNOWN_ERROR)
@@ -248,8 +239,8 @@ class SpanTest {
         }
     }
 
-    private fun getTransaction(): SentryTracer {
-        return SentryTracer(TransactionContext("name", "op"), fixture.hub)
+    private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
+        return SentryTracer(transactionContext, fixture.hub)
     }
 
     private fun startChildFromSpan(): Span {

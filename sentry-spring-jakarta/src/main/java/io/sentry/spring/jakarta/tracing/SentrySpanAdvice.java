@@ -31,7 +31,7 @@ public class SentrySpanAdvice implements MethodInterceptor {
   public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final ISpan activeSpan = hub.getSpan();
 
-    if (activeSpan == null) {
+    if (activeSpan == null || activeSpan.isNoOp()) {
       // there is no active transaction, we do not start new span
       return invocation.proceed();
     } else {

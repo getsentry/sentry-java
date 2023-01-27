@@ -14,7 +14,6 @@ import io.sentry.util.Pair;
 import java.io.Closeable;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -30,6 +29,7 @@ public final class Hub implements IHub {
   private final @NotNull TracesSampler tracesSampler;
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
+  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
 
   public Hub(final @NotNull SentryOptions options) {
     this(options, createRootStackItem(options));
@@ -44,6 +44,7 @@ public final class Hub implements IHub {
     this.tracesSampler = new TracesSampler(options);
     this.stack = stack;
     this.lastEventId = SentryId.EMPTY_ID;
+    this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
 
     // Integrations will use this Hub instance once registered.
     // Make sure Hub ready to be used then.
@@ -605,7 +606,8 @@ public final class Hub implements IHub {
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceContext traceContext,
-      final @Nullable Hint hint) {
+      final @Nullable Hint hint,
+      final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "transaction is required");
 
     SentryId sentryId = SentryId.EMPTY_ID;
@@ -640,7 +642,8 @@ public final class Hub implements IHub {
             item = stack.peek();
             sentryId =
                 item.getClient()
-                    .captureTransaction(transaction, traceContext, item.getScope(), hint);
+                    .captureTransaction(
+                        transaction, traceContext, item.getScope(), hint, profilingTraceData);
           } catch (Throwable e) {
             options
                 .getLogger()
@@ -684,7 +687,7 @@ public final class Hub implements IHub {
       final @NotNull TransactionContext transactionContext,
       final @Nullable CustomSamplingContext customSamplingContext,
       final boolean bindToScope,
-      final @Nullable Date startTimestamp,
+      final @Nullable SentryDate startTimestamp,
       final boolean waitForChildren,
       final @Nullable Long idleTimeout,
       final boolean trimEnd,
@@ -698,6 +701,15 @@ public final class Hub implements IHub {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'startTransaction' returns a no-op.");
+      transaction = NoOpTransaction.getInstance();
+    } else if (!options.getInstrumenter().equals(transactionContext.getInstrumenter())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
+              transactionContext.getInstrumenter(),
+              options.getInstrumenter());
       transaction = NoOpTransaction.getInstance();
     } else if (!options.isTracingEnabled()) {
       options
@@ -719,7 +731,8 @@ public final class Hub implements IHub {
               waitForChildren,
               idleTimeout,
               trimEnd,
-              transactionFinishedCallback);
+              transactionFinishedCallback,
+              transactionPerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
@@ -744,7 +757,7 @@ public final class Hub implements IHub {
               SentryLevel.WARNING, "Instance is disabled and this 'traceHeaders' call is a no-op.");
     } else {
       final ISpan span = stack.peek().getScope().getSpan();
-      if (span != null) {
+      if (span != null && !span.isNoOp()) {
         traceHeader = span.toSentryTrace();
       }
     }

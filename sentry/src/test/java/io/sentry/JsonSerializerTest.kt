@@ -45,14 +45,15 @@ class JsonSerializerTest {
         val serializer: ISerializer
         val hub = mock<IHub>()
         val traceFile = Files.createTempFile("test", "here").toFile()
+        val options = SentryOptions()
 
         init {
-            val options = SentryOptions()
             options.dsn = "https://key@sentry.io/proj"
             options.setLogger(logger)
-            options.setDebug(true)
+            options.isDebug = true
             whenever(hub.options).thenReturn(options)
             serializer = JsonSerializer(options)
+            options.setSerializer(serializer)
             options.setEnvelopeReader(EnvelopeReader(serializer))
         }
     }
@@ -509,8 +510,7 @@ class JsonSerializerTest {
         )
         profilingTraceData.transactionName = "transactionName"
         profilingTraceData.durationNs = "100"
-        profilingTraceData.versionName = "versionName"
-        profilingTraceData.versionCode = "versionCode"
+        profilingTraceData.release = "release"
         profilingTraceData.transactionId = "transactionId"
         profilingTraceData.traceId = "traceId"
         profilingTraceData.profileId = "profileId"
@@ -521,7 +521,22 @@ class JsonSerializerTest {
                 ProfileMeasurement.ID_SCREEN_FRAME_RATES to
                     ProfileMeasurement(
                         ProfileMeasurement.UNIT_HZ,
-                        listOf(ProfileMeasurementValue(1, 60.1F))
+                        listOf(ProfileMeasurementValue(1, 60.1))
+                    ),
+                ProfileMeasurement.ID_MEMORY_FOOTPRINT to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_BYTES,
+                        listOf(ProfileMeasurementValue(2, 100.52))
+                    ),
+                ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_BYTES,
+                        listOf(ProfileMeasurementValue(3, 104.52))
+                    ),
+                ProfileMeasurement.ID_CPU_USAGE to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_PERCENT,
+                        listOf(ProfileMeasurementValue(5, 10.52))
                     )
             )
         )
@@ -575,8 +590,38 @@ class JsonSerializerTest {
                         "unit" to ProfileMeasurement.UNIT_HZ,
                         "values" to listOf(
                             mapOf(
-                                "value" to "60.1",
-                                "elapsed_since_start_ns" to 1
+                                "value" to 60.1,
+                                "elapsed_since_start_ns" to "1"
+                            )
+                        )
+                    ),
+                ProfileMeasurement.ID_MEMORY_FOOTPRINT to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_BYTES,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 100.52,
+                                "elapsed_since_start_ns" to "2"
+                            )
+                        )
+                    ),
+                ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_BYTES,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 104.52,
+                                "elapsed_since_start_ns" to "3"
+                            )
+                        )
+                    ),
+                ProfileMeasurement.ID_CPU_USAGE to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_PERCENT,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 10.52,
+                                "elapsed_since_start_ns" to "5"
                             )
                         )
                     )
@@ -585,8 +630,8 @@ class JsonSerializerTest {
         )
         assertEquals("transactionName", element["transaction_name"] as String)
         assertEquals("100", element["duration_ns"] as String)
-        assertEquals("versionName", element["version_name"] as String)
-        assertEquals("versionCode", element["version_code"] as String)
+        assertEquals("release", element["version_name"] as String)
+        assertEquals("", element["version_code"] as String)
         assertEquals("transactionId", element["transaction_id"] as String)
         assertEquals("traceId", element["trace_id"] as String)
         assertEquals("profileId", element["profile_id"] as String)
@@ -639,12 +684,30 @@ class JsonSerializerTest {
                                     "values":[
                                         {"value":"100","elapsed_since_start_ns":"2"}
                                     ]
+                                },
+                                "memory_footprint": {
+                                    "unit":"byte",
+                                    "values":[
+                                        {"value":"1000","elapsed_since_start_ns":"3"}
+                                    ]
+                                },
+                                "memory_native_footprint": {
+                                    "unit":"byte",
+                                    "values":[
+                                        {"value":"1100","elapsed_since_start_ns":"4"}
+                                    ]
+                                },
+                                "cpu_usage": {
+                                    "unit":"percent",
+                                    "values":[
+                                        {"value":"17.04","elapsed_since_start_ns":"5"}
+                                    ]
                                 }
                             },
                             "transaction_name":"transactionName",
                             "duration_ns":"100",
-                            "version_name":"versionName",
-                            "version_code":"versionCode",
+                            "version_name":"release",
+                            "version_code":"",
                             "transaction_id":"transactionId",
                             "trace_id":"traceId",
                             "profile_id":"profileId",
@@ -692,13 +755,24 @@ class JsonSerializerTest {
             ProfileMeasurement.ID_FROZEN_FRAME_RENDERS to ProfileMeasurement(
                 ProfileMeasurement.UNIT_NANOSECONDS,
                 listOf(ProfileMeasurementValue(2, 100))
+            ),
+            ProfileMeasurement.ID_MEMORY_FOOTPRINT to ProfileMeasurement(
+                ProfileMeasurement.UNIT_BYTES,
+                listOf(ProfileMeasurementValue(3, 1000))
+            ),
+            ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to ProfileMeasurement(
+                ProfileMeasurement.UNIT_BYTES,
+                listOf(ProfileMeasurementValue(4, 1100))
+            ),
+            ProfileMeasurement.ID_CPU_USAGE to ProfileMeasurement(
+                ProfileMeasurement.UNIT_PERCENT,
+                listOf(ProfileMeasurementValue(5, 17.04))
             )
         )
         assertEquals(expectedMeasurements, profilingTraceData.measurementsMap)
         assertEquals("transactionName", profilingTraceData.transactionName)
         assertEquals("100", profilingTraceData.durationNs)
-        assertEquals("versionName", profilingTraceData.versionName)
-        assertEquals("versionCode", profilingTraceData.versionCode)
+        assertEquals("release", profilingTraceData.release)
         assertEquals("transactionId", profilingTraceData.transactionId)
         assertEquals("traceId", profilingTraceData.traceId)
         assertEquals("profileId", profilingTraceData.profileId)
@@ -712,7 +786,7 @@ class JsonSerializerTest {
         val measurementValues = listOf(ProfileMeasurementValue(1, 2), ProfileMeasurementValue(3, 4))
         val profileMeasurement = ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, measurementValues)
         val actual = serializeToString(profileMeasurement)
-        val expected = "{\"unit\":\"nanosecond\",\"values\":[{\"value\":\"2\",\"elapsed_since_start_ns\":1},{\"value\":\"4\",\"elapsed_since_start_ns\":3}]}"
+        val expected = "{\"unit\":\"nanosecond\",\"values\":[{\"value\":2.0,\"elapsed_since_start_ns\":\"1\"},{\"value\":4.0,\"elapsed_since_start_ns\":\"3\"}]}"
         assertEquals(expected, actual)
     }
 
@@ -736,7 +810,7 @@ class JsonSerializerTest {
     fun `serializes profileMeasurementValue`() {
         val profileMeasurementValue = ProfileMeasurementValue(1, 2)
         val actual = serializeToString(profileMeasurementValue)
-        val expected = "{\"value\":\"2\",\"elapsed_since_start_ns\":1}"
+        val expected = "{\"value\":2.0,\"elapsed_since_start_ns\":\"1\"}"
         assertEquals(expected, actual)
     }
 
@@ -746,6 +820,7 @@ class JsonSerializerTest {
         val profileMeasurementValue = fixture.serializer.deserialize(StringReader(json), ProfileMeasurementValue::class.java)
         val expected = ProfileMeasurementValue(1, 60.1)
         assertEquals(expected, profileMeasurementValue)
+        assertEquals(60.1, profileMeasurementValue?.value)
     }
 
     @Test
@@ -948,9 +1023,9 @@ class JsonSerializerTest {
 
         val message = "hello"
         val attachment = Attachment(message.toByteArray(), "bytes.txt")
-        val validAttachmentItem = SentryEnvelopeItem.fromAttachment(attachment, 5)
+        val validAttachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, attachment, 5)
 
-        val invalidAttachmentItem = SentryEnvelopeItem.fromAttachment(Attachment("no"), 5)
+        val invalidAttachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, fixture.options.logger, Attachment("no"), 5)
         val envelope = SentryEnvelope(header, listOf(invalidAttachmentItem, validAttachmentItem))
 
         val actualJson = serializeToString(envelope)
@@ -1110,7 +1185,8 @@ class JsonSerializerTest {
             "127.0.0.1",
             "jamesBond",
             "debug",
-            "io.sentry@1.0+123"
+            "io.sentry@1.0+123",
+            "anr_foreground"
         )
 
     private val userFeedback: UserFeedback get() {

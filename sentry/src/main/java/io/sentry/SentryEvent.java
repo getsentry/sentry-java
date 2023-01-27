@@ -82,8 +82,6 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
    * and for making informed decisions on which frameworks to support in future development efforts.
    */
   private @Nullable Map<String, String> modules;
-  /** Meta data for event processing and debugging. */
-  private @Nullable DebugMeta debugMeta;
 
   SentryEvent(final @NotNull SentryId eventId, final @NotNull Date timestamp) {
     super(eventId);
@@ -207,14 +205,6 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
     return null;
   }
 
-  public @Nullable DebugMeta getDebugMeta() {
-    return debugMeta;
-  }
-
-  public void setDebugMeta(final @Nullable DebugMeta debugMeta) {
-    this.debugMeta = debugMeta;
-  }
-
   /**
    * Returns true if any exception was unhandled by the user.
    *
@@ -255,7 +245,6 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
     public static final String TRANSACTION = "transaction";
     public static final String FINGERPRINT = "fingerprint";
     public static final String MODULES = "modules";
-    public static final String DEBUG_META = "debug_meta";
   }
 
   @Override
@@ -292,9 +281,6 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
     }
     if (modules != null) {
       writer.name(JsonKeys.MODULES).value(logger, modules);
-    }
-    if (debugMeta != null) {
-      writer.name(JsonKeys.DEBUG_META).value(logger, debugMeta);
     }
     new SentryBaseEvent.Serializer().serialize(this, writer, logger);
     if (unknown != null) {
@@ -375,9 +361,6 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
             Map<String, String> deserializedModules =
                 (Map<String, String>) reader.nextObjectOrNull();
             event.modules = CollectionUtils.newConcurrentHashMap(deserializedModules);
-            break;
-          case JsonKeys.DEBUG_META:
-            event.debugMeta = reader.nextOrNull(logger, new DebugMeta.Deserializer());
             break;
           default:
             if (!baseEventDeserializer.deserializeValue(event, nextName, reader, logger)) {

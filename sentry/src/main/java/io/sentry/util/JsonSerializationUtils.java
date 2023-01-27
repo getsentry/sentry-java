@@ -1,5 +1,14 @@
 package io.sentry.util;
 
+import io.sentry.ILogger;
+import io.sentry.ISerializer;
+import io.sentry.JsonSerializable;
+import io.sentry.SentryLevel;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -8,9 +17,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class JsonSerializationUtils {
+
+  @SuppressWarnings("CharsetObjectCanBeUsed")
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   public static @NotNull Map<String, Object> calendarToMap(final @NotNull Calendar calendar) {
     final @NotNull Map<String, Object> map = new HashMap<>();
@@ -33,5 +46,23 @@ public final class JsonSerializationUtils {
       list.add(array.get(i));
     }
     return list;
+  }
+
+  public static @Nullable byte[] bytesFrom(
+      final @NotNull ISerializer serializer,
+      final @NotNull ILogger logger,
+      final @NotNull JsonSerializable serializable) {
+    try {
+      try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+          final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+
+        serializer.serialize(serializable, writer);
+
+        return stream.toByteArray();
+      }
+    } catch (Throwable t) {
+      logger.log(SentryLevel.ERROR, "Could not serialize serializable", t);
+      return null;
+    }
   }
 }

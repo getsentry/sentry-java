@@ -3,6 +3,7 @@ package io.sentry.android.core
 import android.content.pm.ProviderInfo
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.SentryNanotimeDate
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import java.util.Date
@@ -28,7 +29,7 @@ class SentryPerformanceProviderTest {
         providerInfo.authority = AUTHORITY
 
         val providerAppStartMillis = 10L
-        val providerAppStartTime = Date(0)
+        val providerAppStartTime = SentryNanotimeDate(Date(0), 0)
         SentryPerformanceProvider.setAppStartTime(providerAppStartMillis, providerAppStartTime)
 
         val provider = SentryPerformanceProvider()

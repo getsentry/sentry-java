@@ -6,13 +6,13 @@ import io.sentry.JsonObjectReader;
 import io.sentry.JsonObjectWriter;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -24,10 +24,15 @@ public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
   public static final String ID_FROZEN_FRAME_RENDERS = "frozen_frame_renders";
   public static final String ID_SLOW_FRAME_RENDERS = "slow_frame_renders";
   public static final String ID_SCREEN_FRAME_RATES = "screen_frame_rates";
+  public static final String ID_CPU_USAGE = "cpu_usage";
+  public static final String ID_MEMORY_FOOTPRINT = "memory_footprint";
+  public static final String ID_MEMORY_NATIVE_FOOTPRINT = "memory_native_footprint";
   public static final String ID_UNKNOWN = "unknown";
 
   public static final String UNIT_HZ = "hz";
   public static final String UNIT_NANOSECONDS = "nanosecond";
+  public static final String UNIT_BYTES = "byte";
+  public static final String UNIT_PERCENT = "percent";
   public static final String UNIT_UNKNOWN = "unknown";
 
   private @Nullable Map<String, Object> unknown;

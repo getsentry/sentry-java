@@ -906,6 +906,41 @@ class HubTest {
 
         assertEquals("test", scope?.transactionName)
     }
+
+    @Test
+    fun `when startTransaction is called with different instrumenter, no-op is returned`() {
+        val hub = generateHub()
+
+        val transactionContext = TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
+        val transactionOptions = TransactionOptions()
+        val tx = hub.startTransaction(transactionContext, transactionOptions)
+
+        assertTrue(tx is NoOpTransaction)
+    }
+
+    @Test
+    fun `when startTransaction is called with different instrumenter, no-op is returned 2`() {
+        val hub = generateHub() {
+            it.instrumenter = Instrumenter.OTEL
+        }
+
+        val tx = hub.startTransaction("test", "op")
+
+        assertTrue(tx is NoOpTransaction)
+    }
+
+    @Test
+    fun `when startTransaction is called with configured instrumenter, it works`() {
+        val hub = generateHub() {
+            it.instrumenter = Instrumenter.OTEL
+        }
+
+        val transactionContext = TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
+        val transactionOptions = TransactionOptions()
+        val tx = hub.startTransaction(transactionContext, transactionOptions)
+
+        assertFalse(tx is NoOpTransaction)
+    }
     //endregion
 
     //region setUser tests
@@ -1280,7 +1315,7 @@ class HubTest {
         sentryTracer.finish()
         sut.captureTransaction(SentryTransaction(sentryTracer), null as TraceContext?)
         verify(mockClient, never()).captureTransaction(any(), any(), any())
-        verify(mockClient, never()).captureTransaction(any(), any(), any(), anyOrNull())
+        verify(mockClient, never()).captureTransaction(any(), any(), any(), anyOrNull(), anyOrNull())
     }
 
     @Test
@@ -1296,7 +1331,7 @@ class HubTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
         sentryTracer.finish()
         val traceContext = sentryTracer.traceContext()
-        verify(mockClient).captureTransaction(any(), equalTraceContext(traceContext), any(), eq(null))
+        verify(mockClient).captureTransaction(any(), equalTraceContext(traceContext), any(), eq(null), eq(null))
     }
 
     @Test
@@ -1308,7 +1343,7 @@ class HubTest {
         val sut = Hub(options)
         val mockClient = mock<ISentryClient>()
         sut.bindClient(mockClient)
-        whenever(mockClient.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(SentryId())
+        whenever(mockClient.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(SentryId())
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
         sentryTracer.finish()
@@ -1327,7 +1362,7 @@ class HubTest {
 
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), sut)
         sut.captureTransaction(SentryTransaction(sentryTracer), null as TraceContext?)
-        verify(mockClient, never()).captureTransaction(any(), any(), any(), eq(null))
+        verify(mockClient, never()).captureTransaction(any(), any(), any(), eq(null), anyOrNull())
     }
 
     @Test
@@ -1343,7 +1378,7 @@ class HubTest {
         val sentryTracer = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(false)), sut)
         sentryTracer.finish()
         val traceContext = sentryTracer.traceContext()
-        verify(mockClient, never()).captureTransaction(any(), equalTraceContext(traceContext), any(), eq(null))
+        verify(mockClient, never()).captureTransaction(any(), equalTraceContext(traceContext), any(), eq(null), anyOrNull())
     }
 
     @Test
@@ -1372,7 +1407,7 @@ class HubTest {
     fun `when startTransaction and profiling is enabled, transaction is profiled only if sampled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
         val mockClient = mock<ISentryClient>()
-        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenAnswer { mockClient.captureEnvelope(mock()) }
+        whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
         val hub = generateHub {
             it.setTransactionProfiler(mockTransactionProfiler)
         }
@@ -1394,7 +1429,7 @@ class HubTest {
     fun `when startTransaction and is sampled but profiling is disabled, transaction is not profiled`() {
         val mockTransactionProfiler = mock<ITransactionProfiler>()
         val mockClient = mock<ISentryClient>()
-        whenever(mockTransactionProfiler.onTransactionFinish(any())).thenAnswer { mockClient.captureEnvelope(mock()) }
+        whenever(mockTransactionProfiler.onTransactionFinish(any(), anyOrNull())).thenAnswer { mockClient.captureEnvelope(mock()) }
         val hub = generateHub {
             it.profilesSampleRate = 0.0
             it.setTransactionProfiler(mockTransactionProfiler)
