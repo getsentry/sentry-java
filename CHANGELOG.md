@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Dependencies
+
+- Bump Native SDK from v0.5.3 to v0.5.4 ([#2500](https://github.com/getsentry/sentry-java/pull/2500))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#054)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.3...0.5.4)
+
+## 6.13.0
+
 ### Features
 
 - Send cpu usage percentage in profile payload ([#2469](https://github.com/getsentry/sentry-java/pull/2469))
@@ -15,7 +23,9 @@
 
 ### Fixes
 
+- Fix performance collector setup called in main thread ([#2499](https://github.com/getsentry/sentry-java/pull/2499))
 - Expand guard against CVE-2018-9492 "Privilege Escalation via Content Provider" ([#2482](https://github.com/getsentry/sentry-java/pull/2482))
+- Prevent OOM by disabling TransactionPerformanceCollector for now ([#2498](https://github.com/getsentry/sentry-java/pull/2498))
 
 ## 6.12.1
 
