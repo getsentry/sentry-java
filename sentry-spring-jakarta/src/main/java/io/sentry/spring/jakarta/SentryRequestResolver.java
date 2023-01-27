@@ -28,7 +28,7 @@ public class SentryRequestResolver {
   public @NotNull Request resolveSentryRequest(final @NotNull HttpServletRequest httpRequest) {
     final Request sentryRequest = new Request();
     sentryRequest.setMethod(httpRequest.getMethod());
-    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.convertUrl(httpRequest.getRequestURL().toString());
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(httpRequest.getRequestURL().toString());
     urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setQueryString(httpRequest.getQueryString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));

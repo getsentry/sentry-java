@@ -6,22 +6,24 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class UrlUtils {
 
   private static final @NotNull Pattern AUTH_REGEX = Pattern.compile("(.+://)(.*@)(.*)");
 
-  public static @Nullable UrlDetails convertUrlNullable(final @Nullable String url) {
+  public static @Nullable UrlDetails parseNullable(final @Nullable String url) {
     if (url == null) {
       return null;
     }
 
-    return convertUrl(url);
+    return parse(url);
   }
 
-  public static @NotNull UrlDetails convertUrl(final @NotNull String url) {
+  public static @NotNull UrlDetails parse(final @NotNull String url) {
     if (isAbsoluteUrl(url)) {
       return splitAbsoluteUrl(url);
     } else {

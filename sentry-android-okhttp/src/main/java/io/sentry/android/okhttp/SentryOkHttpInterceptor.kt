@@ -54,7 +54,7 @@ class SentryOkHttpInterceptor(
     override fun intercept(chain: Interceptor.Chain): Response {
         var request = chain.request()
 
-        val urlDetails = UrlUtils.convertUrl(request.url.toString())
+        val urlDetails = UrlUtils.parse(request.url.toString())
         val url = urlDetails.urlOrFallback
         val method = request.method
 
@@ -152,7 +152,7 @@ class SentryOkHttpInterceptor(
         // url will be: https://api.github.com/users/getsentry/repos/
         // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
         // but that's not possible
-        val urlDetails = UrlUtils.convertUrl(request.url.toString())
+        val urlDetails = UrlUtils.parse(request.url.toString())
 
         // return if its not a target match
         if (!PropagationTargetsUtils.contain(failedRequestTargets, request.url.toString())) {

@@ -40,7 +40,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     }
 
     final ISpan span = activeSpan.startChild("http.client");
-    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.convertUrl(request.url().toString());
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url().toString());
     span.setDescription(request.method().name() + " " + urlDetails.getUrlOrFallback());
     urlDetails.applyToSpan(span);
 

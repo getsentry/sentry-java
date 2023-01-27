@@ -3712,8 +3712,8 @@ public final class io/sentry/util/StringUtils {
 
 public final class io/sentry/util/UrlUtils {
 	public fun <init> ()V
-	public static fun convertUrl (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
-	public static fun convertUrlNullable (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
+	public static fun parse (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
+	public static fun parseNullable (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
 }
 
 public final class io/sentry/util/UrlUtils$UrlDetails {

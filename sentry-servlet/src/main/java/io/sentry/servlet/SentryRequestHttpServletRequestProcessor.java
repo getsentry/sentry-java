@@ -32,7 +32,7 @@ final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
     final Request sentryRequest = new Request();
     sentryRequest.setMethod(httpRequest.getMethod());
     final @NotNull UrlUtils.UrlDetails urlDetails =
-        UrlUtils.convertUrl(httpRequest.getRequestURL().toString());
+        UrlUtils.parse(httpRequest.getRequestURL().toString());
     urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setQueryString(httpRequest.getQueryString());
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));

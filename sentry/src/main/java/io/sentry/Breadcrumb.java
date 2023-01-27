@@ -68,7 +68,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    */
   public static @NotNull Breadcrumb http(final @NotNull String url, final @NotNull String method) {
     final Breadcrumb breadcrumb = new Breadcrumb();
-    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.convertUrl(url);
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(url);
     breadcrumb.setType("http");
     breadcrumb.setCategory("http");
     if (urlDetails.getUrl() != null) {

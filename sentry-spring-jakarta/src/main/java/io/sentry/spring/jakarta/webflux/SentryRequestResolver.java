@@ -32,7 +32,7 @@ public class SentryRequestResolver {
       httpRequest.getMethod() != null ? httpRequest.getMethod().name() : "unknown";
     sentryRequest.setMethod(methodName);
     final @NotNull URI uri = httpRequest.getURI();
-    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.convertUrl(uri.toString());
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(uri.toString());
     urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
 

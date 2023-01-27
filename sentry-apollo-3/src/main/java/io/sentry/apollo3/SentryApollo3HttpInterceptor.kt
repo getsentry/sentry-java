@@ -81,7 +81,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(private val hub: IH
     }
 
     private fun startChild(request: HttpRequest, activeSpan: ISpan): ISpan {
-        val urlDetails = UrlUtils.convertUrl(request.url)
+        val urlDetails = UrlUtils.parse(request.url)
         val method = request.method
 
         val operationName = operationNameFromHeaders(request)
