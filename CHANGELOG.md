@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add integrations to integration list ([#2179](https://github.com/getsentry/sentry-java/pull/2179))
+
 ### Dependencies
 
 - Bump Native SDK from v0.5.3 to v0.5.4 ([#2500](https://github.com/getsentry/sentry-java/pull/2500))
