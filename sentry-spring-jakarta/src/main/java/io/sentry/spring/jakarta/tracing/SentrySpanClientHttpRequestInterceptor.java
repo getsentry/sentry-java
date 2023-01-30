@@ -14,6 +14,8 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.PropagationTargetsUtils;
+import io.sentry.util.UrlUtils;
+
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +49,9 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final ISpan span = activeSpan.startChild("http.client");
       final String methodName =
           request.getMethod() != null ? request.getMethod().name() : "unknown";
-      span.setDescription(methodName + " " + request.getURI());
+      final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.getURI().toString());
+      span.setDescription(methodName + " " + urlDetails.getUrlOrFallback());
+      urlDetails.applyToSpan(span);
 
       if (!span.isNoOp() && PropagationTargetsUtils.contain(
           hub.getOptions().getTracePropagationTargets(), request.getURI())) {

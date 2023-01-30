@@ -5,6 +5,8 @@ import io.sentry.IHub;
 import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.UrlUtils;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +30,9 @@ public class SentryRequestResolver {
     final String methodName =
         httpRequest.getMethod() != null ? httpRequest.getMethod().name() : "unknown";
     sentryRequest.setMethod(methodName);
-    sentryRequest.setQueryString(httpRequest.getURI().getQuery());
-    sentryRequest.setUrl(httpRequest.getURI().toString());
+    final @NotNull URI uri = httpRequest.getURI();
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(uri.toString());
+    urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
 
     if (hub.getOptions().isSendDefaultPii()) {
