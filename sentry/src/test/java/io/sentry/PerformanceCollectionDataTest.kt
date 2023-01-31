@@ -3,9 +3,9 @@ package io.sentry
 import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
-import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class PerformanceCollectionDataTest {
 
@@ -19,18 +19,18 @@ class PerformanceCollectionDataTest {
     fun `memory data is saved only after commitData`() {
         val data = fixture.getSut()
         data.addMemoryData(mock())
-        assertTrue(data.memoryData.isEmpty())
+        assertNull(data.memoryData)
         data.commitData()
-        assertFalse(data.memoryData.isEmpty())
+        assertNotNull(data.memoryData)
     }
 
     @Test
     fun `cpu data is saved only after commitData`() {
         val data = fixture.getSut()
         data.addCpuData(mock())
-        assertTrue(data.cpuData.isEmpty())
+        assertNull(data.cpuData)
         data.commitData()
-        assertFalse(data.cpuData.isEmpty())
+        assertNotNull(data.cpuData)
     }
 
     @Test
@@ -41,7 +41,7 @@ class PerformanceCollectionDataTest {
         data.addMemoryData(memData1)
         data.addMemoryData(memData2)
         data.commitData()
-        val savedMemoryData = data.memoryData.first()
+        val savedMemoryData = data.memoryData
         assertNotEquals(memData1, savedMemoryData)
         assertEquals(memData2, savedMemoryData)
     }
@@ -54,7 +54,7 @@ class PerformanceCollectionDataTest {
         data.addCpuData(cpuData1)
         data.addCpuData(cpuData2)
         data.commitData()
-        val savedCpuData = data.cpuData.first()
+        val savedCpuData = data.cpuData
         assertNotEquals(cpuData1, savedCpuData)
         assertEquals(cpuData2, savedCpuData)
     }
@@ -67,22 +67,8 @@ class PerformanceCollectionDataTest {
         data.addCpuData(null)
         data.addMemoryData(null)
         data.commitData()
-        assertEquals(1, data.cpuData.size)
-        assertTrue(data.memoryData.isEmpty())
-        val savedCpuData = data.cpuData.first()
+        assertNull(data.memoryData)
+        val savedCpuData = data.cpuData
         assertEquals(cpuData1, savedCpuData)
-    }
-
-    @Test
-    fun `committing multiple times does not duplicate values`() {
-        val data = fixture.getSut()
-        data.addCpuData(mock())
-        data.addMemoryData(mock())
-        data.commitData()
-        assertEquals(1, data.cpuData.size)
-        assertEquals(1, data.memoryData.size)
-        data.commitData()
-        assertEquals(1, data.cpuData.size)
-        assertEquals(1, data.memoryData.size)
     }
 }

@@ -18,13 +18,12 @@ class AndroidMemoryCollectorTest {
 
     @Test
     fun `when collect, both native and heap memory are collected`() {
-        val performanceCollectionData = PerformanceCollectionData()
-        val data = listOf(performanceCollectionData)
+        val data = PerformanceCollectionData()
         val usedNativeMemory = Debug.getNativeHeapSize() - Debug.getNativeHeapFreeSize()
         val usedMemory = fixture.runtime.totalMemory() - fixture.runtime.freeMemory()
         fixture.collector.collect(data)
-        performanceCollectionData.commitData()
-        val memoryData = performanceCollectionData.memoryData.firstOrNull()
+        data.commitData()
+        val memoryData = data.memoryData
         assertNotNull(memoryData)
         assertNotEquals(-1, memoryData.usedNativeMemory)
         assertEquals(usedNativeMemory, memoryData.usedNativeMemory)

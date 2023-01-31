@@ -24,7 +24,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class TransactionPerformanceCollectorTest {
+class DefaultTransactionPerformanceCollectorTest {
 
     private val className = "io.sentry.DefaultTransactionPerformanceCollector"
     private val ctorTypes: Array<Class<*>> = arrayOf(SentryOptions::class.java)
@@ -51,10 +51,8 @@ class TransactionPerformanceCollectorTest {
 
         val mockCpuCollector: ICollector = object : ICollector {
             override fun setup() {}
-            override fun collect(performanceCollectionData: Iterable<PerformanceCollectionData>) {
-                performanceCollectionData.forEach {
-                    it.addCpuData(mock())
-                }
+            override fun collect(performanceCollectionData: PerformanceCollectionData) {
+                performanceCollectionData.addCpuData(mock())
             }
         }
 
@@ -150,11 +148,18 @@ class TransactionPerformanceCollectorTest {
         // There are no more transactions running: the time should stop now
         verify(fixture.mockTimer)!!.cancel()
 
+        assertNotNull(data1)
+        assertNotNull(data2)
+        val memoryData1 = data1.map { it.memoryData }
+        val cpuData1 = data1.map { it.cpuData }
+        val memoryData2 = data2.map { it.memoryData }
+        val cpuData2 = data2.map { it.cpuData }
+
         // The data returned by the collector is not empty
-        assertFalse(data1!!.memoryData.isEmpty())
-        assertFalse(data1.cpuData.isEmpty())
-        assertFalse(data2!!.memoryData.isEmpty())
-        assertFalse(data2.cpuData.isEmpty())
+        assertFalse(memoryData1.isEmpty())
+        assertFalse(cpuData1.isEmpty())
+        assertFalse(memoryData2.isEmpty())
+        assertFalse(cpuData2.isEmpty())
     }
 
     @Test
@@ -169,10 +174,9 @@ class TransactionPerformanceCollectorTest {
         fixture.lastScheduledRunnable?.run()
         verify(fixture.mockTimer)!!.cancel()
 
-        // Data is returned even after the collector times out
+        // Data is deleted after the collector times out
         val data1 = collector.stop(fixture.transaction1)
-        assertFalse(data1!!.memoryData.isEmpty())
-        assertFalse(data1.cpuData.isEmpty())
+        assertNull(data1)
     }
 
     @Test
@@ -193,13 +197,16 @@ class TransactionPerformanceCollectorTest {
         // Let's sleep to make the collector get values
         Thread.sleep(300)
         val data1 = collector.stop(fixture.transaction1)
+        assertNotNull(data1)
+        val memoryData = data1.map { it.memoryData }
+        val cpuData = data1.map { it.cpuData }
 
         // The data returned by the collector is not empty
-        assertFalse(data1!!.memoryData.isEmpty())
-        assertFalse(data1.cpuData.isEmpty())
+        assertFalse(memoryData.isEmpty())
+        assertFalse(cpuData.isEmpty())
 
         // We have the same number of memory and cpu data, even if we have 2 memory collectors and 1 cpu collector
-        assertEquals(data1.memoryData.size, data1.cpuData.size)
+        assertEquals(memoryData.size, cpuData.size)
     }
 
     @Test
@@ -226,7 +233,7 @@ class TransactionPerformanceCollectorTest {
             }
         }
 
-        override fun collect(performanceCollectionData: MutableIterable<PerformanceCollectionData>) {
+        override fun collect(performanceCollectionData: PerformanceCollectionData) {
             if (mainThreadChecker.isMainThread) {
                 throw AssertionError("collect() was called in the main thread")
             }

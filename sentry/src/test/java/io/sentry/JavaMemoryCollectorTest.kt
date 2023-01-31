@@ -2,8 +2,8 @@ package io.sentry
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 
 class JavaMemoryCollectorTest {
 
@@ -16,15 +16,14 @@ class JavaMemoryCollectorTest {
 
     @Test
     fun `when collect, only heap memory is collected`() {
-        val performanceCollectionData = PerformanceCollectionData()
-        val data = listOf(performanceCollectionData)
+        val data = PerformanceCollectionData()
         val usedMemory = fixture.runtime.totalMemory() - fixture.runtime.freeMemory()
         fixture.collector.collect(data)
-        performanceCollectionData.commitData()
-        val memoryData = performanceCollectionData.memoryData
-        assertFalse(memoryData.isEmpty())
-        assertEquals(-1, memoryData.first().usedNativeMemory)
-        assertEquals(usedMemory, memoryData.first().usedHeapMemory)
-        assertNotEquals(0, memoryData.first().timestampMillis)
+        data.commitData()
+        val memoryData = data.memoryData
+        assertNotNull(memoryData)
+        assertEquals(-1, memoryData.usedNativeMemory)
+        assertEquals(usedMemory, memoryData.usedHeapMemory)
+        assertNotEquals(0, memoryData.timestampMillis)
     }
 }

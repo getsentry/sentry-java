@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.os.Build;
+import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
@@ -168,6 +169,7 @@ final class AndroidOptionsInitializer {
       options.addCollector(new AndroidMemoryCollector());
       options.addCollector(new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
     }
+    options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
   }
 
   private static void installDefaultIntegrations(

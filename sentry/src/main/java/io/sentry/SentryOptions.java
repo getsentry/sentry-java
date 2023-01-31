@@ -396,8 +396,8 @@ public class SentryOptions {
   private final @NotNull List<ICollector> collectors = new ArrayList<>();
 
   /** Performance collector that collect performance stats while transactions run. */
-  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
-      new DefaultTransactionPerformanceCollector(this);
+  private @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
+      NoOpTransactionPerformanceCollector.getInstance();
 
   /**
    * Adds an event processor
@@ -1898,6 +1898,17 @@ public class SentryOptions {
   @ApiStatus.Internal
   public @NotNull TransactionPerformanceCollector getTransactionPerformanceCollector() {
     return transactionPerformanceCollector;
+  }
+
+  /**
+   * Sets the performance collector used to collect performance stats while transactions run.
+   *
+   * @param transactionPerformanceCollector the performance collector.
+   */
+  @ApiStatus.Internal
+  public void setTransactionPerformanceCollector(
+      final @NotNull TransactionPerformanceCollector transactionPerformanceCollector) {
+    this.transactionPerformanceCollector = transactionPerformanceCollector;
   }
 
   /**

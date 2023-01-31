@@ -14,13 +14,11 @@ public class AndroidMemoryCollector implements ICollector {
   public void setup() {}
 
   @Override
-  public void collect(@NotNull Iterable<PerformanceCollectionData> performanceCollectionData) {
+  public void collect(final @NotNull PerformanceCollectionData performanceCollectionData) {
     long now = System.currentTimeMillis();
     long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     long usedNativeMemory = Debug.getNativeHeapSize() - Debug.getNativeHeapFreeSize();
     MemoryCollectionData memoryData = new MemoryCollectionData(now, usedMemory, usedNativeMemory);
-    for (PerformanceCollectionData data : performanceCollectionData) {
-      data.addMemoryData(memoryData);
-    }
+    performanceCollectionData.addMemoryData(memoryData);
   }
 }
