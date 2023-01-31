@@ -45,10 +45,11 @@ class SentryTracerTest {
             idleTimeout: Long? = null,
             trimEnd: Boolean = false,
             transactionFinishedCallback: TransactionFinishedCallback? = null,
-            samplingDecision: TracesSamplingDecision? = null
+            samplingDecision: TracesSamplingDecision? = null,
+            performanceCollector: TransactionPerformanceCollector? = transactionPerformanceCollector
         ): SentryTracer {
             optionsConfiguration.configure(options)
-            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback, transactionPerformanceCollector)
+            return SentryTracer(TransactionContext("name", "op", samplingDecision), hub, startTimestamp, waitForChildren, idleTimeout, trimEnd, transactionFinishedCallback, performanceCollector)
         }
     }
 
@@ -916,5 +917,19 @@ class SentryTracerTest {
 
         assertEquals("new-name-2", transaction.name)
         assertEquals(TransactionNameSource.CUSTOM, transaction.transactionNameSource)
+    }
+
+    @Test
+    fun `when transaction is finished, collected performance data is cleared`() {
+        val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
+        val mockPerformanceCollector = object : TransactionPerformanceCollector {
+            override fun start(transaction: ITransaction) {}
+            override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
+        }
+        val transaction = fixture.getSut(optionsConfiguration = {
+            it.profilesSampleRate = 1.0
+        }, performanceCollector = mockPerformanceCollector)
+        transaction.finish()
+        assertTrue(data.isEmpty())
     }
 }

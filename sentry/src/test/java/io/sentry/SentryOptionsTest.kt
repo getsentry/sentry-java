@@ -397,4 +397,12 @@ class SentryOptionsTest {
     fun `when options are initialized, TransactionPerformanceCollector is a NoOp`() {
         assertEquals(SentryOptions().transactionPerformanceCollector, NoOpTransactionPerformanceCollector.getInstance())
     }
+
+    @Test
+    fun `when setTransactionPerformanceCollector is called, overrides default`() {
+        val performanceCollector = mock<TransactionPerformanceCollector>()
+        val options = SentryOptions()
+        options.transactionPerformanceCollector = performanceCollector
+        assertEquals(performanceCollector, options.transactionPerformanceCollector)
+    }
 }
