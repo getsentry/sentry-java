@@ -38,6 +38,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -63,7 +64,7 @@ class SentryWebfluxIntegrationTest {
     @Test
     fun `attaches request information to SentryEvents`() {
         testClient.get()
-            .uri("http://localhost:$port/hello?param=value")
+            .uri("http://localhost:$port/hello?param=value#top")
             .exchange()
             .expectStatus()
             .isOk
@@ -71,9 +72,10 @@ class SentryWebfluxIntegrationTest {
         verify(transport).send(
             checkEvent { event ->
                 assertNotNull(event.request) {
-                    assertEquals("http://localhost:$port/hello?param=value", it.url)
+                    assertEquals("http://localhost:$port/hello", it.url)
                     assertEquals("GET", it.method)
                     assertEquals("param=value", it.queryString)
+                    assertNull(it.fragment)
                 }
             },
             anyOrNull()

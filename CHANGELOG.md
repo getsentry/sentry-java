@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Fixes
+
+- Remove authority from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
+- Fix `sentry-bom` containing incorrect artifacts ([#2504](https://github.com/getsentry/sentry-java/pull/2504))
+
+### Dependencies
+
+- Bump Native SDK from v0.5.3 to v0.5.4 ([#2500](https://github.com/getsentry/sentry-java/pull/2500))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#054)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.5.3...0.5.4)
+
+## 6.13.0
+
 ### Features
 
 - Send cpu usage percentage in profile payload ([#2469](https://github.com/getsentry/sentry-java/pull/2469))

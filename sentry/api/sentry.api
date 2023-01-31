@@ -3745,6 +3745,22 @@ public final class io/sentry/util/StringUtils {
 	public static fun removeSurrounding (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 }
 
+public final class io/sentry/util/UrlUtils {
+	public fun <init> ()V
+	public static fun parse (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
+	public static fun parseNullable (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
+}
+
+public final class io/sentry/util/UrlUtils$UrlDetails {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun applyToRequest (Lio/sentry/protocol/Request;)V
+	public fun applyToSpan (Lio/sentry/ISpan;)V
+	public fun getFragment ()Ljava/lang/String;
+	public fun getQuery ()Ljava/lang/String;
+	public fun getUrl ()Ljava/lang/String;
+	public fun getUrlOrFallback ()Ljava/lang/String;
+}
+
 public abstract interface class io/sentry/util/thread/IMainThreadChecker {
 	public fun isMainThread ()Z
 	public abstract fun isMainThread (J)Z
