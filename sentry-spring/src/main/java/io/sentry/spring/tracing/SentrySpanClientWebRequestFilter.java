@@ -13,6 +13,7 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.PropagationTargetsUtils;
+import io.sentry.util.UrlUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.reactive.function.client.ClientRequest;
@@ -39,7 +40,9 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     }
 
     final ISpan span = activeSpan.startChild("http.client");
-    span.setDescription(request.method().name() + " " + request.url());
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url().toString());
+    span.setDescription(request.method().name() + " " + urlDetails.getUrlOrFallback());
+    urlDetails.applyToSpan(span);
 
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
 
