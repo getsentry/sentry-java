@@ -421,11 +421,11 @@ public final class SentryTracer implements ITransaction {
       for (Span child : children) {
         if (child.getParentSpanId() != null && child.getParentSpanId().equals(span.getSpanId())) {
           childCount++;
-          if (minChildStart == null || minChildStart.diff(child.getStartDate()) < 0) {
+          if (minChildStart == null || child.getStartDate().beforeOrEqual(minChildStart)) {
             minChildStart = child.getStartDate();
           }
           if (maxChildEnd == null
-              || (child.getFinishDate() != null && maxChildEnd.diff(child.getFinishDate()) < 0)) {
+              || (child.getFinishDate() != null && child.getFinishDate().afterOrEqual(maxChildEnd))) {
             maxChildEnd = child.getFinishDate();
           }
         }

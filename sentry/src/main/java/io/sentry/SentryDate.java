@@ -37,6 +37,14 @@ public abstract class SentryDate implements Comparable<SentryDate> {
     return nanoTimestamp() - otherDate.nanoTimestamp();
   }
 
+  public boolean beforeOrEqual(final @NotNull SentryDate otherDate) {
+    return diff(otherDate) <= 0;
+  }
+
+  public boolean afterOrEqual(final @NotNull SentryDate otherDate) {
+    return diff(otherDate) >= 0;
+  }
+
   @Override
   public int compareTo(@NotNull SentryDate otherDate) {
     return Long.valueOf(nanoTimestamp()).compareTo(otherDate.nanoTimestamp());
