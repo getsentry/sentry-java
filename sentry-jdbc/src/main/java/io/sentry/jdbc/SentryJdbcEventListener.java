@@ -26,7 +26,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener implements 
     SdkVersion sdkVersion = hub.getOptions().getSdkVersion();
     if (sdkVersion != null) {
       addIntegrationToSdkVersion(sdkVersion);
-      sdkVersion.addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
+      sdkVersion.addPackage("maven:io.sentry:sentry-jdbc", BuildConfig.VERSION_NAME);
     }
   }
 

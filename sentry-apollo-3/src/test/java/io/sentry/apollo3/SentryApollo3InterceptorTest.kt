@@ -41,7 +41,7 @@ class SentryApollo3InterceptorTest {
                 SentryOptions().apply {
                     dsn = "https://key@sentry.io/proj"
                     isTraceSampling = true
-                    sdkVersion = SdkVersion("test", "version")
+                    sdkVersion = SdkVersion("test", "1.2.3")
                 }
             )
         }
