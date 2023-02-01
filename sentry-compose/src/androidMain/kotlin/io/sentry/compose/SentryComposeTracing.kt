@@ -1,46 +1,71 @@
 package io.sentry.compose
 
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.modifier.ProvidableModifierLocal
-import androidx.compose.ui.modifier.modifierLocalConsumer
-import androidx.compose.ui.modifier.modifierLocalProvider
 import androidx.compose.ui.platform.testTag
-import io.sentry.ISpan
 import io.sentry.Sentry
+import io.sentry.SpanOptions
 
-@Stable
-private class StableHolder<T>(val item: T) {
-    operator fun component1(): T = item
+private const val OP_PARENT_COMPOSITION = "compose.composition"
+private const val OP_COMPOSE = "compose"
+
+private const val OP_PARENT_RENDER = "compose.rendering"
+private const val OP_RENDER = "render"
+
+@Immutable
+private class ImmutableHolder<T>(var item: T)
+
+private val localSentryCompositionParentSpan = compositionLocalOf {
+    ImmutableHolder(
+        Sentry.getRootSpan()
+            ?.startChild(OP_PARENT_COMPOSITION, null, SpanOptions(true, true, true, true))
+    )
 }
 
-private val localSentrySpanModifier = ProvidableModifierLocal {
-    StableHolder(Sentry.getSpan())
+private val localSentryRenderingParentSpan = compositionLocalOf {
+    ImmutableHolder(
+        Sentry.getRootSpan()
+            ?.startChild(OP_PARENT_RENDER, null, SpanOptions(true, true, true, true))
+    )
 }
 
 @ExperimentalComposeUiApi
-public fun Modifier.sentryTraced(tag: String): Modifier = Modifier.composed {
-    val span = remember { mutableStateOf<StableHolder<ISpan?>>(StableHolder(null)) }
-    this
-        .testTag(tag)
-        .modifierLocalConsumer {
-            span.value =
-                StableHolder(localSentrySpanModifier.current.item?.startChild("ui.load", tag))
-        }
-        .drawWithContent {
-            drawContent()
-            span.value.apply {
-                if (item?.isFinished == false) {
-                    item.finish()
+@Composable
+public fun SentryTraced(
+    tag: String,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val parentCompositionSpan = localSentryCompositionParentSpan.current
+    val parentRenderingSpan = localSentryRenderingParentSpan.current
+    val compositionSpan = parentCompositionSpan.item?.startChild(OP_COMPOSE, tag)
+    val firstRendered = remember { ImmutableHolder(false) }
+
+    Box(
+        modifier = modifier
+            .testTag(tag)
+            .drawWithContent {
+                val renderSpan = if (!firstRendered.item) {
+                    parentRenderingSpan.item?.startChild(
+                        OP_RENDER,
+                        tag
+                    )
+                } else {
+                    null
                 }
+                drawContent()
+                firstRendered.item = true
+                renderSpan?.finish()
             }
-        }
-        .modifierLocalProvider(localSentrySpanModifier) {
-            span.value
-        }
+    ) {
+        content()
+    }
+    compositionSpan?.finish()
 }

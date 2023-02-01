@@ -31,9 +31,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import io.sentry.Sentry
-import io.sentry.compose.sentryTraced
-import io.sentry.compose.withSentryObservableEffect
+import io.sentry.compose.SentryTraced
 import io.sentry.samples.android.GithubAPI
 import kotlinx.coroutines.launch
 
@@ -43,14 +41,9 @@ class ComposeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val navController = rememberNavController().withSentryObservableEffect()
+            val navController = rememberNavController()
             SampleNavigation(navController)
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Sentry.getSpan()?.finish()
     }
 }
 
@@ -59,38 +52,38 @@ fun Landing(
     navigateGithub: () -> Unit,
     navigateGithubWithArgs: () -> Unit
 ) {
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .sentryTraced("landing")
-            .fillMaxSize()
-    ) {
-        Button(
-            onClick = {
-                navigateGithub()
-            },
-            modifier = Modifier
-                .sentryTraced("button_nav_github")
-                .padding(top = 32.dp)
+    SentryTraced(tag = "buttons_page") {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text("Navigate to Github Page")
-        }
-        Button(
-            onClick = { navigateGithubWithArgs() },
-            modifier = Modifier
-                .sentryTraced("button_nav_github_args")
-                .padding(top = 32.dp)
-        ) {
-            Text("Navigate to Github Page With Args")
-        }
-        Button(
-            onClick = { throw RuntimeException("Crash from Compose") },
-            modifier = Modifier
-                .sentryTraced("button_crash")
-                .padding(top = 32.dp)
-        ) {
-            Text("Crash from Compose")
+            SentryTraced(tag = "button_nav_github") {
+                Button(
+                    onClick = {
+                        navigateGithub()
+                    },
+                    modifier = Modifier.padding(top = 32.dp)
+                ) {
+                    Text("Navigate to Github")
+                }
+            }
+            SentryTraced(tag = "button_nav_github_args") {
+                Button(
+                    onClick = { navigateGithubWithArgs() },
+                    modifier = Modifier.padding(top = 32.dp)
+                ) {
+                    Text("Navigate to Github Page With Args")
+                }
+            }
+            SentryTraced(tag = "button_crash") {
+                Button(
+                    onClick = { throw RuntimeException("Crash from Compose") },
+                    modifier = Modifier.padding(top = 32.dp)
+                ) {
+                    Text("Crash from Compose")
+                }
+            }
         }
     }
 }
@@ -108,62 +101,67 @@ fun Github(
         result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
     }
 
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .sentryTraced("github-$user")
-            .fillMaxSize()
-    ) {
-        TextField(
-            value = user,
-            onValueChange = { newText ->
-                user = newText
-            }
-        )
-        Text("Random repo $result")
-        Button(
-            onClick = {
-                scope.launch {
-                    result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
-                }
-            },
+    SentryTraced("github-$user") {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .testTag("button_list_repos_async")
-                .padding(top = 32.dp)
+                .fillMaxSize()
         ) {
-            Text("Make Request")
+            TextField(
+                value = user,
+                onValueChange = { newText ->
+                    user = newText
+                }
+            )
+            Text("Random repo $result")
+            Button(
+                onClick = {
+                    scope.launch {
+                        result =
+                            GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+                    }
+                },
+                modifier = Modifier
+                    .testTag("button_list_repos_async")
+                    .padding(top = 32.dp)
+            ) {
+                Text("Make Request")
+            }
         }
     }
 }
 
 @Composable
 fun SampleNavigation(navController: NavHostController) {
-    NavHost(
-        navController = navController,
-        startDestination = Destination.Landing.route,
-       // modifier = Modifier.sentryTraced("app")
-    ) {
-        composable(Destination.Landing.route) {
-            Landing(
-                navigateGithub = { navController.navigate("github") },
-                navigateGithubWithArgs = { navController.navigate("github/spotify?per_page=10") }
-            )
-        }
-        composable(Destination.Github.route) {
-            Github()
-        }
-        composable(
-            Destination.GithubWithArgs.route,
-            arguments = listOf(
-                navArgument(Destination.USER_ARG) { type = NavType.StringType },
-                navArgument(Destination.PER_PAGE_ARG) { type = NavType.IntType; defaultValue = 10 }
-            )
+    SentryTraced(tag = "navhost") {
+        NavHost(
+            navController = navController,
+            startDestination = Destination.Landing.route
         ) {
-            Github(
-                it.arguments?.getString(Destination.USER_ARG) ?: "getsentry",
-                it.arguments?.getInt(Destination.PER_PAGE_ARG) ?: 10
-            )
+            composable(Destination.Landing.route) {
+                Landing(
+                    navigateGithub = { navController.navigate("github") },
+                    navigateGithubWithArgs = { navController.navigate("github/spotify?per_page=10") }
+                )
+            }
+            composable(Destination.Github.route) {
+                Github()
+            }
+            composable(
+                Destination.GithubWithArgs.route,
+                arguments = listOf(
+                    navArgument(Destination.USER_ARG) { type = NavType.StringType },
+                    navArgument(Destination.PER_PAGE_ARG) {
+                        type = NavType.IntType; defaultValue = 10
+                    }
+                )
+            ) {
+                Github(
+                    it.arguments?.getString(Destination.USER_ARG) ?: "getsentry",
+                    it.arguments?.getInt(Destination.PER_PAGE_ARG) ?: 10
+                )
+            }
         }
     }
 }
