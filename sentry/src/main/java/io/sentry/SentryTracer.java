@@ -425,7 +425,8 @@ public final class SentryTracer implements ITransaction {
             minChildStart = child.getStartDate();
           }
           if (maxChildEnd == null
-              || (child.getFinishDate() != null && child.getFinishDate().afterOrEqual(maxChildEnd))) {
+              || (child.getFinishDate() != null
+                  && child.getFinishDate().afterOrEqual(maxChildEnd))) {
             maxChildEnd = child.getFinishDate();
           }
         }
