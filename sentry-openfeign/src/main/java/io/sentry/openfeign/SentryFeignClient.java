@@ -15,6 +15,7 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import io.sentry.util.PropagationTargetsUtils;
+import io.sentry.util.UrlUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,13 +51,15 @@ public final class SentryFeignClient implements Client {
       }
 
       ISpan span = activeSpan.startChild("http.client");
-      String url = request.url();
-      span.setDescription(request.httpMethod().name() + " " + url);
+      final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url());
+      span.setDescription(request.httpMethod().name() + " " + urlDetails.getUrlOrFallback());
+      urlDetails.applyToSpan(span);
 
       final RequestWrapper requestWrapper = new RequestWrapper(request);
 
       if (!span.isNoOp()
-          && PropagationTargetsUtils.contain(hub.getOptions().getTracePropagationTargets(), url)) {
+          && PropagationTargetsUtils.contain(
+              hub.getOptions().getTracePropagationTargets(), request.url())) {
         final SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
         final @Nullable Collection<String> requestBaggageHeader =
             request.headers().get(BaggageHeader.BAGGAGE_HEADER);
