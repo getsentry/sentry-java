@@ -9,13 +9,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
 public final class Span implements ISpan {
 
   /** The moment in time when span was started. */
-  private final @NotNull SentryDate startTimestamp;
+  private @NotNull SentryDate startTimestamp;
 
   /** The moment in time when span has ended. */
   private @Nullable SentryDate timestamp;
@@ -35,6 +34,8 @@ public final class Span implements ISpan {
 
   private final @NotNull AtomicBoolean finished = new AtomicBoolean(false);
 
+  private final @NotNull SpanOptions options;
+
   private @Nullable SpanFinishedCallback spanFinishedCallback;
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
@@ -45,7 +46,7 @@ public final class Span implements ISpan {
       final @NotNull SentryTracer transaction,
       final @NotNull String operation,
       final @NotNull IHub hub) {
-    this(traceId, parentSpanId, transaction, operation, hub, null, null);
+    this(traceId, parentSpanId, transaction, operation, hub, null, new SpanOptions(), null);
   }
 
   Span(
@@ -55,12 +56,14 @@ public final class Span implements ISpan {
       final @NotNull String operation,
       final @NotNull IHub hub,
       final @Nullable SentryDate startTimestamp,
+      final @NotNull SpanOptions options,
       final @Nullable SpanFinishedCallback spanFinishedCallback) {
     this.context =
         new SpanContext(
             traceId, new SpanId(), operation, parentSpanId, transaction.getSamplingDecision());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
+    this.options = options;
     this.spanFinishedCallback = spanFinishedCallback;
     if (startTimestamp != null) {
       this.startTimestamp = startTimestamp;
@@ -69,12 +72,12 @@ public final class Span implements ISpan {
     }
   }
 
-  @VisibleForTesting
   public Span(
       final @NotNull TransactionContext context,
       final @NotNull SentryTracer sentryTracer,
       final @NotNull IHub hub,
-      final @Nullable SentryDate startTimestamp) {
+      final @Nullable SentryDate startTimestamp,
+      final @NotNull SpanOptions options) {
     this.context = Objects.requireNonNull(context, "context is required");
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.hub = Objects.requireNonNull(hub, "hub is required");
@@ -84,6 +87,7 @@ public final class Span implements ISpan {
     } else {
       this.startTimestamp = hub.getOptions().getDateProvider().now();
     }
+    this.options = options;
   }
 
   public @NotNull SentryDate getStartDate() {
@@ -104,13 +108,14 @@ public final class Span implements ISpan {
       final @NotNull String operation,
       final @Nullable String description,
       final @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter) {
+      final @NotNull Instrumenter instrumenter,
+      @NotNull SpanOptions spanOptions) {
     if (finished.get()) {
       return NoOpSpan.getInstance();
     }
 
     return transaction.startChild(
-        context.getSpanId(), operation, description, timestamp, instrumenter);
+        context.getSpanId(), operation, description, timestamp, instrumenter, spanOptions);
   }
 
   @Override
@@ -121,6 +126,24 @@ public final class Span implements ISpan {
     }
 
     return transaction.startChild(context.getSpanId(), operation, description);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions) {
+    if (finished.get()) {
+      return NoOpSpan.getInstance();
+    }
+    return transaction.startChild(context.getSpanId(), operation, description, spanOptions);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull Instrumenter instrumenter) {
+    return startChild(operation, description, timestamp, instrumenter, new SpanOptions());
   }
 
   @Override
@@ -316,5 +339,18 @@ public final class Span implements ISpan {
 
   void setSpanFinishedCallback(final @Nullable SpanFinishedCallback callback) {
     this.spanFinishedCallback = callback;
+  }
+
+  public void setStartDate(SentryDate date) {
+    this.startTimestamp = date;
+  }
+
+  public void setEndDate(SentryDate date) {
+    this.timestamp = date;
+  }
+
+  @NotNull
+  public SpanOptions getOptions() {
+    return options;
   }
 }

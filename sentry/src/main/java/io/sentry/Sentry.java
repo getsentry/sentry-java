@@ -831,6 +831,15 @@ public final class Sentry {
   }
 
   /**
+   * Gets the current active transaction or span.
+   *
+   * @return the active span or null when no active transaction is running
+   */
+  public static @Nullable ISpan getRootSpan() {
+    return getCurrentHub().getRootSpan();
+  }
+
+  /**
    * Returns if the App has crashed (Process has terminated) during the last run. It only returns
    * true or false if offline caching {{@link SentryOptions#getCacheDirPath()} } is set with a valid
    * dir.

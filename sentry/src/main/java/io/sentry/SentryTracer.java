@@ -10,6 +10,7 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -124,7 +125,7 @@ public final class SentryTracer implements ITransaction {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(hub, "hub is required");
     this.measurements = new ConcurrentHashMap<>();
-    this.root = new Span(context, this, hub, startTimestamp);
+    this.root = new Span(context, this, hub, startTimestamp, new SpanOptions());
     this.name = context.getName();
     this.instrumenter = context.getInstrumenter();
     this.hub = hub;
@@ -207,9 +208,25 @@ public final class SentryTracer implements ITransaction {
       final @NotNull SpanId parentSpanId,
       final @NotNull String operation,
       final @Nullable String description) {
-    final ISpan span = createChild(parentSpanId, operation);
-    span.setDescription(description);
-    return span;
+    return startChild(parentSpanId, operation, description, new SpanOptions());
+  }
+
+  /**
+   * Starts a child Span with given trace id and parent span id.
+   *
+   * @param parentSpanId - parent span id
+   * @param operation - span operation name
+   * @param description - span description
+   * @param spanOptions - span options
+   * @return a new transaction span
+   */
+  @NotNull
+  ISpan startChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final @NotNull SpanOptions spanOptions) {
+    return createChild(parentSpanId, operation, description, spanOptions);
   }
 
   @NotNull
@@ -219,18 +236,37 @@ public final class SentryTracer implements ITransaction {
       final @Nullable String description,
       final @Nullable SentryDate timestamp,
       final @NotNull Instrumenter instrumenter) {
-    return createChild(parentSpanId, operation, description, timestamp, instrumenter);
+    return createChild(
+        parentSpanId, operation, description, timestamp, instrumenter, new SpanOptions());
+  }
+
+  @NotNull
+  ISpan startChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final @Nullable SentryDate timestamp,
+      final @NotNull Instrumenter instrumenter,
+      final @NotNull SpanOptions spanOptions) {
+    return createChild(parentSpanId, operation, description, timestamp, instrumenter, spanOptions);
   }
 
   /**
    * Starts a child Span with given trace id and parent span id.
    *
    * @param parentSpanId - parent span id
+   * @param operation - the span operation
+   * @param description - the optional span description
+   * @param options - span options
    * @return a new transaction span
    */
   @NotNull
-  private ISpan createChild(final @NotNull SpanId parentSpanId, final @NotNull String operation) {
-    return createChild(parentSpanId, operation, null, null, Instrumenter.SENTRY);
+  private ISpan createChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final @NotNull SpanOptions options) {
+    return createChild(parentSpanId, operation, description, null, Instrumenter.SENTRY, options);
   }
 
   @NotNull
@@ -239,7 +275,8 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String operation,
       final @Nullable String description,
       @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter) {
+      final @NotNull Instrumenter instrumenter,
+      final @NotNull SpanOptions spanOptions) {
     if (root.isFinished()) {
       return NoOpSpan.getInstance();
     }
@@ -259,6 +296,7 @@ public final class SentryTracer implements ITransaction {
             operation,
             this.hub,
             timestamp,
+            spanOptions,
             __ -> {
               final FinishStatus finishStatus = this.finishStatus;
               if (idleTimeout != null) {
@@ -284,24 +322,41 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
-      final @NotNull String operation,
+      @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
       @NotNull Instrumenter instrumenter) {
-    return createChild(operation, description, timestamp, instrumenter);
+    return startChild(operation, description, timestamp, instrumenter, new SpanOptions());
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      final @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull Instrumenter instrumenter,
+      @NotNull SpanOptions spanOptions) {
+    return createChild(operation, description, timestamp, instrumenter, spanOptions);
   }
 
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    return createChild(operation, description, null, Instrumenter.SENTRY);
+    return startChild(operation, description, null, Instrumenter.SENTRY, new SpanOptions());
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions) {
+    return createChild(operation, description, null, Instrumenter.SENTRY, spanOptions);
   }
 
   private @NotNull ISpan createChild(
       final @NotNull String operation,
       final @Nullable String description,
       @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter) {
+      final @NotNull Instrumenter instrumenter,
+      final @NotNull SpanOptions spanOptions) {
     if (root.isFinished()) {
       return NoOpSpan.getInstance();
     }
@@ -311,7 +366,7 @@ public final class SentryTracer implements ITransaction {
     }
 
     if (children.size() < hub.getOptions().getMaxSpans()) {
-      return root.startChild(operation, description, timestamp, instrumenter);
+      return root.startChild(operation, description, timestamp, instrumenter, spanOptions);
     } else {
       hub.getOptions()
           .getLogger()
@@ -343,6 +398,50 @@ public final class SentryTracer implements ITransaction {
   @Override
   @ApiStatus.Internal
   public void finish(@Nullable SpanStatus status, @Nullable SentryDate finishDate) {
+
+    // auto-finish any open spans
+    for (Span span : getSpans()) {
+      if (span.getOptions().isAutoFinish()) {
+        if (finishDate != null) {
+          span.finish(getSpanContext().status, finishDate);
+        } else {
+          span.finish();
+        }
+      }
+    }
+
+    // remove spans with no children
+    // trim if enabled
+    final Iterator<Span> iterator = children.iterator();
+    while (iterator.hasNext()) {
+      final Span span = iterator.next();
+      int childCount = 0;
+      @Nullable SentryDate minChildStart = null;
+      @Nullable SentryDate maxChildEnd = null;
+      for (Span child : children) {
+        if (child.getParentSpanId() != null && child.getParentSpanId().equals(span.getSpanId())) {
+          childCount++;
+          if (minChildStart == null || minChildStart.diff(child.getStartDate()) < 0) {
+            minChildStart = child.getStartDate();
+          }
+          if (maxChildEnd == null
+              || (child.getFinishDate() != null && maxChildEnd.diff(child.getFinishDate()) < 0)) {
+            maxChildEnd = child.getFinishDate();
+          }
+        }
+      }
+      if (span.getOptions().isRemoveIfNoChildren() && childCount == 0) {
+        iterator.remove();
+      } else {
+        if (span.getOptions().isTrimStart() && minChildStart != null) {
+          span.setStartDate(minChildStart);
+        }
+        if (span.getOptions().isTrimEnd() && maxChildEnd != null) {
+          span.setEndDate(maxChildEnd);
+        }
+      }
+    }
+
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
       PerformanceCollectionData performanceCollectionData = null;
