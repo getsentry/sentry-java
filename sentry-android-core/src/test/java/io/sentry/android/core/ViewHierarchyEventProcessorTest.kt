@@ -6,20 +6,40 @@ import android.view.ViewGroup
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
+import io.sentry.JsonSerializable
+import io.sentry.JsonSerializer
 import io.sentry.SentryEvent
 import io.sentry.protocol.SentryException
 import org.junit.runner.RunWith
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import java.io.Writer
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
 class ViewHierarchyEventProcessorTest {
     private class Fixture {
+        val logger = mock<AndroidLogger>()
+        val serializer: JsonSerializer = mock {
+            on(it.serialize(any<JsonSerializable>(), any())).then { invocationOnMock: InvocationOnMock ->
+                val writer: Writer = invocationOnMock.getArgument(1)
+                writer.write("mock-data")
+                writer.flush()
+            }
+        }
+        val emptySerializer: JsonSerializer = mock {
+            on(it.serialize(any<JsonSerializable>(), any())).then { invocationOnMock: InvocationOnMock ->
+                val writer: Writer = invocationOnMock.getArgument(1)
+                writer.flush()
+            }
+        }
         val activity = mock<Activity>()
         val window = mock<Window>()
         val view = mock<View>()
@@ -59,6 +79,29 @@ class ViewHierarchyEventProcessorTest {
     @BeforeTest
     fun `set up`() {
         fixture = Fixture()
+    }
+
+    @Test
+    fun `should return a view hierarchy as byte array`() {
+        val viewHierarchy = ViewHierarchyEventProcessor.snapshotViewHierarchyAsData(
+            fixture.activity,
+            fixture.serializer,
+            fixture.logger
+        )
+
+        assertNotNull(viewHierarchy)
+        assertFalse(viewHierarchy.isEmpty())
+    }
+
+    @Test
+    fun `should return null as bytes are empty array`() {
+        val viewHierarchy = ViewHierarchyEventProcessor.snapshotViewHierarchyAsData(
+            fixture.activity,
+            fixture.emptySerializer,
+            fixture.logger
+        )
+
+        assertNull(viewHierarchy)
     }
 
     @Test

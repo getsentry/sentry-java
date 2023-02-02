@@ -8,11 +8,13 @@ import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.ILogger;
+import io.sentry.ISerializer;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
+import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +52,30 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     }
 
     return event;
+  }
+
+  @Nullable
+  public static byte[] snapshotViewHierarchyAsData(
+      @Nullable Activity activity, @NotNull ISerializer serializer, @NotNull ILogger logger) {
+    @Nullable ViewHierarchy viewHierarchy = snapshotViewHierarchy(activity, logger);
+
+    if (viewHierarchy == null) {
+      logger.log(SentryLevel.ERROR, "Could not get ViewHierarchy.");
+      return null;
+    }
+
+    final @Nullable byte[] bytes =
+        JsonSerializationUtils.bytesFrom(serializer, logger, viewHierarchy);
+    if (bytes == null) {
+      logger.log(SentryLevel.ERROR, "Could not serialize ViewHierarchy.");
+      return null;
+    }
+    if (bytes.length < 1) {
+      logger.log(SentryLevel.ERROR, "Got empty bytes array after serializing ViewHierarchy.");
+      return null;
+    }
+
+    return bytes;
   }
 
   @Nullable
