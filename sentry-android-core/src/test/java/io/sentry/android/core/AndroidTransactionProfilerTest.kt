@@ -380,12 +380,10 @@ class AndroidTransactionProfilerTest {
         var singleData = PerformanceCollectionData()
         singleData.addMemoryData(MemoryCollectionData(1, 2, 3))
         singleData.addCpuData(CpuCollectionData(1, 1.4))
-        singleData.commitData()
         performanceCollectionData.add(singleData)
 
         singleData = PerformanceCollectionData()
         singleData.addMemoryData(MemoryCollectionData(2, 3, 4))
-        singleData.commitData()
         performanceCollectionData.add(singleData)
 
         profiler.onTransactionStart(fixture.transaction1)

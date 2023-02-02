@@ -891,7 +891,6 @@ public final class io/sentry/PerformanceCollectionData {
 	public fun <init> ()V
 	public fun addCpuData (Lio/sentry/CpuCollectionData;)V
 	public fun addMemoryData (Lio/sentry/MemoryCollectionData;)V
-	public fun commitData ()V
 	public fun getCpuData ()Lio/sentry/CpuCollectionData;
 	public fun getMemoryData ()Lio/sentry/MemoryCollectionData;
 }

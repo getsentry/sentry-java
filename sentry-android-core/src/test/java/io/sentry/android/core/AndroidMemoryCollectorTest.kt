@@ -22,7 +22,6 @@ class AndroidMemoryCollectorTest {
         val usedNativeMemory = Debug.getNativeHeapSize() - Debug.getNativeHeapFreeSize()
         val usedMemory = fixture.runtime.totalMemory() - fixture.runtime.freeMemory()
         fixture.collector.collect(data)
-        data.commitData()
         val memoryData = data.memoryData
         assertNotNull(memoryData)
         assertNotEquals(-1, memoryData.usedNativeMemory)

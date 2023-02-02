@@ -19,7 +19,6 @@ class JavaMemoryCollectorTest {
         val data = PerformanceCollectionData()
         val usedMemory = fixture.runtime.totalMemory() - fixture.runtime.freeMemory()
         fixture.collector.collect(data)
-        data.commitData()
         val memoryData = data.memoryData
         assertNotNull(memoryData)
         assertEquals(-1, memoryData.usedNativeMemory)

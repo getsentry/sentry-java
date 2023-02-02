@@ -78,9 +78,6 @@ public final class DefaultTransactionPerformanceCollector
                 for (ICollector collector : collectors) {
                   collector.collect(tempData);
                 }
-                // We commit data after calling all collectors.
-                // This way we avoid issues caused by having multiple cpu or memory collectors.
-                tempData.commitData();
 
                 for (List<PerformanceCollectionData> data : performanceDataMap.values()) {
                   data.add(tempData);
