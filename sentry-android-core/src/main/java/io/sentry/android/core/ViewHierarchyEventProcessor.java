@@ -14,6 +14,7 @@ import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
+import io.sentry.util.HintUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -40,6 +41,10 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
 
     if (!options.isAttachViewHierarchy()) {
       options.getLogger().log(SentryLevel.DEBUG, "attachViewHierarchy is disabled.");
+      return event;
+    }
+
+    if (HintUtils.isFromHybridSdk(hint)) {
       return event;
     }
 
