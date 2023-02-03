@@ -7,21 +7,22 @@ public final class SpanOptions {
 
   private final boolean trimStart;
   private final boolean trimEnd;
-  private final boolean removeIfNoChildren;
   private final boolean autoFinish;
 
   public SpanOptions() {
-    this(false, false, false, false);
+    this(false, false, false);
   }
 
-  public SpanOptions(
-      final boolean trimStart,
-      final boolean trimEnd,
-      final boolean removeIfNoChildren,
-      final boolean autoFinish) {
+  /**
+   * @param trimStart true if the start time should be trimmed to the minimum start time of it's
+   *     children
+   * @param trimEnd true if the end time should be trimmed to the maximum end time of it's children
+   * @param autoFinish true if this span should be finished whenever the root transaction gets
+   *     finished
+   */
+  public SpanOptions(final boolean trimStart, final boolean trimEnd, final boolean autoFinish) {
     this.trimStart = trimStart;
     this.trimEnd = trimEnd;
-    this.removeIfNoChildren = removeIfNoChildren;
     this.autoFinish = autoFinish;
   }
 
@@ -31,10 +32,6 @@ public final class SpanOptions {
 
   public boolean isTrimEnd() {
     return trimEnd;
-  }
-
-  public boolean isRemoveIfNoChildren() {
-    return removeIfNoChildren;
   }
 
   public boolean isAutoFinish() {

@@ -25,14 +25,14 @@ private class ImmutableHolder<T>(var item: T)
 private val localSentryCompositionParentSpan = compositionLocalOf {
     ImmutableHolder(
         Sentry.getRootSpan()
-            ?.startChild(OP_PARENT_COMPOSITION, null, SpanOptions(true, true, true, true))
+            ?.startChild(OP_PARENT_COMPOSITION, null, SpanOptions(true, true, true))
     )
 }
 
 private val localSentryRenderingParentSpan = compositionLocalOf {
     ImmutableHolder(
         Sentry.getRootSpan()
-            ?.startChild(OP_PARENT_RENDER, null, SpanOptions(true, true, true, true))
+            ?.startChild(OP_PARENT_RENDER, null, SpanOptions(true, true, true))
     )
 }
 

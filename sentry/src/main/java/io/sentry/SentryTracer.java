@@ -10,7 +10,6 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -410,29 +409,23 @@ public final class SentryTracer implements ITransaction {
       }
     }
 
-    // remove spans with no children
-    // trim if enabled
-    final Iterator<Span> iterator = children.iterator();
-    while (iterator.hasNext()) {
-      final Span span = iterator.next();
-      int childCount = 0;
+    // trim span to children if enabled
+    for (Span span : children) {
       @Nullable SentryDate minChildStart = null;
       @Nullable SentryDate maxChildEnd = null;
-      for (Span child : children) {
-        if (child.getParentSpanId() != null && child.getParentSpanId().equals(span.getSpanId())) {
-          childCount++;
-          if (minChildStart == null || child.getStartDate().beforeOrEqual(minChildStart)) {
-            minChildStart = child.getStartDate();
-          }
-          if (maxChildEnd == null
-              || (child.getFinishDate() != null && child.getFinishDate().afterOrEqual(maxChildEnd))) {
-            maxChildEnd = child.getFinishDate();
+
+      if (span.getOptions().isTrimStart() || span.getOptions().isTrimEnd()) {
+        for (Span child : children) {
+          if (child.getParentSpanId() != null && child.getParentSpanId().equals(span.getSpanId())) {
+            if (minChildStart == null || child.getStartDate().isBefore(minChildStart)) {
+              minChildStart = child.getStartDate();
+            }
+            if (maxChildEnd == null
+                || (child.getFinishDate() != null && child.getFinishDate().isAfter(maxChildEnd))) {
+              maxChildEnd = child.getFinishDate();
+            }
           }
         }
-      }
-      if (span.getOptions().isRemoveIfNoChildren() && childCount == 0) {
-        iterator.remove();
-      } else {
         if (span.getOptions().isTrimStart() && minChildStart != null) {
           span.setStartDate(minChildStart);
         }
