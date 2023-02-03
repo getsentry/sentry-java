@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add capabilities to track compose composition/rendering time ([#2507](https://github.com/getsentry/sentry-java/pull/2507))
+
 ### Fixes
 
 - Remove authority from URLs sent to Sentry ([#2366](https://github.com/getsentry/sentry-java/pull/2366))
