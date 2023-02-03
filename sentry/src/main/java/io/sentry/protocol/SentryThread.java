@@ -36,6 +36,7 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
   private @Nullable Boolean current;
   private @Nullable Boolean daemon;
   private @Nullable SentryStackTrace stacktrace;
+  private @Nullable Boolean main;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -184,6 +185,29 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
     this.state = state;
   }
 
+  /**
+   * If applicable, a flag indicating whether the thread was responsible for rendering the user
+   * interface. On mobile platforms this is oftentimes referred to as the "main thread" or "ui
+   * thread".
+   *
+   * @return if its the main thread or not
+   */
+  @Nullable
+  public Boolean getMain() {
+    return main;
+  }
+
+  /**
+   * If applicable, a flag indicating whether the thread was responsible for rendering the user
+   * interface. On mobile platforms this is oftentimes referred to as the "main thread" or "ui
+   * thread".
+   *
+   * @param main if its the main thread or not
+   */
+  public void setMain(final @Nullable Boolean main) {
+    this.main = main;
+  }
+
   // region json
 
   @Nullable
@@ -206,6 +230,7 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
     public static final String CURRENT = "current";
     public static final String DAEMON = "daemon";
     public static final String STACKTRACE = "stacktrace";
+    public static final String MAIN = "main";
   }
 
   @Override
@@ -235,6 +260,9 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
     }
     if (stacktrace != null) {
       writer.name(JsonKeys.STACKTRACE).value(logger, stacktrace);
+    }
+    if (main != null) {
+      writer.name(JsonKeys.MAIN).value(main);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -281,6 +309,9 @@ public final class SentryThread implements JsonUnknown, JsonSerializable {
           case JsonKeys.STACKTRACE:
             sentryThread.stacktrace =
                 reader.nextOrNull(logger, new SentryStackTrace.Deserializer());
+            break;
+          case JsonKeys.MAIN:
+            sentryThread.main = reader.nextBooleanOrNull();
             break;
           default:
             if (unknown == null) {
