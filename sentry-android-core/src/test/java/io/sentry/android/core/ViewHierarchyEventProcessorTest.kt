@@ -9,6 +9,7 @@ import io.sentry.Hint
 import io.sentry.JsonSerializable
 import io.sentry.JsonSerializer
 import io.sentry.SentryEvent
+import io.sentry.TypeCheckHint
 import io.sentry.protocol.SentryException
 import org.junit.runner.RunWith
 import org.mockito.invocation.InvocationOnMock
@@ -64,10 +65,10 @@ class ViewHierarchyEventProcessorTest {
 
         fun process(
             attachViewHierarchy: Boolean,
-            event: SentryEvent
+            event: SentryEvent,
+            hint: Hint = Hint()
         ): Pair<SentryEvent, Hint> {
             val processor = getSut(attachViewHierarchy)
-            val hint = Hint()
             processor.process(event, hint)
 
             return Pair(event, hint)
@@ -102,6 +103,22 @@ class ViewHierarchyEventProcessorTest {
         )
 
         assertNull(viewHierarchy)
+    }
+
+    @Test
+    fun `when an event errored, the view hierarchy should not attached if the event is from hybrid sdk`() {
+        val hintFromHybridSdk = Hint()
+        hintFromHybridSdk.set(TypeCheckHint.SENTRY_IS_FROM_HYBRID_SDK, true)
+        val (event, hint) = fixture.process(
+            true,
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            },
+            hintFromHybridSdk
+        )
+
+        assertNotNull(event)
+        assertNull(hint.viewHierarchy)
     }
 
     @Test
