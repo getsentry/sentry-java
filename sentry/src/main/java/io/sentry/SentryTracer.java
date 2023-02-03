@@ -141,7 +141,9 @@ public final class SentryTracer implements ITransaction {
       this.baggage = new Baggage(hub.getOptions().getLogger());
     }
 
-    if (transactionPerformanceCollector != null) {
+    // We are currently sending the performance data only in profiles, so there's no point in
+    // collecting them if a profile is not sampled
+    if (transactionPerformanceCollector != null && Boolean.TRUE.equals(isProfileSampled())) {
       transactionPerformanceCollector.start(this);
     }
 
@@ -345,7 +347,7 @@ public final class SentryTracer implements ITransaction {
   public void finish(@Nullable SpanStatus status, @Nullable SentryDate finishDate) {
     this.finishStatus = FinishStatus.finishing(status);
     if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
-      PerformanceCollectionData performanceCollectionData = null;
+      List<PerformanceCollectionData> performanceCollectionData = null;
       if (transactionPerformanceCollector != null) {
         performanceCollectionData = transactionPerformanceCollector.stop(this);
       }
@@ -356,6 +358,9 @@ public final class SentryTracer implements ITransaction {
             hub.getOptions()
                 .getTransactionProfiler()
                 .onTransactionFinish(this, performanceCollectionData);
+      }
+      if (performanceCollectionData != null) {
+        performanceCollectionData.clear();
       }
 
       // try to get the high precision timestamp from the root span

@@ -251,7 +251,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   @Override
   public @Nullable synchronized ProfilingTraceData onTransactionFinish(
       final @NotNull ITransaction transaction,
-      final @Nullable PerformanceCollectionData performanceCollectionData) {
+      final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
     try {
       return options
           .getExecutorService()
@@ -269,7 +269,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private @Nullable ProfilingTraceData onTransactionFinish(
       final @NotNull ITransaction transaction,
       final boolean isTimeout,
-      final @Nullable PerformanceCollectionData performanceCollectionData) {
+      final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
 
     // onTransactionStart() is only available since Lollipop
     // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
@@ -416,28 +416,32 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   }
 
   private void putPerformanceCollectionDataInMeasurements(
-      final @Nullable PerformanceCollectionData performanceCollectionData) {
+      final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
     if (performanceCollectionData != null) {
       final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
-          new ArrayDeque<>();
+          new ArrayDeque<>(performanceCollectionData.size());
       final @NotNull ArrayDeque<ProfileMeasurementValue> nativeMemoryUsageMeasurements =
-          new ArrayDeque<>();
-      final @NotNull ArrayDeque<ProfileMeasurementValue> cpuUsageMeasurements = new ArrayDeque<>();
-      for (CpuCollectionData cpuData : performanceCollectionData.getCpuData()) {
-        cpuUsageMeasurements.add(
-            new ProfileMeasurementValue(
-                TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) - transactionStartNanos,
-                cpuData.getCpuUsagePercentage()));
-      }
-      for (MemoryCollectionData memoryData : performanceCollectionData.getMemoryData()) {
-        if (memoryData.getUsedHeapMemory() > -1) {
+          new ArrayDeque<>(performanceCollectionData.size());
+      final @NotNull ArrayDeque<ProfileMeasurementValue> cpuUsageMeasurements =
+          new ArrayDeque<>(performanceCollectionData.size());
+      for (PerformanceCollectionData performanceData : performanceCollectionData) {
+        CpuCollectionData cpuData = performanceData.getCpuData();
+        MemoryCollectionData memoryData = performanceData.getMemoryData();
+        if (cpuData != null) {
+          cpuUsageMeasurements.add(
+              new ProfileMeasurementValue(
+                  TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis())
+                      - transactionStartNanos,
+                  cpuData.getCpuUsagePercentage()));
+        }
+        if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
           memoryUsageMeasurements.add(
               new ProfileMeasurementValue(
                   TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis())
                       - transactionStartNanos,
                   memoryData.getUsedHeapMemory()));
         }
-        if (memoryData.getUsedNativeMemory() > -1) {
+        if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
           nativeMemoryUsageMeasurements.add(
               new ProfileMeasurementValue(
                   TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis())

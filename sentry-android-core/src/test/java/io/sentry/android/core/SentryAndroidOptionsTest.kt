@@ -113,7 +113,7 @@ class SentryAndroidOptionsTest {
         override fun onTransactionStart(transaction: ITransaction) {}
         override fun onTransactionFinish(
             transaction: ITransaction,
-            memoryCollectionData: PerformanceCollectionData?
+            performanceCollectionData: List<PerformanceCollectionData>?
         ): ProfilingTraceData? = null
     }
 }
